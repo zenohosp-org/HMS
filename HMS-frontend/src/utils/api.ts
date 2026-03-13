@@ -3,7 +3,13 @@ import axios from 'axios'
 // ── Axios Instance ────────────────────────────────────────────────────────────
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
+    baseURL: (() => {
+        const rawUrl = import.meta.env.VITE_API_URL || '';
+        if (!rawUrl || rawUrl === '/api') return '/api';
+        // Ensure no trailing slash before appending /api
+        const baseUrl = rawUrl.replace(/\/$/, '');
+        return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+    })(),
     headers: { 'Content-Type': 'application/json' },
 })
 
