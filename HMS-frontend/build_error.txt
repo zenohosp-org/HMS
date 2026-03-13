@@ -1,0 +1,60 @@
+﻿[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 4 modules transformed.
+node.exe : [31mx[39m Build failed in 2.03s
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: 
+    ([31mx[39m Build failed in 2.03s:Str  
+  ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommand 
+   Error
+ 
+[31merror during build:
+[31m[vite:css] [postcss] 
+C:/Users/Karthikeyan M/Desktop/zenohosp-HMS/
+frontend/src/index.css:1:1: The 
+`border-border` class does not exist. If 
+`border-border` is a custom class, make 
+sure it is defined within a `@layer` 
+directive.[31m
+file: [36mC:/Users/Karthikeyan M/Desktop/ze
+nohosp-HMS/frontend/src/index.css:1:0[31m
+    at Input.error (C:\Users\Karthikeyan M\D
+esktop\zenohosp-HMS\frontend\node_modules\po
+stcss\lib\input.js:135:16)
+    at AtRule.error (C:\Users\Karthikeyan M\
+Desktop\zenohosp-HMS\frontend\node_modules\p
+ostcss\lib\node.js:146:32)
+    at processApply (C:\Users\Karthikeyan M\
+Desktop\zenohosp-HMS\frontend\node_modules\t
+ailwindcss\lib\lib\expandApplyAtRules.js:380
+:29)
+    at C:\Users\Karthikeyan M\Desktop\zenoho
+sp-HMS\frontend\node_modules\tailwindcss\lib
+\lib\expandApplyAtRules.js:551:9
+    at C:\Users\Karthikeyan M\Desktop\zenoho
+sp-HMS\frontend\node_modules\tailwindcss\lib
+\processTailwindFeatures.js:55:50
+    at async plugins (C:\Users\Karthikeyan M
+\Desktop\zenohosp-HMS\frontend\node_modules\
+tailwindcss\lib\plugin.js:38:17)
+    at async LazyResult.runAsync 
+(C:\Users\Karthikeyan M\Desktop\zenohosp-HMS
+\frontend\node_modules\postcss\lib\lazy-resu
+lt.js:293:11)
+    at async compileCSS (file:///C:/Users/Ka
+rthikeyan%20M/Desktop/zenohosp-HMS/frontend/
+node_modules/vite/dist/node/chunks/dep-BK3b2
+jBa.js:36898:21)
+    at async Object.transform (file:///C:/Us
+ers/Karthikeyan%20M/Desktop/zenohosp-HMS/fro
+ntend/node_modules/vite/dist/node/chunks/dep
+-BK3b2jBa.js:36171:11)
+    at async transform (file:///C:/Users/Kar
+thikeyan%20M/Desktop/zenohosp-HMS/frontend/n
+ode_modules/rollup/dist/es/shared/node-entry
+.js:21269:16)[39m

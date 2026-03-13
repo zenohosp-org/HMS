@@ -1,0 +1,230 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Inter Fallback', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dark mode body — true neutral dark, not blue */
+.dark body {
+  background-color: #0f0f0f;
+  color: #e5e5e5;
+}
+
+/* Card component */
+.card {
+  background: white;
+  border-radius: 0;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e2e8f0;
+}
+
+.dark .card {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+}
+
+/* Button components */
+.btn-primary {
+  background-color: #020617; /* slate-950 */
+  color: white;
+  font-weight: 700;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem; /* rounded-xl */
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.875rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary:hover {
+  background-color: #0f172a; /* slate-900 */
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.btn-primary:active {
+  transform: translateY(0px);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background-color: white;
+  color: #475569; /* slate-600 */
+  font-weight: 700;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem; /* rounded-xl */
+  border: 1px solid #e2e8f0; /* slate-200 */
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.875rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary:hover {
+  background-color: #f8fafc; /* slate-50 */
+  border-color: #cbd5e1; /* slate-300 */
+  color: #1e293b; /* slate-800 */
+}
+
+.btn-secondary:active {
+  background-color: #f1f5f9; /* slate-100 */
+}
+.dark .btn-primary {
+  background-color: #ffffff;
+  color: #020617;
+}
+.dark .btn-primary:hover {
+  background-color: #f1f5f9;
+}
+
+.dark .btn-secondary {
+  background-color: #111111;
+  color: #aaaaaa;
+  border-color: #222222;
+}
+
+.dark .btn-secondary:hover {
+  background-color: #1e1e1e;
+  border-color: #2a2a2a;
+  color: #cccccc;
+}
+
+/* Input component */
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0;
+  border: 2px solid #94a3b8;
+  background: white;
+  color: #0f172a;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.input:focus {
+  border-color: #0f172a;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1);
+}
+
+.input::placeholder {
+  color: #94a3b8;
+}
+
+.dark .input {
+  background: #1e1e1e;
+  border-color: #333333;
+  color: #e5e5e5;
+}
+
+.dark .input::placeholder {
+  color: #555555;
+}
+
+/* Label */
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.dark .label {
+  color: #d1d5db;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #111111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #555555;
+}
+
+/* Print */
+@media print {
+
+  /* Hide all chrome UI */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Full-page reset */
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Let the main area fill the page */
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Invoice card: no shadow, no border radius, full width */
+  .card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1.5cm;
+  }
+}
