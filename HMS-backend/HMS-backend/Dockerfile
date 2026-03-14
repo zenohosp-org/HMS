@@ -16,8 +16,8 @@ WORKDIR /app
 # Copy the built jar from the build stage
 COPY --from=build /app/target/HMS-backend-0.0.1-SNAPSHOT.jar app.jar
 
-# Expose the port the app runs on
+# Expose the port (Render uses PORT env var, but EXPOSE is good for documentation)
 EXPOSE 9001
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the application, ensuring it listens on the PORT provided by the environment
+ENTRYPOINT ["java", "-Dserver.port=${PORT:9001}", "-jar", "app.jar"]
