@@ -1,0 +1,44 @@
+2026-03-14T20:45:29.170319100 : Starting loadUser for registration: directory
+2026-03-14T20:45:29.172335100 : Access Token: eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIzMWM4ODUxOS04MGM3LTRiNWQtYjI5Yi04M2ZiODhkYzU5YzYiLCJyb2xlIjoiSE9TUElUQUxfQURNSU4iLCJlbWFpbCI6ImFkbWluQGRlbHRhLmNvbSIsImlhdCI6MTc3MzUwMTMyOCwiZXhwIjoxNzczNTg3NzI4LCJob3NwaXRhbElkIjoiMDYzYWJmNmItZjdjYS00MjNkLTllNTAtYmYzYTNlZDBlZWM5IiwiaG9zcGl0YWxOYW1lIjoiRGVsdGEiLCJzdWJzY3JpcHRpb25QbGFuIjoiYmFzaWMiLCJtb2R1bGVzIjpbImhtcyJdfQ.xr_Vk5vrSEu-KFwr2jejISknhCuT44_jZDUCXwqCvapeIgaHsMRpsNQ_4R0Yj_zt
+2026-03-14T20:45:29.402336700 : Error during user-info retrieval: Attribute value for 'email' cannot be null
+2026-03-14T20:50:15.040709100 : Starting loadUser for registration: directory
+2026-03-14T20:58:03.502796700 : Starting loadUser for registration: directory
+2026-03-14T20:58:03.504411500 : Inside loadDirectoryUser
+2026-03-14T20:58:03.507737700 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-14T20:58:03.510290700 : Token (first 10 chars): eyJhbGciOi
+2026-03-14T20:58:03.520154300 : Executing RestTemplate exchange...
+2026-03-14T20:58:08.763097600 : Manual fetch response status: 200 OK
+2026-03-14T20:58:08.769822600 : Manual fetch response body: {success=true, message=null, data={id=31c88519-80c7-4b5d-b29b-83fb88dc59c6, firstName=Adithya, lastName=M, email=admin@delta.com, employeeCode=null, designation=null, gender=null, dateOfJoining=null, role={id=049f975f-5ac4-4021-a9c4-52cfe1160bda, name=HOSPITAL_ADMIN, displayName=Hospital Admin, description=Administrative access for hospital, isSystemRole=true, canAccessHms=true, canAccessAsset=true, canAccessInventory=true, canAccessOt=true, canAccessPharmacy=true}}}
+2026-03-14T20:58:08.770838600 : Unwrapped 'data' into top level
+2026-03-14T20:58:08.773130700 : Using userNameAttributeName: email
+2026-03-14T20:58:08.775700200 : Successfully created OAuth2User for: admin@delta.com
+2026-03-14T21:01:25.047589800 : Starting loadUser for registration: directory
+2026-03-14T21:01:25.048983400 : Inside loadDirectoryUser
+2026-03-14T21:01:25.050006600 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-14T21:01:25.053801600 : Token (first 10 chars): eyJhbGciOi
+2026-03-14T21:01:25.059711900 : Executing RestTemplate exchange...
+2026-03-14T21:01:25.584136500 : Manual fetch response status: 200 OK
+2026-03-14T21:01:25.585985400 : Manual fetch response body: {success=true, message=null, data={id=31c88519-80c7-4b5d-b29b-83fb88dc59c6, firstName=Adithya, lastName=M, email=admin@delta.com, employeeCode=null, designation=null, gender=null, dateOfJoining=null, role={id=049f975f-5ac4-4021-a9c4-52cfe1160bda, name=HOSPITAL_ADMIN, displayName=Hospital Admin, description=Administrative access for hospital, isSystemRole=true, canAccessHms=true, canAccessAsset=true, canAccessInventory=true, canAccessOt=true, canAccessPharmacy=true}}}
+2026-03-14T21:01:25.588048300 : Unwrapped 'data' into top level
+2026-03-14T21:01:25.589063 : Using userNameAttributeName: email
+2026-03-14T21:01:25.590579200 : Successfully created OAuth2User for: admin@delta.com
+2026-03-14T21:02:23.207845200 : Starting loadUser for registration: directory
+2026-03-14T21:02:23.212544100 : Inside loadDirectoryUser
+2026-03-14T21:02:23.215084200 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-14T21:02:23.216085300 : Token (first 10 chars): eyJhbGciOi
+2026-03-14T21:02:23.223087700 : Executing RestTemplate exchange...
+2026-03-14T21:02:24.000673700 : Manual fetch response status: 200 OK
+2026-03-14T21:02:24.002570100 : Manual fetch response body: {success=true, message=null, data={id=31c88519-80c7-4b5d-b29b-83fb88dc59c6, firstName=Adithya, lastName=M, email=admin@delta.com, employeeCode=null, designation=null, gender=null, dateOfJoining=null, role={id=049f975f-5ac4-4021-a9c4-52cfe1160bda, name=HOSPITAL_ADMIN, displayName=Hospital Admin, description=Administrative access for hospital, isSystemRole=true, canAccessHms=true, canAccessAsset=true, canAccessInventory=true, canAccessOt=true, canAccessPharmacy=true}}}
+2026-03-14T21:02:24.003569600 : Unwrapped 'data' into top level
+2026-03-14T21:02:24.004565600 : Using userNameAttributeName: email
+2026-03-14T21:02:24.006135600 : Successfully created OAuth2User for: admin@delta.com
+2026-03-14T21:09:27.482168300 : Starting loadUser for registration: directory
+2026-03-14T21:09:27.487867500 : Inside loadDirectoryUser
+2026-03-14T21:09:27.489927200 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-14T21:09:27.491465100 : Token (first 10 chars): eyJhbGciOi
+2026-03-14T21:09:27.496915300 : Executing RestTemplate exchange...
+2026-03-14T21:09:27.610431100 : Manual fetch response status: 200 OK
+2026-03-14T21:09:27.613954400 : Manual fetch response body: {success=true, message=null, data={id=31c88519-80c7-4b5d-b29b-83fb88dc59c6, firstName=Adithya, lastName=M, email=admin@delta.com, employeeCode=null, designation=null, gender=null, dateOfJoining=null, role={id=049f975f-5ac4-4021-a9c4-52cfe1160bda, name=HOSPITAL_ADMIN, displayName=Hospital Admin, description=Administrative access for hospital, isSystemRole=true, canAccessHms=true, canAccessAsset=true, canAccessInventory=true, canAccessOt=true, canAccessPharmacy=true}}}
+2026-03-14T21:09:27.619843500 : Unwrapped 'data' into top level
+2026-03-14T21:09:27.630012 : Using userNameAttributeName: email
+2026-03-14T21:09:27.643523800 : Successfully created OAuth2User for: admin@delta.com

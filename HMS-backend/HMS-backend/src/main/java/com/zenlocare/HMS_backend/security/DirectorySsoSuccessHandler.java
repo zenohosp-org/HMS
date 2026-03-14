@@ -9,12 +9,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Handles successful Directory SSO login.
@@ -31,7 +31,7 @@ import java.util.Map;
 public class DirectorySsoSuccessHandler implements AuthenticationSuccessHandler {
 
     private final UserRepository userRepository;
-    private final OAuth2AuthorizedClientService authorizedClientService;
+    private final JwtUtil jwtUtil;
 
     @Value("${frontend.url}")
     private String frontendUrl;
@@ -40,23 +40,40 @@ public class DirectorySsoSuccessHandler implements AuthenticationSuccessHandler 
     public void onAuthenticationSuccess(HttpServletRequest request,
                                          HttpServletResponse response,
                                          Authentication authentication) throws IOException {
-
-        OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
-        Map<String, Object> attributes = oauthToken.getPrincipal().getAttributes();
+        
+        try {
+            log.info("Directory SSO: Processing successful authentication for principal: {}", authentication.getName());
+            OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+            Map<String, Object> attributes = oauthToken.getPrincipal().getAttributes();
+            log.info("Directory SSO: Attributes received: {}", attributes);
 
         String email = (String) attributes.get("email");
 
+        // Robustness: If not at top level, check if it's wrapped in a 'data' object
+        if (email == null && attributes.containsKey("data") && attributes.get("data") instanceof Map) {
+            Map<?, ?> data = (Map<?, ?>) attributes.get("data");
+            email = (String) data.get("email");
+            log.info("Directory SSO: Found email in 'data' wrapper: {}", email);
+        }
+
         if (email == null) {
-            log.error("Directory SSO: email attribute missing from user-info response");
+            log.error("Directory SSO: email attribute missing from user-info response. Attributes keys: {}", attributes.keySet());
             response.sendRedirect(frontendUrl + "/login?error=sso_failed");
             return;
         }
 
         User user = userRepository.findByEmail(email).orElse(null);
-
+        log.debug("Directory SSO: Local user lookup result: {}", user != null ? "Found" : "Not Found");
+ 
         if (user == null) {
             log.warn("Directory SSO: no local HMS user found for email={}", email);
             response.sendRedirect(frontendUrl + "/login?error=user_not_found");
+            return;
+        }
+ 
+        if (user.getRole() == null) {
+            log.error("Directory SSO: User {} has no role assigned!", email);
+            response.sendRedirect(frontendUrl + "/login?error=role_missing");
             return;
         }
 
@@ -73,21 +90,16 @@ public class DirectorySsoSuccessHandler implements AuthenticationSuccessHandler 
             return;
         }
 
-        // Get the original access token from Directory
-        String clientRegistrationId = oauthToken.getAuthorizedClientRegistrationId();
-        var client = authorizedClientService.loadAuthorizedClient(clientRegistrationId, oauthToken.getName());
-        
-        if (client == null) {
-            log.error("Directory SSO: Could not load authorized client for registrationId={} principal={}", 
-                      clientRegistrationId, oauthToken.getName());
-            response.sendRedirect(frontendUrl + "/login?error=token_retrieval_failed");
-            return;
+        String roleName   = user.getRole().getName();
+        String hospitalId = user.getHospital() != null ? user.getHospital().getId().toString() : null;
+        String localToken = jwtUtil.generateToken(email, roleName, hospitalId);
+ 
+        log.info("Directory SSO login success for: {}. redirecting to frontend callback.", email);
+ 
+        response.sendRedirect(frontendUrl + "/sso/callback?token=" + localToken);
+        } catch (Exception e) {
+            log.error("Directory SSO: Critical error in success handler: {}", e.getMessage(), e);
+            response.sendRedirect(frontendUrl + "/login?error=internal_server_error");
         }
-
-        String token = client.getAccessToken().getTokenValue();
-
-        log.info("Directory SSO login success for: {}. Using shared Directory token.", email);
-
-        response.sendRedirect(frontendUrl + "/sso/callback?token=" + token);
     }
 }

@@ -137,13 +137,29 @@ public class AuthService {
     /**
      * Returns the profile of the currently authenticated user.
      */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public AuthResponse getProfile(User user) {
-        String roleName = user.getRole().getName();
-        String roleDisplay = user.getRole().getDisplayName();
-        UUID hospitalId = user.getHospital() != null ? user.getHospital().getId() : null;
-        String hospitalName = user.getHospital() != null ? user.getHospital().getName() : null;
+        if (user == null) {
+            log.warn("getProfile called with NULL user principal");
+            throw new UnauthorizedException("Session expired or invalid token");
+        }
+        
+        log.info("Retrieving profile for user: {}", user.getEmail());
+        try {
+            // Reload user from DB to ensure relationships are accessible in this transaction
+            User managedUser = userRepository.findById(user.getId())
+                    .orElseThrow(() -> new UnauthorizedException("User no longer exists"));
 
-        return buildResponse(null, user, roleName, roleDisplay, hospitalId, hospitalName, "Profile retrieved");
+            String roleName = managedUser.getRole().getName();
+            String roleDisplay = managedUser.getRole().getDisplayName();
+            UUID hospitalId = managedUser.getHospital() != null ? managedUser.getHospital().getId() : null;
+            String hospitalName = managedUser.getHospital() != null ? managedUser.getHospital().getName() : null;
+
+            return buildResponse(null, managedUser, roleName, roleDisplay, hospitalId, hospitalName, "Profile retrieved");
+        } catch (Exception e) {
+            log.error("Error building profile for user {}: {}", user.getEmail(), e.getMessage(), e);
+            throw e;
+        }
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────

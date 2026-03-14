@@ -36,6 +36,7 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
     private final DirectorySsoSuccessHandler directorySsoSuccessHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -63,6 +64,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(auth -> auth.authorizationRequestRepository(new HttpSessionOAuth2AuthorizationRequestRepository()))
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(delegatingOAuth2SuccessHandler()))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -79,8 +81,7 @@ public class SecurityConfig {
      * - "google"    → GoogleOAuth2SuccessHandler
      * - "directory" → DirectorySsoSuccessHandler
      */
-    @Bean
-    public AuthenticationSuccessHandler delegatingOAuth2SuccessHandler() {
+    private AuthenticationSuccessHandler delegatingOAuth2SuccessHandler() {
         return (HttpServletRequest request, HttpServletResponse response, Authentication authentication) -> {
             if (authentication instanceof OAuth2AuthenticationToken token) {
                 String registrationId = token.getAuthorizedClientRegistrationId();
@@ -93,11 +94,6 @@ public class SecurityConfig {
                 googleOAuth2SuccessHandler.onAuthenticationSuccess(request, response, authentication);
             }
         };
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
     }
 
     @org.springframework.beans.factory.annotation.Value("${frontend.url}")

@@ -33,14 +33,15 @@ public class DataSeeder implements CommandLineRunner {
      */
     private void seedRoles() {
         createRoleIfAbsent("SUPER_ADMIN", "Super Admin", "Full system access", true, true, true, true, true, true);
-        createRoleIfAbsent("HOSPITAL_ADMIN", "Hospital Admin", "Administrative access for hospital", true, true, true, true, true, true);
+        createRoleIfAbsent("HOSPITAL_ADMIN", "Hospital Admin", "Administrative access for hospital", true, true, true,
+                true, true, true);
         createRoleIfAbsent("DOCTOR", "Doctor", "Medical professional access", true, true, false, false, true, false);
         createRoleIfAbsent("STAFF", "Staff", "General staff access", true, true, false, true, false, true);
         log.info("✅ Roles seeded.");
     }
 
     private void createRoleIfAbsent(String name, String displayName, String description, boolean isSystem,
-                                    boolean hms, boolean asset, boolean inventory, boolean ot, boolean pharmacy) {
+            boolean hms, boolean asset, boolean inventory, boolean ot, boolean pharmacy) {
         if (!roleRepository.existsByName(name)) {
             roleRepository.save(Role.builder()
                     .name(name)
@@ -58,7 +59,7 @@ public class DataSeeder implements CommandLineRunner {
 
     /**
      * Seeds the initial Hospital Admin account.
-     * Email : admin@zenohosp.com
+     * Email : admin@gmail.com
      * Password: admin123
      * Role : HOSPITAL_ADMIN
      * Hospital: Zeno Hospital
@@ -66,13 +67,13 @@ public class DataSeeder implements CommandLineRunner {
      * Idempotent — skips if the admin already exists.
      */
     private void seedHospitalAdmin() {
-        if (userRepository.existsByEmail("admin@zenohosp.com")) {
+        if (userRepository.existsByEmail("admin@gmail.com")) {
             log.info("ℹ️  Hospital admin already exists — skipping.");
             return;
         }
 
-        Role adminRole = roleRepository.findByName("HOSPITAL_ADMIN")
-                .orElseThrow(() -> new IllegalStateException("HOSPITAL_ADMIN role not found after seed"));
+        Role adminRole = roleRepository.findByName("SUPER_ADMIN")
+                .orElseThrow(() -> new IllegalStateException("SUPER_ADMIN role not found after seed"));
 
         // Get or create the hospital - check if it already exists
         Hospital hospital = hospitalRepository.findByCode("SRM")
@@ -89,13 +90,13 @@ public class DataSeeder implements CommandLineRunner {
                 User.builder()
                         .hospital(hospital)
                         .role(adminRole)
-                        .email("admin@zenohosp.com")
+                        .email("admin@gmail.com")
                         .passwordHash(passwordEncoder.encode("admin123"))
                         .firstName("Zeno")
                         .lastName("Admin")
                         .isActive(true)
                         .build());
 
-        log.info("✅ Hospital admin seeded → admin@zenohosp.com / admin123  [Hospital: Zeno Hospital]");
+        log.info("✅ Hospital admin seeded → admin@gmail.com / admin123  [Hospital: Zeno Hospital]");
     }
 }
