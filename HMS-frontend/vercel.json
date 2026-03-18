@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api/*",
-      "destination": "https://hms-1-zdg2.onrender.com/api/:path*"
+      "source": "/api/(.*)",
+      "destination": "https://hms-1-zdg2.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
