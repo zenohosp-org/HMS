@@ -40,8 +40,8 @@ public class DoctorService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
-        if (!"DOCTOR".equals(user.getRole().getName())) {
-            throw new ConflictException("User does not have the DOCTOR role");
+        if (!"doctor".equalsIgnoreCase(user.getRole().getName())) {
+            throw new ConflictException("User does not have the doctor role");
         }
 
         if (doctorRepository.findByUserId(userId).isPresent()) {

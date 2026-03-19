@@ -64,7 +64,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
 
         User user = User.builder()
-                .email(email)
+                .email(normalizedEmail)
                 .passwordHash(passwordEncoder.encode(password != null ? password : "defaultPassword123"))
                 .firstName(firstName)
                 .lastName(lastName)
