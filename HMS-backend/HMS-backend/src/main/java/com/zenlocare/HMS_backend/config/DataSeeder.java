@@ -72,8 +72,8 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
-        Role adminRole = roleRepository.findByName("super_admin")
-                .orElseThrow(() -> new IllegalStateException("SUPER_ADMIN role not found after seed"));
+        Role adminRole = roleRepository.findByName("hospital_admin")
+                .orElseThrow(() -> new IllegalStateException("HOSPITAL_ADMIN role not found after seed"));
 
         // Get or create the hospital - check if it already exists
         Hospital hospital = hospitalRepository.findByCode("srm")
