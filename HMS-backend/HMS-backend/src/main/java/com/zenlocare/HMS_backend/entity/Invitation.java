@@ -45,4 +45,23 @@ public class Invitation {
     @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @PrePersist
+    public void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        normalizeCase();
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        normalizeCase();
+    }
+
+    private void normalizeCase() {
+        if (invitedEmail != null) {
+            this.invitedEmail = invitedEmail.toLowerCase().trim();
+        }
+    }
 }

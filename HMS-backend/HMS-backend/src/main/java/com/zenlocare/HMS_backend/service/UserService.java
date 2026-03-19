@@ -50,12 +50,15 @@ public class UserService {
             String roleName, UUID hospitalId, String phone, String employeeCode, String designation,
             String gender, java.time.LocalDate dateOfJoining, UUID branchId, UUID departmentId) {
 
-        if (userRepository.existsByEmail(email)) {
-            throw new ConflictException("Email already exists: " + email);
+        final String normalizedEmail = email != null ? email.toLowerCase().trim() : null;
+        final String normalizedRoleName = roleName != null ? roleName.toLowerCase().trim() : null;
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new ConflictException("Email already exists: " + normalizedEmail);
         }
 
-        Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleName));
+        Role role = roleRepository.findByName(normalizedRoleName)
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + normalizedRoleName));
 
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));

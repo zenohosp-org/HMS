@@ -43,7 +43,7 @@ public class UserController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<UserDto> createUser(@RequestBody CreateUserRequest req) {
         User user = userService.createUser(
                 req.getEmail(), req.getPassword(), req.getFirstName(), req.getLastName(),
@@ -54,14 +54,14 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<Void> deactivateUser(@PathVariable java.util.UUID id) {
         userService.deactivateUser(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<Void> activateUser(@PathVariable java.util.UUID id) {
         userService.activateUser(id);
         return ResponseEntity.noContent().build();

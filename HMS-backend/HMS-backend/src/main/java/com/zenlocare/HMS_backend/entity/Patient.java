@@ -58,5 +58,17 @@ public class Patient {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        normalizeCase();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        normalizeCase();
+    }
+
+    private void normalizeCase() {
+        if (email != null) {
+            this.email = email.toLowerCase().trim();
+        }
     }
 }

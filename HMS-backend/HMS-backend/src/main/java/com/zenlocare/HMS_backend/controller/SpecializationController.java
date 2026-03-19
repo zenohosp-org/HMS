@@ -31,21 +31,21 @@ public class SpecializationController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<SpecializationDto> createSpecialization(@RequestBody Specialization req) {
         Specialization specialization = specializationService.createSpecialization(req);
         return ResponseEntity.ok(mapToDto(specialization));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<SpecializationDto> updateSpecialization(@PathVariable UUID id, @RequestBody Specialization req) {
         Specialization specialization = specializationService.updateSpecialization(id, req);
         return ResponseEntity.ok(mapToDto(specialization));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<Void> deleteSpecialization(@PathVariable UUID id) {
         specializationService.deleteSpecialization(id);
         return ResponseEntity.noContent().build();

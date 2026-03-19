@@ -36,9 +36,10 @@ public class AuthService {
      * Returns a JWT + user context on success.
      */
     public AuthResponse login(LoginRequest request) {
+        String requestEmail = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : null;
         // 1. Try to authenticate with Directory Backend first
         try {
-            log.info("Proxying login for {} to Directory Backend...", request.getEmail());
+            log.info("Proxying login for {} to Directory Backend...", requestEmail);
             String directoryLoginUrl = directoryApiUrl + "/api/auth/login";
             
             var responseEntity = restTemplate.postForEntity(directoryLoginUrl, request, java.util.Map.class);
@@ -78,7 +79,7 @@ public class AuthService {
         }
 
         // 4. Local Authentication Fallback
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(requestEmail)
                 .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
@@ -107,11 +108,12 @@ public class AuthService {
      * links them later).
      */
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ConflictException("Email already registered: " + request.getEmail());
+        String email = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : null;
+        if (userRepository.existsByEmail(email)) {
+            throw new ConflictException("Email already registered: " + email);
         }
 
-        Role staffRole = roleRepository.findByName("STAFF")
+        Role staffRole = roleRepository.findByName("staff")
                 .orElseThrow(() -> new IllegalStateException("STAFF role not found — run app to seed roles first"));
 
         User user = User.builder()

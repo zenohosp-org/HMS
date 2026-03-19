@@ -67,14 +67,31 @@ public class User {
     private Boolean isActive = true;
 
     @Builder.Default
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Builder.Default
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @PrePersist
+    public void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        this.updatedAt = LocalDateTime.now();
+        normalizeCase();
+    }
 
     @PreUpdate
     public void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+        normalizeCase();
+    }
+
+    private void normalizeCase() {
+        if (email != null) {
+            this.email = email.toLowerCase().trim();
+        }
     }
 }

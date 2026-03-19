@@ -19,7 +19,15 @@ public class Role {
     private UUID id;
 
     @Column(nullable = false, unique = true, length = 50)
-    private String name; // "SUPER_ADMIN", "HOSPITAL_ADMIN", "DOCTOR", "STAFF"
+    private String name; // "super_admin", "hospital_admin", "doctor", "staff"
+
+    @PrePersist
+    @PreUpdate
+    public void normalizeCase() {
+        if (name != null) {
+            this.name = name.toLowerCase().trim();
+        }
+    }
 
     @Column(name = "display_name", length = 100)
     private String displayName; // "Super Admin", "Hospital Admin", "Doctor", "Staff"

@@ -57,9 +57,9 @@ public class SecurityConfig {
                                 "/error")
                         .permitAll()
                         // Super Admin only
-                        .requestMatchers("/api/super-admin/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/super-admin/**").hasRole("super_admin")
                         // Admin and above
-                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("admin", "super_admin")
                         // All authenticated users
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2

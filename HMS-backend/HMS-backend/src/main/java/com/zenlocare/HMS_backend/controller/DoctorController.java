@@ -40,7 +40,7 @@ public class DoctorController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<DoctorDto> createDoctor(@RequestBody CreateDoctorRequest req) {
         Doctor doctorData = new Doctor();
         doctorData.setSpecialization(req.getSpecialization());
@@ -58,7 +58,7 @@ public class DoctorController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN') or hasRole('DOCTOR')")
+    @PreAuthorize("hasRole('hospital_admin') or hasRole('doctor')")
     public ResponseEntity<DoctorDto> updateDoctor(@PathVariable UUID id, @RequestBody DoctorDto req) {
         Doctor updatedData = new Doctor();
         updatedData.setSpecialization(req.getSpecialization());
@@ -76,7 +76,7 @@ public class DoctorController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<Void> deleteDoctor(@PathVariable UUID id) {
         doctorService.deleteDoctor(id);
         return ResponseEntity.noContent().build();

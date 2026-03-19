@@ -60,10 +60,9 @@ public class JwtUtil {
         return email;
     }
 
-    /** Extract the role claim. Normalizes to uppercase. */
     public String extractRole(String token) {
         Object role = parseClaims(token).get("role");
-        return role == null ? null : role.toString().toUpperCase();
+        return role == null ? null : role.toString().toLowerCase();
     }
 
     /** Extract the hospitalId claim. Supports both String and UUID formats. */

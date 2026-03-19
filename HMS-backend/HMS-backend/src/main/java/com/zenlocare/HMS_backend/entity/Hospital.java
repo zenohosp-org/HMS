@@ -50,8 +50,25 @@ public class Hospital {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @PrePersist
+    public void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        normalizeCase();
+    }
+
     @PreUpdate
     public void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+        normalizeCase();
+    }
+
+    private void normalizeCase() {
+        if (code != null) {
+            this.code = code.toLowerCase().trim();
+        }
+        if (subdomain != null) {
+            this.subdomain = subdomain.toLowerCase().trim();
+        }
     }
 }

@@ -20,26 +20,26 @@ public class RoomController {
     private final RoomService roomService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('HOSPITAL_ADMIN', 'DOCTOR', 'STAFF')")
+    @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
     public ResponseEntity<List<Room>> getRoomsForHospital(@RequestParam UUID hospitalId) {
         return ResponseEntity.ok(roomService.getRoomsForHospital(hospitalId));
     }
 
     @PostMapping("/generate")
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<List<Room>> generateRooms(@RequestBody RoomCreateRequest request) {
         return ResponseEntity.ok(roomService.generateRooms(request));
     }
 
     @PostMapping("/allocate")
-    @PreAuthorize("hasAnyRole('HOSPITAL_ADMIN', 'DOCTOR', 'STAFF')")
+    @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
     public ResponseEntity<Room> allocatePatient(@RequestBody RoomAllocationRequest request,
             @RequestParam UUID hospitalId) {
         return ResponseEntity.ok(roomService.allocatePatient(request, hospitalId));
     }
 
     @PostMapping("/{roomId}/deallocate")
-    @PreAuthorize("hasAnyRole('HOSPITAL_ADMIN', 'DOCTOR', 'STAFF')")
+    @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
     public ResponseEntity<Room> deallocatePatient(@PathVariable Long roomId, @RequestParam UUID hospitalId) {
         return ResponseEntity.ok(roomService.deallocatePatient(roomId, hospitalId));
     }

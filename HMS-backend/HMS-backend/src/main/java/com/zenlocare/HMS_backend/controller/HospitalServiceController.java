@@ -23,26 +23,26 @@ public class HospitalServiceController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<HospitalService> createService(@RequestBody HospitalService req) {
         return ResponseEntity.ok(service.createService(req));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<HospitalService> updateService(@PathVariable UUID id, @RequestBody HospitalService req) {
         return ResponseEntity.ok(service.updateService(id, req));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<Void> deleteService(@PathVariable UUID id) {
         service.deleteService(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/toggle-status")
-    @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
+    @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<Void> toggleStatus(@PathVariable UUID id) {
         service.toggleStatus(id);
         return ResponseEntity.noContent().build();

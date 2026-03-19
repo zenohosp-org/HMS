@@ -32,11 +32,11 @@ public class DataSeeder implements CommandLineRunner {
      * Seeds all system roles. Idempotent — skips roles that already exist.
      */
     private void seedRoles() {
-        createRoleIfAbsent("SUPER_ADMIN", "Super Admin", "Full system access", true, true, true, true, true, true);
-        createRoleIfAbsent("HOSPITAL_ADMIN", "Hospital Admin", "Administrative access for hospital", true, true, true,
+        createRoleIfAbsent("super_admin", "Super Admin", "Full system access", true, true, true, true, true, true);
+        createRoleIfAbsent("hospital_admin", "Hospital Admin", "Administrative access for hospital", true, true, true,
                 true, true, true);
-        createRoleIfAbsent("DOCTOR", "Doctor", "Medical professional access", true, true, false, false, true, false);
-        createRoleIfAbsent("STAFF", "Staff", "General staff access", true, true, false, true, false, true);
+        createRoleIfAbsent("doctor", "Doctor", "Medical professional access", true, true, false, false, true, false);
+        createRoleIfAbsent("staff", "Staff", "General staff access", true, true, false, true, false, true);
         log.info("✅ Roles seeded.");
     }
 
@@ -72,14 +72,14 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
-        Role adminRole = roleRepository.findByName("SUPER_ADMIN")
+        Role adminRole = roleRepository.findByName("super_admin")
                 .orElseThrow(() -> new IllegalStateException("SUPER_ADMIN role not found after seed"));
 
         // Get or create the hospital - check if it already exists
-        Hospital hospital = hospitalRepository.findByCode("SRM")
+        Hospital hospital = hospitalRepository.findByCode("srm")
                 .orElseGet(() -> hospitalRepository.save(
                         Hospital.builder()
-                                .code("SRM")
+                                .code("srm")
                                 .name("SRM Hospital")
                                 .subdomain("srm")
                                 .address("Chennai, Tamil Nadu")
