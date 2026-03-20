@@ -42,3 +42,61 @@
 2026-03-14T21:09:27.619843500 : Unwrapped 'data' into top level
 2026-03-14T21:09:27.630012 : Using userNameAttributeName: email
 2026-03-14T21:09:27.643523800 : Successfully created OAuth2User for: admin@delta.com
+2026-03-20T12:57:42.652009400 : Starting loadUser for registration: directory
+2026-03-20T12:57:42.655454300 : Inside loadDirectoryUser
+2026-03-20T12:57:42.656988400 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-20T12:57:42.658505800 : Token (first 10 chars): eyJhbGciOi
+2026-03-20T12:57:42.668985600 : Executing RestTemplate exchange...
+2026-03-20T12:57:42.742569800 : Manual fetch failed with Throwable: 500  on GET request for "http://localhost:9000/api/users/me": "{"success":false,"message":"Debug: NoResourceFoundException - No static resource api/users/me for request '/api/users/me'.","data":null}"
+2026-03-20T12:57:42.774422900 : CRITICAL GLOBAL ERROR in loadUser: null
+2026-03-20T13:08:19.553379200 : Starting loadUser for registration: directory
+2026-03-20T13:08:19.556466500 : Inside loadDirectoryUser
+2026-03-20T13:08:19.563626600 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-20T13:08:19.564793300 : Token (first 10 chars): eyJhbGciOi
+2026-03-20T13:08:19.570229100 : Executing RestTemplate exchange...
+2026-03-20T13:08:19.696117800 : Manual fetch failed with Throwable: 500  on GET request for "http://localhost:9000/api/users/me": "{"success":false,"message":"Debug: NoResourceFoundException - No static resource api/users/me for request '/api/users/me'.","data":null}"
+2026-03-20T13:08:19.899555700 : CRITICAL GLOBAL ERROR in loadUser: null
+2026-03-20T13:10:16.430499700 : Starting loadUser for registration: directory
+2026-03-20T13:10:16.433593400 : Inside loadDirectoryUser
+2026-03-20T13:10:16.439130800 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-20T13:10:16.446403900 : Token (first 10 chars): eyJhbGciOi
+2026-03-20T13:10:16.456660200 : Executing RestTemplate exchange...
+2026-03-20T13:10:16.495663 : Manual fetch failed with Throwable: 500  on GET request for "http://localhost:9000/api/users/me": "{"success":false,"message":"Debug: NoResourceFoundException - No static resource api/users/me for request '/api/users/me'.","data":null}"
+2026-03-20T13:10:16.514644 : CRITICAL GLOBAL ERROR in loadUser: null
+2026-03-20T13:19:46.368634100 : Starting loadUser for registration: directory
+2026-03-20T13:19:46.370625600 : Inside loadDirectoryUser
+2026-03-20T13:19:46.373181900 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-20T13:19:46.374693300 : Token (first 10 chars): eyJhbGciOi
+2026-03-20T13:19:46.384311500 : Executing RestTemplate exchange...
+2026-03-20T13:19:46.724112300 : Manual fetch failed with Throwable: 500  on GET request for "http://localhost:9000/api/users/me": "{"success":false,"message":"Debug: NoResourceFoundException - No static resource api/users/me for request '/api/users/me'.","data":null}"
+2026-03-20T13:19:46.740222 : CRITICAL GLOBAL ERROR in loadUser: null
+2026-03-20T13:34:22.366422500 : Starting loadUser for registration: directory
+2026-03-20T13:34:22.368461400 : Inside loadDirectoryUser
+2026-03-20T13:34:22.370529400 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-20T13:34:22.370529400 : Token (first 10 chars): eyJhbGciOi
+2026-03-20T13:34:22.376117 : Executing RestTemplate exchange...
+2026-03-20T13:34:22.611550100 : Manual fetch response status: 200 OK
+2026-03-20T13:34:22.614105600 : Manual fetch response body: {success=true, message=null, data={id=19c2d25e-4bbd-41b1-a79e-92b3b75fa91d, firstName=Karthik, lastName=M, email=admin@delta.com, employeeCode=null, designation=null, gender=null, dateOfJoining=null, role={id=1759541b-3ba2-478b-85e8-4757a2022094, name=hospital_admin, displayName=Hospital Admin, description=Administrative access for hospital, isSystemRole=true}, canAccessHms=true, canAccessAsset=true, canAccessInventory=true, canAccessOt=true, canAccessPharmacy=true}}
+2026-03-20T13:34:22.615140800 : Unwrapped 'data' into top level
+2026-03-20T13:34:22.615674200 : Using userNameAttributeName: email
+2026-03-20T13:34:22.615674200 : Successfully created OAuth2User for: admin@delta.com
+2026-03-20T13:40:17.984404800 : Starting loadUser for registration: directory
+2026-03-20T13:40:17.994685 : Inside loadDirectoryUser
+2026-03-20T13:40:17.994685 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-20T13:40:17.996197200 : Token (first 10 chars): eyJhbGciOi
+2026-03-20T13:40:18.000223600 : Executing RestTemplate exchange...
+2026-03-20T13:40:18.253228300 : Manual fetch response status: 200 OK
+2026-03-20T13:40:18.253228300 : Manual fetch response body: {success=true, message=null, data={id=19c2d25e-4bbd-41b1-a79e-92b3b75fa91d, firstName=Karthik, lastName=M, email=admin@delta.com, employeeCode=null, designation=null, gender=null, dateOfJoining=null, role={id=1759541b-3ba2-478b-85e8-4757a2022094, name=hospital_admin, displayName=Hospital Admin, description=Administrative access for hospital, isSystemRole=true}, canAccessHms=true, canAccessAsset=true, canAccessInventory=true, canAccessOt=true, canAccessPharmacy=true}}
+2026-03-20T13:40:18.254901800 : Unwrapped 'data' into top level
+2026-03-20T13:40:18.256932 : Using userNameAttributeName: email
+2026-03-20T13:40:18.258440200 : Successfully created OAuth2User for: admin@delta.com
+2026-03-20T13:40:47.246816 : Starting loadUser for registration: directory
+2026-03-20T13:40:47.248355600 : Inside loadDirectoryUser
+2026-03-20T13:40:47.249379900 : Manually fetching user info from: http://localhost:9000/api/users/me
+2026-03-20T13:40:47.250895 : Token (first 10 chars): eyJhbGciOi
+2026-03-20T13:40:47.255336200 : Executing RestTemplate exchange...
+2026-03-20T13:40:47.330015700 : Manual fetch response status: 200 OK
+2026-03-20T13:40:47.331030100 : Manual fetch response body: {success=true, message=null, data={id=19c2d25e-4bbd-41b1-a79e-92b3b75fa91d, firstName=Karthik, lastName=M, email=admin@delta.com, employeeCode=null, designation=null, gender=null, dateOfJoining=null, role={id=1759541b-3ba2-478b-85e8-4757a2022094, name=hospital_admin, displayName=Hospital Admin, description=Administrative access for hospital, isSystemRole=true}, canAccessHms=true, canAccessAsset=true, canAccessInventory=true, canAccessOt=true, canAccessPharmacy=true}}
+2026-03-20T13:40:47.332029400 : Unwrapped 'data' into top level
+2026-03-20T13:40:47.333028200 : Using userNameAttributeName: email
+2026-03-20T13:40:47.334029300 : Successfully created OAuth2User for: admin@delta.com

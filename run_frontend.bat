@@ -10,8 +10,8 @@ echo.
 
 cd /d "%~dp0HMS-frontend"
 
-echo  Starting frontend on http://localhost:5173
-echo  Backend proxy  → http://localhost:8080
+echo  Starting frontend on http://localhost:5174
+echo  Backend proxy  → http://localhost:9001
 echo  Press Ctrl+C to stop.
 echo.
 
