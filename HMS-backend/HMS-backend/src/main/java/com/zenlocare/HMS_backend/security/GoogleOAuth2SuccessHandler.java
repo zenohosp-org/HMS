@@ -19,9 +19,10 @@ import java.io.IOException;
 /**
  * After successful Google login:
  *  1. Extract email + googleId from the OIDC token.
- *  2. Find the existing user by email OR create a new STAFF user.
+ *  2. Find the existing user by email OR create a new staff user.
  *  3. Save / update googleId on the user record.
- *  4. Issue a JWT and redirect to the frontend with the token in the URL.
+ *  4. Set JWT as an HttpOnly cookie via raw Set-Cookie header.
+ *  5. Redirect to /sso/callback — no token in the URL.
  */
 @Slf4j
 @Component
@@ -35,6 +36,18 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     @Value("${frontend.url}")
     private String frontendUrl;
 
+    @Value("${jwt.cookie.name}")
+    private String cookieName;
+
+    @Value("${jwt.cookie.domain:localhost}")
+    private String cookieDomain;
+
+    @Value("${jwt.cookie.secure:false}")
+    private boolean cookieSecure;
+
+    @Value("${jwt.expiration:86400}")
+    private int cookieMaxAge;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
@@ -42,15 +55,15 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
 
-        String email    = oidcUser.getEmail();
-        String googleId = oidcUser.getSubject();
+        String email     = oidcUser.getEmail();
+        String googleId  = oidcUser.getSubject();
         String firstName = oidcUser.getGivenName() != null ? oidcUser.getGivenName() : email;
         String lastName  = oidcUser.getFamilyName();
 
-        // Find existing user by email, or create a new STAFF user
+        // Role names are lowercase in the DB (Role.normalizeCase() enforces this)
         User user = userRepository.findByEmail(email).orElseGet(() -> {
-            Role staffRole = roleRepository.findByName("STAFF")
-                    .orElseThrow(() -> new IllegalStateException("STAFF role not found"));
+            Role staffRole = roleRepository.findByName("staff")
+                    .orElseThrow(() -> new IllegalStateException("'staff' role not found in database"));
 
             return User.builder()
                     .email(email)
@@ -62,21 +75,39 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
                     .build();
         });
 
-        // Update googleId if it's missing (e.g. user existed with email/password before)
         if (user.getGoogleId() == null) {
             user.setGoogleId(googleId);
         }
 
         userRepository.save(user);
 
-        String roleName   = user.getRole().getName();
+        String roleName   = user.getRole().getName(); // lowercase: "staff", "doctor", etc.
         String hospitalId = user.getHospital() != null ? user.getHospital().getId().toString() : null;
         String token      = jwtUtil.generateToken(email, roleName, hospitalId);
 
-        log.info("Google OAuth2 login success for: {} ({})", email, roleName);
+        setJwtCookieHeader(response, token);
 
-        // Redirect to frontend — token is passed as a query param so the SPA can store it
-        String redirectUrl = frontendUrl + "/auth/google/callback?token=" + token;
-        response.sendRedirect(redirectUrl);
+        log.info("Google OAuth2 login success for: {} ({})", email, roleName);
+        response.sendRedirect(frontendUrl + "/sso/callback");
+    }
+
+    /**
+     * Sets the JWT cookie using a raw Set-Cookie header.
+     * In production (secure=true): Domain=.zenohosp.com; Secure; SameSite=None
+     * In development (secure=false): no Domain, no Secure, SameSite=Lax
+     */
+    private void setJwtCookieHeader(HttpServletResponse response, String token) {
+        String header;
+        if (cookieSecure) {
+            String domain = cookieDomain.startsWith(".") ? cookieDomain.substring(1) : cookieDomain;
+            header = String.format(
+                "%s=%s; Domain=.%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=None",
+                cookieName, token, domain, cookieMaxAge);
+        } else {
+            header = String.format(
+                "%s=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax",
+                cookieName, token, cookieMaxAge);
+        }
+        response.addHeader("Set-Cookie", header);
     }
 }

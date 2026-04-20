@@ -1,9 +1,13 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { authApi } from '@/utils/api'
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
+import api, { authApi } from '@/utils/api'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type UserRole = 'ADMIN' | 'HOSPITAL_ADMIN' | 'DOCTOR' | 'STAFF'
+/**
+ * Role names exactly as stored in Directory and HMS databases.
+ * All lowercase with underscores — never uppercase, matching Directory's convention.
+ */
+export type UserRole = 'super_admin' | 'hospital_admin' | 'doctor' | 'staff'
 
 export interface AuthUser {
     userId: string
@@ -19,115 +23,141 @@ export interface AuthUser {
 
 interface AuthContextValue {
     user: AuthUser | null
-    token: string | null
     isAuthenticated: boolean
     isLoading: boolean
     login: (email: string, password: string) => Promise<void>
-    ssoLogin: (token: string) => Promise<void>
-    logout: () => void
+    logout: () => Promise<void>
 }
 
 // ── Context ──────────────────────────────────────────────────────────────────
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+const LOGOUT_FLAG_KEY = 'hms_logout_in_progress'
+const USER_STORAGE_KEY = 'hms_user'
+
 // ── Provider ─────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(() => {
-        const stored = localStorage.getItem('hms_user')
-        return stored ? JSON.parse(stored) : null
+        try {
+            const stored = sessionStorage.getItem(USER_STORAGE_KEY)
+            return stored ? JSON.parse(stored) : null
+        } catch {
+            return null
+        }
     })
-    const [token, setToken] = useState<string | null>(
-        () => localStorage.getItem('hms_token')
-    )
-    const [isLoading, setIsLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(!user)
+
+    // Restore session from cookie on mount
+    useEffect(() => {
+        if (!user && isLoading) {
+            const logoutInProgress = localStorage.getItem(LOGOUT_FLAG_KEY)
+            if (logoutInProgress) {
+                sessionStorage.removeItem(USER_STORAGE_KEY)
+                setUser(null)
+                setIsLoading(false)
+                localStorage.removeItem(LOGOUT_FLAG_KEY)
+                return
+            }
+
+            authApi.me()
+                .then((profile) => {
+                    const authUser = mapProfileToUser(profile)
+                    sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(authUser))
+                    setUser(authUser)
+                })
+                .catch(() => {
+                    sessionStorage.removeItem(USER_STORAGE_KEY)
+                    setUser(null)
+                })
+                .finally(() => setIsLoading(false))
+        } else {
+            setIsLoading(false)
+        }
+    }, [])
+
+    // Re-validate session when the tab regains focus (detects cross-app logouts)
+    useEffect(() => {
+        const verifyOnFocus = async () => {
+            if (!user) return
+            try {
+                await authApi.me()
+            } catch {
+                sessionStorage.removeItem(USER_STORAGE_KEY)
+                setUser(null)
+                window.location.href = '/login?logged_out=1'
+            }
+        }
+
+        window.addEventListener('focus', verifyOnFocus)
+        return () => window.removeEventListener('focus', verifyOnFocus)
+    }, [user])
+
+    // Cross-tab logout via localStorage storage event (matches inventory/directory pattern)
+    useEffect(() => {
+        const handleStorageChange = (event: StorageEvent) => {
+            if (event.key === 'hms-logout') {
+                sessionStorage.removeItem(USER_STORAGE_KEY)
+                setUser(null)
+                window.location.href = '/login?logged_out=1'
+            }
+        }
+
+        const handleCustomLogout = () => {
+            sessionStorage.removeItem(USER_STORAGE_KEY)
+            setUser(null)
+            window.location.href = '/login?logged_out=1'
+        }
+
+        window.addEventListener('storage', handleStorageChange)
+        window.addEventListener('hms-logout', handleCustomLogout)
+        return () => {
+            window.removeEventListener('storage', handleStorageChange)
+            window.removeEventListener('hms-logout', handleCustomLogout)
+        }
+    }, [])
 
     const login = useCallback(async (email: string, password: string) => {
         setIsLoading(true)
         try {
+            // Backend sets HttpOnly cookie in the response; user profile comes in the body
             const response = await authApi.login(email, password)
-            const { token: newToken, ...userData } = response
-
-            const mappedRole = (userData.role as string).toUpperCase()
-            const authUser: AuthUser = {
-                userId: userData.userId,
-                email: userData.email,
-                firstName: userData.firstName,
-                lastName: userData.lastName ?? null,
-                role: (mappedRole === 'SUPER_ADMIN' ? 'ADMIN' : mappedRole) as UserRole,
-                roleDisplay: userData.roleDisplay,
-                hospitalId: userData.hospitalId ?? null,
-                hospitalName: userData.hospitalName ?? null,
-                isActive: userData.isActive,
-            }
-
+            const authUser = mapProfileToUser(response)
+            sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(authUser))
             setUser(authUser)
-            setToken(newToken)
-            localStorage.setItem('hms_token', newToken)
-            localStorage.setItem('hms_user', JSON.stringify(authUser))
         } finally {
             setIsLoading(false)
         }
     }, [])
 
-    const logout = useCallback(() => {
+    const logout = useCallback(async () => {
+        localStorage.setItem(LOGOUT_FLAG_KEY, '1')
+        sessionStorage.removeItem(USER_STORAGE_KEY)
         setUser(null)
-        setToken(null)
-        localStorage.removeItem('hms_token')
-        localStorage.removeItem('hms_user')
-    }, [])
 
-    /**
-     * Called after Directory SSO redirects to /sso/callback?token=<jwt>.
-     * Decodes the JWT payload (base64) to extract user info without an extra API call.
-     */
-    const ssoLogin = useCallback(async (rawToken: string) => {
-        setIsLoading(true)
         try {
-            // Decode JWT payload (middle segment) — no verification needed client-side
-            const payload = JSON.parse(atob(rawToken.split('.')[1]))
-            const email: string = payload.email || payload.sub
-            const rawRole = (payload.role as string || '').toUpperCase()
-            const role: UserRole = (rawRole === 'SUPER_ADMIN' ? 'ADMIN' : rawRole) as UserRole
-            const hospitalId: string | null = payload.hospitalId ?? null
-
-            // Fetch full profile from /api/auth/me to get names + hospitalName
-            const res = await fetch('/api/auth/me', {
-                headers: { Authorization: `Bearer ${rawToken}` },
-            })
-            if (!res.ok) throw new Error('Profile fetch failed')
-            const profile = await res.json()
-
-            const authUser: AuthUser = {
-                userId: profile.userId ?? '',
-                email,
-                firstName: profile.firstName ?? email,
-                lastName: profile.lastName ?? null,
-                role,
-                roleDisplay: profile.roleDisplay ?? role,
-                hospitalId,
-                hospitalName: profile.hospitalName ?? null,
-                isActive: profile.isActive ?? true,
-            }
-
-            setUser(authUser)
-            setToken(rawToken)
-            localStorage.setItem('hms_token', rawToken)
-            localStorage.setItem('hms_user', JSON.stringify(authUser))
-        } finally {
-            setIsLoading(false)
+            localStorage.setItem('hms-logout', `${Date.now()}`)
+            window.dispatchEvent(new Event('hms-logout'))
+        } catch (e) {
+            console.warn('Failed to broadcast logout:', e)
         }
+
+        try {
+            await api.post('/auth/logout')
+        } catch (e) {
+            console.warn('Logout API failed:', e)
+        }
+
+        window.location.href = '/login?logged_out=1'
     }, [])
 
     return (
         <AuthContext.Provider value={{
             user,
-            token,
-            isAuthenticated: !!user && !!token,
+            isAuthenticated: !!user,
             isLoading,
             login,
-            ssoLogin,
             logout,
         }}>
             {children}
@@ -141,4 +171,26 @@ export function useAuth(): AuthContextValue {
     const ctx = useContext(AuthContext)
     if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>')
     return ctx
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Maps the AuthResponse payload from the HMS backend to an AuthUser.
+ * Role names are kept as-is (lowercase) — they match Directory's convention exactly:
+ *   super_admin | hospital_admin | doctor | staff
+ */
+function mapProfileToUser(profile: any): AuthUser {
+    const role = ((profile.role as string) || '').toLowerCase() as UserRole
+    return {
+        userId: profile.userId?.toString() ?? '',
+        email: profile.email ?? '',
+        firstName: profile.firstName ?? '',
+        lastName: profile.lastName ?? null,
+        role,
+        roleDisplay: profile.roleDisplay ?? role,
+        hospitalId: profile.hospitalId?.toString() ?? null,
+        hospitalName: profile.hospitalName ?? null,
+        isActive: profile.isActive ?? true,
+    }
 }

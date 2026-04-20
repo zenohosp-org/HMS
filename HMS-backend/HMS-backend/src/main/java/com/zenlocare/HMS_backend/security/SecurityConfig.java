@@ -58,8 +58,8 @@ public class SecurityConfig {
                         .permitAll()
                         // Super Admin only
                         .requestMatchers("/api/super-admin/**").hasRole("super_admin")
-                        // Admin and above
-                        .requestMatchers("/api/admin/**").hasAnyRole("admin", "super_admin")
+                        // Hospital Admin and above (role names match Directory: lowercase with underscores)
+                        .requestMatchers("/api/admin/**").hasAnyRole("hospital_admin", "super_admin")
                         // All authenticated users
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2

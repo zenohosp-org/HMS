@@ -6,28 +6,21 @@ const api = axios.create({
     baseURL: (() => {
         const rawUrl = import.meta.env.VITE_API_URL || '';
         if (!rawUrl || rawUrl === '/api') return '/api';
-        // Ensure no trailing slash before appending /api
         const baseUrl = rawUrl.replace(/\/$/, '');
         return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
     })(),
     headers: { 'Content-Type': 'application/json' },
+    withCredentials: true,  // Automatically send/receive HttpOnly cookies
 })
 
-// Attach JWT token to every request
-api.interceptors.request.use(config => {
-    const token = localStorage.getItem('hms_token')
-    if (token) config.headers.Authorization = `Bearer ${token}`
-    return config
-})
-
-// Handle 401 globally — clear storage and redirect to login
+// Handle 401 globally — session expired, redirect to login
 api.interceptors.response.use(
     res => res,
     err => {
         if (err.response?.status === 401) {
-            localStorage.removeItem('hms_token')
-            localStorage.removeItem('hms_user')
-            window.location.href = '/login'
+            if (!err.config?.url?.includes('/auth/me')) {
+                window.location.href = '/login'
+            }
         }
         return Promise.reject(err)
     }

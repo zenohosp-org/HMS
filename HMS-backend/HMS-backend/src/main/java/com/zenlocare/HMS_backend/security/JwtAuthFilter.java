@@ -41,16 +41,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = extractToken(request);
 
         if (token != null) {
-            log.info("JWT Auth: Token extracted from request. Validating...");
             if (jwtUtil.isTokenValid(token)) {
                 String email = jwtUtil.extractEmail(token);
                 String role = jwtUtil.extractRole(token);
-                log.info("JWT Auth: Token valid for email: {}, role: {}", email, role);
+                log.debug("JWT Auth: Token valid for email: {}, role: {}", email, role);
 
                 Optional<User> userOpt = userRepository.findByEmail(email);
                 if (userOpt.isPresent()) {
                     User user = userOpt.get();
-                    log.info("JWT Auth: User {} found in DB. Setting SecurityContext.", email);
                     var auth = new UsernamePasswordAuthenticationToken(
                             user,
                             null,
@@ -58,10 +56,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 } else {
-                    log.warn("JWT Auth: User {} NOT FOUND in database!", email);
+                    log.warn("JWT Auth: User {} not found in database.", email);
                 }
             } else {
-                log.warn("JWT Auth: Token is INVALID or EXPIRED.");
+                log.warn("JWT Auth: Token is invalid or expired.");
             }
         }
 
@@ -69,21 +67,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Try Authorization header first (Bearer token), then fall back to cookie.
+     * Cookie takes priority over Bearer header — matches Directory's JwtFilter behaviour.
+     * Cookie is set by the HMS backend after successful login/SSO; Bearer is kept for
+     * API clients (e.g. mobile, automated tools) that cannot use cookies.
      */
     private String extractToken(HttpServletRequest request) {
-        // 1. Bearer header
-        String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith("Bearer ")) {
-            return header.substring(7);
-        }
-        // 2. Cookie
+        // 1. HttpOnly cookie (priority — set by server after login/SSO)
         if (request.getCookies() != null) {
             return Arrays.stream(request.getCookies())
                     .filter(c -> cookieName.equals(c.getName()))
                     .map(Cookie::getValue)
                     .findFirst()
                     .orElse(null);
+        }
+        // 2. Authorization: Bearer <token> (fallback for API clients)
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
         }
         return null;
     }
