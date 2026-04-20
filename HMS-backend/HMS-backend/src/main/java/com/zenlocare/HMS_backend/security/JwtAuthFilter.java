@@ -30,7 +30,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
 
-    @Value("${jwt.cookie.name}")
+    @Value("${sso.cookie.name:sso_token}")
     private String cookieName;
 
     @Override

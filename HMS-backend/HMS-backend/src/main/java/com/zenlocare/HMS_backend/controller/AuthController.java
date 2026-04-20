@@ -21,16 +21,16 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Value("${jwt.cookie.name}")
+    @Value("${sso.cookie.name:sso_token}")
     private String cookieName;
 
-    @Value("${jwt.cookie.domain:localhost}")
+    @Value("${sso.cookie.domain:localhost}")
     private String cookieDomain;
 
-    @Value("${jwt.cookie.secure:false}")
+    @Value("${sso.cookie.secure:false}")
     private boolean cookieSecure;
 
-    @Value("${jwt.expiration:86400}")
+    @Value("${sso.cookie.max-age:86400}")
     private int cookieMaxAge;
 
     /**

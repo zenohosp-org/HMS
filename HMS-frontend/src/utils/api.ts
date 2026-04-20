@@ -1,5 +1,7 @@
 import axios from 'axios'
 
+const DIRECTORY_API_URL = 'https://api-directory.zenohosp.com'
+
 // ── Axios Instance ────────────────────────────────────────────────────────────
 
 const api = axios.create({
@@ -45,6 +47,10 @@ export const authApi = {
         return data
     },
 }
+
+// Clears the sso_token cookie on the Directory server (cross-app logout)
+export const directoryLogout = () =>
+    axios.post(`${DIRECTORY_API_URL}/api/auth/logout`, {}, { withCredentials: true })
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

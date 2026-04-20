@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
-import api, { authApi } from '@/utils/api'
+import api, { authApi, directoryLogout } from '@/utils/api'
+import SSOCookieManager from '@/utils/ssoManager'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -94,11 +95,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => window.removeEventListener('focus', verifyOnFocus)
     }, [user])
 
-    // Cross-tab logout via localStorage storage event (matches inventory/directory pattern)
+    // Cross-tab / cross-app logout via localStorage — key 'sso-logout' matches the
+    // platform-wide convention used by Inventory and Directory apps
     useEffect(() => {
         const handleStorageChange = (event: StorageEvent) => {
-            if (event.key === 'hms-logout') {
+            if (event.key === 'sso-logout') {
                 sessionStorage.removeItem(USER_STORAGE_KEY)
+                SSOCookieManager.clearToken()
                 setUser(null)
                 window.location.href = '/login?logged_out=1'
             }
@@ -106,15 +109,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const handleCustomLogout = () => {
             sessionStorage.removeItem(USER_STORAGE_KEY)
+            SSOCookieManager.clearToken()
             setUser(null)
             window.location.href = '/login?logged_out=1'
         }
 
         window.addEventListener('storage', handleStorageChange)
-        window.addEventListener('hms-logout', handleCustomLogout)
+        window.addEventListener('sso-logout', handleCustomLogout)
         return () => {
             window.removeEventListener('storage', handleStorageChange)
-            window.removeEventListener('hms-logout', handleCustomLogout)
+            window.removeEventListener('sso-logout', handleCustomLogout)
         }
     }, [])
 
@@ -134,17 +138,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = useCallback(async () => {
         localStorage.setItem(LOGOUT_FLAG_KEY, '1')
         sessionStorage.removeItem(USER_STORAGE_KEY)
+        SSOCookieManager.clearToken()
         setUser(null)
 
+        // Broadcast to all other tabs/apps on zenohosp.com
         try {
-            localStorage.setItem('hms-logout', `${Date.now()}`)
-            window.dispatchEvent(new Event('hms-logout'))
+            localStorage.setItem('sso-logout', `${Date.now()}`)
+            window.dispatchEvent(new Event('sso-logout'))
         } catch (e) {
             console.warn('Failed to broadcast logout:', e)
         }
 
+        // Clear cookie on both HMS backend and Directory backend
         try {
-            await api.post('/auth/logout')
+            await Promise.all([
+                api.post('/auth/logout'),
+                directoryLogout(),
+            ])
         } catch (e) {
             console.warn('Logout API failed:', e)
         }

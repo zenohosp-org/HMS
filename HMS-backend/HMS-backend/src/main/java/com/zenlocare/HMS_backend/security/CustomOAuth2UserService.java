@@ -1,6 +1,8 @@
 package com.zenlocare.HMS_backend.security;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -8,124 +10,58 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+/**
+ * Loads the OAuth2 user by parsing the JWT access token returned by the Directory server.
+ * Avoids an extra HTTP round-trip to the user-info endpoint — the JWT already carries
+ * all needed claims (email, role, hospitalId) signed with the shared JWT_SECRET.
+ */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private void logBoth(String message) {
-        System.out.println("SSO_DIAGNOSTIC: " + message);
-        try (PrintWriter out = new PrintWriter(new FileWriter("sso_debug.log", true))) {
-            out.println(LocalDateTime.now() + " : " + message);
-        } catch (Exception e) {
-            log.error("Failed to write to sso_debug.log", e);
-        }
-    }
+    private final JwtUtil jwtUtil;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        try {
-            if (userRequest == null || userRequest.getClientRegistration() == null) {
-                logBoth("CRITICAL: userRequest or ClientRegistration is NULL");
-                throw new OAuth2AuthenticationException("Invalid user request");
-            }
+        String registrationId = userRequest.getClientRegistration().getRegistrationId();
 
-            String registrationId = userRequest.getClientRegistration().getRegistrationId();
-            logBoth("Starting loadUser for registration: " + registrationId);
-            
-            if ("directory".equalsIgnoreCase(registrationId)) {
-                return loadDirectoryUser(userRequest);
-            }
-
-            return super.loadUser(userRequest);
-        } catch (Throwable t) {
-            logBoth("CRITICAL GLOBAL ERROR in loadUser: " + t.getMessage());
-            t.printStackTrace();
-            if (t instanceof OAuth2AuthenticationException oae) throw oae;
-            throw new OAuth2AuthenticationException(t.getMessage());
+        if ("directory".equalsIgnoreCase(registrationId)) {
+            return loadFromDirectoryJwt(userRequest);
         }
+
+        return super.loadUser(userRequest);
     }
 
-    private OAuth2User loadDirectoryUser(OAuth2UserRequest userRequest) {
-        logBoth("Inside loadDirectoryUser");
+    private OAuth2User loadFromDirectoryJwt(OAuth2UserRequest userRequest) {
+        String accessToken = userRequest.getAccessToken().getTokenValue();
         try {
-            var providerDetails = userRequest.getClientRegistration().getProviderDetails();
-            var userInfoEndpoint = providerDetails.getUserInfoEndpoint();
-            String userInfoUri = userInfoEndpoint.getUri();
-            String accessToken = userRequest.getAccessToken().getTokenValue();
-            
-            logBoth("Manually fetching user info from: " + userInfoUri);
-            logBoth("Token (first 10 chars): " + (accessToken != null && accessToken.length() > 10 ? accessToken.substring(0, 10) : "null"));
-            
-            if (userInfoUri == null) {
-                logBoth("ERROR: User Info URI is NULL in configuration!");
-                throw new RuntimeException("User Info URI is missing");
+            String email = jwtUtil.extractEmail(accessToken);
+            if (email == null) {
+                throw new OAuth2AuthenticationException("Directory JWT missing email claim");
             }
 
-            RestTemplate restTemplate = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(accessToken);
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            
-            logBoth("Executing RestTemplate exchange...");
-            ResponseEntity<Map> response = restTemplate.exchange(userInfoUri, HttpMethod.GET, entity, Map.class);
-            Map<String, Object> attributes = (Map<String, Object>) response.getBody();
-            logBoth("Manual fetch response status: " + response.getStatusCode());
-            logBoth("Manual fetch response body: " + attributes);
-            
-            if (attributes == null) {
-                throw new RuntimeException("Received empty response body from user-info endpoint");
-            }
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put("email", email);
 
-            Map<String, Object> processedAttributes = new HashMap<>(attributes);
-            
-            if (attributes.containsKey("data") && attributes.get("data") instanceof Map) {
-                Map<String, Object> data = (Map<String, Object>) attributes.get("data");
-                processedAttributes.putAll(data);
-                logBoth("Unwrapped 'data' into top level");
-            }
+            String role = jwtUtil.extractRole(accessToken);
+            if (role != null) attributes.put("role", role);
 
-            String userNameAttributeName = userInfoEndpoint.getUserNameAttributeName();
-            if (userNameAttributeName == null) userNameAttributeName = "email";
-            
-            logBoth("Using userNameAttributeName: " + userNameAttributeName);
-            
-            if (!processedAttributes.containsKey(userNameAttributeName)) {
-                logBoth("Warning: '" + userNameAttributeName + "' not found. Keys: " + processedAttributes.keySet());
-                if (processedAttributes.containsKey("email")) {
-                    userNameAttributeName = "email";
-                    logBoth("Falling back to 'email'");
-                } else if (!processedAttributes.isEmpty()) {
-                    userNameAttributeName = processedAttributes.keySet().iterator().next();
-                    logBoth("Critical Fallback to first key: " + userNameAttributeName);
-                }
-            }
-
-            Collection<GrantedAuthority> authorities = new ArrayList<>();
-            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-            
-            logBoth("Successfully created OAuth2User for: " + processedAttributes.get(userNameAttributeName));
-            return new DefaultOAuth2User(authorities, processedAttributes, userNameAttributeName);
-            
-        } catch (Throwable e) {
-            logBoth("Manual fetch failed with Throwable: " + e.getMessage());
-            e.printStackTrace();
-            throw new OAuth2AuthenticationException(e.getMessage());
+            log.info("Directory SSO: parsed JWT for email={}", email);
+            return new DefaultOAuth2User(
+                    List.of(new SimpleGrantedAuthority("ROLE_USER")),
+                    attributes,
+                    "email"
+            );
+        } catch (OAuth2AuthenticationException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Directory SSO: failed to parse JWT access token: {}", e.getMessage());
+            throw new OAuth2AuthenticationException("Failed to parse Directory JWT: " + e.getMessage());
         }
     }
 }
