@@ -88,7 +88,7 @@ export default function Rooms() {
                     <h1 className="text-xl font-bold text-slate-900 dark:text-[#f0f0f0]">Room Allocation</h1>
                     <p className="text-sm text-slate-500 dark:text-[#666666]">{rooms.length} total rooms in hospital</p>
                 </div>
-                {user?.role === 'HOSPITAL_ADMIN' && (
+                {user?.role === 'hospital_admin' && (
                     <button className="btn-primary flex items-center gap-2" onClick={() => setShowGenerateModal(true)}>
                         <Plus className="w-4 h-4" /> Generate Rooms
                     </button>

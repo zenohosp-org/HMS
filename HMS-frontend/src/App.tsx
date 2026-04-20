@@ -37,7 +37,7 @@ export default function App() {
 
                                 {/* Protected — authenticated + hospital assigned */}
                                 <Route element={
-                                    <ProtectedRoute allowedRoles={['ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'STAFF']}>
+                                    <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin', 'doctor', 'staff']}>
                                         <Layout />
                                     </ProtectedRoute>
                                 }>
@@ -48,34 +48,34 @@ export default function App() {
                                     <Route path="rooms" element={<Rooms />} />
                                     <Route path="billing" element={<CreateInvoice />} />
                                     <Route path="billing/invoices" element={
-                                        <ProtectedRoute allowedRoles={['ADMIN', 'HOSPITAL_ADMIN']}>
+                                        <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>
                                             <InvoiceList />
                                         </ProtectedRoute>
                                     } />
                                     <Route path="appointments" element={<AppointmentsDashboard />} />
 
                                     <Route path="doctors" element={
-                                        <ProtectedRoute allowedRoles={['ADMIN', 'HOSPITAL_ADMIN']}>
+                                        <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>
                                             <DoctorsList />
                                         </ProtectedRoute>
                                     } />
                                     <Route path="doctors/:id" element={
-                                        <ProtectedRoute allowedRoles={['ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR']}>
+                                        <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin', 'doctor']}>
                                             <DoctorDetails />
                                         </ProtectedRoute>
                                     } />
                                     <Route path="staffs" element={
-                                        <ProtectedRoute allowedRoles={['ADMIN', 'HOSPITAL_ADMIN']}>
+                                        <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>
                                             <StaffsList />
                                         </ProtectedRoute>
                                     } />
                                     <Route path="specializations" element={
-                                        <ProtectedRoute allowedRoles={['ADMIN', 'HOSPITAL_ADMIN']}>
+                                        <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>
                                             <Specializations />
                                         </ProtectedRoute>
                                     } />
                                     <Route path="services" element={
-                                        <ProtectedRoute allowedRoles={['ADMIN', 'HOSPITAL_ADMIN']}>
+                                        <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>
                                             <Services />
                                         </ProtectedRoute>
                                     } />

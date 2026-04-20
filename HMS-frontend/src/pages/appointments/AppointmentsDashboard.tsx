@@ -204,7 +204,7 @@ export default function AppointmentsDashboard() {
             setDoctors(docs)
 
             // Handle redirection filter
-            if (location.state?.filterMine && user.role === 'DOCTOR') {
+            if (location.state?.filterMine && user.role === 'doctor') {
                 const doc = docs.find(d => d.userId === user.userId)
                 if (doc) {
                     setSelectedDoctorId(doc.id)

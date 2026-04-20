@@ -38,7 +38,7 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
     const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`
 
     const filteredManagementLinks = MANAGEMENT_LINKS.filter(link => {
-        if (user?.role === 'HOSPITAL_ADMIN') return true
+        if (user?.role === 'hospital_admin') return true
         // Doctors and Staff only see a subset (Patients, Appointments, Billing, Room Allocation)
         const allowedLinks = ['Patients', 'Appointments', 'Billing', 'Room Allocation']
         return allowedLinks.includes(link.label)

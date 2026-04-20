@@ -142,7 +142,7 @@ export default function CreateInvoice() {
                     <p className="text-sm text-slate-500 font-medium">Generate and track hospital bills</p>
                 </div>
                 <div className="flex gap-3">
-                    {user?.role === 'HOSPITAL_ADMIN' && (
+                    {user?.role === 'hospital_admin' && (
                         <button 
                             className="btn-secondary flex items-center gap-2" 
                             onClick={() => navigate('/billing/invoices')}

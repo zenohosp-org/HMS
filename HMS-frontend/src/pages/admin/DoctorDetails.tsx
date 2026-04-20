@@ -122,7 +122,7 @@ export default function DoctorDetails() {
         </div>
     )
 
-    const canEdit = user?.role === 'HOSPITAL_ADMIN' || user?.userId === doctor.userId
+    const canEdit = user?.role === 'hospital_admin' || user?.userId === doctor.userId
     const initials = `${doctor.firstName[0]}${doctor.lastName?.[0] ?? ''}`.toUpperCase()
 
     return (

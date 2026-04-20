@@ -148,7 +148,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 ])
                 setPatients(patientsRes)
                 setDoctors(doctorsRes)
-                if (user.role === 'DOCTOR') {
+                if (user.role === 'doctor') {
                     const doc = doctorsRes.find((d: DoctorUser) => d.userId === user.userId)
                     if (doc) setDoctorId(doc.id)
                 }
@@ -199,7 +199,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
 
     const resetForm = () => {
         setPatientId(''); setPatientSearch('')
-        if (user?.role !== 'DOCTOR') setDoctorId('')
+        if (user?.role !== 'doctor') setDoctorId('')
         setApptTime(''); setType('OPD'); setChiefComplaint(''); setErrors({})
     }
 
@@ -428,7 +428,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                                 <select
                                     value={doctorId}
                                     onChange={e => { setDoctorId(e.target.value); setApptTime(''); setErrors(p => ({...p, doctor: ''})) }}
-                                    disabled={user?.role === 'DOCTOR'}
+                                    disabled={user?.role === 'doctor'}
                                     className="w-full px-4 py-3 text-sm text-slate-900 dark:text-[#cccccc] bg-transparent outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     <option value="">Select a doctor</option>

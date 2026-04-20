@@ -165,7 +165,7 @@ function DoctorStaffDashboard() {
     const femaleCount = todayPatients.filter(p => p.gender?.toUpperCase() === 'FEMALE').length
 
     const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`
-    const isDoctor = user?.role === 'DOCTOR'
+    const isDoctor = user?.role === 'doctor'
 
     return (
         <div className="space-y-6 w-full">
@@ -312,6 +312,6 @@ function DoctorStaffDashboard() {
 
 export default function Dashboard() {
     const { user } = useAuth()
-    if (user?.role === 'HOSPITAL_ADMIN') return <AdminDashboard />
+    if (user?.role === 'hospital_admin') return <AdminDashboard />
     return <DoctorStaffDashboard />
 }
