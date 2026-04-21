@@ -65,19 +65,8 @@ public class DirectorySsoSuccessHandler implements AuthenticationSuccessHandler 
                 return;
             }
 
-            if (user.getRole() == null) {
-                log.error("Directory SSO: no role assigned for email={}", email);
-                response.sendRedirect(frontendUrl + "/login?error=role_missing");
-                return;
-            }
-
-            if (!Boolean.TRUE.equals(user.getRole().getCanAccessHms())) {
-                log.warn("Directory SSO: HMS access not enabled for email={}", email);
-                response.sendRedirect(frontendUrl + "/login?error=no_hms_access");
-                return;
-            }
-
             // Directory already set the sso_token HttpOnly cookie — just redirect
+            // (Directory already validated HMS module access before issuing the JWT)
             log.info("Directory SSO: login success for email={}", email);
             response.sendRedirect(frontendUrl + "/sso/callback");
 

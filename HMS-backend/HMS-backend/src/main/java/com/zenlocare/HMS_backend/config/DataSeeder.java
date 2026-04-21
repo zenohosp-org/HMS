@@ -41,19 +41,16 @@ public class DataSeeder implements CommandLineRunner {
 
     private void createRoleIfAbsent(String name, String displayName, String description, boolean isSystem,
             boolean hms, boolean asset, boolean inventory, boolean ot, boolean pharmacy) {
-        roleRepository.findByName(name).orElseGet(() ->
-            roleRepository.save(Role.builder()
-                    .name(name)
-                    .displayName(displayName)
-                    .description(description)
-                    .isSystemRole(isSystem)
-                    .canAccessHms(hms)
-                    .canAccessAsset(asset)
-                    .canAccessInventory(inventory)
-                    .canAccessOt(ot)
-                    .canAccessPharmacy(pharmacy)
-                    .build())
-        );
+        Role role = roleRepository.findByName(name).orElseGet(() -> Role.builder().name(name).build());
+        role.setDisplayName(displayName);
+        role.setDescription(description);
+        role.setIsSystemRole(isSystem);
+        role.setCanAccessHms(hms);
+        role.setCanAccessAsset(asset);
+        role.setCanAccessInventory(inventory);
+        role.setCanAccessOt(ot);
+        role.setCanAccessPharmacy(pharmacy);
+        roleRepository.save(role);
     }
 
     private void seedHospitalAdmin() {
