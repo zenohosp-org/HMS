@@ -41,6 +41,9 @@ public class Room {
     @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler", "hospital" })
     private Patient currentPatient;
 
+    @Column(name = "price_per_day", precision = 10, scale = 2)
+    private java.math.BigDecimal pricePerDay;
+
     @Column(name = "approx_discharge_time")
     private LocalDateTime approxDischargeTime;
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { validateEmail, validateRequired, validatePhone } from '@/utils/validators'
 import type { Patient } from '@/utils/api'
+import StateSelect from '@/components/StateSelect'
 
 interface Props {
     patient?: Patient | null
@@ -22,6 +23,7 @@ export default function PatientModal({ patient, onClose, onSave }: Props) {
         email: patient?.email ?? '',
         bloodGroup: patient?.bloodGroup ?? '',
         address: patient?.address ?? '',
+        state: patient?.state ?? '',
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [saving, setSaving] = useState(false)
@@ -128,6 +130,13 @@ export default function PatientModal({ patient, onClose, onSave }: Props) {
                         <textarea rows={2} className="input resize-none" value={form.address}
                             onChange={e => set('address', e.target.value)} />
                     </div>
+
+                    <StateSelect
+                        value={form.state}
+                        onChange={val => set('state', val)}
+                        inputClassName="input w-full flex items-center justify-between text-left"
+                        labelClassName="label"
+                    />
 
                     <div className="flex justify-end gap-3 pt-2">
                         <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>

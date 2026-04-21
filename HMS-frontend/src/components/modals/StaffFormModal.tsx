@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { staffApi, type StaffUser } from '@/utils/api'
 import { X, UserIcon, ShieldAlert } from 'lucide-react'
+import StateSelect from '@/components/StateSelect'
 
 interface StaffFormModalProps {
     onClose: () => void
@@ -26,6 +27,7 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }: StaffFor
         designation: editStaff?.designation || '',
         gender: editStaff?.gender || 'OTHER',
         dateOfJoining: editStaff?.dateOfJoining || '',
+        state: editStaff?.state || '',
     })
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -128,6 +130,14 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }: StaffFor
                                         <option value="FEMALE">Female</option>
                                         <option value="OTHER">Other</option>
                                     </select>
+                                </div>
+                                <div className="col-span-2">
+                                    <StateSelect
+                                        value={form.state}
+                                        onChange={val => setForm({ ...form, state: val })}
+                                        inputClassName={inputClasses}
+                                        labelClassName={labelClasses}
+                                    />
                                 </div>
                             </div>
                         </div>

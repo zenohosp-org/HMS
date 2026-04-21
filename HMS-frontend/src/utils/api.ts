@@ -65,6 +65,7 @@ export interface Patient {
     email: string | null
     bloodGroup: string | null
     address: string | null
+    state: string | null
     createdAt: string
 }
 
@@ -96,6 +97,7 @@ export interface StaffUser {
     reviewCount?: number
     address?: string
     phone?: string
+    state?: string
     employeeCode?: string
     designation?: string
     gender?: string

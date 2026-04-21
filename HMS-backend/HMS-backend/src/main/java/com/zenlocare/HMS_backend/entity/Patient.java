@@ -52,6 +52,9 @@ public class Patient {
     @Column(columnDefinition = "TEXT")
     private String address;
 
+    @Column(name = "state", length = 100)
+    private String state;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

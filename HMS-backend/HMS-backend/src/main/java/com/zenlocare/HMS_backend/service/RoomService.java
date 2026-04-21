@@ -51,6 +51,7 @@ public class RoomService {
                     .hospital(hospital)
                     .roomNumber(tempRoomNumber)
                     .roomType(request.getRoomType())
+                    .pricePerDay(request.getPricePerDay())
                     .status(RoomStatus.AVAILABLE)
                     .build();
 

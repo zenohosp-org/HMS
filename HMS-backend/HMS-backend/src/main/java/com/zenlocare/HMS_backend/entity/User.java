@@ -50,6 +50,9 @@ public class User {
 
     private String gender;
 
+    @Column(name = "state", length = 100)
+    private String state;
+
     @Column(name = "date_of_joining")
     private java.time.LocalDate dateOfJoining;
 

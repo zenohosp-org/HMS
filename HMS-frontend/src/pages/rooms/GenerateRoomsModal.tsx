@@ -14,7 +14,8 @@ export default function GenerateRoomsModal({ onClose, onSuccess }: GenerateRooms
     const [formData, setFormData] = useState({
         roomPrefix: 'GEN',
         roomType: 'GENERAL',
-        count: 5
+        count: 5,
+        pricePerDay: 0,
     })
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -78,13 +79,29 @@ export default function GenerateRoomsModal({ onClose, onSuccess }: GenerateRooms
                     </div>
 
                     <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-1.5">Price Per Day (₹)</label>
+                        <input
+                            type="number"
+                            required
+                            min="0"
+                            step="0.01"
+                            className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
+                                bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc]
+                                focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            value={formData.pricePerDay}
+                            onChange={e => setFormData({ ...formData, pricePerDay: parseFloat(e.target.value) || 0 })}
+                        />
+                        <p className="text-xs text-slate-500 mt-1.5">This price will be used when adding room charges to a bill.</p>
+                    </div>
+
+                    <div>
                         <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-1.5">Number of Rooms to Generate</label>
                         <input
                             type="number"
                             required
                             min="1"
                             max="50"
-                            className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] 
+                            className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                 bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc]
                                 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             value={formData.count}

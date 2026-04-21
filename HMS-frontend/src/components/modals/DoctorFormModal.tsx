@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { doctorsApi, staffApi, type StaffUser, type DoctorUser } from '@/utils/api'
 import { X, UserPlus, Search } from 'lucide-react'
+import StateSelect from '@/components/StateSelect'
 
 interface DoctorFormModalProps {
     onClose: () => void
@@ -19,7 +20,7 @@ export default function DoctorFormModal({ onClose, onSaved, editDoctor }: Doctor
 
     // Basic User Details Form (for 'new' mode)
     const [userForm, setUserForm] = useState({
-        firstName: '', lastName: '', email: '', phone: '', password: ''
+        firstName: '', lastName: '', email: '', phone: '', password: '', state: ''
     })
 
     // Doctor Profile Form
@@ -116,6 +117,14 @@ export default function DoctorFormModal({ onClose, onSaved, editDoctor }: Doctor
                                 <div className="col-span-2">
                                     <label className={labelClasses}>Temporary Password *</label>
                                     <input required type="password" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} className={inputClasses} placeholder="Minimum 6 characters" />
+                                </div>
+                                <div className="col-span-2">
+                                    <StateSelect
+                                        value={userForm.state}
+                                        onChange={val => setUserForm({ ...userForm, state: val })}
+                                        inputClassName={inputClasses}
+                                        labelClassName={labelClasses}
+                                    />
                                 </div>
                             </div>
 
