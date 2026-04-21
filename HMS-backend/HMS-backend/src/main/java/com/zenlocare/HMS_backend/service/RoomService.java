@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -91,6 +92,10 @@ public class RoomService {
 
         room.setStatus(RoomStatus.OCCUPIED);
         room.setCurrentPatient(patient);
+        room.setAttenderName(request.getAttenderName());
+        room.setAttenderPhone(request.getAttenderPhone());
+        room.setAttenderRelationship(request.getAttenderRelationship());
+        room.setAllocationToken(generateToken());
         if (request.getApproxDischargeTime() != null) {
             room.setApproxDischargeTime(request.getApproxDischargeTime());
         }
@@ -110,7 +115,20 @@ public class RoomService {
         room.setStatus(RoomStatus.AVAILABLE);
         room.setCurrentPatient(null);
         room.setApproxDischargeTime(null);
+        room.setAttenderName(null);
+        room.setAttenderPhone(null);
+        room.setAttenderRelationship(null);
+        room.setAllocationToken(null);
 
         return roomRepository.save(room);
+    }
+
+    private String generateToken() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O, 0, I, 1 to avoid confusion
+        StringBuilder token = new StringBuilder(8);
+        for (int i = 0; i < 8; i++) {
+            token.append(chars.charAt(ThreadLocalRandom.current().nextInt(chars.length())));
+        }
+        return token.toString();
     }
 }

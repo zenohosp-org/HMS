@@ -20,6 +20,11 @@ interface Room {
     status: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE'
     currentPatient?: PatientSummary
     approxDischargeTime?: string
+    attenderName?: string
+    attenderPhone?: string
+    attenderRelationship?: string
+    allocationToken?: string
+    pricePerDay?: number
 }
 
 export default function Rooms() {
@@ -197,24 +202,46 @@ export default function Rooms() {
 
                             {room.status === 'OCCUPIED' && room.currentPatient ? (
                                 <div className="flex-1 sm:pl-8 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-[#222222] pt-4 sm:pt-0">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-xs text-slate-500 dark:text-[#666666] mb-0.5">Assigned Patient</p>
-                                            <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">
-                                                {room.currentPatient.firstName} {room.currentPatient.lastName}
-                                            </p>
-                                            <p className="text-[11px] text-slate-400 dark:text-[#555555] mt-0.5">{room.currentPatient.mrn}</p>
-                                        </div>
-                                        {room.approxDischargeTime && (
-                                            <div className="text-right hidden md:block">
-                                                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#666666] mb-0.5 justify-end">
-                                                    <CalendarClock className="w-3.5 h-3.5" /> Est. Discharge
-                                                </div>
-                                                <p className="text-xs font-medium text-slate-700 dark:text-[#aaaaaa]">
-                                                    {formatDateTime(room.approxDischargeTime)}
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="space-y-1.5">
+                                            <div>
+                                                <p className="text-xs text-slate-500 dark:text-[#666666]">Patient</p>
+                                                <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">
+                                                    {room.currentPatient.firstName} {room.currentPatient.lastName}
                                                 </p>
+                                                <p className="text-[11px] text-slate-400 dark:text-[#555555]">{room.currentPatient.mrn}</p>
                                             </div>
-                                        )}
+                                            {room.attenderName && (
+                                                <div>
+                                                    <p className="text-xs text-slate-500 dark:text-[#666666]">Attender</p>
+                                                    <p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">
+                                                        {room.attenderName}
+                                                        {room.attenderRelationship && <span className="text-xs text-slate-400 dark:text-[#555555] ml-1">({room.attenderRelationship})</span>}
+                                                    </p>
+                                                    {room.attenderPhone && <p className="text-[11px] text-slate-400 dark:text-[#555555]">{room.attenderPhone}</p>}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-right shrink-0 space-y-2">
+                                            {room.allocationToken && (
+                                                <div>
+                                                    <p className="text-xs text-slate-500 dark:text-[#666666] mb-0.5">Token</p>
+                                                    <span className="inline-block px-2.5 py-1 rounded-lg bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 text-sm font-bold tracking-widest text-violet-700 dark:text-violet-400 font-mono">
+                                                        {room.allocationToken}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {room.approxDischargeTime && (
+                                                <div className="hidden md:block">
+                                                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#666666] mb-0.5 justify-end">
+                                                        <CalendarClock className="w-3.5 h-3.5" /> Est. Discharge
+                                                    </div>
+                                                    <p className="text-xs font-medium text-slate-700 dark:text-[#aaaaaa]">
+                                                        {formatDateTime(room.approxDischargeTime)}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ) : (

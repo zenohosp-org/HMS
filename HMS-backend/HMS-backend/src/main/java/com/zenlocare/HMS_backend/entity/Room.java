@@ -44,6 +44,18 @@ public class Room {
     @Column(name = "price_per_day", precision = 10, scale = 2)
     private java.math.BigDecimal pricePerDay;
 
+    @Column(name = "attender_name", length = 100)
+    private String attenderName;
+
+    @Column(name = "attender_phone", length = 20)
+    private String attenderPhone;
+
+    @Column(name = "attender_relationship", length = 50)
+    private String attenderRelationship;
+
+    @Column(name = "allocation_token", length = 10)
+    private String allocationToken;
+
     @Column(name = "approx_discharge_time")
     private LocalDateTime approxDischargeTime;
 

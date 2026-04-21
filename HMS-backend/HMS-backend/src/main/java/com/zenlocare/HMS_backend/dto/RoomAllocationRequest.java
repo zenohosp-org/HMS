@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 public class RoomAllocationRequest {
     private Long roomId;
     private Integer patientId;
-    // Optional
     private LocalDateTime approxDischargeTime;
+    private String attenderName;
+    private String attenderPhone;
+    private String attenderRelationship;
 }

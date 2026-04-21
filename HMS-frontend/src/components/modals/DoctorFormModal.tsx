@@ -165,11 +165,17 @@ export default function DoctorFormModal({ onClose, onSaved, editDoctor }: Doctor
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className={labelClasses}>Consultation Fee ($) *</label>
-                                    <input required type="number" min="0" step="0.01" value={doctorForm.consultationFee} onChange={e => setDoctorForm({ ...doctorForm, consultationFee: parseFloat(e.target.value) })} className={inputClasses} placeholder="50.00" />
+                                    <input required type="number" min="1" step="0.01"
+                                        value={doctorForm.consultationFee || ''}
+                                        onChange={e => setDoctorForm({ ...doctorForm, consultationFee: parseFloat(e.target.value) || 0 })}
+                                        className={inputClasses} placeholder="500" />
                                 </div>
                                 <div>
                                     <label className={labelClasses}>Follow-up Fee ($) *</label>
-                                    <input required type="number" min="0" step="0.01" value={doctorForm.followUpFee} onChange={e => setDoctorForm({ ...doctorForm, followUpFee: parseFloat(e.target.value) })} className={inputClasses} placeholder="30.00" />
+                                    <input required type="number" min="1" step="0.01"
+                                        value={doctorForm.followUpFee || ''}
+                                        onChange={e => setDoctorForm({ ...doctorForm, followUpFee: parseFloat(e.target.value) || 0 })}
+                                        className={inputClasses} placeholder="300" />
                                 </div>
                                 <div className="col-span-2">
                                     <label className={labelClasses}>Available Days *</label>
@@ -178,11 +184,17 @@ export default function DoctorFormModal({ onClose, onSaved, editDoctor }: Doctor
                                 </div>
                                 <div>
                                     <label className={labelClasses}>Slot Duration (Mins) *</label>
-                                    <input required type="number" min="5" step="5" value={doctorForm.slotDurationMin} onChange={e => setDoctorForm({ ...doctorForm, slotDurationMin: parseInt(e.target.value) })} className={inputClasses} />
+                                    <input required type="number" min="5" step="5"
+                                        value={doctorForm.slotDurationMin || ''}
+                                        onChange={e => setDoctorForm({ ...doctorForm, slotDurationMin: parseInt(e.target.value) || 0 })}
+                                        className={inputClasses} />
                                 </div>
                                 <div>
                                     <label className={labelClasses}>Max Daily Slots *</label>
-                                    <input required type="number" min="1" value={doctorForm.maxDailySlots} onChange={e => setDoctorForm({ ...doctorForm, maxDailySlots: parseInt(e.target.value) })} className={inputClasses} />
+                                    <input required type="number" min="1"
+                                        value={doctorForm.maxDailySlots || ''}
+                                        onChange={e => setDoctorForm({ ...doctorForm, maxDailySlots: parseInt(e.target.value) || 0 })}
+                                        className={inputClasses} />
                                 </div>
                             </div>
                         </div>

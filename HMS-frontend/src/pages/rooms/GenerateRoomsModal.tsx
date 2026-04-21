@@ -88,7 +88,7 @@ export default function GenerateRoomsModal({ onClose, onSuccess }: GenerateRooms
                             className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                 bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc]
                                 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            value={formData.pricePerDay}
+                            value={formData.pricePerDay || ''}
                             onChange={e => setFormData({ ...formData, pricePerDay: parseFloat(e.target.value) || 0 })}
                         />
                         <p className="text-xs text-slate-500 mt-1.5">This price will be used when adding room charges to a bill.</p>
@@ -104,7 +104,7 @@ export default function GenerateRoomsModal({ onClose, onSuccess }: GenerateRooms
                             className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                 bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc]
                                 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            value={formData.count}
+                            value={formData.count || ''}
                             onChange={e => setFormData({ ...formData, count: parseInt(e.target.value) || 0 })}
                         />
                     </div>
