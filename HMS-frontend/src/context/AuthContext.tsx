@@ -40,25 +40,17 @@ const USER_STORAGE_KEY = 'hms_user'
 // ── Provider ─────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<AuthUser | null>(() => {
-        try {
-            const stored = sessionStorage.getItem(USER_STORAGE_KEY)
-            return stored ? JSON.parse(stored) : null
-        } catch {
-            return null
-        }
-    })
+    const [user, setUser] = useState<AuthUser | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
-    // Always verify session with backend on mount — sessionStorage is only a
-    // render-cache to avoid flash of unauthenticated content, not a source of truth.
-    // This catches external logouts (e.g. Directory) that cleared the server session
-    // while the user was away or after a page reload.
+    // Always validate with /auth/me on mount — never trust sessionStorage as auth state.
+    // sessionStorage.removeItem ensures any stale cached user is cleared before the
+    // backend responds, so there is no window where a logged-out user appears logged in.
     useEffect(() => {
+        sessionStorage.removeItem(USER_STORAGE_KEY) // clear any legacy cached value
+
         const logoutInProgress = localStorage.getItem(LOGOUT_FLAG_KEY)
         if (logoutInProgress) {
-            sessionStorage.removeItem(USER_STORAGE_KEY)
-            setUser(null)
             setIsLoading(false)
             localStorage.removeItem(LOGOUT_FLAG_KEY)
             return
@@ -67,11 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authApi.me()
             .then((profile) => {
                 const authUser = mapProfileToUser(profile)
-                sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(authUser))
                 setUser(authUser)
             })
             .catch(() => {
-                sessionStorage.removeItem(USER_STORAGE_KEY)
                 setUser(null)
             })
             .finally(() => setIsLoading(false))
@@ -85,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
                 await authApi.me()
             } catch {
-                sessionStorage.removeItem(USER_STORAGE_KEY)
+                sessionStorage.removeItem(USER_STORAGE_KEY) // clear any legacy cached value
                 setUser(null)
                 window.location.href = '/login?logged_out=1'
             }
@@ -100,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const handleStorageChange = (event: StorageEvent) => {
             if (event.key === 'sso-logout') {
-                sessionStorage.removeItem(USER_STORAGE_KEY)
+                sessionStorage.removeItem(USER_STORAGE_KEY) // clear any legacy cached value
                 SSOCookieManager.clearToken()
                 setUser(null)
                 window.location.href = '/login?logged_out=1'
@@ -108,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const handleCustomLogout = () => {
-            sessionStorage.removeItem(USER_STORAGE_KEY)
+            sessionStorage.removeItem(USER_STORAGE_KEY) // clear any legacy cached value
             SSOCookieManager.clearToken()
             setUser(null)
             window.location.href = '/login?logged_out=1'
@@ -128,7 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Backend sets HttpOnly cookie in the response; user profile comes in the body
             const response = await authApi.login(email, password)
             const authUser = mapProfileToUser(response)
-            sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(authUser))
             setUser(authUser)
         } finally {
             setIsLoading(false)
@@ -137,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = useCallback(async () => {
         localStorage.setItem(LOGOUT_FLAG_KEY, '1')
-        sessionStorage.removeItem(USER_STORAGE_KEY)
+        sessionStorage.removeItem(USER_STORAGE_KEY) // clear any legacy cached value
         SSOCookieManager.clearToken()
         setUser(null)
 
