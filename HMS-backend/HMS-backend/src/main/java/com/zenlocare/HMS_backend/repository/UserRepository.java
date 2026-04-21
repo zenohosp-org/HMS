@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.repository;
 
+import com.zenlocare.HMS_backend.entity.Hospital;
 import com.zenlocare.HMS_backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -22,6 +23,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByRoleName(String roleName);
 
     boolean existsByEmail(String email);
+
+    boolean existsByEmailAndHospital(String email, Hospital hospital);
 
     @org.springframework.data.jpa.repository.Query("SELECT u FROM User u WHERE u.hospital.id = :hospitalId AND " +
             "(:role IS NULL OR u.role.name = :role) AND " +

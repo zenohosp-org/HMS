@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -23,14 +24,12 @@ public class DataSeeder implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional
     public void run(String... args) {
         seedRoles();
         seedHospitalAdmin();
     }
 
-    /**
-     * Seeds all system roles. Idempotent — skips roles that already exist.
-     */
     private void seedRoles() {
         createRoleIfAbsent("super_admin", "Super Admin", "Full system access", true, true, true, true, true, true);
         createRoleIfAbsent("hospital_admin", "Hospital Admin", "Administrative access for hospital", true, true, true,
@@ -42,7 +41,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private void createRoleIfAbsent(String name, String displayName, String description, boolean isSystem,
             boolean hms, boolean asset, boolean inventory, boolean ot, boolean pharmacy) {
-        if (!roleRepository.existsByName(name)) {
+        roleRepository.findByName(name).orElseGet(() ->
             roleRepository.save(Role.builder()
                     .name(name)
                     .displayName(displayName)
@@ -53,29 +52,11 @@ public class DataSeeder implements CommandLineRunner {
                     .canAccessInventory(inventory)
                     .canAccessOt(ot)
                     .canAccessPharmacy(pharmacy)
-                    .build());
-        }
+                    .build())
+        );
     }
 
-    /**
-     * Seeds the initial Hospital Admin account.
-     * Email : admin@gmail.com
-     * Password: admin123
-     * Role : HOSPITAL_ADMIN
-     * Hospital: Zeno Hospital
-     *
-     * Idempotent — skips if the admin already exists.
-     */
     private void seedHospitalAdmin() {
-        if (userRepository.existsByEmail("admin@gmail.com")) {
-            log.info("ℹ️  Hospital admin already exists — skipping.");
-            return;
-        }
-
-        Role adminRole = roleRepository.findByName("hospital_admin")
-                .orElseThrow(() -> new IllegalStateException("HOSPITAL_ADMIN role not found after seed"));
-
-        // Get or create the hospital - check if it already exists
         Hospital hospital = hospitalRepository.findByCode("srm")
                 .orElseGet(() -> hospitalRepository.save(
                         Hospital.builder()
@@ -85,7 +66,17 @@ public class DataSeeder implements CommandLineRunner {
                                 .address("Chennai, Tamil Nadu")
                                 .build()));
 
-        // Create the admin user
+        Role adminRole = roleRepository.findByName("hospital_admin")
+                .orElseThrow(() -> new IllegalStateException("hospital_admin role not found after seed"));
+
+        // Unique constraint is (email, hospital_id) — check both to avoid duplicates
+        boolean exists = userRepository.existsByEmailAndHospital(
+                "admin@gmail.com", hospital);
+        if (exists) {
+            log.info("ℹ️  Hospital admin already exists — skipping.");
+            return;
+        }
+
         userRepository.save(
                 User.builder()
                         .hospital(hospital)
@@ -97,6 +88,6 @@ public class DataSeeder implements CommandLineRunner {
                         .isActive(true)
                         .build());
 
-        log.info("✅ Hospital admin seeded → admin@gmail.com / admin123  [Hospital: Zeno Hospital]");
+        log.info("✅ Hospital admin seeded → admin@gmail.com / admin123  [Hospital: SRM Hospital]");
     }
 }
