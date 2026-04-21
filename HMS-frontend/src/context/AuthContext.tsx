@@ -98,9 +98,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (document.visibilityState === 'visible') verifySession()
         }
 
+        // Poll every 10 s while tab is visible — only way to get near-instant
+        // cross-origin logout (Directory clears the cookie; we catch it within 10 s)
+        const poll = setInterval(() => {
+            if (document.visibilityState === 'visible') verifySession()
+        }, 10_000)
+
         window.addEventListener('focus', verifySession)
         document.addEventListener('visibilitychange', onVisibilityChange)
         return () => {
+            clearInterval(poll)
             window.removeEventListener('focus', verifySession)
             document.removeEventListener('visibilitychange', onVisibilityChange)
         }
