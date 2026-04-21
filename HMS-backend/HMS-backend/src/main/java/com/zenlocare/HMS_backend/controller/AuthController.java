@@ -5,7 +5,9 @@ import com.zenlocare.HMS_backend.dto.LoginRequest;
 import com.zenlocare.HMS_backend.dto.RegisterRequest;
 import com.zenlocare.HMS_backend.entity.User;
 import com.zenlocare.HMS_backend.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -75,7 +77,12 @@ public class AuthController {
      * Clears the JWT cookie. Must use the exact same cookie attributes as set-time.
      */
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout(HttpServletResponse response) {
+    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request,
+                                                      HttpServletResponse response) {
+        // Invalidate the Spring Security HTTP session (HMS_SESSION cookie)
+        HttpSession session = request.getSession(false);
+        if (session != null) session.invalidate();
+
         clearJwtCookieHeader(response);
         return ResponseEntity.ok(Map.of("message", "Logged out successfully", "status", "success"));
     }
