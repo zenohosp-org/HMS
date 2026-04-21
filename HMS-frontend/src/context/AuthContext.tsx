@@ -48,34 +48,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return null
         }
     })
-    const [isLoading, setIsLoading] = useState(!user)
+    const [isLoading, setIsLoading] = useState(true)
 
-    // Restore session from cookie on mount
+    // Always verify session with backend on mount — sessionStorage is only a
+    // render-cache to avoid flash of unauthenticated content, not a source of truth.
+    // This catches external logouts (e.g. Directory) that cleared the server session
+    // while the user was away or after a page reload.
     useEffect(() => {
-        if (!user && isLoading) {
-            const logoutInProgress = localStorage.getItem(LOGOUT_FLAG_KEY)
-            if (logoutInProgress) {
+        const logoutInProgress = localStorage.getItem(LOGOUT_FLAG_KEY)
+        if (logoutInProgress) {
+            sessionStorage.removeItem(USER_STORAGE_KEY)
+            setUser(null)
+            setIsLoading(false)
+            localStorage.removeItem(LOGOUT_FLAG_KEY)
+            return
+        }
+
+        authApi.me()
+            .then((profile) => {
+                const authUser = mapProfileToUser(profile)
+                sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(authUser))
+                setUser(authUser)
+            })
+            .catch(() => {
                 sessionStorage.removeItem(USER_STORAGE_KEY)
                 setUser(null)
-                setIsLoading(false)
-                localStorage.removeItem(LOGOUT_FLAG_KEY)
-                return
-            }
-
-            authApi.me()
-                .then((profile) => {
-                    const authUser = mapProfileToUser(profile)
-                    sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(authUser))
-                    setUser(authUser)
-                })
-                .catch(() => {
-                    sessionStorage.removeItem(USER_STORAGE_KEY)
-                    setUser(null)
-                })
-                .finally(() => setIsLoading(false))
-        } else {
-            setIsLoading(false)
-        }
+            })
+            .finally(() => setIsLoading(false))
     }, [])
 
     // Re-validate session when the tab regains focus — detects cross-origin logouts
