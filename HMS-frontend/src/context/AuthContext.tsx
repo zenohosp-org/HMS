@@ -78,9 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [])
 
-    // Re-validate session when the tab regains focus (detects cross-app logouts)
+    // Re-validate session when the tab regains focus or becomes visible.
+    // visibilitychange catches the cross-origin case: Directory clears the cookie
+    // via the HMS backend, then when the user switches back to this tab the
+    // session is gone and we redirect immediately.
     useEffect(() => {
-        const verifyOnFocus = async () => {
+        const verifySession = async () => {
             if (!user) return
             try {
                 await authApi.me()
@@ -91,8 +94,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        window.addEventListener('focus', verifyOnFocus)
-        return () => window.removeEventListener('focus', verifyOnFocus)
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'visible') verifySession()
+        }
+
+        window.addEventListener('focus', verifySession)
+        document.addEventListener('visibilitychange', onVisibilityChange)
+        return () => {
+            window.removeEventListener('focus', verifySession)
+            document.removeEventListener('visibilitychange', onVisibilityChange)
+        }
     }, [user])
 
     // Cross-tab / cross-app logout via localStorage — key 'sso-logout' matches the
