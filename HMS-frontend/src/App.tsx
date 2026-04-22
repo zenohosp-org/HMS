@@ -22,6 +22,8 @@ import RoomLogsPage from '@/pages/rooms/RoomLogsPage'
 import CreateInvoice from '@/pages/billing/CreateInvoice'
 import InvoiceList from '@/pages/billing/InvoiceList'
 import AppointmentsDashboard from '@/pages/appointments/AppointmentsDashboard'
+import ShiftRoster from '@/pages/admin/ShiftRoster'
+import Payroll from '@/pages/admin/Payroll'
 
 export default function App() {
     return (
@@ -69,6 +71,16 @@ export default function App() {
                                     <Route path="staffs" element={
                                         <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>
                                             <StaffsList />
+                                        </ProtectedRoute>
+                                    } />
+                                    <Route path="staffs/roster" element={
+                                        <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>
+                                            <ShiftRoster />
+                                        </ProtectedRoute>
+                                    } />
+                                    <Route path="staffs/payroll" element={
+                                        <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>
+                                            <Payroll />
                                         </ProtectedRoute>
                                     } />
                                     <Route path="specializations" element={

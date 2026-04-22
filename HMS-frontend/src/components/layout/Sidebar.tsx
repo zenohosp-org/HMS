@@ -1,5 +1,5 @@
-import React from 'react'
-import { NavLink } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import {
     Home,
@@ -15,7 +15,11 @@ import {
     BookOpen,
     Boxes,
     BarChart2,
-    LayoutGrid
+    LayoutGrid,
+    ChevronDown,
+    UserSquare2,
+    CalendarDays,
+    Banknote,
 } from 'lucide-react'
 
 interface NavItem {
@@ -34,7 +38,6 @@ const DASHBOARD_LINK: NavItem = { label: 'Dashboard', to: '/dashboard', icon: Ho
 
 const MANAGEMENT_LINKS: NavItem[] = [
     { label: 'Doctors', to: '/doctors', icon: Users },
-    { label: 'Staffs', to: '/staffs', icon: ClipboardList },
     { label: 'Patients', to: '/patients', icon: Building2 },
     { label: 'Appointments', to: '/appointments', icon: Calendar },
     { label: 'Billing', to: '/billing', icon: ReceiptText },
@@ -43,32 +46,46 @@ const MANAGEMENT_LINKS: NavItem[] = [
     { label: 'Services', to: '/services', icon: ClipboardList },
 ]
 
+const HR_LINKS: NavItem[] = [
+    { label: 'Staff Directory', to: '/staffs', icon: UserSquare2 },
+    { label: 'Shift Roster',   to: '/staffs/roster',  icon: CalendarDays },
+    { label: 'Payroll',        to: '/staffs/payroll',  icon: Banknote     },
+]
+
 const EXTERNAL_APPS: ExternalApp[] = [
-    { label: 'Finance', href: 'https://finance.zenohosp.com', icon: BarChart2 },
-    { label: 'Inventory', href: 'https://inventory.zenohosp.com', icon: Boxes },
-    { label: 'Directory', href: 'https://directory.zenohosp.com', icon: BookOpen },
-    { label: 'Assets', href: 'https://asset.zenohosp.com', icon: LayoutGrid },
+    { label: 'Finance',   href: 'https://finance.zenohosp.com',   icon: BarChart2  },
+    { label: 'Inventory', href: 'https://inventory.zenohosp.com', icon: Boxes      },
+    { label: 'Directory', href: 'https://directory.zenohosp.com', icon: BookOpen   },
+    { label: 'Assets',    href: 'https://asset.zenohosp.com',     icon: LayoutGrid },
 ]
 
 export default function Sidebar({ isOpen }: { isOpen: boolean }) {
     const { user } = useAuth()
+    const location = useLocation()
+    const [hrOpen, setHrOpen] = useState(() => location.pathname.startsWith('/staffs'))
 
     const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`
 
     const filteredManagementLinks = MANAGEMENT_LINKS.filter(link => {
-        if (user?.role === 'hospital_admin') return true
+        if (user?.role === 'hospital_admin' || user?.role === 'super_admin') return true
         const allowedLinks = ['Patients', 'Appointments', 'Billing', 'Room Allocation']
         return allowedLinks.includes(link.label)
     })
 
-    const renderLink = (link: NavItem) => {
+    const isHrAdmin = user?.role === 'hospital_admin' || user?.role === 'super_admin'
+    const hrActive = location.pathname.startsWith('/staffs')
+
+    const renderLink = (link: NavItem, indent = false) => {
         const Icon = link.icon
         return isOpen ? (
             <NavLink
                 key={link.to}
                 to={link.to}
+                end={link.to === '/staffs'}
                 className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${isActive
+                    `flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
+                    ${indent ? 'px-3 pl-8' : 'px-3'}
+                    ${isActive
                         ? 'bg-emerald-50 dark:bg-[#1e1e1e] text-emerald-700 dark:text-white'
                         : 'text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc]'
                     }`
@@ -86,6 +103,7 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
             <NavLink
                 key={link.to}
                 to={link.to}
+                end={link.to === '/staffs'}
                 title={link.label}
                 className={({ isActive }) =>
                     `flex items-center justify-center w-full py-3 rounded-lg transition-colors duration-150 ${isActive
@@ -127,6 +145,33 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
         )
     }
 
+    const renderHrAccordion = () => {
+        if (!isOpen) {
+            return HR_LINKS.map(link => renderLink(link))
+        }
+        return (
+            <div>
+                <button
+                    onClick={() => setHrOpen(o => !o)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
+                        ${hrActive
+                            ? 'text-emerald-700 dark:text-white'
+                            : 'text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc]'
+                        }`}
+                >
+                    <ClipboardList className={`w-4 h-4 shrink-0 ${hrActive ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
+                    <span className="flex-1 text-left truncate">HR &amp; Staff</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${hrOpen ? 'rotate-180' : ''} opacity-50`} />
+                </button>
+                {hrOpen && (
+                    <div className="mt-0.5 space-y-0.5">
+                        {HR_LINKS.map(link => renderLink(link, true))}
+                    </div>
+                )}
+            </div>
+        )
+    }
+
     return (
         <aside
             className={`flex flex-col h-full transition-all duration-300 ease-in-out shrink-0
@@ -161,6 +206,17 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
                     </div>
                 )}
                 {filteredManagementLinks.map(link => renderLink(link))}
+
+                {isHrAdmin && (
+                    <>
+                        {isOpen && (
+                            <div className="px-3 mb-2 mt-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
+                                Human Resources
+                            </div>
+                        )}
+                        {renderHrAccordion()}
+                    </>
+                )}
 
                 {/* Divider */}
                 <div className={`border-t border-slate-100 dark:border-[#1e1e1e] ${isOpen ? 'mx-3 my-4' : 'my-4'}`} />

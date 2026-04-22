@@ -434,6 +434,38 @@ export const roomLogsApi = {
     },
 }
 
+// ── Staff Shifts API ─────────────────────────────────────────────────────────
+
+export interface StaffShift {
+    id: number
+    staffId: string
+    staffName: string
+    role: string
+    designation?: string
+    shiftType: 'ON_CALL' | 'MORNING' | 'GENERAL' | 'AFTERNOON' | 'NIGHT'
+    shiftDate: string
+}
+
+export const shiftsApi = {
+    getWeek: async (hospitalId: string, weekStart: string): Promise<StaffShift[]> => {
+        const { data } = await api.get('/shifts', { params: { hospitalId, weekStart } })
+        return data
+    },
+    getMonth: async (hospitalId: string, year: number, month: number): Promise<StaffShift[]> => {
+        const { data } = await api.get('/shifts/monthly', { params: { hospitalId, year, month } })
+        return data
+    },
+    assign: async (payload: {
+        staffId: string; hospitalId: string; shiftType: string; shiftDate: string
+    }): Promise<StaffShift> => {
+        const { data } = await api.post('/shifts', payload)
+        return data
+    },
+    remove: async (id: number): Promise<void> => {
+        await api.delete(`/shifts/${id}`)
+    },
+}
+
 // ── Invoice API ─────────────────────────────────────────────────────────────
 
 export const invoiceApi = {
