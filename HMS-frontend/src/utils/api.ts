@@ -406,6 +406,34 @@ export const hospitalServiceApi = {
     }
 }
 
+// ── Room Logs API ────────────────────────────────────────────────────────────
+
+export interface RoomLog {
+    id: number
+    roomId: number
+    roomNumber: string
+    event: 'ROOM_CREATED' | 'ALLOCATED' | 'DEALLOCATED' | 'ATTENDER_ASSIGNED' | 'ATTENDER_UPDATED'
+    patientName?: string
+    patientMrn?: string
+    attenderName?: string
+    allocationToken?: string
+    performedBy?: string
+    createdAt: string
+}
+
+export const roomLogsApi = {
+    getHospitalLogs: async (hospitalId: string, search?: string): Promise<RoomLog[]> => {
+        const params: Record<string, string> = { hospitalId }
+        if (search) params.search = search
+        const { data } = await api.get('/rooms/logs', { params })
+        return data
+    },
+    getRoomLogs: async (roomId: number, hospitalId: string): Promise<RoomLog[]> => {
+        const { data } = await api.get(`/rooms/${roomId}/logs`, { params: { hospitalId } })
+        return data
+    },
+}
+
 // ── Invoice API ─────────────────────────────────────────────────────────────
 
 export const invoiceApi = {

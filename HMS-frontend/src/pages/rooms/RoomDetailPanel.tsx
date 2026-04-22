@@ -1,5 +1,4 @@
-import React from 'react'
-import { X, Bed, User, Phone, Users, Package, CalendarClock } from 'lucide-react'
+import { X, User, Phone, Users, Package, CalendarClock, ScrollText } from 'lucide-react'
 import { formatDateTime } from '@/utils/validators'
 
 interface PatientSummary {
@@ -26,9 +25,10 @@ interface Room {
 interface RoomDetailPanelProps {
     room: Room
     onClose: () => void
+    onViewLogs: () => void
 }
 
-export default function RoomDetailPanel({ room, onClose }: RoomDetailPanelProps) {
+export default function RoomDetailPanel({ room, onClose, onViewLogs }: RoomDetailPanelProps) {
     return (
         <div className="w-80 shrink-0 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl flex flex-col overflow-hidden self-start sticky top-0">
 
@@ -150,6 +150,17 @@ export default function RoomDetailPanel({ room, onClose }: RoomDetailPanelProps)
                     </div>
                 </div>
 
+            </div>
+
+            {/* Footer: View Logs */}
+            <div className="p-4 border-t border-slate-100 dark:border-[#1e1e1e] shrink-0">
+                <button
+                    onClick={onViewLogs}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#2a2a2a] text-sm font-semibold text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white transition-colors"
+                >
+                    <ScrollText className="w-4 h-4" />
+                    View Room Logs
+                </button>
             </div>
         </div>
     )
