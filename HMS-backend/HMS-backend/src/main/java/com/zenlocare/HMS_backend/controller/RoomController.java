@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.controller;
 
+import com.zenlocare.HMS_backend.dto.AttenderUpdateRequest;
 import com.zenlocare.HMS_backend.dto.RoomAllocationRequest;
 import com.zenlocare.HMS_backend.dto.RoomCreateRequest;
 import com.zenlocare.HMS_backend.entity.Room;
@@ -36,6 +37,14 @@ public class RoomController {
     public ResponseEntity<Room> allocatePatient(@RequestBody RoomAllocationRequest request,
             @RequestParam UUID hospitalId) {
         return ResponseEntity.ok(roomService.allocatePatient(request, hospitalId));
+    }
+
+    @PatchMapping("/{roomId}/attender")
+    @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
+    public ResponseEntity<Room> updateAttender(@PathVariable Long roomId,
+            @RequestBody AttenderUpdateRequest request,
+            @RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(roomService.updateAttender(roomId, request, hospitalId));
     }
 
     @PostMapping("/{roomId}/deallocate")

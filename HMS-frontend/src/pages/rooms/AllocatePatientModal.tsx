@@ -133,9 +133,8 @@ export default function AllocatePatientModal({ roomId, roomNumber, onClose, onSu
                         </h3>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="col-span-2">
-                                <label className={labelCls}>Attender Name *</label>
+                                <label className={labelCls}>Attender Name</label>
                                 <input
-                                    required
                                     type="text"
                                     className={inputCls}
                                     placeholder="Full name of attender"

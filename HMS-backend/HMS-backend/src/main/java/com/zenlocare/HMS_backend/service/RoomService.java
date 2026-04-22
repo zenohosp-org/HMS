@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.service;
 
+import com.zenlocare.HMS_backend.dto.AttenderUpdateRequest;
 import com.zenlocare.HMS_backend.dto.RoomAllocationRequest;
 import com.zenlocare.HMS_backend.dto.RoomCreateRequest;
 import com.zenlocare.HMS_backend.entity.Hospital;
@@ -119,6 +120,26 @@ public class RoomService {
         room.setAttenderPhone(null);
         room.setAttenderRelationship(null);
         room.setAllocationToken(null);
+
+        return roomRepository.save(room);
+    }
+
+    @Transactional
+    public Room updateAttender(Long roomId, AttenderUpdateRequest request, UUID hospitalId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if (!room.getHospital().getId().equals(hospitalId)) {
+            throw new RuntimeException("Room does not belong to this hospital");
+        }
+
+        if (room.getStatus() != RoomStatus.OCCUPIED) {
+            throw new RuntimeException("Room is not occupied");
+        }
+
+        room.setAttenderName(request.getAttenderName());
+        room.setAttenderPhone(request.getAttenderPhone());
+        room.setAttenderRelationship(request.getAttenderRelationship());
 
         return roomRepository.save(room);
     }
