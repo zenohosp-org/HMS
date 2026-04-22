@@ -83,15 +83,24 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User updateUser(UUID userId, User updatedData) {
+    public User updateUser(UUID userId, String firstName, String lastName, String phone,
+            String roleName, String employeeCode, String designation,
+            String gender, java.time.LocalDate dateOfJoining, String state) {
         User user = getUserById(userId);
 
-        if (updatedData.getFirstName() != null)
-            user.setFirstName(updatedData.getFirstName());
-        if (updatedData.getLastName() != null)
-            user.setLastName(updatedData.getLastName());
-        if (updatedData.getPhone() != null)
-            user.setPhone(updatedData.getPhone());
+        if (firstName != null) user.setFirstName(firstName);
+        if (lastName != null) user.setLastName(lastName);
+        if (phone != null) user.setPhone(phone);
+        if (employeeCode != null) user.setEmployeeCode(employeeCode);
+        if (designation != null) user.setDesignation(designation);
+        if (gender != null) user.setGender(gender);
+        if (dateOfJoining != null) user.setDateOfJoining(dateOfJoining);
+        if (state != null) user.setState(state);
+        if (roleName != null && !roleName.isBlank()) {
+            Role role = roleRepository.findByName(roleName.toLowerCase().trim())
+                    .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleName));
+            user.setRole(role);
+        }
 
         return userRepository.save(user);
     }

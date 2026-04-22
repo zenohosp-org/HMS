@@ -69,12 +69,9 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> updateUser(@PathVariable UUID id, @RequestBody UserDto req) {
-        User updatedData = new User();
-        updatedData.setFirstName(req.getFirstName());
-        updatedData.setLastName(req.getLastName());
-        updatedData.setPhone(req.getPhone());
-
-        User user = userService.updateUser(id, updatedData);
+        User user = userService.updateUser(id, req.getFirstName(), req.getLastName(), req.getPhone(),
+                req.getRole(), req.getEmployeeCode(), req.getDesignation(),
+                req.getGender(), req.getDateOfJoining(), req.getState());
         return ResponseEntity.ok(mapToDto(user));
     }
 
@@ -88,7 +85,7 @@ public class UserController {
         dto.setRoleDisplay(user.getRole().getDisplayName());
         dto.setPhone(user.getPhone());
         dto.setIsActive(user.getIsActive());
-
+        dto.setState(user.getState());
         dto.setEmployeeCode(user.getEmployeeCode());
         dto.setDesignation(user.getDesignation());
         dto.setGender(user.getGender());
@@ -127,6 +124,7 @@ public class UserController {
         private String roleDisplay;
         private Boolean isActive;
         private String phone;
+        private String state;
         private String employeeCode;
         private String designation;
         private String gender;
