@@ -18,6 +18,7 @@ import Services from '@/pages/admin/Services'
 import Patients from '@/pages/patients/Patients'
 import PatientDetails from '@/pages/patients/PatientDetails'
 import Rooms from '@/pages/rooms/Rooms'
+import RoomLogsPage from '@/pages/rooms/RoomLogsPage'
 import CreateInvoice from '@/pages/billing/CreateInvoice'
 import InvoiceList from '@/pages/billing/InvoiceList'
 import AppointmentsDashboard from '@/pages/appointments/AppointmentsDashboard'
@@ -46,6 +47,7 @@ export default function App() {
                                     <Route path="patients" element={<Patients />} />
                                     <Route path="patients/:id" element={<PatientDetails />} />
                                     <Route path="rooms" element={<Rooms />} />
+                                    <Route path="rooms/logs" element={<RoomLogsPage />} />
                                     <Route path="billing" element={<CreateInvoice />} />
                                     <Route path="billing/invoices" element={
                                         <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import api from '@/utils/api'
 import { Bed, Plus, Search, CalendarClock, MoreVertical, ScrollText } from 'lucide-react'
 import { formatDateTime } from '@/utils/validators'
@@ -7,7 +8,6 @@ import GenerateRoomsModal from './GenerateRoomsModal'
 import AllocatePatientModal from './AllocatePatientModal'
 import AssignAttenderModal from './AssignAttenderModal'
 import RoomDetailPanel from './RoomDetailPanel'
-import RoomLogsModal from './RoomLogsModal'
 
 interface PatientSummary {
     id: number
@@ -92,6 +92,7 @@ function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate }: {
 
 export default function Rooms() {
     const { user } = useAuth()
+    const navigate = useNavigate()
     const [rooms, setRooms] = useState<Room[]>([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState<'ALL' | 'AVAILABLE' | 'OCCUPIED'>('ALL')
@@ -101,7 +102,6 @@ export default function Rooms() {
     const [showGenerateModal, setShowGenerateModal] = useState(false)
     const [showAllocateModal, setShowAllocateModal] = useState<{ open: boolean, room: Room | null }>({ open: false, room: null })
     const [showAttenderModal, setShowAttenderModal] = useState<{ open: boolean, room: Room | null }>({ open: false, room: null })
-    const [showLogsModal, setShowLogsModal] = useState<{ open: boolean, room: Room | null }>({ open: false, room: null })
 
     const fetchRooms = async () => {
         try {
@@ -171,7 +171,7 @@ export default function Rooms() {
                 <div className="flex items-center gap-2">
                     <button
                         className="btn-secondary flex items-center gap-2"
-                        onClick={() => setShowLogsModal({ open: true, room: null })}
+                        onClick={() => navigate('/rooms/logs')}
                     >
                         <ScrollText className="w-4 h-4" /> Logs
                     </button>
@@ -360,7 +360,7 @@ export default function Rooms() {
                     <RoomDetailPanel
                         room={selectedRoom}
                         onClose={() => setSelectedRoom(null)}
-                        onViewLogs={() => setShowLogsModal({ open: true, room: selectedRoom })}
+                        onViewLogs={() => navigate(`/rooms/logs?roomId=${selectedRoom.id}&roomNumber=${selectedRoom.roomNumber}`)}
                     />
                 )}
             </div>
@@ -405,13 +405,6 @@ export default function Rooms() {
                 />
             )}
 
-            {showLogsModal.open && (
-                <RoomLogsModal
-                    onClose={() => setShowLogsModal({ open: false, room: null })}
-                    roomId={showLogsModal.room?.id}
-                    roomNumber={showLogsModal.room?.roomNumber}
-                />
-            )}
         </div>
     )
 }
