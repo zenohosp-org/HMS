@@ -10,12 +10,23 @@ import {
     Activity,
     Bed,
     Calendar,
-    Stethoscope
+    Stethoscope,
+    ArrowUpRight,
+    BookOpen,
+    Boxes,
+    BarChart2,
+    LayoutGrid
 } from 'lucide-react'
 
 interface NavItem {
     label: string
     to: string
+    icon: React.ElementType
+}
+
+interface ExternalApp {
+    label: string
+    href: string
     icon: React.ElementType
 }
 
@@ -32,6 +43,13 @@ const MANAGEMENT_LINKS: NavItem[] = [
     { label: 'Services', to: '/services', icon: ClipboardList },
 ]
 
+const EXTERNAL_APPS: ExternalApp[] = [
+    { label: 'Finance', href: 'https://finance.zenohosp.com', icon: BarChart2 },
+    { label: 'Inventory', href: 'https://inventory.zenohosp.com', icon: Boxes },
+    { label: 'Directory', href: 'https://directory.zenohosp.com', icon: BookOpen },
+    { label: 'Assets', href: 'https://asset.zenohosp.com', icon: LayoutGrid },
+]
+
 export default function Sidebar({ isOpen }: { isOpen: boolean }) {
     const { user } = useAuth()
 
@@ -39,7 +57,6 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
 
     const filteredManagementLinks = MANAGEMENT_LINKS.filter(link => {
         if (user?.role === 'hospital_admin') return true
-        // Doctors and Staff only see a subset (Patients, Appointments, Billing, Room Allocation)
         const allowedLinks = ['Patients', 'Appointments', 'Billing', 'Room Allocation']
         return allowedLinks.includes(link.label)
     })
@@ -82,6 +99,34 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
         )
     }
 
+    const renderExternalApp = (app: ExternalApp) => {
+        const Icon = app.icon
+        return isOpen ? (
+            <a
+                key={app.href}
+                href={app.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc] group"
+            >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="truncate flex-1">{app.label}</span>
+                <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+            </a>
+        ) : (
+            <a
+                key={app.href}
+                href={app.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={app.label}
+                className="flex items-center justify-center w-full py-3 rounded-lg transition-colors duration-150 text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc]"
+            >
+                <Icon className="w-4 h-4 text-inherit" />
+            </a>
+        )
+    }
+
     return (
         <aside
             className={`flex flex-col h-full transition-all duration-300 ease-in-out shrink-0
@@ -116,6 +161,16 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
                     </div>
                 )}
                 {filteredManagementLinks.map(link => renderLink(link))}
+
+                {/* Divider */}
+                <div className={`border-t border-slate-100 dark:border-[#1e1e1e] ${isOpen ? 'mx-3 my-4' : 'my-4'}`} />
+
+                {isOpen && (
+                    <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
+                        Other Apps
+                    </div>
+                )}
+                {EXTERNAL_APPS.map(app => renderExternalApp(app))}
             </nav>
 
             {/* User profile at bottom */}

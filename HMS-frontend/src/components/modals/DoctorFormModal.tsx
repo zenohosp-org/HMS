@@ -179,8 +179,30 @@ export default function DoctorFormModal({ onClose, onSaved, editDoctor }: Doctor
                                 </div>
                                 <div className="col-span-2">
                                     <label className={labelClasses}>Available Days *</label>
-                                    <input required type="text" value={doctorForm.availableDays} onChange={e => setDoctorForm({ ...doctorForm, availableDays: e.target.value })} className={inputClasses} placeholder="MON,TUE,WED,THU,FRI" />
-                                    <p className="text-xs text-slate-500 mt-2">Comma separated days (e.g., MON,TUE,WED).</p>
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                        {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(day => {
+                                            const selected = doctorForm.availableDays.split(',').map(d => d.trim()).includes(day)
+                                            const toggle = () => {
+                                                const current = doctorForm.availableDays.split(',').map(d => d.trim()).filter(Boolean)
+                                                const next = selected ? current.filter(d => d !== day) : [...current, day]
+                                                const ordered = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].filter(d => next.includes(d))
+                                                setDoctorForm({ ...doctorForm, availableDays: ordered.join(',') })
+                                            }
+                                            return (
+                                                <button
+                                                    key={day}
+                                                    type="button"
+                                                    onClick={toggle}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${selected
+                                                        ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30'
+                                                        : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-[#1a1a1a] dark:text-[#555555] dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a]'
+                                                    }`}
+                                                >
+                                                    {day}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
                                 </div>
                                 <div>
                                     <label className={labelClasses}>Slot Duration (Mins) *</label>
