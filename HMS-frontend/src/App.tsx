@@ -24,6 +24,9 @@ import InvoiceList from '@/pages/billing/InvoiceList'
 import AppointmentsDashboard from '@/pages/appointments/AppointmentsDashboard'
 import ShiftRoster from '@/pages/admin/ShiftRoster'
 import Payroll from '@/pages/admin/Payroll'
+import RadiologyQueue from '@/pages/radiology/RadiologyQueue'
+import RadiologyReports from '@/pages/radiology/RadiologyReports'
+import RadiologyReportView from '@/pages/radiology/RadiologyReportView'
 
 export default function App() {
     return (
@@ -57,6 +60,9 @@ export default function App() {
                                         </ProtectedRoute>
                                     } />
                                     <Route path="appointments" element={<AppointmentsDashboard />} />
+                                    <Route path="radiology" element={<RadiologyQueue />} />
+                                    <Route path="radiology/reports" element={<RadiologyReports />} />
+                                    <Route path="radiology/reports/:id" element={<RadiologyReportView />} />
 
                                     <Route path="doctors" element={
                                         <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>

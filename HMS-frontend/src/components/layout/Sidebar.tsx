@@ -20,6 +20,8 @@ import {
     UserSquare2,
     CalendarDays,
     Banknote,
+    ScanLine,
+    FileText,
 } from 'lucide-react'
 
 interface NavItem {
@@ -46,6 +48,11 @@ const MANAGEMENT_LINKS: NavItem[] = [
     { label: 'Services', to: '/services', icon: ClipboardList },
 ]
 
+const RADIOLOGY_LINKS: NavItem[] = [
+    { label: 'Imaging Queue', to: '/radiology',         icon: ScanLine  },
+    { label: 'Reports',       to: '/radiology/reports', icon: FileText  },
+]
+
 const HR_LINKS: NavItem[] = [
     { label: 'Staff Directory', to: '/staffs', icon: UserSquare2 },
     { label: 'Shift Roster',   to: '/staffs/roster',  icon: CalendarDays },
@@ -63,6 +70,7 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
     const { user } = useAuth()
     const location = useLocation()
     const [hrOpen, setHrOpen] = useState(() => location.pathname.startsWith('/staffs'))
+    const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith('/radiology'))
 
     const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`
 
@@ -73,7 +81,8 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
     })
 
     const isHrAdmin = user?.role === 'hospital_admin' || user?.role === 'super_admin'
-    const hrActive = location.pathname.startsWith('/staffs')
+    const hrActive  = location.pathname.startsWith('/staffs')
+    const radActive = location.pathname.startsWith('/radiology')
 
     const renderLink = (link: NavItem, indent = false) => {
         const Icon = link.icon
@@ -145,32 +154,40 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
         )
     }
 
-    const renderHrAccordion = () => {
-        if (!isOpen) {
-            return HR_LINKS.map(link => renderLink(link))
-        }
+    const renderAccordionSection = (
+        links: NavItem[],
+        label: string,
+        AccIcon: React.ElementType,
+        open: boolean,
+        setOpen: (v: (p: boolean) => boolean) => void,
+        active: boolean,
+    ) => {
+        if (!isOpen) return links.map(link => renderLink(link))
         return (
             <div>
                 <button
-                    onClick={() => setHrOpen(o => !o)}
+                    onClick={() => setOpen(o => !o)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
-                        ${hrActive
+                        ${active
                             ? 'text-emerald-700 dark:text-white'
                             : 'text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc]'
                         }`}
                 >
-                    <ClipboardList className={`w-4 h-4 shrink-0 ${hrActive ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
-                    <span className="flex-1 text-left truncate">HR &amp; Staff</span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${hrOpen ? 'rotate-180' : ''} opacity-50`} />
+                    <AccIcon className={`w-4 h-4 shrink-0 ${active ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
+                    <span className="flex-1 text-left truncate">{label}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''} opacity-50`} />
                 </button>
-                {hrOpen && (
+                {open && (
                     <div className="mt-0.5 space-y-0.5">
-                        {HR_LINKS.map(link => renderLink(link, true))}
+                        {links.map(link => renderLink(link, true))}
                     </div>
                 )}
             </div>
         )
     }
+
+    const renderHrAccordion = () =>
+        renderAccordionSection(HR_LINKS, 'HR & Staff', ClipboardList, hrOpen, setHrOpen, hrActive)
 
     return (
         <aside
@@ -206,6 +223,16 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
                     </div>
                 )}
                 {filteredManagementLinks.map(link => renderLink(link))}
+
+                {/* Radiology — visible to all roles */}
+                <>
+                    {isOpen && (
+                        <div className="px-3 mb-2 mt-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
+                            Radiology
+                        </div>
+                    )}
+                    {renderAccordionSection(RADIOLOGY_LINKS, 'Radiology', ScanLine, radOpen, setRadOpen, radActive)}
+                </>
 
                 {isHrAdmin && (
                     <>

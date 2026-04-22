@@ -99,6 +99,7 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }: StaffFor
                                     <select required value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className={inputClasses}>
                                         <option value="STAFF">General Staff</option>
                                         <option value="HOSPITAL_ADMIN">Hospital Administrator</option>
+                                        <option value="TECHNICIAN">Technician</option>
                                     </select>
                                     <p className="text-[10px] text-slate-500 mt-1">Hospital Administrators have full authority over all modules.</p>
                                 </div>

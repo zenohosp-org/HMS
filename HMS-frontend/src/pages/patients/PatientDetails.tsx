@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import api, { patientApi, recordApi, appointmentsApi, type Patient, type PatientRecord, type Appointment } from '@/utils/api'
+import api, { patientApi, recordApi, appointmentsApi, radiologyApi, type Patient, type PatientRecord, type Appointment, type RadiologyOrder } from '@/utils/api'
 import { useNotification } from '@/context/NotificationContext'
 import { useAuth } from '@/context/AuthContext'
 import { calcAge, formatDate, formatDateTime } from '@/utils/validators'
@@ -9,7 +9,7 @@ import {
     Loader2, ArrowLeft, User, FileText, CreditCard, Phone,
     Mail, MapPin, Droplets, Calendar, Clock, Edit2,
     ReceiptText, ClipboardList, ChevronRight, Activity,
-    AlertCircle, Stethoscope, Plus, X, MoreHorizontal, UserX, Pencil, Bed, CalendarClock
+    AlertCircle, Stethoscope, Plus, X, MoreHorizontal, UserX, Pencil, Bed, CalendarClock, ScanLine
 } from 'lucide-react'
 
 // ─── Type helpers ──────────────────────────────────────────────────────────────
@@ -206,7 +206,7 @@ function AddRecordForm({ patientId, hospitalId, onSaved, onCancel }: {
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'records' | 'appointments'
+type Tab = 'overview' | 'records' | 'appointments' | 'radiology'
 
 export default function PatientDetails() {
     const { id } = useParams<{ id: string }>()
@@ -224,6 +224,8 @@ export default function PatientDetails() {
     const [tab, setTab] = useState<Tab>('overview')
     const [showAddRecord, setShowAddRecord] = useState(false)
     const [menuOpen, setMenuOpen] = useState(false)
+    const [radiologyOrders, setRadiologyOrders] = useState<RadiologyOrder[]>([])
+    const [radiologyLoading, setRadiologyLoading] = useState(false)
 
     const loadPatient = () => {
         if (!id || !user?.hospitalId) return
@@ -259,9 +261,19 @@ export default function PatientDetails() {
             .finally(() => setAppointmentsLoading(false))
     }
 
+    const loadRadiology = () => {
+        if (!id) return
+        setRadiologyLoading(true)
+        radiologyApi.getByPatient(Number(id))
+            .then(setRadiologyOrders)
+            .catch(console.error)
+            .finally(() => setRadiologyLoading(false))
+    }
+
     useEffect(() => { loadPatient() }, [id, user?.hospitalId])
     useEffect(() => { loadRecords() }, [id, user?.hospitalId])
     useEffect(() => { loadAppointments() }, [id])
+    useEffect(() => { loadRadiology() }, [id])
 
     const handleUpdate = async (data: Partial<Patient>) => {
         await patientApi.update(Number(id), data)
@@ -454,7 +466,7 @@ export default function PatientDetails() {
 
                 {/* Tab bar */}
                 <div className="flex items-center gap-1 px-6 pt-5 pb-0 border-b border-slate-200 dark:border-[#1e1e1e] shrink-0">
-                    {(['overview', 'appointments', 'records'] as Tab[]).map(t => (
+                    {(['overview', 'appointments', 'records', 'radiology'] as Tab[]).map(t => (
                         <button
                             key={t}
                             onClick={() => setTab(t)}
@@ -465,6 +477,7 @@ export default function PatientDetails() {
                         >
                             {t === 'records' ? `Records ${!recordsLoading ? `(${records.length})` : ''}`
                                 : t === 'appointments' ? `Appointments ${!appointmentsLoading ? `(${appointments.length})` : ''}`
+                                : t === 'radiology' ? `Radiology ${!radiologyLoading ? `(${radiologyOrders.length})` : ''}`
                                     : 'Overview'}
                         </button>
                     ))}
@@ -766,6 +779,83 @@ export default function PatientDetails() {
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── RADIOLOGY TAB ── */}
+                    {tab === 'radiology' && (
+                        <div className="w-full max-w-5xl space-y-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <div>
+                                    <h3 className="font-semibold text-slate-800 dark:text-[#e5e5e5]">Radiology History</h3>
+                                    <p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">
+                                        All imaging investigations for {patient.firstName}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {radiologyLoading ? (
+                                <div className="flex justify-center py-16">
+                                    <Loader2 className="w-7 h-7 animate-spin text-[#444444]" />
+                                </div>
+                            ) : radiologyOrders.length === 0 ? (
+                                <div className="py-16 text-center">
+                                    <ScanLine className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" />
+                                    <p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No radiology orders</p>
+                                    <p className="text-xs text-slate-400 dark:text-[#444444] mt-1">Orders created from the Radiology Queue will appear here.</p>
+                                </div>
+                            ) : (
+                                <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl overflow-hidden">
+                                    <div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">
+                                        {radiologyOrders.map(order => {
+                                            const statusCls = order.status === 'REPORT_GENERATED'
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+                                                : order.status === 'AWAITING_REPORT'
+                                                ? 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20'
+                                                : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
+                                            const statusLabel = order.status === 'REPORT_GENERATED' ? 'Report Ready'
+                                                : order.status === 'AWAITING_REPORT' ? 'Awaiting Report'
+                                                : 'Pending Scan'
+                                            return (
+                                                <div key={order.id} className="px-5 py-4 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 flex items-center justify-center shrink-0">
+                                                            <ScanLine className="w-4 h-4 text-violet-500 dark:text-violet-400" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{order.serviceName}</p>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                {order.referredByName && (
+                                                                    <p className="text-xs text-slate-400 dark:text-[#555555]">by {order.referredByName}</p>
+                                                                )}
+                                                                <p className="text-xs text-slate-300 dark:text-[#444444]">·</p>
+                                                                <p className="text-xs text-slate-400 dark:text-[#555555]">
+                                                                    {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${statusCls}`}>
+                                                            {statusLabel}
+                                                        </span>
+                                                        {order.status === 'REPORT_GENERATED' && order.id && (
+                                                            <a
+                                                                href={`/radiology/reports/${order.id}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1"
+                                                            >
+                                                                View Report
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
                                 </div>
                             )}
                         </div>

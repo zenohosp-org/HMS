@@ -434,6 +434,75 @@ export const roomLogsApi = {
     },
 }
 
+// ── Radiology API ────────────────────────────────────────────────────────────
+
+export interface RadiologyOrder {
+    id: number
+    hospitalId: string
+    patientId: number
+    patientName: string
+    patientMrn: string
+    serviceName: string
+    specializationName?: string
+    referredByName?: string
+    technicianId?: string
+    technicianName?: string
+    priority: 'ROUTINE' | 'URGENT' | 'STAT'
+    status: 'PENDING_SCAN' | 'AWAITING_REPORT' | 'REPORT_GENERATED'
+    scheduledDate?: string
+    billNo?: string
+    scannedAt?: string
+    reportedAt?: string
+    findings?: string
+    observation?: string
+    reportId?: string
+    createdByName?: string
+    createdAt: string
+}
+
+export interface RadiologyStats {
+    pendingScan: number
+    awaitingReport: number
+    reportGenerated: number
+}
+
+export const radiologyApi = {
+    list: async (hospitalId: string, status?: string): Promise<RadiologyOrder[]> => {
+        const params: Record<string, string> = { hospitalId }
+        if (status) params.status = status
+        const { data } = await api.get('/radiology', { params })
+        return data
+    },
+    get: async (id: number): Promise<RadiologyOrder> => {
+        const { data } = await api.get(`/radiology/${id}`)
+        return data
+    },
+    getByPatient: async (patientId: number): Promise<RadiologyOrder[]> => {
+        const { data } = await api.get(`/radiology/patient/${patientId}`)
+        return data
+    },
+    getStats: async (hospitalId: string): Promise<RadiologyStats> => {
+        const { data } = await api.get('/radiology/stats', { params: { hospitalId } })
+        return data
+    },
+    create: async (payload: {
+        hospitalId: string; patientId: number; serviceName: string
+        specializationName?: string; technicianId?: string; technicianName?: string
+        priority?: string; scheduledDate?: string; billNo?: string
+    }): Promise<RadiologyOrder> => {
+        const { data } = await api.post('/radiology', payload)
+        return data
+    },
+    markScanned: async (id: number): Promise<RadiologyOrder> => {
+        const { data } = await api.patch(`/radiology/${id}/scan`)
+        return data
+    },
+    generateReport: async (id: number, findings: string, observation: string): Promise<RadiologyOrder> => {
+        const { data } = await api.patch(`/radiology/${id}/report`, { findings, observation })
+        return data
+    },
+}
+
 // ── Staff Shifts API ─────────────────────────────────────────────────────────
 
 export interface StaffShift {
