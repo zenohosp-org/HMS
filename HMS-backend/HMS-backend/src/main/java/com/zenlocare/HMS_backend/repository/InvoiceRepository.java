@@ -10,5 +10,6 @@ import java.util.UUID;
 public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     List<Invoice> findByHospitalId(UUID hospitalId);
     List<Invoice> findByPatientId(Integer patientId);
+    List<Invoice> findByPatientIdOrderByCreatedAtDesc(Integer patientId);
     Invoice findByInvoiceNumber(String invoiceNumber);
 }

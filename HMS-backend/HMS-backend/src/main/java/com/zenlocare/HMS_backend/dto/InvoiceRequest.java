@@ -18,12 +18,14 @@ public class InvoiceRequest {
     private BigDecimal discount;
     private BigDecimal total;
     private String notes;
+    private String paymentMethod;
     private InvoiceStatus status;
     private List<InvoiceItemRequest> items;
 
     @Data
     public static class InvoiceItemRequest {
         private UUID serviceId;
+        private String itemType;
         private String description;
         private Integer quantity;
         private BigDecimal unitPrice;

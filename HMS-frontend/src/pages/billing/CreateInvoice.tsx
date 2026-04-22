@@ -1,365 +1,633 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { 
-    patientApi, 
-    specializationApi, 
-    appointmentsApi, 
-    hospitalServiceApi, 
-    invoiceApi,
-    type Patient, 
-    type Specialization, 
-    type Appointment, 
-    type HospitalService,
-    type Invoice,
-    type InvoiceItem
-} from '@/utils/api'
-import { generateInvoiceNumber, formatDate } from '@/utils/validators'
 import { useNotification } from '@/context/NotificationContext'
-import { Printer, Save, Plus, Trash2, Search, Calendar, Stethoscope, ChevronDown, History as HistoryIcon } from 'lucide-react'
-import SearchSelect from '@/components/ui/SearchSelect'
+import {
+    patientApi, invoiceApi, doctorsApi, hospitalServiceApi,
+    type Patient, type InvoiceItem, type ItemType,
+    type SmartBillingSuggestion, type HospitalService, type DoctorUser
+} from '@/utils/api'
+import { generateInvoiceNumber } from '@/utils/validators'
+import {
+    ArrowLeft, Info, Search, Plus, Trash2, Printer,
+    BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench, Loader2, Sparkles
+} from 'lucide-react'
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance', 'Cheque']
+const GST_RATE = 0.18 // 18% on medicines only
+
+function fmt(n: number) {
+    return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+type ItemTypeMeta = { label: string; color: string; bg: string; icon: React.ReactNode }
+const TYPE_META: Record<ItemType, ItemTypeMeta> = {
+    MEDICINE:     { label: 'Medicine',     color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill className="w-3 h-3" /> },
+    LAB_TEST:     { label: 'Lab Test',     color: 'text-violet-700 dark:text-violet-400',   bg: 'bg-violet-100 dark:bg-violet-500/20',   icon: <FlaskConical className="w-3 h-3" /> },
+    CONSULTATION: { label: 'Consultation', color: 'text-blue-700 dark:text-blue-400',       bg: 'bg-blue-100 dark:bg-blue-500/20',       icon: <Stethoscope className="w-3 h-3" /> },
+    ROOM_CHARGE:  { label: 'Room',         color: 'text-orange-700 dark:text-orange-400',   bg: 'bg-orange-100 dark:bg-orange-500/20',   icon: <BedDouble className="w-3 h-3" /> },
+    RADIOLOGY:    { label: 'Radiology',    color: 'text-violet-700 dark:text-violet-400',   bg: 'bg-violet-100 dark:bg-violet-500/20',   icon: <ScanLine className="w-3 h-3" /> },
+    CUSTOM:       { label: 'Custom',       color: 'text-slate-600 dark:text-[#aaaaaa]',     bg: 'bg-slate-100 dark:bg-[#222222]',        icon: <Wrench className="w-3 h-3" /> },
+}
+
+function TypeBadge({ type }: { type: ItemType }) {
+    const m = TYPE_META[type]
+    return (
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${m.color} ${m.bg}`}>
+            {m.icon} {m.label}
+        </span>
+    )
+}
+
+// ── component ─────────────────────────────────────────────────────────────────
 
 export default function CreateInvoice() {
     const { user } = useAuth()
     const { notify } = useNotification()
     const navigate = useNavigate()
     const [params] = useSearchParams()
-    
-    // Core Data
-    const [patient, setPatient] = useState<Patient | null>(null)
-    const [specialization, setSpecialization] = useState<Specialization | null>(null)
-    const [appointment, setAppointment] = useState<Appointment | null>(null)
-    const [services, setServices] = useState<HospitalService[]>([])
-    
-    // Invoice State
-    const [invoiceNo] = useState(generateInvoiceNumber())
-    const [today] = useState(formatDate(new Date().toISOString()))
-    const [items, setItems] = useState<Partial<InvoiceItem>[]>([
-        { description: '', quantity: 1, unitPrice: 0, totalPrice: 0 }
-    ])
-    const [notes, setNotes] = useState('')
-    const [isSaving, setIsSaving] = useState(false)
 
-    // Load initial data
+    // Patient
+    const [patientSearch, setPatientSearch] = useState('')
+    const [patientResults, setPatientResults] = useState<Patient[]>([])
+    const [searching, setSearching] = useState(false)
+    const [patient, setPatient] = useState<Patient | null>(null)
+
+    // Smart suggestions
+    const [suggestions, setSuggestions] = useState<SmartBillingSuggestion | null>(null)
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+    const [addedSuggestions, setAddedSuggestions] = useState<Set<string>>(new Set())
+
+    // Referred by (doctor)
+    const [doctors, setDoctors] = useState<DoctorUser[]>([])
+    const [referredById, setReferredById] = useState('')
+
+    // Services for search
+    const [services, setServices] = useState<HospitalService[]>([])
+    const [serviceSearch, setServiceSearch] = useState('')
+    const [serviceResults, setServiceResults] = useState<HospitalService[]>([])
+
+    // Invoice items
+    const [items, setItems] = useState<(InvoiceItem & { key: number })[]>([])
+    const [nextKey, setNextKey] = useState(0)
+
+    // Payment
+    const [discountPct, setDiscountPct] = useState(0)
+    const [paymentMethod, setPaymentMethod] = useState('Cash')
+    const [notes, setNotes] = useState('')
+    const [saving, setSaving] = useState(false)
+
+    const [invoiceNo] = useState(generateInvoiceNumber())
+
+    // Load doctors + services
+    useEffect(() => {
+        if (!user?.hospitalId) return
+        doctorsApi.list(user.hospitalId).then(setDoctors).catch(() => {})
+        hospitalServiceApi.list(user.hospitalId).then(setServices).catch(() => {})
+    }, [user?.hospitalId])
+
+    // Pre-fill patient from URL param
     useEffect(() => {
         const pId = params.get('patientId')
         if (pId && user?.hospitalId) {
-            patientApi.get(Number(pId), user.hospitalId).then(setPatient).catch(console.error)
-        }
-        if (user?.hospitalId) {
-            hospitalServiceApi.list(user.hospitalId).then(setServices).catch(console.error)
+            patientApi.get(Number(pId), user.hospitalId).then(p => selectPatient(p)).catch(() => {})
         }
     }, [params, user?.hospitalId])
 
-    // Load patient appointments when patient is selected
-    const [patientAppointments, setPatientAppointments] = useState<Appointment[]>([])
+    // Patient search debounce
     useEffect(() => {
-        if (patient?.id) {
-            appointmentsApi.getByPatient(patient.id).then(setPatientAppointments).catch(console.error)
-        } else {
-            setPatientAppointments([])
+        if (!patientSearch.trim() || patientSearch.length < 2 || !user?.hospitalId) {
+            setPatientResults([])
+            return
         }
-    }, [patient])
+        const t = setTimeout(async () => {
+            setSearching(true)
+            try { setPatientResults((await patientApi.search(user.hospitalId!, patientSearch)).slice(0, 6)) }
+            catch { setPatientResults([]) }
+            finally { setSearching(false) }
+        }, 300)
+        return () => clearTimeout(t)
+    }, [patientSearch, user?.hospitalId])
 
-    // Calculations
-    const subtotal = useMemo(() => items.reduce((s, i) => s + (i.totalPrice || 0), 0), [items])
-    const taxRate = 0.08 // 8% as per reference
-    const tax = subtotal * taxRate
-    const total = subtotal + tax
+    // Service search
+    useEffect(() => {
+        if (!serviceSearch.trim()) { setServiceResults([]); return }
+        const q = serviceSearch.toLowerCase()
+        setServiceResults(services.filter(s => s.isActive && s.name.toLowerCase().includes(q)).slice(0, 8))
+    }, [serviceSearch, services])
 
-    // Handlers
-    const addItem = () => setItems(p => [...p, { description: '', quantity: 1, unitPrice: 0, totalPrice: 0 }])
-    const removeItem = (idx: number) => setItems(p => p.filter((_, i) => i !== idx))
-    
-    const updateItem = (idx: number, updates: Partial<InvoiceItem>) => {
-        setItems(p => p.map((item, i) => {
-            if (i !== idx) return item
-            const newItem = { ...item, ...updates }
+    const selectPatient = async (p: Patient) => {
+        setPatient(p)
+        setPatientResults([])
+        setPatientSearch('')
+        setAddedSuggestions(new Set())
+        setSuggestions(null)
+        setLoadingSuggestions(true)
+        try {
+            const s = await invoiceApi.getSmartSuggestions(p.id!)
+            setSuggestions(s)
+        } catch { setSuggestions(null) }
+        finally { setLoadingSuggestions(false) }
+    }
+
+    const addItem = (item: Omit<InvoiceItem, 'id'>, suggestionKey?: string) => {
+        const key = nextKey
+        setNextKey(k => k + 1)
+        setItems(prev => [...prev, { ...item, key }])
+        if (suggestionKey) setAddedSuggestions(prev => new Set([...prev, suggestionKey]))
+    }
+
+    const addBlankItem = () => addItem({ itemType: 'CUSTOM', description: '', quantity: 1, unitPrice: 0, totalPrice: 0 })
+
+    const removeItem = (key: number) => setItems(prev => prev.filter(i => i.key !== key))
+
+    const updateItem = (key: number, updates: Partial<InvoiceItem>) => {
+        setItems(prev => prev.map(item => {
+            if (item.key !== key) return item
+            const merged = { ...item, ...updates }
             if (updates.quantity !== undefined || updates.unitPrice !== undefined) {
-                newItem.totalPrice = (newItem.quantity || 0) * (newItem.unitPrice || 0)
+                merged.totalPrice = (merged.quantity || 0) * (merged.unitPrice || 0)
             }
-            return newItem
+            return merged
         }))
     }
 
-    const handleServiceSelect = (idx: number, service: HospitalService) => {
-        updateItem(idx, {
-            serviceId: service.id,
-            description: service.name,
-            unitPrice: service.price,
-            totalPrice: (items[idx].quantity || 1) * service.price
-        })
+    const addServiceItem = (s: HospitalService) => {
+        addItem({ itemType: 'LAB_TEST', serviceId: s.id, description: s.name, quantity: 1, unitPrice: s.price, totalPrice: s.price })
+        setServiceSearch('')
+        setServiceResults([])
     }
 
-    const handleSave = async (isPrint: boolean = false) => {
-        if (!patient || !user?.hospitalId) {
-            notify('Please select a patient first', 'warning')
-            return
-        }
-        if (items.some(i => !i.description || (i.totalPrice || 0) <= 0)) {
-            notify('Please complete all item details', 'error')
-            return
-        }
+    // Calculations
+    const subtotal = useMemo(() => items.reduce((s, i) => s + (i.totalPrice || 0), 0), [items])
+    const discountAmt = subtotal * (discountPct / 100)
+    const medicineTotal = items.filter(i => i.itemType === 'MEDICINE').reduce((s, i) => s + (i.totalPrice || 0), 0)
+    const gstOnMedicines = (medicineTotal - medicineTotal * (discountPct / 100)) * GST_RATE
+    const grandTotal = subtotal - discountAmt + gstOnMedicines
 
-        setIsSaving(true)
+    const hasSuggestions = suggestions && (
+        suggestions.roomCharge ||
+        suggestions.radiologyOrders.length > 0 ||
+        suggestions.appointments.length > 0
+    )
+
+    const handleSubmit = async () => {
+        if (!patient || !user?.hospitalId) { notify('Select a patient first', 'warning'); return }
+        if (items.length === 0) { notify('Add at least one item', 'warning'); return }
+        if (items.some(i => !i.description.trim())) { notify('Fill in all item descriptions', 'error'); return }
+
+        setSaving(true)
         try {
-            const payload: Partial<Invoice> = {
+            await invoiceApi.create({
                 invoiceNumber: invoiceNo,
                 hospitalId: user.hospitalId,
                 patientId: patient.id!,
-                appointmentId: appointment?.id,
-                specializationId: specialization?.id,
                 subtotal,
-                tax,
-                discount: 0,
-                total,
+                tax: gstOnMedicines,
+                discount: discountAmt,
+                total: grandTotal,
+                paymentMethod,
                 notes,
                 status: 'UNPAID',
                 items: items.map(i => ({
-                    description: i.description!,
-                    quantity: i.quantity!,
-                    unitPrice: i.unitPrice!,
-                    totalPrice: i.totalPrice!,
-                    serviceId: i.serviceId
-                }))
-            }
-            await invoiceApi.create(payload)
-            notify('Invoice generated and stored successfully!', 'success')
-            if (isPrint) window.print()
-        } catch (err) {
-            notify('Failed to save invoice', 'error')
+                    itemType: i.itemType,
+                    serviceId: i.serviceId,
+                    description: i.description,
+                    quantity: i.quantity,
+                    unitPrice: i.unitPrice,
+                    totalPrice: i.totalPrice,
+                })),
+            })
+            notify('Invoice created successfully', 'success')
+            window.print()
+        } catch {
+            notify('Failed to create invoice', 'error')
         } finally {
-            setIsSaving(false)
+            setSaving(false)
         }
     }
 
+    const inputCls = 'w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] px-4 py-2.5 text-sm text-slate-900 dark:text-[#dddddd] focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all'
+    const sectionCls = 'bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl p-6'
+
     return (
-        <div className="space-y-6 max-w-5xl mx-auto pb-20">
-            {/* Header / Controls */}
-            <div className="no-print flex items-center justify-between pb-4 border-b border-slate-200 dark:border-[#222222]">
+        <>
+        <div className="max-w-3xl mx-auto space-y-5 pb-24 no-print">
+
+            {/* ── Header ── */}
+            <div className="flex items-center gap-3">
+                <button onClick={() => navigate(-1)} className="p-2 rounded-xl border border-slate-200 dark:border-[#2a2a2a] text-slate-500 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
+                    <ArrowLeft className="w-4 h-4" />
+                </button>
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Create Invoice</h1>
-                    <p className="text-sm text-slate-500 font-medium">Generate and track hospital bills</p>
-                </div>
-                <div className="flex gap-3">
-                    {user?.role === 'hospital_admin' && (
-                        <button 
-                            className="btn-secondary flex items-center gap-2" 
-                            onClick={() => navigate('/billing/invoices')}
-                        >
-                            <HistoryIcon className="w-4 h-4" /> View Invoices
-                        </button>
-                    )}
-                    <button 
-                        className="btn-primary flex items-center gap-2" 
-                        onClick={() => handleSave(true)}
-                        disabled={isSaving}
-                    >
-                        <Printer className="w-4 h-4" /> Save & Print
-                    </button>
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">Create New Invoice</h1>
+                    <p className="text-xs text-slate-400 dark:text-[#666666] mt-0.5">Smart billing with automatic pending order detection</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 no-print">
-                {/* Selectors Panel */}
-                <div className="lg:col-span-1 space-y-4">
-                    <div className="bg-white dark:bg-[#111111] p-5 rounded-2xl border border-slate-200 dark:border-[#222222] shadow-sm space-y-4">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-[#aaaaaa] uppercase tracking-wider">Billing Context</h3>
-                        
-                        <SearchSelect<Patient>
-                            label="Patient"
-                            value={patient}
-                            onChange={setPatient}
-                            onSearch={async (q) => patientApi.search(user?.hospitalId!, q)}
-                            getDisplayValue={(p) => `${p.firstName} ${p.lastName}`}
-                            renderItem={(p) => (
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#2a2a2a] flex items-center justify-center font-bold text-xs">
-                                        {p.firstName[0]}{p.lastName[0]}
+            {/* ── Smart billing info banner ── */}
+            <div className="flex gap-3 px-4 py-3.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
+                <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                    <p className="font-semibold">Smart Billing System</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400">When you select a patient, this system will automatically detect:</p>
+                    <ul className="text-xs text-blue-600 dark:text-blue-400 list-disc list-inside space-y-0.5">
+                        <li><span className="font-medium">Active Room Charges</span> — current room assignment with daily rate</li>
+                        <li><span className="font-medium">Pending Radiology Orders</span> — scans awaiting completion</li>
+                        <li><span className="font-medium">Recent Consultations</span> — completed appointments in last 60 days</li>
+                    </ul>
+                </div>
+            </div>
+
+            {/* ── Select Patient ── */}
+            <div className={sectionCls}>
+                <h2 className="text-sm font-bold text-slate-700 dark:text-[#cccccc] mb-4 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-[#222222] flex items-center justify-center text-[11px] font-bold text-slate-500">1</span>
+                    Select Patient
+                </h2>
+                {patient ? (
+                    <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10">
+                        <div>
+                            <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{patient.firstName} {patient.lastName}</p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5">{patient.mrn} {patient.phone ? `· ${patient.phone}` : ''}</p>
+                        </div>
+                        <button onClick={() => { setPatient(null); setSuggestions(null) }} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">Change</button>
+                    </div>
+                ) : (
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            className={`${inputCls} pl-9`}
+                            placeholder="Search patient by name or MRN…"
+                            value={patientSearch}
+                            onChange={e => setPatientSearch(e.target.value)}
+                        />
+                        {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-slate-400" />}
+                        {patientResults.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-xl shadow-xl z-20 overflow-hidden">
+                                {patientResults.map(p => (
+                                    <button key={p.id} type="button" onClick={() => selectPatient(p)}
+                                        className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0">
+                                        <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{p.firstName} {p.lastName}</p>
+                                        <p className="text-xs text-slate-400 dark:text-[#555555]">{p.mrn}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* ── Smart Suggestions ── */}
+            {patient && (loadingSuggestions || hasSuggestions) && (
+                <div className={sectionCls}>
+                    <h2 className="text-sm font-bold text-slate-700 dark:text-[#cccccc] mb-4 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        Detected Items
+                        {loadingSuggestions && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400 ml-1" />}
+                    </h2>
+                    {!loadingSuggestions && suggestions && (
+                        <div className="space-y-2">
+                            {/* Room charge */}
+                            {suggestions.roomCharge && (() => {
+                                const r = suggestions.roomCharge!
+                                const key = `room-${r.roomNumber}`
+                                const added = addedSuggestions.has(key)
+                                return (
+                                    <div key={key} className="flex items-center justify-between px-4 py-3 rounded-xl border border-orange-200 dark:border-orange-500/20 bg-orange-50 dark:bg-orange-500/5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center">
+                                                <BedDouble className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">Room {r.roomNumber} — {r.roomType.replace('_', ' ')}</p>
+                                                <p className="text-xs text-slate-400 dark:text-[#666666]">{fmt(r.pricePerDay)}/day × {r.daysStayed} day{r.daysStayed !== 1 ? 's' : ''} = <span className="font-semibold text-slate-600 dark:text-[#aaaaaa]">{fmt(r.totalCharge)}</span></p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => !added && addItem({ itemType: 'ROOM_CHARGE', description: `Room ${r.roomNumber} (${r.roomType}) — ${r.daysStayed} day${r.daysStayed !== 1 ? 's' : ''}`, quantity: Number(r.daysStayed), unitPrice: r.pricePerDay, totalPrice: r.totalCharge }, key)}
+                                            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default' : 'bg-orange-500 hover:bg-orange-600 text-white'}`}
+                                        >{added ? 'Added' : '+ Add'}</button>
                                     </div>
-                                    <div>
-                                        <div className="font-bold text-sm text-slate-900 dark:text-white">{p.firstName} {p.lastName}</div>
-                                        <div className="text-xs text-slate-500">{p.mrn}</div>
+                                )
+                            })()}
+
+                            {/* Radiology */}
+                            {suggestions.radiologyOrders.map(r => {
+                                const key = `radiology-${r.orderId}`
+                                const added = addedSuggestions.has(key)
+                                return (
+                                    <div key={key} className="flex items-center justify-between px-4 py-3 rounded-xl border border-violet-200 dark:border-violet-500/20 bg-violet-50 dark:bg-violet-500/5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
+                                                <ScanLine className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{r.serviceName}</p>
+                                                <p className="text-xs text-slate-400 dark:text-[#666666]">{r.status.replace('_', ' ')} {r.scheduledDate ? `· ${r.scheduledDate}` : ''}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => !added && addItem({ itemType: 'RADIOLOGY', description: r.serviceName, quantity: 1, unitPrice: 0, totalPrice: 0 }, key)}
+                                            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default' : 'bg-violet-500 hover:bg-violet-600 text-white'}`}
+                                        >{added ? 'Added' : '+ Add'}</button>
                                     </div>
+                                )
+                            })}
+
+                            {/* Appointments */}
+                            {suggestions.appointments.map(a => {
+                                const key = `appt-${a.appointmentId}`
+                                const added = addedSuggestions.has(key)
+                                return (
+                                    <div key={key} className="flex items-center justify-between px-4 py-3 rounded-xl border border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center">
+                                                <Stethoscope className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{a.doctorName}{a.specialization ? ` — ${a.specialization}` : ''}</p>
+                                                <p className="text-xs text-slate-400 dark:text-[#666666]">Consultation · {a.apptDate} · <span className="font-semibold text-slate-600 dark:text-[#aaaaaa]">{fmt(a.consultationFee)}</span></p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => !added && addItem({ itemType: 'CONSULTATION', description: `Consultation — ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ''}`, quantity: 1, unitPrice: a.consultationFee, totalPrice: a.consultationFee }, key)}
+                                            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
+                                        >{added ? 'Added' : '+ Add'}</button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── Referred By ── */}
+            <div className={sectionCls}>
+                <h2 className="text-sm font-bold text-slate-700 dark:text-[#cccccc] mb-4 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-[#222222] flex items-center justify-center text-[11px] font-bold text-slate-500">2</span>
+                    Referred By <span className="text-xs font-normal text-slate-400 dark:text-[#666666]">(Optional)</span>
+                </h2>
+                <div>
+                    <label className="block text-xs text-slate-500 dark:text-[#888888] mb-1.5">Doctor / Referral</label>
+                    <select className={inputCls} value={referredById} onChange={e => setReferredById(e.target.value)}>
+                        <option value="">Self / Walk-in (No Referral)</option>
+                        {doctors.map(d => (
+                            <option key={d.id} value={d.id}>{d.firstName} {d.lastName}{d.specialization ? ` — ${d.specialization}` : ''}</option>
+                        ))}
+                    </select>
+                    <p className="text-[11px] text-slate-400 dark:text-[#555555] mt-1">Leave as "Self / Walk-in" for direct billing without referral</p>
+                </div>
+            </div>
+
+            {/* ── Add Tests & Services ── */}
+            <div className={sectionCls}>
+                <h2 className="text-sm font-bold text-slate-700 dark:text-[#cccccc] mb-4 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-[#222222] flex items-center justify-center text-[11px] font-bold text-slate-500">3</span>
+                    Add Tests &amp; Services
+                </h2>
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Search services */}
+                    <div>
+                        <label className="block text-xs text-slate-500 dark:text-[#888888] mb-1.5 flex items-center gap-1.5">
+                            <FlaskConical className="w-3.5 h-3.5 text-violet-500" /> Search Lab / Services
+                        </label>
+                        <div className="relative">
+                            <input
+                                className={inputCls}
+                                placeholder="Search by test name, code…"
+                                value={serviceSearch}
+                                onChange={e => setServiceSearch(e.target.value)}
+                            />
+                            {serviceResults.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-xl shadow-xl z-20 overflow-hidden">
+                                    {serviceResults.map(s => (
+                                        <button key={s.id} type="button" onClick={() => addServiceItem(s)}
+                                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0">
+                                            <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{s.name}</p>
+                                            <p className="text-xs text-slate-400">{fmt(s.price)}</p>
+                                        </button>
+                                    ))}
                                 </div>
                             )}
-                            placeholder="Find patient..."
-                        />
-
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Specialization (Optional)</label>
-                            <div className="relative group">
-                                <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <select 
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm appearance-none outline-none focus:ring-2 focus:ring-emerald-500/20"
-                                    value={specialization?.id || ''}
-                                    onChange={(e) => {
-                                        const s = services.find(srv => srv.specializationId === e.target.value) // Simplified for mock
-                                        setSpecialization({ id: e.target.value } as any)
-                                    }}
-                                >
-                                    <option value="">General / All</option>
-                                    {/* Map actual specializations here if fetched */}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Link Appointment</label>
-                            <div className="relative group">
-                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <select 
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm appearance-none outline-none focus:ring-2 focus:ring-emerald-500/20"
-                                    value={appointment?.id || ''}
-                                    onChange={(e) => setAppointment(patientAppointments.find(a => a.id === e.target.value) || null)}
-                                    disabled={!patient}
-                                >
-                                    <option value="">No appointment linked</option>
-                                    {patientAppointments.map(a => (
-                                        <option key={a.id} value={a.id}>{a.apptDate} - {a.doctorName}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                            </div>
+                            {!serviceResults.length && serviceSearch && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-xl shadow-xl z-20 p-4 text-center text-xs text-slate-400">
+                                    No services found. Add as custom item below.
+                                </div>
+                            )}
                         </div>
                     </div>
-                </div>
-
-                {/* Items & Services Table - Premium Layout */}
-                <div className="lg:col-span-2 bg-white dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden p-6 transition-all">
-                    <div className="flex items-center justify-between mb-8">
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Items & Services</h2>
-                        <button className="btn-secondary text-xs !bg-slate-900 dark:!bg-white !text-white dark:!text-slate-900 border-none px-4 py-2" onClick={addItem}>
-                            <Plus className="w-3.5 h-3.5" /> Add Item
+                    {/* Medicine search placeholder */}
+                    <div>
+                        <label className="block text-xs text-slate-500 dark:text-[#888888] mb-1.5 flex items-center gap-1.5">
+                            <Pill className="w-3.5 h-3.5 text-emerald-500" /> Add Medicine
+                        </label>
+                        <button
+                            onClick={() => addItem({ itemType: 'MEDICINE', description: '', quantity: 1, unitPrice: 0, totalPrice: 0 })}
+                            className="w-full px-4 py-2.5 rounded-xl border border-dashed border-emerald-300 dark:border-emerald-500/30 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors text-left"
+                        >
+                            + Add medicine item manually
                         </button>
                     </div>
+                </div>
+            </div>
 
-                    <div className="space-y-6">
-                        {/* Table Header */}
-                        <div className="grid grid-cols-12 gap-4 px-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-[#222222] pb-2">
-                            <div className="col-span-6">Description</div>
-                            <div className="col-span-2 text-center">Quantity</div>
-                            <div className="col-span-2 text-right">Unit Price</div>
-                            <div className="col-span-2 text-right pr-8">Total</div>
+            {/* ── Invoice Items ── */}
+            <div className={sectionCls}>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-sm font-bold text-slate-700 dark:text-[#cccccc] flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-[#222222] flex items-center justify-center text-[11px] font-bold text-slate-500">4</span>
+                        Invoice Items
+                    </h2>
+                    <button onClick={addBlankItem} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
+                        <Plus className="w-3 h-3" /> Add Custom Item
+                    </button>
+                </div>
+
+                {items.length === 0 ? (
+                    <div className="py-10 text-center text-sm text-slate-400 dark:text-[#555555] border-2 border-dashed border-slate-100 dark:border-[#222222] rounded-xl">
+                        No items yet — detect from patient or add manually above
+                    </div>
+                ) : (
+                    <>
+                        {/* Table header */}
+                        <div className="grid grid-cols-12 gap-3 px-2 pb-2 border-b border-slate-100 dark:border-[#1e1e1e]">
+                            <div className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Type</div>
+                            <div className="col-span-5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Description</div>
+                            <div className="col-span-2 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Quantity</div>
+                            <div className="col-span-2 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Unit Price (₹)</div>
+                            <div className="col-span-2 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Total (₹)</div>
                         </div>
 
-                        {/* Line Items */}
-                        <div className="space-y-4">
-                            {items.map((item, idx) => (
-                                <div key={idx} className="grid grid-cols-12 gap-4 items-start group">
-                                    <div className="col-span-6 space-y-2">
-                                        <select 
-                                            className="w-full bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:text-white transition-colors"
-                                            value={item.serviceId || ''}
-                                            onChange={(e) => {
-                                                const srv = services.find(s => s.id === e.target.value)
-                                                if (srv) handleServiceSelect(idx, srv)
-                                            }}
+                        <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
+                            {items.map(item => (
+                                <div key={item.key} className="grid grid-cols-12 gap-3 items-center py-2.5 group">
+                                    {/* Type */}
+                                    <div className="col-span-1">
+                                        <select
+                                            className="w-full text-[10px] rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-1.5 py-1 text-slate-700 dark:text-[#cccccc] focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                                            value={item.itemType ?? 'CUSTOM'}
+                                            onChange={e => updateItem(item.key, { itemType: e.target.value as ItemType })}
                                         >
-                                            <option value="">Select service or item</option>
-                                            {services.filter(s => !specialization || s.specializationId === specialization.id).map(s => (
-                                                <option key={s.id} value={s.id}>{s.name} - ₹{s.price}</option>
+                                            {(Object.keys(TYPE_META) as ItemType[]).map(t => (
+                                                <option key={t} value={t}>{TYPE_META[t].label}</option>
                                             ))}
                                         </select>
-                                        <input 
-                                            className="w-full bg-transparent border border-slate-100 dark:border-[#2a2a2a] rounded-lg px-3 py-2 text-[11px] text-slate-600 dark:text-slate-400 placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:border-emerald-500"
-                                            placeholder="Additional description"
+                                    </div>
+                                    {/* Description */}
+                                    <div className="col-span-5">
+                                        <input
+                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                                            placeholder="Item description…"
                                             value={item.description}
-                                            onChange={(e) => updateItem(idx, { description: e.target.value })}
+                                            onChange={e => updateItem(item.key, { description: e.target.value })}
                                         />
                                     </div>
+                                    {/* Quantity */}
                                     <div className="col-span-2">
-                                        <input 
-                                            type="number" 
-                                            className="w-full bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg px-3 py-2 text-center text-xs outline-none focus:border-emerald-500 dark:text-white"
+                                        <input
+                                            type="number" min={1}
+                                            className="w-full text-center px-3 py-1.5 rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] focus:outline-none focus:ring-1 focus:ring-blue-500/30"
                                             value={item.quantity}
-                                            onChange={(e) => updateItem(idx, { quantity: parseInt(e.target.value) || 0 })}
+                                            onChange={e => updateItem(item.key, { quantity: parseInt(e.target.value) || 1 })}
                                         />
                                     </div>
+                                    {/* Unit price */}
                                     <div className="col-span-2">
-                                        <input 
-                                            type="number" 
-                                            className="w-full bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg px-3 py-2 text-right text-xs outline-none focus:border-emerald-500 dark:text-white"
+                                        <input
+                                            type="number" min={0}
+                                            className="w-full text-right px-3 py-1.5 rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] focus:outline-none focus:ring-1 focus:ring-blue-500/30"
                                             value={item.unitPrice}
-                                            onChange={(e) => updateItem(idx, { unitPrice: parseFloat(e.target.value) || 0 })}
+                                            onChange={e => updateItem(item.key, { unitPrice: parseFloat(e.target.value) || 0 })}
                                         />
                                     </div>
-                                    <div className="col-span-2 flex items-center justify-end gap-3 text-right">
-                                        <span className="text-sm font-bold text-slate-900 dark:text-white">₹{(item.totalPrice || 0).toFixed(2)}</span>
-                                        <button 
-                                            className="text-slate-400 hover:text-red-500 transition-colors bg-slate-100 dark:bg-white/5 p-1.5 rounded-lg opacity-0 group-hover:opacity-100"
-                                            onClick={() => removeItem(idx)}
-                                        >
+                                    {/* Total + delete */}
+                                    <div className="col-span-2 flex items-center justify-end gap-2">
+                                        <span className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{fmt(item.totalPrice || 0)}</span>
+                                        <button onClick={() => removeItem(item.key)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-300 hover:text-red-500 transition-all">
                                             <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </div>
 
-                    {/* Footer / Summary */}
-                    <div className="mt-12 flex justify-end">
-                        <div className="w-full max-w-[240px] space-y-3 pt-6 border-t border-slate-100 dark:border-[#222222]">
-                            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                <span>Subtotal:</span>
-                                <span>₹{subtotal.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                <span>Tax (8%):</span>
-                                <span>₹{tax.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                <span>Discount:</span>
-                                <span>-₹0.00</span>
-                            </div>
-                            <div className="flex justify-between text-lg font-bold border-t border-slate-100 dark:border-[#222222] pt-3 text-emerald-600 dark:text-emerald-400">
-                                <span>Total:</span>
-                                <span>₹{total.toFixed(2)}</span>
+                        {/* Summary */}
+                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-[#1e1e1e] flex justify-end">
+                            <div className="w-64 space-y-2.5">
+                                <div className="flex justify-between text-sm text-slate-500 dark:text-[#888888]">
+                                    <span>Subtotal:</span>
+                                    <span className="font-semibold">{fmt(subtotal)}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm text-slate-500 dark:text-[#888888]">
+                                    <span>Discount (%):</span>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number" min={0} max={100}
+                                            className="w-16 text-center px-2 py-1 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                                            value={discountPct}
+                                            onChange={e => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))}
+                                        />
+                                        <span className="text-red-500 font-semibold w-20 text-right">-{fmt(discountAmt)}</span>
+                                    </div>
+                                </div>
+                                {medicineTotal > 0 && (
+                                    <div className="flex justify-between text-sm text-slate-500 dark:text-[#888888]">
+                                        <span>GST on Medicines (18%):</span>
+                                        <span className="font-semibold">{fmt(gstOnMedicines)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-base font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-[#1e1e1e]">
+                                    <span>Grand Total:</span>
+                                    <span className="text-blue-600 dark:text-blue-400">{fmt(grandTotal)}</span>
+                                </div>
                             </div>
                         </div>
+                    </>
+                )}
+            </div>
+
+            {/* ── Payment Details ── */}
+            <div className={sectionCls}>
+                <h2 className="text-sm font-bold text-slate-700 dark:text-[#cccccc] mb-4 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-[#222222] flex items-center justify-center text-[11px] font-bold text-slate-500">5</span>
+                    Payment Details
+                </h2>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs text-slate-500 dark:text-[#888888] mb-1.5">Payment Method</label>
+                        <select className={inputCls} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                            {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs text-slate-500 dark:text-[#888888] mb-1.5">Notes <span className="font-normal">(optional)</span></label>
+                        <input className={inputCls} placeholder="Any additional notes…" value={notes} onChange={e => setNotes(e.target.value)} />
                     </div>
                 </div>
             </div>
 
-            {/* PRINT VIEW - Hidden on screen */}
-            <div className="print-only hidden print:block bg-white text-black p-8">
-                {/* Simplified Print Invoice Structure */}
-                <h1 className="text-2xl font-bold mb-4">{user?.hospitalName}</h1>
-                <p>Invoice #: {invoiceNo}</p>
-                <p>Date: {today}</p>
-                <div className="mt-8 border-t border-black pt-4">
-                    <p className="font-bold">Bill To:</p>
-                    <p>{patient?.firstName} {patient?.lastName}</p>
-                    <p>MRN: {patient?.mrn}</p>
+            {/* ── Generate Invoice button ── */}
+            <button
+                onClick={handleSubmit}
+                disabled={saving || !patient || items.length === 0}
+                className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-base flex items-center justify-center gap-2 transition-colors"
+            >
+                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Printer className="w-5 h-5" />}
+                {saving ? 'Generating…' : 'Generate Invoice & Print'}
+            </button>
+        </div>
+
+        {/* ── Print view ── */}
+        <div className="hidden print:block bg-white text-black p-8">
+            <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold">{user?.hospitalName}</h1>
+                    <p className="text-sm text-gray-500 mt-1">Tax Invoice</p>
                 </div>
-                <table className="w-full mt-8 border-collapse">
-                    <thead>
-                        <tr className="border-b-2 border-black">
-                            <th className="text-left py-2">Service</th>
-                            <th className="text-center py-2">Qty</th>
-                            <th className="text-right py-2">Rate</th>
-                            <th className="text-right py-2">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items.map((i, idx) => (
-                            <tr key={idx} className="border-b border-gray-200">
-                                <td className="py-2">{i.description}</td>
-                                <td className="text-center py-2">{i.quantity}</td>
-                                <td className="text-right py-2">₹{i.unitPrice?.toFixed(2)}</td>
-                                <td className="text-right py-2">₹{i.totalPrice?.toFixed(2)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                <div className="mt-8 text-right space-y-2">
-                    <p>Subtotal: ₹{subtotal.toFixed(2)}</p>
-                    <p>Tax (8%): ₹{tax.toFixed(2)}</p>
-                    <p className="font-bold text-xl">Grand Total: ₹{total.toFixed(2)}</p>
+                <div className="text-right text-sm">
+                    <p className="font-bold text-lg">#{invoiceNo}</p>
+                    <p className="text-gray-500">{new Date().toLocaleDateString('en-IN')}</p>
                 </div>
             </div>
+            <div className="border-t border-gray-200 pt-4 mb-6">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Bill To</p>
+                <p className="font-bold">{patient?.firstName} {patient?.lastName}</p>
+                <p className="text-sm text-gray-500">{patient?.mrn}</p>
+            </div>
+            <table className="w-full text-sm border-collapse">
+                <thead>
+                    <tr className="border-b-2 border-black">
+                        <th className="text-left py-2">Description</th>
+                        <th className="text-center py-2 w-20">Qty</th>
+                        <th className="text-right py-2 w-28">Unit Price</th>
+                        <th className="text-right py-2 w-28">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items.map((i, idx) => (
+                        <tr key={idx} className="border-b border-gray-100">
+                            <td className="py-2">{i.description}</td>
+                            <td className="text-center py-2">{i.quantity}</td>
+                            <td className="text-right py-2">{fmt(i.unitPrice)}</td>
+                            <td className="text-right py-2">{fmt(i.totalPrice)}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            <div className="mt-6 text-right space-y-1 text-sm">
+                <p>Subtotal: {fmt(subtotal)}</p>
+                {discountAmt > 0 && <p>Discount ({discountPct}%): -{fmt(discountAmt)}</p>}
+                {gstOnMedicines > 0 && <p>GST on Medicines (18%): {fmt(gstOnMedicines)}</p>}
+                <p className="text-lg font-bold border-t border-gray-300 pt-2 mt-2">Grand Total: {fmt(grandTotal)}</p>
+            </div>
+            <div className="mt-6 text-sm text-gray-500">
+                <p>Payment Method: {paymentMethod}</p>
+                {notes && <p>Notes: {notes}</p>}
+            </div>
         </div>
+        </>
     )
 }

@@ -26,7 +26,10 @@ public class InvoiceItem {
     private Invoice invoice;
 
     @Column(name = "service_id")
-    private UUID serviceId; // Nullable for ad-hoc items
+    private UUID serviceId;
+
+    @Column(name = "item_type", length = 30)
+    private String itemType; // MEDICINE, LAB_TEST, CONSULTATION, ROOM_CHARGE, RADIOLOGY, CUSTOM
 
     @Column(nullable = false)
     private String description;

@@ -57,6 +57,9 @@ public class Invoice {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total;
 
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 

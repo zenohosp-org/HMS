@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import api, { patientApi, recordApi, appointmentsApi, radiologyApi, type Patient, type PatientRecord, type Appointment, type RadiologyOrder } from '@/utils/api'
+import api, { patientApi, recordApi, appointmentsApi, radiologyApi, invoiceApi, type Patient, type PatientRecord, type Appointment, type RadiologyOrder, type Invoice } from '@/utils/api'
 import { useNotification } from '@/context/NotificationContext'
 import { useAuth } from '@/context/AuthContext'
 import { calcAge, formatDate, formatDateTime } from '@/utils/validators'
@@ -206,7 +206,7 @@ function AddRecordForm({ patientId, hospitalId, onSaved, onCancel }: {
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'records' | 'appointments' | 'radiology'
+type Tab = 'overview' | 'records' | 'appointments' | 'radiology' | 'billing'
 
 export default function PatientDetails() {
     const { id } = useParams<{ id: string }>()
@@ -226,6 +226,8 @@ export default function PatientDetails() {
     const [menuOpen, setMenuOpen] = useState(false)
     const [radiologyOrders, setRadiologyOrders] = useState<RadiologyOrder[]>([])
     const [radiologyLoading, setRadiologyLoading] = useState(false)
+    const [invoices, setInvoices] = useState<Invoice[]>([])
+    const [invoicesLoading, setInvoicesLoading] = useState(false)
 
     const loadPatient = () => {
         if (!id || !user?.hospitalId) return
@@ -270,10 +272,20 @@ export default function PatientDetails() {
             .finally(() => setRadiologyLoading(false))
     }
 
+    const loadInvoices = () => {
+        if (!id) return
+        setInvoicesLoading(true)
+        invoiceApi.getByPatient(Number(id))
+            .then(setInvoices)
+            .catch(console.error)
+            .finally(() => setInvoicesLoading(false))
+    }
+
     useEffect(() => { loadPatient() }, [id, user?.hospitalId])
     useEffect(() => { loadRecords() }, [id, user?.hospitalId])
     useEffect(() => { loadAppointments() }, [id])
     useEffect(() => { loadRadiology() }, [id])
+    useEffect(() => { loadInvoices() }, [id])
 
     const handleUpdate = async (data: Partial<Patient>) => {
         await patientApi.update(Number(id), data)
@@ -466,7 +478,7 @@ export default function PatientDetails() {
 
                 {/* Tab bar */}
                 <div className="flex items-center gap-1 px-6 pt-5 pb-0 border-b border-slate-200 dark:border-[#1e1e1e] shrink-0">
-                    {(['overview', 'appointments', 'records', 'radiology'] as Tab[]).map(t => (
+                    {(['overview', 'appointments', 'records', 'radiology', 'billing'] as Tab[]).map(t => (
                         <button
                             key={t}
                             onClick={() => setTab(t)}
@@ -478,7 +490,8 @@ export default function PatientDetails() {
                             {t === 'records' ? `Records ${!recordsLoading ? `(${records.length})` : ''}`
                                 : t === 'appointments' ? `Appointments ${!appointmentsLoading ? `(${appointments.length})` : ''}`
                                 : t === 'radiology' ? `Radiology ${!radiologyLoading ? `(${radiologyOrders.length})` : ''}`
-                                    : 'Overview'}
+                                : t === 'billing' ? `Billing ${!invoicesLoading ? `(${invoices.length})` : ''}`
+                                : 'Overview'}
                         </button>
                     ))}
                 </div>
@@ -856,6 +869,57 @@ export default function PatientDetails() {
                                             )
                                         })}
                                     </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── Billing tab ── */}
+                    {tab === 'billing' && (
+                        <div className="p-6 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">Invoice History</p>
+                                <button
+                                    onClick={() => navigate(`/billing?patientId=${id}`)}
+                                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
+                                >
+                                    + New Invoice
+                                </button>
+                            </div>
+                            {invoicesLoading ? (
+                                <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-slate-300" /></div>
+                            ) : invoices.length === 0 ? (
+                                <div className="py-12 text-center">
+                                    <p className="text-sm text-slate-400 dark:text-[#555555]">No invoices yet</p>
+                                    <button onClick={() => navigate(`/billing?patientId=${id}`)} className="mt-3 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                                        Create first invoice
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {invoices.map(inv => {
+                                        const statusCls = inv.status === 'PAID'
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+                                            : inv.status === 'CANCELLED'
+                                            ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
+                                            : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
+                                        return (
+                                            <div key={inv.id} className="flex items-center justify-between px-4 py-3 rounded-xl border border-slate-100 dark:border-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-[#0f0f0f] transition-colors">
+                                                <div>
+                                                    <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">#{inv.invoiceNumber}</p>
+                                                    <p className="text-xs text-slate-400 dark:text-[#555555] mt-0.5">
+                                                        {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN') : ''}
+                                                        {inv.paymentMethod ? ` · ${inv.paymentMethod}` : ''}
+                                                        {' · '}{(inv.items?.length ?? 0)} item{(inv.items?.length ?? 0) !== 1 ? 's' : ''}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${statusCls}`}>{inv.status}</span>
+                                                    <span className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">₹{inv.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
                                 </div>
                             )}
                         </div>

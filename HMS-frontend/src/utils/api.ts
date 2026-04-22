@@ -205,18 +205,45 @@ export interface Invoice {
     discount: number
     total: number
     notes?: string
+    paymentMethod?: string
     status: 'UNPAID' | 'PAID' | 'CANCELLED'
     items: InvoiceItem[]
     createdAt?: string
 }
 
+export type ItemType = 'MEDICINE' | 'LAB_TEST' | 'CONSULTATION' | 'ROOM_CHARGE' | 'RADIOLOGY' | 'CUSTOM'
+
 export interface InvoiceItem {
     id?: string
     serviceId?: string
+    itemType?: ItemType
     description: string
     quantity: number
     unitPrice: number
     totalPrice: number
+}
+
+export interface SmartBillingSuggestion {
+    roomCharge?: {
+        roomNumber: string
+        roomType: string
+        pricePerDay: number
+        daysStayed: number
+        totalCharge: number
+    }
+    radiologyOrders: Array<{
+        orderId: number
+        serviceName: string
+        status: string
+        scheduledDate?: string
+    }>
+    appointments: Array<{
+        appointmentId: string
+        doctorName: string
+        specialization?: string
+        consultationFee: number
+        apptDate: string
+    }>
 }
 
 // ── Patient API ───────────────────────────────────────────────────────────────
@@ -549,7 +576,15 @@ export const invoiceApi = {
     get: async (id: string): Promise<Invoice> => {
         const { data } = await api.get(`/invoices/${id}`)
         return data
-    }
+    },
+    getByPatient: async (patientId: number): Promise<Invoice[]> => {
+        const { data } = await api.get(`/billing/patient/${patientId}/invoices`)
+        return data
+    },
+    getSmartSuggestions: async (patientId: number): Promise<SmartBillingSuggestion> => {
+        const { data } = await api.get('/billing/smart-suggestions', { params: { patientId } })
+        return data
+    },
 }
 
 // ── Bank Accounts API ────────────────────────────────────────────────────────

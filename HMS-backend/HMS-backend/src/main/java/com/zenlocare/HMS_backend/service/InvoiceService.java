@@ -38,6 +38,7 @@ public class InvoiceService {
                 .discount(request.getDiscount())
                 .total(request.getTotal())
                 .notes(request.getNotes())
+                .paymentMethod(request.getPaymentMethod())
                 .status(request.getStatus() != null ? request.getStatus() : InvoiceStatus.UNPAID)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -55,6 +56,7 @@ public class InvoiceService {
                 return InvoiceItem.builder()
                         .invoice(invoice)
                         .serviceId(itemRequest.getServiceId())
+                        .itemType(itemRequest.getItemType())
                         .description(itemRequest.getDescription())
                         .quantity(itemRequest.getQuantity())
                         .unitPrice(itemRequest.getUnitPrice())
@@ -69,6 +71,10 @@ public class InvoiceService {
 
     public List<Invoice> getHospitalInvoices(UUID hospitalId) {
         return invoiceRepository.findByHospitalId(hospitalId);
+    }
+
+    public List<Invoice> getPatientInvoices(Integer patientId) {
+        return invoiceRepository.findByPatientIdOrderByCreatedAtDesc(patientId);
     }
 
     public Invoice getInvoice(UUID id) {
