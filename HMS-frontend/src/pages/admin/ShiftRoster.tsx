@@ -6,20 +6,20 @@ import { ChevronLeft, ChevronRight, Loader2, Plus, X, Users } from 'lucide-react
 
 type ShiftType = StaffShift['shiftType']
 
-const SHIFTS: { type: ShiftType; label: string; time: string; textCls: string; badgeCls: string }[] = [
-    { type: 'ON_CALL',   label: 'On Call',   time: '00:00–23:59',
+const SHIFTS: { type: ShiftType; label: string; time: string; dot: string; textCls: string; badgeCls: string }[] = [
+    { type: 'ON_CALL',   label: 'On Call',   time: '00:00–23:59', dot: 'bg-slate-400',
       textCls:  'text-slate-600 dark:text-[#aaaaaa]',
       badgeCls: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#aaaaaa] dark:border-[#333333]' },
-    { type: 'MORNING',   label: 'Morning',   time: '06:00–14:00',
+    { type: 'MORNING',   label: 'Morning',   time: '06:00–14:00', dot: 'bg-amber-400',
       textCls:  'text-amber-600 dark:text-amber-400',
       badgeCls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' },
-    { type: 'GENERAL',   label: 'General',   time: '09:00–17:00',
+    { type: 'GENERAL',   label: 'General',   time: '09:00–17:00', dot: 'bg-blue-400',
       textCls:  'text-blue-600 dark:text-blue-400',
       badgeCls: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20' },
-    { type: 'AFTERNOON', label: 'Afternoon', time: '14:00–22:00',
+    { type: 'AFTERNOON', label: 'Afternoon', time: '14:00–22:00', dot: 'bg-orange-400',
       textCls:  'text-orange-600 dark:text-orange-400',
       badgeCls: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20' },
-    { type: 'NIGHT',     label: 'Night',     time: '22:00–06:00',
+    { type: 'NIGHT',     label: 'Night',     time: '22:00–06:00', dot: 'bg-violet-400',
       textCls:  'text-violet-600 dark:text-violet-400',
       badgeCls: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20' },
 ]
@@ -49,7 +49,6 @@ interface StaffOption {
     name: string
     roleDisplay: string
     designation?: string
-    specialization?: string
     group: string
     avatarCls: string
 }
@@ -75,9 +74,9 @@ export default function ShiftRoster() {
     const [loading, setLoading] = useState(true)
     const [staffOptions, setStaffOptions] = useState<StaffOption[]>([])
 
-    const [popover, setPopover] = useState<{ staffId: string; date: string } | null>(null)
-    const [selectedShift, setSelectedShift] = useState<ShiftType>('GENERAL')
-    const [assigning, setAssigning] = useState(false)
+    const [popover, setPopover] = useState<{ staffId: string; date: string; flipUp: boolean } | null>(null)
+    // per-cell assigning key: "staffId|date"
+    const [assigningKey, setAssigningKey] = useState<string | null>(null)
     const popoverRef = useRef<HTMLDivElement>(null)
 
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
@@ -121,7 +120,6 @@ export default function ShiftRoster() {
                 name: `${u.firstName} ${u.lastName ?? ''}`.trim(),
                 roleDisplay: doc ? 'Doctor' : (u.roleDisplay ?? u.role),
                 designation: doc ? (doc.qualification ?? undefined) : (u.designation ?? undefined),
-                specialization: doc?.specialization ?? undefined,
                 group,
                 avatarCls: getAvatarCls(role),
             })
@@ -145,7 +143,6 @@ export default function ShiftRoster() {
     useEffect(() => { loadStaff() }, [loadStaff])
     useEffect(() => { fetchShifts() }, [fetchShifts])
 
-    // Group staff by group label, preserving insertion order
     const groups = Array.from(
         staffOptions.reduce((map, s) => {
             const list = map.get(s.group) ?? []
@@ -158,36 +155,37 @@ export default function ShiftRoster() {
     const getShiftsFor = (staffId: string, date: string) =>
         shifts.filter(s => s.staffId === staffId && s.shiftDate === date)
 
-    const openPopover = (staffId: string, date: string) => {
-        setSelectedShift('GENERAL')
-        setPopover({ staffId, date })
+    const openPopover = (staffId: string, date: string, triggerEl: HTMLButtonElement) => {
+        const rect = triggerEl.getBoundingClientRect()
+        const spaceBelow = window.innerHeight - rect.bottom
+        setPopover({ staffId, date, flipUp: spaceBelow < 240 })
     }
 
-    const handleAssign = async () => {
+    // Single-click assigns immediately — no confirm step
+    const handleAssign = async (shiftType: ShiftType) => {
         if (!popover || !user?.hospitalId) return
-        setAssigning(true)
+        const key = `${popover.staffId}|${popover.date}`
+        setAssigningKey(key)
+        setPopover(null)
         try {
             await shiftsApi.assign({
                 staffId: popover.staffId,
                 hospitalId: user.hospitalId,
-                shiftType: selectedShift,
+                shiftType,
                 shiftDate: popover.date,
             })
-            notify('Shift assigned', 'success')
-            setPopover(null)
             fetchShifts()
         } catch (e: unknown) {
             const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
             notify(msg ?? 'Could not assign shift', 'error')
         } finally {
-            setAssigning(false)
+            setAssigningKey(null)
         }
     }
 
     const handleRemove = async (shiftId: number) => {
         try {
             await shiftsApi.remove(shiftId)
-            notify('Shift removed', 'info')
             fetchShifts()
         } catch {
             notify('Could not remove shift', 'error')
@@ -197,43 +195,41 @@ export default function ShiftRoster() {
     const weekLabel = `${weekDays[0].getDate()} ${weekDays[0].toLocaleString('en-IN', { month: 'short' })} – ${weekDays[6].getDate()} ${weekDays[6].toLocaleString('en-IN', { month: 'short' })}, ${weekDays[0].getFullYear()}`
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-3">
 
             {/* ── Top nav card ── */}
-            <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl px-5 py-3 flex items-center gap-4">
+            <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl px-4 py-3 flex items-center gap-3">
                 {/* Week nav */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                     <button
                         onClick={() => setWeekStart(w => addDays(w, -7))}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
                     >
-                        <ChevronLeft className="w-4 h-4" />
+                        <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
                     <button
                         onClick={() => setWeekStart(getMondayOf(new Date()))}
-                        className="px-3 h-8 text-xs font-semibold rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                        className="px-3 h-7 text-xs font-semibold rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
                     >
                         Today
                     </button>
                     <button
                         onClick={() => setWeekStart(w => addDays(w, 7))}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
                     >
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                 </div>
 
                 {/* Date range */}
-                <div className="flex-1 text-center">
-                    <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{weekLabel}</p>
-                </div>
+                <p className="flex-1 text-center text-sm font-bold text-slate-800 dark:text-[#dddddd]">{weekLabel}</p>
 
-                {/* Shift legend pills */}
-                <div className="flex items-center gap-2 shrink-0">
+                {/* Compact shift legend */}
+                <div className="flex items-center gap-3 shrink-0">
                     {SHIFTS.map(s => (
-                        <span key={s.type} className={`flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${s.badgeCls}`}>
+                        <span key={s.type} className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-[#888888]">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
                             {s.label}
-                            <span className="text-[10px] font-normal opacity-70">{s.time}</span>
                         </span>
                     ))}
                 </div>
@@ -251,14 +247,14 @@ export default function ShiftRoster() {
                 </div>
             ) : (
                 groups.map(([groupName, members]) => (
-                    <div key={groupName} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl overflow-hidden">
+                    <div key={groupName} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl overflow-visible">
 
                         {/* Group header */}
-                        <div className="px-5 py-3 border-b border-slate-100 dark:border-[#1e1e1e]">
-                            <p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">
+                        <div className="px-4 py-2.5 border-b border-slate-100 dark:border-[#1e1e1e]">
+                            <p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wide">
                                 {groupName}
-                                <span className="ml-2 text-xs font-normal text-slate-400 dark:text-[#666666]">
-                                    ({members.length} staff)
+                                <span className="ml-2 font-normal text-slate-400 dark:text-[#666666] normal-case">
+                                    {members.length} {members.length === 1 ? 'member' : 'members'}
                                 </span>
                             </p>
                         </div>
@@ -268,7 +264,7 @@ export default function ShiftRoster() {
                             <table className="w-full min-w-[700px]">
                                 <thead>
                                     <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
-                                        <th className="text-left px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555] w-52">
+                                        <th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555] w-48">
                                             Employee
                                         </th>
                                         {weekDays.map(d => {
@@ -277,38 +273,37 @@ export default function ShiftRoster() {
                                             return (
                                                 <th
                                                     key={ds}
-                                                    className={`text-center px-3 py-2.5 text-[11px] font-semibold w-24
+                                                    className={`text-center px-2 py-2 text-[11px] font-semibold w-24
                                                         ${isToday
-                                                            ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                                                            : 'text-slate-500 dark:text-[#888888]'
+                                                            ? 'bg-blue-50 dark:bg-blue-500/10'
+                                                            : ''
                                                         }`}
                                                 >
-                                                    <div className="uppercase tracking-wide text-[10px]">{DAY_SHORT[d.getDay()]}</div>
-                                                    <div className={`text-base font-bold mt-0.5 ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-[#aaaaaa]'}`}>
-                                                        {d.getDate()}
+                                                    <div className={`text-[10px] uppercase tracking-wide ${isToday ? 'text-blue-500' : 'text-slate-400 dark:text-[#666666]'}`}>
+                                                        {DAY_SHORT[d.getDay()]}
                                                     </div>
-                                                    <div className="text-[10px] font-normal opacity-70 mt-0.5">
-                                                        {d.toLocaleString('en-IN', { month: 'short' })}
+                                                    <div className={`text-sm font-bold mt-0.5 ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-[#aaaaaa]'}`}>
+                                                        {d.getDate()}
                                                     </div>
                                                 </th>
                                             )
                                         })}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">
+                                <tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
                                     {members.map(staff => (
-                                        <tr key={staff.id}>
+                                        <tr key={staff.id} className="hover:bg-slate-50/50 dark:hover:bg-[#0f0f0f] transition-colors">
                                             {/* Staff info */}
-                                            <td className="px-5 py-3">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${staff.avatarCls}`}>
+                                            <td className="px-4 py-2.5">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${staff.avatarCls}`}>
                                                         {getInitials(staff.name)}
                                                     </div>
                                                     <div className="min-w-0">
                                                         <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight truncate">
                                                             {staff.name}
                                                         </p>
-                                                        <p className="text-[11px] text-slate-400 dark:text-[#555555] mt-0.5 truncate">
+                                                        <p className="text-[10px] text-slate-400 dark:text-[#555555] truncate">
                                                             {staff.designation ?? staff.roleDisplay}
                                                         </p>
                                                     </div>
@@ -320,25 +315,31 @@ export default function ShiftRoster() {
                                                 const dateStr = toISODate(d)
                                                 const isToday = dateStr === todayStr
                                                 const dayShifts = getShiftsFor(staff.id, dateStr)
+                                                const cellKey = `${staff.id}|${dateStr}`
+                                                const isAssigning = assigningKey === cellKey
                                                 const isOpen = popover?.staffId === staff.id && popover?.date === dateStr
                                                 return (
                                                     <td
                                                         key={dateStr}
-                                                        className={`px-2 py-2.5 align-middle relative ${isToday ? 'bg-blue-50/50 dark:bg-blue-500/5' : ''}`}
+                                                        className={`px-1.5 py-2 align-middle relative ${isToday ? 'bg-blue-50/40 dark:bg-blue-500/5' : ''}`}
                                                     >
-                                                        {dayShifts.length > 0 ? (
-                                                            <div className="space-y-1">
+                                                        {isAssigning ? (
+                                                            <div className="w-full h-7 flex items-center justify-center">
+                                                                <Loader2 className="w-3 h-3 animate-spin text-slate-300" />
+                                                            </div>
+                                                        ) : dayShifts.length > 0 ? (
+                                                            <div className="space-y-0.5">
                                                                 {dayShifts.map(s => {
                                                                     const meta = SHIFTS.find(x => x.type === s.shiftType)!
                                                                     return (
                                                                         <div
                                                                             key={s.id}
-                                                                            className={`group flex items-center justify-between gap-1 text-[11px] font-semibold px-2 py-1 rounded-md border ${meta.badgeCls}`}
+                                                                            className={`group flex items-center justify-between gap-1 text-[11px] font-semibold px-2 py-1 rounded border ${meta.badgeCls}`}
                                                                         >
                                                                             <span>{meta.label}</span>
                                                                             <button
                                                                                 onClick={() => handleRemove(s.id)}
-                                                                                className="opacity-0 group-hover:opacity-60 hover:opacity-100 transition-opacity shrink-0"
+                                                                                className="opacity-0 group-hover:opacity-50 hover:opacity-100 transition-opacity shrink-0"
                                                                                 title="Remove"
                                                                             >
                                                                                 <X className="w-2.5 h-2.5" />
@@ -349,56 +350,40 @@ export default function ShiftRoster() {
                                                             </div>
                                                         ) : (
                                                             <button
-                                                                onClick={() => openPopover(staff.id, dateStr)}
-                                                                className="w-full h-9 flex items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-[#2a2a2a] text-slate-300 dark:text-[#444444] hover:border-blue-300 dark:hover:border-blue-500/40 hover:text-blue-400 dark:hover:text-blue-400 transition-colors"
+                                                                onClick={e => openPopover(staff.id, dateStr, e.currentTarget)}
+                                                                className="w-full h-7 flex items-center justify-center rounded border border-dashed border-slate-200 dark:border-[#2a2a2a] text-slate-300 dark:text-[#3a3a3a] hover:border-blue-300 dark:hover:border-blue-500/40 hover:text-blue-400 dark:hover:text-blue-500 transition-colors"
                                                             >
-                                                                <Plus className="w-3.5 h-3.5" />
+                                                                <Plus className="w-3 h-3" />
                                                             </button>
                                                         )}
 
-                                                        {/* Popover — rendered inside the cell, stopPropagation on the popover itself */}
+                                                        {/* Popover — single click assigns, no confirm */}
                                                         {isOpen && (
                                                             <div
                                                                 ref={popoverRef}
-                                                                className="absolute left-0 top-full z-40 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-xl shadow-xl w-56 overflow-hidden"
+                                                                className={`absolute left-0 z-50 bg-white dark:bg-[#1c1c1c] border border-slate-200 dark:border-[#333333] rounded-xl shadow-xl w-48 overflow-hidden
+                                                                    ${popover.flipUp ? 'bottom-full mb-1' : 'top-full mt-1'}`}
                                                                 onMouseDown={e => e.stopPropagation()}
                                                             >
-                                                                <div className="px-4 py-3 border-b border-slate-100 dark:border-[#2a2a2a]">
-                                                                    <p className="text-xs font-bold text-slate-700 dark:text-[#cccccc]">Assign Shift</p>
+                                                                <div className="px-3 py-2 border-b border-slate-100 dark:border-[#2a2a2a]">
+                                                                    <p className="text-[11px] font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Assign Shift</p>
                                                                 </div>
-                                                                <div className="p-1.5 space-y-0.5">
-                                                                    {SHIFTS.map(s => {
-                                                                        const isSelected = selectedShift === s.type
-                                                                        return (
-                                                                            <button
-                                                                                key={s.type}
-                                                                                type="button"
-                                                                                onMouseDown={e => {
-                                                                                    e.stopPropagation()
-                                                                                    setSelectedShift(s.type)
-                                                                                }}
-                                                                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors
-                                                                                    ${isSelected
-                                                                                        ? `${s.badgeCls} border`
-                                                                                        : 'text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#222222] border border-transparent'
-                                                                                    }`}
-                                                                            >
-                                                                                <span className="font-semibold">{s.label}</span>
-                                                                                <span className={`text-xs font-normal ${isSelected ? '' : 'opacity-50'}`}>{s.time}</span>
-                                                                            </button>
-                                                                        )
-                                                                    })}
-                                                                </div>
-                                                                <div className="px-3 pb-3">
-                                                                    <button
-                                                                        type="button"
-                                                                        onMouseDown={e => e.stopPropagation()}
-                                                                        onClick={handleAssign}
-                                                                        disabled={assigning}
-                                                                        className="w-full py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold transition-colors disabled:opacity-50"
-                                                                    >
-                                                                        {assigning ? 'Assigning…' : 'Confirm'}
-                                                                    </button>
+                                                                <div className="p-1">
+                                                                    {SHIFTS.map(s => (
+                                                                        <button
+                                                                            key={s.type}
+                                                                            type="button"
+                                                                            onMouseDown={e => {
+                                                                                e.stopPropagation()
+                                                                                handleAssign(s.type)
+                                                                            }}
+                                                                            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-[#252525] transition-colors"
+                                                                        >
+                                                                            <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
+                                                                            <span className="text-sm font-medium text-slate-700 dark:text-[#cccccc] flex-1">{s.label}</span>
+                                                                            <span className="text-[10px] text-slate-400 dark:text-[#555555]">{s.time}</span>
+                                                                        </button>
+                                                                    ))}
                                                                 </div>
                                                             </div>
                                                         )}
