@@ -552,4 +552,80 @@ export const invoiceApi = {
     }
 }
 
+// ── Bank Accounts API ────────────────────────────────────────────────────────
+
+export interface BankAccount {
+    id: string
+    accountName: string
+    accountNumber: string
+    accountType?: string
+    bankName?: string
+    branch?: string
+    ifscCode?: string
+    isDefault?: boolean
+    openingBalance: number
+    currentBalance: number
+}
+
+export const bankApi = {
+    list: async (hospitalId: string): Promise<BankAccount[]> => {
+        const { data } = await api.get('/bank-accounts', { params: { hospitalId } })
+        return data
+    },
+}
+
+// ── Payroll API ──────────────────────────────────────────────────────────────
+
+export interface StaffPayroll {
+    staffId: string
+    staffName: string
+    role: string
+    department?: string
+    basicSalary: number
+    lastPaidMonth?: number
+    lastPaidYear?: number
+    lastNetPay?: number
+    lastPaidAt?: string
+}
+
+export interface PayrollRecord {
+    id: string
+    staffId: string
+    staffName: string
+    role: string
+    department?: string
+    month: number
+    year: number
+    baseSalary: number
+    bonus: number
+    deductions: number
+    netPay: number
+    bankAccountId?: string
+    bankAccountName?: string
+    paymentMethod?: string
+    processedAt: string
+}
+
+export const payrollApi = {
+    listStaff: async (hospitalId: string): Promise<StaffPayroll[]> => {
+        const { data } = await api.get('/payroll/staff', { params: { hospitalId } })
+        return data
+    },
+    updateSalary: async (staffId: string, hospitalId: string, basicSalary: number): Promise<void> => {
+        await api.put(`/payroll/staff/${staffId}/salary`, { basicSalary }, { params: { hospitalId } })
+    },
+    process: async (payload: {
+        hospitalId: string; staffId: string; month: number; year: number
+        baseSalary: number; bonus: number; deductions: number
+        bankAccountId?: string; paymentMethod?: string; referenceNo?: string
+    }): Promise<PayrollRecord> => {
+        const { data } = await api.post('/payroll/process', payload)
+        return data
+    },
+    getRecords: async (hospitalId: string, month: number, year: number): Promise<PayrollRecord[]> => {
+        const { data } = await api.get('/payroll/records', { params: { hospitalId, month, year } })
+        return data
+    },
+}
+
 export default api

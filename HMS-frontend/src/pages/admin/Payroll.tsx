@@ -1,238 +1,260 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { shiftsApi, type StaffShift } from '@/utils/api'
-import { ChevronLeft, ChevronRight, Loader2, Users, Download } from 'lucide-react'
+import { useNotification } from '@/context/NotificationContext'
+import { payrollApi, type StaffPayroll } from '@/utils/api'
+import { Loader2, Search, Check, Clock, Edit2 } from 'lucide-react'
+import ProcessSalaryModal from './ProcessSalaryModal'
 
-type ShiftType = StaffShift['shiftType']
+const MONTHS = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+]
 
-const SHIFT_RATE: Record<ShiftType, number> = {
-    ON_CALL:   500,
-    MORNING:   800,
-    GENERAL:   700,
-    AFTERNOON: 850,
-    NIGHT:    1000,
+function fmt(n: number) {
+    return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-const SHIFT_LABEL: Record<ShiftType, string> = {
-    ON_CALL:   'On Call',
-    MORNING:   'Morning',
-    GENERAL:   'General',
-    AFTERNOON: 'Afternoon',
-    NIGHT:     'Night',
+function lastPaidLabel(staff: StaffPayroll): { text: string; paid: boolean } {
+    if (!staff.lastPaidMonth || !staff.lastPaidYear) return { text: 'Not paid yet', paid: false }
+    return {
+        text: `Paid · ${MONTHS[staff.lastPaidMonth - 1]} ${staff.lastPaidYear}`,
+        paid: true,
+    }
 }
-
-const SHIFT_CLS: Record<ShiftType, string> = {
-    ON_CALL:   'bg-slate-100 text-slate-600 dark:bg-[#222222] dark:text-[#888888]',
-    MORNING:   'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
-    GENERAL:   'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
-    AFTERNOON: 'bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
-    NIGHT:     'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400',
-}
-
-interface StaffPayrow {
-    staffId: string
-    staffName: string
-    role: string
-    counts: Record<ShiftType, number>
-    total: number
-    gross: number
-}
-
-const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-const ALL_SHIFT_TYPES: ShiftType[] = ['ON_CALL','MORNING','GENERAL','AFTERNOON','NIGHT']
 
 export default function Payroll() {
     const { user } = useAuth()
-    const today = new Date()
-    const [year, setYear]   = useState(today.getFullYear())
-    const [month, setMonth] = useState(today.getMonth() + 1)
-    const [shifts, setShifts] = useState<StaffShift[]>([])
-    const [loading, setLoading] = useState(true)
+    const { notify } = useNotification()
 
-    const fetchShifts = useCallback(async () => {
+    const [staffList, setStaffList] = useState<StaffPayroll[]>([])
+    const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState('')
+
+    const [editingId, setEditingId] = useState<string | null>(null)
+    const [editValue, setEditValue] = useState('')
+    const [savingId, setSavingId] = useState<string | null>(null)
+
+    const [processTarget, setProcessTarget] = useState<StaffPayroll | null>(null)
+
+    const load = useCallback(async () => {
         if (!user?.hospitalId) return
         setLoading(true)
         try {
-            const data = await shiftsApi.getMonth(user.hospitalId, year, month)
-            setShifts(data)
+            const data = await payrollApi.listStaff(user.hospitalId)
+            setStaffList(data)
         } catch {
-            setShifts([])
+            notify('Failed to load payroll data', 'error')
         } finally {
             setLoading(false)
         }
-    }, [user?.hospitalId, year, month])
+    }, [user?.hospitalId])
 
-    useEffect(() => { fetchShifts() }, [fetchShifts])
+    useEffect(() => { load() }, [load])
 
-    const rows = useMemo<StaffPayrow[]>(() => {
-        const map = new Map<string, StaffPayrow>()
-        shifts.forEach(s => {
-            if (!map.has(s.staffId)) {
-                map.set(s.staffId, {
-                    staffId: s.staffId,
-                    staffName: s.staffName,
-                    role: s.role,
-                    counts: { ON_CALL: 0, MORNING: 0, GENERAL: 0, AFTERNOON: 0, NIGHT: 0 },
-                    total: 0,
-                    gross: 0,
-                })
-            }
-            const row = map.get(s.staffId)!
-            row.counts[s.shiftType]++
-            row.total++
-            row.gross += SHIFT_RATE[s.shiftType]
-        })
-        return Array.from(map.values()).sort((a, b) => b.gross - a.gross)
-    }, [shifts])
+    const filtered = staffList.filter(s =>
+        s.staffName.toLowerCase().includes(search.toLowerCase()) ||
+        s.role.toLowerCase().includes(search.toLowerCase()) ||
+        (s.department ?? '').toLowerCase().includes(search.toLowerCase())
+    )
 
-    const totalGross = rows.reduce((acc, r) => acc + r.gross, 0)
-    const totalShifts = rows.reduce((acc, r) => acc + r.total, 0)
+    const totalPayroll = staffList.reduce((sum, s) => sum + (s.basicSalary ?? 0), 0)
+    const totalStaff = staffList.length
+    const paidThisMonth = staffList.filter(s => {
+        const now = new Date()
+        return s.lastPaidMonth === now.getMonth() + 1 && s.lastPaidYear === now.getFullYear()
+    }).length
 
-    const prevMonth = () => {
-        if (month === 1) { setMonth(12); setYear(y => y - 1) }
-        else setMonth(m => m - 1)
+    const startEdit = (s: StaffPayroll) => {
+        setEditingId(s.staffId)
+        setEditValue(String(s.basicSalary ?? 0))
     }
-    const nextMonth = () => {
-        if (month === 12) { setMonth(1); setYear(y => y + 1) }
-        else setMonth(m => m + 1)
+
+    const saveSalary = async (s: StaffPayroll) => {
+        if (!user?.hospitalId) return
+        const val = parseFloat(editValue)
+        if (isNaN(val) || val < 0) { notify('Invalid salary amount', 'error'); return }
+        setSavingId(s.staffId)
+        try {
+            await payrollApi.updateSalary(s.staffId, user.hospitalId, val)
+            setStaffList(prev => prev.map(x => x.staffId === s.staffId ? { ...x, basicSalary: val } : x))
+            setEditingId(null)
+        } catch {
+            notify('Failed to update salary', 'error')
+        } finally {
+            setSavingId(null)
+        }
+    }
+
+    const roleColor: Record<string, string> = {
+        DOCTOR: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+        HOSPITAL_ADMIN: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
+        TECHNICIAN: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+        STAFF: 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400',
     }
 
     return (
-        <div className="space-y-5">
+        <div className="space-y-4">
 
             {/* Header */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <h1 className="text-xl font-bold text-slate-900 dark:text-[#f0f0f0]">Payroll Summary</h1>
-                    <p className="text-sm text-slate-500 dark:text-[#666666] mt-0.5">
-                        {MONTH_NAMES[month - 1]} {year} · {totalShifts} shifts recorded
-                    </p>
+            <div>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white">Payroll</h1>
+                <p className="text-sm text-slate-400 dark:text-[#666666] mt-0.5">Manage staff salaries and process payments</p>
+            </div>
+
+            {/* Stat cards */}
+            <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4">
+                    <p className="text-xs font-semibold text-slate-400 dark:text-[#666666] uppercase tracking-wider">Total Base Payroll</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{fmt(totalPayroll)}</p>
+                    <p className="text-[11px] text-slate-400 dark:text-[#555555] mt-0.5">per month</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={prevMonth} className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-[#888888] dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors">
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <span className="text-sm font-semibold text-slate-700 dark:text-[#cccccc] min-w-[100px] text-center">
-                        {MONTH_NAMES[month - 1]} {year}
-                    </span>
-                    <button onClick={nextMonth} className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-[#888888] dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors">
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                    <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-xs font-semibold text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
-                        <Download className="w-3.5 h-3.5" /> Export
-                    </button>
+                <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4">
+                    <p className="text-xs font-semibold text-slate-400 dark:text-[#666666] uppercase tracking-wider">Total Staff</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{totalStaff}</p>
+                    <p className="text-[11px] text-slate-400 dark:text-[#555555] mt-0.5">on payroll</p>
+                </div>
+                <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4">
+                    <p className="text-xs font-semibold text-slate-400 dark:text-[#666666] uppercase tracking-wider">Paid This Month</p>
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{paidThisMonth}</p>
+                    <p className="text-[11px] text-slate-400 dark:text-[#555555] mt-0.5">of {totalStaff} staff</p>
                 </div>
             </div>
 
-            {/* Summary cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4">
-                    <p className="text-xs font-semibold text-slate-400 dark:text-[#666666] uppercase tracking-wider mb-1">Total Payroll</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-[#f0f0f0]">₹{totalGross.toLocaleString('en-IN')}</p>
-                </div>
-                <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4">
-                    <p className="text-xs font-semibold text-slate-400 dark:text-[#666666] uppercase tracking-wider mb-1">Total Shifts</p>
-                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{totalShifts}</p>
-                </div>
-                <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4">
-                    <p className="text-xs font-semibold text-slate-400 dark:text-[#666666] uppercase tracking-wider mb-1">Staff Active</p>
-                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{rows.length}</p>
-                </div>
-            </div>
-
-            {/* Payroll table */}
+            {/* Table card */}
             <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl overflow-hidden">
 
-                {/* Column headers */}
-                <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1.2fr] gap-3 px-6 py-3 border-b border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0d0d0d]">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">Staff</p>
-                    {ALL_SHIFT_TYPES.map(t => (
-                        <p key={t} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555] text-center">{SHIFT_LABEL[t]}</p>
-                    ))}
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555] text-right">Gross Pay</p>
+                {/* Toolbar */}
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-[#1e1e1e]">
+                    <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd] shrink-0">Payroll Table</p>
+                    <div className="flex-1" />
+                    <div className="relative w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                        <input
+                            className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#dddddd] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
+                            placeholder="Search by name or role…"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                    </div>
                 </div>
 
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                        <Loader2 className="w-5 h-5 animate-spin text-slate-300" />
                     </div>
-                ) : rows.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400 dark:text-[#555555]">
-                        <Users className="w-10 h-10 opacity-30" />
-                        <p className="text-sm">No shift data for this month</p>
-                    </div>
+                ) : filtered.length === 0 ? (
+                    <div className="py-20 text-center text-sm text-slate-400 dark:text-[#555555]">No staff found</div>
                 ) : (
-                    <div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">
-                        {rows.map(row => (
-                            <div
-                                key={row.staffId}
-                                className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1.2fr] md:gap-3 md:items-center space-y-2 md:space-y-0"
-                            >
-                                {/* Staff info */}
-                                <div>
-                                    <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd] leading-tight">{row.staffName}</p>
-                                    <p className="text-xs text-slate-400 dark:text-[#555555] mt-0.5">{row.role}</p>
-                                </div>
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
+                                <th className="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555] w-10">#</th>
+                                <th className="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Name</th>
+                                <th className="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Role</th>
+                                <th className="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Department</th>
+                                <th className="text-right px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Basic Salary</th>
+                                <th className="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Last Paid Status</th>
+                                <th className="text-right px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555]">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
+                            {filtered.map((s, i) => {
+                                const { text: paidText, paid } = lastPaidLabel(s)
+                                const roleBadge = roleColor[s.role.toUpperCase()] ?? roleColor.STAFF
+                                const isEditing = editingId === s.staffId
+                                const isSaving = savingId === s.staffId
 
-                                {/* Shift counts per type */}
-                                {ALL_SHIFT_TYPES.map(t => (
-                                    <div key={t} className="flex items-center justify-center">
-                                        {row.counts[t] > 0 ? (
-                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${SHIFT_CLS[t]}`}>
-                                                {row.counts[t]}
+                                return (
+                                    <tr key={s.staffId} className="hover:bg-slate-50/50 dark:hover:bg-[#0f0f0f] transition-colors">
+                                        <td className="px-5 py-3.5 text-sm text-slate-400 dark:text-[#555555]">{i + 1}</td>
+                                        <td className="px-5 py-3.5">
+                                            <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{s.staffName}</p>
+                                        </td>
+                                        <td className="px-5 py-3.5">
+                                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${roleBadge}`}>
+                                                {s.role.replace('_', ' ')}
                                             </span>
-                                        ) : (
-                                            <span className="text-slate-300 dark:text-[#444444] text-xs">—</span>
-                                        )}
-                                    </div>
-                                ))}
-
-                                {/* Gross pay */}
-                                <div className="md:text-right">
-                                    <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                                        ₹{row.gross.toLocaleString('en-IN')}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400 dark:text-[#555555] mt-0.5">
-                                        {row.total} shift{row.total !== 1 ? 's' : ''}
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Footer totals */}
-                {!loading && rows.length > 0 && (
-                    <div className="px-6 py-3 border-t border-slate-200 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0d0d0d] md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1.2fr] md:gap-3 md:items-center">
-                        <p className="text-xs font-bold text-slate-500 dark:text-[#666666] uppercase tracking-wide">Total</p>
-                        {ALL_SHIFT_TYPES.map(t => (
-                            <div key={t} className="flex items-center justify-center">
-                                <span className="text-xs font-bold text-slate-600 dark:text-[#aaaaaa]">
-                                    {rows.reduce((acc, r) => acc + r.counts[t], 0) || '—'}
-                                </span>
-                            </div>
-                        ))}
-                        <div className="md:text-right">
-                            <p className="text-sm font-bold text-slate-900 dark:text-[#f0f0f0]">
-                                ₹{totalGross.toLocaleString('en-IN')}
-                            </p>
-                        </div>
-                    </div>
+                                        </td>
+                                        <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-[#888888]">
+                                            {s.department ?? '—'}
+                                        </td>
+                                        <td className="px-5 py-3.5 text-right">
+                                            {isEditing ? (
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <input
+                                                        autoFocus
+                                                        type="number"
+                                                        value={editValue}
+                                                        onChange={e => setEditValue(e.target.value)}
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter') saveSalary(s)
+                                                            if (e.key === 'Escape') setEditingId(null)
+                                                        }}
+                                                        className="w-32 text-right px-2.5 py-1.5 rounded-lg border border-blue-300 dark:border-blue-500/40 bg-white dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                                    />
+                                                    <button
+                                                        onClick={() => saveSalary(s)}
+                                                        disabled={isSaving}
+                                                        className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50"
+                                                    >
+                                                        {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setEditingId(null)}
+                                                        className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-[#222222] transition-colors text-xs"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <span className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">
+                                                        {fmt(s.basicSalary ?? 0)}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => startEdit(s)}
+                                                        className="p-1 rounded text-slate-300 dark:text-[#444444] hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+                                                        title="Edit salary"
+                                                    >
+                                                        <Edit2 className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-5 py-3.5">
+                                            <div className="flex items-center gap-1.5">
+                                                {paid
+                                                    ? <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                                    : <Clock className="w-3.5 h-3.5 text-slate-300 dark:text-[#444444] shrink-0" />
+                                                }
+                                                <span className={`text-xs font-medium ${paid ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-[#555555]'}`}>
+                                                    {paidText}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-5 py-3.5 text-right">
+                                            <button
+                                                onClick={() => setProcessTarget(s)}
+                                                className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold hover:bg-slate-700 dark:hover:bg-slate-100 transition-colors"
+                                            >
+                                                Process Salary
+                                            </button>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
                 )}
             </div>
 
-            {/* Rate reference */}
-            <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4">
-                <p className="text-xs font-bold text-slate-400 dark:text-[#555555] uppercase tracking-wider mb-3">Shift Rates (per shift)</p>
-                <div className="flex flex-wrap gap-3">
-                    {ALL_SHIFT_TYPES.map(t => (
-                        <div key={t} className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg ${SHIFT_CLS[t]}`}>
-                            <span className="font-semibold">{SHIFT_LABEL[t]}</span>
-                            <span className="font-bold">₹{SHIFT_RATE[t]}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {processTarget && (
+                <ProcessSalaryModal
+                    staff={processTarget}
+                    onClose={() => setProcessTarget(null)}
+                    onProcessed={() => { setProcessTarget(null); load() }}
+                />
+            )}
         </div>
     )
 }
