@@ -10,7 +10,7 @@ import {
 import {
   Users, Stethoscope, Building2, BedDouble, TrendingUp,
   TrendingDown, ArrowRight, Calendar, ReceiptText, Activity,
-  Loader2, Plus, UserCheck, AlertCircle
+  Loader2, Plus, UserCheck
 } from "lucide-react";
 import { format, subDays, parseISO, startOfMonth, isSameMonth } from "date-fns";
 
@@ -138,7 +138,6 @@ function RevenueTooltip({ active, payload, label }) {
   );
 }
 
-const GENDER_COLORS = ["#10b981", "#f43f5e", "#6366f1"];
 const STATUS_COLORS = { SCHEDULED: "#6366f1", COMPLETED: "#10b981", CANCELLED: "#f43f5e", NO_SHOW: "#f59e0b" };
 const ROLE_COLORS = ["#10b981", "#6366f1", "#f59e0b", "#f43f5e", "#3b82f6"];
 
@@ -250,17 +249,6 @@ export default function AdminDashboard() {
     [patients]
   );
 
-  const genderData = useMemo(() => {
-    const m = patients.filter((p) => p.gender?.toUpperCase() === "MALE").length;
-    const f = patients.filter((p) => p.gender?.toUpperCase() === "FEMALE").length;
-    const o = patients.length - m - f;
-    return [
-      { name: "Male", value: m },
-      { name: "Female", value: f },
-      ...(o > 0 ? [{ name: "Other", value: o }] : []),
-    ].filter((d) => d.value > 0);
-  }, [patients]);
-
   const appointmentStatus = useMemo(() => {
     const counts = {};
     appointments.forEach((a) => {
@@ -361,86 +349,48 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* ── Row 2: Patient trend + Revenue ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-
-        {/* Patient registrations — 30-day area */}
-        <div className="lg:col-span-3">
-          <ChartCard
-            title="Patient Registrations"
-            subtitle="Daily new registrations — last 30 days"
-            action="/patients"
-            actionLabel="All patients"
-          >
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={patientTrend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="patGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: "#94a3b8" }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval={6}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#94a3b8" }}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip content={<PatientTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  fill="url(#patGrad)"
-                  dot={false}
-                  activeDot={{ r: 4, fill: "#10b981", strokeWidth: 0 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </div>
-
-        {/* Gender split donut */}
-        <div className="lg:col-span-2">
-          <ChartCard title="Patient Gender" subtitle="All-time distribution">
-            {genderData.length > 0 ? (
-              <>
-                <DonutChart
-                  data={genderData}
-                  colors={GENDER_COLORS}
-                  centerLabel="total"
-                  centerValue={patients.length}
-                />
-                <div className="space-y-2 mt-1">
-                  {genderData.map((d, i) => (
-                    <LegendDot
-                      key={d.name}
-                      color={GENDER_COLORS[i]}
-                      label={d.name}
-                      value={d.value}
-                      total={patients.length}
-                    />
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-40 gap-2 text-slate-400 dark:text-[#444]">
-                <AlertCircle className="w-8 h-8" />
-                <p className="text-xs">No patient data yet</p>
-              </div>
-            )}
-          </ChartCard>
-        </div>
-      </div>
+      {/* ── Row 2: Patient trend — full width ── */}
+      <ChartCard
+        title="Patient Registrations"
+        subtitle="Daily new registrations — last 30 days"
+        action="/patients"
+        actionLabel="All patients"
+      >
+        <ResponsiveContainer width="100%" height={220}>
+          <AreaChart data={patientTrend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="patGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" vertical={false} />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 10, fill: "#94a3b8" }}
+              tickLine={false}
+              axisLine={false}
+              interval={4}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: "#94a3b8" }}
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+            />
+            <Tooltip content={<PatientTooltip />} />
+            <Area
+              type="monotone"
+              dataKey="count"
+              stroke="#10b981"
+              strokeWidth={2}
+              fill="url(#patGrad)"
+              dot={false}
+              activeDot={{ r: 4, fill: "#10b981", strokeWidth: 0 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
       {/* ── Row 3: Revenue bars + Appointment status + Staff roles ── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
