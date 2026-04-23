@@ -352,25 +352,26 @@ export default function ShiftRoster() {
                                                 return (
                                                     <td
                                                         key={dateStr}
-                                                        className={`px-1.5 py-2 align-middle relative ${isToday ? 'bg-blue-50/40 dark:bg-blue-500/5' : ''}`}
+                                                        className={`px-1.5 py-2 align-top relative ${isToday ? 'bg-blue-50/40 dark:bg-blue-500/5' : ''}`}
                                                     >
+                                                        <div className="min-h-[52px] flex flex-col gap-0.5">
                                                         {isAssigning ? (
-                                                            <div className="w-full h-7 flex items-center justify-center">
+                                                            <div className="flex-1 flex items-center justify-center rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#0f0f0f]">
                                                                 <Loader2 className="w-3 h-3 animate-spin text-slate-300" />
                                                             </div>
                                                         ) : dayShifts.length > 0 ? (
-                                                            <div className="space-y-0.5">
+                                                            <>
                                                                 {dayShifts.map(s => {
                                                                     const meta = SHIFTS.find(x => x.type === s.shiftType)!
                                                                     return (
                                                                         <div
                                                                             key={s.id}
-                                                                            className={`group flex items-center justify-between gap-1 text-[11px] font-semibold px-2 py-1 rounded border ${meta.badgeCls}`}
+                                                                            className={`group flex items-center justify-between gap-1 text-[11px] font-semibold px-2 py-1.5 rounded-lg border ${meta.badgeCls}`}
                                                                         >
                                                                             <span>{meta.label}</span>
                                                                             <button
                                                                                 onClick={() => handleRemove(s.id)}
-                                                                                className="opacity-0 group-hover:opacity-50 hover:opacity-100 transition-opacity shrink-0"
+                                                                                className="opacity-0 group-hover:opacity-60 hover:opacity-100 transition-opacity shrink-0"
                                                                                 title="Remove"
                                                                             >
                                                                                 <X className="w-2.5 h-2.5" />
@@ -378,15 +379,22 @@ export default function ShiftRoster() {
                                                                         </div>
                                                                     )
                                                                 })}
-                                                            </div>
+                                                                <button
+                                                                    onClick={e => openPopover(staff.id, dateStr, e.currentTarget)}
+                                                                    className="w-full py-1 flex items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-[#2a2a2a] text-slate-300 dark:text-[#3a3a3a] hover:border-blue-300 dark:hover:border-blue-500/40 hover:text-blue-400 transition-colors"
+                                                                >
+                                                                    <Plus className="w-3 h-3" />
+                                                                </button>
+                                                            </>
                                                         ) : (
                                                             <button
                                                                 onClick={e => openPopover(staff.id, dateStr, e.currentTarget)}
-                                                                className="w-full h-7 flex items-center justify-center rounded border border-dashed border-slate-200 dark:border-[#2a2a2a] text-slate-300 dark:text-[#3a3a3a] hover:border-blue-300 dark:hover:border-blue-500/40 hover:text-blue-400 dark:hover:text-blue-500 transition-colors"
+                                                                className="flex-1 flex items-center justify-center rounded-lg border border-slate-100 dark:border-[#1e1e1e] bg-slate-50/60 dark:bg-[#0d0d0d] text-slate-300 dark:text-[#333333] hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-blue-50/40 dark:hover:bg-blue-500/5 hover:text-blue-400 transition-colors"
                                                             >
-                                                                <Plus className="w-3 h-3" />
+                                                                <Plus className="w-3.5 h-3.5" />
                                                             </button>
                                                         )}
+                                                        </div>
 
                                                         {/* Popover — single click assigns, no confirm */}
                                                         {isOpen && (
