@@ -53,7 +53,7 @@ public class Room {
     @Column(name = "attender_relationship", length = 50)
     private String attenderRelationship;
 
-    @Column(name = "allocation_token", length = 10)
+    @Column(name = "allocation_token", length = 30)
     private String allocationToken;
 
     @Column(name = "approx_discharge_time")

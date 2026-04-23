@@ -40,7 +40,7 @@ public class RoomLog {
     @Column(name = "attender_name", length = 100)
     private String attenderName;
 
-    @Column(name = "allocation_token", length = 10)
+    @Column(name = "allocation_token", length = 30)
     private String allocationToken;
 
     @Column(name = "performed_by", length = 200)
