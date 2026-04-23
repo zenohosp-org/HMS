@@ -223,27 +223,8 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
                     </div>
                 )}
                 {filteredManagementLinks.map(link => renderLink(link))}
-
-                {/* Radiology — visible to all roles */}
-                <>
-                    {isOpen && (
-                        <div className="px-3 mb-2 mt-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
-                            Radiology
-                        </div>
-                    )}
-                    {renderAccordionSection(RADIOLOGY_LINKS, 'Radiology', ScanLine, radOpen, setRadOpen, radActive)}
-                </>
-
-                {isHrAdmin && (
-                    <>
-                        {isOpen && (
-                            <div className="px-3 mb-2 mt-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
-                                Human Resources
-                            </div>
-                        )}
-                        {renderHrAccordion()}
-                    </>
-                )}
+                {renderAccordionSection(RADIOLOGY_LINKS, 'Radiology', ScanLine, radOpen, setRadOpen, radActive)}
+                {isHrAdmin && renderHrAccordion()}
 
                 {/* Divider */}
                 <div className={`border-t border-slate-100 dark:border-[#1e1e1e] ${isOpen ? 'mx-3 my-4' : 'my-4'}`} />
