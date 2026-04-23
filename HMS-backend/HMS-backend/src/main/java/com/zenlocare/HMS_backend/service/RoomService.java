@@ -5,10 +5,8 @@ import com.zenlocare.HMS_backend.dto.RoomAllocationRequest;
 import com.zenlocare.HMS_backend.dto.RoomCreateRequest;
 import com.zenlocare.HMS_backend.dto.RoomLogDTO;
 import com.zenlocare.HMS_backend.entity.*;
-import com.zenlocare.HMS_backend.repository.HospitalRepository;
-import com.zenlocare.HMS_backend.repository.PatientRepository;
-import com.zenlocare.HMS_backend.repository.RoomLogRepository;
-import com.zenlocare.HMS_backend.repository.RoomRepository;
+import com.zenlocare.HMS_backend.repository.*;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +25,8 @@ public class RoomService {
     private final HospitalRepository hospitalRepository;
     private final PatientRepository patientRepository;
     private final RoomLogRepository roomLogRepository;
+    private final DepartmentRepository departmentRepository;
+    private final AdmissionRepository admissionRepository;
 
     public List<Room> getRoomsForHospital(UUID hospitalId) {
         return roomRepository.findByHospitalId(hospitalId);
@@ -46,12 +46,17 @@ public class RoomService {
                 tempRoomNumber = request.getRoomPrefix() + "-" + String.format("%02d", counter);
             }
 
+            Department dept = request.getDepartmentId() != null
+                    ? departmentRepository.findById(request.getDepartmentId()).orElse(null) : null;
+
             Room room = Room.builder()
                     .hospital(hospital)
                     .roomNumber(tempRoomNumber)
                     .roomType(request.getRoomType())
                     .pricePerDay(request.getPricePerDay())
                     .status(RoomStatus.AVAILABLE)
+                    .department(dept)
+                    .ward(request.getWard())
                     .build();
 
             Room saved = roomRepository.save(room);
@@ -101,6 +106,7 @@ public class RoomService {
         room.setAttenderPhone(request.getAttenderPhone());
         room.setAttenderRelationship(request.getAttenderRelationship());
         room.setAllocationToken(generateToken());
+        room.setAdmissionDate(LocalDateTime.now());
         if (request.getApproxDischargeTime() != null) {
             room.setApproxDischargeTime(request.getApproxDischargeTime());
         }
@@ -139,12 +145,21 @@ public class RoomService {
         room.setStatus(RoomStatus.AVAILABLE);
         room.setCurrentPatient(null);
         room.setApproxDischargeTime(null);
+        room.setAdmissionDate(null);
         room.setAttenderName(null);
         room.setAttenderPhone(null);
         room.setAttenderRelationship(null);
         room.setAllocationToken(null);
 
         Room saved = roomRepository.save(room);
+
+        // Auto-discharge any linked active Admission
+        admissionRepository.findByRoomIdAndStatus(roomId, AdmissionStatus.ADMITTED)
+                .ifPresent(admission -> {
+                    admission.setStatus(AdmissionStatus.DISCHARGED);
+                    admission.setActualDischargeDate(LocalDateTime.now());
+                    admissionRepository.save(admission);
+                });
 
         roomLogRepository.save(RoomLog.builder()
                 .room(saved)

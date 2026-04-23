@@ -49,7 +49,7 @@ public class UserController {
                 req.getEmail(), req.getPassword(), req.getFirstName(), req.getLastName(),
                 req.getRole(), req.getHospitalId(), req.getPhone(),
                 req.getEmployeeCode(), req.getDesignation(), req.getGender(),
-                req.getDateOfJoining(), req.getBranchId(), req.getDepartmentId());
+                req.getDateOfJoining(), req.getBranchId(), req.getDepartmentId(), req.getDesignationId());
         return ResponseEntity.ok(mapToDto(user));
     }
 
@@ -71,7 +71,8 @@ public class UserController {
     public ResponseEntity<UserDto> updateUser(@PathVariable UUID id, @RequestBody UserDto req) {
         User user = userService.updateUser(id, req.getFirstName(), req.getLastName(), req.getPhone(),
                 req.getRole(), req.getEmployeeCode(), req.getDesignation(),
-                req.getGender(), req.getDateOfJoining(), req.getState());
+                req.getGender(), req.getDateOfJoining(), req.getState(),
+                req.getDepartmentId(), req.getDesignationId());
         return ResponseEntity.ok(mapToDto(user));
     }
 
@@ -91,9 +92,17 @@ public class UserController {
         dto.setGender(user.getGender());
         dto.setDateOfJoining(user.getDateOfJoining());
         dto.setBranchId(user.getBranchId());
-        dto.setDepartmentId(user.getDepartmentId());
         dto.setLastLoginAt(user.getLastLoginAt());
-
+        if (user.getDepartment() != null) {
+            dto.setDepartmentId(user.getDepartment().getId());
+            dto.setDepartmentName(user.getDepartment().getName());
+            dto.setDepartmentType(user.getDepartment().getType().name());
+        }
+        if (user.getDesignationRef() != null) {
+            dto.setDesignationId(user.getDesignationRef().getId());
+            dto.setDesignationName(user.getDesignationRef().getName());
+            dto.setDesignationCategory(user.getDesignationRef().getCategory().name());
+        }
         return dto;
     }
 
@@ -112,6 +121,7 @@ public class UserController {
         private java.time.LocalDate dateOfJoining;
         private UUID branchId;
         private UUID departmentId;
+        private UUID designationId;
     }
 
     @Data
@@ -131,6 +141,11 @@ public class UserController {
         private java.time.LocalDate dateOfJoining;
         private UUID branchId;
         private UUID departmentId;
+        private String departmentName;
+        private String departmentType;
+        private UUID designationId;
+        private String designationName;
+        private String designationCategory;
         private java.time.LocalDateTime lastLoginAt;
     }
 }

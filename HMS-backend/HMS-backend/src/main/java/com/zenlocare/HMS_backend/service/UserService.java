@@ -1,13 +1,9 @@
 package com.zenlocare.HMS_backend.service;
 
-import com.zenlocare.HMS_backend.entity.Hospital;
-import com.zenlocare.HMS_backend.entity.Role;
-import com.zenlocare.HMS_backend.entity.User;
+import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.exception.ConflictException;
 import com.zenlocare.HMS_backend.exception.ResourceNotFoundException;
-import com.zenlocare.HMS_backend.repository.HospitalRepository;
-import com.zenlocare.HMS_backend.repository.RoleRepository;
-import com.zenlocare.HMS_backend.repository.UserRepository;
+import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,6 +18,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final HospitalRepository hospitalRepository;
+    private final DepartmentRepository departmentRepository;
+    private final DesignationRepository designationRepository;
     private final PasswordEncoder passwordEncoder;
 
     public List<User> getUsersByHospital(UUID hospitalId) {
@@ -40,15 +38,13 @@ public class UserService {
             }
             return userRepository.findByHospitalId(hospitalId);
         }
-
-        // Use pagination request to limit to top 20 results for performance
         org.springframework.data.domain.Pageable limit = org.springframework.data.domain.PageRequest.of(0, 20);
         return userRepository.searchUsers(hospitalId, query.trim(), role, limit);
     }
 
     public User createUser(String email, String password, String firstName, String lastName,
             String roleName, UUID hospitalId, String phone, String employeeCode, String designation,
-            String gender, java.time.LocalDate dateOfJoining, UUID branchId, UUID departmentId) {
+            String gender, java.time.LocalDate dateOfJoining, UUID branchId, UUID departmentId, UUID designationId) {
 
         final String normalizedEmail = email != null ? email.toLowerCase().trim() : null;
         final String normalizedRoleName = roleName != null ? roleName.toLowerCase().trim() : null;
@@ -63,6 +59,11 @@ public class UserService {
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
 
+        Department dept = departmentId != null
+                ? departmentRepository.findById(departmentId).orElse(null) : null;
+        Designation desig = designationId != null
+                ? designationRepository.findById(designationId).orElse(null) : null;
+
         User user = User.builder()
                 .email(normalizedEmail)
                 .passwordHash(passwordEncoder.encode(password != null ? password : "defaultPassword123"))
@@ -76,7 +77,8 @@ public class UserService {
                 .gender(gender)
                 .dateOfJoining(dateOfJoining)
                 .branchId(branchId)
-                .departmentId(departmentId)
+                .department(dept)
+                .designationRef(desig)
                 .isActive(true)
                 .build();
 
@@ -85,7 +87,8 @@ public class UserService {
 
     public User updateUser(UUID userId, String firstName, String lastName, String phone,
             String roleName, String employeeCode, String designation,
-            String gender, java.time.LocalDate dateOfJoining, String state) {
+            String gender, java.time.LocalDate dateOfJoining, String state,
+            UUID departmentId, UUID designationId) {
         User user = getUserById(userId);
 
         if (firstName != null) user.setFirstName(firstName);
@@ -96,6 +99,12 @@ public class UserService {
         if (gender != null) user.setGender(gender);
         if (dateOfJoining != null) user.setDateOfJoining(dateOfJoining);
         if (state != null) user.setState(state);
+        if (departmentId != null) {
+            user.setDepartment(departmentRepository.findById(departmentId).orElse(null));
+        }
+        if (designationId != null) {
+            user.setDesignationRef(designationRepository.findById(designationId).orElse(null));
+        }
         if (roleName != null && !roleName.isBlank()) {
             Role role = roleRepository.findByName(roleName.toLowerCase().trim())
                     .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleName));

@@ -9,6 +9,7 @@ import {
   ReceiptText,
   Activity,
   Bed,
+  BedDouble,
   Calendar,
   Stethoscope,
   ArrowUpRight,
@@ -20,7 +21,8 @@ import {
   UserSquare2,
   CalendarDays,
   ScanLine,
-  FileText
+  FileText,
+  Award
 } from "lucide-react";
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
 const MANAGEMENT_LINKS = [
@@ -38,7 +40,10 @@ const RADIOLOGY_LINKS = [
 ];
 const HR_LINKS = [
   { label: "Staff Directory", to: "/staffs", icon: UserSquare2 },
-  { label: "Shift Roster", to: "/staffs/roster", icon: CalendarDays }
+  { label: "Shift Roster", to: "/staffs/roster", icon: CalendarDays },
+  { label: "Departments", to: "/staffs/departments", icon: Building2 },
+  { label: "Designations", to: "/staffs/designations", icon: Award },
+  { label: "IPD Admissions", to: "/admissions", icon: BedDouble },
 ];
 const EXTERNAL_APPS = [
   { label: "Finance", href: "https://finance.zenohosp.com", icon: BarChart2 },

@@ -282,12 +282,79 @@ const bankApi = {
     return data;
   }
 };
+
+const departmentApi = {
+  list: async (hospitalId, activeOnly = false) => {
+    const { data } = await api.get("/departments", { params: { hospitalId, activeOnly } });
+    return data;
+  },
+  create: async (payload) => {
+    const { data } = await api.post("/departments", payload);
+    return data;
+  },
+  update: async (id, payload) => {
+    const { data } = await api.put(`/departments/${id}`, payload);
+    return data;
+  },
+  toggle: async (id) => {
+    const { data } = await api.patch(`/departments/${id}/toggle`);
+    return data;
+  }
+};
+
+const designationApi = {
+  list: async (hospitalId, activeOnly = false, departmentId = null) => {
+    const params = { hospitalId, activeOnly };
+    if (departmentId) params.departmentId = departmentId;
+    const { data } = await api.get("/designations", { params });
+    return data;
+  },
+  create: async (payload) => {
+    const { data } = await api.post("/designations", payload);
+    return data;
+  },
+  toggle: async (id) => {
+    const { data } = await api.patch(`/designations/${id}/toggle`);
+    return data;
+  }
+};
+
+const admissionApi = {
+  list: async (hospitalId, all = false) => {
+    const { data } = await api.get("/admissions", { params: { hospitalId, all } });
+    return data;
+  },
+  get: async (id) => {
+    const { data } = await api.get(`/admissions/${id}`);
+    return data;
+  },
+  byPatient: async (patientId) => {
+    const { data } = await api.get(`/admissions/patient/${patientId}`);
+    return data;
+  },
+  admit: async (payload) => {
+    const { data } = await api.post("/admissions", payload);
+    return data;
+  },
+  assignRoom: async (admissionId, roomId) => {
+    const { data } = await api.patch(`/admissions/${admissionId}/assign-room`, { roomId });
+    return data;
+  },
+  discharge: async (admissionId, payload) => {
+    const { data } = await api.patch(`/admissions/${admissionId}/discharge`, payload);
+    return data;
+  }
+};
+
 var stdin_default = api;
 export {
+  admissionApi,
   appointmentsApi,
   authApi,
   bankApi,
   stdin_default as default,
+  departmentApi,
+  designationApi,
   directoryLogout,
   doctorsApi,
   hospitalServiceApi,

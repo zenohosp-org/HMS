@@ -59,6 +59,17 @@ public class Room {
     @Column(name = "approx_discharge_time")
     private LocalDateTime approxDischargeTime;
 
+    @Column(name = "admission_date")
+    private LocalDateTime admissionDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Department department;
+
+    @Column(name = "ward", length = 100)
+    private String ward;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

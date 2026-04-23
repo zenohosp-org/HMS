@@ -8,8 +8,10 @@ import java.util.UUID;
 @Data
 public class RoomCreateRequest {
     private UUID hospitalId;
-    private String roomPrefix; // e.g. "GEN", "ICU"
+    private String roomPrefix;
     private RoomType roomType;
-    private Integer count; // How many to generate
+    private Integer count;
     private BigDecimal pricePerDay;
+    private UUID departmentId;
+    private String ward;
 }

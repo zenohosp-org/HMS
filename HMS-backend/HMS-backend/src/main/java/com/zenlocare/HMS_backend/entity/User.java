@@ -59,8 +59,13 @@ public class User {
     @Column(name = "branch_id")
     private UUID branchId;
 
-    @Column(name = "department_id")
-    private UUID departmentId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id")
+    private Department department;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "designation_id")
+    private Designation designationRef;
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
