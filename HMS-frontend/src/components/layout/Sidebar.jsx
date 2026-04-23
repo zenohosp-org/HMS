@@ -25,13 +25,15 @@ import {
   Award
 } from "lucide-react";
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
-const MANAGEMENT_LINKS = [
+const CLINICAL_LINKS = [
   { label: "Doctors", to: "/doctors", icon: Users },
   { label: "Patients", to: "/patients", icon: Building2 },
   { label: "Appointments", to: "/appointments", icon: Calendar },
+];
+const ADMIN_LINKS = [
   { label: "Billing", to: "/billing", icon: ReceiptText },
   { label: "Specializations", to: "/specializations", icon: Stethoscope },
-  { label: "Services", to: "/services", icon: ClipboardList }
+  { label: "Services", to: "/services", icon: ClipboardList },
 ];
 const ROOMS_LINKS = [
   { label: "Room Allocation", to: "/rooms", icon: Bed },
@@ -61,9 +63,14 @@ function Sidebar({ isOpen }) {
   const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
   const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
   const initials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`;
-  const filteredManagementLinks = MANAGEMENT_LINKS.filter((link) => {
+  const filteredClinicalLinks = CLINICAL_LINKS.filter((link) => {
     if (user?.role === "hospital_admin" || user?.role === "super_admin") return true;
-    const allowedLinks = ["Patients", "Appointments", "Billing"];
+    const allowedLinks = ["Patients", "Appointments"];
+    return allowedLinks.includes(link.label);
+  });
+  const filteredAdminLinks = ADMIN_LINKS.filter((link) => {
+    if (user?.role === "hospital_admin" || user?.role === "super_admin") return true;
+    const allowedLinks = ["Billing"];
     return allowedLinks.includes(link.label);
   });
   const isHrAdmin = user?.role === "hospital_admin" || user?.role === "super_admin";
@@ -126,7 +133,7 @@ function Sidebar({ isOpen }) {
                         Main Menu
                     </div>}{renderLink(DASHBOARD_LINK)}{isOpen && <div className="px-3 mb-2 mt-10 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
                         Hospital
-                    </div>}{filteredManagementLinks.map((link) => renderLink(link))}{renderRoomsAccordion()}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{isHrAdmin && renderHrAccordion()}{
+                    </div>}{filteredClinicalLinks.map((link) => renderLink(link))}{renderRoomsAccordion()}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{filteredAdminLinks.map((link) => renderLink(link))}{isHrAdmin && renderHrAccordion()}{
     /* Divider */
   }<div className={`border-t border-slate-100 dark:border-[#1e1e1e] ${isOpen ? "mx-3 my-4" : "my-4"}`} />{isOpen && <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
                         Other Apps
