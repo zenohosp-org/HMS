@@ -36,6 +36,7 @@ public class DataSeeder implements CommandLineRunner {
                 true, true, true);
         createRoleIfAbsent("doctor", "Doctor", "Medical professional access", true, true, false, false, true, false);
         createRoleIfAbsent("staff", "Staff", "General staff access", true, true, false, true, false, true);
+        createRoleIfAbsent("technician", "Technician", "Technical staff access", true, true, false, false, true, true);
         log.info("✅ Roles seeded.");
     }
 

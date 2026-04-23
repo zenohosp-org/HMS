@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
-import { staffApi, departmentApi, designationApi } from '@/utils/api'
-import { X, User as UserIcon, ShieldAlert, Building2, CreditCard } from 'lucide-react'
+import { staffApi, departmentApi, designationApi, doctorsApi, specializationApi } from '@/utils/api'
+import { X, User as UserIcon, ShieldAlert, Building2, CreditCard, Stethoscope } from 'lucide-react'
 import StateSelect from '@/components/StateSelect'
 
 const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]$/
@@ -20,6 +20,8 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
   const [submitting, setSubmitting] = useState(false)
   const [departments, setDepartments] = useState([])
   const [designations, setDesignations] = useState([])
+  const [specializations, setSpecializations] = useState([])
+  const [doctorProfileId, setDoctorProfileId] = useState(null)
 
   const [form, setForm] = useState({
     firstName: editStaff?.firstName || '',
@@ -39,6 +41,12 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
     dateOfJoining: editStaff?.dateOfJoining || '',
     departmentId: editStaff?.departmentId || '',
     designationId: editStaff?.designationId || '',
+    // Doctor-specific fields
+    specialization: '',
+    qualification: '',
+    medicalRegistrationNumber: '',
+    registrationCouncil: '',
+    consultationFee: '',
   })
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
@@ -46,12 +54,29 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
   useEffect(() => {
     if (!user?.hospitalId) return
     departmentApi.list(user.hospitalId, true).then(setDepartments).catch(() => {})
+    specializationApi.list(user.hospitalId).then(setSpecializations).catch(() => {})
   }, [user?.hospitalId])
 
   useEffect(() => {
     if (!user?.hospitalId) return
     designationApi.list(user.hospitalId, true, form.departmentId || null).then(setDesignations).catch(() => {})
   }, [user?.hospitalId, form.departmentId])
+
+  // Load existing doctor profile when editing a doctor-role user
+  useEffect(() => {
+    if (!editStaff?.id || editStaff?.role !== 'doctor') return
+    doctorsApi.getByUserId(editStaff.id).then(profile => {
+      setDoctorProfileId(profile.id)
+      setForm(f => ({
+        ...f,
+        specialization: profile.specialization || '',
+        qualification: profile.qualification || '',
+        medicalRegistrationNumber: profile.medicalRegistrationNumber || '',
+        registrationCouncil: profile.registrationCouncil || '',
+        consultationFee: profile.consultationFee != null ? String(profile.consultationFee) : '',
+      }))
+    }).catch(() => {})
+  }, [editStaff?.id, editStaff?.role])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -77,13 +102,33 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
         departmentId: form.departmentId || null,
         designationId: form.designationId || null,
       }
+
+      let savedUser
       if (editStaff) {
-        await staffApi.update(editStaff.id, payload)
+        savedUser = await staffApi.update(editStaff.id, payload)
         notify('Staff profile updated', 'success')
       } else {
-        await staffApi.create({ ...payload, hospitalId: user.hospitalId })
+        savedUser = await staffApi.create({ ...payload, hospitalId: user.hospitalId })
         notify('Staff access created successfully', 'success')
       }
+
+      // Create or update Doctor profile when role is doctor
+      if (form.role === 'doctor') {
+        const doctorPayload = {
+          specialization: form.specialization || null,
+          qualification: form.qualification || null,
+          medicalRegistrationNumber: form.medicalRegistrationNumber || null,
+          registrationCouncil: form.registrationCouncil || null,
+          consultationFee: form.consultationFee ? parseFloat(form.consultationFee) : null,
+        }
+        const userId = editStaff?.id || savedUser?.id
+        if (doctorProfileId) {
+          await doctorsApi.update(doctorProfileId, doctorPayload)
+        } else if (userId) {
+          await doctorsApi.create({ ...doctorPayload, userId, hospitalId: user.hospitalId })
+        }
+      }
+
       onSaved()
     } catch (error) {
       notify(error.response?.data?.error || 'Operation failed', 'error')
@@ -219,17 +264,62 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
                   <label className={labelCls}>System Role *</label>
                   <select required value={form.role} onChange={e => set('role', e.target.value)} className={inputCls}>
                     <option value="staff">General Staff</option>
-                    <option value="hospital_admin">Hospital Administrator</option>
+                    <option value="doctor">Doctor</option>
                     <option value="technician">Technician</option>
+                    <option value="hospital_admin">Hospital Administrator</option>
                   </select>
                   <p className="text-[10px] text-slate-500 mt-1">
-                    Hospital Administrators have full access across all modules.
+                    Doctors will also appear in the Doctors directory. Hospital Administrators have full access across all modules.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* ── 4. Organizational Details ── */}
+            {/* ── 4. Medical Profile (only for Doctor role) ── */}
+            {form.role === 'doctor' && (
+              <div className="space-y-4">
+                <h3 className={sectionHead}>
+                  <Stethoscope className="w-4 h-4 text-blue-500" /> Medical Profile
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Specialization</label>
+                    <select value={form.specialization} onChange={e => set('specialization', e.target.value)} className={inputCls}>
+                      <option value="">Select specialization…</option>
+                      {specializations.map(s => (
+                        <option key={s.id} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Qualification</label>
+                    <input type="text" value={form.qualification}
+                      onChange={e => set('qualification', e.target.value)}
+                      className={inputCls} placeholder="e.g. MBBS, MD" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Medical Registration No.</label>
+                    <input type="text" value={form.medicalRegistrationNumber}
+                      onChange={e => set('medicalRegistrationNumber', e.target.value)}
+                      className={inputCls} placeholder="e.g. MH-12345" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Registration Council</label>
+                    <input type="text" value={form.registrationCouncil}
+                      onChange={e => set('registrationCouncil', e.target.value)}
+                      className={inputCls} placeholder="e.g. Maharashtra Medical Council" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Consultation Fee (₹)</label>
+                    <input type="number" min="0" step="0.01" value={form.consultationFee}
+                      onChange={e => set('consultationFee', e.target.value)}
+                      className={inputCls} placeholder="e.g. 500" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── 5. Organizational Details ── */}
             <div className="space-y-4">
               <h3 className={sectionHead}>
                 <Building2 className="w-4 h-4 text-blue-500" /> Organizational Details
