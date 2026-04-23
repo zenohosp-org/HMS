@@ -49,7 +49,8 @@ public class UserController {
                 req.getEmail(), req.getPassword(), req.getFirstName(), req.getLastName(),
                 req.getRole(), req.getHospitalId(), req.getPhone(),
                 req.getEmployeeCode(), req.getDesignation(), req.getGender(),
-                req.getDateOfJoining(), req.getBranchId(), req.getDepartmentId(), req.getDesignationId());
+                req.getDateOfJoining(), req.getBranchId(), req.getDepartmentId(), req.getDesignationId(),
+                req.getAadhaarNumber(), req.getPanNumber());
         return ResponseEntity.ok(mapToDto(user));
     }
 
@@ -72,7 +73,7 @@ public class UserController {
         User user = userService.updateUser(id, req.getFirstName(), req.getLastName(), req.getPhone(),
                 req.getRole(), req.getEmployeeCode(), req.getDesignation(),
                 req.getGender(), req.getDateOfJoining(), req.getState(),
-                req.getDepartmentId(), req.getDesignationId());
+                req.getDepartmentId(), req.getDesignationId(), req.getAadhaarNumber(), req.getPanNumber());
         return ResponseEntity.ok(mapToDto(user));
     }
 
@@ -103,6 +104,8 @@ public class UserController {
             dto.setDesignationName(user.getDesignationRef().getName());
             dto.setDesignationCategory(user.getDesignationRef().getCategory().name());
         }
+        dto.setAadhaarNumber(user.getAadhaarNumber());
+        dto.setPanNumber(user.getPanNumber());
         return dto;
     }
 
@@ -122,6 +125,8 @@ public class UserController {
         private UUID branchId;
         private UUID departmentId;
         private UUID designationId;
+        private String aadhaarNumber;
+        private String panNumber;
     }
 
     @Data
@@ -146,6 +151,8 @@ public class UserController {
         private UUID designationId;
         private String designationName;
         private String designationCategory;
+        private String aadhaarNumber;
+        private String panNumber;
         private java.time.LocalDateTime lastLoginAt;
     }
 }

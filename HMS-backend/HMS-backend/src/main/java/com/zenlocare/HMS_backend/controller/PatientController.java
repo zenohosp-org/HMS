@@ -40,7 +40,15 @@ public class PatientController {
         Patient p = patientService.createPatient(
                 req.getHospitalId(), req.getFirstName(), req.getLastName(),
                 req.getDob(), req.getGender(), req.getPhone(), req.getEmail(),
-                req.getBloodGroup(), req.getAddress());
+                req.getBloodGroup(), req.getAddress(), req.getAadhaarNumber());
+        return ResponseEntity.ok(p);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Patient> updatePatient(@PathVariable Integer id, @RequestBody CreatePatientRequest req) {
+        Patient p = patientService.updatePatient(id, req.getHospitalId(), req.getFirstName(), req.getLastName(),
+                req.getDob(), req.getGender(), req.getPhone(), req.getEmail(),
+                req.getBloodGroup(), req.getAddress(), req.getAadhaarNumber());
         return ResponseEntity.ok(p);
     }
 
@@ -55,5 +63,6 @@ public class PatientController {
         private String email;
         private String bloodGroup;
         private String address;
+        private String aadhaarNumber;
     }
 }

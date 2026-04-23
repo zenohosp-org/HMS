@@ -44,7 +44,8 @@ public class UserService {
 
     public User createUser(String email, String password, String firstName, String lastName,
             String roleName, UUID hospitalId, String phone, String employeeCode, String designation,
-            String gender, java.time.LocalDate dateOfJoining, UUID branchId, UUID departmentId, UUID designationId) {
+            String gender, java.time.LocalDate dateOfJoining, UUID branchId, UUID departmentId, UUID designationId,
+            String aadhaarNumber, String panNumber) {
 
         final String normalizedEmail = email != null ? email.toLowerCase().trim() : null;
         final String normalizedRoleName = roleName != null ? roleName.toLowerCase().trim() : null;
@@ -79,6 +80,8 @@ public class UserService {
                 .branchId(branchId)
                 .department(dept)
                 .designationRef(desig)
+                .aadhaarNumber(aadhaarNumber != null ? aadhaarNumber.replaceAll("\\D", "") : null)
+                .panNumber(panNumber != null ? panNumber.trim().toUpperCase() : null)
                 .isActive(true)
                 .build();
 
@@ -88,7 +91,7 @@ public class UserService {
     public User updateUser(UUID userId, String firstName, String lastName, String phone,
             String roleName, String employeeCode, String designation,
             String gender, java.time.LocalDate dateOfJoining, String state,
-            UUID departmentId, UUID designationId) {
+            UUID departmentId, UUID designationId, String aadhaarNumber, String panNumber) {
         User user = getUserById(userId);
 
         if (firstName != null) user.setFirstName(firstName);
@@ -105,6 +108,8 @@ public class UserService {
         if (designationId != null) {
             user.setDesignationRef(designationRepository.findById(designationId).orElse(null));
         }
+        user.setAadhaarNumber(aadhaarNumber != null ? aadhaarNumber.replaceAll("\\D", "") : null);
+        user.setPanNumber(panNumber != null ? panNumber.trim().toUpperCase() : null);
         if (roleName != null && !roleName.isBlank()) {
             Role role = roleRepository.findByName(roleName.toLowerCase().trim())
                     .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleName));

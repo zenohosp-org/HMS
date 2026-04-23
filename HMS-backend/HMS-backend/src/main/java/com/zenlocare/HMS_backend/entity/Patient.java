@@ -55,6 +55,9 @@ public class Patient {
     @Column(name = "state", length = 100)
     private String state;
 
+    @Column(name = "aadhaar_number", length = 12)
+    private String aadhaarNumber;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

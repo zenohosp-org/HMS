@@ -33,7 +33,7 @@ function Patients() {
   }, [location.state]);
   const handleSave = async (data) => {
     if (modal.patient) {
-      await patientApi.update(modal.patient.id, data);
+      await patientApi.update(modal.patient.id, { ...data, hospitalId: user.hospitalId });
       notify("Patient updated", "success");
     } else {
       await patientApi.create({ ...data, hospitalId: user.hospitalId });

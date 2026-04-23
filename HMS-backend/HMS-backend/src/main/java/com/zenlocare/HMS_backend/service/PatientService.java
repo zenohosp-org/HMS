@@ -39,7 +39,7 @@ public class PatientService {
     }
 
     public Patient createPatient(UUID hospitalId, String firstName, String lastName, LocalDate dob,
-            String gender, String phone, String email, String bloodGroup, String address) {
+            String gender, String phone, String email, String bloodGroup, String address, String aadhaarNumber) {
 
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
@@ -58,8 +58,26 @@ public class PatientService {
                 .email(email)
                 .bloodGroup(bloodGroup)
                 .address(address)
+                .aadhaarNumber(aadhaarNumber != null ? aadhaarNumber.replaceAll("\\D", "") : null)
                 .build();
 
+        return patientRepository.save(patient);
+    }
+
+    public Patient updatePatient(Integer patientId, UUID hospitalId, String firstName, String lastName,
+            LocalDate dob, String gender, String phone, String email, String bloodGroup, String address,
+            String aadhaarNumber) {
+
+        Patient patient = getPatientById(patientId, hospitalId);
+        if (firstName != null) patient.setFirstName(firstName);
+        if (lastName != null) patient.setLastName(lastName);
+        if (dob != null) patient.setDob(dob);
+        if (gender != null) patient.setGender(gender);
+        if (phone != null) patient.setPhone(phone);
+        if (email != null) patient.setEmail(email);
+        if (bloodGroup != null) patient.setBloodGroup(bloodGroup);
+        if (address != null) patient.setAddress(address);
+        patient.setAadhaarNumber(aadhaarNumber != null ? aadhaarNumber.replaceAll("\\D", "") : null);
         return patientRepository.save(patient);
     }
 }

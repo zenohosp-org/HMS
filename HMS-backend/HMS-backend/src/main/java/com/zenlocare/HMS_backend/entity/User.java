@@ -59,6 +59,12 @@ public class User {
     @Column(name = "branch_id")
     private UUID branchId;
 
+    @Column(name = "aadhaar_number", length = 12)
+    private String aadhaarNumber;
+
+    @Column(name = "pan_number", length = 10)
+    private String panNumber;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
     private Department department;
