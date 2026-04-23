@@ -2,10 +2,13 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle } from 'lucide-react'
 import BookAppointmentModal from '@/components/modals/BookAppointmentModal'
+import Pagination from '@/components/ui/Pagination'
 import { useAuth } from '@/context/AuthContext'
 import { appointmentsApi, doctorsApi, type Appointment, type DoctorUser } from '@/utils/api'
 import { format, addDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, isSameMonth, parseISO, isToday } from 'date-fns'
 import { useNotification } from '@/context/NotificationContext'
+
+const APPT_PAGE_SIZE = 10
 
 type ViewMode = 'list' | 'calendar'
 type CalendarView = 'day' | 'week' | 'month'
@@ -185,6 +188,7 @@ export default function AppointmentsDashboard() {
     const [calendarView, setCalendarView] = useState<CalendarView>('month')
     const [listFilter, setListFilter] = useState<ListFilter>('all')
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
+    const [apptPage, setApptPage] = useState(1)
 
     const [currentDate, setCurrentDate] = useState(new Date())
     const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -231,6 +235,9 @@ export default function AppointmentsDashboard() {
             notify(err?.response?.data?.message || 'Failed to update status', 'error')
         }
     }
+
+    // Reset list page when filter or doctor changes
+    useEffect(() => { setApptPage(1) }, [listFilter, selectedDoctorId])
 
     const filteredAppointments = useMemo(() => {
         let appts = appointments
@@ -308,6 +315,7 @@ export default function AppointmentsDashboard() {
                 </div>
             </div>
 
+            <div className="flex flex-col flex-1 overflow-hidden">
             <div className="overflow-x-auto flex-1">
                 <table className="w-full text-left border-collapse">
                     <thead>
@@ -328,7 +336,7 @@ export default function AppointmentsDashboard() {
                                     No appointments found for the selected filters.
                                 </td>
                             </tr>
-                        ) : filteredAppointments.map((appt) => (
+                        ) : filteredAppointments.slice((apptPage - 1) * APPT_PAGE_SIZE, apptPage * APPT_PAGE_SIZE).map((appt) => (
                             <tr key={appt.id} className="hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors group">
                                 <td className="py-3 px-5">
                                     <div className="flex items-center gap-3">
@@ -360,6 +368,16 @@ export default function AppointmentsDashboard() {
                         ))}
                     </tbody>
                 </table>
+            </div>
+            <div className="px-5 pb-4">
+                <Pagination
+                    currentPage={apptPage}
+                    totalPages={Math.ceil(filteredAppointments.length / APPT_PAGE_SIZE)}
+                    totalItems={filteredAppointments.length}
+                    pageSize={APPT_PAGE_SIZE}
+                    onPageChange={setApptPage}
+                />
+            </div>
             </div>
         </div>
     )

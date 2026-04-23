@@ -4,7 +4,10 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { doctorsApi, staffApi, type DoctorUser } from '@/utils/api'
 import DoctorFormModal from '@/components/modals/DoctorFormModal'
+import Pagination from '@/components/ui/Pagination'
 import { MoreVertical, CheckCircle, XCircle, Trash2 } from 'lucide-react'
+
+const PAGE_SIZE = 8
 
 export default function DoctorsList() {
     const { user } = useAuth()
@@ -14,6 +17,7 @@ export default function DoctorsList() {
     const [loading, setLoading] = useState(true)
     const [showModal, setShowModal] = useState(false)
     const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+    const [page, setPage] = useState(1)
 
     const load = () => {
         if (!user?.hospitalId) return
@@ -78,7 +82,8 @@ export default function DoctorsList() {
                         <p className="text-slate-500 dark:text-[#666666]">No doctors found for this hospital.</p>
                     </div>
                 ) : (
-                    doctors.map(d => {
+                    <>
+                    {doctors.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(d => {
                         const initials = `${d.firstName[0]}${d.lastName?.[0] ?? ''}`.toUpperCase()
                         return (
                             <div key={d.id}
@@ -159,7 +164,15 @@ export default function DoctorsList() {
                                 </div>
                             </div>
                         )
-                    })
+                    })}
+                    <Pagination
+                        currentPage={page}
+                        totalPages={Math.ceil(doctors.length / PAGE_SIZE)}
+                        totalItems={doctors.length}
+                        pageSize={PAGE_SIZE}
+                        onPageChange={setPage}
+                    />
+                    </>
                 )}
             </div>
 

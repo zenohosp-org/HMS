@@ -4,7 +4,10 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { patientApi, type Patient } from '@/utils/api'
 import PatientModal from '@/components/modals/PatientModal'
+import Pagination from '@/components/ui/Pagination'
 import { calcAge, formatDate } from '@/utils/validators'
+
+const PAGE_SIZE = 8
 
 export default function Patients() {
     const { user } = useAuth()
@@ -14,6 +17,7 @@ export default function Patients() {
     const [patients, setPatients] = useState<Patient[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
+    const [page, setPage] = useState(1)
     const [modal, setModal] = useState<{ open: boolean; patient: Patient | null }>
         ({ open: false, patient: null })
 
@@ -76,7 +80,7 @@ export default function Patients() {
                     focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                 placeholder="Search by name, MRN or phone…"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => { setSearch(e.target.value); setPage(1) }}
             />
 
             {/* Separated Rows Layout */}
@@ -92,7 +96,8 @@ export default function Patients() {
                         </p>
                     </div>
                 ) : (
-                    filtered.map(p => {
+                    <>
+                    {filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(p => {
                         const initials = `${p.firstName[0]}${p.lastName?.[0] ?? ''}`.toUpperCase()
                         return (
                             <div key={p.id}
@@ -151,7 +156,15 @@ export default function Patients() {
                                 </div>
                             </div>
                         )
-                    })
+                    })}
+                    <Pagination
+                        currentPage={page}
+                        totalPages={Math.ceil(filtered.length / PAGE_SIZE)}
+                        totalItems={filtered.length}
+                        pageSize={PAGE_SIZE}
+                        onPageChange={setPage}
+                    />
+                    </>
                 )}
             </div>
 

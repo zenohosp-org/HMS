@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { shiftsApi, staffApi, doctorsApi, type StaffShift, type StaffUser, type DoctorUser } from '@/utils/api'
+import Pagination from '@/components/ui/Pagination'
 import { ChevronLeft, ChevronRight, Loader2, Plus, X, Users } from 'lucide-react'
+
+const GROUP_PAGE_SIZE = 5
 
 type ShiftType = StaffShift['shiftType']
 
@@ -74,6 +77,7 @@ export default function ShiftRoster() {
     const [loading, setLoading] = useState(true)
     const [staffOptions, setStaffOptions] = useState<StaffOption[]>([])
 
+    const [groupPages, setGroupPages] = useState<Record<string, number>>({})
     const [popover, setPopover] = useState<{ staffId: string; date: string; flipUp: boolean } | null>(null)
     // per-cell assigning key: "staffId|date"
     const [assigningKey, setAssigningKey] = useState<string | null>(null)
@@ -246,17 +250,44 @@ export default function ShiftRoster() {
                     <p className="text-sm">No staff members found</p>
                 </div>
             ) : (
-                groups.map(([groupName, members]) => (
+                groups.map(([groupName, members]) => {
+                    const gPage = groupPages[groupName] ?? 1
+                    const totalGroupPages = Math.ceil(members.length / GROUP_PAGE_SIZE)
+                    const visibleMembers = members.slice((gPage - 1) * GROUP_PAGE_SIZE, gPage * GROUP_PAGE_SIZE)
+                    const setGPage = (p: number) => setGroupPages(prev => ({ ...prev, [groupName]: p }))
+
+                    return (
                     <div key={groupName} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl overflow-visible">
 
                         {/* Group header */}
-                        <div className="px-4 py-2.5 border-b border-slate-100 dark:border-[#1e1e1e]">
+                        <div className="px-4 py-2.5 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
                             <p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wide">
                                 {groupName}
                                 <span className="ml-2 font-normal text-slate-400 dark:text-[#666666] normal-case">
                                     {members.length} {members.length === 1 ? 'member' : 'members'}
                                 </span>
                             </p>
+                            {totalGroupPages > 1 && (
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => setGPage(Math.max(1, gPage - 1))}
+                                        disabled={gPage === 1}
+                                        className="w-6 h-6 flex items-center justify-center rounded border border-slate-200 dark:border-[#2a2a2a] text-slate-400 dark:text-[#666666] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        <ChevronLeft className="w-3 h-3" />
+                                    </button>
+                                    <span className="text-[11px] text-slate-400 dark:text-[#666666] px-1">
+                                        {gPage}/{totalGroupPages}
+                                    </span>
+                                    <button
+                                        onClick={() => setGPage(Math.min(totalGroupPages, gPage + 1))}
+                                        disabled={gPage === totalGroupPages}
+                                        className="w-6 h-6 flex items-center justify-center rounded border border-slate-200 dark:border-[#2a2a2a] text-slate-400 dark:text-[#666666] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        <ChevronRight className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Group table */}
@@ -291,7 +322,7 @@ export default function ShiftRoster() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
-                                    {members.map(staff => (
+                                    {visibleMembers.map(staff => (
                                         <tr key={staff.id} className="hover:bg-slate-50/50 dark:hover:bg-[#0f0f0f] transition-colors">
                                             {/* Staff info */}
                                             <td className="px-4 py-2.5">
@@ -396,7 +427,8 @@ export default function ShiftRoster() {
                             </table>
                         </div>
                     </div>
-                ))
+                    )
+                })
             )}
         </div>
     )

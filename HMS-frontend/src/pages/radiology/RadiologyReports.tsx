@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { radiologyApi, type RadiologyOrder, type RadiologyStats } from '@/utils/api'
+import Pagination from '@/components/ui/Pagination'
 import { FileText, Search, Loader2, CheckCircle2, User, Clock, ExternalLink } from 'lucide-react'
+
+const PAGE_SIZE = 8
 
 const PRIORITY_CLS: Record<RadiologyOrder['priority'], string> = {
     ROUTINE: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#888888] dark:border-[#333333]',
@@ -28,6 +31,7 @@ export default function RadiologyReports() {
     const [stats, setStats] = useState<RadiologyStats>({ pendingScan: 0, awaitingReport: 0, reportGenerated: 0 })
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
+    const [page, setPage] = useState(1)
 
     const load = useCallback(async () => {
         if (!user?.hospitalId) return
@@ -86,7 +90,7 @@ export default function RadiologyReports() {
                         className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                         placeholder="Search by patient, investigation, MRN, report ID…"
                         value={search}
-                        onChange={e => setSearch(e.target.value)}
+                        onChange={e => { setSearch(e.target.value); setPage(1) }}
                     />
                 </div>
             </div>
@@ -116,7 +120,7 @@ export default function RadiologyReports() {
                             ))}
                         </div>
                         <div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">
-                            {filtered.map(order => (
+                            {filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(order => (
                                 <div key={order.id} className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors md:grid md:grid-cols-[2.5fr_2fr_2fr_1.5fr_1fr_auto] md:gap-4 md:items-center space-y-2 md:space-y-0">
 
                                     {/* Patient */}
@@ -167,6 +171,15 @@ export default function RadiologyReports() {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                        <div className="px-6 pb-4">
+                            <Pagination
+                                currentPage={page}
+                                totalPages={Math.ceil(filtered.length / PAGE_SIZE)}
+                                totalItems={filtered.length}
+                                pageSize={PAGE_SIZE}
+                                onPageChange={setPage}
+                            />
                         </div>
                     </>
                 )}
