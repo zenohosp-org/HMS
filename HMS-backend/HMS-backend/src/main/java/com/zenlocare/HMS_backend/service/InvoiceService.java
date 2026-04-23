@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.service;
 
+import com.zenlocare.HMS_backend.dto.InvoiceDTO;
 import com.zenlocare.HMS_backend.dto.InvoiceRequest;
 import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
@@ -110,15 +111,49 @@ public class InvoiceService {
         });
     }
 
-    public List<Invoice> getHospitalInvoices(UUID hospitalId) {
-        return invoiceRepository.findByHospitalId(hospitalId);
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<InvoiceDTO> getHospitalInvoices(UUID hospitalId) {
+        return invoiceRepository.findByHospitalIdWithPatient(hospitalId)
+                .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    public List<Invoice> getPatientInvoices(Integer patientId) {
-        return invoiceRepository.findByPatientIdOrderByCreatedAtDesc(patientId);
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<InvoiceDTO> getPatientInvoices(Integer patientId) {
+        return invoiceRepository.findByPatientIdWithPatient(patientId)
+                .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     public Invoice getInvoice(UUID id) {
         return invoiceRepository.findById(id).orElseThrow(() -> new RuntimeException("Invoice not found"));
+    }
+
+    private InvoiceDTO toDTO(Invoice inv) {
+        return InvoiceDTO.builder()
+                .id(inv.getId().toString())
+                .invoiceNumber(inv.getInvoiceNumber())
+                .patientId(inv.getPatient() != null ? inv.getPatient().getId() : null)
+                .patientName(inv.getPatient() != null
+                        ? inv.getPatient().getFirstName() + " " + inv.getPatient().getLastName() : null)
+                .patientMrn(inv.getPatient() != null ? inv.getPatient().getMrn() : null)
+                .subtotal(inv.getSubtotal())
+                .tax(inv.getTax())
+                .discount(inv.getDiscount())
+                .total(inv.getTotal())
+                .paymentMethod(inv.getPaymentMethod())
+                .notes(inv.getNotes())
+                .status(inv.getStatus().name())
+                .createdAt(inv.getCreatedAt())
+                .updatedAt(inv.getUpdatedAt())
+                .items(inv.getItems() != null ? inv.getItems().stream().map(item ->
+                        InvoiceDTO.ItemDTO.builder()
+                                .itemType(item.getItemType())
+                                .description(item.getDescription())
+                                .quantity(item.getQuantity())
+                                .unitPrice(item.getUnitPrice())
+                                .totalPrice(item.getTotalPrice())
+                                .serviceId(item.getServiceId())
+                                .build()
+                ).collect(Collectors.toList()) : java.util.Collections.emptyList())
+                .build();
     }
 }

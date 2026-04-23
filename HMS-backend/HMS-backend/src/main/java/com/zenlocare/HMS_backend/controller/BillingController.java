@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.controller;
 
+import com.zenlocare.HMS_backend.dto.InvoiceDTO;
 import com.zenlocare.HMS_backend.dto.SmartBillingSuggestion;
 import com.zenlocare.HMS_backend.entity.Invoice;
 import com.zenlocare.HMS_backend.service.InvoiceService;
@@ -26,7 +27,7 @@ public class BillingController {
     }
 
     @GetMapping("/patient/{patientId}/invoices")
-    public ResponseEntity<List<Invoice>> getPatientInvoices(@PathVariable Integer patientId) {
+    public ResponseEntity<List<InvoiceDTO>> getPatientInvoices(@PathVariable Integer patientId) {
         return ResponseEntity.ok(invoiceService.getPatientInvoices(patientId));
     }
 

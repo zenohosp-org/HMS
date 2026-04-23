@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.controller;
 
+import com.zenlocare.HMS_backend.dto.InvoiceDTO;
 import com.zenlocare.HMS_backend.entity.Invoice;
 import com.zenlocare.HMS_backend.service.InvoiceService;
 import com.zenlocare.HMS_backend.dto.InvoiceRequest;
@@ -24,7 +25,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/hospital/{hospitalId}")
-    public ResponseEntity<List<Invoice>> getHospitalInvoices(@PathVariable UUID hospitalId) {
+    public ResponseEntity<List<InvoiceDTO>> getHospitalInvoices(@PathVariable UUID hospitalId) {
         return ResponseEntity.ok(invoiceService.getHospitalInvoices(hospitalId));
     }
 

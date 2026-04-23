@@ -30,9 +30,13 @@ const MANAGEMENT_LINKS = [
   { label: "Patients", to: "/patients", icon: Building2 },
   { label: "Appointments", to: "/appointments", icon: Calendar },
   { label: "Billing", to: "/billing", icon: ReceiptText },
-  { label: "Room Allocation", to: "/rooms", icon: Bed },
   { label: "Specializations", to: "/specializations", icon: Stethoscope },
   { label: "Services", to: "/services", icon: ClipboardList }
+];
+const ROOMS_LINKS = [
+  { label: "Room Allocation", to: "/rooms", icon: Bed },
+  { label: "Room Logs", to: "/rooms/logs", icon: ClipboardList },
+  { label: "IPD Admissions", to: "/admissions", icon: BedDouble },
 ];
 const RADIOLOGY_LINKS = [
   { label: "Imaging Queue", to: "/radiology", icon: ScanLine },
@@ -43,7 +47,6 @@ const HR_LINKS = [
   { label: "Shift Roster", to: "/staffs/roster", icon: CalendarDays },
   { label: "Departments", to: "/staffs/departments", icon: Building2 },
   { label: "Designations", to: "/staffs/designations", icon: Award },
-  { label: "IPD Admissions", to: "/admissions", icon: BedDouble },
 ];
 const EXTERNAL_APPS = [
   { label: "Finance", href: "https://finance.zenohosp.com", icon: BarChart2 },
@@ -56,15 +59,17 @@ function Sidebar({ isOpen }) {
   const location = useLocation();
   const [hrOpen, setHrOpen] = useState(() => location.pathname.startsWith("/staffs"));
   const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
+  const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
   const initials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`;
   const filteredManagementLinks = MANAGEMENT_LINKS.filter((link) => {
     if (user?.role === "hospital_admin" || user?.role === "super_admin") return true;
-    const allowedLinks = ["Patients", "Appointments", "Billing", "Room Allocation"];
+    const allowedLinks = ["Patients", "Appointments", "Billing"];
     return allowedLinks.includes(link.label);
   });
   const isHrAdmin = user?.role === "hospital_admin" || user?.role === "super_admin";
   const hrActive = location.pathname.startsWith("/staffs");
   const radActive = location.pathname.startsWith("/radiology");
+  const roomsActive = location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions");
   const renderLink = (link, indent = false) => {
     const Icon = link.icon;
     return isOpen ? <NavLink
@@ -108,6 +113,7 @@ function Sidebar({ isOpen }) {
     ><AccIcon className={`w-4 h-4 shrink-0 ${active ? "text-emerald-600 dark:text-emerald-400" : ""}`} /><span className="flex-1 text-left truncate">{label}</span><ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""} opacity-50`} /></button>{open && <div className="mt-0.5 space-y-0.5">{links.map((link) => renderLink(link, true))}</div>}</div>;
   };
   const renderHrAccordion = () => renderAccordionSection(HR_LINKS, "HR & Staff", ClipboardList, hrOpen, setHrOpen, hrActive);
+  const renderRoomsAccordion = () => renderAccordionSection(ROOMS_LINKS, "Rooms", Bed, roomsOpen, setRoomsOpen, roomsActive);
   return <aside
     className={`flex flex-col h-full transition-all duration-300 ease-in-out shrink-0
                 bg-white dark:bg-[#111111] border-r border-slate-200 dark:border-[#222222]
@@ -120,7 +126,7 @@ function Sidebar({ isOpen }) {
                         Main Menu
                     </div>}{renderLink(DASHBOARD_LINK)}{isOpen && <div className="px-3 mb-2 mt-10 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
                         Hospital
-                    </div>}{filteredManagementLinks.map((link) => renderLink(link))}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{isHrAdmin && renderHrAccordion()}{
+                    </div>}{filteredManagementLinks.map((link) => renderLink(link))}{renderRoomsAccordion()}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{isHrAdmin && renderHrAccordion()}{
     /* Divider */
   }<div className={`border-t border-slate-100 dark:border-[#1e1e1e] ${isOpen ? "mx-3 my-4" : "my-4"}`} />{isOpen && <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
                         Other Apps
