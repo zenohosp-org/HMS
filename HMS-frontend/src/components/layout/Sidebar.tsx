@@ -19,7 +19,6 @@ import {
     ChevronDown,
     UserSquare2,
     CalendarDays,
-    Banknote,
     ScanLine,
     FileText,
 } from 'lucide-react'
@@ -56,7 +55,6 @@ const RADIOLOGY_LINKS: NavItem[] = [
 const HR_LINKS: NavItem[] = [
     { label: 'Staff Directory', to: '/staffs', icon: UserSquare2 },
     { label: 'Shift Roster',   to: '/staffs/roster',  icon: CalendarDays },
-    { label: 'Payroll',        to: '/staffs/payroll',  icon: Banknote     },
 ]
 
 const EXTERNAL_APPS: ExternalApp[] = [

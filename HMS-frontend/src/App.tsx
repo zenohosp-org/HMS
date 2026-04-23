@@ -23,7 +23,6 @@ import CreateInvoice from '@/pages/billing/CreateInvoice'
 import InvoiceList from '@/pages/billing/InvoiceList'
 import AppointmentsDashboard from '@/pages/appointments/AppointmentsDashboard'
 import ShiftRoster from '@/pages/admin/ShiftRoster'
-import Payroll from '@/pages/admin/Payroll'
 import RadiologyQueue from '@/pages/radiology/RadiologyQueue'
 import RadiologyReports from '@/pages/radiology/RadiologyReports'
 import RadiologyReportView from '@/pages/radiology/RadiologyReportView'
@@ -82,11 +81,6 @@ export default function App() {
                                     <Route path="staffs/roster" element={
                                         <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>
                                             <ShiftRoster />
-                                        </ProtectedRoute>
-                                    } />
-                                    <Route path="staffs/payroll" element={
-                                        <ProtectedRoute allowedRoles={['super_admin', 'hospital_admin']}>
-                                            <Payroll />
                                         </ProtectedRoute>
                                     } />
                                     <Route path="specializations" element={
