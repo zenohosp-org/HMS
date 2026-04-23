@@ -20,10 +20,13 @@ interface Props {
  *  - Role not in allowedRoles              → /unauthorized
  */
 export default function ProtectedRoute({ children, allowedRoles }: Props) {
-    const { isAuthenticated, user } = useAuth()
+    const { isAuthenticated, isLoading, user } = useAuth()
     const location = useLocation()
 
-    // 1. Not logged in
+    // 1. Wait for session check before redirecting (prevents flash-to-login on new tab)
+    if (isLoading) return null
+
+    // 2. Not logged in
     if (!isAuthenticated || !user) {
         return <Navigate to="/login" state={{ from: location }} replace />
     }
