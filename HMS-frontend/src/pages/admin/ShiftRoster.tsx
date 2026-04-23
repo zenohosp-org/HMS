@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { shiftsApi, staffApi, doctorsApi, type StaffShift, type StaffUser, type DoctorUser } from '@/utils/api'
@@ -78,8 +79,10 @@ export default function ShiftRoster() {
     const [staffOptions, setStaffOptions] = useState<StaffOption[]>([])
 
     const [groupPages, setGroupPages] = useState<Record<string, number>>({})
-    const [popover, setPopover] = useState<{ staffId: string; date: string; flipUp: boolean } | null>(null)
-    // per-cell assigning key: "staffId|date"
+    const [popover, setPopover] = useState<{
+        staffId: string; date: string;
+        x: number; y: number; flipUp: boolean
+    } | null>(null)
     const [assigningKey, setAssigningKey] = useState<string | null>(null)
     const popoverRef = useRef<HTMLDivElement>(null)
 
@@ -162,7 +165,14 @@ export default function ShiftRoster() {
     const openPopover = (staffId: string, date: string, triggerEl: HTMLButtonElement) => {
         const rect = triggerEl.getBoundingClientRect()
         const spaceBelow = window.innerHeight - rect.bottom
-        setPopover({ staffId, date, flipUp: spaceBelow < 240 })
+        const flipUp = spaceBelow < 260
+        setPopover({
+            staffId,
+            date,
+            x: rect.left,
+            y: flipUp ? rect.top : rect.bottom,
+            flipUp,
+        })
     }
 
     // Single-click assigns immediately — no confirm step
@@ -199,6 +209,7 @@ export default function ShiftRoster() {
     const weekLabel = `${weekDays[0].getDate()} ${weekDays[0].toLocaleString('en-IN', { month: 'short' })} – ${weekDays[6].getDate()} ${weekDays[6].toLocaleString('en-IN', { month: 'short' })}, ${weekDays[0].getFullYear()}`
 
     return (
+        <>
         <div className="space-y-3">
 
             {/* ── Top nav card ── */}
@@ -396,36 +407,6 @@ export default function ShiftRoster() {
                                                         )}
                                                         </div>
 
-                                                        {/* Popover — single click assigns, no confirm */}
-                                                        {isOpen && (
-                                                            <div
-                                                                ref={popoverRef}
-                                                                className={`absolute left-0 z-50 bg-white dark:bg-[#1c1c1c] border border-slate-200 dark:border-[#333333] rounded-xl shadow-xl w-48 overflow-hidden
-                                                                    ${popover.flipUp ? 'bottom-full mb-1' : 'top-full mt-1'}`}
-                                                                onMouseDown={e => e.stopPropagation()}
-                                                            >
-                                                                <div className="px-3 py-2 border-b border-slate-100 dark:border-[#2a2a2a]">
-                                                                    <p className="text-[11px] font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Assign Shift</p>
-                                                                </div>
-                                                                <div className="p-1">
-                                                                    {SHIFTS.map(s => (
-                                                                        <button
-                                                                            key={s.type}
-                                                                            type="button"
-                                                                            onMouseDown={e => {
-                                                                                e.stopPropagation()
-                                                                                handleAssign(s.type)
-                                                                            }}
-                                                                            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-[#252525] transition-colors"
-                                                                        >
-                                                                            <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
-                                                                            <span className="text-sm font-medium text-slate-700 dark:text-[#cccccc] flex-1">{s.label}</span>
-                                                                            <span className="text-[10px] text-slate-400 dark:text-[#555555]">{s.time}</span>
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
                                                     </td>
                                                 )
                                             })}
@@ -439,5 +420,41 @@ export default function ShiftRoster() {
                 })
             )}
         </div>
+
+        {/* Shift popover — portal so it floats above overflow-clipped table */}
+        {popover && createPortal(
+            <div
+                ref={popoverRef}
+                style={{
+                    position: 'fixed',
+                    left: popover.x,
+                    ...(popover.flipUp
+                        ? { bottom: window.innerHeight - popover.y + 4 }
+                        : { top: popover.y + 4 }),
+                }}
+                className="z-[9999] bg-white dark:bg-[#1c1c1c] border border-slate-200 dark:border-[#333333] rounded-xl shadow-2xl w-52 overflow-hidden"
+                onMouseDown={e => e.stopPropagation()}
+            >
+                <div className="px-3 py-2.5 border-b border-slate-100 dark:border-[#2a2a2a]">
+                    <p className="text-[11px] font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Assign Shift</p>
+                </div>
+                <div className="p-1">
+                    {SHIFTS.map(s => (
+                        <button
+                            key={s.type}
+                            type="button"
+                            onMouseDown={e => { e.stopPropagation(); handleAssign(s.type) }}
+                            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-[#252525] transition-colors"
+                        >
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
+                            <span className="text-sm font-medium text-slate-700 dark:text-[#cccccc] flex-1">{s.label}</span>
+                            <span className="text-[10px] text-slate-400 dark:text-[#555555]">{s.time}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>,
+            document.body
+        )}
+        </>
     )
 }
