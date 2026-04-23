@@ -19,6 +19,7 @@ public class InvoiceRequest {
     private BigDecimal total;
     private String notes;
     private String paymentMethod;
+    private UUID bankAccountId;
     private InvoiceStatus status;
     private List<InvoiceItemRequest> items;
 

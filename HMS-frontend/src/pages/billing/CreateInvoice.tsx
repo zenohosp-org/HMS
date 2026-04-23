@@ -1,17 +1,18 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import {
-    patientApi, invoiceApi, doctorsApi, hospitalServiceApi,
+    patientApi, invoiceApi, bankApi, doctorsApi, hospitalServiceApi,
     type Patient, type InvoiceItem, type ItemType, type Invoice,
-    type SmartBillingSuggestion, type HospitalService, type DoctorUser
+    type SmartBillingSuggestion, type HospitalService, type DoctorUser, type BankAccount
 } from '@/utils/api'
 import { generateInvoiceNumber } from '@/utils/validators'
 import {
     Info, Search, Plus, Trash2, Printer, X,
     BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench,
-    Loader2, Sparkles, Receipt, ChevronRight, CheckCircle2, Clock, Ban
+    Loader2, Sparkles, Receipt, ChevronRight, CheckCircle2, Clock, Ban,
+    PanelRightClose, PanelRightOpen, Landmark, RefreshCw, User
 } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -54,7 +55,6 @@ const STATUS_CFG = {
 export default function CreateInvoice() {
     const { user } = useAuth()
     const { notify } = useNotification()
-    const navigate = useNavigate()
     const [params] = useSearchParams()
 
     // Patient
@@ -68,11 +68,9 @@ export default function CreateInvoice() {
     const [loadingSuggestions, setLoadingSuggestions] = useState(false)
     const [addedSuggestions, setAddedSuggestions] = useState<Set<string>>(new Set())
 
-    // Referred by
+    // Referred by / Services
     const [doctors, setDoctors] = useState<DoctorUser[]>([])
     const [referredById, setReferredById] = useState('')
-
-    // Services
     const [services, setServices] = useState<HospitalService[]>([])
     const [serviceSearch, setServiceSearch] = useState('')
     const [serviceResults, setServiceResults] = useState<HospitalService[]>([])
@@ -88,29 +86,44 @@ export default function CreateInvoice() {
     const [saving, setSaving] = useState(false)
     const [invoiceNo] = useState(generateInvoiceNumber())
 
-    // Invoice logs (right panel)
+    // Bank accounts
+    const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
+    const [bankAccountId, setBankAccountId] = useState<string>('')
+
+    // Right pane
+    const [paneOpen, setPaneOpen] = useState(true)
     const [allInvoices, setAllInvoices] = useState<Invoice[]>([])
     const [logsLoading, setLogsLoading] = useState(false)
     const [logSearch, setLogSearch] = useState('')
     const [logStatus, setLogStatus] = useState<'ALL' | 'UNPAID' | 'PAID' | 'CANCELLED'>('ALL')
     const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null)
+    const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
 
-    const loadLogs = useCallback(async () => {
+    // Load logs — patient-specific when patient selected, else all hospital
+    const loadLogs = useCallback(async (forPatient?: Patient | null) => {
         if (!user?.hospitalId) return
         setLogsLoading(true)
         try {
-            const data = await invoiceApi.getByHospital(user.hospitalId)
+            const target = forPatient !== undefined ? forPatient : patient
+            const data = target
+                ? await invoiceApi.getByPatient(target.id!)
+                : await invoiceApi.getByHospital(user.hospitalId)
             setAllInvoices(data.sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()))
         } catch { /* silent */ }
         finally { setLogsLoading(false) }
-    }, [user?.hospitalId])
+    }, [user?.hospitalId, patient])
 
-    useEffect(() => { loadLogs() }, [loadLogs])
+    useEffect(() => { loadLogs() }, [user?.hospitalId])
 
     useEffect(() => {
         if (!user?.hospitalId) return
         doctorsApi.list(user.hospitalId).then(setDoctors).catch(() => {})
         hospitalServiceApi.list(user.hospitalId).then(setServices).catch(() => {})
+        bankApi.list(user.hospitalId).then(accounts => {
+            setBankAccounts(accounts)
+            const def = accounts.find(a => a.isDefault) ?? accounts[0]
+            if (def) setBankAccountId(def.id)
+        }).catch(() => {})
     }, [user?.hospitalId])
 
     useEffect(() => {
@@ -144,10 +157,16 @@ export default function CreateInvoice() {
     const selectPatient = async (p: Patient) => {
         setPatient(p); setPatientResults([]); setPatientSearch('')
         setAddedSuggestions(new Set()); setSuggestions(null)
+        loadLogs(p)
         setLoadingSuggestions(true)
         try { setSuggestions(await invoiceApi.getSmartSuggestions(p.id!)) }
         catch { setSuggestions(null) }
         finally { setLoadingSuggestions(false) }
+    }
+
+    const clearPatient = () => {
+        setPatient(null); setSuggestions(null)
+        loadLogs(null)
     }
 
     const addItem = (item: Omit<InvoiceItem, 'id'>, suggKey?: string) => {
@@ -188,6 +207,7 @@ export default function CreateInvoice() {
                 invoiceNumber: invoiceNo, hospitalId: user.hospitalId, patientId: patient.id!,
                 subtotal, tax: gstOnMedicines, discount: discountAmt, total: grandTotal,
                 paymentMethod, notes, status: 'UNPAID',
+                bankAccountId: bankAccountId || undefined,
                 items: items.map(i => ({ itemType: i.itemType, serviceId: i.serviceId, description: i.description, quantity: i.quantity, unitPrice: i.unitPrice, totalPrice: i.totalPrice })),
             })
             notify('Invoice created', 'success')
@@ -197,7 +217,19 @@ export default function CreateInvoice() {
         finally { setSaving(false) }
     }
 
-    // Filtered logs
+    const handleMarkPaid = async (invoiceId: string) => {
+        setMarkingPaidId(invoiceId)
+        try {
+            await invoiceApi.markAsPaid(invoiceId, bankAccountId || undefined)
+            notify('Invoice marked as paid — bank account credited', 'success')
+            loadLogs()
+        } catch (e: any) {
+            notify(e?.response?.data?.message || 'Failed to mark as paid', 'error')
+        } finally {
+            setMarkingPaidId(null)
+        }
+    }
+
     const filteredLogs = useMemo(() => {
         const q = logSearch.toLowerCase()
         return allInvoices.filter(inv => {
@@ -210,21 +242,30 @@ export default function CreateInvoice() {
         })
     }, [allInvoices, logSearch, logStatus])
 
+    const selectedAccount = bankAccounts.find(a => a.id === bankAccountId)
+
     const inputCls = 'w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm text-slate-900 dark:text-[#dddddd] focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all'
     const cardCls = 'bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-5'
 
     return (
         <>
-        {/* Full-height two-panel layout */}
         <div className="flex h-full overflow-hidden no-print -m-6">
 
             {/* ── LEFT: Create Invoice ── */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4 min-w-0">
 
-                {/* Header */}
-                <div>
-                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">Create New Invoice</h1>
-                    <p className="text-xs text-slate-400 dark:text-[#666666] mt-0.5">Smart billing with automatic pending order detection</p>
+                <div className="flex items-start justify-between">
+                    <div>
+                        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Create New Invoice</h1>
+                        <p className="text-xs text-slate-400 dark:text-[#666666] mt-0.5">Smart billing with automatic pending order detection</p>
+                    </div>
+                    <button
+                        onClick={() => setPaneOpen(o => !o)}
+                        className="p-2 rounded-xl border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors shrink-0"
+                        title={paneOpen ? 'Hide invoice logs' : 'Show invoice logs'}
+                    >
+                        {paneOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+                    </button>
                 </div>
 
                 {/* Smart banner */}
@@ -232,12 +273,7 @@ export default function CreateInvoice() {
                     <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                     <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
                         <p className="font-bold text-sm">Smart Billing System</p>
-                        <p>When you select a patient, this system will automatically detect:</p>
-                        <ul className="list-disc list-inside space-y-0.5 text-blue-600 dark:text-blue-400">
-                            <li><span className="font-semibold">Active Room Charges</span> — current room assignment with daily rate</li>
-                            <li><span className="font-semibold">Pending Radiology Orders</span> — scans awaiting completion</li>
-                            <li><span className="font-semibold">Recent Consultations</span> — completed appointments in last 60 days</li>
-                        </ul>
+                        <p>Selecting a patient auto-detects active room charges, pending radiology orders, and recent consultations.</p>
                     </div>
                 </div>
 
@@ -249,11 +285,18 @@ export default function CreateInvoice() {
                     </p>
                     {patient ? (
                         <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10">
-                            <div>
-                                <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{patient.firstName} {patient.lastName}</p>
-                                <p className="text-xs text-emerald-600 dark:text-emerald-500">{patient.mrn}{patient.phone ? ` · ${patient.phone}` : ''}</p>
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+                                    <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{patient.firstName} {patient.lastName}</p>
+                                    <p className="text-xs text-emerald-600 dark:text-emerald-500">{patient.mrn}{patient.phone ? ` · ${patient.phone}` : ''}</p>
+                                </div>
                             </div>
-                            <button onClick={() => { setPatient(null); setSuggestions(null) }} className="p-1 text-emerald-500 hover:text-emerald-700 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                            <button onClick={clearPatient} className="p-1 text-emerald-500 hover:text-emerald-700 transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                            </button>
                         </div>
                     ) : (
                         <div className="relative">
@@ -475,13 +518,14 @@ export default function CreateInvoice() {
                     )}
                 </div>
 
-                {/* 5. Payment */}
+                {/* 5. Payment Details */}
                 <div className={cardCls}>
-                    <p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-4 flex items-center gap-2">
                         <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">5</span>
                         Payment Details
                     </p>
-                    <div className="grid grid-cols-2 gap-3">
+
+                    <div className="grid grid-cols-2 gap-3 mb-4">
                         <div>
                             <label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Payment Method</label>
                             <select className={inputCls} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
@@ -493,6 +537,60 @@ export default function CreateInvoice() {
                             <input className={inputCls} placeholder="Additional notes…" value={notes} onChange={e => setNotes(e.target.value)} />
                         </div>
                     </div>
+
+                    {/* Bank account cards */}
+                    {bankAccounts.length > 0 && (
+                        <div>
+                            <label className="block text-xs text-slate-400 dark:text-[#666666] mb-2 flex items-center gap-1.5">
+                                <Landmark className="w-3.5 h-3.5" /> Credit payment to
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {bankAccounts.map(a => {
+                                    const isSelected = bankAccountId === a.id
+                                    return (
+                                        <button
+                                            key={a.id}
+                                            type="button"
+                                            onClick={() => setBankAccountId(a.id)}
+                                            className={`text-left p-3 rounded-xl border-2 transition-all ${
+                                                isSelected
+                                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10'
+                                                    : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]'
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-2 mb-1">
+                                                <p className={`text-xs font-bold truncate ${isSelected ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-[#cccccc]'}`}>
+                                                    {a.accountName}
+                                                </p>
+                                                {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                                            </div>
+                                            <p className="text-[11px] text-slate-400 dark:text-[#666666] truncate">{a.bankName ?? 'Bank'} · ···{a.accountNumber.slice(-4)}</p>
+                                            <p className={`text-xs font-bold mt-1.5 ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-[#aaaaaa]'}`}>
+                                                {fmt(a.currentBalance)}
+                                            </p>
+                                        </button>
+                                    )
+                                })}
+                                <button
+                                    type="button"
+                                    onClick={() => setBankAccountId('')}
+                                    className={`text-left p-3 rounded-xl border-2 transition-all ${
+                                        bankAccountId === ''
+                                            ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]'
+                                            : 'border-dashed border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 bg-white dark:bg-[#111111]'
+                                    }`}
+                                >
+                                    <p className="text-xs font-bold text-slate-400 dark:text-[#666666]">No account</p>
+                                    <p className="text-[11px] text-slate-300 dark:text-[#444444] mt-0.5">Skip bank credit</p>
+                                </button>
+                            </div>
+                            {selectedAccount && (
+                                <p className="text-xs text-slate-400 dark:text-[#666666] mt-2">
+                                    After payment: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{fmt(selectedAccount.currentBalance + grandTotal)}</span>
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Generate button */}
@@ -505,117 +603,138 @@ export default function CreateInvoice() {
                 <div className="h-4" />
             </div>
 
-            {/* ── RIGHT: Invoice Logs ── */}
-            <div className="w-96 border-l border-slate-200 dark:border-[#1e1e1e] flex flex-col overflow-hidden bg-white dark:bg-[#0d0d0d] shrink-0">
+            {/* ── RIGHT: Invoice Logs (collapsible) ── */}
+            {paneOpen && (
+                <div className="w-96 border-l border-slate-200 dark:border-[#1e1e1e] flex flex-col overflow-hidden bg-white dark:bg-[#0d0d0d] shrink-0">
 
-                {/* Logs header */}
-                <div className="px-4 py-4 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <Receipt className="w-4 h-4 text-slate-500 dark:text-[#888888]" />
-                            <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">Invoice Logs</p>
-                            <span className="text-xs text-slate-400 dark:text-[#555555] bg-slate-100 dark:bg-[#1e1e1e] px-1.5 py-0.5 rounded-full">{filteredLogs.length}</span>
+                    {/* Pane header */}
+                    <div className="px-4 py-3.5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
+                        <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                                <Receipt className="w-4 h-4 text-slate-500 dark:text-[#888888]" />
+                                <div>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd] leading-tight">
+                                        {patient ? `${patient.firstName} ${patient.lastName}` : 'All Invoices'}
+                                    </p>
+                                    <p className="text-[11px] text-slate-400 dark:text-[#555555]">
+                                        {patient ? 'Patient invoice history' : 'Hospital invoice log'} · {filteredLogs.length} shown
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={() => loadLogs()} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors" title="Refresh">
+                                <RefreshCw className={`w-3.5 h-3.5 ${logsLoading ? 'animate-spin' : ''}`} />
+                            </button>
                         </div>
-                        <button onClick={loadLogs} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors" title="Refresh">
-                            <Loader2 className={`w-3.5 h-3.5 ${logsLoading ? 'animate-spin' : ''}`} />
-                        </button>
+
+                        {/* Search */}
+                        <div className="relative mt-2.5 mb-2">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                            <input
+                                className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
+                                placeholder="Search invoice #, patient…"
+                                value={logSearch}
+                                onChange={e => setLogSearch(e.target.value)}
+                            />
+                            {logSearch && (
+                                <button onClick={() => setLogSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Status filter */}
+                        <div className="flex gap-1.5">
+                            {(['ALL', 'UNPAID', 'PAID', 'CANCELLED'] as const).map(s => (
+                                <button key={s} onClick={() => setLogStatus(s)}
+                                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${logStatus === s ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-500 dark:text-[#888888] hover:bg-slate-200 dark:hover:bg-[#2a2a2a]'}`}>
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Search */}
-                    <div className="relative mb-2.5">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                        <input
-                            className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
-                            placeholder="Search invoice #, patient…"
-                            value={logSearch}
-                            onChange={e => setLogSearch(e.target.value)}
-                        />
-                        {logSearch && (
-                            <button onClick={() => setLogSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                                <X className="w-3 h-3" />
-                            </button>
+                    {/* Log list */}
+                    <div className="flex-1 overflow-y-auto">
+                        {logsLoading ? (
+                            <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin text-slate-300" /></div>
+                        ) : filteredLogs.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16 gap-2">
+                                <Receipt className="w-8 h-8 text-slate-200 dark:text-[#2a2a2a]" />
+                                <p className="text-sm text-slate-400 dark:text-[#555555]">
+                                    {patient ? `No invoices for ${patient.firstName}` : 'No invoices found'}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
+                                {filteredLogs.map(inv => {
+                                    const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID
+                                    const StatusIcon = cfg.icon
+                                    const isExpanded = expandedInvoice === inv.id
+                                    return (
+                                        <div key={inv.id}>
+                                            <button
+                                                onClick={() => setExpandedInvoice(isExpanded ? null : (inv.id ?? null))}
+                                                className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-[#111111] transition-colors"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                                            <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd] truncate">#{inv.invoiceNumber}</p>
+                                                            <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded border ${cfg.cls}`}>
+                                                                <StatusIcon className="w-2.5 h-2.5" />{cfg.label}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-slate-400 dark:text-[#555555]">
+                                                            {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                                                            {inv.paymentMethod ? ` · ${inv.paymentMethod}` : ''}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                        <span className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{fmt(inv.total)}</span>
+                                                        <ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                                                    </div>
+                                                </div>
+                                            </button>
+
+                                            {isExpanded && (
+                                                <div className="px-4 pb-3 bg-slate-50 dark:bg-[#0a0a0a] border-t border-slate-100 dark:border-[#1e1e1e]">
+                                                    <div className="pt-2 space-y-1">
+                                                        {(inv.items ?? []).map((item, idx) => (
+                                                            <div key={idx} className="flex items-center justify-between gap-2 py-1">
+                                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                                    <TypeBadge type={item.itemType as ItemType} />
+                                                                    <p className="text-xs text-slate-600 dark:text-[#aaaaaa] truncate">{item.description}</p>
+                                                                </div>
+                                                                <span className="text-xs font-semibold text-slate-700 dark:text-[#cccccc] shrink-0">×{item.quantity} · {fmt(item.totalPrice)}</span>
+                                                            </div>
+                                                        ))}
+                                                        <div className="flex justify-between pt-1.5 border-t border-slate-200 dark:border-[#1e1e1e] mt-1">
+                                                            <span className="text-xs text-slate-400">Total</span>
+                                                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{fmt(inv.total)}</span>
+                                                        </div>
+                                                        {inv.status === 'UNPAID' && inv.id && (
+                                                            <button
+                                                                onClick={() => handleMarkPaid(inv.id!)}
+                                                                disabled={markingPaidId === inv.id}
+                                                                className="mt-2 w-full py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                                                            >
+                                                                {markingPaidId === inv.id
+                                                                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                                                                    : <CheckCircle2 className="w-3 h-3" />}
+                                                                Mark as Paid{selectedAccount ? ` → ${selectedAccount.accountName}` : ''}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
                         )}
                     </div>
-
-                    {/* Status filter pills */}
-                    <div className="flex gap-1.5">
-                        {(['ALL', 'UNPAID', 'PAID', 'CANCELLED'] as const).map(s => (
-                            <button key={s} onClick={() => setLogStatus(s)}
-                                className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${logStatus === s ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-500 dark:text-[#888888] hover:bg-slate-200 dark:hover:bg-[#2a2a2a]'}`}>
-                                {s}
-                            </button>
-                        ))}
-                    </div>
                 </div>
-
-                {/* Log list */}
-                <div className="flex-1 overflow-y-auto">
-                    {logsLoading ? (
-                        <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin text-slate-300" /></div>
-                    ) : filteredLogs.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 gap-2">
-                            <Receipt className="w-8 h-8 text-slate-200 dark:text-[#2a2a2a]" />
-                            <p className="text-sm text-slate-400 dark:text-[#555555]">No invoices found</p>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
-                            {filteredLogs.map(inv => {
-                                const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID
-                                const StatusIcon = cfg.icon
-                                const isExpanded = expandedInvoice === inv.id
-                                return (
-                                    <div key={inv.id}>
-                                        <button
-                                            onClick={() => setExpandedInvoice(isExpanded ? null : (inv.id ?? null))}
-                                            className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-[#111111] transition-colors"
-                                        >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="min-w-0">
-                                                    <div className="flex items-center gap-1.5 mb-0.5">
-                                                        <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd] truncate">#{inv.invoiceNumber}</p>
-                                                        <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded border ${cfg.cls}`}>
-                                                            <StatusIcon className="w-2.5 h-2.5" />{cfg.label}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-xs text-slate-400 dark:text-[#555555]">
-                                                        {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                                                        {inv.paymentMethod ? ` · ${inv.paymentMethod}` : ''}
-                                                    </p>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 shrink-0">
-                                                    <span className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{fmt(inv.total)}</span>
-                                                    <ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                                                </div>
-                                            </div>
-                                        </button>
-
-                                        {/* Expanded row */}
-                                        {isExpanded && (
-                                            <div className="px-4 pb-3 bg-slate-50 dark:bg-[#0a0a0a] border-t border-slate-100 dark:border-[#1e1e1e]">
-                                                <div className="pt-2 space-y-1">
-                                                    {(inv.items ?? []).map((item, idx) => (
-                                                        <div key={idx} className="flex items-center justify-between gap-2 py-1">
-                                                            <div className="flex items-center gap-1.5 min-w-0">
-                                                                <TypeBadge type={item.itemType as ItemType} />
-                                                                <p className="text-xs text-slate-600 dark:text-[#aaaaaa] truncate">{item.description}</p>
-                                                            </div>
-                                                            <span className="text-xs font-semibold text-slate-700 dark:text-[#cccccc] shrink-0">×{item.quantity} · {fmt(item.totalPrice)}</span>
-                                                        </div>
-                                                    ))}
-                                                    <div className="flex justify-between pt-1.5 border-t border-slate-200 dark:border-[#1e1e1e] mt-1">
-                                                        <span className="text-xs text-slate-400">Total</span>
-                                                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{fmt(inv.total)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
-                </div>
-            </div>
+            )}
         </div>
 
         {/* Print view */}

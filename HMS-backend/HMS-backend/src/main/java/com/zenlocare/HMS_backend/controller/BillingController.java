@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/billing")
@@ -26,5 +28,14 @@ public class BillingController {
     @GetMapping("/patient/{patientId}/invoices")
     public ResponseEntity<List<Invoice>> getPatientInvoices(@PathVariable Integer patientId) {
         return ResponseEntity.ok(invoiceService.getPatientInvoices(patientId));
+    }
+
+    @PatchMapping("/invoices/{id}/pay")
+    public ResponseEntity<Invoice> markAsPaid(
+            @PathVariable UUID id,
+            @RequestBody(required = false) Map<String, String> body) {
+        UUID bankAccountId = (body != null && body.get("bankAccountId") != null)
+                ? UUID.fromString(body.get("bankAccountId")) : null;
+        return ResponseEntity.ok(invoiceService.markAsPaid(id, bankAccountId));
     }
 }

@@ -206,6 +206,7 @@ export interface Invoice {
     total: number
     notes?: string
     paymentMethod?: string
+    bankAccountId?: string
     status: 'UNPAID' | 'PAID' | 'CANCELLED'
     items: InvoiceItem[]
     createdAt?: string
@@ -583,6 +584,10 @@ export const invoiceApi = {
     },
     getSmartSuggestions: async (patientId: number): Promise<SmartBillingSuggestion> => {
         const { data } = await api.get('/billing/smart-suggestions', { params: { patientId } })
+        return data
+    },
+    markAsPaid: async (invoiceId: string, bankAccountId?: string): Promise<Invoice> => {
+        const { data } = await api.patch(`/billing/invoices/${invoiceId}/pay`, { bankAccountId })
         return data
     },
 }

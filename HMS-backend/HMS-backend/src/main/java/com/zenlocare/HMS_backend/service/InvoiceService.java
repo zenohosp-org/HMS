@@ -21,6 +21,8 @@ public class InvoiceService {
     private final PatientRepository patientRepository;
     private final AppointmentRepository appointmentRepository;
     private final SpecializationRepository specializationRepository;
+    private final BankAccountRepository bankAccountRepository;
+    private final BankTransactionRepository bankTransactionRepository;
 
     @Transactional
     public Invoice createInvoice(InvoiceRequest request) {
@@ -66,7 +68,46 @@ public class InvoiceService {
             invoice.setItems(items);
         }
 
-        return invoiceRepository.save(invoice);
+        Invoice saved = invoiceRepository.save(invoice);
+
+        // If paid immediately, credit the selected bank account
+        if (InvoiceStatus.PAID.equals(saved.getStatus()) && request.getBankAccountId() != null) {
+            creditBankAccount(request.getBankAccountId(), saved);
+        }
+
+        return saved;
+    }
+
+    @Transactional
+    public Invoice markAsPaid(UUID invoiceId, UUID bankAccountId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+        if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
+            throw new RuntimeException("Invoice is already paid");
+        }
+        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setUpdatedAt(LocalDateTime.now());
+        Invoice saved = invoiceRepository.save(invoice);
+        if (bankAccountId != null) {
+            creditBankAccount(bankAccountId, saved);
+        }
+        return saved;
+    }
+
+    private void creditBankAccount(UUID bankAccountId, Invoice invoice) {
+        bankAccountRepository.findById(bankAccountId).ifPresent(account -> {
+            bankTransactionRepository.save(BankTransaction.builder()
+                    .hospitalId(account.getHospitalId())
+                    .bankAccountId(bankAccountId)
+                    .amount(invoice.getTotal())
+                    .type("CREDIT")
+                    .description("Invoice payment — " + invoice.getInvoiceNumber())
+                    .referenceNo(invoice.getInvoiceNumber())
+                    .relatedEntityId(invoice.getId())
+                    .relatedEntityType("INVOICE")
+                    .transactionDate(LocalDateTime.now())
+                    .build());
+        });
     }
 
     public List<Invoice> getHospitalInvoices(UUID hospitalId) {
