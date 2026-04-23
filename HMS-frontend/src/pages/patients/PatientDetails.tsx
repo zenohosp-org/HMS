@@ -855,14 +855,12 @@ export default function PatientDetails() {
                                                             {statusLabel}
                                                         </span>
                                                         {order.status === 'REPORT_GENERATED' && order.id && (
-                                                            <a
-                                                                href={`/radiology/reports/${order.id}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
+                                                            <button
+                                                                onClick={() => navigate(`/radiology/reports/${order.id}`)}
                                                                 className="text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1"
                                                             >
                                                                 View Report
-                                                            </a>
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </div>
