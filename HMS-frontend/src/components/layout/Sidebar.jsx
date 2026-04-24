@@ -22,7 +22,8 @@ import {
   CalendarDays,
   ScanLine,
   FileText,
-  Award
+  Award,
+  LogOut
 } from "lucide-react";
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
 const CLINICAL_LINKS = [
@@ -57,7 +58,7 @@ const EXTERNAL_APPS = [
   { label: "Assets", href: "https://asset.zenohosp.com", icon: LayoutGrid }
 ];
 function Sidebar({ isOpen }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const [hrOpen, setHrOpen] = useState(() => location.pathname.startsWith("/staffs"));
   const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
@@ -139,7 +140,7 @@ function Sidebar({ isOpen }) {
                         Other Apps
                     </div>}{EXTERNAL_APPS.map((app) => renderExternalApp(app))}</nav>{
     /* User profile at bottom */
-  }<div className={`border-t border-slate-200 dark:border-[#222222] ${isOpen ? "px-4 py-4" : "py-4 flex justify-center"}`}>{isOpen ? <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#333333] border border-slate-300 dark:border-[#444444] flex items-center justify-center text-xs font-bold text-slate-700 dark:text-[#cccccc] shrink-0">{initials}</div><div className="overflow-hidden"><p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user?.firstName} {user?.lastName}</p><p className="text-xs text-slate-500 dark:text-[#666666] truncate">{user?.roleDisplay}</p></div></div> : <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#333333] border border-slate-300 dark:border-[#444444] flex items-center justify-center text-xs font-bold text-slate-700 dark:text-[#cccccc]">{initials}</div>}</div></aside>;
+  }<div className={`border-t border-slate-200 dark:border-[#222222] ${isOpen ? "px-4 py-4" : "py-4 flex flex-col items-center gap-3"}`}>{isOpen ? <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#333333] border border-slate-300 dark:border-[#444444] flex items-center justify-center text-xs font-bold text-slate-700 dark:text-[#cccccc] shrink-0">{initials}</div><div className="overflow-hidden flex-1"><p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user?.firstName} {user?.lastName}</p><p className="text-xs text-slate-500 dark:text-[#666666] truncate">{user?.roleDisplay}</p></div><button onClick={logout} title="Logout" className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors shrink-0"><LogOut className="w-4 h-4" /></button></div> : <><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#333333] border border-slate-300 dark:border-[#444444] flex items-center justify-center text-xs font-bold text-slate-700 dark:text-[#cccccc]">{initials}</div><button onClick={logout} title="Logout" className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"><LogOut className="w-4 h-4" /></button></>}</div></aside>;
 }
 export {
   Sidebar as default
