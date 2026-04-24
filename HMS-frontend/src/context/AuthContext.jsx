@@ -1,110 +1,154 @@
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import api, { authApi, directoryLogout } from "@/utils/api";
 import SSOCookieManager from "@/utils/ssoManager";
-const AuthContext = createContext(void 0);
+
+const AuthContext = createContext(undefined);
+
 const LOGOUT_FLAG_KEY = "hms_logout_in_progress";
-const USER_STORAGE_KEY = "hms_user";
+
+// How often to validate the session while the tab is visible.
+// Directory calls our backend logout directly — the HttpOnly sso_token cookie
+// gets cleared server-side. The next /auth/me poll will return 401 and we log out.
+const SESSION_POLL_MS = 30000;
+
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Ref so interval/event callbacks always see the current value without
+  // needing to be re-registered every time user changes.
+  const userRef = useRef(null);
+  useEffect(() => { userRef.current = user; }, [user]);
+
+  // ── Initial session load ────────────────────────────────────────────────
   useEffect(() => {
-    sessionStorage.removeItem(USER_STORAGE_KEY);
     const logoutInProgress = localStorage.getItem(LOGOUT_FLAG_KEY);
     if (logoutInProgress) {
-      setIsLoading(false);
       localStorage.removeItem(LOGOUT_FLAG_KEY);
+      setIsLoading(false);
       return;
     }
-    authApi.me().then((profile) => {
-      const authUser = mapProfileToUser(profile);
-      setUser(authUser);
-    }).catch(() => {
-      setUser(null);
-    }).finally(() => setIsLoading(false));
+    authApi.me()
+      .then((profile) => setUser(mapProfileToUser(profile)))
+      .catch(() => setUser(null))
+      .finally(() => setIsLoading(false));
   }, []);
+
+  // ── Force-logout helper (session already dead on the server) ────────────
+  // Does NOT call backend endpoints — they already cleared the session.
+  const forceLogout = useCallback(() => {
+    SSOCookieManager.clearToken(); // clean up any non-HttpOnly sso_token artifact
+    setUser(null);
+    userRef.current = null;
+    window.location.href = "/login?logged_out=1";
+  }, []);
+
+  // ── 1. Poll /auth/me every 30 s while tab is visible ───────────────────
+  // This is the PRIMARY cross-subdomain logout detector.
+  //
+  // Why: the sso_token cookie is HttpOnly — JS cannot read it via document.cookie,
+  // so watching the cookie directly is impossible. When Directory (or any other
+  // zenohosp.com app) calls our POST /api/auth/logout, the backend clears the
+  // HttpOnly cookie. The next poll to /auth/me returns 401 and we log out.
   useEffect(() => {
-    const verifyOnFocus = async () => {
-      if (!user) return;
+    const id = setInterval(async () => {
+      if (!userRef.current || document.visibilityState !== "visible") return;
       try {
         await authApi.me();
       } catch {
-        sessionStorage.removeItem(USER_STORAGE_KEY);
-        setUser(null);
-        window.location.href = "/login?logged_out=1";
+        forceLogout();
       }
-    };
-    window.addEventListener("focus", verifyOnFocus);
-    return () => window.removeEventListener("focus", verifyOnFocus);
-  }, [user]);
+    }, SESSION_POLL_MS);
+    return () => clearInterval(id);
+  }, [forceLogout]);
+
+  // ── 2. Revalidate immediately when tab becomes visible ──────────────────
+  // Catches the case where logout happened while this tab was in the background.
+  // visibilitychange is more reliable than window.focus across browsers.
   useEffect(() => {
-    const handleStorageChange = (event) => {
-      if (event.key === "sso-logout") {
-        sessionStorage.removeItem(USER_STORAGE_KEY);
-        SSOCookieManager.clearToken();
-        setUser(null);
-        window.location.href = "/login?logged_out=1";
+    const handleVisibility = async () => {
+      if (document.visibilityState !== "visible" || !userRef.current) return;
+      try {
+        await authApi.me();
+      } catch {
+        forceLogout();
       }
     };
-    const handleCustomLogout = () => {
-      sessionStorage.removeItem(USER_STORAGE_KEY);
-      SSOCookieManager.clearToken();
-      setUser(null);
-      window.location.href = "/login?logged_out=1";
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [forceLogout]);
+
+  // ── 3. Same-origin multi-tab broadcast (localStorage storage event) ─────
+  // localStorage events fire only across tabs of the SAME origin, so this
+  // handles multiple HMS tabs — not cross-subdomain. Kept as a fast path.
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === "sso-logout") forceLogout();
     };
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("sso-logout", handleCustomLogout);
+    const handleCustomEvent = () => forceLogout();
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("sso-logout", handleCustomEvent);
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("sso-logout", handleCustomLogout);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("sso-logout", handleCustomEvent);
     };
-  }, []);
+  }, [forceLogout]);
+
+  // ── login ───────────────────────────────────────────────────────────────
   const login = useCallback(async (email, password) => {
     setIsLoading(true);
     try {
       const response = await authApi.login(email, password);
-      const authUser = mapProfileToUser(response);
-      setUser(authUser);
+      setUser(mapProfileToUser(response));
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  // ── logout ──────────────────────────────────────────────────────────────
+  // Clears HMS session + tells Directory to clear its own session.
+  // Other zenohosp.com apps detect the HMS logout on their next /auth/me poll
+  // (or immediately on visibilitychange), same as we detect theirs.
   const logout = useCallback(async () => {
     localStorage.setItem(LOGOUT_FLAG_KEY, "1");
-    sessionStorage.removeItem(USER_STORAGE_KEY);
     SSOCookieManager.clearToken();
     setUser(null);
+    userRef.current = null;
+
+    // Same-origin tab broadcast
     try {
-      localStorage.setItem("sso-logout", `${Date.now()}`);
+      localStorage.setItem("sso-logout", String(Date.now()));
       window.dispatchEvent(new Event("sso-logout"));
     } catch (e) {
-      console.warn("Failed to broadcast logout:", e);
+      console.warn("Same-origin logout broadcast failed:", e);
     }
-    try {
-      await Promise.all([
-        api.post("/auth/logout"),
-        directoryLogout()
-      ]);
-    } catch (e) {
-      console.warn("Logout API failed:", e);
-    }
+
+    // Invalidate server sessions — don't await, let redirect happen immediately
+    Promise.all([
+      api.post("/auth/logout").catch(() => {}),
+      directoryLogout().catch(() => {}),
+    ]);
+
     window.location.href = "/login?logged_out=1";
   }, []);
-  return <AuthContext.Provider value={{
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    login,
-    logout
-  }}>{children}</AuthContext.Provider>;
+
+  return (
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
+
 function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
   return ctx;
 }
+
 function mapProfileToUser(profile) {
-  const role = (profile.role || "").toLowerCase();
+  const role = (profile.role ?? "").toLowerCase();
   return {
+    id: profile.userId?.toString() ?? "",
     userId: profile.userId?.toString() ?? "",
     email: profile.email ?? "",
     firstName: profile.firstName ?? "",
@@ -113,10 +157,8 @@ function mapProfileToUser(profile) {
     roleDisplay: profile.roleDisplay ?? role,
     hospitalId: profile.hospitalId?.toString() ?? null,
     hospitalName: profile.hospitalName ?? null,
-    isActive: profile.isActive ?? true
+    isActive: profile.isActive ?? true,
   };
 }
-export {
-  AuthProvider,
-  useAuth
-};
+
+export { AuthProvider, useAuth };
