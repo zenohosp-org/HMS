@@ -40,26 +40,37 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = extractToken(request);
 
-        if (token != null) {
-            if (jwtUtil.isTokenValid(token)) {
-                String email = jwtUtil.extractEmail(token);
-                String role = jwtUtil.extractRole(token);
-                log.debug("JWT Auth: Token valid for email: {}, role: {}", email, role);
+        if (token != null && jwtUtil.isTokenValid(token)) {
+            String email = jwtUtil.extractEmail(token);
+            String role = jwtUtil.extractRole(token);
+            log.debug("JWT Auth: Token valid for email: {}, role: {}", email, role);
 
-                Optional<User> userOpt = userRepository.findByEmail(email);
-                if (userOpt.isPresent()) {
-                    User user = userOpt.get();
-                    var auth = new UsernamePasswordAuthenticationToken(
-                            user,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role)));
-                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                } else {
-                    log.warn("JWT Auth: User {} not found in database.", email);
-                }
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                var auth = new UsernamePasswordAuthenticationToken(
+                        user,
+                        null,
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(auth);
             } else {
-                log.warn("JWT Auth: Token is invalid or expired.");
+                log.warn("JWT Auth: User {} not found in database.", email);
+                SecurityContextHolder.clearContext();
+            }
+        } else {
+            // No valid sso_token cookie/header present.
+            // The SecurityContextHolderFilter may have already loaded auth from HMS_SESSION.
+            // Clear it so the JWT cookie is the single source of truth — without it,
+            // the user must re-authenticate even if an HTTP session still exists.
+            // Skip OAuth2/login paths to avoid disrupting the SSO handshake flow.
+            String uri = request.getRequestURI();
+            boolean isOAuth2Path = uri.startsWith("/oauth2/") || uri.startsWith("/login/") || uri.startsWith("/error");
+            if (!isOAuth2Path) {
+                SecurityContextHolder.clearContext();
+                if (token != null) {
+                    log.warn("JWT Auth: Token is invalid or expired for URI: {}", uri);
+                }
             }
         }
 
