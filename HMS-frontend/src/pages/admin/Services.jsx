@@ -44,8 +44,9 @@ function Services() {
   };
   const filteredServices = useMemo(() => {
     return services.filter((s) => {
-      const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase());
       const specName = getSpecName(s.specializationId);
+      const q = search.toLowerCase();
+      const matchesSearch = s.name.toLowerCase().includes(q) || specName.toLowerCase().includes(q);
       const matchesDept = activeFilters.departments.length === 0 || activeFilters.departments.includes(specName);
       const matchesStatus = activeFilters.statuses.length === 0 || activeFilters.statuses.includes("Active") && s.isActive || activeFilters.statuses.includes("Inactive") && !s.isActive;
       let matchesPrice = true;
@@ -86,7 +87,7 @@ function Services() {
   ><Plus className="w-4 h-4" /> New Service
                     </button></div></div><div className="flex justify-between items-center gap-4 bg-white/50 dark:bg-[#0a0a0a]/50 p-2 rounded-2xl border border-slate-100 dark:border-[#1a1a1a]"><div className="relative flex-1 max-w-md"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
     type="text"
-    placeholder="Search services..."
+    placeholder="Search by service name or department..."
     value={search}
     onChange={(e) => setSearch(e.target.value)}
     className="w-full pl-10 pr-4 py-2 text-sm bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder-slate-400 dark:placeholder-[#444444] text-slate-700 dark:text-[#cccccc]"
