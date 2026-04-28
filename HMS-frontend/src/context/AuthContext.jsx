@@ -28,6 +28,19 @@ function AuthProvider({ children }) {
       setIsLoading(false);
       return;
     }
+
+    if (import.meta.env.VITE_DEV_MOCK_AUTH === 'true') {
+      setUser({
+        userId: import.meta.env.VITE_MOCK_USER_ID || '1',
+        email: import.meta.env.VITE_MOCK_USER_EMAIL || 'dev@zenohosp.com',
+        role: import.meta.env.VITE_MOCK_USER_ROLE || 'super_admin',
+        hospitalId: import.meta.env.VITE_MOCK_HOSPITAL_ID || '1',
+        modules: [],
+      });
+      setIsLoading(false);
+      return;
+    }
+
     authApi.me()
       .then((profile) => setUser(mapProfileToUser(profile)))
       .catch(() => setUser(null))

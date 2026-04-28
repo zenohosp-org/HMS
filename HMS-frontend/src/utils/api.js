@@ -11,6 +11,13 @@ const api = axios.create({
   withCredentials: true
   // Automatically send/receive HttpOnly cookies
 });
+if (import.meta.env.VITE_DEV_MOCK_AUTH === 'true' && import.meta.env.VITE_MOCK_JWT) {
+  api.interceptors.request.use((config) => {
+    config.headers.Authorization = `Bearer ${import.meta.env.VITE_MOCK_JWT}`;
+    return config;
+  });
+}
+
 api.interceptors.response.use(
   (res) => res,
   (err) => {
