@@ -1,9 +1,14 @@
 #!/bin/bash
-# ZenoHosp HMS — Frontend launcher (macOS)
-# Dev server: http://localhost:5174
-# API proxy → http://localhost:9001 (start backend first)
+# ZenoHosp HMS — Frontend (macOS)
 
 cd "$(dirname "$0")/HMS-frontend"
+
+# Kill anything already on port 5174
+if lsof -ti:5174 > /dev/null 2>&1; then
+  echo " Killing existing process on port 5174..."
+  lsof -ti:5174 | xargs kill -9 2>/dev/null
+  sleep 1
+fi
 
 echo ""
 echo " ZenoHosp HMS Frontend"

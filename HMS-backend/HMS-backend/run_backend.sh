@@ -1,11 +1,17 @@
 #!/bin/bash
 # ZenoHosp HMS — Backend (macOS)
-# Runs Spring Boot on http://localhost:9001 with the 'local' profile
 
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home
 export PATH="$JAVA_HOME/bin:$PATH"
 
 cd "$(dirname "$0")"
+
+# Kill anything already on port 9001
+if lsof -ti:9001 > /dev/null 2>&1; then
+  echo " Killing existing process on port 9001..."
+  lsof -ti:9001 | xargs kill -9 2>/dev/null
+  sleep 1
+fi
 
 echo ""
 echo " ZenoHosp HMS Backend"
