@@ -85,11 +85,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private String extractToken(HttpServletRequest request) {
         // 1. HttpOnly cookie (priority — set by server after login/SSO)
         if (request.getCookies() != null) {
-            return Arrays.stream(request.getCookies())
+            Optional<String> cookieToken = Arrays.stream(request.getCookies())
                     .filter(c -> cookieName.equals(c.getName()))
                     .map(Cookie::getValue)
-                    .findFirst()
-                    .orElse(null);
+                    .findFirst();
+            if (cookieToken.isPresent()) {
+                return cookieToken.get();
+            }
+            // Target cookie not found — fall through to Bearer header
         }
         // 2. Authorization: Bearer <token> (fallback for API clients)
         String header = request.getHeader("Authorization");
