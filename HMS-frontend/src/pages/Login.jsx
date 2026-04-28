@@ -1,8 +1,16 @@
-import { useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Activity } from "lucide-react";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (import.meta.env.VITE_DEV_MOCK_AUTH === 'true') {
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
   const loggedOut = searchParams.get("logged_out");
   const error = searchParams.get("error");
 

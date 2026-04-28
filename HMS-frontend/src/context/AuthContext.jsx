@@ -30,12 +30,18 @@ function AuthProvider({ children }) {
     }
 
     if (import.meta.env.VITE_DEV_MOCK_AUTH === 'true') {
+      const role = (import.meta.env.VITE_MOCK_USER_ROLE || 'hospital_admin').toLowerCase();
       setUser({
+        id: import.meta.env.VITE_MOCK_USER_ID || '1',
         userId: import.meta.env.VITE_MOCK_USER_ID || '1',
         email: import.meta.env.VITE_MOCK_USER_EMAIL || 'dev@zenohosp.com',
-        role: import.meta.env.VITE_MOCK_USER_ROLE || 'super_admin',
+        firstName: 'Dev',
+        lastName: 'User',
+        role,
+        roleDisplay: role,
         hospitalId: import.meta.env.VITE_MOCK_HOSPITAL_ID || '1',
-        modules: [],
+        hospitalName: 'Dev Hospital',
+        isActive: true,
       });
       setIsLoading(false);
       return;
