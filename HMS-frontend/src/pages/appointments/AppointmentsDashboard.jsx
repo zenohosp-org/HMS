@@ -49,8 +49,12 @@ const STATUS_TRANSITIONS = {
     { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600 dark:text-slate-400" }
   ],
   COMPLETED: [],
-  CANCELLED: [],
-  NO_SHOW: []
+  CANCELLED: [
+    { status: "SCHEDULED", label: "Reschedule", icon: "reschedule", color: "text-slate-600 dark:text-slate-400" }
+  ],
+  NO_SHOW: [
+    { status: "SCHEDULED", label: "Reschedule", icon: "reschedule", color: "text-slate-600 dark:text-slate-400" }
+  ]
 };
 function ActionMenu({ appt, onUpdate }) {
   const [open, setOpen] = useState(false);
@@ -96,6 +100,7 @@ function ActionMenu({ appt, onUpdate }) {
     if (icon === "checkin") return <LogIn className="w-4 h-4 opacity-70" />;
     if (icon === "progress") return <PlayCircle className="w-4 h-4 opacity-70" />;
     if (icon === "noshow") return <AlertCircle className="w-4 h-4 opacity-70" />;
+    if (icon === "reschedule") return <CalendarIcon className="w-4 h-4 opacity-70" />;
     return <CheckCircle2 className="w-4 h-4 opacity-70" />;
   };
   return <div className="relative" ref={ref}><button
@@ -175,11 +180,13 @@ function AppointmentsDashboard() {
     loadData();
   }, [user]);
   const handleStatusUpdate = async (id, status, cancelledReason) => {
+    const snapshot = appointments.find((a) => String(a.id) === id);
+    setAppointments((prev) => prev.map((a) => String(a.id) === id ? { ...a, status } : a));
     try {
       await appointmentsApi.updateStatus(id, status, cancelledReason);
-      setAppointments((prev) => prev.map((a) => String(a.id) === id ? { ...a, status } : a));
       notify(`Appointment marked as ${status.replace(/_/g, " ").toLowerCase()}`, "success");
     } catch (err) {
+      if (snapshot) setAppointments((prev) => prev.map((a) => String(a.id) === id ? snapshot : a));
       notify(err?.response?.data?.message || "Failed to update status", "error");
     }
   };
