@@ -70,6 +70,11 @@ public class Room {
     @Column(name = "ward", length = 100)
     private String ward;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ward_id")
+    @JsonIgnore
+    private HospitalWard hospitalWard;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

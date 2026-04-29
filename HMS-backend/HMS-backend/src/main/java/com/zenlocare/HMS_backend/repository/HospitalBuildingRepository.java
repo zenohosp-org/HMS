@@ -13,7 +13,7 @@ public interface HospitalBuildingRepository extends JpaRepository<HospitalBuildi
     @Query("SELECT DISTINCT b FROM HospitalBuilding b LEFT JOIN FETCH b.floors f LEFT JOIN FETCH f.wards WHERE b.hospital.id = :hospitalId ORDER BY b.displayOrder ASC")
     List<HospitalBuilding> findByHospitalIdWithDetails(UUID hospitalId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
     @Query(value = "DELETE FROM hospital_buildings WHERE hospital_id = :hospitalId", nativeQuery = true)
     void deleteByHospitalId(UUID hospitalId);

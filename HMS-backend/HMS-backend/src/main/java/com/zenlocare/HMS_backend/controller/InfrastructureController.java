@@ -48,6 +48,13 @@ public class InfrastructureController {
         private Long id;
         private String name;
         private BigDecimal dailyCharge;
-        private Integer roomCount;
+        private String roomType;
+        private List<RoomDto> rooms = List.of();
+    }
+
+    @Data
+    public static class RoomDto {
+        private Long id;
+        private String name;
     }
 }

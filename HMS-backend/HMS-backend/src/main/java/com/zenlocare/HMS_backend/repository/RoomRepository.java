@@ -21,4 +21,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     Optional<Room> findByCurrentPatientId(Integer patientId);
 
     boolean existsByHospitalId(UUID hospitalId);
+
+    List<Room> findByHospitalWard_Id(Long wardId);
+
+    List<Room> findByHospitalIdAndHospitalWardIsNotNull(UUID hospitalId);
 }

@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface HospitalWardRepository extends JpaRepository<HospitalWard, Long> {
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
     @Query(value = "DELETE FROM hospital_wards WHERE floor_id IN (SELECT id FROM hospital_floors WHERE building_id IN (SELECT id FROM hospital_buildings WHERE hospital_id = :hospitalId))", nativeQuery = true)
     void deleteByHospitalId(UUID hospitalId);
