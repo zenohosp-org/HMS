@@ -307,7 +307,7 @@ function AppointmentsDashboard() {
       className={`px-4 py-2 text-sm font-semibold rounded-lg capitalize transition-all ${listFilter === f ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-md" : "text-slate-600 dark:text-[#888888] hover:bg-slate-100 dark:hover:bg-[#222222]"}`}
     >{f === "all" ? "All Appointments" : f}</button>)}</div>}</header>{
       /* Content Area */
-    }<div className="flex-1 overflow-hidden flex flex-col gap-6">{viewMode === "calendar" && <div className="flex items-center justify-between pb-2"><div className="flex items-center bg-white dark:bg-[#111111] rounded-lg p-1 shadow-sm border border-slate-200 dark:border-[#333333]">{["day", "week", "month"].map((v) => <button
+    }<div className="flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden flex flex-col gap-6">{viewMode === "calendar" && <div className="flex items-center justify-between pb-2"><div className="flex items-center bg-white dark:bg-[#111111] rounded-lg p-1 shadow-sm border border-slate-200 dark:border-[#333333]">{["day", "week", "month"].map((v) => <button
       key={v}
       onClick={() => setCalendarView(v)}
       className={`px-4 py-1.5 text-sm font-semibold rounded-lg capitalize transition-all ${calendarView === v ? "bg-white dark:bg-white dark:text-slate-950 text-slate-950 shadow-md" : "text-slate-500 dark:text-[#888888] hover:text-slate-700 dark:hover:text-[#cccccc]"}`}
