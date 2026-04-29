@@ -4,7 +4,6 @@ import { useNotification } from "@/context/NotificationContext";
 import { staffApi, doctorsApi } from "@/utils/api";
 import StaffFormModal from "@/components/modals/StaffFormModal";
 import {
-  Search,
   UserPlus,
   Mail,
   Phone,
@@ -15,6 +14,7 @@ import {
   User,
   MoreVertical
 } from "lucide-react";
+import SearchInput from "@/components/SearchInput";
 const ROLE_TABS = [
   { key: "all", label: "All" },
   { key: "doctor", label: "Doctors" },
@@ -166,14 +166,13 @@ function StaffsList() {
     { label: "Admin", value: stats.admins, icon: ShieldCheck, cls: "text-rose-600 dark:text-rose-400" }
   ].map(({ label, value, icon: Icon, cls }) => <div key={label} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4"><div className="flex items-center justify-between mb-2"><p className="text-xs font-semibold text-slate-400 dark:text-[#666666] uppercase tracking-wider">{label}</p><Icon className={`w-4 h-4 ${cls}`} /></div><p className={`text-2xl font-bold ${cls}`}>{value}</p></div>)}</div>{
     /* Search + filter row */
-  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4 flex flex-col sm:flex-row gap-3"><div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
-    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
-                            bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc]
-                            focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-    placeholder="Search by name, email, code, designation…"
+  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4 flex flex-col sm:flex-row gap-3"><SearchInput
     value={search}
-    onChange={(e) => setSearch(e.target.value)}
-  /></div><div className="flex gap-1.5">{ROLE_TABS.map((tab) => <button
+    onChange={setSearch}
+    placeholder="Search by name, email, code, designation…"
+    suggestions={members.map((m) => ({ label: `${m.firstName} ${m.lastName}`, sub: m.roleDisplay }))}
+    className="flex-1"
+  /><div className="flex gap-1.5">{ROLE_TABS.map((tab) => <button
     key={tab.key}
     onClick={() => setRoleFilter(tab.key)}
     className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors
