@@ -4,6 +4,7 @@ import com.zenlocare.HMS_backend.entity.HospitalBuilding;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,6 +14,7 @@ public interface HospitalBuildingRepository extends JpaRepository<HospitalBuildi
     List<HospitalBuilding> findByHospitalIdWithDetails(UUID hospitalId);
 
     @Modifying
-    @Query("DELETE FROM HospitalBuilding b WHERE b.hospital.id = :hospitalId")
+    @Transactional
+    @Query(value = "DELETE FROM hospital_buildings WHERE hospital_id = :hospitalId", nativeQuery = true)
     void deleteByHospitalId(UUID hospitalId);
 }
