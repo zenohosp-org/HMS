@@ -65,9 +65,9 @@ function buildAgeGroups(patients) {
 function KpiCard({ label, value, sub, icon, accent, trend, trendLabel }) {
   const isUp = trend === "up";
   return (
-    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl p-5 flex flex-col gap-4">
+    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-6 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${accent}`}>
+        <div className="flex items-center justify-start">
           {icon}
         </div>
         {trendLabel && (
@@ -81,8 +81,8 @@ function KpiCard({ label, value, sub, icon, accent, trend, trendLabel }) {
         )}
       </div>
       <div>
-        <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{value}</p>
-        <p className="text-sm font-medium text-slate-500 dark:text-[#666] mt-0.5">{label}</p>
+        <p className="text-sm font-medium text-slate-500 dark:text-[#666]">{label}</p>
+        <p className="text-4xl font-semibold text-slate-900 dark:text-white mt-1 tracking-tight">{value}</p>
         {sub && <p className="text-xs text-slate-400 dark:text-[#555] mt-0.5">{sub}</p>}
       </div>
     </div>
@@ -92,7 +92,7 @@ function KpiCard({ label, value, sub, icon, accent, trend, trendLabel }) {
 function ChartCard({ title, subtitle, children, action, actionLabel }) {
   const navigate = useNavigate();
   return (
-    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl p-6 flex flex-col gap-5">
+    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-6 flex flex-col gap-5 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
           <p className="font-bold text-slate-900 dark:text-white text-sm">{title}</p>
@@ -112,7 +112,7 @@ function ChartCard({ title, subtitle, children, action, actionLabel }) {
   );
 }
 
-const CUSTOM_TOOLTIP_CLS = "bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl shadow-xl px-4 py-3 text-xs";
+const CUSTOM_TOOLTIP_CLS = "bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-md px-4 py-3 text-xs";
 
 function PatientTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -518,7 +518,7 @@ export default function AdminDashboard() {
         </ChartCard>
 
         {/* Quick actions */}
-        <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl p-6 flex flex-col gap-4">
+        <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-6 flex flex-col gap-4 shadow-sm">
           <div>
             <p className="font-bold text-slate-900 dark:text-white text-sm">Quick Actions</p>
             <p className="text-xs text-slate-400 dark:text-[#555] mt-0.5">Jump to common tasks</p>

@@ -22,8 +22,7 @@ import {
   CalendarDays,
   ScanLine,
   FileText,
-  Award,
-  LogOut
+  Award
 } from "lucide-react";
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
 const CLINICAL_LINKS = [
@@ -58,12 +57,11 @@ const EXTERNAL_APPS = [
   { label: "Assets", href: "https://asset.zenohosp.com", icon: LayoutGrid }
 ];
 function Sidebar({ isOpen }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const [hrOpen, setHrOpen] = useState(() => location.pathname.startsWith("/staffs"));
   const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
   const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
-  const initials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`;
   const filteredClinicalLinks = CLINICAL_LINKS.filter((link) => {
     if (user?.role === "hospital_admin" || user?.role === "super_admin") return true;
     const allowedLinks = ["Patients", "Appointments"];
@@ -127,20 +125,18 @@ function Sidebar({ isOpen }) {
                 bg-white dark:bg-[#111111] border-r border-slate-200 dark:border-[#222222]
                 ${isOpen ? "w-60" : "w-16"}`}
   >{
-    /* Logo */
-  }<div className={`flex items-center border-b border-slate-200 dark:border-[#222222] py-5 ${isOpen ? "gap-3 px-4" : "justify-center"}`}><div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0"><Activity className="w-4 h-4 text-white" /></div>{isOpen && <div className="overflow-hidden"><p className="font-bold text-sm leading-tight tracking-wider text-slate-900 dark:text-white">ZenoHosp</p><p className="text-xs text-slate-500 dark:text-[#555555] truncate mt-0.5">{user?.hospitalName}</p></div>}</div>{
-    /* Navigation */
-  }<nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
-                        Main Menu
-                    </div>}{renderLink(DASHBOARD_LINK)}{isOpen && <div className="px-3 mb-2 mt-10 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
-                        Hospital
-                    </div>}{filteredClinicalLinks.map((link) => renderLink(link))}{renderRoomsAccordion()}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{filteredAdminLinks.map((link) => renderLink(link))}{isHrAdmin && renderHrAccordion()}{
-    /* Divider */
-  }<div className={`border-t border-slate-100 dark:border-[#1e1e1e] ${isOpen ? "mx-3 my-4" : "my-4"}`} />{isOpen && <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
-                        Other Apps
-                    </div>}{EXTERNAL_APPS.map((app) => renderExternalApp(app))}</nav>{
-    /* User profile at bottom */
-  }<div className={`border-t border-slate-200 dark:border-[#222222] ${isOpen ? "px-4 py-4" : "py-4 flex flex-col items-center gap-3"}`}>{isOpen ? <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#333333] border border-slate-300 dark:border-[#444444] flex items-center justify-center text-xs font-bold text-slate-700 dark:text-[#cccccc] shrink-0">{initials}</div><div className="overflow-hidden flex-1"><p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user?.firstName} {user?.lastName}</p><p className="text-xs text-slate-500 dark:text-[#666666] truncate">{user?.roleDisplay}</p></div><button onClick={logout} title="Logout" className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors shrink-0"><LogOut className="w-4 h-4" /></button></div> : <><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#333333] border border-slate-300 dark:border-[#444444] flex items-center justify-center text-xs font-bold text-slate-700 dark:text-[#cccccc]">{initials}</div><button onClick={logout} title="Logout" className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"><LogOut className="w-4 h-4" /></button></>}</div></aside>;
+      /* Logo */
+    }<div className={`flex items-center border-b border-slate-200 dark:border-[#222222] py-5 ${isOpen ? "gap-3 px-4" : "justify-center"}`}><div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0"><Activity className="w-4 h-4 text-white" /></div>{isOpen && <div className="overflow-hidden"><p className="font-bold text-sm leading-tight tracking-wider text-slate-900 dark:text-white">ZenoHosp</p><p className="text-xs text-slate-500 dark:text-[#555555] truncate mt-0.5">{user?.hospitalName}</p></div>}</div>{
+      /* Navigation */
+    }<nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
+      Main Menu
+    </div>}{renderLink(DASHBOARD_LINK)}{isOpen && <div className="px-3 mb-2 mt-10 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
+      Hospital
+    </div>}{filteredClinicalLinks.map((link) => renderLink(link))}{renderRoomsAccordion()}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{filteredAdminLinks.map((link) => renderLink(link))}{isHrAdmin && renderHrAccordion()}</nav>{
+      /* Other Apps at bottom */
+    }<div className="border-t border-slate-200 dark:border-[#222222] p-2 space-y-0.5 shrink-0">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
+      Other Apps
+    </div>}{EXTERNAL_APPS.map((app) => renderExternalApp(app))}</div></aside>;
 }
 export {
   Sidebar as default
