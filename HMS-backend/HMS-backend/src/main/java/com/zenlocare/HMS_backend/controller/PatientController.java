@@ -37,18 +37,13 @@ public class PatientController {
 
     @PostMapping
     public ResponseEntity<Patient> createPatient(@RequestBody CreatePatientRequest req) {
-        Patient p = patientService.createPatient(
-                req.getHospitalId(), req.getFirstName(), req.getLastName(),
-                req.getDob(), req.getGender(), req.getPhone(), req.getEmail(),
-                req.getBloodGroup(), req.getAddress(), req.getAadhaarNumber());
+        Patient p = patientService.createPatient(req);
         return ResponseEntity.ok(p);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Patient> updatePatient(@PathVariable Integer id, @RequestBody CreatePatientRequest req) {
-        Patient p = patientService.updatePatient(id, req.getHospitalId(), req.getFirstName(), req.getLastName(),
-                req.getDob(), req.getGender(), req.getPhone(), req.getEmail(),
-                req.getBloodGroup(), req.getAddress(), req.getAadhaarNumber());
+        Patient p = patientService.updatePatient(id, req);
         return ResponseEntity.ok(p);
     }
 
@@ -63,6 +58,17 @@ public class PatientController {
         private String email;
         private String bloodGroup;
         private String address;
+        private String state;
         private String aadhaarNumber;
+        private String maritalStatus;
+        private String occupation;
+        private String emergencyContactName;
+        private String emergencyContactPhone;
+        private String emergencyContactRelation;
+        private String insuranceScheme;
+        private String insurancePolicyNumber;
+        private String allergies;
+        private String chronicConditions;
+        private String referredBy;
     }
 }
