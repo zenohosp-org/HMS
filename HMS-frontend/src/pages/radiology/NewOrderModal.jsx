@@ -137,7 +137,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#111111] rounded-2xl shadow-xl w-full max-w-lg border border-slate-200 dark:border-[#2a2a2a] flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-[#111111] rounded-lg shadow-xl w-full max-w-lg border border-slate-200 dark:border-[#2a2a2a] flex flex-col max-h-[90vh]">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
@@ -173,7 +173,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
         {/* ── Quick Register Form ── */}
         {showRegister ? (
           <form onSubmit={handleQuickRegister} className="flex-1 overflow-y-auto p-6 space-y-5">
-            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
+            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
               <UserPlus className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
                 Walk-in patient — minimum info needed. Full profile can be completed later from the Patients section.
@@ -274,7 +274,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
             <div>
               <label className={labelCls}>Patient *</label>
               {selectedPatient ? (
-                <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-emerald-200 dark:border-slate-900 dark:border-white/30 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10">
+                <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-emerald-200 dark:border-slate-900 dark:border-white/30 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300">
                       {selectedPatient.firstName[0]}{selectedPatient.lastName?.[0] ?? ""}
@@ -313,7 +313,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
 
                   {/* Results dropdown */}
                   {patients.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl shadow-xl z-10 overflow-hidden">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-xl z-10 overflow-hidden">
                       {patients.map((p) => (
                         <button
                           key={p.id}
@@ -339,7 +339,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
 
                   {/* No results — offer quick register */}
                   {noResults && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl shadow-xl z-10 overflow-hidden">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-xl z-10 overflow-hidden">
                       <div className="px-4 py-3 text-xs text-slate-400 dark:text-[#555] border-b border-slate-100 dark:border-[#222]">
                         No patient found for "{patientSearch}"
                       </div>

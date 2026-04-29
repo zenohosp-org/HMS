@@ -198,7 +198,7 @@ function ShiftRoster() {
   const weekLabel = `${weekDays[0].getDate()} ${weekDays[0].toLocaleString("en-IN", { month: "short" })} \u2013 ${weekDays[6].getDate()} ${weekDays[6].toLocaleString("en-IN", { month: "short" })}, ${weekDays[0].getFullYear()}`;
   return <><div className="space-y-3">{
     /* ── Top nav card ── */
-  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl px-4 py-3 flex items-center gap-3">{
+  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg px-4 py-3 flex items-center gap-3">{
     /* Week nav */
   }<div className="flex items-center gap-1 shrink-0"><button
     onClick={() => setWeekStart((w) => addDays(w, -7))}
@@ -222,7 +222,7 @@ function ShiftRoster() {
     const totalGroupPages = Math.ceil(members.length / GROUP_PAGE_SIZE);
     const visibleMembers = members.slice((gPage - 1) * GROUP_PAGE_SIZE, gPage * GROUP_PAGE_SIZE);
     const setGPage = (p) => setGroupPages((prev) => ({ ...prev, [groupName]: p }));
-    return <div key={groupName} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl overflow-visible">{
+    return <div key={groupName} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-visible">{
       /* Group header */
     }<div className="px-4 py-2.5 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between"><p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wide">{groupName}<span className="ml-2 font-normal text-slate-400 dark:text-[#666666] normal-case">{members.length} {members.length === 1 ? "member" : "members"}</span></p>{totalGroupPages > 1 && <div className="flex items-center gap-1"><button
       onClick={() => setGPage(Math.max(1, gPage - 1))}
@@ -286,7 +286,7 @@ function ShiftRoster() {
         left: popover.x,
         ...popover.flipUp ? { bottom: window.innerHeight - popover.y + 4 } : { top: popover.y + 4 }
       }}
-      className="z-[9999] bg-white dark:bg-[#1c1c1c] border border-slate-200 dark:border-[#333333] rounded-xl shadow-2xl w-52 overflow-hidden"
+      className="z-[9999] bg-white dark:bg-[#1c1c1c] border border-slate-200 dark:border-[#333333] rounded-lg shadow-2xl w-52 overflow-hidden"
       onMouseDown={(e) => e.stopPropagation()}
     ><div className="px-3 py-2.5 border-b border-slate-100 dark:border-[#2a2a2a]"><p className="text-[11px] font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Assign Shift</p></div><div className="p-1">{SHIFTS.map((s) => <button
       key={s.type}

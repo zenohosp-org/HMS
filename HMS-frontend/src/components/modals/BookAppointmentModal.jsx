@@ -171,7 +171,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     const dt = /* @__PURE__ */ new Date(d + "T00:00:00");
     return dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
   };
-  return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"><div className="bg-white dark:bg-[#111111] rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#1e1e1e]">{
+  return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"><div className="bg-white dark:bg-[#111111] rounded-lg shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#1e1e1e]">{
     /* Header */
   }<div className="flex items-center justify-between px-7 py-5 border-b border-slate-200 dark:border-[#1e1e1e]"><div><h2 className="text-xl font-bold text-slate-900 dark:text-white">Add Appointment</h2><p className="text-sm text-slate-500 dark:text-[#888888] mt-0.5">Schedule a new appointment for a patient.</p></div><button
     onClick={() => {
@@ -189,19 +189,19 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     key={opt.value}
     type="button"
     onClick={() => setType(opt.value)}
-    className={`text-left px-4 py-3 rounded-xl border transition-all ${type === opt.value ? "border-slate-900 dark:border-white bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10" : "border-slate-200 dark:border-[#222222] hover:border-slate-300 dark:hover:border-[#333333]"}`}
+    className={`text-left px-4 py-3 rounded-lg border transition-all ${type === opt.value ? "border-slate-900 dark:border-white bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10" : "border-slate-200 dark:border-[#222222] hover:border-slate-300 dark:hover:border-[#333333]"}`}
   ><p className={`text-sm font-semibold ${type === opt.value ? "text-slate-900 dark:text-white dark:text-slate-300" : "text-slate-700 dark:text-[#cccccc]"}`}>{type === opt.value && <CheckCircle className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />}{opt.label}</p><p className="text-xs text-slate-400 dark:text-[#666666] mt-0.5">{opt.desc}</p></button>)}</div></div>{
     /* Date */
   }<div><label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3 flex items-center gap-2"><Calendar className="w-4 h-4 text-slate-400" /> Date
-                                </label><div className="border border-slate-200 dark:border-[#222222] rounded-xl p-4 bg-white dark:bg-[#0f0f0f]">{apptDate && <div className="mb-3 px-3 py-2 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10 rounded-lg border border-emerald-100 dark:border-slate-900 dark:border-white/20"><p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-300">{formatDisplayDate(apptDate)}</p></div>}<MiniCalendar value={apptDate} onChange={(v) => {
+                                </label><div className="border border-slate-200 dark:border-[#222222] rounded-lg p-4 bg-white dark:bg-[#0f0f0f]">{apptDate && <div className="mb-3 px-3 py-2 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10 rounded-lg border border-emerald-100 dark:border-slate-900 dark:border-white/20"><p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-300">{formatDisplayDate(apptDate)}</p></div>}<MiniCalendar value={apptDate} onChange={(v) => {
     setApptDate(v);
     setApptTime("");
   }} /></div></div>{
     /* Time Slots */
   }<div><label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3 flex items-center gap-2"><Clock className="w-4 h-4 text-slate-400" /> Time
-                                </label>{!doctorId ? <div className="border border-dashed border-slate-200 dark:border-[#222222] rounded-xl p-5 text-center text-sm text-slate-400 dark:text-[#666666]">
+                                </label>{!doctorId ? <div className="border border-dashed border-slate-200 dark:border-[#222222] rounded-lg p-5 text-center text-sm text-slate-400 dark:text-[#666666]">
                                         Select a doctor to view available time slots.
-                                    </div> : <div className="border border-slate-200 dark:border-[#222222] rounded-xl overflow-hidden bg-white dark:bg-[#0f0f0f]"><div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-[#1a1a1a]">{timeSlots.map((slot) => <button
+                                    </div> : <div className="border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#0f0f0f]"><div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-[#1a1a1a]">{timeSlots.map((slot) => <button
     key={slot.timeStr}
     type="button"
     disabled={slot.isBooked}
@@ -218,7 +218,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     value={chiefComplaint}
     onChange={(e) => setChiefComplaint(e.target.value)}
     rows={3}
-    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white outline-none transition-all resize-none"
+    className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white outline-none transition-all resize-none"
     placeholder="Enter the reason for the appointment"
   /></div></form></div>{
     /* ─── RIGHT: Patient & Doctor ─── */
@@ -231,10 +231,10 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     value={patientSearch}
     onChange={(e) => setPatientSearch(e.target.value)}
     placeholder="Search patients..."
-    className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white outline-none transition-all`}
+    className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white outline-none transition-all`}
   /></div>{
     /* Patient list */
-  }{patientSearch && filteredPatients.length > 0 && <div className="border border-slate-200 dark:border-[#222222] rounded-xl overflow-hidden mb-2 bg-white dark:bg-[#111111] max-h-44 overflow-y-auto">{filteredPatients.slice(0, 8).map((p) => <button
+  }{patientSearch && filteredPatients.length > 0 && <div className="border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden mb-2 bg-white dark:bg-[#111111] max-h-44 overflow-y-auto">{filteredPatients.slice(0, 8).map((p) => <button
     key={p.id}
     type="button"
     onClick={() => {
@@ -245,7 +245,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left border-b last:border-b-0 border-slate-100 dark:border-[#1a1a1a]"
   ><div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{p.firstName[0]}</div><div className="min-w-0"><p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">{p.firstName} {p.lastName}</p><p className="text-[11px] text-slate-400 dark:text-[#666666]">{p.mrn}</p></div></button>)}</div>}{
     /* Selected patient display */
-  }{selectedPatient && <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10 border border-emerald-200 dark:border-slate-900 dark:border-white/20 rounded-xl mb-2"><div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300 shrink-0">{selectedPatient.firstName[0]}</div><div className="flex-1 min-w-0"><p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 truncate">{selectedPatient.firstName} {selectedPatient.lastName}</p><p className="text-[11px] text-slate-900 dark:text-white dark:text-slate-900 dark:text-white">{selectedPatient.mrn}</p></div><button type="button" onClick={() => setPatientId("")} className="text-slate-900 dark:text-white hover:text-slate-900 dark:text-white dark:hover:text-emerald-300"><X className="w-3.5 h-3.5" /></button></div>}{errors.patient && <p className="text-xs text-red-500 mb-2">{errors.patient}</p>}<button
+  }{selectedPatient && <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10 border border-emerald-200 dark:border-slate-900 dark:border-white/20 rounded-lg mb-2"><div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300 shrink-0">{selectedPatient.firstName[0]}</div><div className="flex-1 min-w-0"><p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 truncate">{selectedPatient.firstName} {selectedPatient.lastName}</p><p className="text-[11px] text-slate-900 dark:text-white dark:text-slate-900 dark:text-white">{selectedPatient.mrn}</p></div><button type="button" onClick={() => setPatientId("")} className="text-slate-900 dark:text-white hover:text-slate-900 dark:text-white dark:hover:text-emerald-300"><X className="w-3.5 h-3.5" /></button></div>}{errors.patient && <p className="text-xs text-red-500 mb-2">{errors.patient}</p>}<button
     type="button"
     onClick={() => {
       onClose();
@@ -258,7 +258,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     /* Divider */
   }<div className="border-t border-slate-200 dark:border-[#1e1e1e]" />{
     /* Select Doctor */
-  }<div><h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">Select Doctor</h3><p className="text-xs text-slate-500 dark:text-[#666666] mb-4">Choose a doctor for this appointment.</p><div className={`border ${errors.doctor ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} rounded-xl overflow-hidden bg-white dark:bg-[#111111]`}><select
+  }<div><h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">Select Doctor</h3><p className="text-xs text-slate-500 dark:text-[#666666] mb-4">Choose a doctor for this appointment.</p><div className={`border ${errors.doctor ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} rounded-lg overflow-hidden bg-white dark:bg-[#111111]`}><select
     value={doctorId}
     onChange={(e) => {
       setDoctorId(e.target.value);
@@ -270,7 +270,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
   ><option value="">Select a doctor</option>{doctors.map((d) => <option key={d.id} value={d.id}>
                                             Dr. {d.firstName} {d.lastName} — {d.specialization}</option>)}</select></div>{errors.doctor && <p className="text-xs text-red-500 mt-1">{errors.doctor}</p>}{
     /* Doctor info card */
-  }{selectedDoctor && <div className="mt-3 p-3 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-xl"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 shrink-0">{selectedDoctor.firstName[0]}</div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}</p><p className="text-xs text-slate-500 dark:text-[#888888]">{selectedDoctor.specialization}</p></div></div>{selectedDoctor.consultationFee != null && <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] grid grid-cols-2 gap-2"><div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Fee</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.consultationFee}</p></div><div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div></div>}</div>}</div></div></div>{
+  }{selectedDoctor && <div className="mt-3 p-3 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 shrink-0">{selectedDoctor.firstName[0]}</div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}</p><p className="text-xs text-slate-500 dark:text-[#888888]">{selectedDoctor.specialization}</p></div></div>{selectedDoctor.consultationFee != null && <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] grid grid-cols-2 gap-2"><div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Fee</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.consultationFee}</p></div><div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div></div>}</div>}</div></div></div>{
     /* Footer */
   }<div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#111111]"><button
     type="button"

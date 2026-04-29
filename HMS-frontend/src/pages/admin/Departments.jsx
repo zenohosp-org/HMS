@@ -126,7 +126,7 @@ export default function Departments() {
 
   const existing = new Set(departments.map(d => d.name))
 
-  const inputCls = 'w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all'
+  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all'
   const labelCls = 'block text-xs font-bold text-slate-600 dark:text-[#aaa] uppercase tracking-wider mb-1.5'
 
   return (
@@ -146,13 +146,13 @@ export default function Departments() {
       <div className="flex gap-2">
         {DEPT_TYPES.map(t => (
           <button key={t} onClick={() => setActiveTab(t)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${activeTab === t ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-violet-400'}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${activeTab === t ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-violet-400'}`}>
             {t.charAt(0) + t.slice(1).toLowerCase()} ({grouped[t]?.length ?? 0})
           </button>
         ))}
       </div>
 
-      <div className="rounded-2xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] overflow-hidden flex-1">
+      <div className="rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] overflow-hidden flex-1">
         <div className="p-5 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
           <span className="font-semibold text-slate-800 dark:text-white">{activeTab.charAt(0) + activeTab.slice(1).toLowerCase()} Departments</span>
           <span className="text-xs text-slate-400">{grouped[activeTab]?.length ?? 0} departments</span>
@@ -210,7 +210,7 @@ export default function Departments() {
           <div className="flex flex-wrap gap-2">
             {PRESETS[activeTab]?.filter(p => !existing.has(p.name)).map(p => (
               <button key={p.name} onClick={() => openCreate(p)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-400 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 text-xs font-medium transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-400 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 text-xs font-medium transition-colors">
                 <Plus className="w-3 h-3" /> {p.name}
               </button>
             ))}
@@ -223,7 +223,7 @@ export default function Departments() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#111] rounded-2xl shadow-xl w-full max-w-md border border-slate-200 dark:border-[#2a2a2a]">
+          <div className="bg-white dark:bg-[#111] rounded-lg shadow-xl w-full max-w-md border border-slate-200 dark:border-[#2a2a2a]">
             <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-[#1e1e1e]">
               <h3 className="font-bold text-slate-900 dark:text-white">{editing ? 'Edit Department' : 'New Department'}</h3>
               <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 hover:text-slate-600 transition-colors">
@@ -256,7 +256,7 @@ export default function Departments() {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
                   Cancel
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2">

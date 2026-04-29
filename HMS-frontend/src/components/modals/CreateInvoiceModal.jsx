@@ -187,8 +187,8 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
     }
   }
 
-  const inputCls = 'w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm text-slate-900 dark:text-[#dddddd] focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all'
-  const cardCls = 'bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-5'
+  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm text-slate-900 dark:text-[#dddddd] focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all'
+  const cardCls = 'bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-5'
   const sectionNum = (n) => (
     <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center shrink-0">{n}</span>
   )
@@ -196,7 +196,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div className="bg-slate-50 dark:bg-[#0d0d0d] rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#2a2a2a]">
+        <div className="bg-slate-50 dark:bg-[#0d0d0d] rounded-lg shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#2a2a2a]">
 
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#111111] shrink-0">
             <div>
@@ -205,14 +205,14 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                 Invoice #{invoiceNo} · Smart billing with auto-detection
               </p>
             </div>
-            <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
+            <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
 
-            <div className="flex gap-3 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
+            <div className="flex gap-3 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
               <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
               <p className="text-xs text-blue-700 dark:text-blue-300">
                 Selecting a patient auto-detects active room charges, pending radiology orders, and recent consultations.
@@ -225,7 +225,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                 {sectionNum(1)} Select Patient
               </p>
               {patient ? (
-                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-emerald-200 dark:border-slate-900 dark:border-white/30 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10">
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-emerald-200 dark:border-slate-900 dark:border-white/30 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
                       <User className="w-4 h-4 text-slate-900 dark:text-white dark:text-slate-300" />
@@ -246,7 +246,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                     value={patientSearch} onChange={e => setPatientSearch(e.target.value)} />
                   {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400" />}
                   {patientResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-xl shadow-xl z-30 overflow-hidden">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-lg shadow-xl z-30 overflow-hidden">
                       {patientResults.map(p => (
                         <button key={p.id} type="button" onClick={() => selectPatient(p)}
                           className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0">
@@ -368,7 +368,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                     <input className={inputCls} placeholder="Search by test name…"
                       value={serviceSearch} onChange={e => setServiceSearch(e.target.value)} />
                     {serviceResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-xl shadow-xl z-20 overflow-hidden">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-lg shadow-xl z-20 overflow-hidden">
                         {serviceResults.map(s => (
                           <button key={s.id} type="button" onClick={() => {
                             addItem({ itemType: 'LAB_TEST', serviceId: s.id, description: s.name, quantity: 1, unitPrice: s.price, totalPrice: s.price })
@@ -388,7 +388,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                     <Pill className="w-3 h-3 text-slate-900 dark:text-white" /> Add Medicine
                   </label>
                   <button onClick={() => addItem({ itemType: 'MEDICINE', description: '', quantity: 1, unitPrice: 0, totalPrice: 0 })}
-                    className="w-full px-3 py-2 rounded-xl border border-dashed border-emerald-300 dark:border-slate-900 dark:border-white/30 text-sm text-slate-900 dark:text-white dark:text-slate-300 hover:bg-slate-100 dark:bg-[#1e1e1e] dark:hover:bg-slate-500/10 transition-colors text-left">
+                    className="w-full px-3 py-2 rounded-lg border border-dashed border-emerald-300 dark:border-slate-900 dark:border-white/30 text-sm text-slate-900 dark:text-white dark:text-slate-300 hover:bg-slate-100 dark:bg-[#1e1e1e] dark:hover:bg-slate-500/10 transition-colors text-left">
                     + Add medicine item manually
                   </button>
                 </div>
@@ -408,7 +408,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
               </div>
 
               {items.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-400 dark:text-[#555555] border-2 border-dashed border-slate-100 dark:border-[#1e1e1e] rounded-xl">
+                <div className="py-8 text-center text-sm text-slate-400 dark:text-[#555555] border-2 border-dashed border-slate-100 dark:border-[#1e1e1e] rounded-lg">
                   No items yet — detect from patient or add manually
                 </div>
               ) : (
@@ -506,7 +506,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                       const isSelected = bankAccountId === a.id
                       return (
                         <button key={a.id} type="button" onClick={() => setBankAccountId(a.id)}
-                          className={`text-left p-3 rounded-xl border-2 transition-all ${isSelected ? 'border-slate-900 dark:border-white bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]'}`}>
+                          className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected ? 'border-slate-900 dark:border-white bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]'}`}>
                           <div className="flex items-start justify-between gap-2 mb-1">
                             <p className={`text-xs font-bold truncate ${isSelected ? 'text-slate-900 dark:text-white dark:text-slate-300' : 'text-slate-700 dark:text-[#cccccc]'}`}>{a.accountName}</p>
                             {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}
@@ -530,7 +530,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
 
           <div className="px-6 py-4 border-t border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#111111] shrink-0">
             <button onClick={handleSubmit} disabled={saving || !patient || items.length === 0}
-              className="w-full py-3 rounded-xl bg-slate-900 dark:bg-white hover:bg-slate-900 dark:bg-white disabled:opacity-50 text-white font-bold flex items-center justify-center gap-2 transition-colors">
+              className="w-full py-3 rounded-lg bg-slate-900 dark:bg-white hover:bg-slate-900 dark:bg-white disabled:opacity-50 text-white font-bold flex items-center justify-center gap-2 transition-colors">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
               {saving ? 'Generating…' : 'Generate Invoice & Print'}
             </button>

@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 const EVENT_META = {
   ROOM_CREATED: { label: "Room Created", cls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20", icon: PlusCircle },
-  ALLOCATED: { label: "Allocated", cls: "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white border-emerald-200 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-900 dark:border-white/20", icon: Bed },
+  ALLOCATED: { label: "Allocated", cls: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20", icon: Bed },
   DEALLOCATED: { label: "Deallocated", cls: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#888888] dark:border-[#333333]", icon: LogOut },
   ATTENDER_ASSIGNED: { label: "Attender Assigned", cls: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20", icon: UserCheck },
   ATTENDER_UPDATED: { label: "Attender Updated", cls: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20", icon: UserCog }
@@ -81,7 +81,7 @@ function RoomLogsPage() {
     className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-[#888888] dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
   ><ArrowLeft className="w-5 h-5" /></button><div><h1 className="text-xl font-bold text-slate-900 dark:text-[#f0f0f0]">{roomNumber ? `Room ${roomNumber} \u2014 Activity Log` : "Room Activity Log"}</h1><p className="text-sm text-slate-500 dark:text-[#666666] mt-0.5">{loading ? "Loading\u2026" : `${filteredLogs.length} event${filteredLogs.length !== 1 ? "s" : ""}`}</p></div></div>{
     /* Search + filter bar */
-  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
+  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-4"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                             bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc]
                             focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
@@ -91,7 +91,7 @@ function RoomLogsPage() {
     autoFocus
   /></div></div>{
     /* Log table */
-  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl overflow-hidden">{
+  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden">{
     /* Column headers */
   }<div className="hidden md:grid grid-cols-[2fr_2fr_2fr_1.5fr_1fr] gap-4 px-6 py-3 border-b border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0d0d0d]"><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">Event</p><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">Patient</p><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">Attender</p><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">Performed By</p><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555] text-right">Time</p></div>{loading ? <div className="flex items-center justify-center py-20 text-slate-400"><Loader2 className="w-5 h-5 animate-spin" /></div> : filteredLogs.length === 0 ? <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400 dark:text-[#555555]"><CalendarClock className="w-10 h-10 opacity-30" /><p className="text-sm">No log entries found</p>{search && <p className="text-xs">Try clearing the search filter</p>}</div> : <div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredLogs.map((log) => {
     const meta = EVENT_META[log.event];

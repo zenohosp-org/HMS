@@ -34,7 +34,7 @@ export default function Login() {
 
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <Activity className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -53,12 +53,12 @@ export default function Login() {
 
           {/* Alerts */}
           {loggedOut && (
-            <div className="px-4 py-3 rounded-xl bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] text-sm text-slate-600 dark:text-[#888]">
+            <div className="px-4 py-3 rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] text-sm text-slate-600 dark:text-[#888]">
               You have been signed out successfully.
             </div>
           )}
           {errorMessage && (
-            <div className="px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-sm text-rose-700 dark:text-rose-400">
+            <div className="px-4 py-3 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-sm text-rose-700 dark:text-rose-400">
               {errorMessage}
             </div>
           )}
@@ -67,7 +67,7 @@ export default function Login() {
           <button
             type="button"
             onClick={() => { window.location.href = "/oauth2/authorization/directory"; }}
-            className="w-full py-4 bg-slate-900 dark:bg-white hover:bg-slate-900 dark:bg-white text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+            className="w-full py-4 bg-slate-900 dark:bg-white hover:bg-slate-900 dark:bg-white text-white font-bold text-sm rounded-lg shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
           >
             <Activity className="w-5 h-5" />
             Sign in with ZenoHosp Directory

@@ -253,21 +253,21 @@ function CreateInvoice() {
     });
   }, [allInvoices, logSearch, logStatus]);
   const selectedAccount = bankAccounts.find((a) => a.id === bankAccountId);
-  const inputCls = "w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm text-slate-900 dark:text-[#dddddd] focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all";
-  const cardCls = "bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-5";
+  const inputCls = "w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm text-slate-900 dark:text-[#dddddd] focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all";
+  const cardCls = "bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-5";
   return <><div className="flex h-full overflow-hidden no-print -m-6">{
     /* ── LEFT: Create Invoice ── */
   }<div className="flex-1 overflow-y-auto p-6 space-y-4 min-w-0"><div className="flex items-start justify-between"><div><h1 className="text-xl font-bold text-slate-900 dark:text-white">Create New Invoice</h1><p className="text-xs text-slate-400 dark:text-[#666666] mt-0.5">Smart billing with automatic pending order detection</p></div><button
     onClick={() => setPaneOpen((o) => !o)}
-    className="p-2 rounded-xl border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors shrink-0"
+    className="p-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors shrink-0"
     title={paneOpen ? "Hide invoice logs" : "Show invoice logs"}
   >{paneOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}</button></div>{
     /* Smart banner */
-  }<div className="flex gap-3 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20"><Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" /><div className="text-xs text-blue-700 dark:text-blue-300 space-y-1"><p className="font-bold text-sm">Smart Billing System</p><p>Selecting a patient auto-detects active room charges, pending radiology orders, and recent consultations.</p></div></div>{
+  }<div className="flex gap-3 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20"><Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" /><div className="text-xs text-blue-700 dark:text-blue-300 space-y-1"><p className="font-bold text-sm">Smart Billing System</p><p>Selecting a patient auto-detects active room charges, pending radiology orders, and recent consultations.</p></div></div>{
     /* 1. Select Patient */
   }<div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">1</span>
                         Select Patient
-                    </p>{patient ? <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-emerald-200 dark:border-slate-900 dark:border-white/30 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10"><div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0"><User className="w-4 h-4 text-slate-900 dark:text-white dark:text-slate-300" /></div><div><p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{patient.firstName} {patient.lastName}</p><p className="text-xs text-slate-900 dark:text-white dark:text-slate-900 dark:text-white">{patient.mrn}{patient.phone ? ` \xB7 ${patient.phone}` : ""}</p></div></div><button onClick={clearPatient} className="p-1 text-slate-900 dark:text-white hover:text-slate-900 dark:text-white transition-colors"><X className="w-3.5 h-3.5" /></button></div> : <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" /><input className={`${inputCls} pl-9`} placeholder="Search by name or MRN…" value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} />{searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400" />}{patientResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-xl shadow-xl z-30 overflow-hidden">{patientResults.map((p) => <button
+                    </p>{patient ? <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-emerald-200 dark:border-slate-900 dark:border-white/30 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10"><div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0"><User className="w-4 h-4 text-slate-900 dark:text-white dark:text-slate-300" /></div><div><p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{patient.firstName} {patient.lastName}</p><p className="text-xs text-slate-900 dark:text-white dark:text-slate-900 dark:text-white">{patient.mrn}{patient.phone ? ` \xB7 ${patient.phone}` : ""}</p></div></div><button onClick={clearPatient} className="p-1 text-slate-900 dark:text-white hover:text-slate-900 dark:text-white transition-colors"><X className="w-3.5 h-3.5" /></button></div> : <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" /><input className={`${inputCls} pl-9`} placeholder="Search by name or MRN…" value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} />{searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400" />}{patientResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-lg shadow-xl z-30 overflow-hidden">{patientResults.map((p) => <button
     key={p.id}
     type="button"
     onClick={() => selectPatient(p)}
@@ -304,7 +304,7 @@ function CreateInvoice() {
     /* 3. Add Tests & Services */
   }<div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">3</span>
                         Add Tests &amp; Services
-                    </p><div className="grid grid-cols-2 gap-3"><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5 flex items-center gap-1"><FlaskConical className="w-3 h-3 text-violet-500" /> Search Lab / Services</label><div className="relative"><input className={inputCls} placeholder="Search by test name…" value={serviceSearch} onChange={(e) => setServiceSearch(e.target.value)} />{serviceResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-xl shadow-xl z-20 overflow-hidden">{serviceResults.map((s) => <button
+                    </p><div className="grid grid-cols-2 gap-3"><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5 flex items-center gap-1"><FlaskConical className="w-3 h-3 text-violet-500" /> Search Lab / Services</label><div className="relative"><input className={inputCls} placeholder="Search by test name…" value={serviceSearch} onChange={(e) => setServiceSearch(e.target.value)} />{serviceResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-lg shadow-xl z-20 overflow-hidden">{serviceResults.map((s) => <button
     key={s.id}
     type="button"
     onClick={() => {
@@ -315,7 +315,7 @@ function CreateInvoice() {
     className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0"
   ><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{s.name}</p><p className="text-xs text-slate-400">{fmt(s.price)}</p></button>)}</div>}</div></div><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5 flex items-center gap-1"><Pill className="w-3 h-3 text-slate-900 dark:text-white" /> Add Medicine</label><button
     onClick={() => addItem({ itemType: "MEDICINE", description: "", quantity: 1, unitPrice: 0, totalPrice: 0 })}
-    className="w-full px-3 py-2 rounded-xl border border-dashed border-emerald-300 dark:border-slate-900 dark:border-white/30 text-sm text-slate-900 dark:text-white dark:text-slate-300 hover:bg-slate-100 dark:bg-[#1e1e1e] dark:hover:bg-slate-500/10 transition-colors text-left"
+    className="w-full px-3 py-2 rounded-lg border border-dashed border-emerald-300 dark:border-slate-900 dark:border-white/30 text-sm text-slate-900 dark:text-white dark:text-slate-300 hover:bg-slate-100 dark:bg-[#1e1e1e] dark:hover:bg-slate-500/10 transition-colors text-left"
   >
                                 + Add medicine item manually
                             </button></div></div></div>{
@@ -326,7 +326,7 @@ function CreateInvoice() {
     onClick={() => addItem({ itemType: "CUSTOM", description: "", quantity: 1, unitPrice: 0, totalPrice: 0 })}
     className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
   ><Plus className="w-3 h-3" /> Add Custom Item
-                        </button></div>{items.length === 0 ? <div className="py-8 text-center text-sm text-slate-400 dark:text-[#555555] border-2 border-dashed border-slate-100 dark:border-[#1e1e1e] rounded-xl">
+                        </button></div>{items.length === 0 ? <div className="py-8 text-center text-sm text-slate-400 dark:text-[#555555] border-2 border-dashed border-slate-100 dark:border-[#1e1e1e] rounded-lg">
                             No items yet — detect from patient or add manually
                         </div> : <><div className="grid grid-cols-12 gap-2 pb-2 border-b border-slate-100 dark:border-[#1e1e1e] text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555] px-1"><div className="col-span-1">Type</div><div className="col-span-5">Description</div><div className="col-span-2 text-center">Qty</div><div className="col-span-2 text-right">Unit ₹</div><div className="col-span-2 text-right">Total ₹</div></div><div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{items.map((item) => <div key={item.key} className="grid grid-cols-12 gap-2 items-center py-2 group px-1"><div className="col-span-1"><select
     className="w-full text-[10px] rounded border border-slate-100 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-1 py-1 text-slate-700 dark:text-[#cccccc] focus:outline-none"
@@ -371,19 +371,19 @@ function CreateInvoice() {
       key={a.id}
       type="button"
       onClick={() => setBankAccountId(a.id)}
-      className={`text-left p-3 rounded-xl border-2 transition-all ${isSelected ? "border-slate-900 dark:border-white bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10" : "border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]"}`}
+      className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected ? "border-slate-900 dark:border-white bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10" : "border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]"}`}
     ><div className="flex items-start justify-between gap-2 mb-1"><p className={`text-xs font-bold truncate ${isSelected ? "text-slate-900 dark:text-white dark:text-slate-300" : "text-slate-700 dark:text-[#cccccc]"}`}>{a.accountName}</p>{isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}</div><p className="text-[11px] text-slate-400 dark:text-[#666666] truncate">{a.bankName ?? "Bank"} · ···{a.accountNumber.slice(-4)}</p><p className={`text-xs font-bold mt-1.5 ${isSelected ? "text-slate-900 dark:text-white dark:text-slate-300" : "text-slate-600 dark:text-[#aaaaaa]"}`}>{fmt(a.currentBalance)}</p></button>;
   })}<button
     type="button"
     onClick={() => setBankAccountId("")}
-    className={`text-left p-3 rounded-xl border-2 transition-all ${bankAccountId === "" ? "border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]" : "border-dashed border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 bg-white dark:bg-[#111111]"}`}
+    className={`text-left p-3 rounded-lg border-2 transition-all ${bankAccountId === "" ? "border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]" : "border-dashed border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 bg-white dark:bg-[#111111]"}`}
   ><p className="text-xs font-bold text-slate-400 dark:text-[#666666]">No account</p><p className="text-[11px] text-slate-300 dark:text-[#444444] mt-0.5">Skip bank credit</p></button></div>{selectedAccount && <p className="text-xs text-slate-400 dark:text-[#666666] mt-2">
                                     After payment: <span className="font-semibold text-slate-900 dark:text-white dark:text-slate-300">{fmt(selectedAccount.currentBalance + grandTotal)}</span></p>}</div>}</div>{
     /* Generate button */
   }<button
     onClick={handleSubmit}
     disabled={saving || !patient || items.length === 0}
-    className="w-full py-3.5 rounded-2xl bg-slate-900 dark:bg-white hover:bg-slate-900 dark:bg-white disabled:opacity-50 text-white font-bold flex items-center justify-center gap-2 transition-colors"
+    className="w-full py-3.5 rounded-lg bg-slate-900 dark:bg-white hover:bg-slate-900 dark:bg-white disabled:opacity-50 text-white font-bold flex items-center justify-center gap-2 transition-colors"
   >{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}{saving ? "Generating\u2026" : "Generate Invoice & Print"}</button><div className="h-4" /></div>{
     /* ── RIGHT: Invoice Logs (collapsible) ── */
   }{paneOpen && <div className="w-96 border-l border-slate-200 dark:border-[#1e1e1e] flex flex-col overflow-hidden bg-white dark:bg-[#0d0d0d] shrink-0">{

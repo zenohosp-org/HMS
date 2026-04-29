@@ -43,9 +43,9 @@ function RadiologyReportView() {
   ><Printer className="w-4 h-4" /> Print Report
                 </button></div>{
     /* Report card */
-  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl overflow-hidden print:border-none print:shadow-none">{
+  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden print:border-none print:shadow-none">{
     /* Hospital header */
-  }<div className="px-8 py-6 border-b-2 border-violet-500 dark:border-violet-400"><div className="flex items-start justify-between"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center shrink-0"><ScanLine className="w-7 h-7 text-violet-600 dark:text-violet-400" /></div><div><h1 className="text-xl font-bold text-slate-900 dark:text-white">{user?.hospitalName ?? "Hospital"}</h1><p className="text-sm text-slate-500 dark:text-[#888888] mt-0.5">Radiology Department</p></div></div><div className="text-right"><span className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300">
+  }<div className="px-8 py-6 border-b-2 border-violet-500 dark:border-violet-400"><div className="flex items-start justify-between"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center shrink-0"><ScanLine className="w-7 h-7 text-violet-600 dark:text-violet-400" /></div><div><h1 className="text-xl font-bold text-slate-900 dark:text-white">{user?.hospitalName ?? "Hospital"}</h1><p className="text-sm text-slate-500 dark:text-[#888888] mt-0.5">Radiology Department</p></div></div><div className="text-right"><span className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300">
                                 Department of Radiology
                             </span>{order.reportId && <p className="text-xs text-slate-400 dark:text-[#555555] mt-2 font-mono">
                                     Report ID: <span className="font-bold text-slate-700 dark:text-[#cccccc]">{order.reportId}</span></p>}</div></div></div>{

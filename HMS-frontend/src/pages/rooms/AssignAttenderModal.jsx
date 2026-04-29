@@ -26,7 +26,7 @@ function AssignAttenderModal({ roomId, roomNumber, existing, onClose, onSuccess 
       setSubmitting(false);
     }
   };
-  return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"><div className="bg-white dark:bg-[#111111] rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-[#2a2a2a]"><div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-[#222222]"><h2 className="text-lg font-bold text-slate-900 dark:text-white">
+  return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"><div className="bg-white dark:bg-[#111111] rounded-lg shadow-xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-[#2a2a2a]"><div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-[#222222]"><h2 className="text-lg font-bold text-slate-900 dark:text-white">
                         Assign Attender <span className="text-slate-400 font-normal">· Room {roomNumber}</span></h2><button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-[#aaaaaa] rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"><X className="w-5 h-5" /></button></div><form onSubmit={handleSubmit} className="p-5 space-y-4"><div><label className={labelCls}>Attender Name *</label><input
     required
     type="text"

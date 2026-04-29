@@ -360,8 +360,8 @@ export default function AdminDashboard() {
           <AreaChart data={patientTrend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="patGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#0f172a" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" vertical={false} />
@@ -382,11 +382,11 @@ export default function AdminDashboard() {
             <Area
               type="monotone"
               dataKey="count"
-              stroke="#0f172a"
+              stroke="#3b82f6"
               strokeWidth={2}
               fill="url(#patGrad)"
               dot={false}
-              activeDot={{ r: 4, fill: "#0f172a", strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: "#3b82f6", strokeWidth: 0 }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -482,7 +482,7 @@ export default function AdminDashboard() {
                   ) : null
                 }
               />
-              <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={36} />
+              <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -534,7 +534,7 @@ export default function AdminDashboard() {
               <button
                 key={item.to}
                 onClick={() => navigate(item.to)}
-                className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left group"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left group"
               >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.color}`}>
                   {item.icon}

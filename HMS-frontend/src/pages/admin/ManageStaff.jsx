@@ -43,15 +43,15 @@ function ManageStaff() {
   }<div className="flex gap-2 mb-4">{["ALL", "DOCTOR", "STAFF"].map((f) => <button
     key={f}
     onClick={() => setFilter(f)}
-    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all 
+    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all 
               ${filter === f ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-md" : "bg-white text-slate-500 border border-slate-200 dark:bg-[#111111] dark:border-[#222222] hover:bg-slate-50 dark:hover:bg-[#1a1a1a]"}`}
   >{f === "ALL" ? "All" : f === "DOCTOR" ? "Doctors" : "Staff"}</button>)}</div>{
     /* Table layout converted to separated rows */
-  }<div className="space-y-3">{loading ? <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-8 text-center"><p className="text-slate-500 dark:text-[#666666]">Loading…</p></div> : visible.length === 0 ? <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-8 text-center"><p className="text-slate-500 dark:text-[#666666]">No accounts found.</p></div> : visible.map((s) => {
+  }<div className="space-y-3">{loading ? <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-8 text-center"><p className="text-slate-500 dark:text-[#666666]">Loading…</p></div> : visible.length === 0 ? <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-8 text-center"><p className="text-slate-500 dark:text-[#666666]">No accounts found.</p></div> : visible.map((s) => {
     const initials = `${s.firstName[0]}${s.lastName?.[0] ?? ""}`.toUpperCase();
     return <div
       key={s.id}
-      className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4 
+      className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-4 
                                 flex items-center justify-between hover:border-slate-300 dark:hover:border-[#2a2a2a] transition-colors"
     ><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#2a2a2a] 
                                         flex items-center justify-center text-sm font-bold text-slate-700 dark:text-[#cccccc] shrink-0">{initials}</div><div><div className="flex items-center gap-2"><p

@@ -104,7 +104,7 @@ export default function DoctorDetails() {
                 {canEdit && (
                     <button
                         onClick={() => setEditing(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl text-sm font-bold text-slate-700 dark:text-[#cccccc] hover:bg-slate-50 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg text-sm font-bold text-slate-700 dark:text-[#cccccc] hover:bg-slate-50 transition-all shadow-sm"
                     >
                         <Edit2 className="w-4 h-4" /> Edit Profile
                     </button>
@@ -113,7 +113,7 @@ export default function DoctorDetails() {
 
                 {/* Avatar + Name block */}
                 <div className="px-5 py-6 text-center border-b border-slate-200 dark:border-[#1e1e1e]">
-                    <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-500/10 border border-slate-200 dark:border-[#2a2a2a] mx-auto mb-3
+                    <div className="w-16 h-16 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-slate-200 dark:border-[#2a2a2a] mx-auto mb-3
                         flex items-center justify-center text-2xl font-bold text-blue-600 dark:text-blue-400">
                         {initials}
                     </div>
@@ -259,7 +259,7 @@ export default function DoctorDetails() {
                                             {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(day => {
                                                 const isAvailable = doctor.availableDays?.includes(day)
                                                 return (
-                                                    <div key={day} className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors flex items-center gap-2
+                                                    <div key={day} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-colors flex items-center gap-2
                                                         ${isAvailable
                                                             ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30'
                                                             : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-[#161616] dark:text-[#555555] dark:border-[#222222]'}`}
@@ -368,7 +368,7 @@ export default function DoctorDetails() {
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {doctorPatients.slice(0, 50).map((patient, idx) => (
-                                            <div key={idx} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4 flex items-center gap-4 hover:border-slate-300 dark:hover:border-[#2a2a2a] transition-colors cursor-pointer" onClick={() => navigate(`/patients/${patient.id}`)}>
+                                            <div key={idx} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-4 flex items-center gap-4 hover:border-slate-300 dark:hover:border-[#2a2a2a] transition-colors cursor-pointer" onClick={() => navigate(`/patients/${patient.id}`)}>
                                                 <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#2a2a2a] flex items-center justify-center text-sm font-bold text-slate-700 dark:text-[#cccccc] shrink-0">
                                                     {patient.name.charAt(0)}
                                                 </div>

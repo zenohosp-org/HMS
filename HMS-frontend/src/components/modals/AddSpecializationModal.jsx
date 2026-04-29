@@ -52,7 +52,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g. Cardiology"
-          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white transition-all"
+          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white transition-all"
         />
       </div>
       <div className="space-y-2">
@@ -62,7 +62,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Enter detail description..."
-          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white transition-all resize-none"
+          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white transition-all resize-none"
         />
       </div>
       <div className="flex items-center gap-3 py-2">
@@ -100,10 +100,10 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#111111] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-[#222222] animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-[#111111] rounded-lg shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-[#222222] animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1a1a1a]">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">Add New Specialization</h2>
-          <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all">
+          <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all">
             <X className="w-5 h-5" />
           </button>
         </div>
