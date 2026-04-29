@@ -23,7 +23,8 @@ import {
   ScanLine,
   FileText,
   Award,
-  LogOut
+  LogOut,
+  Network,
 } from "lucide-react";
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
 const CLINICAL_LINKS = [
@@ -37,6 +38,7 @@ const ADMIN_LINKS = [
   { label: "Services", to: "/services", icon: ClipboardList },
 ];
 const ROOMS_LINKS = [
+  { label: "Infrastructure", to: "/ipd/infrastructure", icon: Network },
   { label: "Room Allocation", to: "/rooms", icon: Bed },
   { label: "Room Logs", to: "/rooms/logs", icon: ClipboardList },
   { label: "IPD Admissions", to: "/admissions", icon: BedDouble },
@@ -62,7 +64,7 @@ function Sidebar({ isOpen }) {
   const location = useLocation();
   const [hrOpen, setHrOpen] = useState(() => location.pathname.startsWith("/staffs"));
   const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
-  const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
+  const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions") || location.pathname.startsWith("/ipd"));
   const initials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`;
   const filteredClinicalLinks = CLINICAL_LINKS.filter((link) => {
     if (user?.role === "hospital_admin" || user?.role === "super_admin") return true;
@@ -77,7 +79,7 @@ function Sidebar({ isOpen }) {
   const isHrAdmin = user?.role === "hospital_admin" || user?.role === "super_admin";
   const hrActive = location.pathname.startsWith("/staffs");
   const radActive = location.pathname.startsWith("/radiology");
-  const roomsActive = location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions");
+  const roomsActive = location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions") || location.pathname.startsWith("/ipd");
   const renderLink = (link, indent = false) => {
     const Icon = link.icon;
     return isOpen ? <NavLink
@@ -121,7 +123,7 @@ function Sidebar({ isOpen }) {
     ><AccIcon className={`w-4 h-4 shrink-0 ${active ? "text-emerald-600 dark:text-emerald-400" : ""}`} /><span className="flex-1 text-left truncate">{label}</span><ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""} opacity-50`} /></button>{open && <div className="mt-0.5 space-y-0.5">{links.map((link) => renderLink(link, true))}</div>}</div>;
   };
   const renderHrAccordion = () => renderAccordionSection(HR_LINKS, "HR & Staff", ClipboardList, hrOpen, setHrOpen, hrActive);
-  const renderRoomsAccordion = () => renderAccordionSection(ROOMS_LINKS, "Rooms", Bed, roomsOpen, setRoomsOpen, roomsActive);
+  const renderRoomsAccordion = () => renderAccordionSection(ROOMS_LINKS, "IPD Management", BedDouble, roomsOpen, setRoomsOpen, roomsActive);
   return <aside
     className={`flex flex-col h-full transition-all duration-300 ease-in-out shrink-0
                 bg-white dark:bg-[#111111] border-r border-slate-200 dark:border-[#222222]
