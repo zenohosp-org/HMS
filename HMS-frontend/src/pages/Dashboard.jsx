@@ -100,7 +100,7 @@ function SectionCard({ title, subtitle, children, action, actionLabel, actionFn 
       <div className="flex items-start justify-between">
         <div>
           <p className="font-bold text-slate-900 dark:text-white text-sm">{title}</p>
-          {subtitle && <p className="text-xs text-slate-400 dark:text-[#555] mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-slate-600 dark:text-[#555] mt-0.5">{subtitle}</p>}
         </div>
         {actionFn && (
           <button
@@ -117,7 +117,7 @@ function SectionCard({ title, subtitle, children, action, actionLabel, actionFn 
 }
 
 function AppointmentStatusRow({ status, count, total }) {
-  const meta = STATUS_META[status] ?? { icon: Clock, color: "text-slate-400", bg: "bg-slate-100 dark:bg-[#1e1e1e]", label: status };
+  const meta = STATUS_META[status] ?? { icon: Clock, color: "text-slate-600", bg: "bg-slate-100 dark:bg-[#1e1e1e]", label: status };
   const Icon = meta.icon;
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
@@ -137,7 +137,7 @@ function AppointmentStatusRow({ status, count, total }) {
           />
         </div>
       </div>
-      <span className="text-[10px] text-slate-400 dark:text-[#555] w-7 text-right">{pct}%</span>
+      <span className="text-[10px] text-slate-600 dark:text-[#555] w-7 text-right">{pct}%</span>
     </div>
   );
 }
@@ -158,7 +158,7 @@ function PatientRowCard({ p }) {
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-800 dark:text-[#e5e5e5]">{p.firstName} {p.lastName}</p>
-            <p className="text-xs text-slate-400 dark:text-[#555]">{p.mrn}</p>
+            <p className="text-xs text-slate-600 dark:text-[#555]">{p.mrn}</p>
           </div>
         </div>
       </td>
@@ -178,7 +178,7 @@ function PatientRowCard({ p }) {
         </span>
       </td>
       <td className="px-5 py-3.5 text-right">
-        <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-[#555] justify-end">
+        <span className="flex items-center gap-1 text-xs text-slate-600 dark:text-[#555] justify-end">
           <Clock className="w-3 h-3" />{timeAgo(p.createdAt)}
         </span>
       </td>
@@ -399,7 +399,7 @@ function DoctorStaffDashboard() {
           ) : (
             <div className="flex flex-col items-center justify-center h-32 gap-2 text-slate-300 dark:text-[#333]">
               <Calendar className="w-8 h-8" />
-              <p className="text-xs text-slate-400 dark:text-[#555]">No appointments yet</p>
+              <p className="text-xs text-slate-600 dark:text-[#555]">No appointments yet</p>
             </div>
           )}
           {totalAppts > 0 && (
@@ -447,7 +447,7 @@ function DoctorStaffDashboard() {
               </div>
               <div className="text-center">
                 <p className="text-sm font-semibold text-slate-500 dark:text-[#555]">No new patients today</p>
-                <p className="text-xs text-slate-400 dark:text-[#444] mt-0.5">New registrations will appear here</p>
+                <p className="text-xs text-slate-600 dark:text-[#444] mt-0.5">New registrations will appear here</p>
               </div>
               <button onClick={() => navigate("/patients")} className="btn-primary text-xs mt-1">
                 Register Patient
@@ -459,7 +459,7 @@ function DoctorStaffDashboard() {
                 <thead>
                   <tr className="bg-slate-50 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1a1a1a]">
                     {["Patient", "Age / Gender", "Phone", "Blood", "Registered"].map((h) => (
-                      <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-[#555] uppercase tracking-widest last:text-right">
+                      <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-[#555] uppercase tracking-widest last:text-right">
                         {h}
                       </th>
                     ))}
@@ -493,7 +493,7 @@ function DoctorStaffDashboard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-slate-800 dark:text-[#e5e5e5] text-sm">{item.label}</p>
-              <p className="text-xs text-slate-400 dark:text-[#555] mt-0.5">{item.sub}</p>
+              <p className="text-xs text-slate-600 dark:text-[#555] mt-0.5">{item.sub}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-slate-300 dark:text-[#333] group-hover:text-slate-500 dark:group-hover:text-[#666] group-hover:translate-x-0.5 transition-all" />
           </button>

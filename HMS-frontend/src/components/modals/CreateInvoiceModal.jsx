@@ -201,11 +201,11 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#111111] shrink-0">
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Create New Invoice</h2>
-              <p className="text-xs text-slate-400 dark:text-[#666] mt-0.5">
+              <p className="text-xs text-slate-600 dark:text-[#666] mt-0.5">
                 Invoice #{invoiceNo} · Smart billing with auto-detection
               </p>
             </div>
-            <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
+            <button onClick={onClose} className="p-2 rounded-lg text-slate-600 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -241,17 +241,17 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                 </div>
               ) : (
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
                   <input className={`${inputCls} pl-9`} placeholder="Search by name or MRN…"
                     value={patientSearch} onChange={e => setPatientSearch(e.target.value)} />
-                  {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400" />}
+                  {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-600" />}
                   {patientResults.length > 0 && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-lg shadow-xl z-30 overflow-hidden">
                       {patientResults.map(p => (
                         <button key={p.id} type="button" onClick={() => selectPatient(p)}
                           className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0">
                           <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{p.firstName} {p.lastName}</p>
-                          <p className="text-xs text-slate-400">{p.mrn}</p>
+                          <p className="text-xs text-slate-600">{p.mrn}</p>
                         </button>
                       ))}
                     </div>
@@ -265,7 +265,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
               <div className={cardCls}>
                 <p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2">
                   <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Detected Pending Items
-                  {loadingSuggestions && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                  {loadingSuggestions && <Loader2 className="w-3 h-3 animate-spin text-slate-600" />}
                 </p>
                 {!loadingSuggestions && suggestions && (
                   <div className="space-y-2">
@@ -281,12 +281,12 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                             </div>
                             <div>
                               <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">Room {r.roomNumber} — {r.roomType.replace('_', ' ')}</p>
-                              <p className="text-xs text-slate-400">{fmt(r.pricePerDay)}/day × {r.daysStayed} day{r.daysStayed !== 1 ? 's' : ''} = <span className="font-semibold">{fmt(r.totalCharge)}</span></p>
+                              <p className="text-xs text-slate-600">{fmt(r.pricePerDay)}/day × {r.daysStayed} day{r.daysStayed !== 1 ? 's' : ''} = <span className="font-semibold">{fmt(r.totalCharge)}</span></p>
                             </div>
                           </div>
                           <button
                             onClick={() => !added && addItem({ itemType: 'ROOM_CHARGE', description: `Room ${r.roomNumber} (${r.roomType}) — ${r.daysStayed} day${r.daysStayed !== 1 ? 's' : ''}`, quantity: Number(r.daysStayed), unitPrice: r.pricePerDay, totalPrice: r.totalCharge }, key)}
-                            className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default' : 'bg-orange-500 hover:bg-orange-600 text-white'}`}>
+                            className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-600 cursor-default' : 'bg-orange-500 hover:bg-orange-600 text-white'}`}>
                             {added ? '✓ Added' : '+ Add'}
                           </button>
                         </div>
@@ -303,12 +303,12 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                             </div>
                             <div>
                               <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{r.serviceName}</p>
-                              <p className="text-xs text-slate-400">{r.status?.replace('_', ' ')}{r.scheduledDate ? ` · ${r.scheduledDate}` : ''}</p>
+                              <p className="text-xs text-slate-600">{r.status?.replace('_', ' ')}{r.scheduledDate ? ` · ${r.scheduledDate}` : ''}</p>
                             </div>
                           </div>
                           <button
                             onClick={() => !added && addItem({ itemType: 'RADIOLOGY', description: r.serviceName, quantity: 1, unitPrice: 0, totalPrice: 0 }, key)}
-                            className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default' : 'bg-violet-500 hover:bg-violet-600 text-white'}`}>
+                            className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-600 cursor-default' : 'bg-violet-500 hover:bg-violet-600 text-white'}`}>
                             {added ? '✓ Added' : '+ Add'}
                           </button>
                         </div>
@@ -325,12 +325,12 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                             </div>
                             <div>
                               <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{a.doctorName}{a.specialization ? ` — ${a.specialization}` : ''}</p>
-                              <p className="text-xs text-slate-400">Consultation · {a.apptDate} · <span className="font-semibold">{fmt(a.consultationFee)}</span></p>
+                              <p className="text-xs text-slate-600">Consultation · {a.apptDate} · <span className="font-semibold">{fmt(a.consultationFee)}</span></p>
                             </div>
                           </div>
                           <button
                             onClick={() => !added && addItem({ itemType: 'CONSULTATION', description: `Consultation — ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ''}`, quantity: 1, unitPrice: a.consultationFee, totalPrice: a.consultationFee }, key)}
-                            className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}>
+                            className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-600 cursor-default' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}>
                             {added ? '✓ Added' : '+ Add'}
                           </button>
                         </div>
@@ -344,7 +344,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
             {/* 2 — Referred By */}
             <div className={cardCls}>
               <p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2">
-                {sectionNum(2)} Referred By <span className="font-normal normal-case text-slate-400">(Optional)</span>
+                {sectionNum(2)} Referred By <span className="font-normal normal-case text-slate-600">(Optional)</span>
               </p>
               <select className={inputCls} value={referredById} onChange={e => setReferredById(e.target.value)}>
                 <option value="">Self / Walk-in (No Referral)</option>
@@ -361,7 +361,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5 flex items-center gap-1">
+                  <label className="block text-xs text-slate-600 dark:text-[#666666] mb-1.5 flex items-center gap-1">
                     <FlaskConical className="w-3 h-3 text-violet-500" /> Search Lab / Services
                   </label>
                   <div className="relative">
@@ -376,7 +376,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                             setServiceResults([])
                           }} className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0">
                             <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{s.name}</p>
-                            <p className="text-xs text-slate-400">{fmt(s.price)}</p>
+                            <p className="text-xs text-slate-600">{fmt(s.price)}</p>
                           </button>
                         ))}
                       </div>
@@ -384,7 +384,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5 flex items-center gap-1">
+                  <label className="block text-xs text-slate-600 dark:text-[#666666] mb-1.5 flex items-center gap-1">
                     <Pill className="w-3 h-3 text-slate-900 dark:text-white" /> Add Medicine
                   </label>
                   <button onClick={() => addItem({ itemType: 'MEDICINE', description: '', quantity: 1, unitPrice: 0, totalPrice: 0 })}
@@ -408,12 +408,12 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
               </div>
 
               {items.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-400 dark:text-[#555555] border-2 border-dashed border-slate-100 dark:border-[#1e1e1e] rounded-lg">
+                <div className="py-8 text-center text-sm text-slate-600 dark:text-[#555555] border-2 border-dashed border-slate-100 dark:border-[#1e1e1e] rounded-lg">
                   No items yet — detect from patient or add manually
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-12 gap-2 pb-2 border-b border-slate-100 dark:border-[#1e1e1e] text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555555] px-1">
+                  <div className="grid grid-cols-12 gap-2 pb-2 border-b border-slate-100 dark:border-[#1e1e1e] text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#555555] px-1">
                     <div className="col-span-1">Type</div>
                     <div className="col-span-5">Description</div>
                     <div className="col-span-2 text-center">Qty</div>
@@ -486,19 +486,19 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
               </p>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
-                  <label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Payment Method</label>
+                  <label className="block text-xs text-slate-600 dark:text-[#666666] mb-1.5">Payment Method</label>
                   <select className={inputCls} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
                     {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Notes (optional)</label>
+                  <label className="block text-xs text-slate-600 dark:text-[#666666] mb-1.5">Notes (optional)</label>
                   <input className={inputCls} placeholder="Additional notes…" value={notes} onChange={e => setNotes(e.target.value)} />
                 </div>
               </div>
               {bankAccounts.length > 0 && (
                 <div>
-                  <label className="block text-xs text-slate-400 dark:text-[#666666] mb-2 flex items-center gap-1.5">
+                  <label className="block text-xs text-slate-600 dark:text-[#666666] mb-2 flex items-center gap-1.5">
                     <Landmark className="w-3.5 h-3.5" /> Credit payment to
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -511,14 +511,14 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                             <p className={`text-xs font-bold truncate ${isSelected ? 'text-slate-900 dark:text-white dark:text-slate-300' : 'text-slate-700 dark:text-[#cccccc]'}`}>{a.accountName}</p>
                             {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}
                           </div>
-                          <p className="text-[11px] text-slate-400 dark:text-[#666666] truncate">{a.bankName ?? 'Bank'} · ···{a.accountNumber.slice(-4)}</p>
+                          <p className="text-[11px] text-slate-600 dark:text-[#666666] truncate">{a.bankName ?? 'Bank'} · ···{a.accountNumber.slice(-4)}</p>
                           <p className={`text-xs font-bold mt-1.5 ${isSelected ? 'text-slate-900 dark:text-white dark:text-slate-300' : 'text-slate-600 dark:text-[#aaaaaa]'}`}>{fmt(a.currentBalance)}</p>
                         </button>
                       )
                     })}
                   </div>
                   {selectedAccount && (
-                    <p className="text-xs text-slate-400 dark:text-[#666666] mt-2">
+                    <p className="text-xs text-slate-600 dark:text-[#666666] mt-2">
                       After payment: <span className="font-semibold text-slate-900 dark:text-white dark:text-slate-300">{fmt(selectedAccount.currentBalance + grandTotal)}</span>
                     </p>
                   )}

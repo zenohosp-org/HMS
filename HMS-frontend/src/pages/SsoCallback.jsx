@@ -37,9 +37,9 @@ function SsoCallback() {
     }
   }, [searchParams, isLoading, user, navigate]);
   if (error) {
-    return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#0f0f0f]"><div className="text-center space-y-4"><div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto"><svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></div><p className="text-red-500 font-semibold">{error}</p><p className="text-slate-400 text-sm">Redirecting to login...</p></div></div>;
+    return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#0f0f0f]"><div className="text-center space-y-4"><div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto"><svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></div><p className="text-red-500 font-semibold">{error}</p><p className="text-slate-600 text-sm">Redirecting to login...</p></div></div>;
   }
-  return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#0f0f0f]"><div className="text-center space-y-4"><div className="w-12 h-12 border-4 border-slate-900 dark:border-white border-t-transparent rounded-full animate-spin mx-auto" /><p className="text-slate-700 dark:text-slate-300 font-semibold">Completing sign-in...</p><p className="text-slate-400 text-sm">Please wait while we set up your session.</p></div></div>;
+  return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#0f0f0f]"><div className="text-center space-y-4"><div className="w-12 h-12 border-4 border-slate-900 dark:border-white border-t-transparent rounded-full animate-spin mx-auto" /><p className="text-slate-700 dark:text-slate-300 font-semibold">Completing sign-in...</p><p className="text-slate-600 text-sm">Please wait while we set up your session.</p></div></div>;
 }
 export {
   SsoCallback as default

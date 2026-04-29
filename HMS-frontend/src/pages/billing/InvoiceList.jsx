@@ -67,7 +67,7 @@ function InvoiceList() {
     onClick={() => navigate("/billing")}
     className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-white mb-2 transition-colors"
   ><ChevronLeft className="w-3 h-3" /> Back to Billing
-                    </button><h1 className="text-2xl font-bold text-slate-900 dark:text-white">Invoice History</h1><p className="text-sm text-slate-500 font-medium tracking-tight">Track all hospital billing and payments</p></div><div className="flex gap-3"><div className="relative group"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-900 dark:text-white transition-colors" /><input
+                    </button><h1 className="text-2xl font-bold text-slate-900 dark:text-white">Invoice History</h1><p className="text-sm text-slate-500 font-medium tracking-tight">Track all hospital billing and payments</p></div><div className="flex gap-3"><div className="relative group"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-slate-900 dark:text-white transition-colors" /><input
     type="text"
     placeholder="Search invoice number..."
     className="pl-10 pr-4 py-2 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg text-sm outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 w-64"

@@ -63,10 +63,10 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
     /* Header */
   }<div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0"><div><h2 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h2><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{loading ? "Loading\u2026" : `${filteredLogs.length} event${filteredLogs.length !== 1 ? "s" : ""}`}</p></div><button
     onClick={onClose}
-    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-[#cccccc] rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
+    className="p-2 text-slate-600 hover:text-slate-600 dark:hover:text-[#cccccc] rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
   ><X className="w-5 h-5" /></button></div>{
     /* Search */
-  }<div className="px-6 py-3 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
+  }<div className="px-6 py-3 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" /><input
     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                 bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc]
                                 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
@@ -76,7 +76,7 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
     autoFocus
   /></div></div>{
     /* Log list */
-  }<div className="flex-1 overflow-y-auto">{loading ? <div className="flex items-center justify-center h-48 text-slate-400"><Loader2 className="w-5 h-5 animate-spin" /></div> : filteredLogs.length === 0 ? <div className="flex flex-col items-center justify-center h-48 text-slate-400 dark:text-[#555555] gap-2"><CalendarClock className="w-8 h-8 opacity-40" /><p className="text-sm">No logs found</p></div> : <div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredLogs.map((log) => {
+  }<div className="flex-1 overflow-y-auto">{loading ? <div className="flex items-center justify-center h-48 text-slate-600"><Loader2 className="w-5 h-5 animate-spin" /></div> : filteredLogs.length === 0 ? <div className="flex flex-col items-center justify-center h-48 text-slate-600 dark:text-[#555555] gap-2"><CalendarClock className="w-8 h-8 opacity-40" /><p className="text-sm">No logs found</p></div> : <div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredLogs.map((log) => {
     const meta = EVENT_META[log.event];
     const Icon = meta.icon;
     return <div key={log.id} className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors"><div className="flex items-start gap-4">{
@@ -87,9 +87,9 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
       /* Room number */
     }<span className="text-xs font-bold text-slate-700 dark:text-[#cccccc] bg-slate-100 dark:bg-[#222222] px-2 py-0.5 rounded-md">{log.roomNumber}</span>{
       /* Token */
-    }{log.allocationToken && <span className="text-[10px] font-bold tracking-widest text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 px-2 py-0.5 rounded-md font-mono">{log.allocationToken}</span>}</div><div className="flex flex-wrap gap-x-5 gap-y-1 mt-2">{log.patientName && <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#aaaaaa]"><User className="w-3 h-3 text-slate-400 dark:text-[#555555] shrink-0" /><span className="font-medium">{log.patientName}</span>{log.patientMrn && <span className="text-slate-400 dark:text-[#555555]">· {log.patientMrn}</span>}</div>}{log.attenderName && <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#aaaaaa]"><Users className="w-3 h-3 text-slate-400 dark:text-[#555555] shrink-0" /><span>{log.attenderName}</span></div>}</div></div>{
+    }{log.allocationToken && <span className="text-[10px] font-bold tracking-widest text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 px-2 py-0.5 rounded-md font-mono">{log.allocationToken}</span>}</div><div className="flex flex-wrap gap-x-5 gap-y-1 mt-2">{log.patientName && <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#aaaaaa]"><User className="w-3 h-3 text-slate-600 dark:text-[#555555] shrink-0" /><span className="font-medium">{log.patientName}</span>{log.patientMrn && <span className="text-slate-600 dark:text-[#555555]">· {log.patientMrn}</span>}</div>}{log.attenderName && <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#aaaaaa]"><Users className="w-3 h-3 text-slate-600 dark:text-[#555555] shrink-0" /><span>{log.attenderName}</span></div>}</div></div>{
       /* Right: performed by + time */
-    }<div className="text-right shrink-0 space-y-1">{log.performedBy && <p className="text-xs font-medium text-slate-700 dark:text-[#cccccc]">{log.performedBy}</p>}<p className="text-[11px] text-slate-400 dark:text-[#555555]" title={formatFull(log.createdAt)}>{formatRelative(log.createdAt)}</p><p className="text-[10px] text-slate-300 dark:text-[#444444]">{formatFull(log.createdAt)}</p></div></div></div>;
+    }<div className="text-right shrink-0 space-y-1">{log.performedBy && <p className="text-xs font-medium text-slate-700 dark:text-[#cccccc]">{log.performedBy}</p>}<p className="text-[11px] text-slate-600 dark:text-[#555555]" title={formatFull(log.createdAt)}>{formatRelative(log.createdAt)}</p><p className="text-[10px] text-slate-300 dark:text-[#444444]">{formatFull(log.createdAt)}</p></div></div></div>;
   })}</div>}</div></div></div>;
 }
 export {

@@ -148,14 +148,14 @@ export default function DoctorDetails() {
                             <div className="flex items-start gap-3">
                                 <Mail className="w-4 h-4 mt-0.5 shrink-0 text-[#555] dark:text-[#555555]" />
                                 <div>
-                                    <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-[#555555] font-semibold">Email</p>
+                                    <p className="text-[11px] uppercase tracking-wider text-slate-600 dark:text-[#555555] font-semibold">Email</p>
                                     <p className="text-sm text-slate-700 dark:text-[#cccccc] mt-0.5 break-all">{doctor.email}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
                                 <Phone className="w-4 h-4 mt-0.5 shrink-0 text-[#555] dark:text-[#555555]" />
                                 <div>
-                                    <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-[#555555] font-semibold">Phone</p>
+                                    <p className="text-[11px] uppercase tracking-wider text-slate-600 dark:text-[#555555] font-semibold">Phone</p>
                                     <p className="text-sm text-slate-700 dark:text-[#cccccc] mt-0.5">{doctor.phone || '—'}</p>
                                 </div>
                             </div>
@@ -208,13 +208,13 @@ export default function DoctorDetails() {
                                     </div>
                                     <div className="grid grid-cols-2 gap-6">
                                         <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Registration Number</p>
+                                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Registration Number</p>
                                             <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">
                                                 {doctor.medicalRegistrationNumber || 'Not specified'}
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Registration Council</p>
+                                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Registration Council</p>
                                             <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">
                                                 {doctor.registrationCouncil || 'Not specified'}
                                             </p>
@@ -243,7 +243,7 @@ export default function DoctorDetails() {
                                         <div className="p-4 bg-slate-50 dark:bg-[#161616] rounded-lg border border-slate-100 dark:border-[#222222]">
                                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Slot Duration</p>
                                             <div className="flex items-center gap-2">
-                                                <Clock className="w-4 h-4 text-slate-400" />
+                                                <Clock className="w-4 h-4 text-slate-600" />
                                                 <p className="text-base font-bold text-slate-900 dark:text-white">{doctor.slotDurationMin} <span className="text-xs font-medium text-slate-500">mins</span></p>
                                             </div>
                                         </div>
@@ -254,7 +254,7 @@ export default function DoctorDetails() {
                                     </div>
 
                                     <div>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Available Days</p>
+                                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-3">Available Days</p>
                                         <div className="flex flex-wrap gap-2">
                                             {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(day => {
                                                 const isAvailable = doctor.availableDays?.includes(day)
@@ -262,7 +262,7 @@ export default function DoctorDetails() {
                                                     <div key={day} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-colors flex items-center gap-2
                                                         ${isAvailable
                                                             ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30'
-                                                            : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-[#161616] dark:text-[#555555] dark:border-[#222222]'}`}
+                                                            : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-[#161616] dark:text-[#555555] dark:border-[#222222]'}`}
                                                     >
                                                         {isAvailable && <CheckCircle className="w-3.5 h-3.5" />}
                                                         {day}
@@ -293,7 +293,7 @@ export default function DoctorDetails() {
                                     <div className="py-16 text-center">
                                         <CalendarIcon className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" />
                                         <p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No Appointments</p>
-                                        <p className="text-xs text-slate-400 dark:text-[#444444] mt-1">This doctor has no recorded appointments yet.</p>
+                                        <p className="text-xs text-slate-600 dark:text-[#444444] mt-1">This doctor has no recorded appointments yet.</p>
                                     </div>
                                 ) : (
                                     <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden shadow-sm">
@@ -363,7 +363,7 @@ export default function DoctorDetails() {
                                     <div className="py-16 text-center">
                                         <Building2 className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" />
                                         <p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No Patients Found</p>
-                                        <p className="text-xs text-slate-400 dark:text-[#444444] mt-1">There are no patients associated with this doctor yet.</p>
+                                        <p className="text-xs text-slate-600 dark:text-[#444444] mt-1">There are no patients associated with this doctor yet.</p>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

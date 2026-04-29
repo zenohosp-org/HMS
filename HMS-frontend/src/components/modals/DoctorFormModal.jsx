@@ -125,7 +125,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                 };
                 return (
                   <button key={day} type="button" onClick={toggle}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${selected ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30" : "bg-slate-50 text-slate-400 border-slate-200 dark:bg-[#1a1a1a] dark:text-[#555555] dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a]"}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${selected ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30" : "bg-slate-50 text-slate-600 border-slate-200 dark:bg-[#1a1a1a] dark:text-[#555555] dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a]"}`}>
                     {day}
                   </button>
                 );
@@ -176,7 +176,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
       <div className="bg-white dark:bg-[#111111] rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#2a2a2a]">
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1e1e1e]">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">Add Doctor Profile</h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors">
+          <button onClick={onClose} className="p-2 text-slate-600 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

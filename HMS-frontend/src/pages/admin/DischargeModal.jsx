@@ -46,7 +46,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">{admission.patientName} · {admission.admissionNumber}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-600 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

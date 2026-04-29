@@ -42,7 +42,7 @@ function ServiceFilters({ isOpen, onClose, onFilter, specializations }) {
     value={tempFilters.amountRange}
     onChange={(e) => setTempFilters((prev) => ({ ...prev, amountRange: e.target.value }))}
     className="w-full pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#222222] rounded-lg text-xs font-medium text-slate-600 dark:text-[#888888] appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
-  ><option value="">Select Range</option><option value="0-100">$0 - $100</option><option value="101-200">$101 - $200</option><option value="201-500">$201 - $500</option><option value="501+">$500+</option></select><ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" /></div></div>{
+  ><option value="">Select Range</option><option value="0-100">$0 - $100</option><option value="101-200">$101 - $200</option><option value="201-500">$201 - $500</option><option value="501+">$500+</option></select><ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600 pointer-events-none" /></div></div>{
     /* Status Section */
   }<div className="space-y-3"><div className="flex justify-between items-center"><h3 className="text-sm font-bold text-slate-700 dark:text-[#aaaaaa]">Status</h3><button
     onClick={resetStatuses}

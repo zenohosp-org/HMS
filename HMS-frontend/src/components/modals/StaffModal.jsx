@@ -34,7 +34,7 @@ function StaffModal({ onClose, onSave }) {
       setSaving(false);
     }
   };
-  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"><div className="card w-full max-w-lg mx-4"><div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between"><h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Add Staff / Doctor</h2><button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">✕</button></div><form onSubmit={handleSubmit} className="p-6 space-y-4">{
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"><div className="card w-full max-w-lg mx-4"><div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between"><h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Add Staff / Doctor</h2><button onClick={onClose} className="text-slate-600 hover:text-slate-600 text-xl">✕</button></div><form onSubmit={handleSubmit} className="p-6 space-y-4">{
     /* Role selector */
   }<div><label className="label">Role *</label><div className="flex gap-3">{["STAFF", "DOCTOR"].map((r) => <button
     key={r}

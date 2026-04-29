@@ -33,7 +33,7 @@ function MiniCalendar({ value, onChange }) {
     if (ds < todayStr) return;
     onChange(ds);
   };
-  return <div className="select-none"><div className="flex items-center justify-between mb-3"><span className="text-sm font-semibold text-slate-800 dark:text-[#e5e5e5]">{MONTHS[view.month]} {view.year}</span><div className="flex items-center gap-1"><button type="button" onClick={prevMonth} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-[#222222] text-slate-500 dark:text-[#888888] transition-colors"><ChevronLeft className="w-4 h-4" /></button><button type="button" onClick={nextMonth} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-[#222222] text-slate-500 dark:text-[#888888] transition-colors"><ChevronRight className="w-4 h-4" /></button></div></div><div className="grid grid-cols-7 mb-1">{DAYS.map((d) => <div key={d} className="text-center text-[10px] font-bold text-slate-400 dark:text-[#555555] uppercase py-1">{d}</div>)}</div><div className="grid grid-cols-7 gap-y-0.5">{cells.map((day, i) => {
+  return <div className="select-none"><div className="flex items-center justify-between mb-3"><span className="text-sm font-semibold text-slate-800 dark:text-[#e5e5e5]">{MONTHS[view.month]} {view.year}</span><div className="flex items-center gap-1"><button type="button" onClick={prevMonth} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-[#222222] text-slate-500 dark:text-[#888888] transition-colors"><ChevronLeft className="w-4 h-4" /></button><button type="button" onClick={nextMonth} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-[#222222] text-slate-500 dark:text-[#888888] transition-colors"><ChevronRight className="w-4 h-4" /></button></div></div><div className="grid grid-cols-7 mb-1">{DAYS.map((d) => <div key={d} className="text-center text-[10px] font-bold text-slate-500 dark:text-[#888888] uppercase py-1">{d}</div>)}</div><div className="grid grid-cols-7 gap-y-0.5">{cells.map((day, i) => {
     if (!day) return <div key={`e-${i}`} />;
     const ds = `${view.year}-${String(view.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const isPast = ds < todayStr;
@@ -178,7 +178,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
       resetForm();
       onClose();
     }}
-    className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1e1e1e] transition-colors"
+    className="p-2 rounded-lg text-slate-600 hover:text-slate-600 dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1e1e1e] transition-colors"
   ><X className="w-5 h-5" /></button></div>{
     /* Body */
   }<div className="flex flex-1 overflow-hidden">{
@@ -190,16 +190,16 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     type="button"
     onClick={() => setType(opt.value)}
     className={`text-left px-4 py-3 rounded-lg border transition-all ${type === opt.value ? "border-slate-900 dark:border-white bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10" : "border-slate-200 dark:border-[#222222] hover:border-slate-300 dark:hover:border-[#333333]"}`}
-  ><p className={`text-sm font-semibold ${type === opt.value ? "text-slate-900 dark:text-white dark:text-slate-300" : "text-slate-700 dark:text-[#cccccc]"}`}>{type === opt.value && <CheckCircle className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />}{opt.label}</p><p className="text-xs text-slate-400 dark:text-[#666666] mt-0.5">{opt.desc}</p></button>)}</div></div>{
+  ><p className={`text-sm font-semibold ${type === opt.value ? "text-slate-900 dark:text-white dark:text-slate-300" : "text-slate-700 dark:text-[#cccccc]"}`}>{type === opt.value && <CheckCircle className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />}{opt.label}</p><p className="text-xs text-slate-500 dark:text-[#888888] mt-0.5">{opt.desc}</p></button>)}</div></div>{
     /* Date */
-  }<div><label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3 flex items-center gap-2"><Calendar className="w-4 h-4 text-slate-400" /> Date
+  }<div><label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3 flex items-center gap-2"><Calendar className="w-4 h-4 text-slate-600" /> Date
                                 </label><div className="border border-slate-200 dark:border-[#222222] rounded-lg p-4 bg-white dark:bg-[#0f0f0f]">{apptDate && <div className="mb-3 px-3 py-2 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10 rounded-lg border border-emerald-100 dark:border-slate-900 dark:border-white/20"><p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-300">{formatDisplayDate(apptDate)}</p></div>}<MiniCalendar value={apptDate} onChange={(v) => {
     setApptDate(v);
     setApptTime("");
   }} /></div></div>{
     /* Time Slots */
-  }<div><label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3 flex items-center gap-2"><Clock className="w-4 h-4 text-slate-400" /> Time
-                                </label>{!doctorId ? <div className="border border-dashed border-slate-200 dark:border-[#222222] rounded-lg p-5 text-center text-sm text-slate-400 dark:text-[#666666]">
+  }<div><label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3 flex items-center gap-2"><Clock className="w-4 h-4 text-slate-600" /> Time
+                                </label>{!doctorId ? <div className="border border-dashed border-slate-200 dark:border-[#222222] rounded-lg p-5 text-center text-sm text-slate-500 dark:text-[#888888]">
                                         Select a doctor to view available time slots.
                                     </div> : <div className="border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#0f0f0f]"><div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-[#1a1a1a]">{timeSlots.map((slot) => <button
     key={slot.timeStr}
@@ -211,9 +211,9 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     }}
     className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors text-left
                                                         ${slot.isBooked ? "text-slate-300 dark:text-[#444444] cursor-not-allowed bg-slate-50/50 dark:bg-[#111111]" : apptTime === slot.timeStr ? "bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10 text-slate-900 dark:text-white dark:text-slate-300 font-semibold" : "hover:bg-slate-50 dark:hover:bg-[#151515] text-slate-700 dark:text-[#cccccc]"}`}
-  ><Clock className={`w-4 h-4 shrink-0 ${slot.isBooked ? "text-slate-300 dark:text-[#444444]" : apptTime === slot.timeStr ? "text-slate-900 dark:text-white" : "text-slate-400"}`} /><span>{slot.displayTime}</span>{slot.isBooked && <span className="ml-auto text-[10px] font-semibold uppercase text-slate-400 dark:text-[#444444]">Booked</span>}{apptTime === slot.timeStr && <CheckCircle className="ml-auto w-4 h-4 text-slate-900 dark:text-white" />}</button>)}</div>{errors.time && <p className="text-xs text-red-500 px-4 py-2 border-t border-slate-100 dark:border-[#1a1a1a]">{errors.time}</p>}</div>}</div>{
+  ><Clock className={`w-4 h-4 shrink-0 ${slot.isBooked ? "text-slate-300 dark:text-[#444444]" : apptTime === slot.timeStr ? "text-slate-900 dark:text-white" : "text-slate-600"}`} /><span>{slot.displayTime}</span>{slot.isBooked && <span className="ml-auto text-[10px] font-semibold uppercase text-slate-600 dark:text-[#444444]">Booked</span>}{apptTime === slot.timeStr && <CheckCircle className="ml-auto w-4 h-4 text-slate-900 dark:text-white" />}</button>)}</div>{errors.time && <p className="text-xs text-red-500 px-4 py-2 border-t border-slate-100 dark:border-[#1a1a1a]">{errors.time}</p>}</div>}</div>{
     /* Reason for Visit */
-  }<div><label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-2 flex items-center gap-2"><FileText className="w-4 h-4 text-slate-400" /> Reason for Visit
+  }<div><label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-2 flex items-center gap-2"><FileText className="w-4 h-4 text-slate-600" /> Reason for Visit
                                 </label><textarea
     value={chiefComplaint}
     onChange={(e) => setChiefComplaint(e.target.value)}
@@ -224,9 +224,9 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     /* ─── RIGHT: Patient & Doctor ─── */
   }<div className="w-80 shrink-0 flex flex-col overflow-y-auto px-6 py-6 gap-6 bg-slate-50/50 dark:bg-[#0d0d0d]">{
     /* Select Patient */
-  }<div><h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">Select Patient</h3><p className="text-xs text-slate-500 dark:text-[#666666] mb-4">Search and select a patient for this appointment.</p>{
+  }<div><h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">Select Patient</h3><p className="text-xs text-slate-500 dark:text-[#888888] mb-4">Search and select a patient for this appointment.</p>{
     /* Search */
-  }<div className="relative mb-2"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
+  }<div className="relative mb-2"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" /><input
     type="text"
     value={patientSearch}
     onChange={(e) => setPatientSearch(e.target.value)}
@@ -243,7 +243,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
       setErrors((e) => ({ ...e, patient: "" }));
     }}
     className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left border-b last:border-b-0 border-slate-100 dark:border-[#1a1a1a]"
-  ><div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{p.firstName[0]}</div><div className="min-w-0"><p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">{p.firstName} {p.lastName}</p><p className="text-[11px] text-slate-400 dark:text-[#666666]">{p.mrn}</p></div></button>)}</div>}{
+  ><div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{p.firstName[0]}</div><div className="min-w-0"><p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">{p.firstName} {p.lastName}</p><p className="text-[11px] text-slate-500 dark:text-[#888888]">{p.mrn}</p></div></button>)}</div>}{
     /* Selected patient display */
   }{selectedPatient && <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10 border border-emerald-200 dark:border-slate-900 dark:border-white/20 rounded-lg mb-2"><div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300 shrink-0">{selectedPatient.firstName[0]}</div><div className="flex-1 min-w-0"><p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 truncate">{selectedPatient.firstName} {selectedPatient.lastName}</p><p className="text-[11px] text-slate-900 dark:text-white dark:text-slate-900 dark:text-white">{selectedPatient.mrn}</p></div><button type="button" onClick={() => setPatientId("")} className="text-slate-900 dark:text-white hover:text-slate-900 dark:text-white dark:hover:text-emerald-300"><X className="w-3.5 h-3.5" /></button></div>}{errors.patient && <p className="text-xs text-red-500 mb-2">{errors.patient}</p>}<button
     type="button"
@@ -258,7 +258,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     /* Divider */
   }<div className="border-t border-slate-200 dark:border-[#1e1e1e]" />{
     /* Select Doctor */
-  }<div><h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">Select Doctor</h3><p className="text-xs text-slate-500 dark:text-[#666666] mb-4">Choose a doctor for this appointment.</p><div className={`border ${errors.doctor ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} rounded-lg overflow-hidden bg-white dark:bg-[#111111]`}><select
+  }<div><h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">Select Doctor</h3><p className="text-xs text-slate-500 dark:text-[#888888] mb-4">Choose a doctor for this appointment.</p><div className={`border ${errors.doctor ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} rounded-lg overflow-hidden bg-white dark:bg-[#111111]`}><select
     value={doctorId}
     onChange={(e) => {
       setDoctorId(e.target.value);
@@ -270,7 +270,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
   ><option value="">Select a doctor</option>{doctors.map((d) => <option key={d.id} value={d.id}>
                                             Dr. {d.firstName} {d.lastName} — {d.specialization}</option>)}</select></div>{errors.doctor && <p className="text-xs text-red-500 mt-1">{errors.doctor}</p>}{
     /* Doctor info card */
-  }{selectedDoctor && <div className="mt-3 p-3 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 shrink-0">{selectedDoctor.firstName[0]}</div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}</p><p className="text-xs text-slate-500 dark:text-[#888888]">{selectedDoctor.specialization}</p></div></div>{selectedDoctor.consultationFee != null && <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] grid grid-cols-2 gap-2"><div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Fee</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.consultationFee}</p></div><div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div></div>}</div>}</div></div></div>{
+  }{selectedDoctor && <div className="mt-3 p-3 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 shrink-0">{selectedDoctor.firstName[0]}</div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}</p><p className="text-xs text-slate-500 dark:text-[#888888]">{selectedDoctor.specialization}</p></div></div>{selectedDoctor.consultationFee != null && <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] grid grid-cols-2 gap-2"><div><p className="text-[10px] font-bold uppercase text-slate-500 dark:text-[#888888]">Fee</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.consultationFee}</p></div><div><p className="text-[10px] font-bold uppercase text-slate-500 dark:text-[#888888]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div></div>}</div>}</div></div></div>{
     /* Footer */
   }<div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#111111]"><button
     type="button"

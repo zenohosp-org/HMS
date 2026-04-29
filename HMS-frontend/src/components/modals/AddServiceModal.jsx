@@ -90,7 +90,7 @@ function AddServiceModal({ isOpen, onClose, service, specializations, onSuccess 
       <div className="relative w-full max-w-md bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1a1a1a]">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">New Service</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-[#1e1e1e] rounded-lg text-slate-400 transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-[#1e1e1e] rounded-lg text-slate-600 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

@@ -18,19 +18,19 @@ function SpecializationFilters({ isOpen, onClose, onApply, initialFilters }) {
   };
   return <div className="absolute top-14 right-0 z-50 w-72 bg-white dark:bg-[#111111] rounded-lg shadow-2xl border border-slate-200 dark:border-[#222222] p-5 animate-in fade-in slide-in-from-top-2 duration-200"><div className="space-y-6">{
     /* Date Filter */
-  }<div className="space-y-2"><label className="text-sm font-semibold text-slate-500 dark:text-slate-400">Date</label><div className="relative"><input
+  }<div className="space-y-2"><label className="text-sm font-semibold text-slate-500 dark:text-slate-600">Date</label><div className="relative"><input
     type="date"
     value={date}
     onChange={(e) => setDate(e.target.value)}
     className="w-full pl-4 pr-10 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white transition-all text-sm"
   /></div></div>{
     /* Status Filter */
-  }<div className="space-y-3"><label className="text-sm font-semibold text-slate-500 dark:text-slate-400">Status</label><div className="flex flex-wrap gap-2">{["Active", "Inactive"].map((status) => {
+  }<div className="space-y-3"><label className="text-sm font-semibold text-slate-500 dark:text-slate-600">Status</label><div className="flex flex-wrap gap-2">{["Active", "Inactive"].map((status) => {
     const isSelected = selectedStatuses.includes(status);
     return <button
       key={status}
       onClick={() => toggleStatus(status)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected ? "bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-[#333333]" : "bg-transparent text-slate-400 dark:text-slate-600 border-slate-100 dark:border-[#1a1a1a] hover:bg-slate-50 dark:hover:bg-[#0f0f0f]"}`}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected ? "bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-[#333333]" : "bg-transparent text-slate-600 dark:text-slate-600 border-slate-100 dark:border-[#1a1a1a] hover:bg-slate-50 dark:hover:bg-[#0f0f0f]"}`}
     >{isSelected && <X className="w-3 h-3" />}{status}</button>;
   })}</div></div>{
     /* Actions */

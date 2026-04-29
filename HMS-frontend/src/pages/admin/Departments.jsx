@@ -130,7 +130,7 @@ export default function Departments() {
   const labelCls = 'block text-xs font-bold text-slate-600 dark:text-[#aaa] uppercase tracking-wider mb-1.5'
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] p-6 gap-6">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -155,23 +155,23 @@ export default function Departments() {
       <div className="rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] overflow-hidden flex-1">
         <div className="p-5 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
           <span className="font-semibold text-slate-800 dark:text-white">{activeTab.charAt(0) + activeTab.slice(1).toLowerCase()} Departments</span>
-          <span className="text-xs text-slate-400">{grouped[activeTab]?.length ?? 0} departments</span>
+          <span className="text-xs text-slate-600">{grouped[activeTab]?.length ?? 0} departments</span>
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-slate-400 text-sm">Loading…</div>
+          <div className="p-12 text-center text-slate-600 text-sm">Loading…</div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
                 {['Department', 'Code', 'Type', 'Status', ''].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{h}</th>
+                  <th key={h} className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
               {grouped[activeTab]?.length === 0 && (
-                <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-400 text-sm">No departments yet. Add from presets below or create custom.</td></tr>
+                <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-600 text-sm">No departments yet. Add from presets below or create custom.</td></tr>
               )}
               {grouped[activeTab]?.map(dept => (
                 <tr key={dept.id} className="group hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors">
@@ -185,7 +185,7 @@ export default function Departments() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${dept.isActive ? 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white dark:bg-slate-500/10 dark:text-slate-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${dept.isActive ? 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white dark:bg-slate-500/10 dark:text-slate-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-600'}`}>
                       {dept.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -206,16 +206,16 @@ export default function Departments() {
         )}
 
         <div className="border-t border-slate-100 dark:border-[#1e1e1e] p-5">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Quick Add from Presets</p>
+          <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Quick Add from Presets</p>
           <div className="flex flex-wrap gap-2">
             {PRESETS[activeTab]?.filter(p => !existing.has(p.name)).map(p => (
               <button key={p.name} onClick={() => openCreate(p)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-400 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 text-xs font-medium transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-600 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 text-xs font-medium transition-colors">
                 <Plus className="w-3 h-3" /> {p.name}
               </button>
             ))}
             {PRESETS[activeTab]?.every(p => existing.has(p.name)) && (
-              <span className="text-xs text-slate-400">All presets added</span>
+              <span className="text-xs text-slate-600">All presets added</span>
             )}
           </div>
         </div>
@@ -226,7 +226,7 @@ export default function Departments() {
           <div className="bg-white dark:bg-[#111] rounded-lg shadow-xl w-full max-w-md border border-slate-200 dark:border-[#2a2a2a]">
             <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-[#1e1e1e]">
               <h3 className="font-bold text-slate-900 dark:text-white">{editing ? 'Edit Department' : 'New Department'}</h3>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 hover:text-slate-600 transition-colors">
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-600 hover:text-slate-600 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>

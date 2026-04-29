@@ -217,24 +217,24 @@ function ShiftRoster() {
     /* Compact shift legend */
   }<div className="flex items-center gap-3 shrink-0">{SHIFTS.map((s) => <span key={s.type} className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-[#888888]"><span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />{s.label}</span>)}</div></div>{
     /* ── Groups ── */
-  }{loading ? <div className="flex items-center justify-center py-24"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div> : staffOptions.length === 0 ? <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400 dark:text-[#555555]"><Users className="w-10 h-10 opacity-30" /><p className="text-sm">No staff members found</p></div> : groups.map(([groupName, members]) => {
+  }{loading ? <div className="flex items-center justify-center py-24"><Loader2 className="w-5 h-5 animate-spin text-slate-600" /></div> : staffOptions.length === 0 ? <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-600 dark:text-[#555555]"><Users className="w-10 h-10 opacity-30" /><p className="text-sm">No staff members found</p></div> : groups.map(([groupName, members]) => {
     const gPage = groupPages[groupName] ?? 1;
     const totalGroupPages = Math.ceil(members.length / GROUP_PAGE_SIZE);
     const visibleMembers = members.slice((gPage - 1) * GROUP_PAGE_SIZE, gPage * GROUP_PAGE_SIZE);
     const setGPage = (p) => setGroupPages((prev) => ({ ...prev, [groupName]: p }));
     return <div key={groupName} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-visible">{
       /* Group header */
-    }<div className="px-4 py-2.5 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between"><p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wide">{groupName}<span className="ml-2 font-normal text-slate-400 dark:text-[#666666] normal-case">{members.length} {members.length === 1 ? "member" : "members"}</span></p>{totalGroupPages > 1 && <div className="flex items-center gap-1"><button
+    }<div className="px-4 py-2.5 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between"><p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wide">{groupName}<span className="ml-2 font-normal text-slate-600 dark:text-[#666666] normal-case">{members.length} {members.length === 1 ? "member" : "members"}</span></p>{totalGroupPages > 1 && <div className="flex items-center gap-1"><button
       onClick={() => setGPage(Math.max(1, gPage - 1))}
       disabled={gPage === 1}
-      className="w-6 h-6 flex items-center justify-center rounded border border-slate-200 dark:border-[#2a2a2a] text-slate-400 dark:text-[#666666] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-    ><ChevronLeft className="w-3 h-3" /></button><span className="text-[11px] text-slate-400 dark:text-[#666666] px-1">{gPage}/{totalGroupPages}</span><button
+      className="w-6 h-6 flex items-center justify-center rounded border border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-[#666666] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+    ><ChevronLeft className="w-3 h-3" /></button><span className="text-[11px] text-slate-600 dark:text-[#666666] px-1">{gPage}/{totalGroupPages}</span><button
       onClick={() => setGPage(Math.min(totalGroupPages, gPage + 1))}
       disabled={gPage === totalGroupPages}
-      className="w-6 h-6 flex items-center justify-center rounded border border-slate-200 dark:border-[#2a2a2a] text-slate-400 dark:text-[#666666] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      className="w-6 h-6 flex items-center justify-center rounded border border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-[#666666] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
     ><ChevronRight className="w-3 h-3" /></button></div>}</div>{
       /* Group table */
-    }<div className="overflow-x-auto"><table className="w-full min-w-[700px]"><thead><tr className="border-b border-slate-100 dark:border-[#1e1e1e]"><th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555] w-48">
+    }<div className="overflow-x-auto"><table className="w-full min-w-[700px]"><thead><tr className="border-b border-slate-100 dark:border-[#1e1e1e]"><th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#555555] w-48">
                                             Employee
                                         </th>{weekDays.map((d) => {
       const ds = toISODate(d);
@@ -243,10 +243,10 @@ function ShiftRoster() {
         key={ds}
         className={`text-center px-2 py-2 text-[11px] font-semibold w-24
                                                         ${isToday ? "bg-blue-50 dark:bg-blue-500/10" : ""}`}
-      ><div className={`text-[10px] uppercase tracking-wide ${isToday ? "text-blue-500" : "text-slate-400 dark:text-[#666666]"}`}>{DAY_SHORT[d.getDay()]}</div><div className={`text-sm font-bold mt-0.5 ${isToday ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-[#aaaaaa]"}`}>{d.getDate()}</div></th>;
+      ><div className={`text-[10px] uppercase tracking-wide ${isToday ? "text-blue-500" : "text-slate-600 dark:text-[#666666]"}`}>{DAY_SHORT[d.getDay()]}</div><div className={`text-sm font-bold mt-0.5 ${isToday ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-[#aaaaaa]"}`}>{d.getDate()}</div></th>;
     })}</tr></thead><tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{visibleMembers.map((staff) => <tr key={staff.id} className="hover:bg-slate-50/50 dark:hover:bg-[#0f0f0f] transition-colors">{
       /* Staff info */
-    }<td className="px-4 py-2.5"><div className="flex items-center gap-2"><div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${staff.avatarCls}`}>{getInitials(staff.name)}</div><div className="min-w-0"><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight truncate">{staff.name}</p><p className="text-[10px] text-slate-400 dark:text-[#555555] truncate">{staff.designation ?? staff.roleDisplay}</p></div></div></td>{
+    }<td className="px-4 py-2.5"><div className="flex items-center gap-2"><div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${staff.avatarCls}`}>{getInitials(staff.name)}</div><div className="min-w-0"><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight truncate">{staff.name}</p><p className="text-[10px] text-slate-600 dark:text-[#555555] truncate">{staff.designation ?? staff.roleDisplay}</p></div></div></td>{
       /* Day cells */
     }{weekDays.map((d) => {
       const dateStr = toISODate(d);
@@ -296,7 +296,7 @@ function ShiftRoster() {
         handleAssign(s.type);
       }}
       className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-[#252525] transition-colors"
-    ><span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} /><span className="text-sm font-medium text-slate-700 dark:text-[#cccccc] flex-1">{s.label}</span><span className="text-[10px] text-slate-400 dark:text-[#555555]">{s.time}</span></button>)}</div></div>,
+    ><span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} /><span className="text-sm font-medium text-slate-700 dark:text-[#cccccc] flex-1">{s.label}</span><span className="text-[10px] text-slate-600 dark:text-[#555555]">{s.time}</span></button>)}</div></div>,
     document.body
   )}</>;
 }

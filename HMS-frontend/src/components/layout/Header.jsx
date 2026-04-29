@@ -11,7 +11,7 @@ function Header({ onMenuClick }) {
     <header className="h-14 bg-white dark:bg-[#111111] border-b border-slate-200 dark:border-[#222222] flex items-center px-4 gap-3 shrink-0">
       <button
         onClick={onMenuClick}
-        className="text-slate-500 hover:text-slate-800 dark:text-[#666666] dark:hover:text-[#cccccc] p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
+        className="text-slate-500 hover:text-slate-800 dark:text-[#888888] dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
         aria-label="Toggle sidebar"
       >
         <Menu className="w-5 h-5" />
@@ -22,13 +22,13 @@ function Header({ onMenuClick }) {
       <div className="flex items-center gap-1">
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg text-slate-500 dark:text-[#666666] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] hover:text-slate-800 dark:hover:text-[#cccccc] transition-colors"
+          className="p-2 rounded-lg text-slate-500 dark:text-[#888888] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] hover:text-slate-800 dark:hover:text-white transition-colors"
           aria-label="Toggle theme"
         >
           {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
         <button
-          className="p-2 rounded-lg text-slate-500 dark:text-[#666666] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] hover:text-slate-800 dark:hover:text-[#cccccc] transition-colors relative"
+          className="p-2 rounded-lg text-slate-500 dark:text-[#888888] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] hover:text-slate-800 dark:hover:text-white transition-colors relative"
           aria-label="Notifications"
         >
           <Bell className="w-4 h-4" />
@@ -45,14 +45,14 @@ function Header({ onMenuClick }) {
             <span className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
               {user?.firstName} {user?.lastName}
             </span>
-            <span className="text-xs text-slate-500 dark:text-[#666666]">
+            <span className="text-xs text-slate-500 dark:text-[#888888]">
               {user?.roleDisplay}
             </span>
           </div>
           <button
             onClick={logout}
             title="Logout"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors shrink-0"
+            className="p-1.5 rounded-lg text-slate-600 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors shrink-0"
           >
             <LogOut className="w-4 h-4" />
           </button>

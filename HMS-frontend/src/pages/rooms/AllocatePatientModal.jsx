@@ -51,15 +51,15 @@ function AllocatePatientModal({ roomId, roomNumber, onClose, onSuccess }) {
     }
   };
   return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"><div className="bg-white dark:bg-[#111111] rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#2a2a2a]"><div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-[#222222] shrink-0"><h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        Allocate Patient <span className="text-slate-400">to Room {roomNumber}</span></h2><button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-[#aaaaaa] rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"><X className="w-5 h-5" /></button></div><form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-5">{
+                        Allocate Patient <span className="text-slate-600">to Room {roomNumber}</span></h2><button onClick={onClose} className="p-2 text-slate-600 hover:text-slate-600 dark:hover:text-[#aaaaaa] rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"><X className="w-5 h-5" /></button></div><form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-5">{
     /* Patient Search */
-  }<div className="space-y-2"><label className={labelCls}>Select Patient *</label><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
+  }<div className="space-y-2"><label className={labelCls}>Select Patient *</label><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" /><input
     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                     bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
     placeholder="Search by name or MRN..."
     value={search}
     onChange={(e) => setSearch(e.target.value)}
-  /></div><div className="h-44 overflow-y-auto space-y-2 border border-slate-100 dark:border-[#222222] rounded-lg p-2 bg-slate-50 dark:bg-[#0d0d0d]">{loading ? <div className="h-full flex items-center justify-center text-slate-400"><Loader2 className="w-5 h-5 animate-spin" /></div> : filteredPatients.length === 0 ? <div className="h-full flex items-center justify-center text-sm text-slate-400">No patients found.</div> : filteredPatients.map((p) => <div
+  /></div><div className="h-44 overflow-y-auto space-y-2 border border-slate-100 dark:border-[#222222] rounded-lg p-2 bg-slate-50 dark:bg-[#0d0d0d]">{loading ? <div className="h-full flex items-center justify-center text-slate-600"><Loader2 className="w-5 h-5 animate-spin" /></div> : filteredPatients.length === 0 ? <div className="h-full flex items-center justify-center text-sm text-slate-600">No patients found.</div> : filteredPatients.map((p) => <div
     key={p.id}
     onClick={() => setSelectedPatientId(p.id)}
     className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between

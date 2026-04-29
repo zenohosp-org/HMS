@@ -186,12 +186,12 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
           <div>
             <label className={labelCls}>Aadhaar Number</label>
             <input type="text" value={form.aadhaarNumber} onChange={e => set('aadhaarNumber', formatAadhaar(e.target.value))} className={inputCls} placeholder="XXXX-XXXX-XXXX" maxLength={14} />
-            <p className="text-[10px] text-slate-400 dark:text-[#555] mt-1">Required for NMC / MCI staff verification</p>
+            <p className="text-[10px] text-slate-500 dark:text-[#777] mt-1">Required for NMC / MCI staff verification</p>
           </div>
           <div>
             <label className={labelCls}>PAN Number</label>
             <input type="text" value={form.panNumber} onChange={e => set('panNumber', e.target.value.toUpperCase().slice(0, 10))} className={inputCls} placeholder="ABCDE1234F" maxLength={10} />
-            <p className="text-[10px] text-slate-400 dark:text-[#555] mt-1">Required for salary disbursement &amp; TDS filing</p>
+            <p className="text-[10px] text-slate-500 dark:text-[#777] mt-1">Required for salary disbursement &amp; TDS filing</p>
           </div>
         </div>
       </div>
@@ -310,9 +310,9 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <UserIcon className="w-5 h-5 text-violet-500" /> Add New Staff
             </h2>
-            <p className="text-xs text-slate-500 dark:text-[#666] mt-0.5">Fill in personal details first, then assign system access and role.</p>
+            <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">Fill in personal details first, then assign system access and role.</p>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors">
+          <button onClick={onClose} className="p-2 text-slate-600 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

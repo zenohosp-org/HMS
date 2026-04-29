@@ -102,7 +102,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               {[1, 2, 3].map(s => (
                 <div key={s} className="flex items-center gap-1.5">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step >= s ? 'bg-violet-600 text-white' : 'bg-slate-200 dark:bg-[#222] text-slate-500'}`}>{s}</div>
-                  <span className={`text-xs ${step === s ? 'text-slate-900 dark:text-white font-semibold' : 'text-slate-400'}`}>
+                  <span className={`text-xs ${step === s ? 'text-slate-900 dark:text-white font-semibold' : 'text-slate-600'}`}>
                     {s === 1 ? 'Patient' : s === 2 ? 'Clinical' : 'Attender'}
                   </span>
                   {s < 3 && <div className={`w-8 h-px ${step > s ? 'bg-violet-400' : 'bg-slate-200 dark:bg-[#333]'}`} />}
@@ -110,7 +110,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               ))}
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 hover:text-slate-600 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-600 hover:text-slate-600 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -135,7 +135,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                   </div>
                 ) : (
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
                     <input value={patientSearch} onChange={e => setPatientSearch(e.target.value)}
                       className={inputCls + ' pl-10'} placeholder="Search by name or MRN…" />
                     {patients.length > 0 && (
@@ -143,7 +143,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                         {patients.map(p => (
                           <button key={p.id} onClick={() => { setSelectedPatient(p); setPatients([]); setPatientSearch('') }}
                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-[#222] text-left transition-colors">
-                            <User className="w-4 h-4 text-slate-400 shrink-0" />
+                            <User className="w-4 h-4 text-slate-600 shrink-0" />
                             <div>
                               <p className="text-sm font-medium text-slate-900 dark:text-white">{p.firstName} {p.lastName}</p>
                               <p className="text-xs text-slate-500">MRN: {p.mrn}</p>
@@ -216,7 +216,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
 
           {step === 3 && (
             <>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Attender / Guardian details (optional)</p>
+              <p className="text-sm text-slate-500 dark:text-slate-600">Attender / Guardian details (optional)</p>
               <div>
                 <label className={labelCls}>Attender Name</label>
                 <input value={form.attenderName} onChange={e => setForm({ ...form, attenderName: e.target.value })}
@@ -238,7 +238,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               </div>
               <div className="rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] p-4 space-y-2 text-sm">
                 <p className="font-semibold text-slate-700 dark:text-slate-200">Summary</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-600 dark:text-slate-600">
                   <span className="font-medium">Patient:</span><span>{selectedPatient?.firstName} {selectedPatient?.lastName}</span>
                   <span className="font-medium">Type:</span><span>{form.admissionType}</span>
                   <span className="font-medium">Source:</span><span>{form.admissionSource.replace(/_/g, ' ')}</span>

@@ -103,7 +103,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
       <div className="bg-white dark:bg-[#111111] rounded-lg shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-[#222222] animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1a1a1a]">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">Add New Specialization</h2>
-          <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all">
+          <button onClick={onClose} className="p-2 rounded-lg text-slate-600 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all">
             <X className="w-5 h-5" />
           </button>
         </div>

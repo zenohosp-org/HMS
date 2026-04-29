@@ -11,7 +11,7 @@ const CAT_COLORS = {
   NURSING: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/20',
   TECHNICAL: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
   ADMINISTRATIVE: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20',
-  SUPPORT: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20',
+  SUPPORT: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-600 dark:border-slate-500/20',
 }
 
 const PRESETS = {
@@ -95,7 +95,7 @@ export default function Designations() {
   const labelCls = 'block text-xs font-bold text-slate-600 dark:text-[#aaa] uppercase tracking-wider mb-1.5'
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] p-6 gap-6">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -127,23 +127,23 @@ export default function Designations() {
       <div className="rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] overflow-hidden flex-1">
         <div className="p-5 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
           <span className="font-semibold text-slate-800 dark:text-white">{activeTab.charAt(0) + activeTab.slice(1).toLowerCase()} Designations</span>
-          <span className="text-xs text-slate-400">{grouped[activeTab]?.length ?? 0} titles</span>
+          <span className="text-xs text-slate-600">{grouped[activeTab]?.length ?? 0} titles</span>
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-slate-400 text-sm">Loading…</div>
+          <div className="p-12 text-center text-slate-600 text-sm">Loading…</div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
                 {['Title', 'Category', 'Department', 'Status', ''].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{h}</th>
+                  <th key={h} className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
               {grouped[activeTab]?.length === 0 && (
-                <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-400 text-sm">No designations yet. Add from presets below.</td></tr>
+                <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-600 text-sm">No designations yet. Add from presets below.</td></tr>
               )}
               {grouped[activeTab]?.map(d => (
                 <tr key={d.id} className="group hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors">
@@ -153,9 +153,9 @@ export default function Designations() {
                       {d.category.charAt(0) + d.category.slice(1).toLowerCase()}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400">{d.departmentName || <span className="text-slate-300 dark:text-slate-600">Cross-department</span>}</td>
+                  <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-600">{d.departmentName || <span className="text-slate-300 dark:text-slate-600">Cross-department</span>}</td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${d.isActive ? 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white dark:bg-slate-500/10 dark:text-slate-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${d.isActive ? 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white dark:bg-slate-500/10 dark:text-slate-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-600'}`}>
                       {d.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -173,16 +173,16 @@ export default function Designations() {
         )}
 
         <div className="border-t border-slate-100 dark:border-[#1e1e1e] p-5">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Quick Add Presets</p>
+          <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Quick Add Presets</p>
           <div className="flex flex-wrap gap-2">
             {PRESETS[activeTab]?.filter(p => !existing.has(p)).map(p => (
               <button key={p} onClick={() => openCreate(p)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-400 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 text-xs font-medium transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-600 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 text-xs font-medium transition-colors">
                 <Plus className="w-3 h-3" /> {p}
               </button>
             ))}
             {PRESETS[activeTab]?.every(p => existing.has(p)) && (
-              <span className="text-xs text-slate-400">All presets added</span>
+              <span className="text-xs text-slate-600">All presets added</span>
             )}
           </div>
         </div>
@@ -193,7 +193,7 @@ export default function Designations() {
           <div className="bg-white dark:bg-[#111] rounded-lg shadow-xl w-full max-w-md border border-slate-200 dark:border-[#2a2a2a]">
             <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-[#1e1e1e]">
               <h3 className="font-bold text-slate-900 dark:text-white">New Designation</h3>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 hover:text-slate-600 transition-colors">
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-600 hover:text-slate-600 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>

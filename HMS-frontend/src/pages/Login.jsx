@@ -39,7 +39,7 @@ export default function Login() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-none">ZenoHosp</h1>
-              <p className="text-xs text-slate-400 dark:text-[#666] font-medium mt-1">Hospital Management System</p>
+              <p className="text-xs text-slate-600 dark:text-[#666] font-medium mt-1">Hospital Management System</p>
             </div>
           </div>
 
@@ -73,7 +73,7 @@ export default function Login() {
             Sign in with ZenoHosp Directory
           </button>
 
-          <p className="text-center text-xs text-slate-400 dark:text-[#555] font-medium">
+          <p className="text-center text-xs text-slate-600 dark:text-[#555] font-medium">
             By continuing, you agree to our{" "}
             <span className="text-slate-900 dark:text-white dark:text-slate-300 hover:underline cursor-pointer">
               Terms of Service

@@ -146,7 +146,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
               <button
                 type="button"
                 onClick={() => setShowRegister(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
+                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -164,7 +164,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
+            className="p-2 text-slate-600 hover:text-slate-600 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -299,7 +299,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                 </div>
               ) : (
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
                   <input
                     className={`${inputCls} pl-9`}
                     placeholder="Search by name or MRN…"
@@ -308,7 +308,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                     autoFocus
                   />
                   {patientSearching && (
-                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-slate-400" />
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-slate-600" />
                   )}
 
                   {/* Results dropdown */}
@@ -328,7 +328,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                             <p className="text-sm font-semibold text-slate-800 dark:text-[#ddd]">
                               {p.firstName} {p.lastName}
                             </p>
-                            <p className="text-xs text-slate-400 dark:text-[#555]">
+                            <p className="text-xs text-slate-600 dark:text-[#555]">
                               {p.mrn}{p.phone ? ` · ${p.phone}` : ""}
                             </p>
                           </div>
@@ -340,7 +340,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                   {/* No results — offer quick register */}
                   {noResults && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-xl z-10 overflow-hidden">
-                      <div className="px-4 py-3 text-xs text-slate-400 dark:text-[#555] border-b border-slate-100 dark:border-[#222]">
+                      <div className="px-4 py-3 text-xs text-slate-600 dark:text-[#555] border-b border-slate-100 dark:border-[#222]">
                         No patient found for "{patientSearch}"
                       </div>
                       <button
@@ -364,7 +364,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                           <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                             Register as new patient
                           </p>
-                          <p className="text-xs text-slate-400 dark:text-[#555]">
+                          <p className="text-xs text-slate-600 dark:text-[#555]">
                             Walk-in — add to system and continue
                           </p>
                         </div>
