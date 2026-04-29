@@ -32,7 +32,7 @@ function GenerateRoomsModal({ onClose, onSuccess }) {
     required
     className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] 
                                 bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder:text-slate-400 dark:placeholder:text-[#555555]
-                                focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
     placeholder="e.g. GEN, ICU, WARD"
     value={formData.roomPrefix}
     onChange={(e) => setFormData({ ...formData, roomPrefix: e.target.value.toUpperCase() })}
@@ -40,7 +40,7 @@ function GenerateRoomsModal({ onClose, onSuccess }) {
     required
     className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] 
                                 bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc]
-                                focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
     value={formData.roomType}
     onChange={(e) => setFormData({ ...formData, roomType: e.target.value })}
   ><option value="GENERAL">General</option><option value="ICU">ICU</option><option value="PRIVATE">Private</option><option value="WARD">Ward</option></select></div><div><label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-1.5">Price Per Day (₹)</label><input
@@ -50,7 +50,7 @@ function GenerateRoomsModal({ onClose, onSuccess }) {
     step="0.01"
     className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                 bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc]
-                                focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
     value={formData.pricePerDay || ""}
     onChange={(e) => setFormData({ ...formData, pricePerDay: parseFloat(e.target.value) || 0 })}
   /><p className="text-xs text-slate-500 mt-1.5">This price will be used when adding room charges to a bill.</p></div><div><label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-1.5">Number of Rooms to Generate</label><input
@@ -60,7 +60,7 @@ function GenerateRoomsModal({ onClose, onSuccess }) {
     max="50"
     className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                 bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc]
-                                focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
     value={formData.count || ""}
     onChange={(e) => setFormData({ ...formData, count: parseInt(e.target.value) || 0 })}
   /></div><div className="pt-4 flex justify-end gap-3"><button type="button" onClick={onClose} className="btn-secondary">

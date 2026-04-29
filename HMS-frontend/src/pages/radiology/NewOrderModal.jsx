@@ -132,7 +132,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
   };
 
   const labelCls = "block text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider mb-1.5";
-  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all";
+  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50 transition-all";
   const noResults = patientSearch.length >= 2 && !patientSearching && patients.length === 0;
 
   return (
@@ -274,16 +274,16 @@ export default function NewOrderModal({ onClose, onCreated }) {
             <div>
               <label className={labelCls}>Patient *</label>
               {selectedPatient ? (
-                <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10">
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-emerald-200 dark:border-slate-900 dark:border-white/30 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300">
                       {selectedPatient.firstName[0]}{selectedPatient.lastName?.[0] ?? ""}
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
                         {selectedPatient.firstName} {selectedPatient.lastName}
                       </p>
-                      <p className="text-xs text-emerald-600 dark:text-emerald-500">
+                      <p className="text-xs text-slate-900 dark:text-white dark:text-slate-900 dark:text-white">
                         {selectedPatient.mrn ?? "New patient"}
                         {selectedPatient.phone ? ` · ${selectedPatient.phone}` : ""}
                       </p>
@@ -292,7 +292,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                   <button
                     type="button"
                     onClick={() => { setSelectedPatient(null); setPatientSearch(""); }}
-                    className="text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300 p-1 rounded transition-colors"
+                    className="text-slate-900 dark:text-white hover:text-slate-900 dark:text-white dark:hover:text-emerald-300 p-1 rounded transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>

@@ -8,7 +8,7 @@ const DEPT_TYPES = ['CLINICAL', 'SUPPORT', 'ADMINISTRATIVE']
 
 const TYPE_COLORS = {
   CLINICAL: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
-  SUPPORT: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+  SUPPORT: 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white border-emerald-200 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-900 dark:border-white/20',
   ADMINISTRATIVE: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20',
 }
 
@@ -185,7 +185,7 @@ export default function Departments() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${dept.isActive ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${dept.isActive ? 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white dark:bg-slate-500/10 dark:text-slate-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
                       {dept.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -195,7 +195,7 @@ export default function Departments() {
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => toggle(dept)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-500 transition-colors">
-                        {dept.isActive ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4" />}
+                        {dept.isActive ? <ToggleRight className="w-4 h-4 text-slate-900 dark:text-white" /> : <ToggleLeft className="w-4 h-4" />}
                       </button>
                     </div>
                   </td>

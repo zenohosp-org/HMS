@@ -181,7 +181,7 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
       </div>
 
       <div className="space-y-4">
-        <h3 className={sectionHead}><CreditCard className="w-4 h-4 text-emerald-500" /> Identity Documents</h3>
+        <h3 className={sectionHead}><CreditCard className="w-4 h-4 text-slate-900 dark:text-white" /> Identity Documents</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Aadhaar Number</label>

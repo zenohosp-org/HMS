@@ -58,11 +58,11 @@ function RadiologyReports() {
   return <div className="space-y-5"><div className="flex items-start justify-between gap-4 flex-wrap"><div><h1 className="text-xl font-bold text-slate-900 dark:text-[#f0f0f0] flex items-center gap-2"><FileText className="w-5 h-5 text-violet-500" /> Radiology Reports
                     </h1><p className="text-sm text-slate-500 dark:text-[#666666] mt-0.5">
                         View and manage completed radiology reports
-                    </p></div><div className="flex items-center gap-2 text-xs font-semibold"><span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="w-3 h-3" /> {stats.reportGenerated} total reports
+                    </p></div><div className="flex items-center gap-2 text-xs font-semibold"><span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-slate-900 dark:border-white/20 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10 text-slate-900 dark:text-white dark:text-slate-300"><CheckCircle2 className="w-3 h-3" /> {stats.reportGenerated} total reports
                     </span></div></div>{
     /* Search */
   }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
-    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
     placeholder="Search by patient, investigation, MRN, report ID…"
     value={search}
     onChange={(e) => {

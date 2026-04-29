@@ -161,7 +161,7 @@ function StaffsList() {
     /* Stat cards */
   }<div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[
     { label: "Total Staff", value: stats.total, icon: Users, cls: "text-slate-600 dark:text-[#888888]" },
-    { label: "Active", value: stats.active, icon: UserPlus, cls: "text-emerald-600 dark:text-emerald-400" },
+    { label: "Active", value: stats.active, icon: UserPlus, cls: "text-slate-900 dark:text-white dark:text-slate-300" },
     { label: "Doctors", value: stats.doctors, icon: Stethoscope, cls: "text-blue-600 dark:text-blue-400" },
     { label: "Admin", value: stats.admins, icon: ShieldCheck, cls: "text-rose-600 dark:text-rose-400" }
   ].map(({ label, value, icon: Icon, cls }) => <div key={label} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4"><div className="flex items-center justify-between mb-2"><p className="text-xs font-semibold text-slate-400 dark:text-[#666666] uppercase tracking-wider">{label}</p><Icon className={`w-4 h-4 ${cls}`} /></div><p className={`text-2xl font-bold ${cls}`}>{value}</p></div>)}</div>{
@@ -169,7 +169,7 @@ function StaffsList() {
   }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4 flex flex-col sm:flex-row gap-3"><div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                             bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc]
-                            focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
     placeholder="Search by name, email, code, designation…"
     value={search}
     onChange={(e) => setSearch(e.target.value)}
@@ -227,7 +227,7 @@ function StaffsList() {
                                                         Deactivate
                                                     </button> : <button
       onClick={() => handleActivate(m.id)}
-      className="w-full text-left px-3.5 py-2 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
+      className="w-full text-left px-3.5 py-2 text-sm text-slate-900 dark:text-white dark:text-slate-300 hover:bg-slate-100 dark:bg-[#1e1e1e] dark:hover:bg-slate-500/10 transition-colors"
     >
                                                         Activate
                                                     </button>}</div>}</div></div>{
@@ -236,7 +236,7 @@ function StaffsList() {
                                             Inactive
                                         </span>}</div>{
       /* Details */
-    }<div className="space-y-1.5 text-xs text-slate-500 dark:text-[#666666]">{m.designation && <p className="font-semibold text-slate-700 dark:text-[#aaaaaa] truncate">{m.designation}</p>}{m.departmentName && <p className="text-[10px] text-violet-600 dark:text-violet-400 font-medium truncate">{m.departmentName}</p>}<div className="flex items-center gap-1.5 truncate"><Mail className="w-3 h-3 shrink-0" /><span className="truncate">{m.email}</span></div>{m.phone && <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 shrink-0" /><span>{m.phone}</span></div>}{m.dateOfJoining && <div className="flex items-center gap-1.5"><Calendar className="w-3 h-3 shrink-0" /><span>Joined {m.dateOfJoining}</span></div>}{m.consultationFee != null && <p className="font-semibold text-emerald-600 dark:text-emerald-400">
+    }<div className="space-y-1.5 text-xs text-slate-500 dark:text-[#666666]">{m.designation && <p className="font-semibold text-slate-700 dark:text-[#aaaaaa] truncate">{m.designation}</p>}{m.departmentName && <p className="text-[10px] text-violet-600 dark:text-violet-400 font-medium truncate">{m.departmentName}</p>}<div className="flex items-center gap-1.5 truncate"><Mail className="w-3 h-3 shrink-0" /><span className="truncate">{m.email}</span></div>{m.phone && <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 shrink-0" /><span>{m.phone}</span></div>}{m.dateOfJoining && <div className="flex items-center gap-1.5"><Calendar className="w-3 h-3 shrink-0" /><span>Joined {m.dateOfJoining}</span></div>}{m.consultationFee != null && <p className="font-semibold text-slate-900 dark:text-white dark:text-slate-300">
                                             ₹{m.consultationFee.toLocaleString("en-IN")} / consult
                                         </p>}</div></div>;
   })}</div>}{showModal && <StaffFormModal

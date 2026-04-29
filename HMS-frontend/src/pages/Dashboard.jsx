@@ -69,7 +69,7 @@ const BLOOD_COLORS = {
 
 const STATUS_META = {
   SCHEDULED: { icon: Clock, color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-500/10", label: "Scheduled" },
-  COMPLETED: { icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/10", label: "Completed" },
+  COMPLETED: { icon: CheckCircle2, color: "text-slate-900 dark:text-white", bg: "bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10", label: "Completed" },
   CANCELLED: { icon: XCircle, color: "text-rose-500", bg: "bg-rose-50 dark:bg-rose-500/10", label: "Cancelled" },
   NO_SHOW: { icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10", label: "No Show" },
 };
@@ -105,7 +105,7 @@ function SectionCard({ title, subtitle, children, action, actionLabel, actionFn 
         {actionFn && (
           <button
             onClick={actionFn}
-            className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-300 hover:underline"
           >
             {actionLabel} <ArrowRight className="w-3 h-3" />
           </button>
@@ -249,7 +249,7 @@ function DoctorStaffDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-slate-900 dark:text-white" />
       </div>
     );
   }
@@ -285,8 +285,8 @@ function DoctorStaffDashboard() {
         <StatPill
           label="New Today"
           value={todayPatients.length}
-          icon={<UserPlus className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
-          accent="bg-emerald-50 dark:bg-emerald-500/10"
+          icon={<UserPlus className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-300" />}
+          accent="bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10"
         />
         <StatPill
           label={isDoctor ? "My Appointments" : "Appointments"}
@@ -363,7 +363,7 @@ function DoctorStaffDashboard() {
                   active && payload?.length ? (
                     <div className={TOOLTIP_CLS}>
                       <p className="font-bold text-slate-700 dark:text-[#ccc] mb-1">{label}</p>
-                      <p className="text-emerald-500">{payload[0].value} appointments</p>
+                      <p className="text-slate-900 dark:text-white">{payload[0].value} appointments</p>
                     </div>
                   ) : null
                 }
@@ -373,7 +373,7 @@ function DoctorStaffDashboard() {
                 dataKey="count"
                 radius={[5, 5, 0, 0]}
                 maxBarSize={32}
-                fill="#10b981"
+                fill="#0f172a"
               />
             </BarChart>
           </ResponsiveContainer>
@@ -411,7 +411,7 @@ function DoctorStaffDashboard() {
               {apptStatusCounts.COMPLETED > 0 && (
                 <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#555] mt-1">
                   <span>Completion rate</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-bold text-slate-900 dark:text-white dark:text-slate-300">
                     {((apptStatusCounts.COMPLETED / totalAppts) * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -434,7 +434,7 @@ function DoctorStaffDashboard() {
             </div>
             <button
               onClick={() => navigate("/patients")}
-              className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+              className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-300 hover:underline"
             >
               All patients <ArrowRight className="w-3 h-3" />
             </button>
@@ -481,7 +481,7 @@ function DoctorStaffDashboard() {
         {[
           { label: "Patients", sub: "Register or find a patient", to: "/patients", icon: <Users className="w-5 h-5" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
           ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10" }] : []),
-          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing", icon: <ReceiptText className="w-5 h-5" />, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" },
+          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10" },
         ].map((item) => (
           <button
             key={item.to}

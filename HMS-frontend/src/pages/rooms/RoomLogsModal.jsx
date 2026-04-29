@@ -4,7 +4,7 @@ import { roomLogsApi } from "@/utils/api";
 import { X, Search, Loader2, Bed, User, Users, CalendarClock, PlusCircle, LogOut, UserCheck, UserCog } from "lucide-react";
 const EVENT_META = {
   ROOM_CREATED: { label: "Room Created", cls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20", icon: PlusCircle },
-  ALLOCATED: { label: "Allocated", cls: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20", icon: Bed },
+  ALLOCATED: { label: "Allocated", cls: "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white border-emerald-200 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-900 dark:border-white/20", icon: Bed },
   DEALLOCATED: { label: "Deallocated", cls: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#888888] dark:border-[#333333]", icon: LogOut },
   ATTENDER_ASSIGNED: { label: "Attender Assigned", cls: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20", icon: UserCheck },
   ATTENDER_UPDATED: { label: "Attender Updated", cls: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20", icon: UserCog }
@@ -69,7 +69,7 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
   }<div className="px-6 py-3 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                 bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc]
-                                focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
     placeholder="Search by room, patient, MRN, attender or performed by…"
     value={search}
     onChange={(e) => setSearch(e.target.value)}

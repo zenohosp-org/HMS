@@ -73,7 +73,7 @@ function KpiCard({ label, value, sub, icon, accent, trend, trendLabel }) {
         {trendLabel && (
           <span className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full
             ${isUp
-              ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              ? "bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10 text-slate-900 dark:text-white dark:text-slate-300"
               : "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400"}`}>
             {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {trendLabel}
@@ -101,7 +101,7 @@ function ChartCard({ title, subtitle, children, action, actionLabel }) {
         {action && (
           <button
             onClick={() => navigate(action)}
-            className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-300 hover:underline"
           >
             {actionLabel} <ArrowRight className="w-3 h-3" />
           </button>
@@ -119,7 +119,7 @@ function PatientTooltip({ active, payload, label }) {
   return (
     <div className={CUSTOM_TOOLTIP_CLS}>
       <p className="font-bold text-slate-700 dark:text-[#ccc] mb-1">{label}</p>
-      <p className="text-emerald-600 dark:text-emerald-400">{payload[0].value} new patients</p>
+      <p className="text-slate-900 dark:text-white dark:text-slate-300">{payload[0].value} new patients</p>
     </div>
   );
 }
@@ -286,7 +286,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-slate-900 dark:text-white" />
       </div>
     );
   }
@@ -328,8 +328,8 @@ export default function AdminDashboard() {
           label="Doctors"
           value={doctors.length}
           sub={`${staff.filter((s) => s.isActive).length} active staff`}
-          icon={<Stethoscope className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
-          accent="bg-emerald-50 dark:bg-emerald-500/10"
+          icon={<Stethoscope className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-300" />}
+          accent="bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10"
         />
         <KpiCard
           label="Revenue Collected"
@@ -360,8 +360,8 @@ export default function AdminDashboard() {
           <AreaChart data={patientTrend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="patGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                <stop offset="5%" stopColor="#0f172a" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" vertical={false} />
@@ -382,11 +382,11 @@ export default function AdminDashboard() {
             <Area
               type="monotone"
               dataKey="count"
-              stroke="#10b981"
+              stroke="#0f172a"
               strokeWidth={2}
               fill="url(#patGrad)"
               dot={false}
-              activeDot={{ r: 4, fill: "#10b981", strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: "#0f172a", strokeWidth: 0 }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -414,13 +414,13 @@ export default function AdminDashboard() {
                   tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
                 />
                 <Tooltip content={<RevenueTooltip />} cursor={{ fill: "rgba(148,163,184,0.05)" }} />
-                <Bar dataKey="paid" name="paid" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                <Bar dataKey="paid" name="paid" fill="#0f172a" radius={[4, 4, 0, 0]} maxBarSize={20} />
                 <Bar dataKey="unpaid" name="unpaid" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={20} opacity={0.7} />
               </BarChart>
             </ResponsiveContainer>
             <div className="flex items-center gap-4 mt-1">
               <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#666]">
-                <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" /> Paid
+                <span className="w-2.5 h-2.5 rounded-sm bg-slate-900 dark:bg-white" /> Paid
               </span>
               <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#666]">
                 <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 opacity-70" /> Outstanding
@@ -525,7 +525,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex flex-col gap-2 flex-1">
             {[
-              { label: "Add Doctor", sub: "Register a new doctor", to: "/doctors", icon: <Stethoscope className="w-4 h-4" />, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" },
+              { label: "Add Doctor", sub: "Register a new doctor", to: "/doctors", icon: <Stethoscope className="w-4 h-4" />, color: "text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10" },
               { label: "Add Staff", sub: "Onboard a team member", to: "/staffs", icon: <UserCheck className="w-4 h-4" />, color: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10" },
               { label: "Register Patient", sub: "New patient registration", to: "/patients", icon: <Users className="w-4 h-4" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
               { label: "Create Invoice", sub: "Bill a patient visit", to: "/billing", icon: <ReceiptText className="w-4 h-4" />, color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" },

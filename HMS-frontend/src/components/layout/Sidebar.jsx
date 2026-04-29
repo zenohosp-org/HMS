@@ -84,13 +84,13 @@ function Sidebar({ isOpen }) {
       end={link.to === "/staffs"}
       className={({ isActive }) => `flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
                     ${indent ? "px-3 pl-8" : "px-3"}
-                    ${isActive ? "bg-emerald-50 dark:bg-[#1e1e1e] text-emerald-700 dark:text-white" : "text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc]"}`}
-    >{({ isActive }) => <><Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-600 dark:text-emerald-400" : ""}`} /><span className="truncate">{link.label}</span>{isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />}</>}</NavLink> : <NavLink
+                    ${isActive ? "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white" : "text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc]"}`}
+    >{({ isActive }) => <><Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-slate-700 dark:text-white" : ""}`} /><span className="truncate">{link.label}</span></>}</NavLink> : <NavLink
       key={link.to}
       to={link.to}
       end={link.to === "/staffs"}
       title={link.label}
-      className={({ isActive }) => `flex items-center justify-center w-full py-3 rounded-lg transition-colors duration-150 ${isActive ? "bg-emerald-50 dark:bg-[#1e1e1e] text-emerald-600 dark:text-emerald-400" : "text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc]"}`}
+      className={({ isActive }) => `flex items-center justify-center w-full py-3 rounded-lg transition-colors duration-150 ${isActive ? "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white" : "text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc]"}`}
     ><Icon className="w-4 h-4 text-inherit" /></NavLink>;
   };
   const renderExternalApp = (app) => {
@@ -115,8 +115,8 @@ function Sidebar({ isOpen }) {
     return <div><button
       onClick={() => setOpen((o) => !o)}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
-                        ${active ? "text-emerald-700 dark:text-white" : "text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc]"}`}
-    ><AccIcon className={`w-4 h-4 shrink-0 ${active ? "text-emerald-600 dark:text-emerald-400" : ""}`} /><span className="flex-1 text-left truncate">{label}</span><ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""} opacity-50`} /></button>{open && <div className="mt-0.5 space-y-0.5">{links.map((link) => renderLink(link, true))}</div>}</div>;
+                        ${active ? "text-slate-900 dark:text-white dark:text-white" : "text-slate-600 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-[#cccccc]"}`}
+    ><AccIcon className={`w-4 h-4 shrink-0 ${active ? "text-slate-900 dark:text-white dark:text-slate-300" : ""}`} /><span className="flex-1 text-left truncate">{label}</span><ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""} opacity-50`} /></button>{open && <div className="mt-0.5 space-y-0.5">{links.map((link) => renderLink(link, true))}</div>}</div>;
   };
   const renderHrAccordion = () => renderAccordionSection(HR_LINKS, "HR & Staff", ClipboardList, hrOpen, setHrOpen, hrActive);
   const renderRoomsAccordion = () => renderAccordionSection(ROOMS_LINKS, "Rooms", Bed, roomsOpen, setRoomsOpen, roomsActive);
@@ -126,7 +126,7 @@ function Sidebar({ isOpen }) {
                 ${isOpen ? "w-60" : "w-16"}`}
   >{
       /* Logo */
-    }<div className={`flex items-center border-b border-slate-200 dark:border-[#222222] py-5 ${isOpen ? "gap-3 px-4" : "justify-center"}`}><div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0"><Activity className="w-4 h-4 text-white" /></div>{isOpen && <div className="overflow-hidden"><p className="font-bold text-sm leading-tight tracking-wider text-slate-900 dark:text-white">ZenoHosp</p><p className="text-xs text-slate-500 dark:text-[#555555] truncate mt-0.5">{user?.hospitalName}</p></div>}</div>{
+    }<div className={`flex items-center border-b border-slate-200 dark:border-[#222222] h-14 ${isOpen ? "gap-3 px-4" : "justify-center"}`}><div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0"><Activity className="w-4 h-4 text-white" /></div>{isOpen && <div className="overflow-hidden"><p className="font-bold text-sm leading-tight tracking-wider text-slate-900 dark:text-white">ZenoHosp</p><p className="text-xs text-slate-500 dark:text-[#555555] truncate mt-0.5">{user?.hospitalName}</p></div>}</div>{
       /* Navigation */
     }<nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555555]">
       Main Menu

@@ -22,7 +22,7 @@ function SpecializationFilters({ isOpen, onClose, onApply, initialFilters }) {
     type="date"
     value={date}
     onChange={(e) => setDate(e.target.value)}
-    className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm"
+    className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white transition-all text-sm"
   /></div></div>{
     /* Status Filter */
   }<div className="space-y-3"><label className="text-sm font-semibold text-slate-500 dark:text-slate-400">Status</label><div className="flex flex-wrap gap-2">{["Active", "Inactive"].map((status) => {

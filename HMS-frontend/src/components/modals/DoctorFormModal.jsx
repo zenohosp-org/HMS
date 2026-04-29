@@ -58,7 +58,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
     }
   };
 
-  const inputClasses = "w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all";
+  const inputClasses = "w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50 focus:border-slate-900 dark:border-white transition-all";
   const labelClasses = "block text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wider mb-2";
 
   const professionalFields = (

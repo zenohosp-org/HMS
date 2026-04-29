@@ -32,7 +32,7 @@ function Header({ onMenuClick }) {
           aria-label="Notifications"
         >
           <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-slate-900 dark:bg-white" />
         </button>
 
         <div className="h-8 w-px bg-slate-200 dark:bg-[#222222] mx-2" />

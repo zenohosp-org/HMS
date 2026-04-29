@@ -15,7 +15,7 @@ function NotificationProvider({ children }) {
   }<div className="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80">{notifications.map((n) => <div
     key={n.id}
     className={`flex items-start gap-3 p-3 rounded-lg shadow-lg text-sm font-medium
-              ${n.type === "success" ? "bg-emerald-500 text-white" : ""}
+              ${n.type === "success" ? "bg-slate-900 dark:bg-white text-white" : ""}
               ${n.type === "error" ? "bg-red-500 text-white" : ""}
               ${n.type === "warning" ? "bg-amber-500 text-white" : ""}
               ${n.type === "info" ? "bg-blue-500 text-white" : ""}

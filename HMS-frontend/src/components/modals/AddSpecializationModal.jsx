@@ -52,7 +52,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g. Cardiology"
-          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white transition-all"
         />
       </div>
       <div className="space-y-2">
@@ -62,7 +62,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Enter detail description..."
-          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none"
+          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white transition-all resize-none"
         />
       </div>
       <div className="flex items-center gap-3 py-2">
@@ -71,7 +71,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
           id="isActive"
           checked={formData.isActive}
           onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-          className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 transition-all cursor-pointer"
+          className="w-4 h-4 rounded border-slate-300 text-slate-900 dark:text-white focus:ring-slate-900 dark:ring-white transition-all cursor-pointer"
         />
         <label htmlFor="isActive" className="text-sm font-medium text-slate-700 dark:text-[#aaaaaa] cursor-pointer">
           Active status

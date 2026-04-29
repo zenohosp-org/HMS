@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { X, Loader2, Search } from "lucide-react";
 const inputCls = `w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
     bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc]
-    focus:outline-none focus:ring-2 focus:ring-emerald-500/50`;
+    focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50`;
 const labelCls = "block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-1.5";
 function AllocatePatientModal({ roomId, roomNumber, onClose, onSuccess }) {
   const { user } = useAuth();
@@ -55,7 +55,7 @@ function AllocatePatientModal({ roomId, roomNumber, onClose, onSuccess }) {
     /* Patient Search */
   }<div className="space-y-2"><label className={labelCls}>Select Patient *</label><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
-                                    bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                    bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
     placeholder="Search by name or MRN..."
     value={search}
     onChange={(e) => setSearch(e.target.value)}
@@ -63,9 +63,9 @@ function AllocatePatientModal({ roomId, roomNumber, onClose, onSuccess }) {
     key={p.id}
     onClick={() => setSelectedPatientId(p.id)}
     className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between
-                                        ${selectedPatientId === p.id ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/30" : "bg-white border-slate-200 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] hover:border-emerald-200 dark:hover:border-emerald-500/20"}`}
-  ><div><p className={`text-sm font-bold ${selectedPatientId === p.id ? "text-emerald-900 dark:text-emerald-400" : "text-slate-800 dark:text-white"}`}>{p.firstName} {p.lastName}</p><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{p.mrn}</p></div><div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0
-                                        ${selectedPatientId === p.id ? "border-emerald-500 bg-emerald-500" : "border-slate-300 dark:border-[#555555]"}`}>{selectedPatientId === p.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}</div></div>)}</div></div>{
+                                        ${selectedPatientId === p.id ? "bg-slate-100 dark:bg-[#1e1e1e] border-emerald-200 dark:bg-slate-500/10 dark:border-slate-900 dark:border-white/30" : "bg-white border-slate-200 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] hover:border-emerald-200 dark:hover:border-slate-900 dark:border-white/20"}`}
+  ><div><p className={`text-sm font-bold ${selectedPatientId === p.id ? "text-emerald-900 dark:text-slate-300" : "text-slate-800 dark:text-white"}`}>{p.firstName} {p.lastName}</p><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{p.mrn}</p></div><div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0
+                                        ${selectedPatientId === p.id ? "border-slate-900 dark:border-white bg-slate-900 dark:bg-white" : "border-slate-300 dark:border-[#555555]"}`}>{selectedPatientId === p.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}</div></div>)}</div></div>{
     /* Attender Details */
   }<div className="space-y-3"><h3 className="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#2a2a2a] pb-2">
                             Patient Attender

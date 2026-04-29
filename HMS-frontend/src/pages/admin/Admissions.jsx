@@ -12,7 +12,7 @@ import {
 import { formatDistanceToNow, format } from 'date-fns'
 
 const STATUS_COLORS = {
-  ADMITTED: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+  ADMITTED: 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white border-emerald-200 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-900 dark:border-white/20',
   DISCHARGED: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20',
   TRANSFERRED: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
   ABSCONDED: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
@@ -99,7 +99,7 @@ export default function Admissions() {
 
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'Active Admissions', value: counts.ADMITTED, icon: BedDouble, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+          { label: 'Active Admissions', value: counts.ADMITTED, icon: BedDouble, color: 'text-slate-900 dark:text-white', bg: 'bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10' },
           { label: 'Discharged Today', value: admissions.filter(a => a.status === 'DISCHARGED' && a.actualDischargeDate?.startsWith(new Date().toISOString().slice(0, 10))).length, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-500/10' },
           { label: 'Overdue Discharge', value: admissions.filter(isOverdue).length, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10' },
           { label: 'Total This Month', value: admissions.filter(a => a.createdAt?.startsWith(new Date().toISOString().slice(0, 7))).length, icon: Calendar, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-500/10' },
@@ -127,7 +127,7 @@ export default function Admissions() {
           <button key={s} onClick={() => setStatusFilter(s)}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-violet-400'}`}>
             {s.charAt(0) + s.slice(1).toLowerCase()}
-            {s === 'ADMITTED' && counts.ADMITTED > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-xs">{counts.ADMITTED}</span>}
+            {s === 'ADMITTED' && counts.ADMITTED > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-slate-900 dark:bg-white text-white text-xs">{counts.ADMITTED}</span>}
           </button>
         ))}
         <div className="flex border border-slate-200 dark:border-[#2a2a2a] rounded-xl overflow-hidden ml-auto">
