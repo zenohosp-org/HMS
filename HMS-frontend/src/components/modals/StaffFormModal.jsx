@@ -235,7 +235,46 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
             </div>
             <div>
               <label className={labelCls}>Qualification</label>
-              <input type="text" value={form.qualification} onChange={e => set('qualification', e.target.value)} className={inputCls} placeholder="e.g. MBBS, MD" />
+              <select value={form.qualification} onChange={e => set('qualification', e.target.value)} className={inputCls + " cursor-pointer"}>
+                <option value="">Select Qualification</option>
+                <optgroup label="Allopathy — Undergraduate">
+                  <option value="MBBS">MBBS</option>
+                </optgroup>
+                <optgroup label="Allopathy — Postgraduate">
+                  <option value="MBBS, MD">MBBS, MD</option>
+                  <option value="MBBS, MS">MBBS, MS</option>
+                  <option value="MBBS, DNB">MBBS, DNB</option>
+                  <option value="MBBS, Diploma">MBBS, Diploma</option>
+                </optgroup>
+                <optgroup label="Allopathy — Superspecialty">
+                  <option value="MBBS, MD, DM">MBBS, MD, DM</option>
+                  <option value="MBBS, MS, MCh">MBBS, MS, MCh</option>
+                  <option value="MBBS, DNB, DrNB">MBBS, DNB, DrNB</option>
+                </optgroup>
+                <optgroup label="Allopathy — International">
+                  <option value="MBBS, FRCS">MBBS, FRCS</option>
+                  <option value="MBBS, MRCP">MBBS, MRCP</option>
+                  <option value="MBBS, MRCS">MBBS, MRCS</option>
+                  <option value="MD (USA/UK)">MD (USA/UK)</option>
+                </optgroup>
+                <optgroup label="Dentistry">
+                  <option value="BDS">BDS</option>
+                  <option value="BDS, MDS">BDS, MDS</option>
+                  <option value="BDS, DNB">BDS, DNB</option>
+                </optgroup>
+                <optgroup label="AYUSH">
+                  <option value="BAMS">BAMS (Ayurveda)</option>
+                  <option value="BAMS, MD (Ay.)">BAMS, MD (Ay.)</option>
+                  <option value="BHMS">BHMS (Homeopathy)</option>
+                  <option value="BUMS">BUMS (Unani)</option>
+                  <option value="BNYS">BNYS (Naturopathy)</option>
+                </optgroup>
+                <optgroup label="Other">
+                  <option value="PhD">PhD (Medical)</option>
+                  <option value="MSc (Nursing)">MSc (Nursing)</option>
+                  <option value="MPH">MPH (Public Health)</option>
+                </optgroup>
+              </select>
             </div>
             <div>
               <label className={labelCls}>Medical Registration No.</label>
