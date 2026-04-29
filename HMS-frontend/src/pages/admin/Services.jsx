@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Filter, ChevronDown, MoreVertical, Edit2, Trash2, Power } from "lucide-react";
-import SearchInput from "@/components/SearchInput";
+import { Plus, Search, Filter, ChevronDown, MoreVertical, Edit2, Trash2, Power } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { hospitalServiceApi, specializationApi } from "@/utils/api";
@@ -86,13 +85,13 @@ function Services() {
     onClick={() => setModal({ open: true, service: null })}
     className="btn-primary"
   ><Plus className="w-4 h-4" /> New Service
-                    </button></div></div><div className="flex justify-between items-center gap-4 bg-white/50 dark:bg-[#0a0a0a]/50 p-2 rounded-2xl border border-slate-100 dark:border-[#1a1a1a]"><SearchInput
-    value={search}
-    onChange={setSearch}
+                    </button></div></div><div className="flex justify-between items-center gap-4 bg-white/50 dark:bg-[#0a0a0a]/50 p-2 rounded-2xl border border-slate-100 dark:border-[#1a1a1a]"><div className="relative flex-1 max-w-md"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
+    type="text"
     placeholder="Search by service name or department..."
-    suggestions={services.map((s) => ({ label: s.name, sub: getSpecName(s.specializationId) }))}
-    className="flex-1 max-w-md"
-  /><div className="flex items-center gap-2 relative"><button
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="w-full pl-10 pr-4 py-2 text-sm bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder-slate-400 dark:placeholder-[#444444] text-slate-700 dark:text-[#cccccc]"
+  /></div><div className="flex items-center gap-2 relative"><button
     onClick={() => setIsFilterOpen(!isFilterOpen)}
     className={`btn-secondary ${isFilterOpen || activeFilters.departments.length > 0 || activeFilters.amountRange || activeFilters.statuses.length > 0 ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30" : ""}`}
   ><Filter className={`w-4 h-4 transition-colors ${isFilterOpen || activeFilters.departments.length > 0 || activeFilters.amountRange || activeFilters.statuses.length > 0 ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 group-hover:text-indigo-500"}`} />

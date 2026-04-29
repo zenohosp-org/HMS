@@ -5,8 +5,7 @@ import { useNotification } from "@/context/NotificationContext";
 import { doctorsApi, staffApi } from "@/utils/api";
 import DoctorFormModal from "@/components/modals/DoctorFormModal";
 import Pagination from "@/components/ui/Pagination";
-import { MoreHorizontal, CheckCircle, XCircle, Trash2, Loader2, Stethoscope } from "lucide-react";
-import SearchInput from "@/components/SearchInput";
+import { MoreHorizontal, CheckCircle, XCircle, Trash2, Loader2, Stethoscope, Search } from "lucide-react";
 const PAGE_SIZE = 8;
 function DoctorsList() {
   const { user } = useAuth();
@@ -62,13 +61,16 @@ function DoctorsList() {
   }<div className="flex items-center justify-between"><div className="flex items-center gap-3"><h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Doctors</h1><span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-800/30">{doctors.length} total
                     </span></div><button className="btn-primary" onClick={() => setShowModal(true)}>+ Add Doctor</button></div>{
     /* Search */
-  }<SearchInput
-    value={search}
-    onChange={(v) => { setSearch(v); setPage(1); }}
+  }<div className="relative max-w-sm"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
+    type="text"
     placeholder="Search by name, email or specialization…"
-    suggestions={doctors.map((d) => ({ label: `${d.firstName} ${d.lastName}`, sub: d.specialization }))}
-    className="max-w-sm"
-  />{
+    value={search}
+    onChange={(e) => {
+      setSearch(e.target.value);
+      setPage(1);
+    }}
+    className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm"
+  /></div>{
     /* Table card */
   }<div className="flex-1 bg-white dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden flex flex-col"><div className="overflow-x-auto flex-1"><table className="w-full text-left border-collapse"><thead><tr className="border-b border-slate-100 dark:border-[#1a1a1a] bg-slate-50/30 dark:bg-[#0f0f0f]"><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Doctor</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Specialization</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Contact</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Status</th><th className="px-6 py-4" /></tr></thead><tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{loading ? <tr><td colSpan={5} className="py-20 text-center"><div className="flex flex-col items-center gap-3"><Loader2 className="w-8 h-8 animate-spin text-emerald-500" /><p className="text-sm font-medium text-slate-400">Loading doctors…</p></div></td></tr> : filtered.length === 0 ? <tr><td colSpan={5} className="py-20 text-center"><div className="flex flex-col items-center gap-3"><div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-[#0f0f0f] flex items-center justify-center"><Stethoscope className="w-8 h-8 text-slate-200 dark:text-slate-800" /></div><p className="text-sm font-medium text-slate-400">{search ? "No doctors match your search." : "No doctors linked to this hospital."}</p></div></td></tr> : paginated.map((d) => {
     const initials = `${d.firstName[0]}${d.lastName?.[0] ?? ""}`.toUpperCase();

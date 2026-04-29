@@ -6,8 +6,7 @@ import { patientApi } from "@/utils/api";
 import PatientModal from "@/components/modals/PatientModal";
 import Pagination from "@/components/ui/Pagination";
 import { calcAge, formatDate } from "@/utils/validators";
-import { Loader2, Users } from "lucide-react";
-import SearchInput from "@/components/SearchInput";
+import { Search, Loader2, Users } from "lucide-react";
 const PAGE_SIZE = 8;
 function Patients() {
   const { user } = useAuth();
@@ -55,13 +54,16 @@ function Patients() {
                     + Register Patient
                 </button></div>{
     /* Search */
-  }<SearchInput
-    value={search}
-    onChange={(v) => { setSearch(v); setPage(1); }}
+  }<div className="relative max-w-sm"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
+    type="text"
     placeholder="Search by name, MRN or phone…"
-    suggestions={patients.map((p) => ({ label: `${p.firstName} ${p.lastName}`, sub: p.mrn }))}
-    className="max-w-sm"
-  />{
+    value={search}
+    onChange={(e) => {
+      setSearch(e.target.value);
+      setPage(1);
+    }}
+    className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm"
+  /></div>{
     /* Table card */
   }<div className="flex-1 bg-white dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden flex flex-col"><div className="overflow-x-auto flex-1"><table className="w-full text-left border-collapse"><thead><tr className="border-b border-slate-100 dark:border-[#1a1a1a] bg-slate-50/30 dark:bg-[#0f0f0f]"><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Patient</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Age / Gender</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Phone</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Registered</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Blood</th><th className="px-6 py-4" /></tr></thead><tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{loading ? <tr><td colSpan={6} className="py-20 text-center"><div className="flex flex-col items-center gap-3"><Loader2 className="w-8 h-8 animate-spin text-emerald-500" /><p className="text-sm font-medium text-slate-400">Loading patients…</p></div></td></tr> : filtered.length === 0 ? <tr><td colSpan={6} className="py-20 text-center"><div className="flex flex-col items-center gap-3"><div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-[#0f0f0f] flex items-center justify-center"><Users className="w-8 h-8 text-slate-200 dark:text-slate-800" /></div><p className="text-sm font-medium text-slate-400">{search ? "No patients match your search." : "No patients registered yet."}</p></div></td></tr> : paginated.map((p) => {
     const initials = `${p.firstName[0]}${p.lastName?.[0] ?? ""}`.toUpperCase();
