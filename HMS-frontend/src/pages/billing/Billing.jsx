@@ -214,11 +214,17 @@ export default function Billing() {
       </div>
     </body></html>`
 
-    const win = window.open('', '_blank', 'width=820,height=640')
-    win.document.write(html)
-    win.document.close()
-    win.focus()
-    setTimeout(() => { win.print(); win.onafterprint = () => win.close() }, 250)
+    const iframe = document.createElement('iframe')
+    iframe.className = 'print-frame'
+    document.body.appendChild(iframe)
+    iframe.contentDocument.open()
+    iframe.contentDocument.write(html)
+    iframe.contentDocument.close()
+    setTimeout(() => {
+      iframe.contentWindow.focus()
+      iframe.contentWindow.print()
+      iframe.contentWindow.onafterprint = () => document.body.removeChild(iframe)
+    }, 250)
   }
 
   const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left'

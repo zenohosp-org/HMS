@@ -61,6 +61,22 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
   const inputClasses = "w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all";
   const labelClasses = "block text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wider mb-2";
 
+  const slotMin = doctorForm.slotDurationMin || 0;
+  const slotsPerDay = doctorForm.maxDailySlots || 0;
+  const workingDaysCount = doctorForm.availableDays
+    ? doctorForm.availableDays.split(",").filter(Boolean).length
+    : 0;
+  const totalMinPerDay = slotMin * slotsPerDay;
+  const totalMinPerWeek = totalMinPerDay * workingDaysCount;
+  const fmtDuration = (mins) => {
+    if (!mins) return "—";
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h && m) return `${h}h ${m}m`;
+    if (h) return `${h} hrs`;
+    return `${m} min`;
+  };
+
   const professionalFields = (
     <>
       <div className="space-y-4">
@@ -182,6 +198,33 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
             <input required type="number" min="1" value={doctorForm.maxDailySlots || ""}
               onChange={(e) => setDoctorForm({ ...doctorForm, maxDailySlots: parseInt(e.target.value) || 0 })}
               className={inputClasses} />
+          </div>
+
+          {/* Schedule summary */}
+          <div className="col-span-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-4">
+            <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-3">Daily Schedule Summary</p>
+            <div className="grid grid-cols-4 gap-3 text-center">
+              <div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Slot</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{slotMin > 0 ? `${slotMin} min` : "—"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Slots / Day</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{slotsPerDay > 0 ? slotsPerDay : "—"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Hrs / Day</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{fmtDuration(totalMinPerDay)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Days / Week</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{workingDaysCount > 0 ? workingDaysCount : "—"}</p>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-emerald-100 dark:border-emerald-500/20 flex items-center justify-between">
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total Working Hours / Week</p>
+              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{fmtDuration(totalMinPerWeek)}</p>
+            </div>
           </div>
         </div>
       </div>
