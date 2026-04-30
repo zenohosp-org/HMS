@@ -41,7 +41,7 @@ function StaffModal({ onClose, onSave }) {
     type="button"
     onClick={() => set("role", r)}
     className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors
-                    ${form.role === r ? "bg-primary-600 border-primary-600 text-white" : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
+                    ${form.role === r ? "bg-primary-600 border-primary-600 text-white" : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
   >{r === "DOCTOR" ? "\u{1F468}\u200D\u2695\uFE0F Doctor" : "\u{1F9D1}\u200D\u{1F4BC} Staff"}</button>)}</div></div><div className="grid grid-cols-2 gap-4"><div><label className="label">First Name *</label><input
     className="input"
     value={form.firstName}

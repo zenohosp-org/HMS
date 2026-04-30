@@ -196,9 +196,9 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
           {room.currentPatient ? (
             <div className="space-y-1 pl-1">
               <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{room.currentPatient.firstName} {room.currentPatient.lastName}</p>
-              <p className="text-xs text-slate-400 dark:text-[#555555]">{room.currentPatient.mrn}</p>
+              <p className="text-xs text-slate-400 dark:text-[#999999]">{room.currentPatient.mrn}</p>
             </div>
-          ) : <p className="text-sm text-slate-400 dark:text-[#555555] pl-1">No patient assigned</p>}
+          ) : <p className="text-sm text-slate-400 dark:text-[#999999] pl-1">No patient assigned</p>}
         </div>
 
         <div className="border-t border-slate-100 dark:border-[#1e1e1e]" />
@@ -271,8 +271,8 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
             </div>
           ) : assets.length === 0 ? (
             <div className="py-5 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 dark:border-[#2a2a2a]">
-              <Package className="w-6 h-6 text-slate-300 dark:text-[#333333] mb-1.5" />
-              <p className="text-xs text-slate-400 dark:text-[#555555]">No assets assigned yet</p>
+              <Package className="w-6 h-6 text-slate-500 dark:text-[#777777] mb-1.5" />
+              <p className="text-xs text-slate-400 dark:text-[#999999]">No assets assigned yet</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -287,7 +287,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
                       <button
                         onClick={() => handleUnassign(a.assetId)}
                         disabled={removingId === a.assetId}
-                        className="shrink-0 p-0.5 rounded text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
+                        className="shrink-0 p-0.5 rounded text-slate-500 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
                         title="Remove from room"
                       >
                         {removingId === a.assetId

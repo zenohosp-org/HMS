@@ -399,7 +399,7 @@ export default function AmbulanceBook() {
               <thead>
                 <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
                   {["Date & Time", "Patient", "Pickup → Destination", "Type / Charge", "Driver / Vehicle", "Status", "Action"].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555]">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#999999]">{h}</th>
                   ))}
                 </tr>
               </thead>

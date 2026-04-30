@@ -64,7 +64,7 @@ function AllocatePatientModal({ roomId, roomNumber, onClose, onSuccess }) {
     onClick={() => setSelectedPatientId(p.id)}
     className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between
                                         ${selectedPatientId === p.id ? "bg-slate-100 dark:bg-[#1e1e1e] border-emerald-200 dark:bg-slate-500/10 dark:border-slate-900 dark:border-white/30" : "bg-white border-slate-200 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] hover:border-emerald-200 dark:hover:border-slate-900 dark:border-white/20"}`}
-  ><div><p className={`text-sm font-bold ${selectedPatientId === p.id ? "text-emerald-900 dark:text-slate-300" : "text-slate-800 dark:text-white"}`}>{p.firstName} {p.lastName}</p><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{p.mrn}</p></div><div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0
+  ><div><p className={`text-sm font-bold ${selectedPatientId === p.id ? "text-emerald-900 dark:text-slate-500" : "text-slate-800 dark:text-white"}`}>{p.firstName} {p.lastName}</p><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{p.mrn}</p></div><div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0
                                         ${selectedPatientId === p.id ? "border-slate-900 dark:border-white bg-slate-900 dark:bg-white" : "border-slate-300 dark:border-[#555555]"}`}>{selectedPatientId === p.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}</div></div>)}</div></div>{
     /* Attender Details */
   }<div className="space-y-3"><h3 className="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#2a2a2a] pb-2">

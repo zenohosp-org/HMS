@@ -124,7 +124,7 @@ function Sidebar({ isOpen }) {
       onClick={() => setOpen((o) => !o)}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
                         ${active ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white"}`}
-    ><AccIcon className={`w-4 h-4 shrink-0 ${active ? "text-slate-900 dark:text-white dark:text-slate-300" : ""}`} /><span className="flex-1 text-left truncate">{label}</span><ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""} opacity-50`} /></button>{open && <div className="mt-0.5 space-y-0.5">{links.map((link) => renderLink(link, true))}</div>}</div>;
+    ><AccIcon className={`w-4 h-4 shrink-0 ${active ? "text-slate-900 dark:text-white dark:text-slate-500" : ""}`} /><span className="flex-1 text-left truncate">{label}</span><ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""} opacity-50`} /></button>{open && <div className="mt-0.5 space-y-0.5">{links.map((link) => renderLink(link, true))}</div>}</div>;
   };
   const renderHrAccordion = () => renderAccordionSection(HR_LINKS, "HR & Staff", ClipboardList, hrOpen, setHrOpen, hrActive);
   const renderRoomsAccordion = () => renderAccordionSection(ROOMS_LINKS, "IPD Management", BedDouble, roomsOpen, setRoomsOpen, roomsActive);

@@ -19,7 +19,7 @@ const STATUS_CFG = {
 }
 
 const TYPE_META = {
-  MEDICINE: { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill className="w-3 h-3 text-slate-900 dark:text-white dark:text-slate-300" /> },
+  MEDICINE: { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill className="w-3 h-3 text-slate-900 dark:text-white dark:text-slate-500" /> },
   LAB_TEST: { bg: 'bg-violet-100 dark:bg-violet-500/20', icon: <FlaskConical className="w-3 h-3 text-violet-600 dark:text-violet-400" /> },
   CONSULTATION: { bg: 'bg-blue-100 dark:bg-blue-500/20', icon: <Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" /> },
   ROOM_CHARGE: { bg: 'bg-orange-100 dark:bg-orange-500/20', icon: <BedDouble className="w-3 h-3 text-orange-600 dark:text-orange-400" /> },
@@ -357,7 +357,7 @@ export default function Billing() {
                               {inv.paymentMethod}
                             </span>
                           ) : (
-                            <span className="text-slate-300 dark:text-slate-700">—</span>
+                            <span className="text-slate-500 dark:text-slate-700">—</span>
                           )}
                         </td>
 

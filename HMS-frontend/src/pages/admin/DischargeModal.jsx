@@ -90,7 +90,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
 
           <div className="flex justify-end gap-3 p-5 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] rounded-b-2xl">
             <button type="button" onClick={onClose}
-              className="px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#222] transition-colors">
+              className="px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-[#222] transition-colors">
               Cancel
             </button>
             <button type="submit" disabled={submitting}

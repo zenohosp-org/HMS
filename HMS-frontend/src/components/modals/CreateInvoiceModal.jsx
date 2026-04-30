@@ -19,7 +19,7 @@ function fmt(n) {
 }
 
 const TYPE_META = {
-  MEDICINE:    { label: 'Medicine',     color: 'text-slate-900 dark:text-white dark:text-slate-300', bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill className="w-3 h-3" /> },
+  MEDICINE:    { label: 'Medicine',     color: 'text-slate-900 dark:text-white dark:text-slate-500', bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill className="w-3 h-3" /> },
   LAB_TEST:    { label: 'Lab Test',     color: 'text-violet-700 dark:text-violet-400',   bg: 'bg-violet-100 dark:bg-violet-500/20',   icon: <FlaskConical className="w-3 h-3" /> },
   CONSULTATION:{ label: 'Consultation', color: 'text-blue-700 dark:text-blue-400',       bg: 'bg-blue-100 dark:bg-blue-500/20',       icon: <Stethoscope className="w-3 h-3" /> },
   ROOM_CHARGE: { label: 'Room',         color: 'text-orange-700 dark:text-orange-400',   bg: 'bg-orange-100 dark:bg-orange-500/20',   icon: <BedDouble className="w-3 h-3" /> },
@@ -228,7 +228,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                 <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-emerald-200 dark:border-slate-900 dark:border-white/30 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
-                      <User className="w-4 h-4 text-slate-900 dark:text-white dark:text-slate-300" />
+                      <User className="w-4 h-4 text-slate-900 dark:text-white dark:text-slate-500" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{patient.firstName} {patient.lastName}</p>
@@ -388,7 +388,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                     <Pill className="w-3 h-3 text-slate-900 dark:text-white" /> Add Medicine
                   </label>
                   <button onClick={() => addItem({ itemType: 'MEDICINE', description: '', quantity: 1, unitPrice: 0, totalPrice: 0 })}
-                    className="w-full px-3 py-2 rounded-lg border border-dashed border-emerald-300 dark:border-slate-900 dark:border-white/30 text-sm text-slate-900 dark:text-white dark:text-slate-300 hover:bg-slate-100 dark:bg-[#1e1e1e] dark:hover:bg-slate-500/10 transition-colors text-left">
+                    className="w-full px-3 py-2 rounded-lg border border-dashed border-emerald-300 dark:border-slate-900 dark:border-white/30 text-sm text-slate-900 dark:text-white dark:text-slate-500 hover:bg-slate-100 dark:bg-[#1e1e1e] dark:hover:bg-slate-500/10 transition-colors text-left">
                     + Add medicine item manually
                   </button>
                 </div>
@@ -408,12 +408,12 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
               </div>
 
               {items.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-600 dark:text-[#555555] border-2 border-dashed border-slate-100 dark:border-[#1e1e1e] rounded-lg">
+                <div className="py-8 text-center text-sm text-slate-600 dark:text-[#999999] border-2 border-dashed border-slate-100 dark:border-[#1e1e1e] rounded-lg">
                   No items yet — detect from patient or add manually
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-12 gap-2 pb-2 border-b border-slate-100 dark:border-[#1e1e1e] text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#555555] px-1">
+                  <div className="grid grid-cols-12 gap-2 pb-2 border-b border-slate-100 dark:border-[#1e1e1e] text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#999999] px-1">
                     <div className="col-span-1">Type</div>
                     <div className="col-span-5">Description</div>
                     <div className="col-span-2 text-center">Qty</div>
@@ -443,7 +443,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                         </div>
                         <div className="col-span-2 flex items-center justify-end gap-1">
                           <span className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{fmt(item.totalPrice || 0)}</span>
-                          <button onClick={() => removeItem(item.key)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-300 hover:text-red-500 transition-all">
+                          <button onClick={() => removeItem(item.key)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-500 hover:text-red-500 transition-all">
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
@@ -508,18 +508,18 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                         <button key={a.id} type="button" onClick={() => setBankAccountId(a.id)}
                           className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected ? 'border-slate-900 dark:border-white bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]'}`}>
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <p className={`text-xs font-bold truncate ${isSelected ? 'text-slate-900 dark:text-white dark:text-slate-300' : 'text-slate-700 dark:text-[#cccccc]'}`}>{a.accountName}</p>
+                            <p className={`text-xs font-bold truncate ${isSelected ? 'text-slate-900 dark:text-white dark:text-slate-500' : 'text-slate-700 dark:text-[#cccccc]'}`}>{a.accountName}</p>
                             {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}
                           </div>
                           <p className="text-[11px] text-slate-600 dark:text-[#666666] truncate">{a.bankName ?? 'Bank'} · ···{a.accountNumber.slice(-4)}</p>
-                          <p className={`text-xs font-bold mt-1.5 ${isSelected ? 'text-slate-900 dark:text-white dark:text-slate-300' : 'text-slate-600 dark:text-[#aaaaaa]'}`}>{fmt(a.currentBalance)}</p>
+                          <p className={`text-xs font-bold mt-1.5 ${isSelected ? 'text-slate-900 dark:text-white dark:text-slate-500' : 'text-slate-600 dark:text-[#aaaaaa]'}`}>{fmt(a.currentBalance)}</p>
                         </button>
                       )
                     })}
                   </div>
                   {selectedAccount && (
                     <p className="text-xs text-slate-600 dark:text-[#666666] mt-2">
-                      After payment: <span className="font-semibold text-slate-900 dark:text-white dark:text-slate-300">{fmt(selectedAccount.currentBalance + grandTotal)}</span>
+                      After payment: <span className="font-semibold text-slate-900 dark:text-white dark:text-slate-500">{fmt(selectedAccount.currentBalance + grandTotal)}</span>
                     </p>
                   )}
                 </div>

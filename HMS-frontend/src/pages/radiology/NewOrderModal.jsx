@@ -276,7 +276,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
               {selectedPatient ? (
                 <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-emerald-200 dark:border-slate-900 dark:border-white/30 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-white dark:text-slate-500">
                       {selectedPatient.firstName[0]}{selectedPatient.lastName?.[0] ?? ""}
                     </div>
                     <div>
@@ -328,7 +328,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                             <p className="text-sm font-semibold text-slate-800 dark:text-[#ddd]">
                               {p.firstName} {p.lastName}
                             </p>
-                            <p className="text-xs text-slate-600 dark:text-[#555]">
+                            <p className="text-xs text-slate-600 dark:text-[#999999]">
                               {p.mrn}{p.phone ? ` · ${p.phone}` : ""}
                             </p>
                           </div>
@@ -340,7 +340,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                   {/* No results — offer quick register */}
                   {noResults && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-xl z-10 overflow-hidden">
-                      <div className="px-4 py-3 text-xs text-slate-600 dark:text-[#555] border-b border-slate-100 dark:border-[#222]">
+                      <div className="px-4 py-3 text-xs text-slate-600 dark:text-[#999999] border-b border-slate-100 dark:border-[#222]">
                         No patient found for "{patientSearch}"
                       </div>
                       <button
@@ -364,7 +364,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                           <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                             Register as new patient
                           </p>
-                          <p className="text-xs text-slate-600 dark:text-[#555]">
+                          <p className="text-xs text-slate-600 dark:text-[#999999]">
                             Walk-in — add to system and continue
                           </p>
                         </div>

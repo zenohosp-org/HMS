@@ -216,7 +216,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
 
           {step === 3 && (
             <>
-              <p className="text-sm text-slate-500 dark:text-slate-600">Attender / Guardian details (optional)</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Attender / Guardian details (optional)</p>
               <div>
                 <label className={labelCls}>Attender Name</label>
                 <input value={form.attenderName} onChange={e => setForm({ ...form, attenderName: e.target.value })}
@@ -238,7 +238,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               </div>
               <div className="rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] p-4 space-y-2 text-sm">
                 <p className="font-semibold text-slate-700 dark:text-slate-200">Summary</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-600 dark:text-slate-600">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400">
                   <span className="font-medium">Patient:</span><span>{selectedPatient?.firstName} {selectedPatient?.lastName}</span>
                   <span className="font-medium">Type:</span><span>{form.admissionType}</span>
                   <span className="font-medium">Source:</span><span>{form.admissionSource.replace(/_/g, ' ')}</span>
@@ -251,7 +251,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
 
         <div className="flex items-center justify-between p-6 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] rounded-b-2xl">
           <button onClick={() => step > 1 ? setStep(s => s - 1) : onClose()}
-            className="px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#222] transition-colors">
+            className="px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-[#222] transition-colors">
             {step > 1 ? 'Back' : 'Cancel'}
           </button>
           {step < 3 ? (

@@ -27,26 +27,26 @@ const APPT_COLORS = [
 ];
 const STATUS_TRANSITIONS = {
   SCHEDULED: [
-    { status: "CONFIRMED", label: "Confirm", icon: "confirm", color: "text-slate-600 dark:text-slate-600" },
-    { status: "CHECKED_IN", label: "Check In", icon: "checkin", color: "text-slate-600 dark:text-slate-600" },
-    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600 dark:text-slate-600" },
-    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600 dark:text-slate-600" },
-    { status: "NO_SHOW", label: "No Show", icon: "noshow", color: "text-slate-600 dark:text-slate-600" }
+    { status: "CONFIRMED", label: "Confirm", icon: "confirm", color: "text-slate-600 dark:text-slate-400" },
+    { status: "CHECKED_IN", label: "Check In", icon: "checkin", color: "text-slate-600 dark:text-slate-400" },
+    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600 dark:text-slate-400" },
+    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600 dark:text-slate-400" },
+    { status: "NO_SHOW", label: "No Show", icon: "noshow", color: "text-slate-600 dark:text-slate-400" }
   ],
   CONFIRMED: [
-    { status: "CHECKED_IN", label: "Check In", icon: "checkin", color: "text-slate-600 dark:text-slate-600" },
-    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600 dark:text-slate-600" },
-    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600 dark:text-slate-600" },
-    { status: "NO_SHOW", label: "No Show", icon: "noshow", color: "text-slate-600 dark:text-slate-600" }
+    { status: "CHECKED_IN", label: "Check In", icon: "checkin", color: "text-slate-600 dark:text-slate-400" },
+    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600 dark:text-slate-400" },
+    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600 dark:text-slate-400" },
+    { status: "NO_SHOW", label: "No Show", icon: "noshow", color: "text-slate-600 dark:text-slate-400" }
   ],
   CHECKED_IN: [
-    { status: "IN_PROGRESS", label: "Start Consultation", icon: "progress", color: "text-slate-600 dark:text-slate-600" },
-    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600 dark:text-slate-600" },
-    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600 dark:text-slate-600" }
+    { status: "IN_PROGRESS", label: "Start Consultation", icon: "progress", color: "text-slate-600 dark:text-slate-400" },
+    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600 dark:text-slate-400" },
+    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600 dark:text-slate-400" }
   ],
   IN_PROGRESS: [
-    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600 dark:text-slate-600" },
-    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600 dark:text-slate-600" }
+    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600 dark:text-slate-400" },
+    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600 dark:text-slate-400" }
   ],
   COMPLETED: [],
   CANCELLED: [
@@ -74,7 +74,7 @@ function ActionMenu({ appt, onUpdate }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
   if (actions.length === 0) {
-    return <div className="flex items-center justify-center w-8 h-8 rounded-lg"><span className="text-slate-300 dark:text-[#333333] text-lg select-none">—</span></div>;
+    return <div className="flex items-center justify-center w-8 h-8 rounded-lg"><span className="text-slate-500 dark:text-[#777777] text-lg select-none">—</span></div>;
   }
   const handleAction = async (status) => {
     if (status === "CANCELLED") {
@@ -246,10 +246,10 @@ function AppointmentsDashboard() {
   const renderListView = () => <div className="bg-white dark:bg-[#111111] rounded-lg shadow-sm border border-slate-200 dark:border-[#222222] overflow-hidden flex flex-col flex-1"><div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-[#222222]"><h3 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">All Appointments</h3><div className="flex gap-2"><div className="relative"><select
     value={selectedDoctorId}
     onChange={(e) => setSelectedDoctorId(e.target.value)}
-    className="appearance-none bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] text-slate-700 dark:text-slate-300 text-sm font-medium py-2 pl-4 pr-10 rounded-lg outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 transition-all cursor-pointer"
+    className="appearance-none bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] text-slate-700 dark:text-slate-500 text-sm font-medium py-2 pl-4 pr-10 rounded-lg outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 transition-all cursor-pointer"
   ><option value="all">All Doctors</option>{doctors.map((d) => <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>)}</select><Filter className="w-4 h-4 text-slate-600 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" /></div></div></div><div className="flex flex-col flex-1 overflow-hidden"><div className="overflow-x-auto flex-1"><table className="w-full text-left border-collapse"><thead><tr className="border-b border-slate-200 dark:border-[#222222] bg-slate-50/50 dark:bg-[#0f0f0f]"><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Patient</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Doctor</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Date &amp; Time</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Status</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Type</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredAppointments.length === 0 ? <tr><td colSpan={6} className="py-12 text-center text-slate-500 dark:text-[#888888]"><CalendarIcon className="w-8 h-8 mx-auto mb-3 opacity-50" />
     No appointments found for the selected filters.
-  </td></tr> : filteredAppointments.slice((apptPage - 1) * APPT_PAGE_SIZE, apptPage * APPT_PAGE_SIZE).map((appt) => <tr key={appt.id} className="hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors group"><td className="py-3 px-5"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#222222] text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-sm">{appt.patientName.charAt(0)}</div><p className="font-semibold text-sm text-slate-900 dark:text-white">{appt.patientName}</p></div></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">
+  </td></tr> : filteredAppointments.slice((apptPage - 1) * APPT_PAGE_SIZE, apptPage * APPT_PAGE_SIZE).map((appt) => <tr key={appt.id} className="hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors group"><td className="py-3 px-5"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#222222] text-slate-600 dark:text-slate-500 flex items-center justify-center font-bold text-sm">{appt.patientName.charAt(0)}</div><p className="font-semibold text-sm text-slate-900 dark:text-white">{appt.patientName}</p></div></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">
     Dr. {appt.doctorName}</td><td className="py-3 px-5"><p className="text-sm font-medium text-slate-900 dark:text-white">{format(parseISO(appt.apptDate), "yyyy-MM-dd")}</p><p className="text-xs text-slate-500 dark:text-[#888888] mt-0.5">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p></td><td className="py-3 px-5"><span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide ${STATUS_STYLES[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">{appt.type.charAt(0) + appt.type.slice(1).toLowerCase().replace("_", "-")}</td><td className="py-3 px-5"><div className="flex items-center gap-2">{(appt.status === "COMPLETED" || appt.status === "IN_PROGRESS") && (<button onClick={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), mrn: appt.patientMrn }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/20 transition-colors"><BedDouble className="w-3.5 h-3.5" /> Admit</button>)}<ActionMenu appt={appt} onUpdate={handleStatusUpdate} /></div></td></tr>)}</tbody></table></div><div className="px-5 pb-4"><Pagination
       currentPage={apptPage}
       totalPages={Math.ceil(filteredAppointments.length / APPT_PAGE_SIZE)}
@@ -283,7 +283,7 @@ function AppointmentsDashboard() {
         days.push(
           <div
             key={day.toISOString()}
-            className={`min-h-[120px] p-2 border-r border-b border-slate-200 dark:border-[#222222] ${!isSameMonth(day, monthStart) ? "bg-slate-50/50 dark:bg-[#0a0a0a] text-slate-600 dark:text-[#555555]" : "bg-white dark:bg-[#111111] text-slate-800 dark:text-[#cccccc]"} ${isToday(day) ? "bg-blue-50/30 dark:bg-blue-500/5" : ""}`}
+            className={`min-h-[120px] p-2 border-r border-b border-slate-200 dark:border-[#222222] ${!isSameMonth(day, monthStart) ? "bg-slate-50/50 dark:bg-[#0a0a0a] text-slate-600 dark:text-[#999999]" : "bg-white dark:bg-[#111111] text-slate-800 dark:text-[#cccccc]"} ${isToday(day) ? "bg-blue-50/30 dark:bg-blue-500/5" : ""}`}
           ><div className="flex justify-between items-center mb-1.5 px-1">{isToday(day) ? <span className="bg-slate-900 dark:bg-white text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold leading-none">{format(day, "d")}</span> : <span className={`text-sm font-semibold ${!isSameMonth(day, monthStart) ? "opacity-50" : ""}`}>{format(day, "d")}</span>}</div><div className="space-y-1 mt-2">{dayAppts.slice(0, 3).map((appt) => {
             const colors = getColorForDoctor(appt.doctorId);
             return <div key={appt.id} className={`px-2 py-1.5 rounded-lg text-xs truncate border ${colors}`}><span className="font-semibold opacity-90 mr-1">{appt.apptTime.substring(0, 5)}</span><span className="font-medium tracking-tight truncate">{appt.patientName}</span></div>;

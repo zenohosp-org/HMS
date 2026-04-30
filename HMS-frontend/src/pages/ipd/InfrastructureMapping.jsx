@@ -42,7 +42,7 @@ function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom }) {
   if (!rooms.length) return null;
   return (
     <div className="border-t border-slate-100 dark:border-[#1e1e1e] p-3 bg-slate-50/50 dark:bg-[#0a0a0a]">
-      <p className="text-[10px] font-bold text-slate-400 dark:text-[#555555] uppercase tracking-widest mb-2.5">
+      <p className="text-[10px] font-bold text-slate-400 dark:text-[#999999] uppercase tracking-widest mb-2.5">
         Rooms · {rooms.length}
       </p>
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
@@ -51,9 +51,9 @@ function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom }) {
             key={rIdx}
             className="flex items-center gap-2 bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#252525] rounded-lg px-2.5 py-2 group hover:border-slate-400 dark:hover:border-[#444] focus-within:border-slate-500 dark:focus-within:border-[#555] transition-colors"
           >
-            <Bed className="w-3 h-3 text-slate-300 dark:text-[#444444] shrink-0 group-hover:text-slate-600 dark:group-hover:text-[#aaa] transition-colors" />
+            <Bed className="w-3 h-3 text-slate-500 dark:text-[#888888] shrink-0 group-hover:text-slate-600 dark:group-hover:text-[#aaa] transition-colors" />
             <input
-              className="flex-1 text-xs text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0 font-medium"
+              className="flex-1 text-xs text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#666666] min-w-0 font-medium"
               value={room.name}
               onChange={(e) => updateRoom(bIdx, fIdx, wIdx, rIdx, e.target.value)}
               placeholder={`Room ${rIdx + 1}`}
@@ -76,7 +76,7 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
             <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
           </div>
           <input
-            className="flex-1 text-sm font-medium text-slate-800 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0"
+            className="flex-1 text-sm font-medium text-slate-800 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#666666] min-w-0"
             value={ward.name}
             onChange={(e) => updateWard(bIdx, fIdx, wIdx, "name", e.target.value)}
             placeholder={`Ward ${wIdx + 1}`}
@@ -98,7 +98,7 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
           <input
             type="number"
             min="0"
-            className="flex-1 text-sm text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] tabular-nums min-w-0"
+            className="flex-1 text-sm text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#666666] tabular-nums min-w-0"
             value={ward.dailyCharge}
             onChange={(e) => updateWard(bIdx, fIdx, wIdx, "dailyCharge", e.target.value)}
             placeholder="0"
@@ -127,7 +127,7 @@ function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard
           <span className="text-[10px] font-bold text-slate-600 dark:text-[#888] uppercase tracking-widest">Floor {fIdx + 1}</span>
         </div>
         <input
-          className="flex-1 min-w-0 text-sm text-slate-700 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#333333] rounded-md px-2.5 py-1 focus:outline-none focus:border-slate-400 placeholder-slate-300 dark:placeholder-[#3a3a3a]"
+          className="flex-1 min-w-0 text-sm text-slate-700 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#333333] rounded-md px-2.5 py-1 focus:outline-none focus:border-slate-400 placeholder-slate-300 dark:placeholder-[#666666]"
           value={floor.name}
           onChange={(e) => updateFloor(bIdx, fIdx, "name", e.target.value)}
           placeholder={`Floor ${fIdx}`}
@@ -154,7 +154,7 @@ function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard
           ))}
         </div>
       ) : (
-        <div className="py-5 text-center text-xs text-slate-400 dark:text-[#555555] bg-white dark:bg-[#0d0d0d]">
+        <div className="py-5 text-center text-xs text-slate-400 dark:text-[#999999] bg-white dark:bg-[#0d0d0d]">
           Set ward count above to add wards
         </div>
       )}
@@ -171,7 +171,7 @@ function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFlo
     <div className="rounded-xl border border-slate-200 dark:border-[#222222] overflow-hidden shadow-sm">
       <div className="flex items-center gap-3 px-4 py-3 bg-slate-900 dark:bg-[#111111] border-b border-slate-700 dark:border-[#222222]">
         <div className="flex items-center gap-2 shrink-0">
-          <Building2 className="w-4 h-4 text-slate-300" />
+          <Building2 className="w-4 h-4 text-slate-500" />
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Building {bIdx + 1}</span>
         </div>
         <input
@@ -208,7 +208,7 @@ function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFlo
           ))}
         </div>
       ) : (
-        <div className="py-8 text-center text-sm text-slate-400 dark:text-[#555555] bg-white dark:bg-[#111111]">
+        <div className="py-8 text-center text-sm text-slate-400 dark:text-[#999999] bg-white dark:bg-[#111111]">
           Set floor count above to configure this building
         </div>
       )}
@@ -386,10 +386,10 @@ export default function InfrastructureMapping() {
         {buildings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 rounded-xl border-2 border-dashed border-slate-200 dark:border-[#2a2a2a]">
             <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-[#1a1a1a] flex items-center justify-center mb-4">
-              <Building2 className="w-8 h-8 text-slate-300 dark:text-[#333333]" />
+              <Building2 className="w-8 h-8 text-slate-500 dark:text-[#777777]" />
             </div>
-            <p className="text-sm font-semibold text-slate-400 dark:text-[#555555]">No buildings configured</p>
-            <p className="text-xs text-slate-300 dark:text-[#3a3a3a] mt-1">Increase the building count above to get started</p>
+            <p className="text-sm font-semibold text-slate-400 dark:text-[#999999]">No buildings configured</p>
+            <p className="text-xs text-slate-500 dark:text-[#777777] mt-1">Increase the building count above to get started</p>
           </div>
         ) : (
           <div className="space-y-4">

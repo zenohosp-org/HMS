@@ -100,12 +100,12 @@ function SectionCard({ title, subtitle, children, action, actionLabel, actionFn 
       <div className="flex items-start justify-between">
         <div>
           <p className="font-bold text-slate-900 dark:text-white text-sm">{title}</p>
-          {subtitle && <p className="text-xs text-slate-600 dark:text-[#555] mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{subtitle}</p>}
         </div>
         {actionFn && (
           <button
             onClick={actionFn}
-            className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-300 hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-500 hover:underline"
           >
             {actionLabel} <ArrowRight className="w-3 h-3" />
           </button>
@@ -137,7 +137,7 @@ function AppointmentStatusRow({ status, count, total }) {
           />
         </div>
       </div>
-      <span className="text-[10px] text-slate-600 dark:text-[#555] w-7 text-right">{pct}%</span>
+      <span className="text-[10px] text-slate-600 dark:text-[#999999] w-7 text-right">{pct}%</span>
     </div>
   );
 }
@@ -158,7 +158,7 @@ function PatientRowCard({ p }) {
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-800 dark:text-[#e5e5e5]">{p.firstName} {p.lastName}</p>
-            <p className="text-xs text-slate-600 dark:text-[#555]">{p.mrn}</p>
+            <p className="text-xs text-slate-600 dark:text-[#999999]">{p.mrn}</p>
           </div>
         </div>
       </td>
@@ -169,7 +169,7 @@ function PatientRowCard({ p }) {
             <Phone className="w-3 h-3" />{p.phone}
           </span>
         ) : (
-          <span className="text-xs text-slate-300 dark:text-[#444]">—</span>
+          <span className="text-xs text-slate-500 dark:text-[#888888]">—</span>
         )}
       </td>
       <td className="px-5 py-3.5">
@@ -178,7 +178,7 @@ function PatientRowCard({ p }) {
         </span>
       </td>
       <td className="px-5 py-3.5 text-right">
-        <span className="flex items-center gap-1 text-xs text-slate-600 dark:text-[#555] justify-end">
+        <span className="flex items-center gap-1 text-xs text-slate-600 dark:text-[#999999] justify-end">
           <Clock className="w-3 h-3" />{timeAgo(p.createdAt)}
         </span>
       </td>
@@ -285,7 +285,7 @@ function DoctorStaffDashboard() {
         <StatPill
           label="New Today"
           value={todayPatients.length}
-          icon={<UserPlus className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-300" />}
+          icon={<UserPlus className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-500" />}
           accent="bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10"
         />
         <StatPill
@@ -397,21 +397,21 @@ function DoctorStaffDashboard() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-32 gap-2 text-slate-300 dark:text-[#333]">
+            <div className="flex flex-col items-center justify-center h-32 gap-2 text-slate-500 dark:text-[#777777]">
               <Calendar className="w-8 h-8" />
-              <p className="text-xs text-slate-600 dark:text-[#555]">No appointments yet</p>
+              <p className="text-xs text-slate-600 dark:text-[#999999]">No appointments yet</p>
             </div>
           )}
           {totalAppts > 0 && (
             <div className="mt-1 pt-4 border-t border-slate-100 dark:border-[#1a1a1a]">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#555]">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#999999]">
                 <span>Total appointments</span>
                 <span className="font-bold text-slate-800 dark:text-[#ddd]">{totalAppts}</span>
               </div>
               {apptStatusCounts.COMPLETED > 0 && (
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#555] mt-1">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#999999] mt-1">
                   <span>Completion rate</span>
-                  <span className="font-bold text-slate-900 dark:text-white dark:text-slate-300">
+                  <span className="font-bold text-slate-900 dark:text-white dark:text-slate-500">
                     {((apptStatusCounts.COMPLETED / totalAppts) * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -434,7 +434,7 @@ function DoctorStaffDashboard() {
             </div>
             <button
               onClick={() => navigate("/patients")}
-              className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-300 hover:underline"
+              className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-500 hover:underline"
             >
               All patients <ArrowRight className="w-3 h-3" />
             </button>
@@ -443,11 +443,11 @@ function DoctorStaffDashboard() {
           {todayPatients.length === 0 ? (
             <div className="flex flex-col items-center justify-center flex-1 py-16 gap-3">
               <div className="w-14 h-14 rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-100 dark:border-[#222] flex items-center justify-center">
-                <UserPlus className="w-7 h-7 text-slate-200 dark:text-[#333]" />
+                <UserPlus className="w-7 h-7 text-slate-200 dark:text-[#777777]" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-semibold text-slate-500 dark:text-[#555]">No new patients today</p>
-                <p className="text-xs text-slate-600 dark:text-[#444] mt-0.5">New registrations will appear here</p>
+                <p className="text-sm font-semibold text-slate-500 dark:text-[#999999]">No new patients today</p>
+                <p className="text-xs text-slate-600 dark:text-[#888888] mt-0.5">New registrations will appear here</p>
               </div>
               <button onClick={() => navigate("/patients")} className="btn-primary text-xs mt-1">
                 Register Patient
@@ -459,7 +459,7 @@ function DoctorStaffDashboard() {
                 <thead>
                   <tr className="bg-slate-50 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1a1a1a]">
                     {["Patient", "Age / Gender", "Phone", "Blood", "Registered"].map((h) => (
-                      <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-[#555] uppercase tracking-widest last:text-right">
+                      <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-[#999999] uppercase tracking-widest last:text-right">
                         {h}
                       </th>
                     ))}
@@ -481,7 +481,7 @@ function DoctorStaffDashboard() {
         {[
           { label: "Patients", sub: "Register or find a patient", to: "/patients", icon: <Users className="w-5 h-5" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
           ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10" }] : []),
-          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10" },
+          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 dark:text-white dark:text-slate-500 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10" },
         ].map((item) => (
           <button
             key={item.to}
@@ -493,9 +493,9 @@ function DoctorStaffDashboard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-slate-800 dark:text-[#e5e5e5] text-sm">{item.label}</p>
-              <p className="text-xs text-slate-600 dark:text-[#555] mt-0.5">{item.sub}</p>
+              <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{item.sub}</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-[#333] group-hover:text-slate-500 dark:group-hover:text-[#666] group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="w-4 h-4 text-slate-500 dark:text-[#777777] group-hover:text-slate-500 dark:group-hover:text-[#666] group-hover:translate-x-0.5 transition-all" />
           </button>
         ))}
       </div>

@@ -73,9 +73,9 @@ export default function Login() {
             Sign in with ZenoHosp Directory
           </button>
 
-          <p className="text-center text-xs text-slate-600 dark:text-[#555] font-medium">
+          <p className="text-center text-xs text-slate-600 dark:text-[#999999] font-medium">
             By continuing, you agree to our{" "}
-            <span className="text-slate-900 dark:text-white dark:text-slate-300 hover:underline cursor-pointer">
+            <span className="text-slate-900 dark:text-white dark:text-slate-500 hover:underline cursor-pointer">
               Terms of Service
             </span>
           </p>

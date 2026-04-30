@@ -217,7 +217,7 @@ function ShiftRoster() {
     /* Compact shift legend */
   }<div className="flex items-center gap-3 shrink-0">{SHIFTS.map((s) => <span key={s.type} className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-[#888888]"><span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />{s.label}</span>)}</div></div>{
     /* ── Groups ── */
-  }{loading ? <div className="flex items-center justify-center py-24"><Loader2 className="w-5 h-5 animate-spin text-slate-600" /></div> : staffOptions.length === 0 ? <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-600 dark:text-[#555555]"><Users className="w-10 h-10 opacity-30" /><p className="text-sm">No staff members found</p></div> : groups.map(([groupName, members]) => {
+  }{loading ? <div className="flex items-center justify-center py-24"><Loader2 className="w-5 h-5 animate-spin text-slate-600" /></div> : staffOptions.length === 0 ? <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-600 dark:text-[#999999]"><Users className="w-10 h-10 opacity-30" /><p className="text-sm">No staff members found</p></div> : groups.map(([groupName, members]) => {
     const gPage = groupPages[groupName] ?? 1;
     const totalGroupPages = Math.ceil(members.length / GROUP_PAGE_SIZE);
     const visibleMembers = members.slice((gPage - 1) * GROUP_PAGE_SIZE, gPage * GROUP_PAGE_SIZE);
@@ -234,7 +234,7 @@ function ShiftRoster() {
       className="w-6 h-6 flex items-center justify-center rounded border border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-[#666666] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
     ><ChevronRight className="w-3 h-3" /></button></div>}</div>{
       /* Group table */
-    }<div className="overflow-x-auto"><table className="w-full min-w-[700px]"><thead><tr className="border-b border-slate-100 dark:border-[#1e1e1e]"><th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#555555] w-48">
+    }<div className="overflow-x-auto"><table className="w-full min-w-[700px]"><thead><tr className="border-b border-slate-100 dark:border-[#1e1e1e]"><th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999] w-48">
                                             Employee
                                         </th>{weekDays.map((d) => {
       const ds = toISODate(d);
@@ -246,7 +246,7 @@ function ShiftRoster() {
       ><div className={`text-[10px] uppercase tracking-wide ${isToday ? "text-blue-500" : "text-slate-600 dark:text-[#666666]"}`}>{DAY_SHORT[d.getDay()]}</div><div className={`text-sm font-bold mt-0.5 ${isToday ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-[#aaaaaa]"}`}>{d.getDate()}</div></th>;
     })}</tr></thead><tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{visibleMembers.map((staff) => <tr key={staff.id} className="hover:bg-slate-50/50 dark:hover:bg-[#0f0f0f] transition-colors">{
       /* Staff info */
-    }<td className="px-4 py-2.5"><div className="flex items-center gap-2"><div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${staff.avatarCls}`}>{getInitials(staff.name)}</div><div className="min-w-0"><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight truncate">{staff.name}</p><p className="text-[10px] text-slate-600 dark:text-[#555555] truncate">{staff.designation ?? staff.roleDisplay}</p></div></div></td>{
+    }<td className="px-4 py-2.5"><div className="flex items-center gap-2"><div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${staff.avatarCls}`}>{getInitials(staff.name)}</div><div className="min-w-0"><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight truncate">{staff.name}</p><p className="text-[10px] text-slate-600 dark:text-[#999999] truncate">{staff.designation ?? staff.roleDisplay}</p></div></div></td>{
       /* Day cells */
     }{weekDays.map((d) => {
       const dateStr = toISODate(d);
@@ -258,7 +258,7 @@ function ShiftRoster() {
       return <td
         key={dateStr}
         className={`px-1.5 py-2 align-top relative ${isToday ? "bg-blue-50/40 dark:bg-blue-500/5" : ""}`}
-      ><div className="min-h-[52px] flex flex-col gap-0.5">{isAssigning ? <div className="flex-1 flex items-center justify-center rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#0f0f0f]"><Loader2 className="w-3 h-3 animate-spin text-slate-300" /></div> : dayShifts.length > 0 ? <>{dayShifts.map((s) => {
+      ><div className="min-h-[52px] flex flex-col gap-0.5">{isAssigning ? <div className="flex-1 flex items-center justify-center rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#0f0f0f]"><Loader2 className="w-3 h-3 animate-spin text-slate-500" /></div> : dayShifts.length > 0 ? <>{dayShifts.map((s) => {
         const meta = SHIFTS.find((x) => x.type === s.shiftType);
         return <div
           key={s.id}
@@ -270,10 +270,10 @@ function ShiftRoster() {
         ><X className="w-2.5 h-2.5" /></button></div>;
       })}<button
         onClick={(e) => openPopover(staff.id, dateStr, e.currentTarget)}
-        className="w-full py-1 flex items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-[#2a2a2a] text-slate-300 dark:text-[#3a3a3a] hover:border-blue-300 dark:hover:border-blue-500/40 hover:text-blue-400 transition-colors"
+        className="w-full py-1 flex items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#777777] hover:border-blue-300 dark:hover:border-blue-500/40 hover:text-blue-400 transition-colors"
       ><Plus className="w-3 h-3" /></button></> : <button
         onClick={(e) => openPopover(staff.id, dateStr, e.currentTarget)}
-        className="flex-1 flex items-center justify-center rounded-lg border border-slate-100 dark:border-[#1e1e1e] bg-slate-50/60 dark:bg-[#0d0d0d] text-slate-300 dark:text-[#333333] hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-blue-50/40 dark:hover:bg-blue-500/5 hover:text-blue-400 transition-colors"
+        className="flex-1 flex items-center justify-center rounded-lg border border-slate-100 dark:border-[#1e1e1e] bg-slate-50/60 dark:bg-[#0d0d0d] text-slate-500 dark:text-[#777777] hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-blue-50/40 dark:hover:bg-blue-500/5 hover:text-blue-400 transition-colors"
       ><Plus className="w-3.5 h-3.5" /></button>}</div></td>;
     })}</tr>)}</tbody></table></div></div>;
   })}</div>{
@@ -296,7 +296,7 @@ function ShiftRoster() {
         handleAssign(s.type);
       }}
       className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-[#252525] transition-colors"
-    ><span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} /><span className="text-sm font-medium text-slate-700 dark:text-[#cccccc] flex-1">{s.label}</span><span className="text-[10px] text-slate-600 dark:text-[#555555]">{s.time}</span></button>)}</div></div>,
+    ><span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} /><span className="text-sm font-medium text-slate-700 dark:text-[#cccccc] flex-1">{s.label}</span><span className="text-[10px] text-slate-600 dark:text-[#999999]">{s.time}</span></button>)}</div></div>,
     document.body
   )}</>;
 }
