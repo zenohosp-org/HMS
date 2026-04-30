@@ -16,6 +16,8 @@ public interface AdmissionRepository extends JpaRepository<Admission, UUID> {
     Optional<Admission> findByPatientIdAndStatus(Integer patientId, AdmissionStatus status);
     Optional<Admission> findByRoomIdAndStatus(Long roomId, AdmissionStatus status);
 
+    List<Admission> findByRoomId(Long roomId);
+
     @Query("SELECT a FROM Admission a WHERE a.hospital.id = :hospitalId AND a.status = 'ADMITTED' " +
            "AND (LOWER(a.patient.firstName) LIKE LOWER(CONCAT('%',:q,'%')) " +
            "OR LOWER(a.patient.lastName) LIKE LOWER(CONCAT('%',:q,'%')) " +

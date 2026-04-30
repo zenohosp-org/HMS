@@ -233,6 +233,11 @@ public class RoomService {
         if (room.getStatus() == RoomStatus.OCCUPIED) {
             throw new IllegalStateException("Cannot delete an occupied room. Deallocate the patient first.");
         }
+        // Null out room FK on historical admissions (past records, not active ones)
+        admissionRepository.findByRoomId(roomId).forEach(a -> {
+            a.setRoom(null);
+            admissionRepository.save(a);
+        });
         roomLogRepository.deleteByRoomId(roomId);
         roomRepository.delete(room);
     }
