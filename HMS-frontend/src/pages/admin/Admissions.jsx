@@ -120,12 +120,12 @@ export default function Admissions() {
         <div className="relative flex-1 min-w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900/30 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900/30 transition-all"
             placeholder="Search by patient, admission no., department, room…" />
         </div>
         {['ADMITTED', 'DISCHARGED', 'ALL'].map(s => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-transparent' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-slate-400'}`}>
+            className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-transparent' : 'bg-white dark:bg-[#111] border-slate-300 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-slate-400'}`}>
             {s.charAt(0) + s.slice(1).toLowerCase()}
             {s === 'ADMITTED' && counts.ADMITTED > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-slate-900 dark:bg-white text-white text-xs">{counts.ADMITTED}</span>}
           </button>

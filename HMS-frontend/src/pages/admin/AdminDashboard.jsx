@@ -414,13 +414,13 @@ export default function AdminDashboard() {
                   tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
                 />
                 <Tooltip content={<RevenueTooltip />} cursor={{ fill: "rgba(148,163,184,0.05)" }} />
-                <Bar dataKey="paid" name="paid" fill="#0f172a" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                <Bar dataKey="paid" name="paid" fill="#45d859ff" radius={[4, 4, 0, 0]} maxBarSize={20} />
                 <Bar dataKey="unpaid" name="unpaid" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={20} opacity={0.7} />
               </BarChart>
             </ResponsiveContainer>
             <div className="flex items-center gap-4 mt-1">
               <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#666]">
-                <span className="w-2.5 h-2.5 rounded-sm bg-slate-900 dark:bg-white" /> Paid
+                <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 dark:bg-white" /> Paid
               </span>
               <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#666]">
                 <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 opacity-70" /> Outstanding

@@ -23,7 +23,8 @@ import {
   ScanLine,
   FileText,
   Award,
-  Ambulance
+  Ambulance,
+  Network
 } from "lucide-react";
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
 const CLINICAL_LINKS = [
