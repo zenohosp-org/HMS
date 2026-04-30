@@ -22,7 +22,8 @@ import {
   CalendarDays,
   ScanLine,
   FileText,
-  Award
+  Award,
+  Ambulance
 } from "lucide-react";
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
 const CLINICAL_LINKS = [
@@ -40,6 +41,10 @@ const ROOMS_LINKS = [
   { label: "Room Allocation", to: "/rooms", icon: Bed },
   { label: "Room Logs", to: "/rooms/logs", icon: ClipboardList },
   { label: "IPD Admissions", to: "/admissions", icon: BedDouble },
+];
+const AMBULANCE_LINKS = [
+  { label: "Book", to: "/ambulance/book", icon: Ambulance },
+  { label: "Status", to: "/ambulance/status", icon: Activity },
 ];
 const RADIOLOGY_LINKS = [
   { label: "Imaging Queue", to: "/radiology", icon: ScanLine },
@@ -62,7 +67,8 @@ function Sidebar({ isOpen }) {
   const location = useLocation();
   const [hrOpen, setHrOpen] = useState(() => location.pathname.startsWith("/staffs"));
   const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
-  const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
+  const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions") || location.pathname.startsWith("/ipd"));
+  const [ambOpen, setAmbOpen] = useState(() => location.pathname.startsWith("/ambulance"));
   const filteredClinicalLinks = CLINICAL_LINKS.filter((link) => {
     if (user?.role === "hospital_admin" || user?.role === "super_admin") return true;
     const allowedLinks = ["Patients", "Appointments"];
@@ -121,6 +127,8 @@ function Sidebar({ isOpen }) {
   };
   const renderHrAccordion = () => renderAccordionSection(HR_LINKS, "HR & Staff", ClipboardList, hrOpen, setHrOpen, hrActive);
   const renderRoomsAccordion = () => renderAccordionSection(ROOMS_LINKS, "IPD Management", BedDouble, roomsOpen, setRoomsOpen, roomsActive);
+  const ambActive = location.pathname.startsWith("/ambulance");
+  const renderAmbulanceAccordion = () => renderAccordionSection(AMBULANCE_LINKS, "Ambulance", Ambulance, ambOpen, setAmbOpen, ambActive);
   return <aside
     className={`flex flex-col h-full transition-all duration-300 ease-in-out shrink-0
                 bg-white dark:bg-[#111111] border-r border-slate-200 dark:border-[#222222]
