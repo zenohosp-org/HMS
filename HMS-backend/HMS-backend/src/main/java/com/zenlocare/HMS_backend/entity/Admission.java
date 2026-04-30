@@ -41,6 +41,9 @@ public class Admission {
     @Column(name = "admission_number", length = 30)
     private String admissionNumber;
 
+    @Column(name = "ipd_id", length = 20, unique = true)
+    private String ipdId;
+
     @Column(name = "admission_date", nullable = false)
     @Builder.Default
     private LocalDateTime admissionDate = LocalDateTime.now();

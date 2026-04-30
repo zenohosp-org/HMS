@@ -18,6 +18,7 @@ public class AppointmentRequest {
     private Appointment.AppointmentType type;
     private String chiefComplaint;
     private UUID priceListId;
+    private UUID packageId;
 
     // For status updates
     private Appointment.AppointmentStatus status;

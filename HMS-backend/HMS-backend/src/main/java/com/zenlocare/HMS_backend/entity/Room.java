@@ -28,6 +28,9 @@ public class Room {
     @Column(name = "room_number", nullable = false, length = 20)
     private String roomNumber;
 
+    @Column(name = "room_code", length = 20, unique = true)
+    private String roomCode;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "room_type", nullable = false, length = 30)
     private RoomType roomType;

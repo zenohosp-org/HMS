@@ -189,7 +189,10 @@ export default function Admissions() {
                 </div>
                 <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
-                  <span className="text-xs font-mono text-slate-400">{a.admissionNumber}</span>
+                  <div className="text-right">
+                    {a.ipdId && <p className="text-xs font-mono font-bold text-violet-600 dark:text-violet-400">{a.ipdId}</p>}
+                    <p className="text-[10px] font-mono text-slate-400">{a.admissionNumber}</p>
+                  </div>
                 </div>
               </div>
               {a.status === 'ADMITTED' && (
@@ -216,7 +219,10 @@ export default function Admissions() {
             <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
               {filtered.map(a => (
                 <tr key={a.id} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-500">{a.admissionNumber}</td>
+                  <td className="px-4 py-3">
+                    {a.ipdId && <p className="font-mono text-xs font-bold text-violet-600 dark:text-violet-400">{a.ipdId}</p>}
+                    <p className="font-mono text-[10px] text-slate-400">{a.admissionNumber}</p>
+                  </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-slate-900 dark:text-white text-sm">{a.patientName}</p>
                     <p className="text-xs text-slate-500">{a.patientMrn}</p>

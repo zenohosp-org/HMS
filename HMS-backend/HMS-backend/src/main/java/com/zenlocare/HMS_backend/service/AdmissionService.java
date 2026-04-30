@@ -57,6 +57,7 @@ public class AdmissionService {
         }
 
         String admNumber = generateAdmissionNumber(hospital.getId());
+        String ipdId = generateIpdId(hospital.getId());
 
         Admission admission = Admission.builder()
                 .hospital(hospital)
@@ -66,6 +67,7 @@ public class AdmissionService {
                 .department(dept)
                 .sourceAppointment(sourceAppt)
                 .admissionNumber(admNumber)
+                .ipdId(ipdId)
                 .admissionType(req.getAdmissionType() != null ? req.getAdmissionType() : AdmissionType.ELECTIVE)
                 .admissionSource(req.getAdmissionSource() != null ? req.getAdmissionSource() : AdmissionSource.DIRECT)
                 .chiefComplaint(req.getChiefComplaint())
@@ -205,15 +207,26 @@ public class AdmissionService {
 
     private String generateAdmissionNumber(UUID hospitalId) {
         String year = String.valueOf(LocalDateTime.now().getYear());
-        long count = admissionRepository.countActiveByHospital(hospitalId);
         long total = admissionRepository.findByHospitalIdOrderByAdmissionDateDesc(hospitalId).size();
         return "ADM-" + year + "-" + String.format("%04d", total + 1);
+    }
+
+    private String generateIpdId(UUID hospitalId) {
+        String year = String.valueOf(LocalDateTime.now().getYear());
+        String prefix = "IPD-" + year + "-";
+        return admissionRepository.findMaxIpdIdForYear(hospitalId, year)
+                .map(max -> {
+                    int seq = Integer.parseInt(max.replace(prefix, "")) + 1;
+                    return prefix + String.format("%04d", seq);
+                })
+                .orElse(prefix + "0001");
     }
 
     public AdmissionDTO toDTO(Admission a) {
         return AdmissionDTO.builder()
                 .id(a.getId())
                 .admissionNumber(a.getAdmissionNumber())
+                .ipdId(a.getIpdId())
                 .patientId(a.getPatient().getId())
                 .patientName(a.getPatient().getFirstName() + " " + a.getPatient().getLastName())
                 .patientMrn(a.getPatient().getMrn())

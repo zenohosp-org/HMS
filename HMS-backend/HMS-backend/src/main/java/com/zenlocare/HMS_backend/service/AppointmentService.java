@@ -6,6 +6,7 @@ import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -23,6 +24,7 @@ public class AppointmentService {
         private final DoctorRepository doctorRepository;
         private final PriceListRepository priceListRepository;
         private final UserRepository userRepository;
+        private final HealthCheckupService healthCheckupService;
 
         public List<AppointmentDto> getAppointmentsByHospital(UUID hospitalId, LocalDate date) {
                 if (date != null) {
@@ -47,6 +49,7 @@ public class AppointmentService {
                                 .collect(Collectors.toList());
         }
 
+        @Transactional
         public AppointmentDto createAppointment(AppointmentRequest request, UUID createdById) {
                 Hospital hospital = hospitalRepository.findById(request.getHospitalId())
                                 .orElseThrow(() -> new RuntimeException("Hospital not found"));
@@ -84,6 +87,20 @@ public class AppointmentService {
                                 request.getApptDate());
                 int assignedToken = currentTokens + 1;
 
+                // Auto-create checkup booking if a package is selected
+                HealthCheckupBooking checkupBooking = null;
+                if (request.getPackageId() != null) {
+                        String creatorName = createdBy.getFirstName() + " " + createdBy.getLastName();
+                        HealthCheckupService.BookingRequest br = new HealthCheckupService.BookingRequest();
+                        br.setPatientId(request.getPatientId());
+                        br.setPackageId(request.getPackageId());
+                        br.setDoctorId(doctor.getId());
+                        br.setScheduledDate(request.getApptDate().toString());
+                        br.setScheduledTime(apptTime.toString());
+                        br.setPaymentStatus("PENDING");
+                        checkupBooking = healthCheckupService.createBooking(hospital.getId(), br, creatorName);
+                }
+
                 Appointment appointment = Appointment.builder()
                                 .hospital(hospital)
                                 .branchId(request.getBranchId())
@@ -97,6 +114,7 @@ public class AppointmentService {
                                 .tokenNumber(assignedToken)
                                 .chiefComplaint(request.getChiefComplaint())
                                 .priceList(priceList)
+                                .checkupBooking(checkupBooking)
                                 .createdBy(createdBy)
                                 .build();
 

@@ -6,7 +6,8 @@ import { useNotification } from "@/context/NotificationContext";
 import {
   patientApi,
   doctorsApi,
-  appointmentsApi
+  appointmentsApi,
+  checkupApi,
 } from "@/utils/api";
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -70,11 +71,14 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
   const [apptTime, setApptTime] = useState("");
   const [type, setType] = useState("OPD");
   const [chiefComplaint, setChiefComplaint] = useState("");
+  const [packages, setPackages] = useState([]);
+  const [packageId, setPackageId] = useState("");
   const [patientSearch, setPatientSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const selectedPatient = patients.find((p) => String(p.id) === patientId);
   const selectedDoctor = doctors.find((d) => d.id === doctorId);
+  const selectedPkg = packages.find((p) => p.id === packageId);
   const filteredPatients = patients.filter((p) => {
     const q = patientSearch.toLowerCase();
     return p.firstName.toLowerCase().includes(q) || p.lastName?.toLowerCase().includes(q) || p.mrn?.toLowerCase().includes(q);
@@ -83,12 +87,14 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     if (!isOpen || !user?.hospitalId) return;
     const loadData = async (hId) => {
       try {
-        const [patientsRes, doctorsRes] = await Promise.all([
+        const [patientsRes, doctorsRes, pkgsRes] = await Promise.all([
           patientApi.list(hId),
-          doctorsApi.list(hId)
+          doctorsApi.list(hId),
+          checkupApi.getPackages(hId, true),
         ]);
         setPatients(patientsRes);
         setDoctors(doctorsRes);
+        setPackages(pkgsRes);
         if (user.role === "doctor") {
           const doc = doctorsRes.find((d) => d.userId === user.userId);
           if (doc) setDoctorId(doc.id);
@@ -126,7 +132,8 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
         apptDate,
         apptTime,
         type,
-        chiefComplaint
+        chiefComplaint,
+        ...(packageId ? { packageId } : {}),
       });
       notify("Appointment scheduled successfully!", "success");
       onSuccess(appointment);
@@ -143,6 +150,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     if (user?.role !== "doctor") setDoctorId("");
     setApptTime("");
     setType("OPD");
+    setPackageId("");
     setChiefComplaint("");
     setErrors({});
   };
@@ -270,7 +278,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
   ><option value="">Select a doctor</option>{doctors.map((d) => <option key={d.id} value={d.id}>
                                             Dr. {d.firstName} {d.lastName} — {d.specialization}</option>)}</select></div>{errors.doctor && <p className="text-xs text-red-500 mt-1">{errors.doctor}</p>}{
     /* Doctor info card */
-  }{selectedDoctor && <div className="mt-3 p-3 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-xl"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 shrink-0">{selectedDoctor.firstName[0]}</div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}</p><p className="text-xs text-slate-500 dark:text-[#888888]">{selectedDoctor.specialization}</p></div></div>{selectedDoctor.consultationFee != null && <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] grid grid-cols-2 gap-2"><div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Fee</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.consultationFee}</p></div><div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div></div>}</div>}</div></div></div>{
+  }{selectedDoctor && <div className="mt-3 p-3 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-xl"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 shrink-0">{selectedDoctor.firstName[0]}</div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}</p><p className="text-xs text-slate-500 dark:text-[#888888]">{selectedDoctor.specialization}</p></div></div>{selectedDoctor.consultationFee != null && <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] grid grid-cols-2 gap-2"><div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Fee</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.consultationFee}</p></div><div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div></div>}</div>}</div>{packages.length > 0 && <><div className="border-t border-slate-200 dark:border-[#1e1e1e]" /><div className="px-0 py-2"><h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">Health Checkup <span className="text-xs font-medium text-slate-400 dark:text-[#555]">(optional)</span></h3><p className="text-xs text-slate-500 dark:text-[#666666] mb-3">Link a checkup package to auto-create a booking.</p><select value={packageId} onChange={e => setPackageId(e.target.value)} className="w-full px-3 py-2.5 text-sm text-slate-900 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"><option value="">No package</option>{packages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>{selectedPkg && <div className="mt-2 px-3 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20"><p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{selectedPkg.tests?.length || 0} tests included</p><p className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5 line-clamp-2">{selectedPkg.tests?.map(t => t.testName).join(", ")}</p></div>}</div></>}</div></div>{
     /* Footer */
   }<div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#111111]"><button
     type="button"

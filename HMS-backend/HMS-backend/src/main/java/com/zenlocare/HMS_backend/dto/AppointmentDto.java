@@ -39,6 +39,10 @@ public class AppointmentDto {
         private UUID priceListId;
         private String priceListName;
 
+        private UUID checkupBookingId;
+        private String checkupBookingNumber;
+        private String checkupPackageName;
+
         private UUID createdById;
         private String createdByName;
         private LocalDateTime createdAt;
@@ -73,6 +77,9 @@ public class AppointmentDto {
                                 .cancelledReason(a.getCancelledReason())
                                 .priceListId(a.getPriceList() != null ? a.getPriceList().getId() : null)
                                 .priceListName(a.getPriceList() != null ? a.getPriceList().getName() : null)
+                                .checkupBookingId(a.getCheckupBooking() != null ? a.getCheckupBooking().getId() : null)
+                                .checkupBookingNumber(a.getCheckupBooking() != null ? a.getCheckupBooking().getBookingNumber() : null)
+                                .checkupPackageName(a.getCheckupBooking() != null && a.getCheckupBooking().getHealthPackage() != null ? a.getCheckupBooking().getHealthPackage().getName() : null)
                                 .createdById(a.getCreatedBy().getId())
                                 .createdByName(creatorName)
                                 .createdAt(a.getCreatedAt())

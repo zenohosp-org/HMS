@@ -75,6 +75,10 @@ public class Appointment {
     @JoinColumn(name = "admission_id")
     private com.zenlocare.HMS_backend.entity.Admission admission;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "checkup_booking_id")
+    private com.zenlocare.HMS_backend.entity.HealthCheckupBooking checkupBooking;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

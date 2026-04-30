@@ -12,6 +12,7 @@ import java.util.UUID;
 public class AdmissionDTO {
     private UUID id;
     private String admissionNumber;
+    private String ipdId;
     private Integer patientId;
     private String patientName;
     private String patientMrn;

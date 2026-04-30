@@ -418,11 +418,54 @@ const ambulanceApi = {
   },
 };
 
+const checkupApi = {
+  getPackages: async (hospitalId, activeOnly = false) => {
+    const { data } = await api.get("/health-checkups/packages", { params: { hospitalId, activeOnly } });
+    return data;
+  },
+  savePackage: async (hospitalId, payload) => {
+    const { data } = await api.post("/health-checkups/packages", payload, { params: { hospitalId } });
+    return data;
+  },
+  togglePackage: async (id) => api.patch(`/health-checkups/packages/${id}/toggle`),
+  deletePackage: async (id) => api.delete(`/health-checkups/packages/${id}`),
+
+  getBookings: async (hospitalId, params = {}) => {
+    const { data } = await api.get("/health-checkups/bookings", { params: { hospitalId, ...params } });
+    return data;
+  },
+  getBooking: async (id) => {
+    const { data } = await api.get(`/health-checkups/bookings/${id}`);
+    return data;
+  },
+  createBooking: async (hospitalId, payload) => {
+    const { data } = await api.post("/health-checkups/bookings", payload, { params: { hospitalId } });
+    return data;
+  },
+  updateStatus: async (id, status) => {
+    const { data } = await api.patch(`/health-checkups/bookings/${id}/status`, { status });
+    return data;
+  },
+  updateResult: async (bookingId, resultId, payload) => {
+    const { data } = await api.patch(`/health-checkups/bookings/${bookingId}/results/${resultId}`, payload);
+    return data;
+  },
+  saveDoctorNotes: async (bookingId, payload) => {
+    const { data } = await api.patch(`/health-checkups/bookings/${bookingId}/doctor-notes`, payload);
+    return data;
+  },
+  getStats: async (hospitalId) => {
+    const { data } = await api.get("/health-checkups/stats", { params: { hospitalId } });
+    return data;
+  },
+};
+
 var stdin_default = api;
 export {
   admissionApi,
   ambulanceApi,
   assetApi,
+  checkupApi,
   infrastructureApi,
   appointmentsApi,
   authApi,

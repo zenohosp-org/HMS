@@ -32,6 +32,15 @@ public class RoomService {
         return roomRepository.findByHospitalId(hospitalId);
     }
 
+    private String generateRoomCode(UUID hospitalId) {
+        return roomRepository.findMaxRoomCode(hospitalId)
+                .map(max -> {
+                    int seq = Integer.parseInt(max.replace("RM-", "")) + 1;
+                    return "RM-" + String.format("%04d", seq);
+                })
+                .orElse("RM-0001");
+    }
+
     @Transactional
     public List<Room> generateRooms(RoomCreateRequest request, String performedBy) {
         Hospital hospital = hospitalRepository.findById(request.getHospitalId())
@@ -52,6 +61,7 @@ public class RoomService {
             Room room = Room.builder()
                     .hospital(hospital)
                     .roomNumber(tempRoomNumber)
+                    .roomCode(generateRoomCode(hospital.getId()))
                     .roomType(request.getRoomType())
                     .pricePerDay(request.getPricePerDay())
                     .status(RoomStatus.AVAILABLE)

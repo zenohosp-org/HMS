@@ -26,4 +26,7 @@ public interface AdmissionRepository extends JpaRepository<Admission, UUID> {
 
     @Query("SELECT COUNT(a) FROM Admission a WHERE a.hospital.id = :hospitalId AND a.status = 'ADMITTED'")
     long countActiveByHospital(@Param("hospitalId") UUID hospitalId);
+
+    @Query("SELECT MAX(a.ipdId) FROM Admission a WHERE a.hospital.id = :hospitalId AND a.ipdId LIKE CONCAT('IPD-', :year, '-%')")
+    Optional<String> findMaxIpdIdForYear(@Param("hospitalId") UUID hospitalId, @Param("year") String year);
 }

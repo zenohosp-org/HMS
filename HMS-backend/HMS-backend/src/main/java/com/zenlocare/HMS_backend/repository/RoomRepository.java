@@ -3,6 +3,8 @@ package com.zenlocare.HMS_backend.repository;
 import com.zenlocare.HMS_backend.entity.Room;
 import com.zenlocare.HMS_backend.entity.RoomStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -25,4 +27,9 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     List<Room> findByHospitalWard_Id(Long wardId);
 
     List<Room> findByHospitalIdAndHospitalWardIsNotNull(UUID hospitalId);
+
+    @Query("SELECT MAX(r.roomCode) FROM Room r WHERE r.hospital.id = :hospitalId AND r.roomCode LIKE 'RM-%'")
+    Optional<String> findMaxRoomCode(@Param("hospitalId") UUID hospitalId);
+
+    long countByHospitalId(UUID hospitalId);
 }
