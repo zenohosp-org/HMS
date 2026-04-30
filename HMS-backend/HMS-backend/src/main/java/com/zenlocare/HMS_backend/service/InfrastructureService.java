@@ -31,15 +31,11 @@ public class InfrastructureService {
 
     @Transactional
     public List<BuildingDto> save(UUID hospitalId, List<BuildingDto> dtos) {
-        // Step 1: Find all rooms currently linked to infrastructure wards
-        List<Room> prevInfraRooms = roomRepo.findByHospitalIdAndHospitalWardIsNotNull(hospitalId);
+        // Step 1: Remember which rooms were part of infrastructure (to clean up removed ones later)
+        List<Room> prevInfraRooms = new ArrayList<>(roomRepo.findByHospitalIdAndHospitalWardIsNotNull(hospitalId));
 
-        // Step 2: Null out all ward references BEFORE deleting wards (avoid FK violation)
-        for (Room room : prevInfraRooms) {
-            room.setHospitalWard(null);
-        }
-        roomRepo.saveAll(prevInfraRooms);
-        roomRepo.flush();
+        // Step 2: Null out ALL ward FKs via native SQL so wards can be safely deleted
+        wardRepo.detachRoomsFromWards(hospitalId);
 
         // Step 3: Delete old infrastructure (native SQL, FK order: wards → floors → buildings)
         wardRepo.deleteByHospitalId(hospitalId);
@@ -79,7 +75,7 @@ public class InfrastructureService {
                 building.getFloors().add(floor);
             }
 
-            // saveAndFlush so ward IDs are generated before we create rooms
+            // saveAndFlush so ward IDs are generated before creating rooms
             buildingRepo.saveAndFlush(building);
 
             for (int j = 0; j < building.getFloors().size(); j++) {
@@ -94,7 +90,7 @@ public class InfrastructureService {
                     for (RoomDto rDto : wDto.getRooms()) {
                         Room room = null;
 
-                        // Try to find by ID first (re-saves existing room)
+                        // Try to find by ID first (update existing room)
                         if (rDto.getId() != null) {
                             room = roomRepo.findById(rDto.getId()).orElse(null);
                         }
@@ -102,7 +98,7 @@ public class InfrastructureService {
                         if (room == null) {
                             room = roomRepo.findByHospitalIdAndRoomNumber(hospitalId, rDto.getName()).orElse(null);
                         }
-                        // New room
+                        // Still not found: create new
                         if (room == null) {
                             room = new Room();
                             room.setHospital(hospital);
@@ -123,11 +119,12 @@ public class InfrastructureService {
 
         // Step 5: Clean up previous infra rooms that were not reassigned
         for (Room room : prevInfraRooms) {
-            if (room.getId() != null && !reassignedRoomIds.contains(room.getId())) {
+            Long id = room.getId();
+            if (id != null && !reassignedRoomIds.contains(id)) {
                 if (room.getStatus() == RoomStatus.AVAILABLE) {
-                    roomRepo.delete(room);
+                    roomRepo.deleteById(id);
                 }
-                // OCCUPIED rooms: already detached (ward_id nulled), kept as standalone
+                // OCCUPIED rooms: ward_id already nulled by native SQL in Step 2, kept as standalone
             }
         }
 
