@@ -181,7 +181,7 @@ function StaffsList() {
         <input
           className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-[#2a2a2a]
                             bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc]
-                            focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
+                            focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:ring-white/50"
           placeholder="Search by name, email, code, designation…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

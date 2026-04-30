@@ -132,7 +132,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
   };
 
   const labelCls = "block text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider mb-1.5";
-  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50 transition-all";
+  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:ring-white/50 transition-all";
   const noResults = patientSearch.length >= 2 && !patientSearching && patients.length === 0;
 
   return (

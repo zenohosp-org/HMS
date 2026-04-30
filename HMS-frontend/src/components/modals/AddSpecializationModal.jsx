@@ -52,7 +52,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g. Cardiology"
-          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white transition-all"
+          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:focus:ring-[#444444] focus:border-slate-300 dark:focus:border-[#444444] dark:border-white transition-all"
         />
       </div>
       <div className="space-y-2">
@@ -62,7 +62,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Enter detail description..."
-          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white transition-all resize-none"
+          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:focus:ring-[#444444] focus:border-slate-300 dark:focus:border-[#444444] dark:border-white transition-all resize-none"
         />
       </div>
       <div className="flex items-center gap-3 py-2">

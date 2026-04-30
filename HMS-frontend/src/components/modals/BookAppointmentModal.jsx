@@ -218,7 +218,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     value={chiefComplaint}
     onChange={(e) => setChiefComplaint(e.target.value)}
     rows={3}
-    className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white outline-none transition-all resize-none"
+    className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:focus:ring-[#444444] focus:border-slate-300 dark:focus:border-[#444444] dark:border-white outline-none transition-all resize-none"
     placeholder="Enter the reason for the appointment"
   /></div></form></div>{
     /* ─── RIGHT: Patient & Doctor ─── */
@@ -231,7 +231,7 @@ function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
     value={patientSearch}
     onChange={(e) => setPatientSearch(e.target.value)}
     placeholder="Search patients..."
-    className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-900 dark:ring-white/20 focus:border-slate-900 dark:border-white outline-none transition-all`}
+    className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:focus:ring-[#444444] focus:border-slate-300 dark:focus:border-[#444444] dark:border-white outline-none transition-all`}
   /></div>{
     /* Patient list */
   }{patientSearch && filteredPatients.length > 0 && <div className="border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden mb-2 bg-white dark:bg-[#111111] max-h-44 overflow-y-auto">{filteredPatients.slice(0, 8).map((p) => <button

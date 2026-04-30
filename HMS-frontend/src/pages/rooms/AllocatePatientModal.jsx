@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { X, Loader2, Search } from "lucide-react";
 const inputCls = `w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
     bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc]
-    focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50`;
+    focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:ring-white/50`;
 const labelCls = "block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-1.5";
 function AllocatePatientModal({ roomId, roomNumber, onClose, onSuccess }) {
   const { user } = useAuth();
@@ -55,7 +55,7 @@ function AllocatePatientModal({ roomId, roomNumber, onClose, onSuccess }) {
     /* Patient Search */
   }<div className="space-y-2"><label className={labelCls}>Select Patient *</label><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" /><input
     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
-                                    bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
+                                    bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:ring-white/50"
     placeholder="Search by name or MRN..."
     value={search}
     onChange={(e) => setSearch(e.target.value)}

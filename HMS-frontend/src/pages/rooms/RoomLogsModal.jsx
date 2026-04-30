@@ -69,7 +69,7 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
   }<div className="px-6 py-3 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" /><input
     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                 bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc]
-                                focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50"
+                                focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:ring-white/50"
     placeholder="Search by room, patient, MRN, attender or performed by…"
     value={search}
     onChange={(e) => setSearch(e.target.value)}

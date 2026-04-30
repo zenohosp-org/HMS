@@ -117,7 +117,7 @@ export default function Admissions() {
         <div className="relative flex-1 min-w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900/30 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444]/30 transition-all"
             placeholder="Search by patient, admission no., department, room…" />
         </div>
         {['ADMITTED', 'DISCHARGED', 'ALL'].map(s => (

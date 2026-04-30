@@ -175,7 +175,7 @@ function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFlo
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Building {bIdx + 1}</span>
         </div>
         <input
-          className="flex-1 min-w-0 text-sm font-semibold text-white bg-transparent border-b border-white/10 pb-0.5 focus:outline-none focus:border-white/30 placeholder-white/20"
+          className="flex-1 min-w-0 text-sm font-semibold text-white bg-transparent border-b border-white/10 pb-0.5 focus:outline-none focus:border-slate-300 dark:focus:border-[#444444]/30 placeholder-white/20"
           value={building.name}
           onChange={(e) => updateBuilding(bIdx, "name", e.target.value)}
           placeholder={`Building ${bIdx + 1}`}
