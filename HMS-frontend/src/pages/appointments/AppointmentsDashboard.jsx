@@ -243,7 +243,7 @@ function AppointmentsDashboard() {
     const index = doctors.findIndex((d) => d.id === doctorId);
     return APPT_COLORS[(index >= 0 ? index : 0) % APPT_COLORS.length];
   };
-  const renderListView = () => <div className="bg-white dark:bg-[#111111] rounded-lg shadow-sm border border-slate-200 dark:border-[#222222] overflow-hidden flex flex-col flex-1"><div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-[#222222]"><h3 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">All Appointments</h3><div className="flex gap-2"><div className="relative"><select
+  const renderListView = () => <div className="bg-white dark:bg-[#111111] overflow-hidden flex flex-col flex-1"><div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-[#222222]"><h3 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">All Appointments</h3><div className="flex gap-2"><div className="relative"><select
     value={selectedDoctorId}
     onChange={(e) => setSelectedDoctorId(e.target.value)}
     className="appearance-none bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] text-slate-700 dark:text-slate-500 text-sm font-medium py-2 pl-4 pr-10 rounded-lg outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/20 transition-all cursor-pointer"
@@ -296,25 +296,42 @@ function AppointmentsDashboard() {
       rows.push(<div className="grid grid-cols-7" key={day.toISOString()}>{days}</div>);
       days = [];
     }
-    return <div className="flex-1 flex flex-col bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] overflow-hidden"><div className="grid grid-cols-7 border-b border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a]">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => <div key={d} className="py-3 text-center text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider border-r last:border-0 border-slate-200 dark:border-[#222222]">{d}</div>)}</div><div className="flex-1 overflow-y-auto minimal-scrollbar">{rows}</div></div>;
+    return <div className="flex-1 flex flex-col bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] overflow-hidden">
+      <div className="grid grid-cols-7 border-b border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a]">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) =>
+        <div key={d} className="py-3 text-center text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider border-r last:border-0 border-slate-200 dark:border-[#222222]">{d}</div>)}
+      </div>
+      <div className="flex-1 overflow-y-auto minimal-scrollbar">{rows}</div></div>;
   };
   return <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505]">{
     /* Header */
-  }<header className="flex-none px-6 py-5 bg-white dark:bg-[#111111] border-b border-slate-200 dark:border-[#222222]"><div className="flex items-center justify-between mb-0"><div><h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-400 tracking-tight">{viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}</h1><p className="text-sm text-slate-500 dark:text-[#888888] mt-1 font-medium">{viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}</p></div><div className="flex items-center gap-3"><button
-    onClick={() => setViewMode(viewMode === "list" ? "calendar" : "list")}
-    className="btn-secondary"
-  ><CalendarIcon className="w-4 h-4" />{viewMode === "list" ? "Calendar View" : "List View"}</button><button
-    onClick={() => setIsBookingModalOpen(true)}
-    className="btn-primary"
-  ><Plus className="w-4 h-4" />
-      New Appointment
-    </button></div></div>{viewMode === "list" && <div className="flex gap-2 mt-6 overflow-x-auto minimal-scrollbar pb-1">{["all", "upcoming", "today", "completed", "cancelled"].map((f) => <button
-      key={f}
-      onClick={() => setListFilter(f)}
-      className={`px-4 py-2 text-sm font-semibold rounded-lg capitalize transition-all ${listFilter === f ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-md" : "text-slate-600 dark:text-[#888888] hover:bg-slate-100 dark:hover:bg-[#222222]"}`}
-    >{f === "all" ? "All Appointments" : f}</button>)}</div>}</header>{
+  }<header className="flex-none dark:bg-[#111111]">
+      <div className="flex items-center justify-between mb-0">
+        <div>
+          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-400 tracking-tight">
+            {viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-[#888888] mt-1 font-medium">
+            {viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setViewMode(viewMode === "list" ? "calendar" : "list")}
+            className="btn-secondary"
+          ><CalendarIcon className="w-4 h-4" />{viewMode === "list" ? "Calendar View" : "List View"}</button><button
+            onClick={() => setIsBookingModalOpen(true)}
+            className="btn-primary"
+          ><Plus className="w-4 h-4" />
+            New Appointment
+          </button></div></div>{viewMode === "list" &&
+            <div className="flex gap-2 mt-6 overflow-x-auto minimal-scrollbar pb-1">
+              {["all", "upcoming", "today", "completed", "cancelled"].map((f) =>
+                <button
+                  key={f}
+                  onClick={() => setListFilter(f)}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg capitalize transition-all ${listFilter === f ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-md" : "text-slate-600 dark:text-[#888888] hover:bg-slate-100 dark:hover:bg-[#222222]"}`}
+                >{f === "all" ? "All Appointments" : f}</button>)}</div>}</header>{
       /* Content Area */
-    }<div className="flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden flex flex-col gap-6">{viewMode === "calendar" && <div className="flex items-center justify-between pb-2"><div className="flex items-center bg-white dark:bg-[#111111] rounded-lg p-1 shadow-sm border border-slate-200 dark:border-[#333333]">{["day", "week", "month"].map((v) => <button
+    }<div className="flex-1 py-6 shadow-sm overflow-hidden flex flex-col gap-6">{viewMode === "calendar" && <div className="flex items-center justify-between pb-2"><div className="flex items-center bg-white dark:bg-[#111111] rounded-lg p-1 shadow-sm border border-slate-200 dark:border-[#333333]">{["day", "week", "month"].map((v) => <button
       key={v}
       onClick={() => setCalendarView(v)}
       className={`px-4 py-1.5 text-sm font-semibold rounded-lg capitalize transition-all ${calendarView === v ? "bg-white dark:bg-white dark:text-slate-950 text-slate-950 shadow-md" : "text-slate-500 dark:text-[#888888] hover:text-slate-700 dark:hover:text-[#cccccc]"}`}
