@@ -150,6 +150,10 @@ const appointmentsApi = {
     const { data } = await api.get(`/appointments/patient/${patientId}`);
     return data;
   },
+  getPastDoctors: async (patientId, hospitalId) => {
+    const { data } = await api.get(`/appointments/patient/${patientId}/past-doctors`, { params: { hospitalId } });
+    return data;
+  },
   create: async (payload) => {
     const { data } = await api.post("/appointments", payload);
     return data;

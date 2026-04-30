@@ -41,6 +41,13 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getAppointmentsByPatient(patientId));
     }
 
+    @GetMapping("/patient/{patientId}/past-doctors")
+    public ResponseEntity<List<AppointmentDto>> getPastDoctors(
+            @PathVariable Integer patientId,
+            @RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(appointmentService.getPastDoctorsForPatient(patientId, hospitalId));
+    }
+
     @PostMapping
     public ResponseEntity<AppointmentDto> createAppointment(
             @RequestBody AppointmentRequest request,

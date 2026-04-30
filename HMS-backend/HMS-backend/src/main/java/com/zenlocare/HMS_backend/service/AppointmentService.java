@@ -13,6 +13,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 @RequiredArgsConstructor
@@ -49,16 +50,49 @@ public class AppointmentService {
                                 .collect(Collectors.toList());
         }
 
+        public List<AppointmentDto> getPastDoctorsForPatient(Integer patientId, UUID hospitalId) {
+                return appointmentRepository.findDistinctDoctorsByPatient(patientId, hospitalId).stream()
+                                .map(d -> AppointmentDto.builder()
+                                                .doctorId(d.getId())
+                                                .doctorName(d.getUser().getFirstName() + " " + d.getUser().getLastName())
+                                                .doctorSpecialization(d.getSpecialization())
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
         @Transactional
         public AppointmentDto createAppointment(AppointmentRequest request, UUID createdById) {
                 Hospital hospital = hospitalRepository.findById(request.getHospitalId())
                                 .orElseThrow(() -> new RuntimeException("Hospital not found"));
 
-                Patient patient = patientRepository.findById(request.getPatientId())
-                                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                // Resolve patient — create a minimal walk-in record for emergencies
+                Patient patient;
+                if (request.getPatientId() != null) {
+                        patient = patientRepository.findById(request.getPatientId())
+                                        .orElseThrow(() -> new RuntimeException("Patient not found"));
+                } else if (request.getEmergencyPatientName() != null && !request.getEmergencyPatientName().isBlank()) {
+                        String[] parts = request.getEmergencyPatientName().trim().split("\\s+", 2);
+                        long count = patientRepository.countByHospitalId(hospital.getId());
+                        String mrn = "MRN-" + String.format("%04d", count + 1);
+                        patient = patientRepository.save(Patient.builder()
+                                        .hospital(hospital)
+                                        .mrn(mrn)
+                                        .firstName(parts[0])
+                                        .lastName(parts.length > 1 ? parts[1] : "—")
+                                        .dob(LocalDate.now())
+                                        .gender("U")
+                                        .phone(request.getEmergencyPhone())
+                                        .build());
+                } else {
+                        throw new RuntimeException("Patient is required");
+                }
 
-                Doctor doctor = doctorRepository.findById(request.getDoctorId())
-                                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                // Doctor is optional for emergencies
+                Doctor doctor = null;
+                if (request.getDoctorId() != null) {
+                        doctor = doctorRepository.findById(request.getDoctorId())
+                                        .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                }
 
                 User createdBy = userRepository.findById(createdById)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -69,22 +103,24 @@ public class AppointmentService {
                                         .orElseThrow(() -> new RuntimeException("Price List not found"));
                 }
 
-                LocalTime apptTime = request.getApptTime();
-                LocalTime apptEndTime = apptTime
-                                .plusMinutes(doctor.getSlotDurationMin() != null ? doctor.getSlotDurationMin() : 15);
+                LocalTime apptTime = request.getApptTime() != null ? request.getApptTime() : LocalTime.now().withSecond(0).withNano(0);
+                LocalTime apptEndTime = doctor != null
+                                ? apptTime.plusMinutes(doctor.getSlotDurationMin() != null ? doctor.getSlotDurationMin() : 15)
+                                : apptTime.plusMinutes(15);
 
-                // Check for slot collisions
-                long overlappingCount = appointmentRepository.countOverlappingAppointments(
-                                doctor.getId(), request.getApptDate(), apptTime, apptEndTime);
-
-                if (overlappingCount > 0) {
-                        throw new RuntimeException(
-                                        "Slot collision detected for Doctor on the specified date and time.");
+                // Check for slot collisions (only when doctor is assigned)
+                if (doctor != null) {
+                        long overlappingCount = appointmentRepository.countOverlappingAppointments(
+                                        doctor.getId(), request.getApptDate(), apptTime, apptEndTime);
+                        if (overlappingCount > 0) {
+                                throw new RuntimeException("Slot collision detected for Doctor on the specified date and time.");
+                        }
                 }
 
                 // Generate Token Number
-                Integer currentTokens = appointmentRepository.countByDoctorIdAndApptDate(doctor.getId(),
-                                request.getApptDate());
+                Integer currentTokens = doctor != null
+                                ? appointmentRepository.countByDoctorIdAndApptDate(doctor.getId(), request.getApptDate())
+                                : 0;
                 int assignedToken = currentTokens + 1;
 
                 // Auto-create checkup booking if a package is selected

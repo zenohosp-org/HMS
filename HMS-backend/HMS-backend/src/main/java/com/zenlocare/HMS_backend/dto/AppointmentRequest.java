@@ -20,6 +20,10 @@ public class AppointmentRequest {
     private UUID priceListId;
     private UUID packageId;
 
+    // Emergency walk-in — patient can be created on the fly
+    private String emergencyPatientName;
+    private String emergencyPhone;
+
     // For status updates
     private Appointment.AppointmentStatus status;
     private String cancelledReason;

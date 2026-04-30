@@ -1,6 +1,7 @@
 package com.zenlocare.HMS_backend.repository;
 
 import com.zenlocare.HMS_backend.entity.Appointment;
+import com.zenlocare.HMS_backend.entity.Doctor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,6 +25,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     List<Appointment> findByPatientIdOrderByApptDateDescApptTimeDesc(Integer patientId);
 
     Optional<Appointment> findByIdAndHospitalId(UUID id, UUID hospitalId);
+
+    @Query("SELECT DISTINCT a.doctor FROM Appointment a WHERE a.patient.id = :patientId AND a.hospital.id = :hospitalId AND a.doctor IS NOT NULL AND a.status NOT IN ('CANCELLED', 'NO_SHOW')")
+    List<Doctor> findDistinctDoctorsByPatient(@Param("patientId") Integer patientId, @Param("hospitalId") UUID hospitalId);
 
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.apptDate = :apptDate")
     Integer countByDoctorIdAndApptDate(@Param("doctorId") UUID doctorId, @Param("apptDate") LocalDate apptDate);

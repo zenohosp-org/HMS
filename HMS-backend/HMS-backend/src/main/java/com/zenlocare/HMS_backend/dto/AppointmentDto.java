@@ -51,9 +51,9 @@ public class AppointmentDto {
         public static AppointmentDto fromEntity(Appointment a) {
                 String pName = a.getPatient().getFirstName()
                                 + (a.getPatient().getLastName() != null ? " " + a.getPatient().getLastName() : "");
-                String dName = a.getDoctor().getUser().getFirstName() + (a.getDoctor().getUser().getLastName() != null
-                                ? " " + a.getDoctor().getUser().getLastName()
-                                : "");
+                String dName = a.getDoctor() != null
+                                ? a.getDoctor().getUser().getFirstName() + (a.getDoctor().getUser().getLastName() != null ? " " + a.getDoctor().getUser().getLastName() : "")
+                                : null;
                 String creatorName = a.getCreatedBy().getFirstName()
                                 + (a.getCreatedBy().getLastName() != null ? " " + a.getCreatedBy().getLastName() : "");
 
@@ -64,9 +64,9 @@ public class AppointmentDto {
                                 .patientId(a.getPatient().getId())
                                 .patientName(pName)
                                 .patientPhone(a.getPatient().getPhone())
-                                .doctorId(a.getDoctor().getId())
+                                .doctorId(a.getDoctor() != null ? a.getDoctor().getId() : null)
                                 .doctorName(dName)
-                                .doctorSpecialization(a.getDoctor().getSpecialization())
+                                .doctorSpecialization(a.getDoctor() != null ? a.getDoctor().getSpecialization() : null)
                                 .apptDate(a.getApptDate())
                                 .apptTime(a.getApptTime())
                                 .apptEndTime(a.getApptEndTime())
