@@ -375,7 +375,7 @@ export default function Billing() {
                               <button
                                 onClick={() => handleMarkPaid(inv.id)}
                                 disabled={markingId === inv.id}
-                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-white hover:bg-slate-900 dark:bg-white disabled:opacity-50 text-white text-xs font-bold transition-colors">
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-white hover:bg-slate-700 dark:hover:bg-slate-200 disabled:opacity-50 text-white dark:text-slate-900 text-xs font-bold transition-colors">
                                 {markingId === inv.id
                                   ? <Loader2 className="w-3 h-3 animate-spin" />
                                   : <CheckCircle2 className="w-3 h-3" />}

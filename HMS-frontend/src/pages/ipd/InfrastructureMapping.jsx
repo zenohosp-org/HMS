@@ -339,8 +339,8 @@ export default function InfrastructureMapping() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="shrink-0 py-6">
-        <div className="flex items-start justify-between gap-6">
+      <div className="shrink-0">
+        <div className="py-6 flex items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Network className="w-5 h-5 text-slate-400" />

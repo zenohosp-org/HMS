@@ -108,7 +108,7 @@ function Sidebar({ isOpen }) {
       href={app.href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-slate-700 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white group"
+      className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 text-slate-700 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white group"
     ><Icon className="w-4 h-4 shrink-0" /><span className="truncate flex-1">{app.label}</span><ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" /></a> : <a
       key={app.href}
       href={app.href}
@@ -136,7 +136,7 @@ function Sidebar({ isOpen }) {
                 ${isOpen ? "w-60" : "w-16"}`}
   >{
       /* Logo */
-    }<div className={`flex items-center border-b border-slate-200 dark:border-[#222222] h-14 ${isOpen ? "gap-3 px-4" : "justify-center"}`}><div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0"><Activity className="w-4 h-4 text-white" /></div>{isOpen && <div className="overflow-hidden"><p className="font-bold text-sm leading-tight tracking-wider text-slate-900 dark:text-white">ZenoHosp</p><p className="text-xs text-slate-600 dark:text-[#888888] truncate mt-0.5">{user?.hospitalName}</p></div>}</div>{
+    }<div className={`flex items-center border-b border-slate-200 dark:border-[#222222] h-14 ${isOpen ? "gap-3 px-4" : "justify-center"}`}><div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0"><Activity className="w-4 h-4 text-white dark:text-slate-900" /></div>{isOpen && <div className="overflow-hidden"><p className="font-bold text-sm leading-tight tracking-wider text-slate-900 dark:text-white">ZenoHosp</p><p className="text-xs text-slate-600 dark:text-[#888888] truncate mt-0.5">{user?.hospitalName}</p></div>}</div>{
       /* Navigation */
     }<nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">
       Main Menu
