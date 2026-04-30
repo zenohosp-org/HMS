@@ -240,3 +240,16 @@ body {
     margin: 1.5cm;
   }
 }
+
+/* Off-screen iframe used for per-invoice printing — must not be display:none
+   or the browser won't render the content before print() is called. */
+.print-frame {
+  position: fixed;
+  right: -9999px;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  border: none;
+  opacity: 0;
+  pointer-events: none;
+}

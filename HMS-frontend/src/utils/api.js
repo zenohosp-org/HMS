@@ -353,9 +353,21 @@ const admissionApi = {
   }
 };
 
+const infrastructureApi = {
+  get: async (hospitalId) => {
+    const { data } = await api.get("/ipd/infrastructure", { params: { hospitalId } });
+    return data;
+  },
+  save: async (hospitalId, buildings) => {
+    const { data } = await api.post("/ipd/infrastructure", buildings, { params: { hospitalId } });
+    return data;
+  },
+};
+
 var stdin_default = api;
 export {
   admissionApi,
+  infrastructureApi,
   appointmentsApi,
   authApi,
   bankApi,

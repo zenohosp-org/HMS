@@ -58,6 +58,36 @@ public class Patient {
     @Column(name = "aadhaar_number", length = 12)
     private String aadhaarNumber;
 
+    @Column(name = "marital_status", length = 20)
+    private String maritalStatus;
+
+    @Column(length = 100)
+    private String occupation;
+
+    @Column(name = "emergency_contact_name", length = 100)
+    private String emergencyContactName;
+
+    @Column(name = "emergency_contact_phone", length = 20)
+    private String emergencyContactPhone;
+
+    @Column(name = "emergency_contact_relation", length = 50)
+    private String emergencyContactRelation;
+
+    @Column(name = "insurance_scheme", length = 50)
+    private String insuranceScheme;
+
+    @Column(name = "insurance_policy_number", length = 50)
+    private String insurancePolicyNumber;
+
+    @Column(columnDefinition = "TEXT")
+    private String allergies;
+
+    @Column(name = "chronic_conditions", columnDefinition = "TEXT")
+    private String chronicConditions;
+
+    @Column(name = "referred_by", length = 100)
+    private String referredBy;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

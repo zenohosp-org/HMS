@@ -150,7 +150,86 @@ export default function Billing() {
     }
   }
 
-  const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-600 uppercase tracking-widest text-left'
+  const printInvoice = (inv) => {
+    const items = inv.items ?? []
+    const total = Number(inv.total)
+    const discount = Number(inv.discount || 0)
+    const subtotal = total + discount
+    const statusCls = { PAID: 'background:#d1fae5;color:#065f46', UNPAID: 'background:#fef3c7;color:#92400e', CANCELLED: 'background:#fee2e2;color:#991b1b' }
+
+    const itemRows = items.map(item => `
+      <tr>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.itemType?.replace('_', ' ') ?? ''}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.description ?? ''}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:center">×${item.quantity}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:right">₹${Number(item.unitPrice).toLocaleString('en-IN')}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;font-weight:600;color:#111;text-align:right">₹${Number(item.totalPrice).toLocaleString('en-IN')}</td>
+      </tr>`).join('')
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+      <title>Invoice ${inv.invoiceNumber}</title>
+      <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:36px}table{width:100%;border-collapse:collapse}@media print{body{padding:24px}}</style>
+    </head><body>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #10b981">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:#10b981">ZenoHosp HMS</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px">${user?.hospitalName ?? 'Hospital Management System'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:700">${inv.invoiceNumber}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px">${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}</div>
+          <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusCls[inv.status] ?? statusCls.UNPAID}">${inv.status}</span></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Billed To</div>
+        <div style="font-size:15px;font-weight:700">${inv.patientName ?? '—'}</div>
+        ${inv.patientMrn ? `<div style="font-size:12px;color:#6b7280">MRN: ${inv.patientMrn}</div>` : ''}
+        ${inv.paymentMethod ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">Payment Method: ${inv.paymentMethod}</div>` : ''}
+      </div>
+
+      <table>
+        <thead>
+          <tr style="background:#f3f4f6">
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;border-bottom:1px solid #e5e7eb">Type</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;border-bottom:1px solid #e5e7eb">Description</th>
+            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;border-bottom:1px solid #e5e7eb">Qty</th>
+            <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;border-bottom:1px solid #e5e7eb">Unit Price</th>
+            <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;border-bottom:1px solid #e5e7eb">Total</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:12px">
+        <div style="min-width:220px">
+          ${discount > 0 ? `
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#4b5563"><span>Subtotal</span><span>₹${subtotal.toLocaleString('en-IN')}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#4b5563"><span>Discount</span><span style="color:#ef4444">−₹${discount.toLocaleString('en-IN')}</span></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:8px 0 4px;font-size:15px;font-weight:800;color:#111;border-top:2px solid #1a1a1a;margin-top:4px"><span>Total</span><span>₹${total.toLocaleString('en-IN')}</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:40px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center">
+        Generated by ZenoHosp HMS · ${window.location.hostname} · Thank you for your payment
+      </div>
+    </body></html>`
+
+    const iframe = document.createElement('iframe')
+    iframe.className = 'print-frame'
+    document.body.appendChild(iframe)
+    iframe.contentDocument.open()
+    iframe.contentDocument.write(html)
+    iframe.contentDocument.close()
+    setTimeout(() => {
+      iframe.contentWindow.focus()
+      iframe.contentWindow.print()
+      iframe.contentWindow.onafterprint = () => document.body.removeChild(iframe)
+    }, 250)
+  }
+
+  const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left'
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">
@@ -303,9 +382,9 @@ export default function Billing() {
                               </button>
                             )}
                             <button
-                              onClick={() => window.print()}
-                              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
-                              title="Print">
+                              onClick={() => printInvoice(inv)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
+                              title="Print Invoice">
                               <Printer className="w-3.5 h-3.5" />
                             </button>
                           </div>

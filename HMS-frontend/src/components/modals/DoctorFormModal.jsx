@@ -61,6 +61,22 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
   const inputClasses = "w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:ring-white/50 focus:border-slate-900 dark:border-white transition-all";
   const labelClasses = "block text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wider mb-2";
 
+  const slotMin = doctorForm.slotDurationMin || 0;
+  const slotsPerDay = doctorForm.maxDailySlots || 0;
+  const workingDaysCount = doctorForm.availableDays
+    ? doctorForm.availableDays.split(",").filter(Boolean).length
+    : 0;
+  const totalMinPerDay = slotMin * slotsPerDay;
+  const totalMinPerWeek = totalMinPerDay * workingDaysCount;
+  const fmtDuration = (mins) => {
+    if (!mins) return "—";
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h && m) return `${h}h ${m}m`;
+    if (h) return `${h} hrs`;
+    return `${m} min`;
+  };
+
   const professionalFields = (
     <>
       <div className="space-y-4">
@@ -76,9 +92,48 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
           </div>
           <div>
             <label className={labelClasses}>Qualification *</label>
-            <input required type="text" value={doctorForm.qualification}
+            <select required value={doctorForm.qualification}
               onChange={(e) => setDoctorForm({ ...doctorForm, qualification: e.target.value })}
-              className={inputClasses} placeholder="e.g., MBBS, MD" />
+              className={inputClasses + " cursor-pointer"}>
+              <option value="">Select Qualification</option>
+              <optgroup label="Allopathy — Undergraduate">
+                <option value="MBBS">MBBS</option>
+              </optgroup>
+              <optgroup label="Allopathy — Postgraduate">
+                <option value="MBBS, MD">MBBS, MD</option>
+                <option value="MBBS, MS">MBBS, MS</option>
+                <option value="MBBS, DNB">MBBS, DNB</option>
+                <option value="MBBS, Diploma">MBBS, Diploma</option>
+              </optgroup>
+              <optgroup label="Allopathy — Superspecialty">
+                <option value="MBBS, MD, DM">MBBS, MD, DM</option>
+                <option value="MBBS, MS, MCh">MBBS, MS, MCh</option>
+                <option value="MBBS, DNB, DrNB">MBBS, DNB, DrNB</option>
+              </optgroup>
+              <optgroup label="Allopathy — International">
+                <option value="MBBS, FRCS">MBBS, FRCS</option>
+                <option value="MBBS, MRCP">MBBS, MRCP</option>
+                <option value="MBBS, MRCS">MBBS, MRCS</option>
+                <option value="MD (USA/UK)">MD (USA/UK)</option>
+              </optgroup>
+              <optgroup label="Dentistry">
+                <option value="BDS">BDS</option>
+                <option value="BDS, MDS">BDS, MDS</option>
+                <option value="BDS, DNB">BDS, DNB</option>
+              </optgroup>
+              <optgroup label="AYUSH">
+                <option value="BAMS">BAMS (Ayurveda)</option>
+                <option value="BAMS, MD (Ay.)">BAMS, MD (Ay.)</option>
+                <option value="BHMS">BHMS (Homeopathy)</option>
+                <option value="BUMS">BUMS (Unani)</option>
+                <option value="BNYS">BNYS (Naturopathy)</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="PhD">PhD (Medical)</option>
+                <option value="MSc (Nursing)">MSc (Nursing)</option>
+                <option value="MPH">MPH (Public Health)</option>
+              </optgroup>
+            </select>
           </div>
           <div>
             <label className={labelClasses}>Medical Registration Number *</label>
@@ -143,6 +198,33 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
             <input required type="number" min="1" value={doctorForm.maxDailySlots || ""}
               onChange={(e) => setDoctorForm({ ...doctorForm, maxDailySlots: parseInt(e.target.value) || 0 })}
               className={inputClasses} />
+          </div>
+
+          {/* Schedule summary */}
+          <div className="col-span-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-4">
+            <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-3">Daily Schedule Summary</p>
+            <div className="grid grid-cols-4 gap-3 text-center">
+              <div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Slot</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{slotMin > 0 ? `${slotMin} min` : "—"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Slots / Day</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{slotsPerDay > 0 ? slotsPerDay : "—"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Hrs / Day</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{fmtDuration(totalMinPerDay)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Days / Week</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{workingDaysCount > 0 ? workingDaysCount : "—"}</p>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-emerald-100 dark:border-emerald-500/20 flex items-center justify-between">
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total Working Hours / Week</p>
+              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{fmtDuration(totalMinPerWeek)}</p>
+            </div>
           </div>
         </div>
       </div>

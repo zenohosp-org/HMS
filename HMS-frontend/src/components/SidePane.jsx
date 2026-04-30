@@ -20,13 +20,13 @@ export default function SidePane({ isOpen, onClose, title, children, footer }) {
   if (!rendered) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div
-        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
-        onClick={onClose}
-      />
+    <div
+      className={`fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
+      onClick={onClose}
+    >
       <div
         className={`relative flex flex-col h-full w-[520px] max-w-[95vw] bg-white dark:bg-[#111111] border-l border-slate-200 dark:border-[#222222] shadow-2xl transition-transform duration-300 ease-in-out ${visible ? "translate-x-0" : "translate-x-full"}`}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-[#1a1a1a] shrink-0">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">{title}</h2>

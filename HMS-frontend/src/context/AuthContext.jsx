@@ -113,6 +113,22 @@ function AuthProvider({ children }) {
     };
   }, [forceLogout]);
 
+  // ── Refresh user from server ────────────────────────────────────────────
+  // Used by SsoCallback so the user state is properly set before navigating
+  // to a protected route. Calling authApi.me() directly in SsoCallback would
+  // bypass setUser, leaving ProtectedRoute with user=null even on success.
+  const refreshUser = useCallback(async () => {
+    try {
+      const profile = await authApi.me();
+      const mapped = mapProfileToUser(profile);
+      setUser(mapped);
+      userRef.current = mapped;
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   // ── login ───────────────────────────────────────────────────────────────
   const login = useCallback(async (email, password) => {
     setIsLoading(true);
@@ -152,7 +168,7 @@ function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
