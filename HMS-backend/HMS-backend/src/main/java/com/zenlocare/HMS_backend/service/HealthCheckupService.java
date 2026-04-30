@@ -177,6 +177,15 @@ public class HealthCheckupService {
     }
 
     @Transactional
+    public HealthCheckupBooking assignDoctor(UUID bookingId, UUID doctorId) {
+        HealthCheckupBooking booking = bookingRepo.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+        Doctor doctor = doctorId != null ? doctorRepo.findById(doctorId).orElse(null) : null;
+        booking.setAssignedDoctor(doctor);
+        return bookingRepo.save(booking);
+    }
+
+    @Transactional
     public HealthCheckupBooking saveDoctorNotes(UUID bookingId, DoctorNotesRequest req) {
         HealthCheckupBooking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));

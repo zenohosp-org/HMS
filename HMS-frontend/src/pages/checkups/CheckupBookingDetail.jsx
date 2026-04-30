@@ -383,7 +383,7 @@ export default function CheckupBookingDetail() {
           <InfoRow icon={Banknote} label="Package Price" value={`₹${Number(booking.healthPackage?.price || 0).toLocaleString("en-IN")}`} />
           <InfoRow icon={Calendar} label="Scheduled" value={booking.scheduledDate} />
           <InfoRow icon={Clock} label="Time" value={booking.scheduledTime || "—"} />
-          <InfoRow icon={Stethoscope} label="Doctor" value={booking.assignedDoctor ? `Dr. ${booking.assignedDoctor.firstName} ${booking.assignedDoctor.lastName}` : "—"} />
+          <InfoRow icon={Stethoscope} label="Doctor" value={booking.assignedDoctor ? `Dr. ${booking.assignedDoctor.user?.firstName ?? booking.assignedDoctor.firstName ?? ""} ${booking.assignedDoctor.user?.lastName ?? booking.assignedDoctor.lastName ?? ""}`.trim() : "—"} />
           <InfoRow
             icon={Banknote}
             label="Payment"

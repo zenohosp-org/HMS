@@ -5,7 +5,7 @@ import { checkupApi, patientApi, doctorsApi } from "@/utils/api";
 import {
   ClipboardList, Plus, Search, X, Calendar, Clock, User,
   AlertCircle, CheckCircle2, Loader2, ChevronRight,
-  Clock3, Activity, XCircle, UserCheck, Banknote,
+  Clock3, Activity, UserCheck, Banknote, UserPlus, Check,
 } from "lucide-react";
 
 const STATUS_CONFIG = {
@@ -223,12 +223,74 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
   );
 }
 
+function doctorName(d) {
+  if (!d) return null;
+  const first = d.user?.firstName ?? d.firstName ?? "";
+  const last  = d.user?.lastName  ?? d.lastName  ?? "";
+  return `Dr. ${first} ${last}`.trim();
+}
+
+function AssignDoctorCell({ booking, doctors, onAssigned }) {
+  const [open, setOpen]   = useState(false);
+  const [saving, setSaving] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const assign = async (doctorId) => {
+    setSaving(true);
+    try {
+      await checkupApi.assignDoctor(booking.id, doctorId || null);
+      onAssigned();
+    } finally { setSaving(false); setOpen(false); }
+  };
+
+  const name = doctorName(booking.assignedDoctor);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-1.5 text-sm transition-colors ${name ? "text-slate-700 dark:text-[#ccc] hover:text-emerald-600 dark:hover:text-emerald-400" : "text-slate-400 dark:text-[#555] hover:text-emerald-600 dark:hover:text-emerald-400"}`}
+      >
+        {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3 shrink-0" />}
+        <span>{name ?? "Assign doctor"}</span>
+      </button>
+      {open && (
+        <div className="absolute z-30 left-0 top-full mt-1 w-56 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333] rounded-xl shadow-xl overflow-hidden">
+          <button onClick={() => assign(null)} className="w-full text-left px-3 py-2 text-xs text-slate-400 dark:text-[#666] hover:bg-slate-50 dark:hover:bg-[#222] border-b border-slate-100 dark:border-[#2a2a2a]">
+            — Unassign doctor
+          </button>
+          {doctors.map(d => {
+            const dn = doctorName(d);
+            const isCurrent = booking.assignedDoctor?.id === d.id;
+            return (
+              <button key={d.id} onClick={() => assign(d.id)} className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222] flex items-center justify-between gap-2 border-b border-slate-100 dark:border-[#2a2a2a] last:border-0">
+                <div>
+                  <p className="text-sm font-medium text-slate-800 dark:text-white">{dn}</p>
+                  <p className="text-xs text-slate-400">{d.specialization}</p>
+                </div>
+                {isCurrent && <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CheckupBookings() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const hospitalId = user?.hospitalId;
 
   const [bookings, setBookings] = useState([]);
+  const [doctors, setDoctors] = useState([]);
   const [stats, setStats] = useState({ today: 0, scheduled: 0, inProgress: 0, completed: 0 });
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -240,11 +302,12 @@ export default function CheckupBookings() {
 
   const load = async () => {
     setLoading(true);
-    const [b, s] = await Promise.all([
+    const [b, s, docs] = await Promise.all([
       checkupApi.getBookings(hospitalId).catch(() => []),
       checkupApi.getStats(hospitalId).catch(() => ({ today: 0, scheduled: 0, inProgress: 0, completed: 0 })),
+      doctorsApi.list(hospitalId).catch(() => []),
     ]);
-    setBookings(b); setStats(s); setLoading(false);
+    setBookings(b); setStats(s); setDoctors(docs); setLoading(false);
   };
 
   const filtered = bookings.filter(b => {
@@ -343,7 +406,7 @@ export default function CheckupBookings() {
                       <p className="text-xs text-slate-400 mt-0.5">{b.scheduledTime || "—"}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-sm text-slate-600 dark:text-[#aaa]">{b.assignedDoctor ? `Dr. ${b.assignedDoctor.firstName} ${b.assignedDoctor.lastName}` : <span className="text-slate-300 dark:text-[#444]">—</span>}</p>
+                      <AssignDoctorCell booking={b} doctors={doctors} onAssigned={load} />
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${b.paymentStatus === "PAID" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : b.paymentStatus === "PARTIAL" ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" : "bg-slate-100 text-slate-500 dark:bg-[#222] dark:text-[#666]"}`}>

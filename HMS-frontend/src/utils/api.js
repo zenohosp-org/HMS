@@ -454,6 +454,10 @@ const checkupApi = {
     const { data } = await api.patch(`/health-checkups/bookings/${bookingId}/doctor-notes`, payload);
     return data;
   },
+  assignDoctor: async (bookingId, doctorId) => {
+    const { data } = await api.patch(`/health-checkups/bookings/${bookingId}/doctor`, { doctorId: doctorId || null });
+    return data;
+  },
   getStats: async (hospitalId) => {
     const { data } = await api.get("/health-checkups/stats", { params: { hospitalId } });
     return data;

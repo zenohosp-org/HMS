@@ -91,6 +91,14 @@ public class HealthCheckupController {
         return ResponseEntity.ok(service.updateResult(id, resultId, req));
     }
 
+    @PatchMapping("/bookings/{id}/doctor")
+    public ResponseEntity<HealthCheckupBooking> assignDoctor(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body) {
+        UUID doctorId = body.get("doctorId") != null ? UUID.fromString(body.get("doctorId")) : null;
+        return ResponseEntity.ok(service.assignDoctor(id, doctorId));
+    }
+
     @PatchMapping("/bookings/{id}/doctor-notes")
     public ResponseEntity<HealthCheckupBooking> saveDoctorNotes(
             @PathVariable UUID id,
