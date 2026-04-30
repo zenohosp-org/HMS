@@ -323,7 +323,7 @@ function AppointmentsDashboard() {
           ><Plus className="w-4 h-4" />
             New Appointment
           </button></div></div>{viewMode === "list" &&
-            <div className="flex gap-2 mt-6 overflow-x-auto minimal-scrollbar pb-1">
+            <div className="bg-white p-3 flex gap-2 mt-6 overflow-x-auto minimal-scrollbar pb-1">
               {["all", "upcoming", "today", "completed", "cancelled"].map((f) =>
                 <button
                   key={f}
