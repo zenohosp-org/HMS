@@ -8,7 +8,7 @@ import GenerateRoomsModal from "./GenerateRoomsModal";
 import AllocatePatientModal from "./AllocatePatientModal";
 import AssignAttenderModal from "./AssignAttenderModal";
 import RoomDetailPanel from "./RoomDetailPanel";
-function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate }) {
+function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate, onDelete }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -19,35 +19,56 @@ function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
-  return <div ref={ref} className="relative shrink-0"><button
-    onClick={(e) => {
-      e.stopPropagation();
-      setOpen((v) => !v);
-    }}
-    className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
-  ><MoreVertical className="w-5 h-5" /></button>{open && <div className="absolute right-0 top-full mt-1 z-20 w-44 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl shadow-lg overflow-hidden">{room.status === "AVAILABLE" && <button
-    onClick={() => {
-      setOpen(false);
-      onAllocate();
-    }}
-    className="w-full text-left px-4 py-2.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
-  >
-                            Allocate Patient
-                        </button>}{room.status === "OCCUPIED" && <><button
-    onClick={() => {
-      setOpen(false);
-      onAssignAttender();
-    }}
-    className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-[#cccccc] hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors"
-  >{room.attenderName ? "Edit Attender" : "Assign Attender"}</button><div className="border-t border-slate-100 dark:border-[#2a2a2a]" /><button
-    onClick={() => {
-      setOpen(false);
-      onDeallocate();
-    }}
-    className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-  >
-                                Deallocate
-                            </button></>}</div>}</div>;
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
+      >
+        <MoreVertical className="w-5 h-5" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl shadow-lg overflow-hidden">
+          {room.status === "AVAILABLE" && (
+            <button
+              onClick={() => { setOpen(false); onAllocate(); }}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
+            >
+              Allocate Patient
+            </button>
+          )}
+          {room.status === "OCCUPIED" && (
+            <>
+              <button
+                onClick={() => { setOpen(false); onAssignAttender(); }}
+                className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-[#cccccc] hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors"
+              >
+                {room.attenderName ? "Edit Attender" : "Assign Attender"}
+              </button>
+              <div className="border-t border-slate-100 dark:border-[#2a2a2a]" />
+              <button
+                onClick={() => { setOpen(false); onDeallocate(); }}
+                className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+              >
+                Deallocate
+              </button>
+            </>
+          )}
+          {room.status === "AVAILABLE" && (
+            <>
+              <div className="border-t border-slate-100 dark:border-[#2a2a2a]" />
+              <button
+                onClick={() => { setOpen(false); onDelete(); }}
+                className="w-full text-left px-4 py-2.5 text-sm font-medium text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+              >
+                Delete Room
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 function Rooms() {
   const { user } = useAuth();
@@ -89,6 +110,18 @@ function Rooms() {
     } catch (error) {
       console.error("Failed to deallocate", error);
       alert("Failed to deallocate room");
+    }
+  };
+
+  const handleDeleteRoom = async (roomId) => {
+    if (!confirm("Permanently delete this room? This cannot be undone.")) return;
+    try {
+      await api.delete(`/rooms/${roomId}?hospitalId=${user?.hospitalId}`);
+      if (selectedRoom?.id === roomId) setSelectedRoom(null);
+      fetchRooms();
+    } catch (error) {
+      const msg = error?.response?.data?.message || "Failed to delete room";
+      alert(msg);
     }
   };
   const filteredRooms = useMemo(() => {
@@ -143,6 +176,7 @@ function Rooms() {
     onAllocate={() => setShowAllocateModal({ open: true, room })}
     onAssignAttender={() => setShowAttenderModal({ open: true, room })}
     onDeallocate={() => handleDeallocate(room.id)}
+    onDelete={() => handleDeleteRoom(room.id)}
   /></div>)}</div>{
     /* Detail Panel */
   }{selectedRoom && <RoomDetailPanel

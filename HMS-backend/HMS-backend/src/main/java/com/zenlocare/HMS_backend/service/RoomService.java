@@ -225,6 +225,18 @@ public class RoomService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    @Transactional
+    public void deleteRoom(Long roomId, UUID hospitalId) {
+        Room room = roomRepository.findById(roomId)
+                .filter(r -> r.getHospital().getId().equals(hospitalId))
+                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
+        if (room.getStatus() == RoomStatus.OCCUPIED) {
+            throw new IllegalStateException("Cannot delete an occupied room. Deallocate the patient first.");
+        }
+        roomLogRepository.deleteByRoomId(roomId);
+        roomRepository.delete(room);
+    }
+
     private RoomLogDTO toDTO(RoomLog log) {
         return RoomLogDTO.builder()
                 .id(log.getId())
