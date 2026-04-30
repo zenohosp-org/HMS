@@ -141,10 +141,10 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
   };
 
   return (
-    <div className="w-1/3 shrink-0 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl flex flex-col overflow-hidden self-start sticky top-0">
+    <div className="w-1/3 shrink-0 bg-white dark:bg-[#111111] border border-slate-300 dark:border-[#1e1e1e] rounded-2xl flex flex-col overflow-hidden self-start sticky top-0">
 
       {/* Header */}
-      <div className="flex items-start justify-between p-5 border-b border-slate-100 dark:border-[#1e1e1e]">
+      <div className="flex items-start justify-between p-5 border-b border-slate-200 dark:border-[#2a2a2a]">
         <div>
           <p className="text-xs font-semibold text-slate-400 dark:text-[#666666] uppercase tracking-wider mb-1">{room.roomNumber}</p>
           <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
           ) : <p className="text-sm text-slate-400 dark:text-[#999999] pl-1">No patient assigned</p>}
         </div>
 
-        <div className="border-t border-slate-100 dark:border-[#1e1e1e]" />
+        <div className="border-t border-slate-200 dark:border-[#2a2a2a]" />
 
         {/* Attender */}
         <div>
@@ -228,7 +228,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
           ) : <p className="text-sm text-amber-500 dark:text-amber-400 pl-1">No attender assigned</p>}
         </div>
 
-        <div className="border-t border-slate-100 dark:border-[#1e1e1e]" />
+        <div className="border-t border-slate-200 dark:border-[#2a2a2a]" />
 
         {/* Assets */}
         <div>
@@ -246,7 +246,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
             </div>
             <button
               onClick={() => setShowAssign(v => !v)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/20 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/30 transition-colors"
             >
               <Plus className="w-3 h-3" /> Assign
             </button>
@@ -326,7 +326,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-slate-100 dark:border-[#1e1e1e] shrink-0">
+      <div className="p-4 border-t border-slate-200 dark:border-[#2a2a2a] shrink-0">
         <button
           onClick={onViewLogs}
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#2a2a2a] text-sm font-semibold text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white transition-colors"
