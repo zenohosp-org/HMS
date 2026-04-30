@@ -125,11 +125,14 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
 
   // Load past doctors when FOLLOWUP + patient selected
   useEffect(() => {
-    if (!isFollowUp || !patientId || !user?.hospitalId) { setPastDoctors([]); setShowAllDoctors(false); return; }
+    if (!isFollowUp || !patientId || !user?.hospitalId || doctors.length === 0) { setPastDoctors([]); setShowAllDoctors(false); return; }
     appointmentsApi.getPastDoctors(Number(patientId), user.hospitalId)
-      .then(setPastDoctors)
+      .then(dtos => {
+        const pastIds = new Set(dtos.map(d => d.doctorId));
+        setPastDoctors(doctors.filter(d => pastIds.has(d.id)));
+      })
       .catch(() => setPastDoctors([]));
-  }, [isFollowUp, patientId, user?.hospitalId]);
+  }, [isFollowUp, patientId, user?.hospitalId, doctors]);
 
   // Reset past-doctor filter when type changes
   useEffect(() => { setPastDoctors([]); setShowAllDoctors(false); setDoctorSearch(""); }, [type]);
