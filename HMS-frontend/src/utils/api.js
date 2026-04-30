@@ -364,9 +364,45 @@ const infrastructureApi = {
   },
 };
 
+const ambulanceApi = {
+  getTypes: async (hospitalId) => {
+    const { data } = await api.get("/ambulance/types", { params: { hospitalId } });
+    return data;
+  },
+  createType: async (hospitalId, payload) => {
+    const { data } = await api.post("/ambulance/types", payload, { params: { hospitalId } });
+    return data;
+  },
+  deleteType: async (id) => api.delete(`/ambulance/types/${id}`),
+
+  getBookings: async (hospitalId, params = {}) => {
+    const { data } = await api.get("/ambulance/bookings", { params: { hospitalId, ...params } });
+    return data;
+  },
+  createBooking: async (hospitalId, payload) => {
+    const { data } = await api.post("/ambulance/bookings", payload, { params: { hospitalId } });
+    return data;
+  },
+  updateStatus: async (id, payload) => {
+    const { data } = await api.patch(`/ambulance/bookings/${id}/status`, payload);
+    return data;
+  },
+  updateBooking: async (id, payload) => {
+    const { data } = await api.put(`/ambulance/bookings/${id}`, payload);
+    return data;
+  },
+  deleteBooking: async (id) => api.delete(`/ambulance/bookings/${id}`),
+
+  getStats: async (hospitalId) => {
+    const { data } = await api.get("/ambulance/stats", { params: { hospitalId } });
+    return data;
+  },
+};
+
 var stdin_default = api;
 export {
   admissionApi,
+  ambulanceApi,
   infrastructureApi,
   appointmentsApi,
   authApi,
