@@ -198,6 +198,7 @@ public class HealthCheckupService {
         String year = String.valueOf(LocalDate.now().getYear());
         String prefix = "HCP-" + year + "-";
         return bookingRepo.findMaxBookingNumberForYear(hospitalId, year)
+                .filter(max -> max != null)
                 .map(max -> {
                     int seq = Integer.parseInt(max.replace(prefix, "")) + 1;
                     return prefix + String.format("%04d", seq);

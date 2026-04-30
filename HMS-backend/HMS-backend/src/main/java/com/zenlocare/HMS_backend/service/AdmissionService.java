@@ -215,6 +215,7 @@ public class AdmissionService {
         String year = String.valueOf(LocalDateTime.now().getYear());
         String prefix = "IPD-" + year + "-";
         return admissionRepository.findMaxIpdIdForYear(hospitalId, year)
+                .filter(max -> max != null)
                 .map(max -> {
                     int seq = Integer.parseInt(max.replace(prefix, "")) + 1;
                     return prefix + String.format("%04d", seq);

@@ -34,6 +34,7 @@ public class RoomService {
 
     private String generateRoomCode(UUID hospitalId) {
         return roomRepository.findMaxRoomCode(hospitalId)
+                .filter(max -> max != null)
                 .map(max -> {
                     int seq = Integer.parseInt(max.replace("RM-", "")) + 1;
                     return "RM-" + String.format("%04d", seq);

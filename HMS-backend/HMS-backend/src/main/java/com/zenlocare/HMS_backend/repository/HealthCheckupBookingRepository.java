@@ -4,6 +4,7 @@ import com.zenlocare.HMS_backend.entity.CheckupBookingStatus;
 import com.zenlocare.HMS_backend.entity.HealthCheckupBooking;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,7 +22,7 @@ public interface HealthCheckupBookingRepository extends JpaRepository<HealthChec
     List<HealthCheckupBooking> findByPatient_IdOrderByScheduledDateDesc(Integer patientId);
 
     @Query("SELECT MAX(b.bookingNumber) FROM HealthCheckupBooking b WHERE b.hospital.id = :hospitalId AND b.bookingNumber LIKE CONCAT('HCP-', :year, '-%')")
-    Optional<String> findMaxBookingNumberForYear(UUID hospitalId, String year);
+    Optional<String> findMaxBookingNumberForYear(@Param("hospitalId") UUID hospitalId, @Param("year") String year);
 
     long countByHospital_IdAndScheduledDate(UUID hospitalId, LocalDate date);
 
