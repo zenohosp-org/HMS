@@ -364,6 +364,25 @@ const infrastructureApi = {
   },
 };
 
+const assetApi = {
+  getByRoom: async (hospitalId, roomId) => {
+    const { data } = await api.get(`/assets/room/${roomId}`, { params: { hospitalId } });
+    return data;
+  },
+  getAvailable: async (hospitalId, q) => {
+    const { data } = await api.get("/assets/available", { params: { hospitalId, ...(q ? { q } : {}) } });
+    return data;
+  },
+  assignToRoom: async (assetId, roomId, hospitalId) => {
+    const { data } = await api.patch(`/assets/${assetId}/assign-room`, { roomId, hospitalId });
+    return data;
+  },
+  unassignFromRoom: async (assetId) => {
+    const { data } = await api.patch(`/assets/${assetId}/unassign-room`);
+    return data;
+  },
+};
+
 const ambulanceApi = {
   getTypes: async (hospitalId) => {
     const { data } = await api.get("/ambulance/types", { params: { hospitalId } });
@@ -403,6 +422,7 @@ var stdin_default = api;
 export {
   admissionApi,
   ambulanceApi,
+  assetApi,
   infrastructureApi,
   appointmentsApi,
   authApi,

@@ -16,6 +16,8 @@ public interface RoomLogRepository extends JpaRepository<RoomLog, Long> {
 
     List<RoomLog> findByRoomIdOrderByCreatedAtDesc(Long roomId);
 
+    void deleteByRoomId(Long roomId);
+
     @Query("SELECT l FROM RoomLog l WHERE l.hospital.id = :hospitalId AND (" +
            "LOWER(l.roomNumber)   LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(l.patientName)  LIKE LOWER(CONCAT('%', :search, '%')) OR " +

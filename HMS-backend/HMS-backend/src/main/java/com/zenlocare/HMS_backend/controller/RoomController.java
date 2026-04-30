@@ -58,6 +58,14 @@ public class RoomController {
         return ResponseEntity.ok(roomService.deallocatePatient(roomId, hospitalId, resolveFullName(auth)));
     }
 
+    @DeleteMapping("/{roomId}")
+    @PreAuthorize("hasRole('hospital_admin')")
+    public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId,
+            @RequestParam UUID hospitalId) {
+        roomService.deleteRoom(roomId, hospitalId);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/logs")
     @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
     public ResponseEntity<List<RoomLogDTO>> getHospitalLogs(@RequestParam UUID hospitalId,
