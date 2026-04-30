@@ -102,16 +102,13 @@ export default function Admissions() {
           { label: 'Active Admissions', value: counts.ADMITTED, icon: BedDouble, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
           { label: 'Discharged Today', value: admissions.filter(a => a.status === 'DISCHARGED' && a.actualDischargeDate?.startsWith(new Date().toISOString().slice(0, 10))).length, icon: CheckCircle2, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-[#1e1e1e]' },
           { label: 'Overdue Discharge', value: admissions.filter(isOverdue).length, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10' },
-          { label: 'Total This Month', value: admissions.filter(a => a.createdAt?.startsWith(new Date().toISOString().slice(0, 7))).length, icon: Calendar, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-[#1e1e1e]' },
-        ].map(stat => (
-          <div key={stat.label} className="rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] p-4 flex items-center gap-4">
-            <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${stat.bg}`}>
+          { label: 'Total This Month', value: admissions.filter(a => a.createdAt?.startsWith(new Date().toISOString().slice(0, 7))).length, icon: Calendar, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-[#1e1e1e]' },        ].map(stat => (
+          <div key={stat.label} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-6 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.bg}`}>
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
-              <p className="text-xs text-slate-500">{stat.label}</p>
-            </div>
+            <p className="text-sm font-medium text-slate-500 dark:text-[#666]">{stat.label}</p>
+            <p className="text-4xl font-semibold text-slate-900 dark:text-white mt-1 tracking-tight">{stat.value}</p>
           </div>
         ))}
       </div>

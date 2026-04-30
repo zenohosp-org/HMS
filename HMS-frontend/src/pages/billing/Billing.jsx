@@ -60,14 +60,14 @@ function StatCard({ label, value, sub, Icon, accent }) {
     rose: 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400',
   }
   return (
-    <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#1e1e1e] p-5 flex items-center gap-4">
-      <div className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 ${accents[accent]}`}>
+    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-6 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${accents[accent]}`}>
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">{label}</p>
-        <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">{value}</p>
-        {sub && <p className="text-xs text-slate-600 mt-0.5">{sub}</p>}
+        <p className="text-sm font-medium text-slate-500 dark:text-[#666]">{label}</p>
+        <p className="text-4xl font-semibold text-slate-900 dark:text-white mt-1 tracking-tight truncate">{value}</p>
+        {sub && <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{sub}</p>}
       </div>
     </div>
   )
@@ -330,14 +330,14 @@ export default function Billing() {
 
                         <td className="px-5 py-4">
                           <p className="font-bold text-sm text-slate-900 dark:text-white">{inv.invoiceNumber}</p>
-                          <p className="text-xs text-slate-600 mt-0.5">
+                          <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">
                             {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                           </p>
                         </td>
 
                         <td className="px-5 py-4">
                           <p className="font-semibold text-sm text-slate-900 dark:text-white">{inv.patientName ?? '—'}</p>
-                          <p className="text-xs text-slate-600 mt-0.5">{inv.patientMrn ?? ''}</p>
+                          <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{inv.patientMrn ?? ''}</p>
                         </td>
 
                         <td className="px-5 py-4">
