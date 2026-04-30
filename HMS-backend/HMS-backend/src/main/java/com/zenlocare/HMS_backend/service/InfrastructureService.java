@@ -31,37 +31,26 @@ public class InfrastructureService {
 
     @Transactional
     public List<BuildingDto> save(UUID hospitalId, List<BuildingDto> dtos) {
-        // Collect room IDs from new DTO (rooms the admin wants to keep)
-        Set<Long> keptRoomIds = dtos.stream()
-                .flatMap(b -> b.getFloors().stream())
-                .flatMap(f -> f.getWards().stream())
-                .flatMap(w -> w.getRooms().stream())
-                .filter(r -> r.getId() != null)
-                .map(RoomDto::getId)
-                .collect(Collectors.toSet());
+        // Step 1: Find all rooms currently linked to infrastructure wards
+        List<Room> prevInfraRooms = roomRepo.findByHospitalIdAndHospitalWardIsNotNull(hospitalId);
 
-        // Handle rooms that are no longer in the infrastructure
-        List<Room> infraRooms = roomRepo.findByHospitalIdAndHospitalWardIsNotNull(hospitalId);
-        for (Room room : infraRooms) {
-            if (!keptRoomIds.contains(room.getId())) {
-                if (room.getStatus() == RoomStatus.AVAILABLE) {
-                    roomRepo.delete(room);
-                } else {
-                    // OCCUPIED — detach from infrastructure but keep the room
-                    room.setHospitalWard(null);
-                    roomRepo.save(room);
-                }
-            }
+        // Step 2: Null out all ward references BEFORE deleting wards (avoid FK violation)
+        for (Room room : prevInfraRooms) {
+            room.setHospitalWard(null);
         }
+        roomRepo.saveAll(prevInfraRooms);
+        roomRepo.flush();
 
-        // Delete old infrastructure structure (native SQL, in FK order)
+        // Step 3: Delete old infrastructure (native SQL, FK order: wards → floors → buildings)
         wardRepo.deleteByHospitalId(hospitalId);
         floorRepo.deleteByHospitalId(hospitalId);
         buildingRepo.deleteByHospitalId(hospitalId);
 
         Hospital hospital = hospitalRepo.getReferenceById(hospitalId);
 
-        // Rebuild infrastructure and create/update rooms
+        // Step 4: Rebuild infrastructure + create/update rooms
+        Set<Long> reassignedRoomIds = new HashSet<>();
+
         for (int i = 0; i < dtos.size(); i++) {
             BuildingDto bDto = dtos.get(i);
             HospitalBuilding building = new HospitalBuilding();
@@ -93,7 +82,6 @@ public class InfrastructureService {
             // saveAndFlush so ward IDs are generated before we create rooms
             buildingRepo.saveAndFlush(building);
 
-            // Create/update rooms for each ward
             for (int j = 0; j < building.getFloors().size(); j++) {
                 HospitalFloor floor = building.getFloors().get(j);
                 FloorDto fDto = bDto.getFloors().get(j);
@@ -104,22 +92,42 @@ public class InfrastructureService {
                     RoomType roomType = parseRoomType(wDto.getRoomType());
 
                     for (RoomDto rDto : wDto.getRooms()) {
-                        Room room;
+                        Room room = null;
+
+                        // Try to find by ID first (re-saves existing room)
                         if (rDto.getId() != null) {
-                            room = roomRepo.findById(rDto.getId()).orElse(new Room());
-                        } else {
+                            room = roomRepo.findById(rDto.getId()).orElse(null);
+                        }
+                        // Fallback: find by room number to avoid unique constraint violation
+                        if (room == null) {
+                            room = roomRepo.findByHospitalIdAndRoomNumber(hospitalId, rDto.getName()).orElse(null);
+                        }
+                        // New room
+                        if (room == null) {
                             room = new Room();
                             room.setHospital(hospital);
                             room.setStatus(RoomStatus.AVAILABLE);
                         }
+
                         room.setRoomNumber(rDto.getName());
                         room.setRoomType(roomType);
                         room.setPricePerDay(wDto.getDailyCharge());
                         room.setWard(wDto.getName());
                         room.setHospitalWard(ward);
-                        roomRepo.save(room);
+                        Room saved = roomRepo.save(room);
+                        if (saved.getId() != null) reassignedRoomIds.add(saved.getId());
                     }
                 }
+            }
+        }
+
+        // Step 5: Clean up previous infra rooms that were not reassigned
+        for (Room room : prevInfraRooms) {
+            if (room.getId() != null && !reassignedRoomIds.contains(room.getId())) {
+                if (room.getStatus() == RoomStatus.AVAILABLE) {
+                    roomRepo.delete(room);
+                }
+                // OCCUPIED rooms: already detached (ward_id nulled), kept as standalone
             }
         }
 
