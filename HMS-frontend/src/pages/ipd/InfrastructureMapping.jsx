@@ -49,9 +49,9 @@ function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom }) {
         {rooms.map((room, rIdx) => (
           <div
             key={rIdx}
-            className="flex items-center gap-2 bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#252525] rounded-lg px-2.5 py-2 group hover:border-emerald-300 dark:hover:border-emerald-500/40 focus-within:border-emerald-400 dark:focus-within:border-emerald-500/60 transition-colors"
+            className="flex items-center gap-2 bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#252525] rounded-lg px-2.5 py-2 group hover:border-slate-400 dark:hover:border-[#444] focus-within:border-slate-500 dark:focus-within:border-[#555] transition-colors"
           >
-            <Bed className="w-3 h-3 text-slate-300 dark:text-[#444444] shrink-0 group-hover:text-emerald-400 dark:group-hover:text-emerald-500 transition-colors" />
+            <Bed className="w-3 h-3 text-slate-300 dark:text-[#444444] shrink-0 group-hover:text-slate-600 dark:group-hover:text-[#aaa] transition-colors" />
             <input
               className="flex-1 text-xs text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0 font-medium"
               value={room.name}
@@ -72,8 +72,8 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
       <div className="flex items-stretch divide-x divide-slate-100 dark:divide-[#1e1e1e]">
         {/* Ward name */}
         <div className="flex items-center gap-2 px-4 py-2.5 flex-1 min-w-0">
-          <div className="w-5 h-5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <div className="w-5 h-5 rounded-md bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
           </div>
           <input
             className="flex-1 text-sm font-medium text-slate-800 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0"
@@ -121,13 +121,13 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
 function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard, setRoomCount, updateRoom }) {
   return (
     <div className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50/60 dark:bg-indigo-500/5 border-b border-indigo-100 dark:border-indigo-500/10">
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 dark:bg-[#1a1a1a] border-b border-slate-200 dark:border-[#222222]">
         <div className="flex items-center gap-2 shrink-0">
-          <Layers className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest">Floor {fIdx + 1}</span>
+          <Layers className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-[10px] font-bold text-slate-600 dark:text-[#888] uppercase tracking-widest">Floor {fIdx + 1}</span>
         </div>
         <input
-          className="flex-1 min-w-0 text-sm text-slate-700 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-indigo-100 dark:border-indigo-500/20 rounded-md px-2.5 py-1 focus:outline-none focus:border-indigo-400 placeholder-slate-300 dark:placeholder-[#3a3a3a]"
+          className="flex-1 min-w-0 text-sm text-slate-700 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#333333] rounded-md px-2.5 py-1 focus:outline-none focus:border-slate-400 placeholder-slate-300 dark:placeholder-[#3a3a3a]"
           value={floor.name}
           onChange={(e) => updateFloor(bIdx, fIdx, "name", e.target.value)}
           placeholder={`Floor ${fIdx}`}
@@ -169,9 +169,9 @@ function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFlo
 
   return (
     <div className="rounded-xl border border-slate-200 dark:border-[#222222] overflow-hidden shadow-sm">
-      <div className="flex items-center gap-3 px-4 py-3 bg-slate-900 dark:bg-[#0a0a0a]">
+      <div className="flex items-center gap-3 px-4 py-3 bg-slate-900 dark:bg-[#111111] border-b border-slate-700 dark:border-[#222222]">
         <div className="flex items-center gap-2 shrink-0">
-          <Building2 className="w-4 h-4 text-slate-400" />
+          <Building2 className="w-4 h-4 text-slate-300" />
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Building {bIdx + 1}</span>
         </div>
         <input
@@ -185,8 +185,8 @@ function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFlo
           <Stepper value={(building.floors || []).length} onChange={(n) => setFloorCount(bIdx, n)} min={0} max={10} variant="dark" />
         </div>
         {roomsInBuilding > 0 && (
-          <div className="shrink-0 ml-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25">
-            <span className="text-xs font-bold text-emerald-400">{roomsInBuilding} rooms</span>
+          <div className="shrink-0 ml-1 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/20">
+            <span className="text-xs font-bold text-white">{roomsInBuilding} rooms</span>
           </div>
         )}
       </div>
@@ -241,7 +241,7 @@ export default function InfrastructureMapping() {
           })));
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [user.hospitalId]);
 
@@ -337,9 +337,9 @@ export default function InfrastructureMapping() {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="shrink-0 bg-white dark:bg-[#111111] border-b border-slate-200 dark:border-[#222222] px-6 py-5">
+      <div className="shrink-0 py-6">
         <div className="flex items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -350,16 +350,16 @@ export default function InfrastructureMapping() {
               Define your hospital layout · Buildings → Floors → Wards → Rooms
             </p>
           </div>
-          <div className="shrink-0 grid grid-cols-4 gap-px rounded-xl overflow-hidden border border-emerald-100 dark:border-emerald-500/20 bg-emerald-100 dark:bg-emerald-500/10">
+          <div className="shrink-0 grid grid-cols-4 gap-px rounded-lg overflow-hidden border border-slate-200 dark:border-[#222222] bg-slate-200 dark:bg-[#222222]">
             {[
               { label: "Buildings", value: buildings.length },
               { label: "Floors", value: totalFloors },
               { label: "Wards", value: totalWards },
               { label: "Rooms", value: totalRooms },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-emerald-50 dark:bg-emerald-500/5 px-5 py-3 text-center">
-                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{value}</p>
-                <p className="text-[10px] font-bold text-emerald-600/60 dark:text-emerald-400/60 uppercase tracking-wider mt-0.5">{label}</p>
+              <div key={label} className="bg-white dark:bg-[#111111] px-5 py-3 text-center">
+                <p className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">{value}</p>
+                <p className="text-[10px] font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider mt-0.5">{label}</p>
               </div>
             ))}
           </div>
@@ -367,7 +367,7 @@ export default function InfrastructureMapping() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+      <div className="flex-1 overflow-y-auto space-y-4">
         {/* Building counter */}
         <div className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222]">
           <div className="flex items-center gap-3">
