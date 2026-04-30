@@ -10,7 +10,8 @@ import java.util.UUID;
 
 public interface HospitalBuildingRepository extends JpaRepository<HospitalBuilding, Long> {
 
-    @Query("SELECT DISTINCT b FROM HospitalBuilding b LEFT JOIN FETCH b.floors f LEFT JOIN FETCH f.wards WHERE b.hospital.id = :hospitalId ORDER BY b.displayOrder ASC")
+    // Only join-fetch one bag (floors); wards load lazily via @BatchSize(50) on HospitalFloor.wards
+    @Query("SELECT DISTINCT b FROM HospitalBuilding b LEFT JOIN FETCH b.floors WHERE b.hospital.id = :hospitalId ORDER BY b.displayOrder ASC")
     List<HospitalBuilding> findByHospitalIdWithDetails(UUID hospitalId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

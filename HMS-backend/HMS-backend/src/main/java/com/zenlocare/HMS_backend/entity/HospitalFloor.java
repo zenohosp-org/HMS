@@ -32,6 +32,7 @@ public class HospitalFloor {
 
     @OneToMany(mappedBy = "floor", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("displayOrder ASC")
+    @org.hibernate.annotations.BatchSize(size = 50)
     @Builder.Default
     private List<HospitalWard> wards = new ArrayList<>();
 }
