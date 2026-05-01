@@ -1,16 +1,17 @@
 package com.zenlocare.HMS_backend.service;
 
 import com.zenlocare.HMS_backend.dto.AttenderUpdateRequest;
+import com.zenlocare.HMS_backend.dto.BedDto;
 import com.zenlocare.HMS_backend.dto.RoomAllocationRequest;
 import com.zenlocare.HMS_backend.dto.RoomCreateRequest;
 import com.zenlocare.HMS_backend.dto.RoomLogDTO;
 import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
-import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -27,9 +28,21 @@ public class RoomService {
     private final RoomLogRepository roomLogRepository;
     private final DepartmentRepository departmentRepository;
     private final AdmissionRepository admissionRepository;
+    private final BedRepository bedRepository;
 
     public List<Room> getRoomsForHospital(UUID hospitalId) {
         return roomRepository.findByHospitalId(hospitalId);
+    }
+
+    public List<BedDto> getBedsByRoom(Long roomId, UUID hospitalId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+        if (!room.getHospital().getId().equals(hospitalId)) {
+            throw new RuntimeException("Room does not belong to this hospital");
+        }
+        return bedRepository.findByRoomIdOrderByBedNumberAsc(roomId).stream()
+                .map(BedDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     private String generateRoomCode(UUID hospitalId) {
@@ -46,6 +59,9 @@ public class RoomService {
     public List<Room> generateRooms(RoomCreateRequest request, String performedBy) {
         Hospital hospital = hospitalRepository.findById(request.getHospitalId())
                 .orElseThrow(() -> new RuntimeException("Hospital not found"));
+
+        int bedCount = request.getBedCount() != null && request.getBedCount() > 0
+                ? request.getBedCount() : 1;
 
         List<Room> newRooms = new ArrayList<>();
         for (int i = 1; i <= request.getCount(); i++) {
@@ -66,12 +82,21 @@ public class RoomService {
                     .roomType(request.getRoomType())
                     .pricePerDay(request.getPricePerDay())
                     .status(RoomStatus.AVAILABLE)
+                    .bedCount(bedCount)
                     .department(dept)
                     .ward(request.getWard())
                     .build();
 
             Room saved = roomRepository.save(room);
             newRooms.add(saved);
+
+            for (int b = 1; b <= bedCount; b++) {
+                bedRepository.save(Bed.builder()
+                        .room(saved)
+                        .bedNumber("Bed " + b)
+                        .status(BedStatus.AVAILABLE)
+                        .build());
+            }
 
             roomLogRepository.save(RoomLog.builder()
                     .room(saved)
@@ -111,15 +136,45 @@ public class RoomService {
             roomRepository.save(existingRoom);
         });
 
-        room.setStatus(RoomStatus.OCCUPIED);
-        room.setCurrentPatient(patient);
-        room.setAttenderName(request.getAttenderName());
-        room.setAttenderPhone(request.getAttenderPhone());
-        room.setAttenderRelationship(request.getAttenderRelationship());
-        room.setAllocationToken(generateToken());
-        room.setAdmissionDate(LocalDateTime.now());
-        if (request.getApproxDischargeTime() != null) {
-            room.setApproxDischargeTime(request.getApproxDischargeTime());
+        boolean isMultiBed = room.getBedCount() != null && room.getBedCount() > 1;
+
+        if (isMultiBed) {
+            Bed bed;
+            if (request.getBedId() != null) {
+                bed = bedRepository.findById(request.getBedId())
+                        .orElseThrow(() -> new RuntimeException("Bed not found"));
+                if (bed.getStatus() != BedStatus.AVAILABLE) {
+                    throw new RuntimeException("Selected bed is not available");
+                }
+            } else {
+                bed = bedRepository.findFirstByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE)
+                        .orElseThrow(() -> new RuntimeException("No available beds in this room"));
+            }
+            bed.setStatus(BedStatus.OCCUPIED);
+            bed.setCurrentPatient(patient);
+            bedRepository.save(bed);
+
+            long availableBeds = bedRepository.countByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE);
+            if (availableBeds == 0) {
+                room.setStatus(RoomStatus.OCCUPIED);
+            }
+        } else {
+            room.setStatus(RoomStatus.OCCUPIED);
+            room.setCurrentPatient(patient);
+            room.setAttenderName(request.getAttenderName());
+            room.setAttenderPhone(request.getAttenderPhone());
+            room.setAttenderRelationship(request.getAttenderRelationship());
+            room.setAllocationToken(generateToken());
+            room.setAdmissionDate(LocalDateTime.now());
+            if (request.getApproxDischargeTime() != null) {
+                room.setApproxDischargeTime(request.getApproxDischargeTime());
+            }
+            bedRepository.findFirstByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE)
+                    .ifPresent(b -> {
+                        b.setStatus(BedStatus.OCCUPIED);
+                        b.setCurrentPatient(patient);
+                        bedRepository.save(b);
+                    });
         }
 
         Room saved = roomRepository.save(room);
@@ -162,9 +217,14 @@ public class RoomService {
         room.setAttenderRelationship(null);
         room.setAllocationToken(null);
 
+        bedRepository.findByRoomIdOrderByBedNumberAsc(roomId).forEach(b -> {
+            b.setStatus(BedStatus.AVAILABLE);
+            b.setCurrentPatient(null);
+            bedRepository.save(b);
+        });
+
         Room saved = roomRepository.save(room);
 
-        // Auto-discharge any linked active Admission
         admissionRepository.findByRoomIdAndStatus(roomId, AdmissionStatus.ADMITTED)
                 .ifPresent(admission -> {
                     admission.setStatus(AdmissionStatus.DISCHARGED);
@@ -183,6 +243,45 @@ public class RoomService {
                 .build());
 
         return saved;
+    }
+
+    @Transactional
+    public BedDto freeBed(Long bedId, UUID hospitalId, String performedBy) {
+        Bed bed = bedRepository.findById(bedId)
+                .orElseThrow(() -> new RuntimeException("Bed not found"));
+
+        Room room = bed.getRoom();
+        if (!room.getHospital().getId().equals(hospitalId)) {
+            throw new RuntimeException("Bed does not belong to this hospital");
+        }
+
+        String patientName = bed.getCurrentPatient() != null
+                ? bed.getCurrentPatient().getFirstName() + " " + bed.getCurrentPatient().getLastName()
+                : null;
+        String patientMrn = bed.getCurrentPatient() != null ? bed.getCurrentPatient().getMrn() : null;
+
+        bed.setStatus(BedStatus.AVAILABLE);
+        bed.setCurrentPatient(null);
+        bedRepository.save(bed);
+
+        long occupiedCount = bedRepository.countByRoomIdAndStatus(room.getId(), BedStatus.OCCUPIED);
+        if (occupiedCount == 0) {
+            room.setStatus(RoomStatus.AVAILABLE);
+            room.setCurrentPatient(null);
+            roomRepository.save(room);
+        }
+
+        roomLogRepository.save(RoomLog.builder()
+                .room(room)
+                .hospital(room.getHospital())
+                .event(RoomLogEvent.DEALLOCATED)
+                .roomNumber(room.getRoomNumber())
+                .patientName(patientName)
+                .patientMrn(patientMrn)
+                .performedBy(performedBy)
+                .build());
+
+        return BedDto.fromEntity(bed);
     }
 
     @Transactional
@@ -244,7 +343,6 @@ public class RoomService {
         if (room.getStatus() == RoomStatus.OCCUPIED) {
             throw new IllegalStateException("Cannot delete an occupied room. Deallocate the patient first.");
         }
-        // Null out room FK on historical admissions (past records, not active ones)
         admissionRepository.findByRoomId(roomId).forEach(a -> {
             a.setRoom(null);
             admissionRepository.save(a);
@@ -269,7 +367,7 @@ public class RoomService {
     }
 
     private String generateToken() {
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O, 0, I, 1 to avoid confusion
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         StringBuilder token = new StringBuilder(8);
         for (int i = 0; i < 8; i++) {
             token.append(chars.charAt(ThreadLocalRandom.current().nextInt(chars.length())));

@@ -200,6 +200,16 @@ const hospitalServiceApi = {
     await api.patch(`/hospital-services/${id}/toggle-status`);
   }
 };
+const bedApi = {
+  getByRoom: async (roomId, hospitalId) => {
+    const { data } = await api.get(`/rooms/${roomId}/beds`, { params: { hospitalId } });
+    return data;
+  },
+  freeBed: async (bedId, hospitalId) => {
+    const { data } = await api.post(`/rooms/beds/${bedId}/free`, null, { params: { hospitalId } });
+    return data;
+  },
+};
 const roomLogsApi = {
   getHospitalLogs: async (hospitalId, search) => {
     const params = { hospitalId };
@@ -473,6 +483,7 @@ export {
   admissionApi,
   ambulanceApi,
   assetApi,
+  bedApi,
   checkupApi,
   infrastructureApi,
   appointmentsApi,

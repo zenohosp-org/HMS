@@ -16,6 +16,7 @@ public class AdmissionRequest {
     private UUID sourceAppointmentId;
     private AdmissionType admissionType;
     private AdmissionSource admissionSource;
+    private Long bedId;
     private String chiefComplaint;
     private LocalDateTime approxDischargeDate;
     private String attenderName;

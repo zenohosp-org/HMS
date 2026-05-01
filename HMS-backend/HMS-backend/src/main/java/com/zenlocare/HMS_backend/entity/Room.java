@@ -78,6 +78,9 @@ public class Room {
     @JsonIgnore
     private HospitalWard hospitalWard;
 
+    @Column(name = "bed_count")
+    private Integer bedCount;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { admissionApi, departmentApi, doctorsApi, patientApi } from '@/utils/api'
+import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi } from '@/utils/api'
 import api from '@/utils/api'
-import { X, Search, BedDouble, User, Stethoscope, Building2, CheckCircle2 } from 'lucide-react'
+import { X, Search, BedDouble, User, Stethoscope, Building2, CheckCircle2, Loader2 } from 'lucide-react'
 
 const ADMISSION_TYPES = ['ELECTIVE', 'EMERGENCY', 'REFERRAL', 'TRANSFER']
 const ADMISSION_SOURCES = ['OPD_REFERRAL', 'EMERGENCY_WALK_IN', 'DIRECT', 'TRANSFER_IN']
@@ -14,6 +14,8 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   const [departments, setDepartments] = useState([])
   const [doctors, setDoctors] = useState([])
   const [rooms, setRooms] = useState([])
+  const [availableBeds, setAvailableBeds] = useState([])
+  const [bedsLoading, setBedsLoading] = useState(false)
   const [patientSearch, setPatientSearch] = useState('')
   const [selectedPatient, setSelectedPatient] = useState(prefill?.patient || null)
   const [form, setForm] = useState({
@@ -22,6 +24,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     departmentId: '',
     admittingDoctorId: prefill?.doctorId || '',
     roomId: '',
+    bedId: '',
     chiefComplaint: prefill?.chiefComplaint || '',
     approxDischargeDate: '',
     attenderName: '',
@@ -60,14 +63,35 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     ).catch(() => {})
   }, [user?.hospitalId])
 
+  const selectedRoom = rooms.find(r => String(r.id) === String(form.roomId))
+  const isMultiBed = selectedRoom && selectedRoom.bedCount != null && selectedRoom.bedCount > 1
+
+  useEffect(() => {
+    if (!isMultiBed || !form.roomId || !user?.hospitalId) {
+      setAvailableBeds([])
+      setForm(f => ({ ...f, bedId: '' }))
+      return
+    }
+    setBedsLoading(true)
+    bedApi.getByRoom(form.roomId, user.hospitalId)
+      .then(beds => setAvailableBeds(beds.filter(b => b.status === 'AVAILABLE')))
+      .catch(() => setAvailableBeds([]))
+      .finally(() => setBedsLoading(false))
+  }, [form.roomId, isMultiBed, user?.hospitalId])
+
   const handleSubmit = async () => {
     if (!selectedPatient) return
+    if (isMultiBed && !form.bedId) {
+      alert('Please select a bed for this room.')
+      return
+    }
     setSubmitting(true)
     try {
       await admissionApi.admit({
         hospitalId: user.hospitalId,
         patientId: selectedPatient.id,
         roomId: form.roomId ? Number(form.roomId) : null,
+        bedId: form.bedId ? Number(form.bedId) : null,
         admittingDoctorId: form.admittingDoctorId || null,
         departmentId: form.departmentId || null,
         sourceAppointmentId: prefill?.appointmentId || null,
@@ -198,10 +222,16 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Assign Room (optional)</label>
-                  <select value={form.roomId} onChange={e => setForm({ ...form, roomId: e.target.value })} className={inputCls}>
+                  <select
+                    value={form.roomId}
+                    onChange={e => setForm({ ...form, roomId: e.target.value, bedId: '' })}
+                    className={inputCls}
+                  >
                     <option value="">Assign later…</option>
                     {rooms.map(r => (
-                      <option key={r.id} value={r.id}>{r.roomNumber} · {r.roomType}{r.ward ? ` · ${r.ward}` : ''}</option>
+                      <option key={r.id} value={r.id}>
+                        {r.roomNumber} · {r.roomType}{r.bedCount > 1 ? ` · ${r.bedCount} beds` : ''}{r.ward ? ` · ${r.ward}` : ''}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -211,6 +241,38 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                     onChange={e => setForm({ ...form, approxDischargeDate: e.target.value })} className={inputCls} />
                 </div>
               </div>
+
+              {/* Bed picker — shown only for multi-bed rooms */}
+              {form.roomId && isMultiBed && (
+                <div>
+                  <label className={labelCls}>Select Bed *</label>
+                  {bedsLoading ? (
+                    <div className="flex items-center gap-2 py-3 text-slate-400">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm">Loading beds…</span>
+                    </div>
+                  ) : availableBeds.length === 0 ? (
+                    <p className="text-sm text-red-500 py-2">No available beds in this room.</p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {availableBeds.map(bed => (
+                        <button
+                          key={bed.id}
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, bedId: String(bed.id) }))}
+                          className={`px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all text-left ${
+                            String(form.bedId) === String(bed.id)
+                              ? 'bg-violet-600 text-white border-violet-600'
+                              : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 hover:border-emerald-400'
+                          }`}
+                        >
+                          {bed.bedNumber}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
 
@@ -242,7 +304,13 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                   <span className="font-medium">Patient:</span><span>{selectedPatient?.firstName} {selectedPatient?.lastName}</span>
                   <span className="font-medium">Type:</span><span>{form.admissionType}</span>
                   <span className="font-medium">Source:</span><span>{form.admissionSource.replace(/_/g, ' ')}</span>
-                  <span className="font-medium">Room:</span><span>{rooms.find(r => String(r.id) === String(form.roomId))?.roomNumber || 'To be assigned'}</span>
+                  <span className="font-medium">Room:</span>
+                  <span>
+                    {selectedRoom?.roomNumber || 'To be assigned'}
+                    {form.bedId && availableBeds.find(b => String(b.id) === String(form.bedId))
+                      ? ` · ${availableBeds.find(b => String(b.id) === String(form.bedId)).bedNumber}`
+                      : ''}
+                  </span>
                 </div>
               </div>
             </>
@@ -255,9 +323,11 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
             {step > 1 ? 'Back' : 'Cancel'}
           </button>
           {step < 3 ? (
-            <button onClick={() => { if (step === 1 && !selectedPatient) return; setStep(s => s + 1) }}
+            <button
+              onClick={() => { if (step === 1 && !selectedPatient) return; setStep(s => s + 1) }}
               disabled={step === 1 && !selectedPatient}
-              className="btn-primary disabled:opacity-50">
+              className="btn-primary disabled:opacity-50"
+            >
               Next →
             </button>
           ) : (

@@ -10,10 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +22,7 @@ public class AdmissionService {
     private final HospitalRepository hospitalRepository;
     private final PatientRepository patientRepository;
     private final RoomRepository roomRepository;
+    private final BedRepository bedRepository;
     private final DoctorRepository doctorRepository;
     private final DepartmentRepository departmentRepository;
     private final AppointmentRepository appointmentRepository;
@@ -56,6 +55,20 @@ public class AdmissionService {
             }
         }
 
+        Bed bed = null;
+        if (req.getBedId() != null) {
+            bed = bedRepository.findById(req.getBedId())
+                    .orElseThrow(() -> new RuntimeException("Bed not found"));
+            if (bed.getStatus() != BedStatus.AVAILABLE) {
+                throw new RuntimeException("Selected bed is not available");
+            }
+        } else if (room != null) {
+            boolean isMultiBed = room.getBedCount() != null && room.getBedCount() > 1;
+            if (!isMultiBed) {
+                bed = bedRepository.findFirstByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE).orElse(null);
+            }
+        }
+
         String admNumber = generateAdmissionNumber(hospital.getId());
         String ipdId = generateIpdId(hospital.getId());
 
@@ -63,6 +76,7 @@ public class AdmissionService {
                 .hospital(hospital)
                 .patient(patient)
                 .room(room)
+                .bed(bed)
                 .admittingDoctor(doctor)
                 .department(dept)
                 .sourceAppointment(sourceAppt)
@@ -81,13 +95,28 @@ public class AdmissionService {
         Admission saved = admissionRepository.save(admission);
 
         if (room != null) {
-            room.setStatus(RoomStatus.OCCUPIED);
-            room.setCurrentPatient(patient);
-            room.setAttenderName(req.getAttenderName());
-            room.setAttenderPhone(req.getAttenderPhone());
-            room.setAttenderRelationship(req.getAttenderRelationship());
-            room.setAdmissionDate(saved.getAdmissionDate());
-            room.setApproxDischargeTime(req.getApproxDischargeDate());
+            boolean isMultiBed = room.getBedCount() != null && room.getBedCount() > 1;
+
+            if (bed != null) {
+                bed.setStatus(BedStatus.OCCUPIED);
+                bed.setCurrentPatient(patient);
+                bedRepository.save(bed);
+            }
+
+            if (isMultiBed) {
+                long availableBeds = bedRepository.countByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE);
+                if (availableBeds == 0) {
+                    room.setStatus(RoomStatus.OCCUPIED);
+                }
+            } else {
+                room.setStatus(RoomStatus.OCCUPIED);
+                room.setCurrentPatient(patient);
+                room.setAttenderName(req.getAttenderName());
+                room.setAttenderPhone(req.getAttenderPhone());
+                room.setAttenderRelationship(req.getAttenderRelationship());
+                room.setAdmissionDate(saved.getAdmissionDate());
+                room.setApproxDischargeTime(req.getApproxDischargeDate());
+            }
             roomRepository.save(room);
 
             roomLogRepository.save(RoomLog.builder()
@@ -118,17 +147,29 @@ public class AdmissionService {
             throw new RuntimeException("Room is not available");
         }
 
+        boolean isMultiBed = room.getBedCount() != null && room.getBedCount() > 1;
+
+        Bed bed = null;
+        if (!isMultiBed) {
+            bed = bedRepository.findFirstByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE).orElse(null);
+            if (bed != null) {
+                bed.setStatus(BedStatus.OCCUPIED);
+                bed.setCurrentPatient(admission.getPatient());
+                bedRepository.save(bed);
+            }
+            room.setStatus(RoomStatus.OCCUPIED);
+            room.setCurrentPatient(admission.getPatient());
+            room.setAdmissionDate(LocalDateTime.now());
+            room.setAttenderName(admission.getAttenderName());
+            room.setAttenderPhone(admission.getAttenderPhone());
+            room.setAttenderRelationship(admission.getAttenderRelationship());
+        }
+        roomRepository.save(room);
+
         admission.setRoom(room);
+        if (bed != null) admission.setBed(bed);
         admission.setAdmissionDate(LocalDateTime.now());
         admissionRepository.save(admission);
-
-        room.setStatus(RoomStatus.OCCUPIED);
-        room.setCurrentPatient(admission.getPatient());
-        room.setAdmissionDate(LocalDateTime.now());
-        room.setAttenderName(admission.getAttenderName());
-        room.setAttenderPhone(admission.getAttenderPhone());
-        room.setAttenderRelationship(admission.getAttenderRelationship());
-        roomRepository.save(room);
 
         roomLogRepository.save(RoomLog.builder()
                 .room(room).hospital(admission.getHospital())
@@ -159,7 +200,36 @@ public class AdmissionService {
         admission.setDischargeDiagnosis(req.getDischargeDiagnosis());
         admission.setDischargeNote(req.getDischargeNote());
 
-        if (admission.getRoom() != null) {
+        if (admission.getBed() != null) {
+            Bed bed = admission.getBed();
+            bed.setStatus(BedStatus.AVAILABLE);
+            bed.setCurrentPatient(null);
+            bedRepository.save(bed);
+
+            if (admission.getRoom() != null) {
+                Room room = admission.getRoom();
+                long occupiedCount = bedRepository.countByRoomIdAndStatus(room.getId(), BedStatus.OCCUPIED);
+                if (occupiedCount == 0) {
+                    room.setStatus(RoomStatus.AVAILABLE);
+                    room.setCurrentPatient(null);
+                    room.setApproxDischargeTime(null);
+                    room.setAttenderName(null);
+                    room.setAttenderPhone(null);
+                    room.setAttenderRelationship(null);
+                    room.setAdmissionDate(null);
+                    roomRepository.save(room);
+
+                    roomLogRepository.save(RoomLog.builder()
+                            .room(room).hospital(admission.getHospital())
+                            .event(RoomLogEvent.DEALLOCATED)
+                            .roomNumber(room.getRoomNumber())
+                            .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
+                            .patientMrn(admission.getPatient().getMrn())
+                            .performedBy(performedBy)
+                            .build());
+                }
+            }
+        } else if (admission.getRoom() != null) {
             Room room = admission.getRoom();
             String patName = admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName();
 
@@ -171,6 +241,15 @@ public class AdmissionService {
             room.setAttenderRelationship(null);
             room.setAdmissionDate(null);
             roomRepository.save(room);
+
+            bedRepository.findByRoomIdOrderByBedNumberAsc(room.getId()).forEach(b -> {
+                if (b.getCurrentPatient() != null &&
+                        b.getCurrentPatient().getId().equals(admission.getPatient().getId())) {
+                    b.setStatus(BedStatus.AVAILABLE);
+                    b.setCurrentPatient(null);
+                    bedRepository.save(b);
+                }
+            });
 
             roomLogRepository.save(RoomLog.builder()
                     .room(room).hospital(admission.getHospital())
@@ -234,6 +313,8 @@ public class AdmissionService {
                 .roomId(a.getRoom() != null ? a.getRoom().getId() : null)
                 .roomNumber(a.getRoom() != null ? a.getRoom().getRoomNumber() : null)
                 .roomType(a.getRoom() != null ? a.getRoom().getRoomType().name() : null)
+                .bedId(a.getBed() != null ? a.getBed().getId() : null)
+                .bedNumber(a.getBed() != null ? a.getBed().getBedNumber() : null)
                 .admittingDoctorId(a.getAdmittingDoctor() != null ? a.getAdmittingDoctor().getId() : null)
                 .admittingDoctorName(a.getAdmittingDoctor() != null
                         ? a.getAdmittingDoctor().getUser().getFirstName() + " " + a.getAdmittingDoctor().getUser().getLastName()

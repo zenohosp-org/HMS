@@ -27,6 +27,10 @@ public class Admission {
     private Room room;
 
     @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "bed_id")
+    private Bed bed;
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "admitting_doctor_id")
     private Doctor admittingDoctor;
 

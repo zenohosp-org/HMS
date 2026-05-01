@@ -14,4 +14,5 @@ public class RoomCreateRequest {
     private BigDecimal pricePerDay;
     private UUID departmentId;
     private String ward;
+    private Integer bedCount;
 }

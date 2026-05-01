@@ -1,6 +1,7 @@
 package com.zenlocare.HMS_backend.controller;
 
 import com.zenlocare.HMS_backend.dto.AttenderUpdateRequest;
+import com.zenlocare.HMS_backend.dto.BedDto;
 import com.zenlocare.HMS_backend.dto.RoomAllocationRequest;
 import com.zenlocare.HMS_backend.dto.RoomCreateRequest;
 import com.zenlocare.HMS_backend.dto.RoomLogDTO;
@@ -27,6 +28,13 @@ public class RoomController {
     @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
     public ResponseEntity<List<Room>> getRoomsForHospital(@RequestParam UUID hospitalId) {
         return ResponseEntity.ok(roomService.getRoomsForHospital(hospitalId));
+    }
+
+    @GetMapping("/{roomId}/beds")
+    @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
+    public ResponseEntity<List<BedDto>> getBedsByRoom(@PathVariable Long roomId,
+            @RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(roomService.getBedsByRoom(roomId, hospitalId));
     }
 
     @PostMapping("/generate")
@@ -56,6 +64,13 @@ public class RoomController {
     public ResponseEntity<Room> deallocatePatient(@PathVariable Long roomId,
             @RequestParam UUID hospitalId, Authentication auth) {
         return ResponseEntity.ok(roomService.deallocatePatient(roomId, hospitalId, resolveFullName(auth)));
+    }
+
+    @PostMapping("/beds/{bedId}/free")
+    @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
+    public ResponseEntity<BedDto> freeBed(@PathVariable Long bedId,
+            @RequestParam UUID hospitalId, Authentication auth) {
+        return ResponseEntity.ok(roomService.freeBed(bedId, hospitalId, resolveFullName(auth)));
     }
 
     @DeleteMapping("/{roomId}")

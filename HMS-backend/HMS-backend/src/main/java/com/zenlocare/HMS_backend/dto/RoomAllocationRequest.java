@@ -11,4 +11,5 @@ public class RoomAllocationRequest {
     private String attenderName;
     private String attenderPhone;
     private String attenderRelationship;
+    private Long bedId;
 }

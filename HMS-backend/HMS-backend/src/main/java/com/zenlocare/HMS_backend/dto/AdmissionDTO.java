@@ -19,6 +19,8 @@ public class AdmissionDTO {
     private Long roomId;
     private String roomNumber;
     private String roomType;
+    private Long bedId;
+    private String bedNumber;
     private UUID admittingDoctorId;
     private String admittingDoctorName;
     private UUID departmentId;
