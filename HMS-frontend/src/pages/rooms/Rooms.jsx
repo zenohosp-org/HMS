@@ -2,9 +2,8 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "@/utils/api";
-import { Bed, Plus, Search, CalendarClock, MoreVertical, ScrollText } from "lucide-react";
+import { Bed, Search, CalendarClock, MoreVertical, ScrollText } from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
-import GenerateRoomsModal from "./GenerateRoomsModal";
 import AllocatePatientModal from "./AllocatePatientModal";
 import AssignAttenderModal from "./AssignAttenderModal";
 import RoomDetailPanel from "./RoomDetailPanel";
@@ -75,16 +74,6 @@ function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate, onDe
   );
 }
 
-function BedOccupancyBar({ bedCount, room }) {
-  if (!bedCount || bedCount <= 1) return null;
-  const occupiedLabel = room.status === "OCCUPIED" ? bedCount : "?";
-  return (
-    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20">
-      {bedCount} beds
-    </span>
-  );
-}
-
 function Rooms() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -93,7 +82,6 @@ function Rooms() {
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showAllocateModal, setShowAllocateModal] = useState({ open: false, room: null });
   const [showAttenderModal, setShowAttenderModal] = useState({ open: false, room: null });
 
@@ -173,16 +161,9 @@ function Rooms() {
           <h1 className="text-xl font-bold text-slate-900 dark:text-[#f0f0f0]">Room Allocation</h1>
           <p className="text-sm text-slate-500 dark:text-[#666666]">{rooms.length} total rooms in hospital</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="btn-secondary flex items-center gap-2" onClick={() => navigate("/rooms/logs")}>
-            <ScrollText className="w-4 h-4" /> Logs
-          </button>
-          {user?.role === "hospital_admin" && (
-            <button className="btn-primary flex items-center gap-2" onClick={() => setShowGenerateModal(true)}>
-              <Plus className="w-4 h-4" /> Generate Rooms
-            </button>
-          )}
-        </div>
+        <button className="btn-secondary flex items-center gap-2" onClick={() => navigate("/rooms/logs")}>
+          <ScrollText className="w-4 h-4" /> Logs
+        </button>
       </div>
 
       {/* Metrics */}
@@ -385,12 +366,6 @@ function Rooms() {
       </div>
 
       {/* Modals */}
-      {showGenerateModal && (
-        <GenerateRoomsModal
-          onClose={() => setShowGenerateModal(false)}
-          onSuccess={() => { setShowGenerateModal(false); fetchRooms(); }}
-        />
-      )}
       {showAllocateModal.open && showAllocateModal.room && (
         <AllocatePatientModal
           roomId={showAllocateModal.room.id}
