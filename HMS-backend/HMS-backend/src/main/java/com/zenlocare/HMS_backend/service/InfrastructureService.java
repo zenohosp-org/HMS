@@ -22,6 +22,7 @@ public class InfrastructureService {
     private final HospitalWardRepository wardRepo;
     private final HospitalRepository hospitalRepo;
     private final RoomRepository roomRepo;
+    private final BedRepository bedRepo;
 
     @Transactional(readOnly = true)
     public List<BuildingDto> get(UUID hospitalId) {
@@ -31,20 +32,14 @@ public class InfrastructureService {
 
     @Transactional
     public List<BuildingDto> save(UUID hospitalId, List<BuildingDto> dtos) {
-        // Step 1: Remember which rooms were part of infrastructure (to clean up removed ones later)
         List<Room> prevInfraRooms = new ArrayList<>(roomRepo.findByHospitalIdAndHospitalWardIsNotNull(hospitalId));
 
-        // Step 2: Null out ALL ward FKs via native SQL so wards can be safely deleted
         wardRepo.detachRoomsFromWards(hospitalId);
-
-        // Step 3: Delete old infrastructure (native SQL, FK order: wards → floors → buildings)
         wardRepo.deleteByHospitalId(hospitalId);
         floorRepo.deleteByHospitalId(hospitalId);
         buildingRepo.deleteByHospitalId(hospitalId);
 
         Hospital hospital = hospitalRepo.getReferenceById(hospitalId);
-
-        // Step 4: Rebuild infrastructure + create/update rooms
         Set<Long> reassignedRoomIds = new HashSet<>();
 
         for (int i = 0; i < dtos.size(); i++) {
@@ -75,7 +70,6 @@ public class InfrastructureService {
                 building.getFloors().add(floor);
             }
 
-            // saveAndFlush so ward IDs are generated before creating rooms
             buildingRepo.saveAndFlush(building);
 
             for (int j = 0; j < building.getFloors().size(); j++) {
@@ -86,19 +80,18 @@ public class InfrastructureService {
                     HospitalWard ward = floor.getWards().get(k);
                     WardDto wDto = fDto.getWards().get(k);
                     RoomType roomType = parseRoomType(wDto.getRoomType());
+                    int wardBedCount = wDto.getBedCount() != null && wDto.getBedCount() > 0
+                            ? wDto.getBedCount() : 1;
 
                     for (RoomDto rDto : wDto.getRooms()) {
                         Room room = null;
 
-                        // Try to find by ID first (update existing room)
                         if (rDto.getId() != null) {
                             room = roomRepo.findById(rDto.getId()).orElse(null);
                         }
-                        // Fallback: find by room number to avoid unique constraint violation
                         if (room == null) {
                             room = roomRepo.findByHospitalIdAndRoomNumber(hospitalId, rDto.getName()).orElse(null);
                         }
-                        // Still not found: create new
                         if (room == null) {
                             room = new Room();
                             room.setHospital(hospital);
@@ -110,25 +103,51 @@ public class InfrastructureService {
                         room.setPricePerDay(wDto.getDailyCharge());
                         room.setWard(wDto.getName());
                         room.setHospitalWard(ward);
+                        room.setBedCount(wardBedCount);
                         Room saved = roomRepo.save(room);
+
+                        syncBeds(saved, wardBedCount);
+
                         if (saved.getId() != null) reassignedRoomIds.add(saved.getId());
                     }
                 }
             }
         }
 
-        // Step 5: Clean up previous infra rooms that were not reassigned
         for (Room room : prevInfraRooms) {
             Long id = room.getId();
             if (id != null && !reassignedRoomIds.contains(id)) {
                 if (room.getStatus() == RoomStatus.AVAILABLE) {
+                    bedRepo.findByRoomIdOrderByBedNumberAsc(id).forEach(bedRepo::delete);
                     roomRepo.deleteById(id);
                 }
-                // OCCUPIED rooms: ward_id already nulled by native SQL in Step 2, kept as standalone
             }
         }
 
         return get(hospitalId);
+    }
+
+    private void syncBeds(Room room, int targetCount) {
+        List<Bed> existing = bedRepo.findByRoomIdOrderByBedNumberAsc(room.getId());
+        int currentCount = existing.size();
+
+        if (targetCount > currentCount) {
+            for (int b = currentCount + 1; b <= targetCount; b++) {
+                bedRepo.save(Bed.builder()
+                        .room(room)
+                        .bedNumber("Bed " + b)
+                        .status(BedStatus.AVAILABLE)
+                        .build());
+            }
+        } else if (targetCount < currentCount) {
+            // Remove excess beds from the end, only if AVAILABLE
+            List<Bed> excess = existing.subList(targetCount, currentCount);
+            for (Bed bed : excess) {
+                if (bed.getStatus() == BedStatus.AVAILABLE) {
+                    bedRepo.delete(bed);
+                }
+            }
+        }
     }
 
     private RoomType parseRoomType(String type) {
@@ -157,8 +176,17 @@ public class InfrastructureService {
         dto.setId(w.getId());
         dto.setName(w.getName());
         dto.setDailyCharge(w.getDailyCharge());
-        List<RoomDto> rooms = roomRepo.findByHospitalWard_Id(w.getId()).stream()
-                .map(r -> { RoomDto rd = new RoomDto(); rd.setId(r.getId()); rd.setName(r.getRoomNumber()); return rd; })
+        List<Room> wardRooms = roomRepo.findByHospitalWard_Id(w.getId());
+        // Derive bedCount from first room (all rooms in a ward share the same count)
+        dto.setBedCount(wardRooms.isEmpty() ? 1 : Optional.ofNullable(wardRooms.get(0).getBedCount()).orElse(1));
+        List<RoomDto> rooms = wardRooms.stream()
+                .map(r -> {
+                    RoomDto rd = new RoomDto();
+                    rd.setId(r.getId());
+                    rd.setName(r.getRoomNumber());
+                    rd.setBedCount(Optional.ofNullable(r.getBedCount()).orElse(1));
+                    return rd;
+                })
                 .collect(Collectors.toList());
         dto.setRooms(rooms);
         return dto;

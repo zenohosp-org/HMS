@@ -49,6 +49,7 @@ public class InfrastructureController {
         private String name;
         private BigDecimal dailyCharge;
         private String roomType;
+        private Integer bedCount;
         private List<RoomDto> rooms = List.of();
     }
 
@@ -56,5 +57,6 @@ public class InfrastructureController {
     public static class RoomDto {
         private Long id;
         private String name;
+        private Integer bedCount;
     }
 }

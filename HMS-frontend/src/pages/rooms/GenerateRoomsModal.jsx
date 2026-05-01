@@ -15,7 +15,6 @@ function GenerateRoomsModal({ onClose, onSuccess }) {
     roomPrefix: "GEN",
     roomType: "GENERAL",
     count: 5,
-    bedCount: 1,
     pricePerDay: 0,
   });
 
@@ -77,32 +76,17 @@ function GenerateRoomsModal({ onClose, onSuccess }) {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Number of Rooms</label>
-              <input
-                type="number"
-                required
-                min="1"
-                max="50"
-                className={inputCls}
-                value={formData.count || ""}
-                onChange={(e) => setFormData({ ...formData, count: parseInt(e.target.value) || 1 })}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Beds per Room</label>
-              <input
-                type="number"
-                required
-                min="1"
-                max="20"
-                className={inputCls}
-                value={formData.bedCount || ""}
-                onChange={(e) => setFormData({ ...formData, bedCount: parseInt(e.target.value) || 1 })}
-              />
-              <p className="text-xs text-slate-500 mt-1">1 = single patient</p>
-            </div>
+          <div>
+            <label className={labelCls}>Number of Rooms to Generate</label>
+            <input
+              type="number"
+              required
+              min="1"
+              max="50"
+              className={inputCls}
+              value={formData.count || ""}
+              onChange={(e) => setFormData({ ...formData, count: parseInt(e.target.value) || 1 })}
+            />
           </div>
 
           <div>

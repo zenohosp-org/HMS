@@ -105,6 +105,11 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
           />
           <span className="text-[10px] text-slate-400">/day</span>
         </div>
+        {/* Beds per room stepper */}
+        <div className="flex items-center gap-2 px-3 py-2.5 shrink-0">
+          <span className="text-xs font-semibold text-slate-400 hidden sm:block">Beds/Room</span>
+          <Stepper value={parseInt(ward.bedCount) || 1} onChange={(n) => updateWard(bIdx, fIdx, wIdx, "bedCount", n)} min={1} max={20} />
+        </div>
         {/* Room stepper */}
         <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
           <Bed className="w-3.5 h-3.5 text-slate-400" />
@@ -235,6 +240,7 @@ export default function InfrastructureMapping() {
                 name: w.name,
                 dailyCharge: String(w.dailyCharge ?? "500"),
                 roomType: w.roomType ?? "GENERAL",
+                bedCount: w.bedCount ?? 1,
                 rooms: (w.rooms ?? []).map((r) => ({ id: r.id, name: r.name })),
               })),
             })),
@@ -267,7 +273,7 @@ export default function InfrastructureMapping() {
   const setWardCount = (bIdx, fIdx, n) =>
     setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
       ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
-        ...f, wards: resizeTo(f.wards, n, () => ({ name: "", dailyCharge: "500", roomType: "GENERAL", rooms: [] }))
+        ...f, wards: resizeTo(f.wards, n, () => ({ name: "", dailyCharge: "500", roomType: "GENERAL", bedCount: 1, rooms: [] }))
       })
     }));
 
@@ -315,6 +321,7 @@ export default function InfrastructureMapping() {
             name: w.name || "Ward",
             dailyCharge: parseFloat(w.dailyCharge) || 0,
             roomType: w.roomType || "GENERAL",
+            bedCount: parseInt(w.bedCount) || 1,
             rooms: (w.rooms || []).map((r) => ({ id: r.id || null, name: r.name || "" })),
           })),
         })),
