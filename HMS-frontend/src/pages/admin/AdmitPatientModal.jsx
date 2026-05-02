@@ -63,6 +63,11 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     ).catch(() => {})
   }, [user?.hospitalId])
 
+  const selectedDept = departments.find(d => String(d.id) === String(form.departmentId))
+  const filteredDoctors = form.departmentId && selectedDept
+    ? doctors.filter(d => d.specialization?.toLowerCase() === selectedDept.name?.toLowerCase())
+    : doctors
+
   const selectedRoom = rooms.find(r => String(r.id) === String(form.roomId))
   const isMultiBed = selectedRoom && selectedRoom.bedCount != null && selectedRoom.bedCount > 1
 
@@ -201,7 +206,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Department</label>
-                  <select value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value })} className={inputCls}>
+                  <select value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value, admittingDoctorId: '' })} className={inputCls}>
                     <option value="">Select department…</option>
                     {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
@@ -210,7 +215,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                   <label className={labelCls}>Admitting Doctor</label>
                   <select value={form.admittingDoctorId} onChange={e => setForm({ ...form, admittingDoctorId: e.target.value })} className={inputCls}>
                     <option value="">Select doctor…</option>
-                    {doctors.map(d => <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>)}
+                    {filteredDoctors.map(d => <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>)}
                   </select>
                 </div>
               </div>
