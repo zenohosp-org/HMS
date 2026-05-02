@@ -7,7 +7,7 @@ import {
   Ambulance, Plus, X, Search, Calendar, Clock, MapPin,
   User, Phone, Car, CreditCard, FileText,
   CheckCircle2, AlertCircle, Clock3, XCircle, Truck,
-  Banknote, TrendingUp, Activity, MoreHorizontal,
+  Activity, MoreHorizontal,
   Wrench, Trash2, Loader2, Edit2, ChevronRight,
 } from "lucide-react";
 
@@ -597,7 +597,6 @@ function BookingsTab({ hospitalId }) {
   const { notify } = useNotification();
   const [bookings, setBookings] = useState([]);
   const [availableVehicles, setAvailableVehicles] = useState([]);
-  const [stats, setStats] = useState({ total: 0, pending: 0, today: 0, completed: 0 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -607,13 +606,11 @@ function BookingsTab({ hospitalId }) {
   const load = async () => {
     setLoading(true);
     try {
-      const [b, s, av] = await Promise.all([
+      const [b, av] = await Promise.all([
         ambulanceApi.getBookings(hospitalId).catch(() => []),
-        ambulanceApi.getStats(hospitalId).catch(() => ({ total: 0, pending: 0, today: 0, completed: 0 })),
         ambulanceApi.getAvailableVehicles(hospitalId).catch(() => []),
       ]);
       setBookings(b);
-      setStats(s);
       setAvailableVehicles(av);
     } finally { setLoading(false); }
   };
@@ -663,19 +660,11 @@ function BookingsTab({ hospitalId }) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Bookings" value={stats.total}     icon={Ambulance}    color="bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-[#888]" />
-        <StatCard label="Pending"        value={stats.pending}   icon={Clock3}       color="bg-amber-50 dark:bg-amber-500/10 text-amber-500" />
-        <StatCard label="Today's Runs"   value={stats.today}     icon={TrendingUp}   color="bg-blue-50 dark:bg-blue-500/10 text-blue-500" />
-        <StatCard label="Completed"      value={stats.completed} icon={CheckCircle2} color="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500" />
-      </div>
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Bookings</h2>
-          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-500/20">
+          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-800/30">
             {bookings.length} total
           </span>
         </div>
@@ -828,7 +817,7 @@ function BookingsTab({ hospitalId }) {
             </tbody>
           </table>
         </div>
-        {!loading && filtered.length > PAGE_SIZE && (
+        {!loading && filtered.length > 0 && (
           <div className="px-6 py-3 border-t border-slate-100 dark:border-[#1a1a1a]">
             <Pagination
               currentPage={page}
