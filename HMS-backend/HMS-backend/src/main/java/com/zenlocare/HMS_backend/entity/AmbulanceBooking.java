@@ -48,6 +48,10 @@ public class AmbulanceBooking {
     @JoinColumn(name = "ambulance_type_id")
     private AmbulanceType ambulanceType;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "vehicle_id")
+    private AmbulanceVehicle vehicle;
+
     @Column(precision = 10, scale = 2)
     private BigDecimal charge;
 

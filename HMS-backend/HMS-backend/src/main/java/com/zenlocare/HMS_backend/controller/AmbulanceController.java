@@ -5,6 +5,7 @@ import com.zenlocare.HMS_backend.repository.*;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -21,6 +22,7 @@ public class AmbulanceController {
 
     private final AmbulanceBookingRepository bookingRepo;
     private final AmbulanceTypeRepository typeRepo;
+    private final AmbulanceVehicleRepository vehicleRepo;
     private final HospitalRepository hospitalRepo;
     private final PatientRepository patientRepo;
 
@@ -52,6 +54,66 @@ public class AmbulanceController {
         return ResponseEntity.ok().build();
     }
 
+    // ── Vehicles ──────────────────────────────────────────────────────────
+
+    @GetMapping("/vehicles")
+    public ResponseEntity<List<AmbulanceVehicle>> getVehicles(@RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(vehicleRepo.findByHospital_IdOrderByCreatedAtDesc(hospitalId));
+    }
+
+    @GetMapping("/vehicles/available")
+    public ResponseEntity<List<AmbulanceVehicle>> getAvailableVehicles(@RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(vehicleRepo.findByHospital_IdAndStatusOrderByVehicleNumberAsc(hospitalId, AmbulanceVehicleStatus.AVAILABLE));
+    }
+
+    @PostMapping("/vehicles")
+    public ResponseEntity<AmbulanceVehicle> createVehicle(@RequestParam UUID hospitalId,
+                                                           @RequestBody VehicleRequest req) {
+        Hospital hospital = hospitalRepo.getReferenceById(hospitalId);
+        AmbulanceType type = req.getAmbulanceTypeId() != null
+                ? typeRepo.findById(req.getAmbulanceTypeId()).orElse(null) : null;
+        AmbulanceVehicle vehicle = AmbulanceVehicle.builder()
+                .hospital(hospital)
+                .vehicleNumber(req.getVehicleNumber())
+                .vehicleName(req.getVehicleName())
+                .ambulanceType(type)
+                .defaultCharge(req.getDefaultCharge())
+                .status(AmbulanceVehicleStatus.AVAILABLE)
+                .notes(req.getNotes())
+                .build();
+        return ResponseEntity.ok(vehicleRepo.save(vehicle));
+    }
+
+    @PutMapping("/vehicles/{id}")
+    public ResponseEntity<AmbulanceVehicle> updateVehicle(@PathVariable Long id,
+                                                           @RequestBody VehicleRequest req) {
+        return vehicleRepo.findById(id).map(v -> {
+            AmbulanceType type = req.getAmbulanceTypeId() != null
+                    ? typeRepo.findById(req.getAmbulanceTypeId()).orElse(null) : null;
+            v.setVehicleNumber(req.getVehicleNumber());
+            v.setVehicleName(req.getVehicleName());
+            v.setAmbulanceType(type);
+            v.setDefaultCharge(req.getDefaultCharge());
+            v.setNotes(req.getNotes());
+            return ResponseEntity.ok(vehicleRepo.save(v));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/vehicles/{id}/status")
+    public ResponseEntity<AmbulanceVehicle> updateVehicleStatus(@PathVariable Long id,
+                                                                  @RequestBody Map<String, String> body) {
+        return vehicleRepo.findById(id).map(v -> {
+            v.setStatus(AmbulanceVehicleStatus.valueOf(body.get("status")));
+            return ResponseEntity.ok(vehicleRepo.save(v));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/vehicles/{id}")
+    public ResponseEntity<Void> deleteVehicle(@PathVariable Long id) {
+        vehicleRepo.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
     // ── Bookings ──────────────────────────────────────────────────────────
 
     @GetMapping("/bookings")
@@ -76,6 +138,12 @@ public class AmbulanceController {
         Hospital hospital = hospitalRepo.getReferenceById(hospitalId);
         Patient patient = req.getPatientId() != null ? patientRepo.findById(req.getPatientId()).orElse(null) : null;
         AmbulanceType type = req.getAmbulanceTypeId() != null ? typeRepo.findById(req.getAmbulanceTypeId()).orElse(null) : null;
+        AmbulanceVehicle vehicle = req.getVehicleId() != null ? vehicleRepo.findById(req.getVehicleId()).orElse(null) : null;
+
+        BigDecimal charge = req.getCharge() != null ? req.getCharge()
+                : (vehicle != null ? vehicle.getDefaultCharge() : null);
+        String vehicleNumber = vehicle != null ? vehicle.getVehicleNumber() : req.getVehicleNumber();
+        if (type == null && vehicle != null) type = vehicle.getAmbulanceType();
 
         AmbulanceBooking booking = AmbulanceBooking.builder()
                 .hospital(hospital)
@@ -85,24 +153,38 @@ public class AmbulanceController {
                 .pickupAddress(req.getPickupAddress())
                 .destinationAddress(req.getDestinationAddress())
                 .ambulanceType(type)
-                .charge(req.getCharge())
+                .vehicle(vehicle)
+                .charge(charge)
                 .paymentStatus(req.getPaymentStatus() != null ? req.getPaymentStatus() : "UNPAID")
                 .status(AmbulanceBookingStatus.PENDING)
                 .driverName(req.getDriverName())
                 .driverPhone(req.getDriverPhone())
-                .vehicleNumber(req.getVehicleNumber())
+                .vehicleNumber(vehicleNumber)
                 .notes(req.getNotes())
                 .build();
 
         return ResponseEntity.ok(bookingRepo.save(booking));
     }
 
+    @Transactional
     @PatchMapping("/bookings/{id}/status")
     public ResponseEntity<AmbulanceBooking> updateStatus(@PathVariable Long id,
                                                           @RequestBody Map<String, String> body) {
         return bookingRepo.findById(id).map(b -> {
-            b.setStatus(AmbulanceBookingStatus.valueOf(body.get("status")));
+            AmbulanceBookingStatus newStatus = AmbulanceBookingStatus.valueOf(body.get("status"));
+            b.setStatus(newStatus);
             if (body.containsKey("paymentStatus")) b.setPaymentStatus(body.get("paymentStatus"));
+
+            if (b.getVehicle() != null) {
+                if (newStatus == AmbulanceBookingStatus.DISPATCHED || newStatus == AmbulanceBookingStatus.EN_ROUTE) {
+                    b.getVehicle().setStatus(AmbulanceVehicleStatus.IN_USE);
+                    vehicleRepo.save(b.getVehicle());
+                } else if (newStatus == AmbulanceBookingStatus.COMPLETED || newStatus == AmbulanceBookingStatus.CANCELLED) {
+                    b.getVehicle().setStatus(AmbulanceVehicleStatus.AVAILABLE);
+                    vehicleRepo.save(b.getVehicle());
+                }
+            }
+
             return ResponseEntity.ok(bookingRepo.save(b));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -113,6 +195,11 @@ public class AmbulanceController {
         return bookingRepo.findById(id).map(b -> {
             if (req.getPatientId() != null) b.setPatient(patientRepo.findById(req.getPatientId()).orElse(null));
             if (req.getAmbulanceTypeId() != null) b.setAmbulanceType(typeRepo.findById(req.getAmbulanceTypeId()).orElse(null));
+            if (req.getVehicleId() != null) {
+                AmbulanceVehicle v = vehicleRepo.findById(req.getVehicleId()).orElse(null);
+                b.setVehicle(v);
+                if (v != null) b.setVehicleNumber(v.getVehicleNumber());
+            }
             if (req.getBookingDate() != null) b.setBookingDate(LocalDate.parse(req.getBookingDate()));
             if (req.getBookingTime() != null) b.setBookingTime(LocalTime.parse(req.getBookingTime()));
             b.setPickupAddress(req.getPickupAddress());
@@ -122,7 +209,7 @@ public class AmbulanceController {
             if (req.getStatus() != null) b.setStatus(AmbulanceBookingStatus.valueOf(req.getStatus()));
             b.setDriverName(req.getDriverName());
             b.setDriverPhone(req.getDriverPhone());
-            b.setVehicleNumber(req.getVehicleNumber());
+            if (req.getVehicleId() == null && req.getVehicleNumber() != null) b.setVehicleNumber(req.getVehicleNumber());
             b.setNotes(req.getNotes());
             return ResponseEntity.ok(bookingRepo.save(b));
         }).orElse(ResponseEntity.notFound().build());
@@ -152,6 +239,15 @@ public class AmbulanceController {
     }
 
     @Data
+    public static class VehicleRequest {
+        private String vehicleNumber;
+        private String vehicleName;
+        private Long ambulanceTypeId;
+        private BigDecimal defaultCharge;
+        private String notes;
+    }
+
+    @Data
     public static class BookingRequest {
         private Integer patientId;
         private String bookingDate;
@@ -159,6 +255,7 @@ public class AmbulanceController {
         private String pickupAddress;
         private String destinationAddress;
         private Long ambulanceTypeId;
+        private Long vehicleId;
         private BigDecimal charge;
         private String paymentStatus;
         private String status;

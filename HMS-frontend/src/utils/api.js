@@ -430,6 +430,28 @@ const ambulanceApi = {
     const { data } = await api.get("/ambulance/stats", { params: { hospitalId } });
     return data;
   },
+
+  getVehicles: async (hospitalId) => {
+    const { data } = await api.get("/ambulance/vehicles", { params: { hospitalId } });
+    return data;
+  },
+  getAvailableVehicles: async (hospitalId) => {
+    const { data } = await api.get("/ambulance/vehicles/available", { params: { hospitalId } });
+    return data;
+  },
+  createVehicle: async (hospitalId, payload) => {
+    const { data } = await api.post("/ambulance/vehicles", payload, { params: { hospitalId } });
+    return data;
+  },
+  updateVehicle: async (id, payload) => {
+    const { data } = await api.put(`/ambulance/vehicles/${id}`, payload);
+    return data;
+  },
+  updateVehicleStatus: async (id, status) => {
+    const { data } = await api.patch(`/ambulance/vehicles/${id}/status`, { status });
+    return data;
+  },
+  deleteVehicle: async (id) => api.delete(`/ambulance/vehicles/${id}`),
 };
 
 const checkupApi = {
