@@ -32,7 +32,7 @@ function MiniCalendar({ value, onChange }) {
           <button type="button" onClick={nextMonth} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-[#222222] text-slate-500 dark:text-[#888888] transition-colors"><ChevronRight className="w-4 h-4" /></button>
         </div>
       </div>
-      <div className="grid grid-cols-7 mb-1">{DAYS.map(d => <div key={d} className="text-center text-[10px] font-bold text-slate-400 dark:text-[#555555] uppercase py-1">{d}</div>)}</div>
+      <div className="grid grid-cols-7 mb-1">{DAYS.map(d => <div key={d} className="text-center text-[10px] font-bold text-slate-600 dark:text-[#999999] uppercase py-1">{d}</div>)}</div>
       <div className="grid grid-cols-7 gap-y-0.5">
         {cells.map((day, i) => {
           if (!day) return <div key={`e-${i}`} />;
@@ -225,14 +225,14 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
           <input
             type="text" value={emergencyName} onChange={e => { setEmergencyName(e.target.value); setErrors(er => ({...er, patient:""})); }}
             placeholder="Patient full name *"
-            className={`w-full px-3 py-2.5 text-sm rounded-xl border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none`}
+            className={`w-full px-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none`}
           />
           {errors.patient && <p className="text-xs text-red-500 mt-1">{errors.patient}</p>}
         </div>
         <input
           type="tel" value={emergencyPhone} onChange={e => setEmergencyPhone(e.target.value)}
           placeholder="Mobile number (optional)"
-          className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none"
+          className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none"
         />
       </div>
       <button type="button" onClick={() => { onClose(); navigate("/patients", { state: { openRegistration: true } }); }} className="btn-secondary w-full mt-3">
@@ -247,11 +247,11 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input type="text" value={patientSearch} onChange={e => setPatientSearch(e.target.value)}
           placeholder="Search by name or MRN..."
-          className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all`}
+          className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none transition-all`}
         />
       </div>
       {patientSearch && filteredPatients.length > 0 && (
-        <div className="border border-slate-200 dark:border-[#222222] rounded-xl overflow-hidden mb-2 bg-white dark:bg-[#111111] max-h-44 overflow-y-auto">
+        <div className="border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden mb-2 bg-white dark:bg-[#111111] max-h-44 overflow-y-auto">
           {filteredPatients.slice(0,8).map(p => (
             <button key={p.id} type="button" onClick={() => { setPatientId(String(p.id)); setPatientSearch(""); setErrors(e => ({...e, patient:""})); }}
               className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left border-b last:border-b-0 border-slate-100 dark:border-[#1a1a1a]">
@@ -265,7 +265,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
         </div>
       )}
       {selectedPatient && (
-        <div className="flex items-center gap-3 px-3 py-2.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl mb-2">
+        <div className="flex items-center gap-3 px-3 py-2.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg mb-2">
           <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400 shrink-0">{selectedPatient.firstName[0]}</div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 truncate">{selectedPatient.firstName} {selectedPatient.lastName}</p>
@@ -287,10 +287,10 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
       <div className="flex items-center justify-between mb-1">
         <h3 className="text-base font-bold text-slate-800 dark:text-white">
           {isEmergency ? "Assign Doctor" : "Select Doctor"}
-          {isEmergency && <span className="ml-2 text-xs font-medium text-slate-400 dark:text-[#555]">(optional)</span>}
+          {isEmergency && <span className="ml-2 text-xs font-medium text-slate-600 dark:text-[#999999]">(optional)</span>}
         </h3>
         {isFollowUp && pastDoctors.length > 0 && (
-          <button type="button" onClick={() => setShowAllDoctors(s => !s)} className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+          <button type="button" onClick={() => setShowAllDoctors(s => !s)} className="text-[11px] font-semibold text-slate-900 dark:text-white hover:underline">
             {showAllDoctors ? "Past doctors" : "All doctors"}
           </button>
         )}
@@ -307,11 +307,11 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input type="text" value={doctorSearch} onChange={e => setDoctorSearch(e.target.value)}
             placeholder="Search by name or specialization..."
-            className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+            className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none"
           />
         </div>
       )}
-      <div className={`border ${errors.doctor ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} rounded-xl overflow-hidden bg-white dark:bg-[#111111]`}>
+      <div className={`border ${errors.doctor ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} rounded-lg overflow-hidden bg-white dark:bg-[#111111]`}>
         <select value={doctorId} onChange={e => { setDoctorId(e.target.value); setApptTime(""); setErrors(p => ({...p, doctor:""})); }}
           disabled={user?.role === "doctor"}
           className="w-full px-4 py-3 text-sm text-slate-900 dark:text-[#cccccc] bg-transparent outline-none disabled:opacity-60 disabled:cursor-not-allowed">
@@ -323,7 +323,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
       </div>
       {errors.doctor && <p className="text-xs text-red-500 mt-1">{errors.doctor}</p>}
       {selectedDoctor && (
-        <div className="mt-3 p-3 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-xl">
+        <div className="mt-3 p-3 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 shrink-0">{selectedDoctor.firstName[0]}</div>
             <div>
@@ -333,8 +333,8 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
           </div>
           {selectedDoctor.consultationFee != null && (
             <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] grid grid-cols-2 gap-2">
-              <div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Fee</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.consultationFee}</p></div>
-              <div><p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[#555555]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div>
+              <div><p className="text-[10px] font-bold uppercase text-slate-600 dark:text-[#999999]">Fee</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.consultationFee}</p></div>
+              <div><p className="text-[10px] font-bold uppercase text-slate-600 dark:text-[#999999]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div>
             </div>
           )}
         </div>
@@ -344,7 +344,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#111111] rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#1e1e1e]">
+      <div className="bg-white dark:bg-[#111111] rounded-lg shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#1e1e1e]">
         {/* Header */}
         <div className="flex items-center justify-between px-7 py-5 border-b border-slate-200 dark:border-[#1e1e1e]">
           <div>
@@ -371,7 +371,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 <div className="grid grid-cols-2 gap-2">
                   {TYPE_OPTIONS.map(opt => (
                     <button key={opt.value} type="button" onClick={() => setType(opt.value)}
-                      className={`text-left px-4 py-3 rounded-xl border transition-all ${type === opt.value ? (opt.value === "EMERGENCY" ? "border-rose-500 bg-rose-50 dark:bg-rose-500/10" : "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10") : "border-slate-200 dark:border-[#222222] hover:border-slate-300 dark:hover:border-[#333333]"}`}>
+                      className={`text-left px-4 py-3 rounded-lg border transition-all ${type === opt.value ? (opt.value === "EMERGENCY" ? "border-rose-500 bg-rose-50 dark:bg-rose-500/10" : "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10") : "border-slate-200 dark:border-[#222222] hover:border-slate-300 dark:hover:border-[#333333]"}`}>
                       <p className={`text-sm font-semibold ${type === opt.value ? (opt.value === "EMERGENCY" ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-400") : "text-slate-700 dark:text-[#cccccc]"}`}>
                         {type === opt.value && <CheckCircle className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />}{opt.label}
                       </p>
@@ -386,7 +386,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-slate-400" /> Date
                 </label>
-                <div className="border border-slate-200 dark:border-[#222222] rounded-xl p-4 bg-white dark:bg-[#0f0f0f]">
+                <div className="border border-slate-200 dark:border-[#222222] rounded-lg p-4 bg-white dark:bg-[#0f0f0f]">
                   {apptDate && (
                     <div className="mb-3 px-3 py-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
                       <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{formatDisplayDate(apptDate)}</p>
@@ -406,18 +406,18 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 {isEmergency ? (
                   <div className="flex gap-2">
                     <input type="time" value={apptTime ? apptTime.substring(0,5) : ""} onChange={e => setApptTime(e.target.value ? e.target.value + ":00" : "")}
-                      className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500" />
+                      className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500" />
                     <button type="button" onClick={() => { const n = new Date(); setApptTime(`${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}:00`); }}
-                      className="px-4 py-3 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-sm font-semibold hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
+                      className="px-4 py-3 rounded-lg border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-sm font-semibold hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
                       Now
                     </button>
                   </div>
                 ) : !doctorId ? (
-                  <div className="border border-dashed border-slate-200 dark:border-[#222222] rounded-xl p-5 text-center text-sm text-slate-400 dark:text-[#666666]">
+                  <div className="border border-dashed border-slate-200 dark:border-[#222222] rounded-lg p-5 text-center text-sm text-slate-400 dark:text-[#666666]">
                     Select a doctor to view available time slots.
                   </div>
                 ) : (
-                  <div className="border border-slate-200 dark:border-[#222222] rounded-xl overflow-hidden bg-white dark:bg-[#0f0f0f]">
+                  <div className="border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#0f0f0f]">
                     <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-[#1a1a1a]">
                       {timeSlots.map(slot => (
                         <button key={slot.timeStr} type="button" disabled={slot.isBooked}
@@ -442,7 +442,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                   {isEmergency && <span className="text-xs font-normal text-slate-400">(optional)</span>}
                 </label>
                 <textarea value={chiefComplaint} onChange={e => setChiefComplaint(e.target.value)} rows={3}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all resize-none"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none transition-all resize-none"
                   placeholder={isEmergency ? "Brief description of emergency (optional)" : "Enter the reason for the appointment"} />
               </div>
             </form>
@@ -458,16 +458,16 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 <div className="border-t border-slate-200 dark:border-[#1e1e1e]" />
                 <div>
                   <h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">
-                    Health Checkup <span className="text-xs font-medium text-slate-400 dark:text-[#555]">(optional)</span>
+                    Health Checkup <span className="text-xs font-medium text-slate-600 dark:text-[#999999]">(optional)</span>
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-[#666666] mb-3">Link a checkup package to auto-create a booking.</p>
                   <select value={packageId} onChange={e => setPackageId(e.target.value)}
-                    className="w-full px-3 py-2.5 text-sm text-slate-900 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                    className="w-full px-3 py-2.5 text-sm text-slate-900 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444]">
                     <option value="">No package</option>
                     {packages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                   {selectedPkg && (
-                    <div className="mt-2 px-3 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+                    <div className="mt-2 px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
                       <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{selectedPkg.tests?.length || 0} tests included</p>
                       <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5 line-clamp-2">{selectedPkg.tests?.map(t => t.testName).join(", ")}</p>
                     </div>
@@ -482,7 +482,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
         <div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#111111]">
           <button type="button" onClick={() => { resetForm(); onClose(); }} className="btn-secondary">Cancel</button>
           <button type="submit" form="book-form" disabled={isLoading}
-            className={isEmergency ? "px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-rose-500 hover:bg-rose-600 disabled:opacity-50 transition-colors" : "btn-primary"}>
+            className={isEmergency ? "px-5 py-2.5 rounded-lg font-semibold text-sm text-white bg-rose-500 hover:bg-rose-600 disabled:opacity-50 transition-colors" : "btn-primary"}>
             {isLoading ? "Saving..." : isEmergency ? "Create Emergency Appointment" : "Schedule Appointment"}
           </button>
         </div>

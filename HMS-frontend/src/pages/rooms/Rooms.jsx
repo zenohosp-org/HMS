@@ -31,7 +31,7 @@ function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate, onDe
         <MoreVertical className="w-5 h-5" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-lg overflow-hidden">
           {room.status === "AVAILABLE" && (
             <button
               onClick={() => { setOpen(false); onAllocate(); }}
@@ -168,7 +168,7 @@ function Rooms() {
 
       {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-4 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">Total Rooms</p>
             <p className="text-2xl font-bold text-slate-800 dark:text-[#e0e0e0] mt-1">{rooms.length}</p>
@@ -177,7 +177,7 @@ function Rooms() {
             <Bed className="w-5 h-5 text-slate-500" />
           </div>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg p-4 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Available</p>
             <p className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 mt-1">{availableCount}</p>
@@ -186,7 +186,7 @@ function Rooms() {
             <Bed className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
         </div>
-        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">Occupied</p>
             <p className="text-2xl font-bold text-blue-800 dark:text-blue-300 mt-1">{occupiedCount}</p>
@@ -204,7 +204,7 @@ function Rooms() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 filter === f
                   ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-md"
                   : "bg-white text-slate-500 border border-slate-200 dark:bg-[#111111] dark:border-[#222222] hover:bg-slate-50 dark:hover:bg-[#1a1a1a]"
@@ -217,7 +217,7 @@ function Rooms() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
-            className="w-full sm:w-64 pl-9 pr-4 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+            className="w-full sm:w-64 pl-9 pr-4 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50"
             placeholder="Search rooms or patients..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -230,11 +230,11 @@ function Rooms() {
         {/* Room List */}
         <div className="flex-1 min-w-0 space-y-3">
           {loading ? (
-            <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-8 text-center">
+            <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-8 text-center">
               <p className="text-slate-500 dark:text-[#666666]">Loading rooms…</p>
             </div>
           ) : filteredRooms.length === 0 ? (
-            <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-8 text-center">
+            <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-8 text-center">
               <p className="text-slate-500 dark:text-[#666666]">No rooms found matching criteria.</p>
             </div>
           ) : filteredRooms.map((room) => {
@@ -243,7 +243,7 @@ function Rooms() {
               <div
                 key={room.id}
                 onClick={() => setSelectedRoom((prev) => prev?.id === room.id ? null : room)}
-                className={`bg-white dark:bg-[#111111] border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-colors ${
+                className={`bg-white dark:bg-[#111111] border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-colors ${
                   selectedRoom?.id === room.id
                     ? "border-slate-400 dark:border-[#444444]"
                     : room.status === "AVAILABLE"
@@ -253,7 +253,7 @@ function Rooms() {
               >
                 {/* Left: room identity */}
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border ${
                     room.status === "AVAILABLE"
                       ? "bg-emerald-50 border-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400"
                       : "bg-slate-50 border-slate-100 text-slate-500 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] dark:text-[#888888]"
@@ -264,7 +264,7 @@ function Rooms() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-base font-bold text-slate-900 dark:text-white leading-tight">{room.roomNumber}</p>
                       {room.roomCode && (
-                        <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-[#555]">{room.roomCode}</span>
+                        <span className="text-[10px] font-mono font-bold text-slate-600 dark:text-[#999999]">{room.roomCode}</span>
                       )}
                       <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${
                         room.roomType === "ICU"
@@ -286,7 +286,7 @@ function Rooms() {
                 {/* Right: patient details (single-bed only) or multi-bed hint */}
                 {isMultiBed ? (
                   <div className="flex-1 sm:pl-8 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-[#222222] pt-4 sm:pt-0 flex items-center">
-                    <p className="text-sm text-slate-400 dark:text-[#555555]">Open panel to view beds</p>
+                    <p className="text-sm text-slate-600 dark:text-[#999999]">Open panel to view beds</p>
                   </div>
                 ) : room.status === "OCCUPIED" && room.currentPatient ? (
                   <div className="flex-1 sm:pl-8 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-[#222222] pt-4 sm:pt-0">
@@ -297,7 +297,7 @@ function Rooms() {
                           <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">
                             {room.currentPatient.firstName} {room.currentPatient.lastName}
                           </p>
-                          <p className="text-[11px] text-slate-400 dark:text-[#555555]">{room.currentPatient.mrn}</p>
+                          <p className="text-[11px] text-slate-600 dark:text-[#999999]">{room.currentPatient.mrn}</p>
                         </div>
                         {room.attenderName ? (
                           <div>
@@ -305,11 +305,11 @@ function Rooms() {
                             <p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">
                               {room.attenderName}
                               {room.attenderRelationship && (
-                                <span className="text-xs text-slate-400 dark:text-[#555555] ml-1">({room.attenderRelationship})</span>
+                                <span className="text-xs text-slate-600 dark:text-[#999999] ml-1">({room.attenderRelationship})</span>
                               )}
                             </p>
                             {room.attenderPhone && (
-                              <p className="text-[11px] text-slate-400 dark:text-[#555555]">{room.attenderPhone}</p>
+                              <p className="text-[11px] text-slate-600 dark:text-[#999999]">{room.attenderPhone}</p>
                             )}
                           </div>
                         ) : (
@@ -338,7 +338,7 @@ function Rooms() {
                   </div>
                 ) : (
                   <div className="flex-1 sm:pl-8 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-[#222222] pt-4 sm:pt-0 flex items-center">
-                    <p className="text-sm text-slate-400 dark:text-[#555555]">Ready for allocation</p>
+                    <p className="text-sm text-slate-600 dark:text-[#999999]">Ready for allocation</p>
                   </div>
                 )}
 

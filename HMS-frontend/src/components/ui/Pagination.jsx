@@ -13,13 +13,13 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize, onPageChang
     if (currentPage < totalPages - 2) pages.push("\u2026");
     pages.push(totalPages);
   }
-  return <div className="flex items-center justify-between pt-3 mt-1 border-t border-slate-100 dark:border-[#1e1e1e]"><p className="text-xs text-slate-400 dark:text-[#555555]">
+  return <div className="flex items-center justify-between pt-3 mt-1 border-t border-slate-100 dark:border-[#1e1e1e]"><p className="text-xs text-slate-600 dark:text-[#999999]">
                 Showing <span className="font-semibold text-slate-600 dark:text-[#888888]">{from}–{to}</span> of <span className="font-semibold text-slate-600 dark:text-[#888888]">{totalItems}</span></p><div className="flex items-center gap-1"><button
     onClick={() => onPageChange(currentPage - 1)}
     disabled={currentPage === 1}
     className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
   ><ChevronLeft className="w-3.5 h-3.5" /></button>{pages.map(
-    (p, i) => p === "\u2026" ? <span key={`ellipsis-${i}`} className="w-7 h-7 flex items-center justify-center text-xs text-slate-400 dark:text-[#555555]">…</span> : <button
+    (p, i) => p === "\u2026" ? <span key={`ellipsis-${i}`} className="w-7 h-7 flex items-center justify-center text-xs text-slate-600 dark:text-[#999999]">…</span> : <button
       key={p}
       onClick={() => onPageChange(p)}
       className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-colors

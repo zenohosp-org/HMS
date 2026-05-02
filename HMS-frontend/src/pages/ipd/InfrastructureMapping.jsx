@@ -42,7 +42,7 @@ function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom }) {
   if (!rooms.length) return null;
   return (
     <div className="border-t border-slate-100 dark:border-[#1e1e1e] p-3 bg-slate-50/50 dark:bg-[#0a0a0a]">
-      <p className="text-[10px] font-bold text-slate-400 dark:text-[#555555] uppercase tracking-widest mb-2.5">
+      <p className="text-[10px] font-bold text-slate-600 dark:text-[#999999] uppercase tracking-widest mb-2.5">
         Rooms · {rooms.length}
       </p>
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
@@ -68,7 +68,7 @@ function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom }) {
 function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom }) {
   const wardRooms = parseInt(ward.rooms?.length) || 0;
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-[#252525] overflow-hidden bg-white dark:bg-[#111111]">
+    <div className="rounded-lg border border-slate-200 dark:border-[#252525] overflow-hidden bg-white dark:bg-[#111111]">
       <div className="flex items-stretch divide-x divide-slate-100 dark:divide-[#1e1e1e]">
         {/* Ward name */}
         <div className="flex items-center gap-2 px-4 py-2.5 flex-1 min-w-0">
@@ -159,7 +159,7 @@ function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard
           ))}
         </div>
       ) : (
-        <div className="py-5 text-center text-xs text-slate-400 dark:text-[#555555] bg-white dark:bg-[#0d0d0d]">
+        <div className="py-5 text-center text-xs text-slate-600 dark:text-[#999999] bg-white dark:bg-[#0d0d0d]">
           Set ward count above to add wards
         </div>
       )}
@@ -173,7 +173,7 @@ function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFlo
   );
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-[#222222] overflow-hidden shadow-sm">
+    <div className="rounded-lg border border-slate-200 dark:border-[#222222] overflow-hidden shadow-sm">
       <div className="flex items-center gap-3 px-4 py-3 bg-slate-900 dark:bg-[#0a0a0a]">
         <div className="flex items-center gap-2 shrink-0">
           <Building2 className="w-4 h-4 text-slate-400" />
@@ -213,7 +213,7 @@ function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFlo
           ))}
         </div>
       ) : (
-        <div className="py-8 text-center text-sm text-slate-400 dark:text-[#555555] bg-white dark:bg-[#111111]">
+        <div className="py-8 text-center text-sm text-slate-600 dark:text-[#999999] bg-white dark:bg-[#111111]">
           Set floor count above to configure this building
         </div>
       )}
@@ -357,7 +357,7 @@ export default function InfrastructureMapping() {
               Define your hospital layout · Buildings → Floors → Wards → Rooms
             </p>
           </div>
-          <div className="shrink-0 grid grid-cols-4 gap-px rounded-xl overflow-hidden border border-emerald-100 dark:border-emerald-500/20 bg-emerald-100 dark:bg-emerald-500/10">
+          <div className="shrink-0 grid grid-cols-4 gap-px rounded-lg overflow-hidden border border-emerald-100 dark:border-emerald-500/20 bg-emerald-100 dark:bg-emerald-500/10">
             {[
               { label: "Buildings", value: buildings.length },
               { label: "Floors", value: totalFloors },
@@ -376,7 +376,7 @@ export default function InfrastructureMapping() {
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
         {/* Building counter */}
-        <div className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222]">
+        <div className="flex items-center justify-between p-4 rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-[#1a1a1a] flex items-center justify-center">
               <Building2 className="w-4 h-4 text-white" />
@@ -391,11 +391,11 @@ export default function InfrastructureMapping() {
 
         {/* Buildings */}
         {buildings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 rounded-xl border-2 border-dashed border-slate-200 dark:border-[#2a2a2a]">
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-[#1a1a1a] flex items-center justify-center mb-4">
+          <div className="flex flex-col items-center justify-center py-24 rounded-lg border-2 border-dashed border-slate-200 dark:border-[#2a2a2a]">
+            <div className="w-16 h-16 rounded-lg bg-slate-100 dark:bg-[#1a1a1a] flex items-center justify-center mb-4">
               <Building2 className="w-8 h-8 text-slate-300 dark:text-[#333333]" />
             </div>
-            <p className="text-sm font-semibold text-slate-400 dark:text-[#555555]">No buildings configured</p>
+            <p className="text-sm font-semibold text-slate-600 dark:text-[#999999]">No buildings configured</p>
             <p className="text-xs text-slate-300 dark:text-[#3a3a3a] mt-1">Increase the building count above to get started</p>
           </div>
         ) : (
@@ -419,7 +419,7 @@ export default function InfrastructureMapping() {
 
         {/* Save bar */}
         {buildings.length > 0 && (
-          <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222]">
+          <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222]">
             <div className="flex items-start gap-2.5">
               <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
               <div>

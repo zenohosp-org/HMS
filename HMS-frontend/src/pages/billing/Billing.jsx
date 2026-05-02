@@ -58,8 +58,8 @@ function StatCard({ label, value, sub, Icon, accent }) {
     rose:    'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400',
   }
   return (
-    <div className="bg-white dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-[#222222] p-5 flex items-center gap-4">
-      <div className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 ${accents[accent]}`}>
+    <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] p-5 flex items-center gap-4">
+      <div className={`w-11 h-11 rounded-lg border flex items-center justify-center shrink-0 ${accents[accent]}`}>
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0">
@@ -262,10 +262,10 @@ export default function Billing() {
             placeholder="Search invoice #, patient name, MRN…"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
           />
         </div>
-        <div className="flex items-center gap-1.5 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-xl p-1 shadow-sm">
+        <div className="flex items-center gap-1.5 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg p-1 shadow-sm">
           {['ALL', 'UNPAID', 'PAID', 'CANCELLED'].map(s => (
             <button key={s} onClick={() => { setStatusFilter(s); setPage(1) }}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === s ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm' : 'text-slate-500 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a]'}`}>
@@ -276,7 +276,7 @@ export default function Billing() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 bg-white dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden flex flex-col">
+      <div className="flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden flex flex-col">
         <div className="overflow-x-auto flex-1">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -393,7 +393,7 @@ export default function Billing() {
                       {isExpanded && inv.items?.length > 0 && (
                         <tr key={`${inv.id}-exp`} className="bg-slate-50/70 dark:bg-[#0d0d0d]">
                           <td colSpan={7} className="px-5 pb-4 pt-2">
-                            <div className="rounded-xl border border-slate-100 dark:border-[#1e1e1e] overflow-hidden">
+                            <div className="rounded-lg border border-slate-100 dark:border-[#1e1e1e] overflow-hidden">
                               <table className="w-full text-sm">
                                 <thead>
                                   <tr className="bg-slate-100/60 dark:bg-[#1a1a1a] text-[11px] text-slate-400 uppercase tracking-widest">

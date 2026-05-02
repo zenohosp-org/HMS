@@ -91,12 +91,12 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
     finally { setSaving(false); }
   };
 
-  const inputCls = "w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#333] bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 placeholder:text-slate-400";
+  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400";
   const labelCls = "block text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wide mb-1.5";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-2xl shadow-2xl w-full max-w-lg">
+      <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-lg shadow-2xl w-full max-w-lg">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e]">
           <div>
             <h2 className="font-bold text-slate-900 dark:text-white">Book Health Checkup</h2>
@@ -107,7 +107,7 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
 
         <div className="p-6 space-y-4">
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm">
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm">
               <AlertCircle className="w-4 h-4 shrink-0" />{error}
             </div>
           )}
@@ -121,7 +121,7 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
                   <input value={patientQuery} onChange={e => searchPatient(e.target.value)} onFocus={() => patientResults.length && setPatientOpen(true)} placeholder="Search by name, MRN or phone…" className={`${inputCls} pl-9`} />
                 </div>
                 {patientOpen && patientResults.length > 0 && (
-                  <div className="absolute z-20 mt-1 w-full bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333] rounded-xl shadow-xl overflow-hidden">
+                  <div className="absolute z-20 mt-1 w-full bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333] rounded-lg shadow-xl overflow-hidden">
                     {patientResults.slice(0, 5).map(p => (
                       <button key={p.id} onClick={() => selectPatient(p)} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222] border-b border-slate-100 dark:border-[#2a2a2a] last:border-0">
                         <p className="text-sm font-semibold text-slate-800 dark:text-white">{p.firstName} {p.lastName}</p>
@@ -143,7 +143,7 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
               </div>
 
               {selectedPkg && (
-                <div className="px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+                <div className="px-4 py-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
                   <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">{selectedPkg.tests?.length || 0} tests included</p>
                   <p className="text-xs text-emerald-600 dark:text-emerald-500 line-clamp-2">{selectedPkg.tests?.map(t => t.testName).join(" · ")}</p>
                 </div>
@@ -193,7 +193,7 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
               </div>
 
               {/* Summary */}
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#1a1a1a] border border-slate-100 dark:border-[#222] space-y-1.5 text-sm">
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-100 dark:border-[#222] space-y-1.5 text-sm">
                 <p className="font-bold text-slate-700 dark:text-[#ccc] text-xs uppercase tracking-wide mb-2">Booking Summary</p>
                 <p className="text-slate-600 dark:text-[#aaa]"><span className="font-semibold">Patient:</span> {form.patient?.firstName} {form.patient?.lastName}</p>
                 <p className="text-slate-600 dark:text-[#aaa]"><span className="font-semibold">Package:</span> {selectedPkg?.name}</p>
@@ -206,14 +206,14 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
 
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-[#1e1e1e]">
           {step === 2 ? (
-            <button onClick={() => setStep(1)} className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">← Back</button>
+            <button onClick={() => setStep(1)} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">← Back</button>
           ) : <div />}
           {step === 1 ? (
-            <button disabled={!canProceed} onClick={() => setStep(2)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold disabled:opacity-50 transition-colors">
+            <button disabled={!canProceed} onClick={() => setStep(2)} className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold disabled:opacity-50 transition-colors">
               Next →
             </button>
           ) : (
-            <button disabled={saving} onClick={handleBook} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold disabled:opacity-50 transition-colors">
+            <button disabled={saving} onClick={handleBook} className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold disabled:opacity-50 transition-colors">
               {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Booking…</> : <><CheckCircle2 className="w-4 h-4" /> Confirm Booking</>}
             </button>
           )}
@@ -255,13 +255,13 @@ function AssignDoctorCell({ booking, doctors, onAssigned }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className={`flex items-center gap-1.5 text-sm transition-colors ${name ? "text-slate-700 dark:text-[#ccc] hover:text-emerald-600 dark:hover:text-emerald-400" : "text-slate-400 dark:text-[#555] hover:text-emerald-600 dark:hover:text-emerald-400"}`}
+        className={`flex items-center gap-1.5 text-sm transition-colors ${name ? "text-slate-700 dark:text-[#ccc] hover:text-emerald-600 dark:hover:text-emerald-400" : "text-slate-600 dark:text-[#999999] hover:text-emerald-600 dark:hover:text-emerald-400"}`}
       >
         {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3 shrink-0" />}
         <span>{name ?? "Assign doctor"}</span>
       </button>
       {open && (
-        <div className="absolute z-30 left-0 top-full mt-1 w-56 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333] rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute z-30 left-0 top-full mt-1 w-56 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333] rounded-lg shadow-xl overflow-hidden">
           <button onClick={() => assign(null)} className="w-full text-left px-3 py-2 text-xs text-slate-400 dark:text-[#666] hover:bg-slate-50 dark:hover:bg-[#222] border-b border-slate-100 dark:border-[#2a2a2a]">
             — Unassign doctor
           </button>
@@ -328,7 +328,7 @@ export default function CheckupBookings() {
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">Checkup Bookings</h1>
           <p className="text-sm text-slate-500 dark:text-[#666] mt-0.5">Schedule and track health checkup appointments</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98]">
+        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98]">
           <Plus className="w-4 h-4" /> New Booking
         </button>
       </div>
@@ -341,8 +341,8 @@ export default function CheckupBookings() {
           { label: "In Progress",      value: stats.inProgress, icon: Activity,      color: "bg-violet-50 dark:bg-violet-500/10 text-violet-500" },
           { label: "Completed",        value: stats.completed,  icon: CheckCircle2,  color: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500" },
         ].map(s => (
-          <div key={s.label} className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-2xl p-5 flex items-center gap-4">
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${s.color}`}>
+          <div key={s.label} className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-lg p-5 flex items-center gap-4">
+            <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}>
               <s.icon className="w-5 h-5" />
             </div>
             <div>
@@ -357,17 +357,17 @@ export default function CheckupBookings() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, MRN, booking number…" className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 placeholder:text-slate-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, MRN, booking number…" className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-slate-300/50">
           <option value="ALL">All Status</option>
           {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+        <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-slate-300/50" />
       </div>
 
       {/* Bookings table */}
-      <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-lg overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16 text-slate-400">
             <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading…
@@ -383,7 +383,7 @@ export default function CheckupBookings() {
               <thead>
                 <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
                   {["Booking #", "Patient", "Package", "Scheduled", "Doctor", "Payment", "Status", ""].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555]">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#999999]">{h}</th>
                   ))}
                 </tr>
               </thead>

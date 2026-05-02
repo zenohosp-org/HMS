@@ -105,8 +105,8 @@ export default function Admissions() {
           { label: 'Overdue Discharge', value: admissions.filter(isOverdue).length, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10' },
           { label: 'Total This Month', value: admissions.filter(a => a.createdAt?.startsWith(new Date().toISOString().slice(0, 7))).length, icon: Calendar, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-500/10' },
         ].map(stat => (
-          <div key={stat.label} className="rounded-2xl bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] p-4 flex items-center gap-4">
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${stat.bg}`}>
+          <div key={stat.label} className="rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] p-4 flex items-center gap-4">
+            <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${stat.bg}`}>
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
             </div>
             <div>
@@ -121,17 +121,17 @@ export default function Admissions() {
         <div className="relative flex-1 min-w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
             placeholder="Search by patient, admission no., department, room…" />
         </div>
         {['ADMITTED', 'DISCHARGED', 'ALL'].map(s => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-violet-400'}`}>
+            className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-violet-400'}`}>
             {s.charAt(0) + s.slice(1).toLowerCase()}
             {s === 'ADMITTED' && counts.ADMITTED > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-xs">{counts.ADMITTED}</span>}
           </button>
         ))}
-        <div className="flex border border-slate-200 dark:border-[#2a2a2a] rounded-xl overflow-hidden ml-auto">
+        <div className="flex border border-slate-200 dark:border-[#2a2a2a] rounded-lg overflow-hidden ml-auto">
           {[['grid', LayoutGrid], ['list', List]].map(([mode, Icon]) => (
             <button key={mode} onClick={() => setViewMode(mode)}
               className={`p-2.5 transition-colors ${viewMode === mode ? 'bg-violet-600 text-white' : 'bg-white dark:bg-[#111] text-slate-500 hover:bg-slate-50 dark:hover:bg-[#1a1a1a]'}`}>
@@ -153,11 +153,11 @@ export default function Admissions() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-2">
           {filtered.map(a => (
             <div key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)}
-              className={`rounded-2xl bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] hover:border-violet-300 hover:shadow-md transition-all cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
+              className={`rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] hover:border-violet-300 hover:shadow-md transition-all cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center shrink-0">
                       <User className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                     </div>
                     <div>
@@ -199,7 +199,7 @@ export default function Admissions() {
               {a.status === 'ADMITTED' && (
                 <div className="px-4 pb-4 flex gap-2" onClick={e => e.stopPropagation()}>
                   <button onClick={() => setDischargeTarget(a)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/20 transition-colors">
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/20 transition-colors">
                     <LogOut className="w-3.5 h-3.5" /> Discharge
                   </button>
                 </div>
@@ -208,7 +208,7 @@ export default function Admissions() {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] overflow-hidden flex-1">
+        <div className="rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] overflow-hidden flex-1">
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">

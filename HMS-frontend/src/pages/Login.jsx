@@ -34,12 +34,12 @@ export default function Login() {
 
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <Activity className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-lg flex items-center justify-center shadow-lg">
+              <Activity className="w-6 h-6 text-white dark:text-slate-900" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-none">ZenoHosp</h1>
-              <p className="text-xs text-slate-400 dark:text-[#666] font-medium mt-1">Hospital Management System</p>
+              <p className="text-xs text-slate-600 dark:text-[#666] font-medium mt-1">Hospital Management System</p>
             </div>
           </div>
 
@@ -53,12 +53,12 @@ export default function Login() {
 
           {/* Alerts */}
           {loggedOut && (
-            <div className="px-4 py-3 rounded-xl bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] text-sm text-slate-600 dark:text-[#888]">
+            <div className="px-4 py-3 rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] text-sm text-slate-600 dark:text-[#888]">
               You have been signed out successfully.
             </div>
           )}
           {errorMessage && (
-            <div className="px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-sm text-rose-700 dark:text-rose-400">
+            <div className="px-4 py-3 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-sm text-rose-700 dark:text-rose-400">
               {errorMessage}
             </div>
           )}
@@ -67,15 +67,15 @@ export default function Login() {
           <button
             type="button"
             onClick={() => { window.location.href = "/oauth2/authorization/directory"; }}
-            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+            className="w-full py-4 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-sm rounded-lg shadow-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
           >
             <Activity className="w-5 h-5" />
             Sign in with ZenoHosp Directory
           </button>
 
-          <p className="text-center text-xs text-slate-400 dark:text-[#555] font-medium">
+          <p className="text-center text-xs text-slate-600 dark:text-[#999] font-medium">
             By continuing, you agree to our{" "}
-            <span className="text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer">
+            <span className="text-slate-900 dark:text-white hover:underline cursor-pointer">
               Terms of Service
             </span>
           </p>

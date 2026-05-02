@@ -68,22 +68,22 @@ const BLOOD_COLORS = {
 };
 
 const STATUS_META = {
-  SCHEDULED: { icon: Clock, color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-500/10", label: "Scheduled" },
-  COMPLETED: { icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/10", label: "Completed" },
+  SCHEDULED: { icon: Clock, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-500/10", label: "Scheduled" },
+  COMPLETED: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-500/10", label: "Completed" },
   CANCELLED: { icon: XCircle, color: "text-rose-500", bg: "bg-rose-50 dark:bg-rose-500/10", label: "Cancelled" },
   NO_SHOW: { icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10", label: "No Show" },
 };
 
 const PIE_COLORS = { SCHEDULED: "#6366f1", COMPLETED: "#10b981", CANCELLED: "#f43f5e", NO_SHOW: "#f59e0b" };
 
-const TOOLTIP_CLS = "bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl shadow-xl px-4 py-3 text-xs";
+const TOOLTIP_CLS = "bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-xl px-4 py-3 text-xs";
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function StatPill({ label, value, icon, accent }) {
   return (
-    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl p-5 flex items-center gap-4">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${accent}`}>
+    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-5 flex items-center gap-4">
+      <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${accent}`}>
         {icon}
       </div>
       <div>
@@ -96,16 +96,16 @@ function StatPill({ label, value, icon, accent }) {
 
 function SectionCard({ title, subtitle, children, action, actionLabel, actionFn }) {
   return (
-    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl p-6 flex flex-col gap-5">
+    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-6 flex flex-col gap-5">
       <div className="flex items-start justify-between">
         <div>
           <p className="font-bold text-slate-900 dark:text-white text-sm">{title}</p>
-          {subtitle && <p className="text-xs text-slate-400 dark:text-[#555] mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{subtitle}</p>}
         </div>
         {actionFn && (
           <button
             onClick={actionFn}
-            className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white hover:underline"
           >
             {actionLabel} <ArrowRight className="w-3 h-3" />
           </button>
@@ -117,7 +117,7 @@ function SectionCard({ title, subtitle, children, action, actionLabel, actionFn 
 }
 
 function AppointmentStatusRow({ status, count, total }) {
-  const meta = STATUS_META[status] ?? { icon: Clock, color: "text-slate-400", bg: "bg-slate-100 dark:bg-[#1e1e1e]", label: status };
+  const meta = STATUS_META[status] ?? { icon: Clock, color: "text-slate-600", bg: "bg-slate-100 dark:bg-[#1e1e1e]", label: status };
   const Icon = meta.icon;
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
@@ -137,7 +137,7 @@ function AppointmentStatusRow({ status, count, total }) {
           />
         </div>
       </div>
-      <span className="text-[10px] text-slate-400 dark:text-[#555] w-7 text-right">{pct}%</span>
+      <span className="text-[10px] text-slate-600 dark:text-[#999999] w-7 text-right">{pct}%</span>
     </div>
   );
 }
@@ -158,7 +158,7 @@ function PatientRowCard({ p }) {
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-800 dark:text-[#e5e5e5]">{p.firstName} {p.lastName}</p>
-            <p className="text-xs text-slate-400 dark:text-[#555]">{p.mrn}</p>
+            <p className="text-xs text-slate-600 dark:text-[#999999]">{p.mrn}</p>
           </div>
         </div>
       </td>
@@ -169,7 +169,7 @@ function PatientRowCard({ p }) {
             <Phone className="w-3 h-3" />{p.phone}
           </span>
         ) : (
-          <span className="text-xs text-slate-300 dark:text-[#444]">—</span>
+          <span className="text-xs text-slate-500 dark:text-[#888888]">—</span>
         )}
       </td>
       <td className="px-5 py-3.5">
@@ -178,7 +178,7 @@ function PatientRowCard({ p }) {
         </span>
       </td>
       <td className="px-5 py-3.5 text-right">
-        <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-[#555] justify-end">
+        <span className="flex items-center gap-1 text-xs text-slate-600 dark:text-[#999999] justify-end">
           <Clock className="w-3 h-3" />{timeAgo(p.createdAt)}
         </span>
       </td>
@@ -249,7 +249,7 @@ function DoctorStaffDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-slate-900 dark:text-white" />
       </div>
     );
   }
@@ -285,8 +285,8 @@ function DoctorStaffDashboard() {
         <StatPill
           label="New Today"
           value={todayPatients.length}
-          icon={<UserPlus className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
-          accent="bg-emerald-50 dark:bg-emerald-500/10"
+          icon={<UserPlus className="w-5 h-5 text-slate-900 dark:text-white" />}
+          accent="bg-slate-100 dark:bg-[#1e1e1e]"
         />
         <StatPill
           label={isDoctor ? "My Appointments" : "Appointments"}
@@ -316,8 +316,8 @@ function DoctorStaffDashboard() {
             <AreaChart data={patientTrend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="actGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" vertical={false} />
@@ -336,11 +336,11 @@ function DoctorStaffDashboard() {
               <Area
                 type="monotone"
                 dataKey="count"
-                stroke="#6366f1"
+                stroke="#3b82f6"
                 strokeWidth={2}
                 fill="url(#actGrad)"
                 dot={false}
-                activeDot={{ r: 4, fill: "#6366f1", strokeWidth: 0 }}
+                activeDot={{ r: 4, fill: "#3b82f6", strokeWidth: 0 }}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -363,7 +363,7 @@ function DoctorStaffDashboard() {
                   active && payload?.length ? (
                     <div className={TOOLTIP_CLS}>
                       <p className="font-bold text-slate-700 dark:text-[#ccc] mb-1">{label}</p>
-                      <p className="text-emerald-500">{payload[0].value} appointments</p>
+                      <p className="text-slate-900 dark:text-white">{payload[0].value} appointments</p>
                     </div>
                   ) : null
                 }
@@ -373,7 +373,7 @@ function DoctorStaffDashboard() {
                 dataKey="count"
                 radius={[5, 5, 0, 0]}
                 maxBarSize={32}
-                fill="#10b981"
+                fill="#0f172a"
               />
             </BarChart>
           </ResponsiveContainer>
@@ -397,21 +397,21 @@ function DoctorStaffDashboard() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-32 gap-2 text-slate-300 dark:text-[#333]">
+            <div className="flex flex-col items-center justify-center h-32 gap-2 text-slate-500 dark:text-[#777777]">
               <Calendar className="w-8 h-8" />
-              <p className="text-xs text-slate-400 dark:text-[#555]">No appointments yet</p>
+              <p className="text-xs text-slate-600 dark:text-[#999999]">No appointments yet</p>
             </div>
           )}
           {totalAppts > 0 && (
             <div className="mt-1 pt-4 border-t border-slate-100 dark:border-[#1a1a1a]">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#555]">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#999999]">
                 <span>Total appointments</span>
                 <span className="font-bold text-slate-800 dark:text-[#ddd]">{totalAppts}</span>
               </div>
               {apptStatusCounts.COMPLETED > 0 && (
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#555] mt-1">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#999999] mt-1">
                   <span>Completion rate</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-bold text-slate-900 dark:text-white">
                     {((apptStatusCounts.COMPLETED / totalAppts) * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -421,7 +421,7 @@ function DoctorStaffDashboard() {
         </SectionCard>
 
         {/* Today's patients */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl overflow-hidden flex flex-col">
+        <div className="lg:col-span-2 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-[#1a1a1a]">
             <div className="flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-blue-500" />
@@ -434,7 +434,7 @@ function DoctorStaffDashboard() {
             </div>
             <button
               onClick={() => navigate("/patients")}
-              className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+              className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white hover:underline"
             >
               All patients <ArrowRight className="w-3 h-3" />
             </button>
@@ -442,12 +442,12 @@ function DoctorStaffDashboard() {
 
           {todayPatients.length === 0 ? (
             <div className="flex flex-col items-center justify-center flex-1 py-16 gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-[#1a1a1a] border border-slate-100 dark:border-[#222] flex items-center justify-center">
-                <UserPlus className="w-7 h-7 text-slate-200 dark:text-[#333]" />
+              <div className="w-14 h-14 rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-100 dark:border-[#222] flex items-center justify-center">
+                <UserPlus className="w-7 h-7 text-slate-200 dark:text-[#777777]" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-semibold text-slate-500 dark:text-[#555]">No new patients today</p>
-                <p className="text-xs text-slate-400 dark:text-[#444] mt-0.5">New registrations will appear here</p>
+                <p className="text-sm font-semibold text-slate-500 dark:text-[#999999]">No new patients today</p>
+                <p className="text-xs text-slate-600 dark:text-[#888888] mt-0.5">New registrations will appear here</p>
               </div>
               <button onClick={() => navigate("/patients")} className="btn-primary text-xs mt-1">
                 Register Patient
@@ -459,7 +459,7 @@ function DoctorStaffDashboard() {
                 <thead>
                   <tr className="bg-slate-50 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1a1a1a]">
                     {["Patient", "Age / Gender", "Phone", "Blood", "Registered"].map((h) => (
-                      <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-[#555] uppercase tracking-widest last:text-right">
+                      <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-[#999999] uppercase tracking-widest last:text-right">
                         {h}
                       </th>
                     ))}
@@ -481,21 +481,21 @@ function DoctorStaffDashboard() {
         {[
           { label: "Patients", sub: "Register or find a patient", to: "/patients", icon: <Users className="w-5 h-5" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
           ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10" }] : []),
-          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing", icon: <ReceiptText className="w-5 h-5" />, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" },
+          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 dark:text-white bg-slate-100 dark:bg-[#1e1e1e]" },
         ].map((item) => (
           <button
             key={item.to}
             onClick={() => navigate(item.to)}
-            className="group flex items-center gap-4 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-2xl p-5 text-left hover:border-slate-300 dark:hover:border-[#2a2a2a] hover:shadow-md transition-all"
+            className="group flex items-center gap-4 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-5 text-left hover:border-slate-300 dark:hover:border-[#2a2a2a] hover:shadow-md transition-all"
           >
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}>
+            <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${item.color}`}>
               {item.icon}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-slate-800 dark:text-[#e5e5e5] text-sm">{item.label}</p>
-              <p className="text-xs text-slate-400 dark:text-[#555] mt-0.5">{item.sub}</p>
+              <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{item.sub}</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-[#333] group-hover:text-slate-500 dark:group-hover:text-[#666] group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="w-4 h-4 text-slate-500 dark:text-[#777777] group-hover:text-slate-500 dark:group-hover:text-[#666] group-hover:translate-x-0.5 transition-all" />
           </button>
         ))}
       </div>

@@ -69,12 +69,12 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
     finally { setSaving(false); }
   };
 
-  const inputCls = "w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#333] bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 placeholder:text-slate-400";
+  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400";
   const labelCls = "block text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wide mb-1.5";
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8 px-4">
-      <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-2xl shadow-2xl w-full max-w-2xl">
+      <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-lg shadow-2xl w-full max-w-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e]">
           <h2 className="font-bold text-slate-900 dark:text-white">{form.id ? "Edit Package" : "New Health Package"}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400"><X className="w-4 h-4" /></button>
@@ -82,7 +82,7 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm">
+            <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm">
               <AlertCircle className="w-4 h-4 shrink-0" /> {error}
             </div>
           )}
@@ -130,26 +130,26 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
             </div>
 
             {form.tests.length === 0 ? (
-              <div className="py-8 flex flex-col items-center rounded-xl border border-dashed border-slate-200 dark:border-[#333] text-slate-400">
+              <div className="py-8 flex flex-col items-center rounded-lg border border-dashed border-slate-200 dark:border-[#333] text-slate-400">
                 <Package className="w-6 h-6 mb-2 opacity-40" />
                 <p className="text-xs">No tests added yet. Click "Add Test" to begin.</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {form.tests.map((t, i) => (
-                  <div key={i} className="flex gap-2 p-3 rounded-xl border border-slate-100 dark:border-[#222] bg-slate-50 dark:bg-[#1a1a1a]">
-                    <GripVertical className="w-4 h-4 text-slate-300 dark:text-[#444] mt-2.5 shrink-0" />
+                  <div key={i} className="flex gap-2 p-3 rounded-lg border border-slate-100 dark:border-[#222] bg-slate-50 dark:bg-[#1a1a1a]">
+                    <GripVertical className="w-4 h-4 text-slate-500 dark:text-[#888888] mt-2.5 shrink-0" />
                     <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2">
                       <div className="col-span-2 md:col-span-2">
-                        <input value={t.testName} onChange={e => updateTest(i, "testName", e.target.value)} placeholder="Test name (e.g. Complete Blood Count)" className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder:text-slate-400" />
+                        <input value={t.testName} onChange={e => updateTest(i, "testName", e.target.value)} placeholder="Test name (e.g. Complete Blood Count)" className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] placeholder:text-slate-400" />
                       </div>
                       <div>
-                        <select value={t.testCategory} onChange={e => updateTest(i, "testCategory", e.target.value)} className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                        <select value={t.testCategory} onChange={e => updateTest(i, "testCategory", e.target.value)} className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50">
                           {TEST_CATEGORIES.map(c => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
                         </select>
                       </div>
                       <div>
-                        <input value={t.normalRange} onChange={e => updateTest(i, "normalRange", e.target.value)} placeholder="Normal range" className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 placeholder:text-slate-400" />
+                        <input value={t.normalRange} onChange={e => updateTest(i, "normalRange", e.target.value)} placeholder="Normal range" className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 placeholder:text-slate-400" />
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -173,8 +173,8 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
               <span className="text-sm font-medium text-slate-600 dark:text-[#888]">Active (visible for booking)</span>
             </label>
             <div className="flex gap-3">
-              <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-[#333] text-sm font-medium text-slate-600 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">Cancel</button>
-              <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold transition-colors disabled:opacity-50">
+              <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] text-sm font-medium text-slate-600 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">Cancel</button>
+              <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold transition-colors disabled:opacity-50">
                 {saving ? "Saving…" : "Save Package"}
               </button>
             </div>
@@ -190,7 +190,7 @@ function PackageCard({ pkg, onEdit, onToggle, onDelete }) {
   const label = CATEGORIES.find(c => c.value === pkg.category)?.label || pkg.category;
 
   return (
-    <div className={`bg-white dark:bg-[#111] border rounded-2xl overflow-hidden transition-all ${pkg.active ? "border-slate-200 dark:border-[#222]" : "border-slate-100 dark:border-[#1a1a1a] opacity-60"}`}>
+    <div className={`bg-white dark:bg-[#111] border rounded-lg overflow-hidden transition-all ${pkg.active ? "border-slate-200 dark:border-[#222]" : "border-slate-100 dark:border-[#1a1a1a] opacity-60"}`}>
       <div className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -236,8 +236,8 @@ function PackageCard({ pkg, onEdit, onToggle, onDelete }) {
               <div key={i} className="flex items-center gap-3 text-xs">
                 <span className="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0 text-[10px]">{i + 1}</span>
                 <span className="font-medium text-slate-700 dark:text-[#ccc] flex-1">{t.testName}</span>
-                <span className="text-slate-400 dark:text-[#555] text-[10px]">{t.testCategory?.replace("_", " ")}</span>
-                {t.normalRange && <span className="text-slate-400 dark:text-[#555] text-[10px]">({t.normalRange})</span>}
+                <span className="text-slate-600 dark:text-[#999999] text-[10px]">{t.testCategory?.replace("_", " ")}</span>
+                {t.normalRange && <span className="text-slate-600 dark:text-[#999999] text-[10px]">({t.normalRange})</span>}
                 {t.mandatory && <Check className="w-3 h-3 text-emerald-500 shrink-0" />}
               </div>
             ))}
@@ -297,7 +297,7 @@ export default function PackageManager() {
         </div>
         <button
           onClick={() => { setEditing(null); setShowForm(true); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98]"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" /> New Package
         </button>
@@ -305,11 +305,11 @@ export default function PackageManager() {
 
       {/* Category filter */}
       <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setFilterCat("ALL")} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filterCat === "ALL" ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" : "bg-white dark:bg-[#111] border border-slate-200 dark:border-[#333] text-slate-500 dark:text-[#888] hover:bg-slate-50"}`}>
+        <button onClick={() => setFilterCat("ALL")} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterCat === "ALL" ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" : "bg-white dark:bg-[#111] border border-slate-200 dark:border-[#333] text-slate-500 dark:text-[#888] hover:bg-slate-50"}`}>
           All ({packages.length})
         </button>
         {CATEGORIES.filter(c => packages.some(p => p.category === c.value)).map(c => (
-          <button key={c.value} onClick={() => setFilterCat(c.value)} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filterCat === c.value ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" : "bg-white dark:bg-[#111] border border-slate-200 dark:border-[#333] text-slate-500 dark:text-[#888] hover:bg-slate-50"}`}>
+          <button key={c.value} onClick={() => setFilterCat(c.value)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterCat === c.value ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" : "bg-white dark:bg-[#111] border border-slate-200 dark:border-[#333] text-slate-500 dark:text-[#888] hover:bg-slate-50"}`}>
             {c.label}
           </button>
         ))}
@@ -317,10 +317,10 @@ export default function PackageManager() {
 
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2">
-          {[1, 2, 3].map(i => <div key={i} className="h-32 rounded-2xl bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-32 rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center py-20 bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-2xl text-slate-400">
+        <div className="flex flex-col items-center py-20 bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-lg text-slate-400">
           <Package className="w-12 h-12 mb-3 opacity-25" />
           <p className="font-semibold text-sm">No packages yet</p>
           <p className="text-xs mt-1">Create your first health checkup package to get started</p>

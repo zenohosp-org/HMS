@@ -58,7 +58,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
     }
   };
 
-  const inputClasses = "w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all";
+  const inputClasses = "w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 transition-all";
   const labelClasses = "block text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wider mb-2";
 
   const slotMin = doctorForm.slotDurationMin || 0;
@@ -201,7 +201,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
           </div>
 
           {/* Schedule summary */}
-          <div className="col-span-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-4">
+          <div className="col-span-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-4">
             <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-3">Daily Schedule Summary</p>
             <div className="grid grid-cols-4 gap-3 text-center">
               <div>
@@ -255,7 +255,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-[#000000]/80 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#111111] rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#2a2a2a]">
+      <div className="bg-white dark:bg-[#111111] rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#2a2a2a]">
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1e1e1e]">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">Add Doctor Profile</h2>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors">
@@ -267,7 +267,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
             <h3 className="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#2a2a2a] pb-2">
               Step 1: User Account Setup
             </h3>
-            <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-[#151515] p-5 rounded-xl border border-slate-100 dark:border-[#222222]">
+            <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-[#151515] p-5 rounded-lg border border-slate-100 dark:border-[#222222]">
               <div>
                 <label className={labelClasses}>First Name *</label>
                 <input required type="text" value={userForm.firstName} onChange={(e) => setUserForm({ ...userForm, firstName: e.target.value })} className={inputClasses} placeholder="John" />

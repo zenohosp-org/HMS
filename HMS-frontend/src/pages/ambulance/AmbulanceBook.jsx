@@ -29,8 +29,8 @@ const PAYMENT_OPTIONS = ["UNPAID", "PAID", "PARTIAL"];
 
 function StatCard({ label, value, icon: Icon, color }) {
   return (
-    <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-2xl p-5 flex items-center gap-4">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+    <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-lg p-5 flex items-center gap-4">
+      <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
         <Icon className="w-5 h-5" />
       </div>
       <div>
@@ -88,12 +88,12 @@ function PatientSearch({ hospitalId, value, onChange }) {
           onChange={e => search(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
           placeholder="Search by name, MRN, or phone…"
-          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-slate-200 dark:border-[#333] bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+          className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400"
         />
         {query && <button onClick={clear} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>}
       </div>
       {open && (
-        <div className="absolute z-20 mt-1 w-full bg-white dark:bg-[#111] border border-slate-200 dark:border-[#333] rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute z-20 mt-1 w-full bg-white dark:bg-[#111] border border-slate-200 dark:border-[#333] rounded-lg shadow-xl overflow-hidden">
           {loading ? (
             <div className="px-4 py-3 text-sm text-slate-400">Searching…</div>
           ) : results.length === 0 ? (
@@ -149,12 +149,12 @@ function VehicleModal({ hospitalId, types, vehicle, onClose, onSaved }) {
     }
   };
 
-  const inputCls = "w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-600";
+  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-600";
   const labelCls = "block text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#111111] rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-[#222222]">
+      <div className="bg-white dark:bg-[#111111] rounded-lg shadow-2xl w-full max-w-md border border-slate-200 dark:border-[#222222]">
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1e1e1e]">
           <h3 className="font-bold text-slate-900 dark:text-white text-lg">{isEdit ? "Edit Vehicle" : "Add Vehicle"}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">
@@ -214,10 +214,10 @@ function VehicleModal({ hospitalId, types, vehicle, onClose, onSaved }) {
             />
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-[#333] text-sm font-semibold text-slate-600 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] text-sm font-semibold text-slate-600 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
               Cancel
             </button>
-            <button type="submit" disabled={saving || !form.vehicleNumber.trim()} className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
+            <button type="submit" disabled={saving || !form.vehicleNumber.trim()} className="flex-1 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
               {saving ? "Saving…" : isEdit ? "Save Changes" : "Add Vehicle"}
             </button>
           </div>
@@ -247,7 +247,7 @@ function AddTypeModal({ hospitalId, onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-2xl shadow-2xl w-full max-w-sm p-6">
+      <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg shadow-2xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-slate-900 dark:text-white">Add Ambulance Type</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400"><X className="w-4 h-4" /></button>
@@ -256,16 +256,16 @@ function AddTypeModal({ hospitalId, onClose, onCreated }) {
           <div>
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Type Name</label>
             <input autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Basic Life Support"
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm" />
+              className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] shadow-sm" />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Default Charge (₹)</label>
             <input type="number" value={charge} onChange={e => setCharge(e.target.value)} placeholder="0.00"
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm" />
+              className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] shadow-sm" />
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-[#333] text-sm font-semibold text-slate-600 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">Cancel</button>
-            <button type="submit" disabled={saving || !name.trim()} className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] text-sm font-semibold text-slate-600 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">Cancel</button>
+            <button type="submit" disabled={saving || !name.trim()} className="flex-1 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
               {saving ? "Saving…" : "Add Type"}
             </button>
           </div>
@@ -349,11 +349,11 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
           placeholder="Search by number, model, or type…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm"
+          className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all shadow-sm"
         />
       </div>
 
-      <div className="bg-white dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -368,7 +368,7 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
                 <tr>
                   <td colSpan={6} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                      <Loader2 className="w-8 h-8 animate-spin text-slate-900 dark:text-white" />
                       <p className="text-sm font-medium text-slate-400">Loading vehicles…</p>
                     </div>
                   </td>
@@ -418,14 +418,14 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
                     <td className="px-6 py-4 text-right relative">
                       <button
                         onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === v.id ? null : v.id); }}
-                        className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
+                        className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
                       >
                         <MoreHorizontal className="w-5 h-5" />
                       </button>
                       {openMenuId === v.id && (
                         <>
                           <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
-                          <div className="absolute right-6 top-14 w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-xl border border-slate-100 dark:border-[#252525] z-20 py-1.5" onClick={e => e.stopPropagation()}>
+                          <div className="absolute right-6 top-14 w-52 bg-white dark:bg-[#1a1a1a] rounded-lg shadow-xl border border-slate-100 dark:border-[#252525] z-20 py-1.5" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => { setOpenMenuId(null); setEditVehicle(v); setShowModal(true); }}
                               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222] transition-all"
@@ -565,7 +565,7 @@ function BookingsTab({ hospitalId, types }) {
     load();
   };
 
-  const inputCls = "w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-600";
+  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-600";
   const labelCls = "block text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5";
 
   return (
@@ -579,19 +579,19 @@ function BookingsTab({ hospitalId, types }) {
       </div>
 
       {/* Booking Form */}
-      <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden shadow-sm">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center gap-2">
           <Plus className="w-4 h-4 text-emerald-500" />
           <h2 className="font-bold text-slate-900 dark:text-white text-sm">New Booking</h2>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {success && (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
+            <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
               <CheckCircle2 className="w-4 h-4" /> Ambulance booked successfully
             </div>
           )}
           {error && (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm font-medium">
+            <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm font-medium">
               <AlertCircle className="w-4 h-4" /> {error}
             </div>
           )}
@@ -668,7 +668,7 @@ function BookingsTab({ hospitalId, types }) {
 
           <div className="flex justify-end pt-1">
             <button type="submit" disabled={saving}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-semibold text-sm shadow-lg shadow-rose-500/20 transition-all active:scale-[0.98] disabled:opacity-50">
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-semibold text-sm shadow-lg shadow-rose-500/20 transition-all active:scale-[0.98] disabled:opacity-50">
               <Ambulance className="w-4 h-4" />
               {saving ? "Booking…" : "Book Ambulance"}
             </button>
@@ -677,7 +677,7 @@ function BookingsTab({ hospitalId, types }) {
       </div>
 
       {/* Bookings Table */}
-      <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden shadow-sm">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
           <h2 className="font-bold text-slate-900 dark:text-white text-sm">All Bookings</h2>
           <span className="text-xs text-slate-400">{bookings.length} total</span>
@@ -693,7 +693,7 @@ function BookingsTab({ hospitalId, types }) {
               <thead>
                 <tr className="border-b border-slate-100 dark:border-[#1e1e1e] bg-slate-50/30 dark:bg-[#0f0f0f]">
                   {["Date & Time", "Patient", "Pickup → Destination", "Vehicle", "Driver", "Status", "Action"].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555]">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#999999]">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -796,7 +796,7 @@ export default function AmbulanceBook() {
     <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] p-6 gap-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
+        <div className="w-10 h-10 rounded-lg bg-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
           <Ambulance className="w-5 h-5 text-white" />
         </div>
         <div>
@@ -807,7 +807,7 @@ export default function AmbulanceBook() {
 
       {/* Tabs */}
       {TABS.length > 1 && (
-        <div className="flex gap-1 bg-slate-100 dark:bg-[#1a1a1a] rounded-xl p-1 w-fit">
+        <div className="flex gap-1 bg-slate-100 dark:bg-[#1a1a1a] rounded-lg p-1 w-fit">
           {TABS.map(t => (
             <button
               key={t.key}
