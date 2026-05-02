@@ -197,7 +197,7 @@ function PatientDetails() {
     loadInvoices();
   }, [id]);
   const handleUpdate = async (data) => {
-    await patientApi.update(Number(id), data);
+    await patientApi.update(Number(id), { ...data, hospitalId: user.hospitalId });
     notify("Patient updated", "success");
     setEditing(false);
     loadPatient();

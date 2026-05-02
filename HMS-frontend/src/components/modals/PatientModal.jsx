@@ -28,11 +28,12 @@ function formatAadhaar(raw) {
 function PatientModal({ patient, onClose, onSave }) {
   const isEdit = !!patient;
   const [paneOpen, setPaneOpen] = useState(true);
+  const VALID_GENDERS = ["Male", "Female", "Other"];
   const [form, setForm] = useState({
     firstName: patient?.firstName ?? "",
-    lastName: patient?.lastName ?? "",
+    lastName: patient?.lastName === "—" ? "" : (patient?.lastName ?? ""),
     dob: patient?.dob ?? "",
-    gender: patient?.gender ?? "Male",
+    gender: VALID_GENDERS.includes(patient?.gender) ? patient.gender : "",
     phone: patient?.phone ?? "",
     email: patient?.email ?? "",
     bloodGroup: patient?.bloodGroup ?? "",
@@ -76,6 +77,7 @@ function PatientModal({ patient, onClose, onSave }) {
     if (fn) e.firstName = fn;
     if (ln) e.lastName = ln;
     if (db) e.dob = db;
+    if (!form.gender) e.gender = "Gender is required";
     if (ph) e.phone = ph;
     if (em) e.email = em;
     const aadhaarDigits = form.aadhaarNumber.replace(/\D/g, '');
@@ -132,10 +134,12 @@ function PatientModal({ patient, onClose, onSave }) {
             <div>
               <label className={labelCls}>Gender *</label>
               <select className={inputCls} value={form.gender} onChange={(e) => set("gender", e.target.value)}>
+                <option value="">Select gender</option>
                 <option>Male</option>
                 <option>Female</option>
                 <option>Other</option>
               </select>
+              {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender}</p>}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
