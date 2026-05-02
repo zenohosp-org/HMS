@@ -37,7 +37,6 @@ export default function Admissions() {
   const [viewMode, setViewMode] = useState('grid')
   const [showAdmitModal, setShowAdmitModal] = useState(false)
   const [dischargeTarget, setDischargeTarget] = useState(null)
-  const [selected, setSelected] = useState(null)
 
   const load = async (all = statusFilter !== 'ADMITTED') => {
     if (!user?.hospitalId) return
@@ -153,8 +152,8 @@ export default function Admissions() {
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-2">
           {filtered.map(a => (
-            <div key={a.id} onClick={() => setSelected(selected?.id === a.id ? null : a)}
-              className={`rounded-2xl bg-white dark:bg-[#111] border transition-all cursor-pointer ${selected?.id === a.id ? 'border-violet-400 shadow-lg shadow-violet-500/10' : 'border-slate-200 dark:border-[#1e1e1e] hover:border-violet-300 hover:shadow-md'} ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
+            <div key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)}
+              className={`rounded-2xl bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] hover:border-violet-300 hover:shadow-md transition-all cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3">
@@ -162,9 +161,7 @@ export default function Admissions() {
                       <User className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                     </div>
                     <div>
-                      <button onClick={() => navigate(`/patients/${a.patientId}`)} className="font-semibold text-sm text-slate-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors text-left">
-                        {a.patientName}
-                      </button>
+                      <p className="font-semibold text-sm text-slate-900 dark:text-white">{a.patientName}</p>
                       <p className="text-xs text-slate-500">MRN: {a.patientMrn}</p>
                     </div>
                   </div>
@@ -222,15 +219,13 @@ export default function Admissions() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
               {filtered.map(a => (
-                <tr key={a.id} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
+                <tr key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
                   <td className="px-4 py-3">
                     {a.ipdId && <p className="font-mono text-xs font-bold text-violet-600 dark:text-violet-400">{a.ipdId}</p>}
                     <p className="font-mono text-[10px] text-slate-400">{a.admissionNumber}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <button onClick={() => navigate(`/patients/${a.patientId}`)} className="font-medium text-sm text-slate-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors text-left">
-                      {a.patientName}
-                    </button>
+                    <p className="font-medium text-sm text-slate-900 dark:text-white">{a.patientName}</p>
                     <p className="text-xs text-slate-500">{a.patientMrn}</p>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{a.departmentName || '—'}</td>
@@ -240,7 +235,7 @@ export default function Admissions() {
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     {a.status === 'ADMITTED' && (
                       <button onClick={() => setDischargeTarget(a)}
                         className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 transition-colors">
