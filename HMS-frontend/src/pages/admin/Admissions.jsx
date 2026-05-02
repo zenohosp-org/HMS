@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { admissionApi } from '@/utils/api'
+import { useNavigate } from 'react-router-dom'
 import AdmitPatientModal from './AdmitPatientModal'
 import DischargeModal from './DischargeModal'
 import {
@@ -28,6 +29,7 @@ const TYPE_COLORS = {
 export default function Admissions() {
   const { user } = useAuth()
   const { notify } = useNotification()
+  const navigate = useNavigate()
   const [admissions, setAdmissions] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -160,7 +162,9 @@ export default function Admissions() {
                       <User className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900 dark:text-white text-sm">{a.patientName}</p>
+                      <button onClick={() => navigate(`/patients/${a.patientId}`)} className="font-semibold text-sm text-slate-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors text-left">
+                        {a.patientName}
+                      </button>
                       <p className="text-xs text-slate-500">MRN: {a.patientMrn}</p>
                     </div>
                   </div>
@@ -224,7 +228,9 @@ export default function Admissions() {
                     <p className="font-mono text-[10px] text-slate-400">{a.admissionNumber}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-slate-900 dark:text-white text-sm">{a.patientName}</p>
+                    <button onClick={() => navigate(`/patients/${a.patientId}`)} className="font-medium text-sm text-slate-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors text-left">
+                      {a.patientName}
+                    </button>
                     <p className="text-xs text-slate-500">{a.patientMrn}</p>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{a.departmentName || '—'}</td>
