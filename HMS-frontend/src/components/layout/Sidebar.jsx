@@ -24,9 +24,9 @@ import {
   FileText,
   Award,
   LogOut,
-  Network,
   Ambulance,
   HeartPulse,
+  Settings,
 } from "lucide-react";
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
 const CLINICAL_LINKS = [
@@ -38,9 +38,9 @@ const ADMIN_LINKS = [
   { label: "Billing", to: "/billing", icon: ReceiptText },
   { label: "Specializations", to: "/specializations", icon: Stethoscope },
   { label: "Services", to: "/services", icon: ClipboardList },
+  { label: "Settings", to: "/settings", icon: Settings },
 ];
 const ROOMS_LINKS = [
-  { label: "Infrastructure", to: "/ipd/infrastructure", icon: Network },
   { label: "Room Allocation", to: "/rooms", icon: Bed },
   { label: "Room Logs", to: "/rooms/logs", icon: ClipboardList },
   { label: "IPD Admissions", to: "/admissions", icon: BedDouble },
@@ -74,7 +74,7 @@ function Sidebar({ isOpen }) {
   const location = useLocation();
   const [hrOpen, setHrOpen] = useState(() => location.pathname.startsWith("/staffs"));
   const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
-  const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions") || location.pathname.startsWith("/ipd"));
+  const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
   const [ambOpen, setAmbOpen] = useState(() => location.pathname.startsWith("/ambulance"));
   const [checkupOpen, setCheckupOpen] = useState(() => location.pathname.startsWith("/checkups"));
   const initials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`;
@@ -91,7 +91,7 @@ function Sidebar({ isOpen }) {
   const isHrAdmin = user?.role === "hospital_admin" || user?.role === "super_admin";
   const hrActive = location.pathname.startsWith("/staffs");
   const radActive = location.pathname.startsWith("/radiology");
-  const roomsActive = location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions") || location.pathname.startsWith("/ipd");
+  const roomsActive = location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions");
   const renderLink = (link, indent = false) => {
     const Icon = link.icon;
     return isOpen ? <NavLink
