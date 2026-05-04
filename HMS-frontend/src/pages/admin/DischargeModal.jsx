@@ -57,12 +57,18 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
     if (step !== 2 || !user?.hospitalId || !admission.patientId) return
     setLoadingBill(true)
 
+    // Calculate actual days stayed from admission → discharge dates
+    const admitMs = new Date(admission.admissionDate).getTime()
+    const dischargeMs = new Date(clinical.actualDischargeDate).getTime()
+    const daysStayed = Math.max(1, Math.ceil((dischargeMs - admitMs) / (1000 * 60 * 60 * 24)))
+
     Promise.all([
-      invoiceApi.getSmartSuggestions(admission.patientId),
-      hospitalServiceApi.list(user.hospitalId),
-      bankApi.list(user.hospitalId),
+      invoiceApi.getSmartSuggestions(admission.patientId).catch(() => ({})),
+      hospitalServiceApi.list(user.hospitalId).catch(() => []),
+      bankApi.list(user.hospitalId).catch(() => []),
+      admissionApi.getById(admission.id).catch(() => null),
     ])
-      .then(([suggestions, services, accounts]) => {
+      .then(([suggestions, services, accounts, fullAdmission]) => {
         const def = accounts.find(a => a.isDefault) ?? accounts[0]
         setBankAccounts(accounts)
         if (def) setBankAccountId(def.id)
@@ -70,20 +76,33 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
         let key = 0
         const auto = []
 
-        // Room charge — always first on a discharge bill
-        if (suggestions.roomCharge) {
-          const r = suggestions.roomCharge
+        // ── Room charge ─────────────────────────────────────────────────────
+        // Calculate directly from actual admission/discharge dates.
+        // Price comes from smart-suggestions → full admission detail → 0 (manual)
+        if (admission.roomNumber) {
+          const pricePerDay =
+            suggestions.roomCharge?.pricePerDay ||
+            fullAdmission?.room?.pricePerDay ||
+            fullAdmission?.room?.dailyCharge ||
+            fullAdmission?.ward?.dailyCharge ||
+            fullAdmission?.pricePerDay ||
+            0
+
+          const roomLabel = admission.roomType
+            ? `Room ${admission.roomNumber} (${admission.roomType.replace(/_/g, ' ')})`
+            : `Room ${admission.roomNumber}`
+
           auto.push({
             key: key++,
             itemType: 'ROOM_CHARGE',
-            description: `Room ${r.roomNumber} (${(r.roomType ?? '').replace(/_/g, ' ')}) — ${r.daysStayed} day${r.daysStayed !== 1 ? 's' : ''}`,
-            quantity: Number(r.daysStayed) || 1,
-            unitPrice: r.pricePerDay,
-            totalPrice: r.totalCharge,
+            description: `${roomLabel} — ${daysStayed} day${daysStayed !== 1 ? 's' : ''}`,
+            quantity: daysStayed,
+            unitPrice: pricePerDay,
+            totalPrice: daysStayed * pricePerDay,
           })
         }
 
-        // Consultations — with known fee
+        // ── Consultations ────────────────────────────────────────────────────
         suggestions.appointments?.forEach(a => {
           auto.push({
             key: key++,
@@ -95,7 +114,8 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
           })
         })
 
-        // Radiology — price looked up from hospital service catalog by name
+        // ── Radiology ────────────────────────────────────────────────────────
+        // Price looked up from hospital service catalog by name match
         suggestions.radiologyOrders?.forEach(r => {
           const match = services.find(
             s => s.name.toLowerCase() === r.serviceName?.toLowerCase()

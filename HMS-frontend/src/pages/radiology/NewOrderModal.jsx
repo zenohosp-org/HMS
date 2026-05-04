@@ -40,7 +40,6 @@ export default function NewOrderModal({ onClose, onCreated }) {
     technicianName: "",
     priority: "ROUTINE",
     scheduledDate: "",
-    billNo: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -120,7 +119,6 @@ export default function NewOrderModal({ onClose, onCreated }) {
         technicianName: form.technicianName || undefined,
         priority: form.priority,
         scheduledDate: form.scheduledDate || undefined,
-        billNo: form.billNo || undefined,
       });
       notify("Radiology order created", "success");
       onCreated();
@@ -446,15 +444,6 @@ export default function NewOrderModal({ onClose, onCreated }) {
                   className={inputCls}
                   value={form.scheduledDate}
                   onChange={(e) => setForm((f) => ({ ...f, scheduledDate: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Bill / Req. No</label>
-                <input
-                  className={inputCls}
-                  placeholder="e.g. DIAG-2026-0001"
-                  value={form.billNo}
-                  onChange={(e) => setForm((f) => ({ ...f, billNo: e.target.value }))}
                 />
               </div>
             </div>
