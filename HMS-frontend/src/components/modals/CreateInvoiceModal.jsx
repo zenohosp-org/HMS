@@ -110,12 +110,48 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
     setSuggestions(null)
     setLoadingSuggestions(true)
     try {
-      setSuggestions(await invoiceApi.getSmartSuggestions(p.id))
+      const data = await invoiceApi.getSmartSuggestions(p.id)
+      setSuggestions(data)
     } catch {
       setSuggestions(null)
     } finally {
       setLoadingSuggestions(false)
     }
+  }
+
+  const addAllDetected = () => {
+    if (!suggestions) return
+    const toAdd = []
+    const newAdded = new Set(addedSuggestions)
+    let key = nextKey
+
+    if (suggestions.roomCharge && !addedSuggestions.has(`room-${suggestions.roomCharge.roomNumber}`)) {
+      const r = suggestions.roomCharge
+      const k = `room-${r.roomNumber}`
+      toAdd.push({ key: key++, itemType: 'ROOM_CHARGE', description: `Room ${r.roomNumber} (${r.roomType}) — ${r.daysStayed} day${r.daysStayed !== 1 ? 's' : ''}`, quantity: Number(r.daysStayed), unitPrice: r.pricePerDay, totalPrice: r.totalCharge })
+      newAdded.add(k)
+    }
+    suggestions.appointments?.forEach(a => {
+      const k = `appt-${a.appointmentId}`
+      if (!addedSuggestions.has(k)) {
+        toAdd.push({ key: key++, itemType: 'CONSULTATION', description: `Consultation — ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ''}`, quantity: 1, unitPrice: a.consultationFee, totalPrice: a.consultationFee })
+        newAdded.add(k)
+      }
+    })
+    suggestions.radiologyOrders?.forEach(r => {
+      const k = `radiology-${r.orderId}`
+      if (!addedSuggestions.has(k)) {
+        const match = services.find(s => s.name.toLowerCase() === r.serviceName?.toLowerCase())
+        const price = match?.price ?? 0
+        toAdd.push({ key: key++, itemType: 'RADIOLOGY', description: r.serviceName, quantity: 1, unitPrice: price, totalPrice: price })
+        newAdded.add(k)
+      }
+    })
+
+    if (toAdd.length === 0) return
+    setItems(prev => [...prev, ...toAdd])
+    setNextKey(key)
+    setAddedSuggestions(newAdded)
   }
 
   const addItem = (item, suggKey) => {
@@ -167,6 +203,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
         notes,
         status: 'UNPAID',
         bankAccountId: bankAccountId || undefined,
+        referredById: referredById || undefined,
         items: items.map(i => ({
           itemType: i.itemType,
           serviceId: i.serviceId,
@@ -263,10 +300,20 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
             {/* Smart Suggestions */}
             {patient && (loadingSuggestions || hasSuggestions) && (
               <div className={cardCls}>
-                <p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Detected Pending Items
-                  {loadingSuggestions && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
-                </p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Detected Pending Items
+                    {loadingSuggestions && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                  </p>
+                  {!loadingSuggestions && hasSuggestions && (
+                    <button
+                      onClick={addAllDetected}
+                      className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 transition-colors"
+                    >
+                      + Add All
+                    </button>
+                  )}
+                </div>
                 {!loadingSuggestions && suggestions && (
                   <div className="space-y-2">
                     {suggestions.roomCharge && (() => {
@@ -295,6 +342,8 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                     {suggestions.radiologyOrders?.map(r => {
                       const key = `radiology-${r.orderId}`
                       const added = addedSuggestions.has(key)
+                      const catalogMatch = services.find(s => s.name.toLowerCase() === r.serviceName?.toLowerCase())
+                      const price = catalogMatch?.price ?? 0
                       return (
                         <div key={key} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-violet-200 dark:border-violet-500/20 bg-violet-50 dark:bg-violet-500/5">
                           <div className="flex items-center gap-2.5">
@@ -303,11 +352,14 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                             </div>
                             <div>
                               <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{r.serviceName}</p>
-                              <p className="text-xs text-slate-400">{r.status?.replace('_', ' ')}{r.scheduledDate ? ` · ${r.scheduledDate}` : ''}</p>
+                              <p className="text-xs text-slate-400">
+                                {r.status?.replace('_', ' ')}{r.scheduledDate ? ` · ${r.scheduledDate}` : ''}
+                                {price > 0 ? ` · ${fmt(price)}` : ' · ₹0 — add service price in catalog'}
+                              </p>
                             </div>
                           </div>
                           <button
-                            onClick={() => !added && addItem({ itemType: 'RADIOLOGY', description: r.serviceName, quantity: 1, unitPrice: 0, totalPrice: 0 }, key)}
+                            onClick={() => !added && addItem({ itemType: 'RADIOLOGY', description: r.serviceName, quantity: 1, unitPrice: price, totalPrice: price }, key)}
                             className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default' : 'bg-violet-500 hover:bg-violet-600 text-white'}`}>
                             {added ? '✓ Added' : '+ Add'}
                           </button>
@@ -506,20 +558,20 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                       const isSelected = bankAccountId === a.id
                       return (
                         <button key={a.id} type="button" onClick={() => setBankAccountId(a.id)}
-                          className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]'}`}>
+                          className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]'}`}>
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <p className={`text-xs font-bold truncate ${isSelected ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-[#cccccc]'}`}>{a.accountName}</p>
-                            {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                            <p className="text-xs font-bold truncate text-slate-700 dark:text-[#cccccc]">{a.accountName}</p>
+                            {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}
                           </div>
                           <p className="text-[11px] text-slate-400 dark:text-[#666666] truncate">{a.bankName ?? 'Bank'} · ···{a.accountNumber.slice(-4)}</p>
-                          <p className={`text-xs font-bold mt-1.5 ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-[#aaaaaa]'}`}>{fmt(a.currentBalance)}</p>
+                          <p className="text-xs font-bold mt-1.5 text-slate-600 dark:text-[#aaaaaa]">{fmt(a.currentBalance)}</p>
                         </button>
                       )
                     })}
                   </div>
                   {selectedAccount && (
                     <p className="text-xs text-slate-400 dark:text-[#666666] mt-2">
-                      After payment: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{fmt(selectedAccount.currentBalance + grandTotal)}</span>
+                      After payment: <span className="font-semibold text-slate-900 dark:text-white">{fmt(selectedAccount.currentBalance + grandTotal)}</span>
                     </p>
                   )}
                 </div>
@@ -530,7 +582,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
 
           <div className="px-6 py-4 border-t border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#111111] shrink-0">
             <button onClick={handleSubmit} disabled={saving || !patient || items.length === 0}
-              className="w-full py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold flex items-center justify-center gap-2 transition-colors">
+              className="btn-primary w-full justify-center disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
               {saving ? 'Generating…' : 'Generate Invoice & Print'}
             </button>
