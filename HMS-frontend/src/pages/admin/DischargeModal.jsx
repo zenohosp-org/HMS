@@ -66,7 +66,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
       invoiceApi.getSmartSuggestions(admission.patientId).catch(() => ({})),
       hospitalServiceApi.list(user.hospitalId).catch(() => []),
       bankApi.list(user.hospitalId).catch(() => []),
-      admissionApi.getById(admission.id).catch(() => null),
+      admissionApi.get(admission.id).catch(() => null),
     ])
       .then(([suggestions, services, accounts, fullAdmission]) => {
         const def = accounts.find(a => a.isDefault) ?? accounts[0]
