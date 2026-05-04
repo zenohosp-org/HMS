@@ -37,7 +37,10 @@ const ADMIN_LINKS = [
   { label: "Billing", to: "/billing", icon: ReceiptText },
   { label: "Specializations", to: "/specializations", icon: Stethoscope },
   { label: "Services", to: "/services", icon: ClipboardList },
-  { label: "Settings", to: "/settings", icon: Settings },
+];
+const SETTINGS_LINKS = [
+  { label: "Infrastructure", to: "/settings", icon: Building2 },
+  { label: "Packages", to: "/checkups/packages", icon: ClipboardList },
 ];
 const ROOMS_LINKS = [
   { label: "Room Allocation", to: "/rooms", icon: Bed },
@@ -48,10 +51,7 @@ const AMBULANCE_LINKS = [
   { label: "Book", to: "/ambulance/book", icon: Ambulance },
   { label: "Status", to: "/ambulance/status", icon: Activity },
 ];
-const CHECKUP_LINKS = [
-  { label: "Packages", to: "/checkups/packages", icon: ClipboardList },
-  { label: "Bookings", to: "/checkups/bookings", icon: HeartPulse },
-];
+const CHECKUP_LINK = { label: "Health Checkups", to: "/checkups/bookings", icon: HeartPulse };
 const RADIOLOGY_LINKS = [
   { label: "Imaging Queue", to: "/radiology", icon: ScanLine },
   { label: "Reports", to: "/radiology/reports", icon: FileText }
@@ -75,7 +75,7 @@ function Sidebar({ isOpen }) {
   const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
   const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
   const [ambOpen, setAmbOpen] = useState(() => location.pathname.startsWith("/ambulance"));
-  const [checkupOpen, setCheckupOpen] = useState(() => location.pathname.startsWith("/checkups"));
+  const [settingsOpen, setSettingsOpen] = useState(() => location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages"));
   const filteredClinicalLinks = CLINICAL_LINKS.filter((link) => {
     if (user?.role === "hospital_admin" || user?.role === "super_admin") return true;
     const allowedLinks = ["Patients", "Appointments"];
@@ -136,8 +136,8 @@ function Sidebar({ isOpen }) {
   const renderRoomsAccordion = () => renderAccordionSection(ROOMS_LINKS, "IPD Management", BedDouble, roomsOpen, setRoomsOpen, roomsActive);
   const ambActive = location.pathname.startsWith("/ambulance");
   const renderAmbulanceAccordion = () => renderAccordionSection(AMBULANCE_LINKS, "Ambulance", Ambulance, ambOpen, setAmbOpen, ambActive);
-  const checkupActive = location.pathname.startsWith("/checkups");
-  const renderCheckupAccordion = () => renderAccordionSection(CHECKUP_LINKS, "Health Checkups", HeartPulse, checkupOpen, setCheckupOpen, checkupActive);
+  const settingsActive = location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages");
+  const renderSettingsAccordion = () => renderAccordionSection(SETTINGS_LINKS, "Settings", Settings, settingsOpen, setSettingsOpen, settingsActive);
   return <aside
     className={`flex flex-col h-full transition-all duration-300 ease-in-out shrink-0
                 bg-white dark:bg-[#111111] border-r border-slate-200 dark:border-[#222222]
@@ -146,7 +146,7 @@ function Sidebar({ isOpen }) {
     /* Logo */
   }<div className={`flex items-center border-b border-slate-200 dark:border-[#222222] h-14 ${isOpen ? "gap-3 px-4" : "justify-center"}`}><div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0"><Activity className="w-4 h-4 text-white dark:text-slate-900" /></div>{isOpen && <div className="overflow-hidden"><p className="font-bold text-sm leading-tight tracking-wider text-slate-900 dark:text-white">ZenoHosp</p><p className="text-xs text-slate-600 dark:text-[#888888] truncate mt-0.5">{user?.hospitalName}</p></div>}</div>{
     /* Navigation */
-  }<nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Main Menu</div>}{renderLink(DASHBOARD_LINK)}{isOpen && <div className="px-3 mb-2 mt-10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Hospital</div>}{filteredClinicalLinks.map((link) => renderLink(link))}{renderRoomsAccordion()}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{renderAmbulanceAccordion()}{renderCheckupAccordion()}{filteredAdminLinks.map((link) => renderLink(link))}{isHrAdmin && renderHrAccordion()}</nav>{
+  }<nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Main Menu</div>}{renderLink(DASHBOARD_LINK)}{isOpen && <div className="px-3 mb-2 mt-10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Hospital</div>}{filteredClinicalLinks.map((link) => renderLink(link))}{renderRoomsAccordion()}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{renderAmbulanceAccordion()}{renderLink(CHECKUP_LINK)}{filteredAdminLinks.map((link) => renderLink(link))}{isHrAdmin && renderHrAccordion()}{isHrAdmin && renderSettingsAccordion()}</nav>{
     /* Other Apps at bottom */
   }<div className="border-t border-slate-200 dark:border-[#222222] p-2 space-y-0.5 shrink-0">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Other Apps</div>}{EXTERNAL_APPS.map((app) => renderExternalApp(app))}</div></aside>;
 }
