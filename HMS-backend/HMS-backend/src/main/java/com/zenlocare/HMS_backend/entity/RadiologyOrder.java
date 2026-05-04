@@ -26,6 +26,10 @@ public class RadiologyOrder {
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admission_id")
+    private Admission admission;
+
     @Column(name = "service_name", nullable = false, length = 200)
     private String serviceName;
 

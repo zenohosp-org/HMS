@@ -38,6 +38,11 @@ public class RadiologyController {
         return ResponseEntity.ok(radiologyService.getByPatient(patientId));
     }
 
+    @GetMapping("/admission/{admissionId}")
+    public ResponseEntity<List<RadiologyOrderDTO>> getByAdmission(@PathVariable UUID admissionId) {
+        return ResponseEntity.ok(radiologyService.getByAdmission(admissionId));
+    }
+
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Long>> getStats(@RequestParam UUID hospitalId) {
         return ResponseEntity.ok(Map.of(

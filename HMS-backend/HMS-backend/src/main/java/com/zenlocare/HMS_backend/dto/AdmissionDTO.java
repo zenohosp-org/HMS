@@ -19,6 +19,7 @@ public class AdmissionDTO {
     private Long roomId;
     private String roomNumber;
     private String roomType;
+    private java.math.BigDecimal roomPricePerDay;
     private Long bedId;
     private String bedNumber;
     private UUID admittingDoctorId;

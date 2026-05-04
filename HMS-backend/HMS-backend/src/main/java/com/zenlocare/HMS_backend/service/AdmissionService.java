@@ -303,6 +303,15 @@ public class AdmissionService {
     }
 
     public AdmissionDTO toDTO(Admission a) {
+        // If room/bed weren't set on the admission (pre-fix allocations), look up via bed table
+        Room room = a.getRoom();
+        com.zenlocare.HMS_backend.entity.Bed bed = a.getBed();
+        if (room == null && a.getStatus() == AdmissionStatus.ADMITTED) {
+            bed = bedRepository.findByCurrentPatientId(a.getPatient().getId()).orElse(null);
+            if (bed != null) room = bed.getRoom();
+        }
+        final Room resolvedRoom = room;
+        final com.zenlocare.HMS_backend.entity.Bed resolvedBed = bed;
         return AdmissionDTO.builder()
                 .id(a.getId())
                 .admissionNumber(a.getAdmissionNumber())
@@ -310,11 +319,12 @@ public class AdmissionService {
                 .patientId(a.getPatient().getId())
                 .patientName(a.getPatient().getFirstName() + " " + a.getPatient().getLastName())
                 .patientMrn(a.getPatient().getMrn())
-                .roomId(a.getRoom() != null ? a.getRoom().getId() : null)
-                .roomNumber(a.getRoom() != null ? a.getRoom().getRoomNumber() : null)
-                .roomType(a.getRoom() != null ? a.getRoom().getRoomType().name() : null)
-                .bedId(a.getBed() != null ? a.getBed().getId() : null)
-                .bedNumber(a.getBed() != null ? a.getBed().getBedNumber() : null)
+                .roomId(resolvedRoom != null ? resolvedRoom.getId() : null)
+                .roomNumber(resolvedRoom != null ? resolvedRoom.getRoomNumber() : null)
+                .roomType(resolvedRoom != null ? resolvedRoom.getRoomType().name() : null)
+                .roomPricePerDay(resolvedRoom != null ? resolvedRoom.getPricePerDay() : null)
+                .bedId(resolvedBed != null ? resolvedBed.getId() : null)
+                .bedNumber(resolvedBed != null ? resolvedBed.getBedNumber() : null)
                 .admittingDoctorId(a.getAdmittingDoctor() != null ? a.getAdmittingDoctor().getId() : null)
                 .admittingDoctorName(a.getAdmittingDoctor() != null
                         ? a.getAdmittingDoctor().getUser().getFirstName() + " " + a.getAdmittingDoctor().getUser().getLastName()

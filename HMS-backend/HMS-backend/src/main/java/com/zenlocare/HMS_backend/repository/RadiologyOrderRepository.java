@@ -16,4 +16,6 @@ public interface RadiologyOrderRepository extends JpaRepository<RadiologyOrder, 
     List<RadiologyOrder> findByPatientIdOrderByCreatedAtDesc(Integer patientId);
 
     long countByHospitalIdAndStatus(UUID hospitalId, RadiologyStatus status);
+
+    List<RadiologyOrder> findByAdmissionIdOrderByCreatedAtDesc(UUID admissionId);
 }

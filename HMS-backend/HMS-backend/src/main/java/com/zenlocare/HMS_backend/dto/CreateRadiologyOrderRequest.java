@@ -10,6 +10,7 @@ import java.util.UUID;
 public class CreateRadiologyOrderRequest {
     private UUID hospitalId;
     private Integer patientId;
+    private UUID admissionId;
     private String serviceName;
     private String specializationName;
     private UUID technicianId;

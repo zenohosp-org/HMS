@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { admissionApi, invoiceApi, bankApi, hospitalServiceApi } from '@/utils/api'
+import { admissionApi, invoiceApi, bankApi, hospitalServiceApi, radiologyApi } from '@/utils/api'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { generateInvoiceNumber } from '@/utils/validators'
@@ -67,8 +67,9 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
       hospitalServiceApi.list(user.hospitalId).catch(() => []),
       bankApi.list(user.hospitalId).catch(() => []),
       admissionApi.get(admission.id).catch(() => null),
+      radiologyApi.getByAdmission(admission.id).catch(() => []),
     ])
-      .then(([suggestions, services, accounts, fullAdmission]) => {
+      .then(([suggestions, services, accounts, fullAdmission, radiologyOrders]) => {
         const def = accounts.find(a => a.isDefault) ?? accounts[0]
         setBankAccounts(accounts)
         if (def) setBankAccountId(def.id)
@@ -77,20 +78,22 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
         const auto = []
 
         // ── Room charge ─────────────────────────────────────────────────────
-        // Calculate directly from actual admission/discharge dates.
-        // Price comes from smart-suggestions → full admission detail → 0 (manual)
-        if (admission.roomNumber) {
+        // Use fullAdmission room data as primary source — admission list object
+        // may not carry roomNumber if room was assigned after initial fetch.
+        const roomNumber = admission.roomNumber || fullAdmission?.roomNumber
+        if (roomNumber) {
           const pricePerDay =
             suggestions.roomCharge?.pricePerDay ||
+            fullAdmission?.roomPricePerDay ||
             fullAdmission?.room?.pricePerDay ||
             fullAdmission?.room?.dailyCharge ||
             fullAdmission?.ward?.dailyCharge ||
-            fullAdmission?.pricePerDay ||
             0
 
-          const roomLabel = admission.roomType
-            ? `Room ${admission.roomNumber} (${admission.roomType.replace(/_/g, ' ')})`
-            : `Room ${admission.roomNumber}`
+          const roomType = admission.roomType || fullAdmission?.roomType
+          const roomLabel = roomType
+            ? `Room ${roomNumber} (${roomType.replace(/_/g, ' ')})`
+            : `Room ${roomNumber}`
 
           auto.push({
             key: key++,
@@ -114,17 +117,19 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
           })
         })
 
-        // ── Radiology ────────────────────────────────────────────────────────
-        // Price looked up from hospital service catalog by name match
-        suggestions.radiologyOrders?.forEach(r => {
-          const match = services.find(
-            s => s.name.toLowerCase() === r.serviceName?.toLowerCase()
-          )
+        // ── Radiology — scoped exactly to this admission, no cross-admission pollution ──
+        const EXCLUDED_STATUSES = ['CANCELLED']
+        const pending = Array.isArray(radiologyOrders)
+          ? radiologyOrders.filter(r => !EXCLUDED_STATUSES.includes(r.status))
+          : []
+        pending.forEach(r => {
+          const name = r.serviceName || r.investigationName || r.testName || 'Radiology'
+          const match = services.find(s => s.name.toLowerCase() === name.toLowerCase())
           const price = match?.price ?? 0
           auto.push({
             key: key++,
             itemType: 'RADIOLOGY',
-            description: r.serviceName,
+            description: name,
             quantity: 1,
             unitPrice: price,
             totalPrice: price,

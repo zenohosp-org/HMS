@@ -4,6 +4,7 @@ import com.zenlocare.HMS_backend.dto.CreateRadiologyOrderRequest;
 import com.zenlocare.HMS_backend.dto.RadiologyOrderDTO;
 import com.zenlocare.HMS_backend.dto.RadiologyReportRequest;
 import com.zenlocare.HMS_backend.entity.*;
+import com.zenlocare.HMS_backend.repository.AdmissionRepository;
 import com.zenlocare.HMS_backend.repository.HospitalRepository;
 import com.zenlocare.HMS_backend.repository.PatientRepository;
 import com.zenlocare.HMS_backend.repository.RadiologyOrderRepository;
@@ -26,6 +27,7 @@ public class RadiologyService {
     private final RadiologyOrderRepository orderRepository;
     private final HospitalRepository hospitalRepository;
     private final PatientRepository patientRepository;
+    private final AdmissionRepository admissionRepository;
 
     public List<RadiologyOrderDTO> getOrders(UUID hospitalId, String status) {
         if (status != null && !status.isBlank()) {
@@ -39,6 +41,11 @@ public class RadiologyService {
 
     public List<RadiologyOrderDTO> getByPatient(Integer patientId) {
         return orderRepository.findByPatientIdOrderByCreatedAtDesc(patientId)
+                .stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    public List<RadiologyOrderDTO> getByAdmission(UUID admissionId) {
+        return orderRepository.findByAdmissionIdOrderByCreatedAtDesc(admissionId)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
@@ -58,9 +65,19 @@ public class RadiologyService {
         Patient patient = patientRepository.findById(req.getPatientId())
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
 
+        Admission admission = null;
+        if (req.getAdmissionId() != null) {
+            admission = admissionRepository.findById(req.getAdmissionId())
+                    .orElseThrow(() -> new RuntimeException("Admission not found"));
+            if (!admission.getPatient().getId().equals(patient.getId())) {
+                throw new RuntimeException("Admission does not belong to this patient");
+            }
+        }
+
         RadiologyOrder order = RadiologyOrder.builder()
                 .hospital(hospital)
                 .patient(patient)
+                .admission(admission)
                 .serviceName(req.getServiceName())
                 .specializationName(req.getSpecializationName())
                 .referredByName(createdByName)
@@ -69,7 +86,6 @@ public class RadiologyService {
                 .priority(req.getPriority() != null ? RadiologyPriority.valueOf(req.getPriority()) : RadiologyPriority.ROUTINE)
                 .status(RadiologyStatus.PENDING_SCAN)
                 .scheduledDate(req.getScheduledDate())
-                .billNo(req.getBillNo())
                 .createdByName(createdByName)
                 .build();
 
@@ -119,6 +135,8 @@ public class RadiologyService {
                 .patientId(o.getPatient().getId())
                 .patientName(patientName)
                 .patientMrn(o.getPatient().getMrn())
+                .admissionId(o.getAdmission() != null ? o.getAdmission().getId() : null)
+                .admissionNumber(o.getAdmission() != null ? o.getAdmission().getAdmissionNumber() : null)
                 .serviceName(o.getServiceName())
                 .specializationName(o.getSpecializationName())
                 .referredByName(o.getReferredByName())

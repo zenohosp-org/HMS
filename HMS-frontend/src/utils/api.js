@@ -237,6 +237,10 @@ const radiologyApi = {
     const { data } = await api.get(`/radiology/patient/${patientId}`);
     return data;
   },
+  getByAdmission: async (admissionId) => {
+    const { data } = await api.get(`/radiology/admission/${admissionId}`);
+    return data;
+  },
   getStats: async (hospitalId) => {
     const { data } = await api.get("/radiology/stats", { params: { hospitalId } });
     return data;

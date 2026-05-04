@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -137,6 +138,7 @@ public class RoomService {
         });
 
         boolean isMultiBed = room.getBedCount() != null && room.getBedCount() > 1;
+        Bed allocatedBed = null;
 
         if (isMultiBed) {
             Bed bed;
@@ -152,7 +154,7 @@ public class RoomService {
             }
             bed.setStatus(BedStatus.OCCUPIED);
             bed.setCurrentPatient(patient);
-            bedRepository.save(bed);
+            allocatedBed = bedRepository.save(bed);
 
             long availableBeds = bedRepository.countByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE);
             if (availableBeds == 0) {
@@ -169,15 +171,25 @@ public class RoomService {
             if (request.getApproxDischargeTime() != null) {
                 room.setApproxDischargeTime(request.getApproxDischargeTime());
             }
-            bedRepository.findFirstByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE)
-                    .ifPresent(b -> {
-                        b.setStatus(BedStatus.OCCUPIED);
-                        b.setCurrentPatient(patient);
-                        bedRepository.save(b);
-                    });
+            Optional<Bed> singleBed = bedRepository.findFirstByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE);
+            if (singleBed.isPresent()) {
+                Bed b = singleBed.get();
+                b.setStatus(BedStatus.OCCUPIED);
+                b.setCurrentPatient(patient);
+                allocatedBed = bedRepository.save(b);
+            }
         }
 
         Room saved = roomRepository.save(room);
+
+        // Sync room + bed back to the active admission so discharge billing can read them
+        final Bed finalBed = allocatedBed;
+        admissionRepository.findByPatientIdAndStatus(patient.getId(), AdmissionStatus.ADMITTED)
+                .ifPresent(admission -> {
+                    admission.setRoom(saved);
+                    admission.setBed(finalBed);
+                    admissionRepository.save(admission);
+                });
 
         roomLogRepository.save(RoomLog.builder()
                 .room(saved)
