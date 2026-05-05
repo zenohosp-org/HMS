@@ -5,10 +5,11 @@ import { admissionApi } from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import AdmitPatientModal from './AdmitPatientModal'
 import DischargeModal from './DischargeModal'
+import MoveToOTModal from './MoveToOTModal'
 import {
   BedDouble, Plus, Search, LogOut, User, Building2,
   Stethoscope, Clock, CheckCircle2, List, LayoutGrid,
-  Calendar, ChevronRight, AlertCircle
+  Calendar, ChevronRight, AlertCircle, Scissors
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 
@@ -37,6 +38,7 @@ export default function Admissions() {
   const [viewMode, setViewMode] = useState('grid')
   const [showAdmitModal, setShowAdmitModal] = useState(false)
   const [dischargeTarget, setDischargeTarget] = useState(null)
+  const [otTarget, setOtTarget] = useState(null)
 
   const load = async (all = statusFilter !== 'ADMITTED') => {
     if (!user?.hospitalId) return
@@ -198,6 +200,10 @@ export default function Admissions() {
               </div>
               {a.status === 'ADMITTED' && (
                 <div className="px-4 pb-4 flex gap-2" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => setOtTarget(a)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20 border border-violet-200 dark:border-violet-500/20 transition-colors">
+                    <Scissors className="w-3.5 h-3.5" /> Move to OT
+                  </button>
                   <button onClick={() => setDischargeTarget(a)}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/20 transition-colors">
                     <LogOut className="w-3.5 h-3.5" /> Discharge
@@ -237,10 +243,16 @@ export default function Admissions() {
                   </td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     {a.status === 'ADMITTED' && (
-                      <button onClick={() => setDischargeTarget(a)}
-                        className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 transition-colors">
-                        <LogOut className="w-3.5 h-3.5" /> Discharge
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setOtTarget(a)}
+                          className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400 transition-colors">
+                          <Scissors className="w-3.5 h-3.5" /> OT
+                        </button>
+                        <button onClick={() => setDischargeTarget(a)}
+                          className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 transition-colors">
+                          <LogOut className="w-3.5 h-3.5" /> Discharge
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -261,6 +273,13 @@ export default function Admissions() {
           admission={dischargeTarget}
           onClose={() => setDischargeTarget(null)}
           onDischarged={() => { setDischargeTarget(null); notify('Patient discharged', 'success'); load(statusFilter !== 'ADMITTED') }}
+        />
+      )}
+      {otTarget && (
+        <MoveToOTModal
+          admission={otTarget}
+          onClose={() => setOtTarget(null)}
+          onMoved={() => { setOtTarget(null); load(false) }}
         />
       )}
     </div>

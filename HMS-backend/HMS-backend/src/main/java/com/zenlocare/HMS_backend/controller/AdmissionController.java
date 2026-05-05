@@ -61,8 +61,22 @@ public class AdmissionController {
         return ResponseEntity.ok(admissionService.discharge(id, req, performedBy));
     }
 
+    @PatchMapping("/{id}/move-to-ot")
+    public ResponseEntity<AdmissionDTO> moveToOT(@PathVariable UUID id,
+                                                  @RequestBody MoveToOTRequest req,
+                                                  @AuthenticationPrincipal UserDetails user) {
+        String performedBy = user != null ? user.getUsername() : "system";
+        return ResponseEntity.ok(admissionService.moveToOT(id, req.getRoomId(), req.getDoctorId(), performedBy));
+    }
+
     @Data
     public static class RoomAssignRequest {
         private Long roomId;
+    }
+
+    @Data
+    public static class MoveToOTRequest {
+        private Long roomId;
+        private UUID doctorId;
     }
 }

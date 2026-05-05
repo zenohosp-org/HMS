@@ -370,6 +370,17 @@ const admissionApi = {
   discharge: async (admissionId, payload) => {
     const { data } = await api.patch(`/admissions/${admissionId}/discharge`, payload);
     return data;
+  },
+  moveToOT: async (admissionId, roomId, doctorId) => {
+    const { data } = await api.patch(`/admissions/${admissionId}/move-to-ot`, { roomId, doctorId });
+    return data;
+  }
+};
+
+const roomApi = {
+  list: async (hospitalId) => {
+    const { data } = await api.get("/rooms", { params: { hospitalId } });
+    return data;
   }
 };
 
@@ -509,6 +520,7 @@ const checkupApi = {
 var stdin_default = api;
 export {
   admissionApi,
+  roomApi,
   ambulanceApi,
   assetApi,
   bedApi,

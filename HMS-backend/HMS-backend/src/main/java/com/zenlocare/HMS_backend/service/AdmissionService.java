@@ -264,6 +264,53 @@ public class AdmissionService {
         return toDTO(admissionRepository.save(admission));
     }
 
+    @Transactional
+    public AdmissionDTO moveToOT(UUID admissionId, Long roomId, UUID doctorId, String performedBy) {
+        Admission admission = admissionRepository.findById(admissionId)
+                .orElseThrow(() -> new RuntimeException("Admission not found"));
+        if (admission.getStatus() != AdmissionStatus.ADMITTED)
+            throw new RuntimeException("Admission is not active");
+
+        Room otRoom = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("OT room not found"));
+        if (otRoom.getRoomType() != com.zenlocare.HMS_backend.entity.RoomType.OT)
+            throw new RuntimeException("Selected room is not an OT room");
+        if (otRoom.getStatus() != RoomStatus.AVAILABLE)
+            throw new RuntimeException("OT room is not available");
+
+        // Vacate current room if any
+        roomRepository.findByCurrentPatientId(admission.getPatient().getId()).ifPresent(prev -> {
+            prev.setStatus(RoomStatus.AVAILABLE);
+            prev.setCurrentPatient(null);
+            prev.setApproxDischargeTime(null);
+            roomRepository.save(prev);
+        });
+
+        // Occupy OT room
+        otRoom.setStatus(RoomStatus.OCCUPIED);
+        otRoom.setCurrentPatient(admission.getPatient());
+        otRoom.setAdmissionDate(LocalDateTime.now());
+        Room savedRoom = roomRepository.save(otRoom);
+
+        // Update admission room and optionally doctor
+        admission.setRoom(savedRoom);
+        if (doctorId != null) {
+            doctorRepository.findById(doctorId).ifPresent(admission::setAdmittingDoctor);
+        }
+
+        roomLogRepository.save(com.zenlocare.HMS_backend.entity.RoomLog.builder()
+                .room(savedRoom)
+                .hospital(admission.getHospital())
+                .event(com.zenlocare.HMS_backend.entity.RoomLogEvent.ALLOCATED)
+                .roomNumber(savedRoom.getRoomNumber())
+                .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
+                .patientMrn(admission.getPatient().getMrn())
+                .performedBy(performedBy)
+                .build());
+
+        return toDTO(admissionRepository.save(admission));
+    }
+
     public List<AdmissionDTO> getActive(UUID hospitalId) {
         return admissionRepository.findByHospitalIdAndStatusOrderByAdmissionDateDesc(hospitalId, AdmissionStatus.ADMITTED)
                 .stream().map(this::toDTO).collect(Collectors.toList());

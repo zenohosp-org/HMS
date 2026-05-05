@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { infrastructureApi } from "@/utils/api";
-import { Building2, Layers, Minus, Plus, Save, AlertTriangle, Network, Bed } from "lucide-react";
+import { Building2, Layers, Minus, Plus, Save, AlertTriangle, Network, Bed, Scissors, X } from "lucide-react";
 
 const ROOM_TYPES = [
   { value: "GENERAL", label: "General" },
   { value: "WARD", label: "Ward" },
   { value: "PRIVATE", label: "Private" },
   { value: "ICU", label: "ICU" },
+  { value: "OT", label: "OT" },
 ];
 
 function resizeTo(arr, n, makeDefault) {
@@ -123,7 +124,51 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
   );
 }
 
-function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard, setRoomCount, updateRoom }) {
+function SpecialRoomCard({ room, onUpdate, onRemove }) {
+  return (
+    <div className="rounded-lg border border-violet-200 dark:border-violet-500/25 overflow-hidden bg-white dark:bg-[#111111]">
+      <div className="flex items-stretch divide-x divide-violet-100 dark:divide-violet-500/15">
+        <div className="flex items-center gap-2 px-4 py-2.5 flex-1 min-w-0">
+          <div className="w-5 h-5 rounded-md bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center shrink-0">
+            <Scissors className="w-3 h-3 text-violet-400" />
+          </div>
+          <input
+            className="flex-1 text-sm font-medium text-slate-800 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0"
+            value={room.name}
+            onChange={(e) => onUpdate("name", e.target.value)}
+            placeholder="Room name (e.g. OT-1)"
+          />
+        </div>
+        <div className="flex items-center px-3 py-2.5 w-32 shrink-0">
+          <select
+            className="w-full text-xs text-slate-600 dark:text-[#aaaaaa] bg-transparent focus:outline-none cursor-pointer"
+            value={room.roomType}
+            onChange={(e) => onUpdate("roomType", e.target.value)}
+          >
+            {ROOM_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-1.5 px-3 py-2.5 w-36 shrink-0">
+          <span className="text-xs font-semibold text-slate-400">₹</span>
+          <input
+            type="number" min="0"
+            className="flex-1 text-sm text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] tabular-nums min-w-0"
+            value={room.dailyCharge}
+            onChange={(e) => onUpdate("dailyCharge", e.target.value)}
+            placeholder="0"
+          />
+          <span className="text-[10px] text-slate-400">/day</span>
+        </div>
+        <button type="button" onClick={onRemove}
+          className="flex items-center justify-center px-3 text-slate-300 hover:text-rose-500 dark:text-[#444] dark:hover:text-rose-400 transition-colors">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard, setRoomCount, updateRoom, addSpecialRoom, updateSpecialRoom, removeSpecialRoom }) {
   return (
     <div className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50/60 dark:bg-indigo-500/5 border-b border-indigo-100 dark:border-indigo-500/10">
@@ -143,33 +188,46 @@ function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard
         </div>
       </div>
 
-      {floor.wards.length > 0 ? (
-        <div className="p-3 space-y-2 bg-white dark:bg-[#0d0d0d]">
-          {floor.wards.map((ward, wIdx) => (
-            <WardCard
-              key={wIdx}
-              ward={ward}
-              bIdx={bIdx}
-              fIdx={fIdx}
-              wIdx={wIdx}
-              updateWard={updateWard}
-              setRoomCount={setRoomCount}
-              updateRoom={updateRoom}
-            />
-          ))}
+      <div className="bg-white dark:bg-[#0d0d0d]">
+        {floor.wards.length > 0 ? (
+          <div className="p-3 space-y-2">
+            {floor.wards.map((ward, wIdx) => (
+              <WardCard key={wIdx} ward={ward} bIdx={bIdx} fIdx={fIdx} wIdx={wIdx}
+                updateWard={updateWard} setRoomCount={setRoomCount} updateRoom={updateRoom} />
+            ))}
+          </div>
+        ) : (
+          <div className="py-4 text-center text-xs text-slate-400 dark:text-[#555555]">
+            Set ward count above to add wards
+          </div>
+        )}
+
+        {/* Special Rooms (OT, etc.) */}
+        {(floor.specialRooms?.length > 0) && (
+          <div className="px-3 pb-2 space-y-2 border-t border-slate-100 dark:border-[#1a1a1a] pt-3">
+            <p className="text-[10px] font-bold text-violet-500 dark:text-violet-400 uppercase tracking-widest px-1">Special Rooms</p>
+            {floor.specialRooms.map((sr, srIdx) => (
+              <SpecialRoomCard key={srIdx} room={sr}
+                onUpdate={(field, val) => updateSpecialRoom(bIdx, fIdx, srIdx, field, val)}
+                onRemove={() => removeSpecialRoom(bIdx, fIdx, srIdx)} />
+            ))}
+          </div>
+        )}
+
+        <div className="px-3 pb-3 pt-2">
+          <button type="button" onClick={() => addSpecialRoom(bIdx, fIdx)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors">
+            <Plus className="w-3.5 h-3.5" /> Add Special Room (OT / Procedure)
+          </button>
         </div>
-      ) : (
-        <div className="py-5 text-center text-xs text-slate-600 dark:text-[#999999] bg-white dark:bg-[#0d0d0d]">
-          Set ward count above to add wards
-        </div>
-      )}
+      </div>
     </div>
   );
 }
 
-function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFloor, setWardCount, updateWard, setRoomCount, updateRoom }) {
+function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFloor, setWardCount, updateWard, setRoomCount, updateRoom, addSpecialRoom, updateSpecialRoom, removeSpecialRoom }) {
   const roomsInBuilding = (building.floors || []).reduce(
-    (s, f) => s + (f.wards || []).reduce((ws, w) => ws + (w.rooms?.length || 0), 0), 0
+    (s, f) => s + (f.wards || []).reduce((ws, w) => ws + (w.rooms?.length || 0), 0) + (f.specialRooms?.length || 0), 0
   );
 
   return (
@@ -209,6 +267,9 @@ function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFlo
               updateWard={updateWard}
               setRoomCount={setRoomCount}
               updateRoom={updateRoom}
+              addSpecialRoom={addSpecialRoom}
+              updateSpecialRoom={updateSpecialRoom}
+              removeSpecialRoom={removeSpecialRoom}
             />
           ))}
         </div>
@@ -234,16 +295,24 @@ export default function InfrastructureMapping() {
         if (data?.length) {
           setBuildings(data.map((b) => ({
             name: b.name,
-            floors: (b.floors ?? []).map((f) => ({
-              name: f.name,
-              wards: (f.wards ?? []).map((w) => ({
-                name: w.name,
-                dailyCharge: String(w.dailyCharge ?? "500"),
-                roomType: w.roomType ?? "GENERAL",
-                bedCount: w.bedCount ?? 1,
-                rooms: (w.rooms ?? []).map((r) => ({ id: r.id, name: r.name })),
-              })),
-            })),
+            floors: (b.floors ?? []).map((f) => {
+              const allWards = f.wards ?? [];
+              const wards = allWards.filter(w => w.roomType !== "OT" || (w.rooms?.length ?? 0) > 1);
+              const specialRooms = allWards
+                .filter(w => w.roomType === "OT" && (w.rooms?.length ?? 0) <= 1)
+                .map(w => ({ id: w.rooms?.[0]?.id ?? null, name: w.name, roomType: "OT", dailyCharge: String(w.dailyCharge ?? "0") }));
+              return {
+                name: f.name,
+                wards: wards.map(w => ({
+                  name: w.name,
+                  dailyCharge: String(w.dailyCharge ?? "500"),
+                  roomType: w.roomType ?? "GENERAL",
+                  bedCount: w.bedCount ?? 1,
+                  rooms: (w.rooms ?? []).map((r) => ({ id: r.id, name: r.name })),
+                })),
+                specialRooms,
+              };
+            }),
           })));
         }
       })
@@ -268,7 +337,7 @@ export default function InfrastructureMapping() {
     setBuildings((p) => resizeTo(p, n, (i) => ({ name: `Building ${i + 1}`, floors: [] })));
 
   const setFloorCount = (bIdx, n) =>
-    setBuildings((p) => p.map((b, i) => i !== bIdx ? b : { ...b, floors: resizeTo(b.floors, n, (j) => ({ name: `Floor ${j}`, wards: [] })) }));
+    setBuildings((p) => p.map((b, i) => i !== bIdx ? b : { ...b, floors: resizeTo(b.floors, n, (j) => ({ name: `Floor ${j}`, wards: [], specialRooms: [] })) }));
 
   const setWardCount = (bIdx, fIdx, n) =>
     setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
@@ -301,6 +370,27 @@ export default function InfrastructureMapping() {
       })
     }));
 
+  const addSpecialRoom = (bIdx, fIdx) =>
+    setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
+      ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
+        ...f, specialRooms: [...(f.specialRooms || []), { id: null, name: "", roomType: "OT", dailyCharge: "0" }]
+      })
+    }));
+
+  const updateSpecialRoom = (bIdx, fIdx, srIdx, field, value) =>
+    setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
+      ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
+        ...f, specialRooms: (f.specialRooms || []).map((sr, k) => k === srIdx ? { ...sr, [field]: value } : sr)
+      })
+    }));
+
+  const removeSpecialRoom = (bIdx, fIdx, srIdx) =>
+    setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
+      ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
+        ...f, specialRooms: (f.specialRooms || []).filter((_, k) => k !== srIdx)
+      })
+    }));
+
   const updateRoom = (bIdx, fIdx, wIdx, rIdx, name) =>
     setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
       ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
@@ -317,13 +407,22 @@ export default function InfrastructureMapping() {
         name: b.name || "Building",
         floors: (b.floors || []).map((f) => ({
           name: f.name || "Floor",
-          wards: (f.wards || []).map((w) => ({
-            name: w.name || "Ward",
-            dailyCharge: parseFloat(w.dailyCharge) || 0,
-            roomType: w.roomType || "GENERAL",
-            bedCount: parseInt(w.bedCount) || 1,
-            rooms: (w.rooms || []).map((r) => ({ id: r.id || null, name: r.name || "" })),
-          })),
+          wards: [
+            ...(f.wards || []).map((w) => ({
+              name: w.name || "Ward",
+              dailyCharge: parseFloat(w.dailyCharge) || 0,
+              roomType: w.roomType || "GENERAL",
+              bedCount: parseInt(w.bedCount) || 1,
+              rooms: (w.rooms || []).map((r) => ({ id: r.id || null, name: r.name || "" })),
+            })),
+            ...(f.specialRooms || []).map((sr) => ({
+              name: sr.name || "Special Room",
+              dailyCharge: parseFloat(sr.dailyCharge) || 0,
+              roomType: sr.roomType || "OT",
+              bedCount: 1,
+              rooms: [{ id: sr.id || null, name: sr.name || "OT" }],
+            })),
+          ],
         })),
       }));
       await infrastructureApi.save(user.hospitalId, payload);
@@ -412,6 +511,9 @@ export default function InfrastructureMapping() {
                 updateWard={updateWard}
                 setRoomCount={setRoomCount}
                 updateRoom={updateRoom}
+                addSpecialRoom={addSpecialRoom}
+                updateSpecialRoom={updateSpecialRoom}
+                removeSpecialRoom={removeSpecialRoom}
               />
             ))}
           </div>
