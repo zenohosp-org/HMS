@@ -109,6 +109,7 @@ public class SecurityConfig {
                 "http://localhost:5174",
                 "https://*.onrender.com",
                 "https://*.vercel.app",
+                "https://ot.zenohosp.com",
                 frontendUrl));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
