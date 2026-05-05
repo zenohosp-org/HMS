@@ -118,7 +118,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
         })
 
         // ── Radiology — scoped exactly to this admission, no cross-admission pollution ──
-        const EXCLUDED_STATUSES = ['CANCELLED']
+        const EXCLUDED_STATUSES = ['CANCELLED', 'BILLED']
         const pending = Array.isArray(radiologyOrders)
           ? radiologyOrders.filter(r => !EXCLUDED_STATUSES.includes(r.status))
           : []
@@ -133,6 +133,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
             quantity: 1,
             unitPrice: price,
             totalPrice: price,
+            radiologyOrderId: r.id,
           })
         })
 
@@ -224,6 +225,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
           quantity: Number(i.quantity),
           unitPrice: Number(i.unitPrice),
           totalPrice: Number(i.totalPrice),
+          radiologyOrderId: i.radiologyOrderId ?? undefined,
         })),
       })
       notify('Patient discharged and discharge bill generated', 'success')

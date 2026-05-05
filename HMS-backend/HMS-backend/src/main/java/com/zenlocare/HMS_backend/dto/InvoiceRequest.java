@@ -11,6 +11,7 @@ public class InvoiceRequest {
     private String invoiceNumber;
     private UUID hospitalId;
     private Integer patientId;
+    private UUID admissionId;
     private UUID appointmentId;
     private UUID specializationId;
     private BigDecimal subtotal;
@@ -26,6 +27,7 @@ public class InvoiceRequest {
     @Data
     public static class InvoiceItemRequest {
         private UUID serviceId;
+        private Long radiologyOrderId;
         private String itemType;
         private String description;
         private Integer quantity;

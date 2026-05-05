@@ -20,6 +20,8 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final HospitalRepository hospitalRepository;
     private final PatientRepository patientRepository;
+    private final AdmissionRepository admissionRepository;
+    private final RadiologyOrderRepository radiologyOrderRepository;
     private final AppointmentRepository appointmentRepository;
     private final SpecializationRepository specializationRepository;
     private final BankAccountRepository bankAccountRepository;
@@ -47,6 +49,9 @@ public class InvoiceService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
+        if (request.getAdmissionId() != null) {
+            invoice.setAdmission(admissionRepository.findById(request.getAdmissionId()).orElse(null));
+        }
         if (request.getAppointmentId() != null) {
             invoice.setAppointment(appointmentRepository.findById(request.getAppointmentId()).orElse(null));
         }
@@ -55,21 +60,34 @@ public class InvoiceService {
         }
 
         if (request.getItems() != null) {
-            List<InvoiceItem> items = request.getItems().stream().map(itemRequest -> {
-                return InvoiceItem.builder()
+            List<InvoiceItem> items = request.getItems().stream().map(itemRequest ->
+                InvoiceItem.builder()
                         .invoice(invoice)
                         .serviceId(itemRequest.getServiceId())
+                        .radiologyOrderId(itemRequest.getRadiologyOrderId())
                         .itemType(itemRequest.getItemType())
                         .description(itemRequest.getDescription())
                         .quantity(itemRequest.getQuantity())
                         .unitPrice(itemRequest.getUnitPrice())
                         .totalPrice(itemRequest.getTotalPrice())
-                        .build();
-            }).collect(Collectors.toList());
+                        .build()
+            ).collect(Collectors.toList());
             invoice.setItems(items);
         }
 
         Invoice saved = invoiceRepository.save(invoice);
+
+        // Mark linked radiology orders as BILLED — runs in same transaction,
+        // so if invoice creation fails the orders are not incorrectly marked.
+        if (saved.getItems() != null) {
+            saved.getItems().stream()
+                .filter(item -> "RADIOLOGY".equals(item.getItemType()) && item.getRadiologyOrderId() != null)
+                .forEach(item -> radiologyOrderRepository.findById(item.getRadiologyOrderId())
+                    .ifPresent(order -> {
+                        order.setStatus(RadiologyStatus.BILLED);
+                        radiologyOrderRepository.save(order);
+                    }));
+        }
 
         // If paid immediately, credit the selected bank account
         if (InvoiceStatus.PAID.equals(saved.getStatus()) && request.getBankAccountId() != null) {
@@ -135,6 +153,8 @@ public class InvoiceService {
                 .patientName(inv.getPatient() != null
                         ? inv.getPatient().getFirstName() + " " + inv.getPatient().getLastName() : null)
                 .patientMrn(inv.getPatient() != null ? inv.getPatient().getMrn() : null)
+                .admissionId(inv.getAdmission() != null ? inv.getAdmission().getId() : null)
+                .admissionNumber(inv.getAdmission() != null ? inv.getAdmission().getAdmissionNumber() : null)
                 .subtotal(inv.getSubtotal())
                 .tax(inv.getTax())
                 .discount(inv.getDiscount())
@@ -152,6 +172,7 @@ public class InvoiceService {
                                 .unitPrice(item.getUnitPrice())
                                 .totalPrice(item.getTotalPrice())
                                 .serviceId(item.getServiceId())
+                                .radiologyOrderId(item.getRadiologyOrderId())
                                 .build()
                 ).collect(Collectors.toList()) : java.util.Collections.emptyList())
                 .build();

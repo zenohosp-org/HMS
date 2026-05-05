@@ -28,6 +28,9 @@ public class InvoiceItem {
     @Column(name = "service_id")
     private UUID serviceId;
 
+    @Column(name = "radiology_order_id")
+    private Long radiologyOrderId;
+
     @Column(name = "item_type", length = 30)
     private String itemType; // MEDICINE, LAB_TEST, CONSULTATION, ROOM_CHARGE, RADIOLOGY, CUSTOM
 

@@ -16,6 +16,8 @@ public class InvoiceDTO {
     private Integer patientId;
     private String patientName;
     private String patientMrn;
+    private UUID admissionId;
+    private String admissionNumber;
     private BigDecimal subtotal;
     private BigDecimal tax;
     private BigDecimal discount;
@@ -36,5 +38,6 @@ public class InvoiceDTO {
         private BigDecimal unitPrice;
         private BigDecimal totalPrice;
         private UUID serviceId;
+        private Long radiologyOrderId;
     }
 }

@@ -36,6 +36,11 @@ public class Invoice {
     private Patient patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admission_id")
+    @JsonIgnore
+    private Admission admission;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "appointment_id")
     @JsonIgnore
     private Appointment appointment;

@@ -143,7 +143,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
       if (!addedSuggestions.has(k)) {
         const match = services.find(s => s.name.toLowerCase() === r.serviceName?.toLowerCase())
         const price = match?.price ?? 0
-        toAdd.push({ key: key++, itemType: 'RADIOLOGY', description: r.serviceName, quantity: 1, unitPrice: price, totalPrice: price })
+        toAdd.push({ key: key++, itemType: 'RADIOLOGY', description: r.serviceName, quantity: 1, unitPrice: price, totalPrice: price, radiologyOrderId: r.orderId })
         newAdded.add(k)
       }
     })
@@ -211,6 +211,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
           quantity: i.quantity,
           unitPrice: i.unitPrice,
           totalPrice: i.totalPrice,
+          radiologyOrderId: i.radiologyOrderId ?? undefined,
         })),
       })
       notify('Invoice created successfully', 'success')
@@ -359,7 +360,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                             </div>
                           </div>
                           <button
-                            onClick={() => !added && addItem({ itemType: 'RADIOLOGY', description: r.serviceName, quantity: 1, unitPrice: price, totalPrice: price }, key)}
+                            onClick={() => !added && addItem({ itemType: 'RADIOLOGY', description: r.serviceName, quantity: 1, unitPrice: price, totalPrice: price, radiologyOrderId: r.orderId }, key)}
                             className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default' : 'bg-violet-500 hover:bg-violet-600 text-white'}`}>
                             {added ? '✓ Added' : '+ Add'}
                           </button>
