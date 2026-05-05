@@ -32,7 +32,7 @@ export default function SidePane({ isOpen, onClose, title, children, footer }) {
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
+            className="p-2 rounded-lg text-slate-600 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
           >
             <X className="w-5 h-5" />
           </button>

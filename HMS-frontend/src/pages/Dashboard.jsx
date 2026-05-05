@@ -105,7 +105,7 @@ function SectionCard({ title, subtitle, children, action, actionLabel, actionFn 
         {actionFn && (
           <button
             onClick={actionFn}
-            className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-500 hover:underline"
           >
             {actionLabel} <ArrowRight className="w-3 h-3" />
           </button>
@@ -285,8 +285,8 @@ function DoctorStaffDashboard() {
         <StatPill
           label="New Today"
           value={todayPatients.length}
-          icon={<UserPlus className="w-5 h-5 text-slate-900 dark:text-white" />}
-          accent="bg-slate-100 dark:bg-[#1e1e1e]"
+          icon={<UserPlus className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-500" />}
+          accent="bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10"
         />
         <StatPill
           label={isDoctor ? "My Appointments" : "Appointments"}
@@ -411,7 +411,7 @@ function DoctorStaffDashboard() {
               {apptStatusCounts.COMPLETED > 0 && (
                 <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#999999] mt-1">
                   <span>Completion rate</span>
-                  <span className="font-bold text-slate-900 dark:text-white">
+                  <span className="font-bold text-slate-900 dark:text-white dark:text-slate-500">
                     {((apptStatusCounts.COMPLETED / totalAppts) * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -434,7 +434,7 @@ function DoctorStaffDashboard() {
             </div>
             <button
               onClick={() => navigate("/patients")}
-              className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white hover:underline"
+              className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-500 hover:underline"
             >
               All patients <ArrowRight className="w-3 h-3" />
             </button>
@@ -481,7 +481,7 @@ function DoctorStaffDashboard() {
         {[
           { label: "Patients", sub: "Register or find a patient", to: "/patients", icon: <Users className="w-5 h-5" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
           ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10" }] : []),
-          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 dark:text-white bg-slate-100 dark:bg-[#1e1e1e]" },
+          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 dark:text-white dark:text-slate-500 bg-slate-100 dark:bg-[#1e1e1e] dark:bg-slate-500/10" },
         ].map((item) => (
           <button
             key={item.to}

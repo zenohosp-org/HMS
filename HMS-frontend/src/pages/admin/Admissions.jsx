@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { admissionApi } from '@/utils/api'
-import { useNavigate } from 'react-router-dom'
 import AdmitPatientModal from './AdmitPatientModal'
 import DischargeModal from './DischargeModal'
 import {
@@ -13,7 +12,7 @@ import {
 import { formatDistanceToNow, format } from 'date-fns'
 
 const STATUS_COLORS = {
-  ADMITTED: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+  ADMITTED: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
   DISCHARGED: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20',
   TRANSFERRED: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
   ABSCONDED: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
@@ -21,7 +20,7 @@ const STATUS_COLORS = {
 
 const TYPE_COLORS = {
   EMERGENCY: 'bg-rose-500 text-white',
-  ELECTIVE: 'bg-slate-200 text-slate-700 dark:bg-[#222] dark:text-slate-300',
+  ELECTIVE: 'bg-slate-200 text-slate-700 dark:bg-[#222] dark:text-slate-500',
   REFERRAL: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
   TRANSFER: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
 }
@@ -29,7 +28,6 @@ const TYPE_COLORS = {
 export default function Admissions() {
   const { user } = useAuth()
   const { notify } = useNotification()
-  const navigate = useNavigate()
   const [admissions, setAdmissions] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -37,6 +35,7 @@ export default function Admissions() {
   const [viewMode, setViewMode] = useState('grid')
   const [showAdmitModal, setShowAdmitModal] = useState(false)
   const [dischargeTarget, setDischargeTarget] = useState(null)
+  const [selected, setSelected] = useState(null)
 
   const load = async (all = statusFilter !== 'ADMITTED') => {
     if (!user?.hospitalId) return
@@ -85,11 +84,11 @@ export default function Admissions() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] p-6 gap-6">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <BedDouble className="w-6 h-6 text-violet-500" /> IPD Admissions
+            <BedDouble className="w-6 h-6 text-slate-700 dark:text-slate-500" /> IPD Admissions
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">In-patient department — active admissions and discharge management</p>
         </div>
@@ -100,41 +99,38 @@ export default function Admissions() {
 
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'Active Admissions', value: counts.ADMITTED, icon: BedDouble, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
-          { label: 'Discharged Today', value: admissions.filter(a => a.status === 'DISCHARGED' && a.actualDischargeDate?.startsWith(new Date().toISOString().slice(0, 10))).length, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+          { label: 'Active Admissions', value: counts.ADMITTED, icon: BedDouble, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+          { label: 'Discharged Today', value: admissions.filter(a => a.status === 'DISCHARGED' && a.actualDischargeDate?.startsWith(new Date().toISOString().slice(0, 10))).length, icon: CheckCircle2, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-[#1e1e1e]' },
           { label: 'Overdue Discharge', value: admissions.filter(isOverdue).length, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10' },
-          { label: 'Total This Month', value: admissions.filter(a => a.createdAt?.startsWith(new Date().toISOString().slice(0, 7))).length, icon: Calendar, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-500/10' },
-        ].map(stat => (
-          <div key={stat.label} className="rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] p-4 flex items-center gap-4">
-            <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${stat.bg}`}>
+          { label: 'Total This Month', value: admissions.filter(a => a.createdAt?.startsWith(new Date().toISOString().slice(0, 7))).length, icon: Calendar, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-[#1e1e1e]' },        ].map(stat => (
+          <div key={stat.label} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-6 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.bg}`}>
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
-              <p className="text-xs text-slate-500">{stat.label}</p>
-            </div>
+            <p className="text-sm font-medium text-slate-500 dark:text-[#666]">{stat.label}</p>
+            <p className="text-4xl font-semibold text-slate-900 dark:text-white mt-1 tracking-tight">{stat.value}</p>
           </div>
         ))}
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444]/30 transition-all"
             placeholder="Search by patient, admission no., department, room…" />
         </div>
         {['ADMITTED', 'DISCHARGED', 'ALL'].map(s => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-violet-400'}`}>
+            className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-transparent' : 'bg-white dark:bg-[#111] border-slate-300 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-500 hover:border-slate-400'}`}>
             {s.charAt(0) + s.slice(1).toLowerCase()}
-            {s === 'ADMITTED' && counts.ADMITTED > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-xs">{counts.ADMITTED}</span>}
+            {s === 'ADMITTED' && counts.ADMITTED > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-slate-900 dark:bg-white text-white text-xs">{counts.ADMITTED}</span>}
           </button>
         ))}
         <div className="flex border border-slate-200 dark:border-[#2a2a2a] rounded-lg overflow-hidden ml-auto">
           {[['grid', LayoutGrid], ['list', List]].map(([mode, Icon]) => (
             <button key={mode} onClick={() => setViewMode(mode)}
-              className={`p-2.5 transition-colors ${viewMode === mode ? 'bg-violet-600 text-white' : 'bg-white dark:bg-[#111] text-slate-500 hover:bg-slate-50 dark:hover:bg-[#1a1a1a]'}`}>
+              className={`p-2.5 transition-colors ${viewMode === mode ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950' : 'bg-white dark:bg-[#111] text-slate-500 hover:bg-slate-50 dark:hover:bg-[#1a1a1a]'}`}>
               <Icon className="w-4 h-4" />
             </button>
           ))}
@@ -142,26 +138,26 @@ export default function Admissions() {
       </div>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center text-slate-400">Loading admissions…</div>
+        <div className="flex-1 flex items-center justify-center text-slate-600">Loading admissions…</div>
       ) : filtered.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-400">
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-600">
           <BedDouble className="w-12 h-12 opacity-30" />
           <p className="text-sm">No admissions found</p>
-          <button onClick={() => setShowAdmitModal(true)} className="text-violet-600 text-sm font-semibold hover:underline">Admit a patient →</button>
+          <button onClick={() => setShowAdmitModal(true)} className="text-slate-900 dark:text-white text-sm font-semibold hover:underline">Admit a patient →</button>
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-2">
           {filtered.map(a => (
-            <div key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)}
-              className={`rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] hover:border-violet-300 hover:shadow-md transition-all cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
+            <div key={a.id} onClick={() => setSelected(selected?.id === a.id ? null : a)}
+              className={`rounded-lg bg-white dark:bg-[#111] border transition-all cursor-pointer ${selected?.id === a.id ? 'border-slate-400 shadow-lg shadow-slate-500/10' : 'border-slate-200 dark:border-[#1e1e1e] hover:border-slate-400 hover:shadow-md'} ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center shrink-0">
-                      <User className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+                      <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm text-slate-900 dark:text-white">{a.patientName}</p>
+                      <p className="font-semibold text-slate-900 dark:text-white text-sm">{a.patientName}</p>
                       <p className="text-xs text-slate-500">MRN: {a.patientMrn}</p>
                     </div>
                   </div>
@@ -190,10 +186,7 @@ export default function Admissions() {
                 </div>
                 <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
-                  <div className="text-right">
-                    {a.ipdId && <p className="text-xs font-mono font-bold text-violet-600 dark:text-violet-400">{a.ipdId}</p>}
-                    <p className="text-[10px] font-mono text-slate-400">{a.admissionNumber}</p>
-                  </div>
+                  <span className="text-xs font-mono text-slate-600">{a.admissionNumber}</span>
                 </div>
               </div>
               {a.status === 'ADMITTED' && (
@@ -213,19 +206,16 @@ export default function Admissions() {
             <thead>
               <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
                 {['Adm. No.', 'Patient', 'Department', 'Room', 'Doctor', 'Admitted', 'Status', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
               {filtered.map(a => (
-                <tr key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
+                <tr key={a.id} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
+                  <td className="px-4 py-3 font-mono text-xs text-slate-500">{a.admissionNumber}</td>
                   <td className="px-4 py-3">
-                    {a.ipdId && <p className="font-mono text-xs font-bold text-violet-600 dark:text-violet-400">{a.ipdId}</p>}
-                    <p className="font-mono text-[10px] text-slate-400">{a.admissionNumber}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-sm text-slate-900 dark:text-white">{a.patientName}</p>
+                    <p className="font-medium text-slate-900 dark:text-white text-sm">{a.patientName}</p>
                     <p className="text-xs text-slate-500">{a.patientMrn}</p>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{a.departmentName || '—'}</td>
@@ -235,7 +225,7 @@ export default function Admissions() {
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
                   </td>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                  <td className="px-4 py-3">
                     {a.status === 'ADMITTED' && (
                       <button onClick={() => setDischargeTarget(a)}
                         className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 transition-colors">

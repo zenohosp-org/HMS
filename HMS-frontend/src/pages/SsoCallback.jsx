@@ -92,7 +92,7 @@ function SsoCallback() {
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#0f0f0f]">
       <div className="text-center space-y-4">
         <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-slate-700 dark:text-slate-300 font-semibold">Completing sign-in...</p>
+        <p className="text-slate-700 dark:text-slate-500 font-semibold">Completing sign-in...</p>
         <p className="text-slate-400 text-sm">Please wait while we set up your session.</p>
       </div>
     </div>

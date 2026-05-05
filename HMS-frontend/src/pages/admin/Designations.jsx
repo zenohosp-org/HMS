@@ -95,7 +95,7 @@ export default function Designations() {
   const labelCls = 'block text-xs font-bold text-slate-600 dark:text-[#aaa] uppercase tracking-wider mb-1.5'
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] p-6 gap-6">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -112,13 +112,13 @@ export default function Designations() {
         <div className="flex gap-2 flex-wrap">
           {CATEGORIES.map(c => (
             <button key={c} onClick={() => setActiveTab(c)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${activeTab === c ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-violet-400'}`}>
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${activeTab === c ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-500 hover:border-violet-400'}`}>
               {c.charAt(0) + c.slice(1).toLowerCase()} ({grouped[c]?.length ?? 0})
             </button>
           ))}
         </div>
         <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
-          className="ml-auto rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/50">
+          className="ml-auto rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-slate-500 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/50">
           <option value="">All Departments</option>
           {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
@@ -127,42 +127,43 @@ export default function Designations() {
       <div className="rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] overflow-hidden flex-1">
         <div className="p-5 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
           <span className="font-semibold text-slate-800 dark:text-white">{activeTab.charAt(0) + activeTab.slice(1).toLowerCase()} Designations</span>
-          <span className="text-xs text-slate-400">{grouped[activeTab]?.length ?? 0} titles</span>
+          <span className="text-xs text-slate-600">{grouped[activeTab]?.length ?? 0} titles</span>
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-slate-400 text-sm">Loading…</div>
+          <div className="p-12 text-center text-slate-600 text-sm">Loading…</div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
-                {['Title', 'Category', 'Department', 'Status', ''].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{h}</th>
+                {['Title', 'Category', 'Department', 'Status'].map(h => (
+                  <th key={h} className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">{h}</th>
                 ))}
+                <th className="px-5 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-600 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
               {grouped[activeTab]?.length === 0 && (
-                <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-400 text-sm">No designations yet. Add from presets below.</td></tr>
+                <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-600 text-sm">No designations yet. Add from presets below.</td></tr>
               )}
               {grouped[activeTab]?.map(d => (
-                <tr key={d.id} className="group hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors">
+                <tr key={d.id} className="group hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0">
                   <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-white text-sm">{d.name}</td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${CAT_COLORS[d.category]}`}>
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${CAT_COLORS[d.category]}`}>
                       {d.category.charAt(0) + d.category.slice(1).toLowerCase()}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400">{d.departmentName || <span className="text-slate-300 dark:text-slate-600">Cross-department</span>}</td>
+                  <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400">{d.departmentName || <span className="text-slate-500 dark:text-slate-400">Cross-department</span>}</td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${d.isActive ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                    <span className={`px-3 py-1.5 rounded-lg text-sm font-semibold border ${d.isActive ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20'}`}>
                       {d.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => toggle(d)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-500 transition-colors">
-                        {d.isActive ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4" />}
+                    <div className="flex items-center gap-2 justify-end">
+                      <button onClick={() => toggle(d)} className="p-2 rounded-lg text-slate-500 dark:text-[#888] hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1e1e1e] border border-slate-200 dark:border-[#333] transition-all">
+                        {d.isActive ? <ToggleRight className="w-4 h-4 text-slate-900 dark:text-white" /> : <ToggleLeft className="w-4 h-4" />}
                       </button>
                     </div>
                   </td>
@@ -172,17 +173,18 @@ export default function Designations() {
           </table>
         )}
 
-        <div className="border-t border-slate-100 dark:border-[#1e1e1e] p-5">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Quick Add Presets</p>
+        <div className="mt-6 rounded-lg border border-dashed border-slate-300 dark:border-[#333333] bg-slate-50/50 dark:bg-[#0f0f0f] p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777] mb-1">Quick Add Presets</p>
+          <p className="text-xs text-slate-400 dark:text-[#666] mb-3">Click any preset to instantly add it as a designation</p>
           <div className="flex flex-wrap gap-2">
             {PRESETS[activeTab]?.filter(p => !existing.has(p)).map(p => (
               <button key={p} onClick={() => openCreate(p)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-400 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 text-xs font-medium transition-colors">
-                <Plus className="w-3 h-3" /> {p}
+                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-900 hover:text-white hover:border-slate-900 dark:hover:bg-white dark:hover:text-slate-900 dark:hover:border-white transition-all duration-150 shadow-sm">
+                <Plus className="w-3 h-3 text-slate-400 group-hover:text-white dark:group-hover:text-slate-900 transition-colors" /> {p}
               </button>
             ))}
             {PRESETS[activeTab]?.every(p => existing.has(p)) && (
-              <span className="text-xs text-slate-400">All presets added</span>
+              <span className="text-xs text-slate-600">All presets added</span>
             )}
           </div>
         </div>
@@ -193,7 +195,7 @@ export default function Designations() {
           <div className="bg-white dark:bg-[#111] rounded-lg shadow-xl w-full max-w-md border border-slate-200 dark:border-[#2a2a2a]">
             <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-[#1e1e1e]">
               <h3 className="font-bold text-slate-900 dark:text-white">New Designation</h3>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 hover:text-slate-600 transition-colors">
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-600 hover:text-slate-600 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -220,7 +222,7 @@ export default function Designations() {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
                   Cancel
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2">

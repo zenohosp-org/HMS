@@ -22,7 +22,7 @@ function SpecializationFilters({ isOpen, onClose, onApply, initialFilters }) {
     type="date"
     value={date}
     onChange={(e) => setDate(e.target.value)}
-    className="w-full pl-4 pr-10 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all text-sm"
+    className="w-full pl-4 pr-10 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:focus:ring-[#444444] focus:border-slate-300 dark:focus:border-[#444444] dark:border-white transition-all text-sm"
   /></div></div>{
     /* Status Filter */
   }<div className="space-y-3"><label className="text-sm font-semibold text-slate-500 dark:text-slate-400">Status</label><div className="flex flex-wrap gap-2">{["Active", "Inactive"].map((status) => {
@@ -30,7 +30,7 @@ function SpecializationFilters({ isOpen, onClose, onApply, initialFilters }) {
     return <button
       key={status}
       onClick={() => toggleStatus(status)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected ? "bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-[#333333]" : "bg-transparent text-slate-400 dark:text-slate-600 border-slate-100 dark:border-[#1a1a1a] hover:bg-slate-50 dark:hover:bg-[#0f0f0f]"}`}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected ? "bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-slate-500 border-slate-200 dark:border-[#333333]" : "bg-transparent text-slate-600 dark:text-slate-400 border-slate-100 dark:border-[#1a1a1a] hover:bg-slate-50 dark:hover:bg-[#0f0f0f]"}`}
     >{isSelected && <X className="w-3 h-3" />}{status}</button>;
   })}</div></div>{
     /* Actions */

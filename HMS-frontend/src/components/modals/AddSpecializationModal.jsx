@@ -52,7 +52,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g. Cardiology"
-          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all"
+          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:focus:ring-[#444444] focus:border-slate-300 dark:focus:border-[#444444] dark:border-white transition-all"
         />
       </div>
       <div className="space-y-2">
@@ -62,7 +62,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Enter detail description..."
-          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all resize-none"
+          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-[#444444] dark:focus:ring-[#444444] focus:border-slate-300 dark:focus:border-[#444444] dark:border-white transition-all resize-none"
         />
       </div>
       <div className="flex items-center gap-3 py-2">
@@ -71,7 +71,7 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
           id="isActive"
           checked={formData.isActive}
           onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-          className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-slate-400 transition-all cursor-pointer"
+          className="w-4 h-4 rounded border-slate-300 text-slate-900 dark:text-white focus:ring-slate-900 dark:ring-white transition-all cursor-pointer"
         />
         <label htmlFor="isActive" className="text-sm font-medium text-slate-700 dark:text-[#aaaaaa] cursor-pointer">
           Active status
@@ -100,11 +100,11 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-[#111111] rounded-lg shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-[#222222] animate-in zoom-in-95 duration-200">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="bg-white dark:bg-[#111111] rounded-lg shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-[#222222] animate-in zoom-in-95 duration-200 relative z-10">
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1a1a1a]">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">Add New Specialization</h2>
-          <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all">
+          <button onClick={onClose} className="p-2 rounded-lg text-slate-600 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all">
             <X className="w-5 h-5" />
           </button>
         </div>

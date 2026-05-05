@@ -35,11 +35,13 @@ body {
 
 /* Button components */
 .btn-primary {
-  background-color: #020617; /* slate-950 */
+  background-color: #020617;
+  /* slate-950 */
   color: white;
   font-weight: 700;
   padding: 0.625rem 1.25rem;
   border-radius: 8px;
+  /* rounded-lg */
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -52,7 +54,8 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: #0f172a; /* slate-900 */
+  background-color: #0f172a;
+  /* slate-900 */
   transform: translateY(-1px);
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
@@ -70,11 +73,14 @@ body {
 
 .btn-secondary {
   background-color: white;
-  color: #475569; /* slate-600 */
+  color: #475569;
+  /* slate-600 */
   font-weight: 700;
   padding: 0.625rem 1.25rem;
   border-radius: 8px;
-  border: 1px solid #e2e8f0; /* slate-200 */
+  /* rounded-lg */
+  border: 1px solid #e2e8f0;
+  /* slate-200 */
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.875rem;
@@ -86,18 +92,24 @@ body {
 }
 
 .btn-secondary:hover {
-  background-color: #f8fafc; /* slate-50 */
-  border-color: #cbd5e1; /* slate-300 */
-  color: #1e293b; /* slate-800 */
+  background-color: #f8fafc;
+  /* slate-50 */
+  border-color: #cbd5e1;
+  /* slate-300 */
+  color: #1e293b;
+  /* slate-800 */
 }
 
 .btn-secondary:active {
-  background-color: #f1f5f9; /* slate-100 */
+  background-color: #f1f5f9;
+  /* slate-100 */
 }
+
 .dark .btn-primary {
   background-color: #ffffff;
   color: #020617;
 }
+
 .dark .btn-primary:hover {
   background-color: #f1f5f9;
 }

@@ -34,14 +34,14 @@ function StaffModal({ onClose, onSave }) {
       setSaving(false);
     }
   };
-  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"><div className="card w-full max-w-lg mx-4"><div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between"><h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Add Staff / Doctor</h2><button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">✕</button></div><form onSubmit={handleSubmit} className="p-6 space-y-4">{
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"><div className="card w-full max-w-lg mx-4"><div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between"><h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Add Staff / Doctor</h2><button onClick={onClose} className="text-slate-600 hover:text-slate-600 text-xl">✕</button></div><form onSubmit={handleSubmit} className="p-6 space-y-4">{
     /* Role selector */
   }<div><label className="label">Role *</label><div className="flex gap-3">{["STAFF", "DOCTOR"].map((r) => <button
     key={r}
     type="button"
     onClick={() => set("role", r)}
     className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors
-                    ${form.role === r ? "bg-primary-600 border-primary-600 text-white" : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
+                    ${form.role === r ? "bg-primary-600 border-primary-600 text-white" : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
   >{r === "DOCTOR" ? "\u{1F468}\u200D\u2695\uFE0F Doctor" : "\u{1F9D1}\u200D\u{1F4BC} Staff"}</button>)}</div></div><div className="grid grid-cols-2 gap-4"><div><label className="label">First Name *</label><input
     className="input"
     value={form.firstName}

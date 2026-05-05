@@ -1,10 +1,12 @@
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { Menu, Sun, Moon, Bell, LogOut } from "lucide-react";
+
 function Header({ onMenuClick }) {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const initials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`;
+
   return (
     <header className="h-14 bg-white dark:bg-[#111111] border-b border-slate-200 dark:border-[#222222] flex items-center px-4 gap-3 shrink-0">
       <button

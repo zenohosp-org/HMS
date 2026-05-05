@@ -66,7 +66,7 @@ function ManageStaff() {
                                             Deactivate
                                         </button> : <button
       onClick={() => handleActivate(s.id)}
-      className="btn-secondary text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20"
+      className="btn-secondary text-slate-900 dark:text-white hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:bg-[#1e1e1e] dark:text-slate-500 dark:hover:bg-slate-500/10 border-emerald-200 dark:border-slate-900 dark:border-white/20"
     >
                                             Activate
                                         </button>}</div></div>;

@@ -29,8 +29,8 @@ function RadiologyReportView() {
     if (!id) return;
     radiologyApi.get(Number(id)).then(setOrder).catch(() => setOrder(null)).finally(() => setLoading(false));
   }, [id]);
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
-  if (!order) return <div className="flex flex-col items-center justify-center h-64 gap-3"><AlertCircle className="w-10 h-10 text-slate-300" /><p className="text-slate-500">Report not found.</p><button onClick={() => navigate("/radiology/reports")} className="btn-secondary text-sm">← Back to Reports</button></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 animate-spin text-slate-600" /></div>;
+  if (!order) return <div className="flex flex-col items-center justify-center h-64 gap-3"><AlertCircle className="w-10 h-10 text-slate-500" /><p className="text-slate-500">Report not found.</p><button onClick={() => navigate("/radiology/reports")} className="btn-secondary text-sm">← Back to Reports</button></div>;
   return <div className="space-y-4 max-w-4xl mx-auto">{
     /* Toolbar */
   }<div className="flex items-center justify-between print:hidden"><button
