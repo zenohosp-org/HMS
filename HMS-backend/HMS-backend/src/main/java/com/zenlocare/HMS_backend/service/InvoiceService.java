@@ -3,6 +3,7 @@ package com.zenlocare.HMS_backend.service;
 import com.zenlocare.HMS_backend.dto.InvoiceDTO;
 import com.zenlocare.HMS_backend.dto.InvoiceRequest;
 import com.zenlocare.HMS_backend.entity.*;
+import com.zenlocare.HMS_backend.entity.Appointment;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -65,6 +66,7 @@ public class InvoiceService {
                         .invoice(invoice)
                         .serviceId(itemRequest.getServiceId())
                         .radiologyOrderId(itemRequest.getRadiologyOrderId())
+                        .appointmentId(itemRequest.getAppointmentId())
                         .itemType(itemRequest.getItemType())
                         .description(itemRequest.getDescription())
                         .quantity(itemRequest.getQuantity())
@@ -86,6 +88,17 @@ public class InvoiceService {
                     .ifPresent(order -> {
                         order.setStatus(RadiologyStatus.BILLED);
                         radiologyOrderRepository.save(order);
+                    }));
+        }
+
+        // Mark linked appointments as BILLED — same transaction, atomic with invoice save.
+        if (saved.getItems() != null) {
+            saved.getItems().stream()
+                .filter(item -> "CONSULTATION".equals(item.getItemType()) && item.getAppointmentId() != null)
+                .forEach(item -> appointmentRepository.findById(item.getAppointmentId())
+                    .ifPresent(appt -> {
+                        appt.setStatus(Appointment.AppointmentStatus.BILLED);
+                        appointmentRepository.save(appt);
                     }));
         }
 
@@ -173,6 +186,7 @@ public class InvoiceService {
                                 .totalPrice(item.getTotalPrice())
                                 .serviceId(item.getServiceId())
                                 .radiologyOrderId(item.getRadiologyOrderId())
+                                .appointmentId(item.getAppointmentId())
                                 .build()
                 ).collect(Collectors.toList()) : java.util.Collections.emptyList())
                 .build();

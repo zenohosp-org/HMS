@@ -292,8 +292,10 @@ const invoiceApi = {
     const { data } = await api.get(`/billing/patient/${patientId}/invoices`);
     return data;
   },
-  getSmartSuggestions: async (patientId) => {
-    const { data } = await api.get("/billing/smart-suggestions", { params: { patientId } });
+  getSmartSuggestions: async (patientId, admissionId) => {
+    const params = { patientId }
+    if (admissionId) params.admissionId = admissionId
+    const { data } = await api.get("/billing/smart-suggestions", { params })
     return data;
   },
   markAsPaid: async (invoiceId, bankAccountId) => {

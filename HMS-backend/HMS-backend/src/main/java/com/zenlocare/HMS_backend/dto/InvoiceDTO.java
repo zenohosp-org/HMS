@@ -39,5 +39,6 @@ public class InvoiceDTO {
         private BigDecimal totalPrice;
         private UUID serviceId;
         private Long radiologyOrderId;
+        private UUID appointmentId;
     }
 }

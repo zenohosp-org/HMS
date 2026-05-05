@@ -28,6 +28,7 @@ public class InvoiceRequest {
     public static class InvoiceItemRequest {
         private UUID serviceId;
         private Long radiologyOrderId;
+        private UUID appointmentId;
         private String itemType;
         private String description;
         private Integer quantity;

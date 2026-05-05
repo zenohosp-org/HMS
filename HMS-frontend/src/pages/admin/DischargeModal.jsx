@@ -63,7 +63,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
     const daysStayed = Math.max(1, Math.ceil((dischargeMs - admitMs) / (1000 * 60 * 60 * 24)))
 
     Promise.all([
-      invoiceApi.getSmartSuggestions(admission.patientId).catch(() => ({})),
+      invoiceApi.getSmartSuggestions(admission.patientId, admission.id).catch(() => ({})),
       hospitalServiceApi.list(user.hospitalId).catch(() => []),
       bankApi.list(user.hospitalId).catch(() => []),
       admissionApi.get(admission.id).catch(() => null),
@@ -114,6 +114,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
             quantity: 1,
             unitPrice: a.consultationFee,
             totalPrice: a.consultationFee,
+            appointmentId: a.appointmentId,
           })
         })
 
@@ -226,6 +227,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
           unitPrice: Number(i.unitPrice),
           totalPrice: Number(i.totalPrice),
           radiologyOrderId: i.radiologyOrderId ?? undefined,
+          appointmentId: i.appointmentId ?? undefined,
         })),
       })
       notify('Patient discharged and discharge bill generated', 'success')

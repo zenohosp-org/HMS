@@ -19,8 +19,14 @@ public class SmartBillingService {
     private final RoomRepository roomRepository;
     private final RadiologyOrderRepository radiologyOrderRepository;
     private final AppointmentRepository appointmentRepository;
+    private final AdmissionRepository admissionRepository;
 
-    public SmartBillingSuggestion getSuggestions(Integer patientId) {
+    public SmartBillingSuggestion getSuggestions(Integer patientId, UUID admissionId) {
+        LocalDate appointmentFrom = admissionId != null
+                ? admissionRepository.findById(admissionId)
+                        .map(a -> a.getAdmissionDate().toLocalDate())
+                        .orElse(LocalDate.now().minusDays(60))
+                : LocalDate.now().minusDays(60);
 
         // ── Room charge ────────────────────────────────────────────────
         SmartBillingSuggestion.RoomSuggestion roomSuggestion = null;
@@ -62,7 +68,8 @@ public class SmartBillingService {
                         .stream()
                         .filter(a -> a.getStatus() == Appointment.AppointmentStatus.COMPLETED
                                 && a.getApptDate() != null
-                                && !a.getApptDate().isBefore(LocalDate.now().minusDays(60)))
+                                && !a.getApptDate().isBefore(appointmentFrom)
+                                && !a.getApptDate().isAfter(LocalDate.now()))
                         .map(a -> {
                             Doctor doc = a.getDoctor();
                             String docName = doc.getUser() != null

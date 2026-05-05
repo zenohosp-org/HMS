@@ -22,8 +22,10 @@ public class BillingController {
     private final InvoiceService invoiceService;
 
     @GetMapping("/smart-suggestions")
-    public ResponseEntity<SmartBillingSuggestion> getSuggestions(@RequestParam Integer patientId) {
-        return ResponseEntity.ok(smartBillingService.getSuggestions(patientId));
+    public ResponseEntity<SmartBillingSuggestion> getSuggestions(
+            @RequestParam Integer patientId,
+            @RequestParam(required = false) UUID admissionId) {
+        return ResponseEntity.ok(smartBillingService.getSuggestions(patientId, admissionId));
     }
 
     @GetMapping("/patient/{patientId}/invoices")

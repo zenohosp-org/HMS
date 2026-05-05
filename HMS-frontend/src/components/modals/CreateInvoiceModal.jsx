@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import {
@@ -27,15 +27,6 @@ const TYPE_META = {
   CUSTOM:      { label: 'Custom',       color: 'text-slate-600 dark:text-[#aaaaaa]',     bg: 'bg-slate-100 dark:bg-[#222222]',        icon: <Wrench className="w-3 h-3" /> },
 }
 
-function TypeBadge({ type }) {
-  if (!type) return null
-  const m = TYPE_META[type] ?? TYPE_META.CUSTOM
-  return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${m.color} ${m.bg}`}>
-      {m.icon}
-    </span>
-  )
-}
 
 export default function CreateInvoiceModal({ onClose, onCreated }) {
   const { user } = useAuth()
@@ -134,7 +125,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
     suggestions.appointments?.forEach(a => {
       const k = `appt-${a.appointmentId}`
       if (!addedSuggestions.has(k)) {
-        toAdd.push({ key: key++, itemType: 'CONSULTATION', description: `Consultation — ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ''}`, quantity: 1, unitPrice: a.consultationFee, totalPrice: a.consultationFee })
+        toAdd.push({ key: key++, itemType: 'CONSULTATION', description: `Consultation — ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ''}`, quantity: 1, unitPrice: a.consultationFee, totalPrice: a.consultationFee, appointmentId: a.appointmentId })
         newAdded.add(k)
       }
     })
@@ -212,6 +203,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
           unitPrice: i.unitPrice,
           totalPrice: i.totalPrice,
           radiologyOrderId: i.radiologyOrderId ?? undefined,
+          appointmentId: i.appointmentId ?? undefined,
         })),
       })
       notify('Invoice created successfully', 'success')
@@ -382,7 +374,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                             </div>
                           </div>
                           <button
-                            onClick={() => !added && addItem({ itemType: 'CONSULTATION', description: `Consultation — ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ''}`, quantity: 1, unitPrice: a.consultationFee, totalPrice: a.consultationFee }, key)}
+                            onClick={() => !added && addItem({ itemType: 'CONSULTATION', description: `Consultation — ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ''}`, quantity: 1, unitPrice: a.consultationFee, totalPrice: a.consultationFee, appointmentId: a.appointmentId }, key)}
                             className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? 'bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}>
                             {added ? '✓ Added' : '+ Add'}
                           </button>
