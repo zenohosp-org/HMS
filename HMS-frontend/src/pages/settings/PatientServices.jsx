@@ -97,7 +97,7 @@ export default function PatientServices() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] p-6 gap-6">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -112,7 +112,7 @@ export default function PatientServices() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-sm">
+      <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
@@ -201,11 +201,10 @@ export default function PatientServices() {
 
                     {/* Status */}
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                        s.isActive
-                          ? "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30"
-                          : "bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800/30"
-                      }`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${s.isActive
+                        ? "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30"
+                        : "bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800/30"
+                        }`}>
                         {s.isActive ? "Active" : "Inactive"}
                       </span>
                     </td>

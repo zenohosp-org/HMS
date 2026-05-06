@@ -85,7 +85,7 @@ function Services() {
         onClick={() => setModal({ open: true, service: null })}
         className="btn-primary"
       ><Plus className="w-4 h-4" /> New Service
-      </button></div></div><div className="flex justify-between items-center gap-4 bg-white/50 dark:bg-[#0a0a0a]/50 p-2 rounded-lg border border-slate-100 dark:border-[#1a1a1a]"><div className="relative flex-1 max-w-md"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
+      </button></div></div><div className="flex justify-between items-center gap-4 bg-white/50 dark:bg-[#0a0a0a]/50 p-2 rounded-lg border border-slate-100 dark:border-[#1a1a1a]"><div className="relative flex-1"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
         type="text"
         placeholder="Search by service name or department..."
         value={search}
