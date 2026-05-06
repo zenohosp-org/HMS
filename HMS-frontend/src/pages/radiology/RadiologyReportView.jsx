@@ -39,13 +39,13 @@ function RadiologyReportView() {
   ><ArrowLeft className="w-4 h-4" /> Back to Reports
                 </button><button
     onClick={() => window.print()}
-    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-violet-500 hover:bg-violet-600 text-white transition-colors"
+    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 hover:bg-slate-900 text-white transition-colors"
   ><Printer className="w-4 h-4" /> Print Report
                 </button></div>{
     /* Report card */
   }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden print:border-none print:shadow-none">{
     /* Hospital header */
-  }<div className="px-8 py-6 border-b-2 border-violet-500 dark:border-violet-400"><div className="flex items-start justify-between"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center shrink-0"><ScanLine className="w-7 h-7 text-violet-600 dark:text-violet-400" /></div><div><h1 className="text-xl font-bold text-slate-900 dark:text-white">{user?.hospitalName ?? "Hospital"}</h1><p className="text-sm text-slate-500 dark:text-[#888888] mt-0.5">Radiology Department</p></div></div><div className="text-right"><span className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300">
+  }<div className="px-8 py-6 border-b-2 border-slate-200 dark:border-slate-400"><div className="flex items-start justify-between"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-lg bg-slate-100 dark:bg-slate-200 flex items-center justify-center shrink-0"><ScanLine className="w-7 h-7 text-slate-900 dark:text-white dark:text-slate-300" /></div><div><h1 className="text-xl font-bold text-slate-900 dark:text-white">{user?.hospitalName ?? "Hospital"}</h1><p className="text-sm text-slate-500 dark:text-[#888888] mt-0.5">Radiology Department</p></div></div><div className="text-right"><span className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-200 text-slate-900 dark:text-white dark:text-slate-300">
                                 Department of Radiology
                             </span>{order.reportId && <p className="text-xs text-slate-600 dark:text-[#999999] mt-2 font-mono">
                                     Report ID: <span className="font-bold text-slate-700 dark:text-[#cccccc]">{order.reportId}</span></p>}</div></div></div>{
@@ -54,15 +54,15 @@ function RadiologyReportView() {
     /* Investigation block */
   }<div className="px-8 py-6 space-y-5">{
     /* Investigation tab */
-  }<div><div className="inline-flex items-center gap-2 px-4 py-2 rounded-t-lg bg-violet-500 text-white text-sm font-bold">{order.serviceName}</div><div className="border border-violet-200 dark:border-violet-500/30 rounded-b-lg rounded-tr-lg p-4"><div className="flex items-center justify-between">{order.billNo && <p className="text-xs text-slate-500 dark:text-[#888888]">
+  }<div><div className="inline-flex items-center gap-2 px-4 py-2 rounded-t-lg bg-slate-900 text-white text-sm font-bold">{order.serviceName}</div><div className="border border-slate-200 dark:border-slate-200/30 rounded-b-lg rounded-tr-lg p-4"><div className="flex items-center justify-between">{order.billNo && <p className="text-xs text-slate-500 dark:text-[#888888]">
                                         Bill No: <span className="font-semibold text-slate-700 dark:text-[#cccccc]">{order.billNo}</span></p>}<span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${PRIORITY_CLS[order.priority]}`}>
                                     Priority: {order.priority}</span></div></div></div>{
     /* Findings */
-  }{order.findings && <div><h3 className="text-xs font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400 mb-2 pb-1 border-b border-violet-200 dark:border-violet-500/20">
+  }{order.findings && <div><h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 dark:text-white dark:text-slate-300 mb-2 pb-1 border-b border-slate-200 dark:border-[#333333]">
                                 Findings
                             </h3><p className="text-sm text-slate-700 dark:text-[#cccccc] whitespace-pre-wrap leading-relaxed">{order.findings}</p></div>}{
     /* Observation */
-  }{order.observation && <div><h3 className="text-xs font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400 mb-2 pb-1 border-b border-violet-200 dark:border-violet-500/20">
+  }{order.observation && <div><h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 dark:text-white dark:text-slate-300 mb-2 pb-1 border-b border-slate-200 dark:border-[#333333]">
                                 Observation / Impression
                             </h3><p className="text-sm text-slate-700 dark:text-[#cccccc] whitespace-pre-wrap leading-relaxed">{order.observation}</p></div>}{
     /* Signature row */

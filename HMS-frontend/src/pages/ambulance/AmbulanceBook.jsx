@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { ambulanceApi, patientApi } from "@/utils/api";
@@ -14,16 +14,16 @@ import {
 const PAGE_SIZE = 8;
 
 const STATUS_CONFIG = {
-  PENDING:    { label: "Pending",    color: "text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400",     icon: Clock3 },
-  DISPATCHED: { label: "Dispatched", color: "text-blue-600 bg-blue-50 dark:bg-blue-500/10 dark:text-blue-400",         icon: Truck },
-  EN_ROUTE:   { label: "En Route",   color: "text-violet-600 bg-violet-50 dark:bg-violet-500/10 dark:text-violet-400", icon: Activity },
-  COMPLETED:  { label: "Completed",  color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400", icon: CheckCircle2 },
-  CANCELLED:  { label: "Cancelled",  color: "text-rose-600 bg-rose-50 dark:bg-rose-500/10 dark:text-rose-400",         icon: XCircle },
+  PENDING: { label: "Pending", color: "text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400", icon: Clock3 },
+  DISPATCHED: { label: "Dispatched", color: "text-blue-600 bg-blue-50 dark:bg-blue-500/10 dark:text-blue-400", icon: Truck },
+  EN_ROUTE: { label: "En Route", color: "text-slate-900 dark:text-white bg-slate-100 dark:bg-[#1e1e1e] dark:text-slate-300", icon: Activity },
+  COMPLETED: { label: "Completed", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400", icon: CheckCircle2 },
+  CANCELLED: { label: "Cancelled", color: "text-rose-600 bg-rose-50 dark:bg-rose-500/10 dark:text-rose-400", icon: XCircle },
 };
 
 const VEHICLE_STATUS_CONFIG = {
-  AVAILABLE:   { label: "Available",   cls: "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30" },
-  IN_USE:      { label: "In Use",      cls: "bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/30" },
+  AVAILABLE: { label: "Available", cls: "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30" },
+  IN_USE: { label: "In Use", cls: "bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/30" },
   MAINTENANCE: { label: "Maintenance", cls: "bg-amber-50 dark:bg-amber-900/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800/30" },
 };
 
@@ -482,7 +482,7 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
         </div>
       </div>
 
-      <div className="relative max-w-sm">
+      <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
         <input
           type="text"
@@ -651,11 +651,11 @@ function BookingsTab({ hospitalId }) {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const NEXT_STATUS = { PENDING: "DISPATCHED", DISPATCHED: "EN_ROUTE", EN_ROUTE: "COMPLETED" };
-  const NEXT_LABEL  = { PENDING: "Dispatch", DISPATCHED: "En Route", EN_ROUTE: "Complete" };
-  const NEXT_COLOR  = {
-    PENDING:    "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20",
-    DISPATCHED: "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20",
-    EN_ROUTE:   "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20",
+  const NEXT_LABEL = { PENDING: "Dispatch", DISPATCHED: "En Route", EN_ROUTE: "Complete" };
+  const NEXT_COLOR = {
+    PENDING: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20",
+    DISPATCHED: "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-200",
+    EN_ROUTE: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20",
   };
 
   return (
@@ -674,7 +674,7 @@ function BookingsTab({ hospitalId }) {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-sm">
+      <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
         <input
           type="text"
@@ -865,7 +865,7 @@ export default function AmbulanceBook() {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] p-6 gap-6">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shadow-lg">
@@ -884,11 +884,10 @@ export default function AmbulanceBook() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                tab === t.key
-                  ? "bg-white dark:bg-[#111] text-slate-900 dark:text-white shadow-sm"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}
+              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === t.key
+                ? "bg-white dark:bg-[#111] text-slate-900 dark:text-white shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                }`}
             >
               {t.label}
             </button>

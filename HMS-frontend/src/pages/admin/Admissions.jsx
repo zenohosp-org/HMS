@@ -89,11 +89,11 @@ export default function Admissions() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] p-6 gap-6">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <BedDouble className="w-6 h-6 text-violet-500" /> IPD Admissions
+            <BedDouble className="w-6 h-6 text-slate-700 dark:text-[#cccccc]" /> IPD Admissions
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">In-patient department — active admissions and discharge management</p>
         </div>
@@ -107,7 +107,7 @@ export default function Admissions() {
           { label: 'Active Admissions', value: counts.ADMITTED, icon: BedDouble, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
           { label: 'Discharged Today', value: admissions.filter(a => a.status === 'DISCHARGED' && a.actualDischargeDate?.startsWith(new Date().toISOString().slice(0, 10))).length, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-500/10' },
           { label: 'Overdue Discharge', value: admissions.filter(isOverdue).length, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10' },
-          { label: 'Total This Month', value: admissions.filter(a => a.createdAt?.startsWith(new Date().toISOString().slice(0, 7))).length, icon: Calendar, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-500/10' },
+          { label: 'Total This Month', value: admissions.filter(a => a.createdAt?.startsWith(new Date().toISOString().slice(0, 7))).length, icon: Calendar, color: 'text-slate-900 dark:text-white', bg: 'bg-slate-100 dark:bg-[#1e1e1e]' },
         ].map(stat => (
           <div key={stat.label} className="rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] p-4 flex items-center gap-4">
             <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${stat.bg}`}>
@@ -125,20 +125,20 @@ export default function Admissions() {
         <div className="relative flex-1 min-w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 transition-all"
             placeholder="Search by patient, admission no., department, room…" />
         </div>
         {['ADMITTED', 'DISCHARGED', 'ALL'].map(s => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-violet-400'}`}>
+            className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-slate-900 text-white border-slate-900' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-slate-300'}`}>
             {s.charAt(0) + s.slice(1).toLowerCase()}
-            {s === 'ADMITTED' && counts.ADMITTED > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-xs">{counts.ADMITTED}</span>}
+            {s === 'ADMITTED' && counts.ADMITTED > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-white dark:bg-[#111] text-black dark:text-white text-xs">{counts.ADMITTED}</span>}
           </button>
         ))}
         <div className="flex border border-slate-200 dark:border-[#2a2a2a] rounded-lg overflow-hidden ml-auto">
           {[['grid', LayoutGrid], ['list', List]].map(([mode, Icon]) => (
             <button key={mode} onClick={() => setViewMode(mode)}
-              className={`p-2.5 transition-colors ${viewMode === mode ? 'bg-violet-600 text-white' : 'bg-white dark:bg-[#111] text-slate-500 hover:bg-slate-50 dark:hover:bg-[#1a1a1a]'}`}>
+              className={`p-2.5 transition-colors ${viewMode === mode ? 'bg-slate-900 text-white' : 'bg-white dark:bg-[#111] text-slate-500 hover:bg-slate-50 dark:hover:bg-[#1a1a1a]'}`}>
               <Icon className="w-4 h-4" />
             </button>
           ))}
@@ -151,18 +151,18 @@ export default function Admissions() {
         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-400">
           <BedDouble className="w-12 h-12 opacity-30" />
           <p className="text-sm">No admissions found</p>
-          <button onClick={() => setShowAdmitModal(true)} className="text-violet-600 text-sm font-semibold hover:underline">Admit a patient →</button>
+          <button onClick={() => setShowAdmitModal(true)} className="text-slate-900 dark:text-white text-sm font-semibold hover:underline">Admit a patient →</button>
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-2">
           {filtered.map(a => (
             <div key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)}
-              className={`rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] hover:border-violet-300 hover:shadow-md transition-all cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
+              className={`rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 hover:shadow-md transition-all cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center shrink-0">
-                      <User className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0">
+                      <User className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-300" />
                     </div>
                     <div>
                       <p className="font-semibold text-sm text-slate-900 dark:text-white">{a.patientName}</p>
@@ -195,7 +195,7 @@ export default function Admissions() {
                 <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
                   <div className="text-right">
-                    {a.ipdId && <p className="text-xs font-mono font-bold text-violet-600 dark:text-violet-400">{a.ipdId}</p>}
+                    {a.ipdId && <p className="text-xs font-mono font-bold text-slate-900 dark:text-white dark:text-slate-300">{a.ipdId}</p>}
                     <p className="text-[10px] font-mono text-slate-400">{a.admissionNumber}</p>
                   </div>
                 </div>
@@ -229,7 +229,7 @@ export default function Admissions() {
               {filtered.map(a => (
                 <tr key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
                   <td className="px-4 py-3">
-                    {a.ipdId && <p className="font-mono text-xs font-bold text-violet-600 dark:text-violet-400">{a.ipdId}</p>}
+                    {a.ipdId && <p className="font-mono text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300">{a.ipdId}</p>}
                     <p className="font-mono text-[10px] text-slate-400">{a.admissionNumber}</p>
                   </td>
                   <td className="px-4 py-3">

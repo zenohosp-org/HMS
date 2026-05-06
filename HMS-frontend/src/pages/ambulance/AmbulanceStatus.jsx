@@ -1,21 +1,21 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { ambulanceApi } from "@/utils/api";
 import {
   Ambulance, Search, CheckCircle2, Clock3, XCircle,
-  Truck, Activity, Filter, RefreshCw, MapPin, Car, Phone, User
+  Truck, Activity, Filter, MapPin, Car, Phone, User
 } from "lucide-react";
 
 const STATUS_CONFIG = {
-  PENDING:    { label: "Pending",    bg: "bg-amber-500",   light: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400",   icon: Clock3 },
-  DISPATCHED: { label: "Dispatched", bg: "bg-blue-500",    light: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",       icon: Truck },
-  EN_ROUTE:   { label: "En Route",   bg: "bg-violet-500",  light: "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400", icon: Activity },
-  COMPLETED:  { label: "Completed",  bg: "bg-emerald-500", light: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400", icon: CheckCircle2 },
-  CANCELLED:  { label: "Cancelled",  bg: "bg-rose-500",    light: "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400",       icon: XCircle },
+  PENDING: { label: "Pending", bg: "bg-amber-500", light: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400", icon: Clock3 },
+  DISPATCHED: { label: "Dispatched", bg: "bg-blue-500", light: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400", icon: Truck },
+  EN_ROUTE: { label: "En Route", bg: "bg-slate-900", light: "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white dark:text-slate-300", icon: Activity },
+  COMPLETED: { label: "Completed", bg: "bg-emerald-500", light: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400", icon: CheckCircle2 },
+  CANCELLED: { label: "Cancelled", bg: "bg-rose-500", light: "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400", icon: XCircle },
 };
 
 const NEXT_STATUS = { PENDING: "DISPATCHED", DISPATCHED: "EN_ROUTE", EN_ROUTE: "COMPLETED" };
-const NEXT_LABEL  = { PENDING: "Dispatch", DISPATCHED: "En Route", EN_ROUTE: "Complete" };
+const NEXT_LABEL = { PENDING: "Dispatch", DISPATCHED: "En Route", EN_ROUTE: "Complete" };
 
 const ALL_STATUSES = ["ALL", "PENDING", "DISPATCHED", "EN_ROUTE", "COMPLETED", "CANCELLED"];
 
@@ -56,7 +56,7 @@ function StatusSelect({ current, bookingId, onUpdate }) {
         onClick={advance}
         disabled={loading}
         className={`px-3 py-1 rounded-full text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-50
-          ${current === "PENDING" ? "bg-blue-500 hover:bg-blue-600" : current === "DISPATCHED" ? "bg-violet-500 hover:bg-violet-600" : "bg-emerald-500 hover:bg-emerald-600"}`}>
+          ${current === "PENDING" ? "bg-blue-500 hover:bg-blue-600" : current === "DISPATCHED" ? "bg-slate-900 hover:bg-slate-900" : "bg-emerald-500 hover:bg-emerald-600"}`}>
         → {NEXT_LABEL[current]}
       </button>
       <button
@@ -107,12 +107,12 @@ export default function AmbulanceStatus() {
   }, {});
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a] p-6 space-y-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a] space-y-6">
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
+          <div className="w-10 h-10 rounded-lg bg-black dark:bg-[#1e1e1e] flex items-center justify-center">
             <Activity className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -120,9 +120,6 @@ export default function AmbulanceStatus() {
             <p className="text-sm text-slate-500 dark:text-[#666]">Live dispatch tracking and status updates</p>
           </div>
         </div>
-        <button onClick={load} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-slate-600 dark:text-[#888] text-sm font-medium hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
-          <RefreshCw className="w-4 h-4" /> Refresh
-        </button>
       </div>
 
       {/* Status summary pills */}

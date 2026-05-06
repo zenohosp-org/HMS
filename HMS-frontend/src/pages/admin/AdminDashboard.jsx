@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+﻿import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
@@ -335,8 +335,8 @@ export default function AdminDashboard() {
           label="Revenue Collected"
           value={`₹${(totalRevenue / 1000).toFixed(1)}k`}
           sub={`₹${(outstanding / 1000).toFixed(1)}k outstanding`}
-          icon={<ReceiptText className="w-5 h-5 text-violet-600 dark:text-violet-400" />}
-          accent="bg-violet-50 dark:bg-violet-500/10"
+          icon={<ReceiptText className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-300" />}
+          accent="bg-slate-100 dark:bg-[#1e1e1e]"
           trend={outstanding > totalRevenue ? "down" : "up"}
           trendLabel={invoices.length > 0 ? `${invoices.filter((i) => i.status === "PAID").length}/${invoices.length} paid` : null}
         />
@@ -482,7 +482,7 @@ export default function AdminDashboard() {
                   ) : null
                 }
               />
-              <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={36} />
+              <Bar dataKey="value" fill="#0f172a" radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -526,7 +526,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col gap-2 flex-1">
             {[
               { label: "Add Doctor", sub: "Register a new doctor", to: "/doctors", icon: <Stethoscope className="w-4 h-4" />, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" },
-              { label: "Add Staff", sub: "Onboard a team member", to: "/staffs", icon: <UserCheck className="w-4 h-4" />, color: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10" },
+              { label: "Add Staff", sub: "Onboard a team member", to: "/staffs", icon: <UserCheck className="w-4 h-4" />, color: "text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e]" },
               { label: "Register Patient", sub: "New patient registration", to: "/patients", icon: <Users className="w-4 h-4" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
               { label: "Create Invoice", sub: "Bill a patient visit", to: "/billing", icon: <ReceiptText className="w-4 h-4" />, color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" },
               { label: "IPD Admission", sub: "Admit a patient", to: "/admissions", icon: <BedDouble className="w-4 h-4" />, color: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10" },

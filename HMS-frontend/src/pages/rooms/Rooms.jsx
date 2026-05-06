@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+﻿import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api, { infrastructureApi } from "@/utils/api";
@@ -378,20 +378,19 @@ function Rooms() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                filter === f
-                  ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-md"
-                  : "bg-white text-slate-500 border border-slate-200 dark:bg-[#111111] dark:border-[#222222] hover:bg-slate-50 dark:hover:bg-[#1a1a1a]"
-              }`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filter === f
+                ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-md"
+                : "bg-white text-slate-500 border border-slate-200 dark:bg-[#111111] dark:border-[#222222] hover:bg-slate-50 dark:hover:bg-[#1a1a1a]"
+                }`}
             >
               {f}
             </button>
           ))}
         </div>
-        <div className="relative">
+        <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
-            className="w-full sm:w-64 pl-9 pr-4 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50"
+            className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50"
             placeholder="Search rooms or patients..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -505,21 +504,19 @@ function Rooms() {
               <div
                 key={room.id}
                 onClick={() => setSelectedRoom((prev) => prev?.id === room.id ? null : room)}
-                className={`bg-white dark:bg-[#111111] border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-colors ${
-                  selectedRoom?.id === room.id
-                    ? "border-slate-400 dark:border-[#444444]"
-                    : room.status === "AVAILABLE"
+                className={`bg-white dark:bg-[#111111] border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-colors ${selectedRoom?.id === room.id
+                  ? "border-slate-400 dark:border-[#444444]"
+                  : room.status === "AVAILABLE"
                     ? "border-emerald-200 dark:border-emerald-900/40 hover:border-emerald-300 dark:hover:border-emerald-800/50"
                     : "border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 dark:hover:border-[#2a2a2a]"
-                }`}
+                  }`}
               >
                 {/* Left: room identity */}
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border ${
-                    room.status === "AVAILABLE"
-                      ? "bg-emerald-50 border-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400"
-                      : "bg-slate-50 border-slate-100 text-slate-500 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] dark:text-[#888888]"
-                  }`}>
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border ${room.status === "AVAILABLE"
+                    ? "bg-emerald-50 border-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400"
+                    : "bg-slate-50 border-slate-100 text-slate-500 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] dark:text-[#888888]"
+                    }`}>
                     <Bed className="w-6 h-6" />
                   </div>
                   <div>
@@ -528,20 +525,18 @@ function Rooms() {
                       {room.roomCode && (
                         <span className="text-[10px] font-mono font-bold text-slate-600 dark:text-[#999999]">{room.roomCode}</span>
                       )}
-                      <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${
-                        room.roomType === "ICU"
-                          ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
-                          : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#888888] dark:border-[#333333]"
-                      }`}>{room.roomType}</span>
+                      <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${room.roomType === "ICU"
+                        ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
+                        : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#888888] dark:border-[#333333]"
+                        }`}>{room.roomType}</span>
                       {isMultiBed && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]">
                           {room.bedCount} beds
                         </span>
                       )}
                     </div>
-                    <p className={`text-xs mt-1 font-medium ${
-                      room.status === "AVAILABLE" ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"
-                    }`}>{room.status}</p>
+                    <p className={`text-xs mt-1 font-medium ${room.status === "AVAILABLE" ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"
+                      }`}>{room.status}</p>
                   </div>
                 </div>
 
@@ -582,7 +577,7 @@ function Rooms() {
                         {room.allocationToken && (
                           <div>
                             <p className="text-xs text-slate-500 dark:text-[#666666] mb-0.5">Token</p>
-                            <span className="inline-block px-2.5 py-1 rounded-lg bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 text-sm font-bold tracking-widest text-violet-700 dark:text-violet-400 font-mono">
+                            <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333] text-sm font-bold tracking-widest text-slate-900 dark:text-white dark:text-slate-300 font-mono">
                               {room.allocationToken}
                             </span>
                           </div>

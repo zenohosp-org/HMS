@@ -62,9 +62,9 @@ const BLOOD_COLORS = {
   "B+": "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20",
   "B-": "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
   "O+": "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
-  "O-": "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20",
-  "AB+": "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20",
-  "AB-": "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20",
+  "O-": "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-100 dark:text-slate-400 dark:border-slate-200/20",
+  "AB+": "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]",
+  "AB-": "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-slate-900/10 dark:text-slate-400 dark:border-slate-200/20",
 };
 
 const STATUS_META = {
@@ -74,7 +74,7 @@ const STATUS_META = {
   NO_SHOW: { icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10", label: "No Show" },
 };
 
-const PIE_COLORS = { SCHEDULED: "#6366f1", COMPLETED: "#10b981", CANCELLED: "#f43f5e", NO_SHOW: "#f59e0b" };
+const PIE_COLORS = { SCHEDULED: "#0f172a", COMPLETED: "#10b981", CANCELLED: "#f43f5e", NO_SHOW: "#f59e0b" };
 
 const TOOLTIP_CLS = "bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-xl px-4 py-3 text-xs";
 
@@ -291,8 +291,8 @@ function DoctorStaffDashboard() {
         <StatPill
           label={isDoctor ? "My Appointments" : "Appointments"}
           value={totalAppts}
-          icon={<Calendar className="w-5 h-5 text-violet-600 dark:text-violet-400" />}
-          accent="bg-violet-50 dark:bg-violet-500/10"
+          icon={<Calendar className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-300" />}
+          accent="bg-slate-100 dark:bg-[#1e1e1e]"
         />
         <StatPill
           label="Today's Schedule"
@@ -328,7 +328,7 @@ function DoctorStaffDashboard() {
                   active && payload?.length ? (
                     <div className={TOOLTIP_CLS}>
                       <p className="font-bold text-slate-700 dark:text-[#ccc] mb-1">{label}</p>
-                      <p className="text-indigo-500">{payload[0].value} patients</p>
+                      <p className="text-slate-700">{payload[0].value} patients</p>
                     </div>
                   ) : null
                 }
@@ -480,7 +480,7 @@ function DoctorStaffDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Patients", sub: "Register or find a patient", to: "/patients", icon: <Users className="w-5 h-5" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
-          ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10" }] : []),
+          ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e]" }] : []),
           { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 dark:text-white bg-slate-100 dark:bg-[#1e1e1e]" },
         ].map((item) => (
           <button

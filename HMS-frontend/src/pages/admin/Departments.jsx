@@ -9,7 +9,7 @@ const DEPT_TYPES = ['CLINICAL', 'SUPPORT', 'ADMINISTRATIVE']
 const TYPE_COLORS = {
   CLINICAL: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
   SUPPORT: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
-  ADMINISTRATIVE: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20',
+  ADMINISTRATIVE: 'bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]',
 }
 
 const PRESETS = {
@@ -126,15 +126,15 @@ export default function Departments() {
 
   const existing = new Set(departments.map(d => d.name))
 
-  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all'
+  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-200 transition-all'
   const labelCls = 'block text-xs font-bold text-slate-600 dark:text-[#aaa] uppercase tracking-wider mb-1.5'
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] p-6 gap-6">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-violet-500" /> Departments
+            <Building2 className="w-6 h-6 text-slate-700 dark:text-[#cccccc]" /> Departments
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">Manage hospital departments and wings</p>
         </div>
@@ -146,7 +146,7 @@ export default function Departments() {
       <div className="flex gap-2">
         {DEPT_TYPES.map(t => (
           <button key={t} onClick={() => setActiveTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${activeTab === t ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-violet-400'}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${activeTab === t ? 'bg-slate-900 text-white border-slate-900' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-slate-300'}`}>
             {t.charAt(0) + t.slice(1).toLowerCase()} ({grouped[t]?.length ?? 0})
           </button>
         ))}
@@ -191,7 +191,7 @@ export default function Departments() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                      <button onClick={() => openEdit(dept)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-500 hover:text-violet-600 transition-colors">
+                      <button onClick={() => openEdit(dept)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-500 hover:text-slate-900 dark:text-white transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => toggle(dept)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-500 transition-colors">
@@ -210,7 +210,7 @@ export default function Departments() {
           <div className="flex flex-wrap gap-2">
             {PRESETS[activeTab]?.filter(p => !existing.has(p.name)).map(p => (
               <button key={p.name} onClick={() => openCreate(p)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-400 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 text-xs font-medium transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-400 hover:border-slate-400 hover:text-slate-900 dark:text-white dark:hover:text-slate-400 dark:text-[#888] text-xs font-medium transition-colors">
                 <Plus className="w-3 h-3" /> {p.name}
               </button>
             ))}

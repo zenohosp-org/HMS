@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi, bankApi } from '@/utils/api'
@@ -13,18 +13,18 @@ import {
 const PAGE_SIZE = 8
 
 const STATUS_CFG = {
-  PAID:      { label: 'Paid',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
-  UNPAID:    { label: 'Unpaid',    cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',       Icon: Clock },
-  CANCELLED: { label: 'Cancelled', cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',             Icon: XCircle },
+  PAID: { label: 'Paid', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
+  UNPAID: { label: 'Unpaid', cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20', Icon: Clock },
+  CANCELLED: { label: 'Cancelled', cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20', Icon: XCircle },
 }
 
 const TYPE_META = {
-  MEDICINE:     { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> },
-  LAB_TEST:     { bg: 'bg-violet-100 dark:bg-violet-500/20',   icon: <FlaskConical className="w-3 h-3 text-violet-600 dark:text-violet-400" /> },
-  CONSULTATION: { bg: 'bg-blue-100 dark:bg-blue-500/20',       icon: <Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" /> },
-  ROOM_CHARGE:  { bg: 'bg-orange-100 dark:bg-orange-500/20',   icon: <BedDouble className="w-3 h-3 text-orange-600 dark:text-orange-400" /> },
-  RADIOLOGY:    { bg: 'bg-purple-100 dark:bg-purple-500/20',   icon: <ScanLine className="w-3 h-3 text-purple-600 dark:text-purple-400" /> },
-  CUSTOM:       { bg: 'bg-slate-100 dark:bg-[#222]',           icon: <Wrench className="w-3 h-3 text-slate-500" /> },
+  MEDICINE: { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> },
+  LAB_TEST: { bg: 'bg-slate-100 dark:bg-slate-200', icon: <FlaskConical className="w-3 h-3 text-slate-900 dark:text-white dark:text-slate-300" /> },
+  CONSULTATION: { bg: 'bg-blue-100 dark:bg-blue-500/20', icon: <Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" /> },
+  ROOM_CHARGE: { bg: 'bg-orange-100 dark:bg-orange-500/20', icon: <BedDouble className="w-3 h-3 text-orange-600 dark:text-orange-400" /> },
+  RADIOLOGY: { bg: 'bg-slate-100 dark:bg-slate-900/20', icon: <ScanLine className="w-3 h-3 text-slate-900 dark:text-white dark:text-slate-400" /> },
+  CUSTOM: { bg: 'bg-slate-100 dark:bg-[#222]', icon: <Wrench className="w-3 h-3 text-slate-500" /> },
 }
 
 function fmt(n) {
@@ -52,10 +52,10 @@ function ItemTypePips({ items }) {
 
 function StatCard({ label, value, sub, Icon, accent }) {
   const accents = {
-    blue:    'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400',
+    blue: 'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400',
     emerald: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-    amber:   'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-600 dark:text-amber-400',
-    rose:    'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400',
+    amber: 'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-600 dark:text-amber-400',
+    rose: 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400',
   }
   return (
     <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] p-5 flex items-center gap-4">
@@ -101,7 +101,7 @@ export default function Billing() {
 
   useEffect(() => {
     if (!user?.hospitalId) return
-    bankApi.list(user.hospitalId).then(setBankAccounts).catch(() => {})
+    bankApi.list(user.hospitalId).then(setBankAccounts).catch(() => { })
   }, [user?.hospitalId])
 
   const today = new Date().toDateString()
@@ -230,7 +230,7 @@ export default function Billing() {
   const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left'
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] p-6 gap-6">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -247,15 +247,23 @@ export default function Billing() {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Total Invoices"   value={stats.total}          sub="all time"            Icon={ReceiptText}  accent="blue"    />
-        <StatCard label="Revenue Collected" value={fmt(stats.collected)} sub="from paid invoices"  Icon={TrendingUp}   accent="emerald" />
-        <StatCard label="Outstanding"       value={fmt(stats.outstanding)} sub="unpaid invoices"  Icon={AlertCircle}  accent="amber"   />
-        <StatCard label="Billed Today"      value={stats.todayCount}     sub="invoices created today" Icon={Clock}    accent="rose"    />
+        <StatCard label="Total Invoices" value={stats.total} sub="all time" Icon={ReceiptText} accent="blue" />
+        <StatCard label="Revenue Collected" value={fmt(stats.collected)} sub="from paid invoices" Icon={TrendingUp} accent="emerald" />
+        <StatCard label="Outstanding" value={fmt(stats.outstanding)} sub="unpaid invoices" Icon={AlertCircle} accent="amber" />
+        <StatCard label="Billed Today" value={stats.todayCount} sub="invoices created today" Icon={Clock} accent="rose" />
       </div>
 
       {/* Controls */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-60 max-w-sm">
+        <div className="flex items-center gap-1.5 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg p-1 shadow-sm">
+          {['ALL', 'UNPAID', 'PAID', 'CANCELLED'].map(s => (
+            <button key={s} onClick={() => { setStatusFilter(s); setPage(1) }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === s ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm' : 'text-slate-500 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a]'}`}>
+              {s}
+            </button>
+          ))}
+        </div>
+        <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
@@ -264,14 +272,6 @@ export default function Billing() {
             onChange={e => { setSearch(e.target.value); setPage(1) }}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
           />
-        </div>
-        <div className="flex items-center gap-1.5 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg p-1 shadow-sm">
-          {['ALL', 'UNPAID', 'PAID', 'CANCELLED'].map(s => (
-            <button key={s} onClick={() => { setStatusFilter(s); setPage(1) }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === s ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm' : 'text-slate-500 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a]'}`}>
-              {s}
-            </button>
-          ))}
         </div>
       </div>
 

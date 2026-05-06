@@ -42,9 +42,9 @@ const SHIFTS = [
     type: "NIGHT",
     label: "Night",
     time: "22:00\u201306:00",
-    dot: "bg-violet-400",
-    textCls: "text-violet-600 dark:text-violet-400",
-    badgeCls: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20"
+    dot: "bg-slate-600",
+    textCls: "text-slate-900 dark:text-white dark:text-slate-300",
+    badgeCls: "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]"
   }
 ];
 const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -67,7 +67,7 @@ function getAvatarCls(role) {
   if (role === "doctor") return "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300";
   if (role === "hospital_admin") return "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300";
   if (role === "technician") return "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300";
-  return "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300";
+  return "bg-slate-100 text-slate-900 dark:text-white dark:bg-slate-200 dark:text-slate-300";
 }
 function getInitials(name) {
   const parts = name.trim().split(" ");

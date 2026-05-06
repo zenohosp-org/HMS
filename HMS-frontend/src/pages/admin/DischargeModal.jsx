@@ -15,8 +15,8 @@ const GST_RATE = 0.18
 const TYPE_META = {
   ROOM_CHARGE:  { label: 'Room',         icon: BedDouble,    color: 'text-orange-600 dark:text-orange-400',  bg: 'bg-orange-50 dark:bg-orange-500/10' },
   CONSULTATION: { label: 'Consultation', icon: Stethoscope,  color: 'text-blue-600 dark:text-blue-400',      bg: 'bg-blue-50 dark:bg-blue-500/10'     },
-  RADIOLOGY:    { label: 'Radiology',    icon: ScanLine,     color: 'text-violet-600 dark:text-violet-400',  bg: 'bg-violet-50 dark:bg-violet-500/10' },
-  LAB_TEST:     { label: 'Lab Test',     icon: FlaskConical, color: 'text-teal-600 dark:text-teal-400',      bg: 'bg-teal-50 dark:bg-teal-500/10'     },
+  RADIOLOGY:    { label: 'Radiology',    icon: ScanLine,     color: 'text-slate-900 dark:text-white dark:text-slate-300',  bg: 'bg-slate-100 dark:bg-[#1e1e1e]' },
+  LAB_TEST:     { label: 'Lab Test',     icon: FlaskConical, color: 'text-slate-700 dark:text-slate-400',      bg: 'bg-slate-100 dark:bg-slate-900/10'     },
   MEDICINE:     { label: 'Medicine',     icon: Pill,         color: 'text-emerald-600 dark:text-emerald-400',bg: 'bg-emerald-50 dark:bg-emerald-500/10'},
   CUSTOM:       { label: 'Custom',       icon: Wrench,       color: 'text-slate-600 dark:text-[#aaa]',       bg: 'bg-slate-100 dark:bg-[#222]'         },
 }

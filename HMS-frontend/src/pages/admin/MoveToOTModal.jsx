@@ -48,8 +48,8 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-[#1e1e1e]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center">
-              <Scissors className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center">
+              <Scissors className="w-4 h-4 text-slate-900 dark:text-white dark:text-slate-300" />
             </div>
             <div>
               <p className="text-sm font-bold text-slate-900 dark:text-white">Move to OT</p>
@@ -84,11 +84,11 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
                   <div className="space-y-2">
                     {otRooms.map(room => (
                       <label key={room.id}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${selectedRoomId === String(room.id) ? 'border-violet-400 bg-violet-50 dark:bg-violet-500/10 dark:border-violet-500/40' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-violet-300 dark:hover:border-violet-500/30'}`}>
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${selectedRoomId === String(room.id) ? 'border-slate-900 bg-slate-100 dark:bg-[#1e1e1e] dark:border-slate-200/40' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-400 dark:hover:border-slate-200/30'}`}>
                         <input type="radio" name="otRoom" value={room.id}
                           checked={selectedRoomId === String(room.id)}
                           onChange={e => setSelectedRoomId(e.target.value)}
-                          className="accent-violet-600" />
+                          className="accent-slate-900" />
                         <div>
                           <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{room.roomNumber}</p>
                           <p className="text-xs text-slate-500">OT · Available</p>
@@ -106,7 +106,7 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
                   Performing Doctor
                 </label>
                 <select
-                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#0d0d0d] text-sm text-slate-800 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#0d0d0d] text-sm text-slate-800 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-slate-300/50"
                   value={selectedDoctorId}
                   onChange={e => setSelectedDoctorId(e.target.value)}>
                   <option value="">— Keep current doctor —</option>

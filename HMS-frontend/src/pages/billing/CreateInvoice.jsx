@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+﻿import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
@@ -44,10 +44,10 @@ function fmt(n) {
 }
 const TYPE_META = {
   MEDICINE: { label: "Medicine", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-500/20", icon: <Pill className="w-3 h-3" /> },
-  LAB_TEST: { label: "Lab Test", color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-500/20", icon: <FlaskConical className="w-3 h-3" /> },
+  LAB_TEST: { label: "Lab Test", color: "text-slate-900 dark:text-white dark:text-slate-300", bg: "bg-slate-100 dark:bg-slate-200", icon: <FlaskConical className="w-3 h-3" /> },
   CONSULTATION: { label: "Consultation", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-500/20", icon: <Stethoscope className="w-3 h-3" /> },
   ROOM_CHARGE: { label: "Room", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-500/20", icon: <BedDouble className="w-3 h-3" /> },
-  RADIOLOGY: { label: "Radiology", color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-500/20", icon: <ScanLine className="w-3 h-3" /> },
+  RADIOLOGY: { label: "Radiology", color: "text-slate-900 dark:text-white dark:text-slate-300", bg: "bg-slate-100 dark:bg-slate-200", icon: <ScanLine className="w-3 h-3" /> },
   CUSTOM: { label: "Custom", color: "text-slate-600 dark:text-[#aaaaaa]", bg: "bg-slate-100 dark:bg-[#222222]", icon: <Wrench className="w-3 h-3" /> }
 };
 function TypeBadge({ type }) {
@@ -287,9 +287,9 @@ function CreateInvoice() {
   })()}{suggestions.radiologyOrders.map((r) => {
     const key = `radiology-${r.orderId}`;
     const added = addedSuggestions.has(key);
-    return <div key={key} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-violet-200 dark:border-violet-500/20 bg-violet-50 dark:bg-violet-500/5"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center shrink-0"><ScanLine className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{r.serviceName}</p><p className="text-xs text-slate-400">{r.status.replace("_", " ")}{r.scheduledDate ? ` \xB7 ${r.scheduledDate}` : ""}</p></div></div><button
+    return <div key={key} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#333333] bg-slate-100 dark:bg-slate-900/5"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-200 flex items-center justify-center shrink-0"><ScanLine className="w-3.5 h-3.5 text-slate-900 dark:text-white dark:text-slate-300" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{r.serviceName}</p><p className="text-xs text-slate-400">{r.status.replace("_", " ")}{r.scheduledDate ? ` \xB7 ${r.scheduledDate}` : ""}</p></div></div><button
       onClick={() => !added && addItem({ itemType: "RADIOLOGY", description: r.serviceName, quantity: 1, unitPrice: 0, totalPrice: 0 }, key)}
-      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default" : "bg-violet-500 hover:bg-violet-600 text-white"}`}
+      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default" : "bg-slate-900 hover:bg-slate-900 text-white"}`}
     >{added ? "\u2713 Added" : "+ Add"}</button></div>;
   })}{suggestions.appointments.map((a) => {
     const key = `appt-${a.appointmentId}`;
@@ -305,7 +305,7 @@ function CreateInvoice() {
     /* 3. Add Tests & Services */
   }<div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">3</span>
                         Add Tests &amp; Services
-                    </p><div className="grid grid-cols-2 gap-3"><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5 flex items-center gap-1"><FlaskConical className="w-3 h-3 text-violet-500" /> Search Lab / Services</label><div className="relative"><input className={inputCls} placeholder="Search by test name…" value={serviceSearch} onChange={(e) => setServiceSearch(e.target.value)} />{serviceResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-lg shadow-xl z-20 overflow-hidden">{serviceResults.map((s) => <button
+                    </p><div className="grid grid-cols-2 gap-3"><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5 flex items-center gap-1"><FlaskConical className="w-3 h-3 text-slate-700 dark:text-[#cccccc]" /> Search Lab / Services</label><div className="relative"><input className={inputCls} placeholder="Search by test name…" value={serviceSearch} onChange={(e) => setServiceSearch(e.target.value)} />{serviceResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-lg shadow-xl z-20 overflow-hidden">{serviceResults.map((s) => <button
     key={s.id}
     type="button"
     onClick={() => {

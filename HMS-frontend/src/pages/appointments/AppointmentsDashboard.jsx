@@ -29,7 +29,7 @@ const APPT_COLORS = [
   "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20",
   "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20",
   "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20",
-  "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20",
+  "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-slate-900/10 dark:text-slate-300 dark:border-slate-200/20",
   "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/20"
 ];
 const STATUS_TRANSITIONS = {
@@ -295,8 +295,8 @@ function AppointmentsDashboard() {
             const colors = getColorForDoctor(appt.doctorId);
             return <div key={appt.id} className={`px-2 py-1.5 rounded-lg text-xs truncate border ${colors}`}><span className="font-semibold opacity-90 mr-1">{appt.apptTime.substring(0, 5)}</span><span className="font-medium tracking-tight truncate">{appt.patientName}</span></div>;
           })}{dayAppts.length > 3 && <div className="text-xs font-semibold text-slate-500 dark:text-[#888888] px-1 pt-1 ml-1 cursor-pointer hover:text-emerald-500 transition-colors">
-                                    + {dayAppts.length - 3} more
-                                </div>}</div></div>
+            + {dayAppts.length - 3} more
+          </div>}</div></div>
         );
         day = addDays(day, 1);
       }
@@ -307,7 +307,7 @@ function AppointmentsDashboard() {
   };
   return <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505]">{
     /* Header */
-  }<header className="flex-none px-6 py-5 bg-white dark:bg-[#111111] border-b border-slate-200 dark:border-[#222222]"><div className="flex items-center justify-between mb-0"><div><h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-400 tracking-tight">{viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}</h1><p className="text-sm text-slate-500 dark:text-[#888888] mt-1 font-medium">{viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}</p></div><div className="flex items-center gap-3"><button
+  }<header className="flex-none py-5 bg-white dark:bg-[#111111] border-b border-slate-200 dark:border-[#222222]"><div className="flex items-center justify-between mb-0"><div><h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-400 tracking-tight">{viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}</h1><p className="text-sm text-slate-500 dark:text-[#888888] mt-1 font-medium">{viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}</p></div><div className="flex items-center gap-3"><button
     onClick={() => setViewMode(viewMode === "list" ? "calendar" : "list")}
     className="btn-secondary"
   ><CalendarIcon className="w-4 h-4" />{viewMode === "list" ? "Calendar View" : "List View"}</button><button

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 import api from "@/utils/api";
 function StateSelect({ value, onChange, inputClassName, labelClassName, required }) {
@@ -52,7 +52,7 @@ function StateSelect({ value, onChange, inputClassName, labelClassName, required
     onClick={() => handleSelect(s.stateName)}
     className={`px-4 py-2.5 text-sm cursor-pointer flex items-center justify-between
                                     hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors
-                                    ${value === s.stateName ? "bg-violet-50 dark:bg-[#1a1a1a] text-violet-600 dark:text-violet-400 font-medium" : "text-slate-800 dark:text-[#cccccc]"}`}
+                                    ${value === s.stateName ? "bg-slate-100 dark:bg-[#1a1a1a] text-slate-900 dark:text-white dark:text-slate-300 font-medium" : "text-slate-800 dark:text-[#cccccc]"}`}
   ><span>{s.stateName}</span><span className="text-xs text-slate-600 dark:text-[#999999]">{s.stateCode}</span></li>)}</ul></div>}</div>;
 }
 export {

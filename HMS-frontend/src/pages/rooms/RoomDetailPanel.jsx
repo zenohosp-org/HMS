@@ -9,10 +9,10 @@ import { formatDateTime } from "@/utils/validators";
 
 function AssetStatusBadge({ status }) {
   const map = {
-    ACTIVE:      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
-    IN_USE:      "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
+    ACTIVE: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
+    IN_USE: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
     MAINTENANCE: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
-    DISPOSED:    "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
+    DISPOSED: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
   };
   return (
     <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${map[status] ?? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222] dark:text-[#888] dark:border-[#333]"}`}>
@@ -158,13 +158,12 @@ function BedsSection({ room, hospitalId, onRoomUpdated }) {
           <p className="text-xs font-bold text-slate-500 dark:text-[#666666] uppercase tracking-wider">
             Beds
           </p>
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
-            occupiedCount === beds.length
-              ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
-              : occupiedCount > 0
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${occupiedCount === beds.length
+            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
+            : occupiedCount > 0
               ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
               : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
-          }`}>
+            }`}>
             {occupiedCount}/{beds.length} occupied
           </span>
         </div>
@@ -174,16 +173,14 @@ function BedsSection({ room, hospitalId, onRoomUpdated }) {
         {beds.map(bed => (
           <div
             key={bed.id}
-            className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${
-              bed.status === "OCCUPIED"
-                ? "bg-blue-50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/20"
-                : "bg-emerald-50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/20"
-            }`}
+            className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${bed.status === "OCCUPIED"
+              ? "bg-blue-50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/20"
+              : "bg-emerald-50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/20"
+              }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className={`w-2 h-2 rounded-full shrink-0 ${
-                bed.status === "OCCUPIED" ? "bg-blue-500" : "bg-emerald-500"
-              }`} />
+              <div className={`w-2 h-2 rounded-full shrink-0 ${bed.status === "OCCUPIED" ? "bg-blue-500" : "bg-emerald-500"
+                }`} />
               <div className="min-w-0">
                 <p className="text-xs font-bold text-slate-800 dark:text-[#dddddd]">{bed.bedNumber}</p>
                 {bed.patientName ? (
@@ -241,7 +238,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs, onRoomUpdated }) {
   const isMultiBed = room.bedCount != null && room.bedCount > 1;
 
   return (
-    <div className="w-80 shrink-0 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg flex flex-col overflow-hidden self-start sticky top-0">
+    <div className="w-[35rem] shrink-0 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg flex flex-col overflow-hidden self-start sticky top-0">
 
       {/* Header */}
       <div className="flex items-start justify-between p-5 border-b border-slate-100 dark:border-[#1e1e1e]">
@@ -261,7 +258,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs, onRoomUpdated }) {
               {room.status}
             </span>
             {isMultiBed && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]">
                 {room.bedCount} beds
               </span>
             )}
@@ -276,9 +273,9 @@ function RoomDetailPanel({ room, onClose, onViewLogs, onRoomUpdated }) {
 
         {/* Allocation token (single-bed only) */}
         {!isMultiBed && room.allocationToken && (
-          <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20">
-            <p className="text-xs font-semibold text-violet-600 dark:text-violet-400">Allocation Token</p>
-            <span className="text-sm font-bold tracking-widest text-violet-700 dark:text-violet-300 font-mono">{room.allocationToken}</span>
+          <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333]">
+            <p className="text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-300">Allocation Token</p>
+            <span className="text-sm font-bold tracking-widest text-slate-900 dark:text-white dark:text-slate-300 font-mono">{room.allocationToken}</span>
           </div>
         )}
 
@@ -297,7 +294,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs, onRoomUpdated }) {
           <BedsSection
             room={room}
             hospitalId={hospitalId}
-            onRoomUpdated={onRoomUpdated ?? (() => {})}
+            onRoomUpdated={onRoomUpdated ?? (() => { })}
           />
         )}
 

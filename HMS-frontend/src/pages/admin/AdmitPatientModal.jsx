@@ -116,7 +116,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     }
   }
 
-  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all'
+  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-200 transition-all'
   const labelCls = 'block text-xs font-bold text-slate-600 dark:text-[#aaa] uppercase tracking-wider mb-1.5'
 
   return (
@@ -125,16 +125,16 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1e1e1e]">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <BedDouble className="w-5 h-5 text-violet-500" /> Admit Patient to IPD
+              <BedDouble className="w-5 h-5 text-slate-700 dark:text-[#cccccc]" /> Admit Patient to IPD
             </h2>
             <div className="flex items-center gap-3 mt-2">
               {[1, 2, 3].map(s => (
                 <div key={s} className="flex items-center gap-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step >= s ? 'bg-violet-600 text-white' : 'bg-slate-200 dark:bg-[#222] text-slate-500'}`}>{s}</div>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step >= s ? 'bg-slate-900 text-white' : 'bg-slate-200 dark:bg-[#222] text-slate-500'}`}>{s}</div>
                   <span className={`text-xs ${step === s ? 'text-slate-900 dark:text-white font-semibold' : 'text-slate-400'}`}>
                     {s === 1 ? 'Patient' : s === 2 ? 'Clinical' : 'Attender'}
                   </span>
-                  {s < 3 && <div className={`w-8 h-px ${step > s ? 'bg-violet-400' : 'bg-slate-200 dark:bg-[#333]'}`} />}
+                  {s < 3 && <div className={`w-8 h-px ${step > s ? 'bg-slate-400' : 'bg-slate-200 dark:bg-[#333]'}`} />}
                 </div>
               ))}
             </div>
@@ -150,17 +150,17 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               <div>
                 <label className={labelCls}>Search Patient *</label>
                 {selectedPatient ? (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333]">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
-                        <User className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                      <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-200 flex items-center justify-center">
+                        <User className="w-4 h-4 text-slate-900 dark:text-white dark:text-slate-300" />
                       </div>
                       <div>
                         <p className="font-semibold text-slate-900 dark:text-white text-sm">{selectedPatient.firstName} {selectedPatient.lastName}</p>
                         <p className="text-xs text-slate-500">MRN: {selectedPatient.mrn} · {selectedPatient.gender}</p>
                       </div>
                     </div>
-                    <button onClick={() => setSelectedPatient(null)} className="text-xs text-violet-600 hover:text-violet-800 font-semibold">Change</button>
+                    <button onClick={() => setSelectedPatient(null)} className="text-xs text-slate-900 dark:text-white hover:text-slate-700 font-semibold">Change</button>
                   </div>
                 ) : (
                   <div className="relative">
@@ -267,7 +267,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                           onClick={() => setForm(f => ({ ...f, bedId: String(bed.id) }))}
                           className={`px-3 py-2.5 rounded-lg border text-sm font-semibold transition-all text-left ${
                             String(form.bedId) === String(bed.id)
-                              ? 'bg-violet-600 text-white border-violet-600'
+                              ? 'bg-slate-900 text-white border-slate-900'
                               : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 hover:border-emerald-400'
                           }`}
                         >
