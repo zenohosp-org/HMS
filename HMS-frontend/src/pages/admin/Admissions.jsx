@@ -5,11 +5,12 @@ import { admissionApi } from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import AdmitPatientModal from './AdmitPatientModal'
 import DischargeModal from './DischargeModal'
-import MoveToOTModal from './MoveToOTModal'
+// import MoveToOTModal from './MoveToOTModal'
+import ViewBillingModal from './ViewBillingModal'
 import {
   BedDouble, Plus, Search, LogOut, User, Building2,
   Stethoscope, Clock, CheckCircle2, List, LayoutGrid,
-  Calendar, ChevronRight, AlertCircle, Scissors
+  Calendar, ChevronRight, AlertCircle, Receipt
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 
@@ -38,7 +39,8 @@ export default function Admissions() {
   const [viewMode, setViewMode] = useState('grid')
   const [showAdmitModal, setShowAdmitModal] = useState(false)
   const [dischargeTarget, setDischargeTarget] = useState(null)
-  const [otTarget, setOtTarget] = useState(null)
+  // const [otTarget, setOtTarget] = useState(null)
+  const [billingTarget, setBillingTarget] = useState(null)
 
   const load = async (all = statusFilter !== 'ADMITTED') => {
     if (!user?.hospitalId) return
@@ -200,9 +202,9 @@ export default function Admissions() {
               </div>
               {a.status === 'ADMITTED' && (
                 <div className="px-4 pb-4 flex gap-2" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => setOtTarget(a)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20 border border-violet-200 dark:border-violet-500/20 transition-colors">
-                    <Scissors className="w-3.5 h-3.5" /> Move to OT
+                  <button onClick={() => setBillingTarget(a)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/20 transition-colors">
+                    <Receipt className="w-3.5 h-3.5" /> View Billing
                   </button>
                   <button onClick={() => setDischargeTarget(a)}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/20 transition-colors">
@@ -244,9 +246,9 @@ export default function Admissions() {
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     {a.status === 'ADMITTED' && (
                       <div className="flex items-center gap-3">
-                        <button onClick={() => setOtTarget(a)}
-                          className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400 transition-colors">
-                          <Scissors className="w-3.5 h-3.5" /> OT
+                        <button onClick={() => setBillingTarget(a)}
+                          className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors">
+                          <Receipt className="w-3.5 h-3.5" /> Bill
                         </button>
                         <button onClick={() => setDischargeTarget(a)}
                           className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 transition-colors">
@@ -275,11 +277,19 @@ export default function Admissions() {
           onDischarged={() => { setDischargeTarget(null); notify('Patient discharged', 'success'); load(statusFilter !== 'ADMITTED') }}
         />
       )}
+      {/* MoveToOTModal flow commented out
       {otTarget && (
         <MoveToOTModal
           admission={otTarget}
           onClose={() => setOtTarget(null)}
           onMoved={() => { setOtTarget(null); load(false) }}
+        />
+      )}
+      */}
+      {billingTarget && (
+        <ViewBillingModal
+          admission={billingTarget}
+          onClose={() => setBillingTarget(null)}
         />
       )}
     </div>
