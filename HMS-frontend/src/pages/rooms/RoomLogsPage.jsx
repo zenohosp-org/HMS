@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { roomLogsApi } from "@/utils/api";
@@ -20,7 +20,7 @@ const EVENT_META = {
   ALLOCATED: { label: "Allocated", cls: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20", icon: Bed },
   DEALLOCATED: { label: "Deallocated", cls: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#888888] dark:border-[#333333]", icon: LogOut },
   ATTENDER_ASSIGNED: { label: "Attender Assigned", cls: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20", icon: UserCheck },
-  ATTENDER_UPDATED: { label: "Attender Updated", cls: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20", icon: UserCog }
+  ATTENDER_UPDATED: { label: "Attender Updated", cls: "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]", icon: UserCog }
 };
 function formatRelative(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -101,7 +101,7 @@ function RoomLogsPage() {
         className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors md:grid md:grid-cols-[2fr_2fr_2fr_1.5fr_1fr] md:gap-4 md:items-center space-y-2 md:space-y-0"
       >{
           /* Event + room */
-        }<div className="flex items-center gap-2 flex-wrap"><div className="w-7 h-7 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] flex items-center justify-center shrink-0"><Icon className="w-3.5 h-3.5 text-slate-500 dark:text-[#888888]" /></div><div><span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${meta.cls}`}>{meta.label}</span><p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] mt-1">{log.roomNumber}{log.allocationToken && <span className="ml-2 font-mono text-violet-600 dark:text-violet-400 font-semibold">
+        }<div className="flex items-center gap-2 flex-wrap"><div className="w-7 h-7 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] flex items-center justify-center shrink-0"><Icon className="w-3.5 h-3.5 text-slate-500 dark:text-[#888888]" /></div><div><span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${meta.cls}`}>{meta.label}</span><p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] mt-1">{log.roomNumber}{log.allocationToken && <span className="ml-2 font-mono text-slate-900 dark:text-white dark:text-slate-300 font-semibold">
           #{log.allocationToken}</span>}</p></div></div>{
           /* Patient */
         }<div>{log.patientName ? <div className="flex items-start gap-1.5"><User className="w-3.5 h-3.5 text-slate-600 dark:text-[#999999] shrink-0 mt-0.5" /><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{log.patientName}</p>{log.patientMrn && <p className="text-xs text-slate-600 dark:text-[#999999]">{log.patientMrn}</p>}</div></div> : <p className="text-xs text-slate-300 dark:text-[#444444]">—</p>}</div>{

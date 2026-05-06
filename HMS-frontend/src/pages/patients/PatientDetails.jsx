@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+﻿import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api, { patientApi, recordApi, appointmentsApi, radiologyApi, invoiceApi } from "@/utils/api";
 import { useNotification } from "@/context/NotificationContext";
@@ -39,9 +39,9 @@ const TYPE_META = {
   },
   PRESCRIPTION: {
     label: "Prescription",
-    color: "bg-violet-50 text-violet-700 border-violet-200",
-    darkColor: "dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20",
-    dot: "bg-violet-500"
+    color: "bg-slate-100 text-slate-900 dark:text-white border-slate-200",
+    darkColor: "dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]",
+    dot: "bg-slate-900"
   },
   LAB_RESULT: {
     label: "Lab Result",
@@ -73,9 +73,9 @@ const BLOOD_DARK = {
   "A+": "dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
   "A-": "dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
   "B+": "dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20",
-  "AB+": "dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20",
+  "AB+": "dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]",
   "O+": "dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
-  "O-": "dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20"
+  "O-": "dark:bg-slate-100 dark:text-slate-400 dark:border-slate-200/20"
 };
 function SideInfoRow({ icon, label, value }) {
   return <div className="flex items-start gap-3"><div className="w-4 h-4 mt-0.5 shrink-0 text-[#555] dark:text-[#555555]">{icon}</div><div><p className="text-[11px] uppercase tracking-wider text-slate-600 dark:text-[#999999] font-semibold">{label}</p><p className="text-sm text-slate-700 dark:text-[#cccccc] mt-0.5">{value || "\u2014"}</p></div></div>;
@@ -357,11 +357,11 @@ function PatientDetails() {
     /* ── RADIOLOGY TAB ── */
   }{tab === "radiology" && <div className="w-full max-w-5xl space-y-4"><div className="flex items-center justify-between mb-2"><div><h3 className="font-semibold text-slate-800 dark:text-[#e5e5e5]">Radiology History</h3><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">
                                         All imaging investigations for {patient.firstName}</p></div></div>{radiologyLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : radiologyOrders.length === 0 ? <div className="py-16 text-center"><ScanLine className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No radiology orders</p><p className="text-xs text-slate-400 dark:text-[#444444] mt-1">Orders created from the Radiology Queue will appear here.</p></div> : <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden"><div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{radiologyOrders.map((order) => {
-    const statusCls = order.status === "REPORT_GENERATED" ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" : order.status === "AWAITING_REPORT" ? "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20" : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
+    const statusCls = order.status === "REPORT_GENERATED" ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" : order.status === "AWAITING_REPORT" ? "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]" : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
     const statusLabel = order.status === "REPORT_GENERATED" ? "Report Ready" : order.status === "AWAITING_REPORT" ? "Awaiting Report" : "Pending Scan";
-    return <div key={order.id} className="px-5 py-4 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 flex items-center justify-center shrink-0"><ScanLine className="w-4 h-4 text-violet-500 dark:text-violet-400" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{order.serviceName}</p><div className="flex items-center gap-2 mt-0.5">{order.referredByName && <p className="text-xs text-slate-600 dark:text-[#999999]">by {order.referredByName}</p>}<p className="text-xs text-slate-300 dark:text-[#444444]">·</p><p className="text-xs text-slate-600 dark:text-[#999999]">{new Date(order.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p></div></div></div><div className="flex items-center gap-3"><span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${statusCls}`}>{statusLabel}</span>{order.status === "REPORT_GENERATED" && order.id && <button
+    return <div key={order.id} className="px-5 py-4 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333] flex items-center justify-center shrink-0"><ScanLine className="w-4 h-4 text-slate-700 dark:text-[#cccccc] dark:text-slate-300" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{order.serviceName}</p><div className="flex items-center gap-2 mt-0.5">{order.referredByName && <p className="text-xs text-slate-600 dark:text-[#999999]">by {order.referredByName}</p>}<p className="text-xs text-slate-300 dark:text-[#444444]">·</p><p className="text-xs text-slate-600 dark:text-[#999999]">{new Date(order.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p></div></div></div><div className="flex items-center gap-3"><span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${statusCls}`}>{statusLabel}</span>{order.status === "REPORT_GENERATED" && order.id && <button
       onClick={() => navigate(`/radiology/reports/${order.id}`)}
-      className="text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1"
+      className="text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-300 hover:underline flex items-center gap-1"
     >
                                                                 View Report
                                                             </button>}</div></div>;

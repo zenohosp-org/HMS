@@ -126,11 +126,11 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
 
 function SpecialRoomCard({ room, onUpdate, onRemove }) {
   return (
-    <div className="rounded-lg border border-violet-200 dark:border-violet-500/25 overflow-hidden bg-white dark:bg-[#111111]">
-      <div className="flex items-stretch divide-x divide-violet-100 dark:divide-violet-500/15">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-200/25 overflow-hidden bg-white dark:bg-[#111111]">
+      <div className="flex items-stretch divide-x divide-slate-100 dark:divide-[#1e1e1e]">
         <div className="flex items-center gap-2 px-4 py-2.5 flex-1 min-w-0">
-          <div className="w-5 h-5 rounded-md bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center shrink-0">
-            <Scissors className="w-3 h-3 text-violet-400" />
+          <div className="w-5 h-5 rounded-md bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0">
+            <Scissors className="w-3 h-3 text-slate-400 dark:text-[#888]" />
           </div>
           <input
             className="flex-1 text-sm font-medium text-slate-800 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0"
@@ -171,13 +171,13 @@ function SpecialRoomCard({ room, onUpdate, onRemove }) {
 function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard, setRoomCount, updateRoom, addSpecialRoom, updateSpecialRoom, removeSpecialRoom }) {
   return (
     <div className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50/60 dark:bg-indigo-500/5 border-b border-indigo-100 dark:border-indigo-500/10">
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 dark:bg-[#1a1a1a] border-b border-slate-200 dark:border-[#1e1e1e]">
         <div className="flex items-center gap-2 shrink-0">
-          <Layers className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest">Floor {fIdx + 1}</span>
+          <Layers className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-widest">Floor {fIdx + 1}</span>
         </div>
         <input
-          className="flex-1 min-w-0 text-sm text-slate-700 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-indigo-100 dark:border-indigo-500/20 rounded-md px-2.5 py-1 focus:outline-none focus:border-indigo-400 placeholder-slate-300 dark:placeholder-[#3a3a3a]"
+          className="flex-1 min-w-0 text-sm text-slate-700 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-200/20 rounded-md px-2.5 py-1 focus:outline-none focus:border-slate-200 placeholder-slate-300 dark:placeholder-[#3a3a3a]"
           value={floor.name}
           onChange={(e) => updateFloor(bIdx, fIdx, "name", e.target.value)}
           placeholder={`Floor ${fIdx}`}
@@ -205,7 +205,7 @@ function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard
         {/* Special Rooms (OT, etc.) */}
         {(floor.specialRooms?.length > 0) && (
           <div className="px-3 pb-2 space-y-2 border-t border-slate-100 dark:border-[#1a1a1a] pt-3">
-            <p className="text-[10px] font-bold text-violet-500 dark:text-violet-400 uppercase tracking-widest px-1">Special Rooms</p>
+            <p className="text-[10px] font-bold text-slate-700 dark:text-[#cccccc] dark:text-slate-300 uppercase tracking-widest px-1">Special Rooms</p>
             {floor.specialRooms.map((sr, srIdx) => (
               <SpecialRoomCard key={srIdx} room={sr}
                 onUpdate={(field, val) => updateSpecialRoom(bIdx, fIdx, srIdx, field, val)}
@@ -216,7 +216,7 @@ function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard
 
         <div className="px-3 pb-3 pt-2">
           <button type="button" onClick={() => addSpecialRoom(bIdx, fIdx)}
-            className="flex items-center gap-1.5 text-xs font-semibold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors">
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-[#cccccc] hover:text-slate-900 dark:text-white dark:hover:text-slate-200 transition-colors">
             <Plus className="w-3.5 h-3.5" /> Add Special Room (OT / Procedure)
           </button>
         </div>

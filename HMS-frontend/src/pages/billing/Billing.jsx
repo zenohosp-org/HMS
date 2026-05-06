@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi, bankApi } from '@/utils/api'
@@ -20,10 +20,10 @@ const STATUS_CFG = {
 
 const TYPE_META = {
   MEDICINE: { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> },
-  LAB_TEST: { bg: 'bg-violet-100 dark:bg-violet-500/20', icon: <FlaskConical className="w-3 h-3 text-violet-600 dark:text-violet-400" /> },
+  LAB_TEST: { bg: 'bg-slate-100 dark:bg-slate-200', icon: <FlaskConical className="w-3 h-3 text-slate-900 dark:text-white dark:text-slate-300" /> },
   CONSULTATION: { bg: 'bg-blue-100 dark:bg-blue-500/20', icon: <Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" /> },
   ROOM_CHARGE: { bg: 'bg-orange-100 dark:bg-orange-500/20', icon: <BedDouble className="w-3 h-3 text-orange-600 dark:text-orange-400" /> },
-  RADIOLOGY: { bg: 'bg-purple-100 dark:bg-purple-500/20', icon: <ScanLine className="w-3 h-3 text-purple-600 dark:text-purple-400" /> },
+  RADIOLOGY: { bg: 'bg-slate-100 dark:bg-slate-900/20', icon: <ScanLine className="w-3 h-3 text-slate-900 dark:text-white dark:text-slate-400" /> },
   CUSTOM: { bg: 'bg-slate-100 dark:bg-[#222]', icon: <Wrench className="w-3 h-3 text-slate-500" /> },
 }
 

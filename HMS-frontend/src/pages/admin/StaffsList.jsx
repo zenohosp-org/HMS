@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+﻿import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { staffApi, doctorsApi } from "@/utils/api";
@@ -24,12 +24,12 @@ const ROLE_TABS = [
 const AVATAR_CLS = {
   doctor: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
   hospital_admin: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
-  staff: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20"
+  staff: "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]"
 };
 const ROLE_BADGE = {
   doctor: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
   hospital_admin: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
-  staff: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20"
+  staff: "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]"
 };
 function getAvatarCls(role) {
   return AVATAR_CLS[role] ?? AVATAR_CLS.staff;
@@ -242,7 +242,7 @@ function StaffsList() {
           Inactive
         </span>}</div>{
           /* Details */
-        }<div className="space-y-1.5 text-xs text-slate-500 dark:text-[#666666]">{m.designation && <p className="font-semibold text-slate-700 dark:text-[#aaaaaa] truncate">{m.designation}</p>}{m.departmentName && <p className="text-[10px] text-violet-600 dark:text-violet-400 font-medium truncate">{m.departmentName}</p>}<div className="flex items-center gap-1.5 truncate"><Mail className="w-3 h-3 shrink-0" /><span className="truncate">{m.email}</span></div>{m.phone && <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 shrink-0" /><span>{m.phone}</span></div>}{m.dateOfJoining && <div className="flex items-center gap-1.5"><Calendar className="w-3 h-3 shrink-0" /><span>Joined {m.dateOfJoining}</span></div>}{m.consultationFee != null && <p className="font-semibold text-emerald-600 dark:text-emerald-400">
+        }<div className="space-y-1.5 text-xs text-slate-500 dark:text-[#666666]">{m.designation && <p className="font-semibold text-slate-700 dark:text-[#aaaaaa] truncate">{m.designation}</p>}{m.departmentName && <p className="text-[10px] text-slate-900 dark:text-white dark:text-slate-300 font-medium truncate">{m.departmentName}</p>}<div className="flex items-center gap-1.5 truncate"><Mail className="w-3 h-3 shrink-0" /><span className="truncate">{m.email}</span></div>{m.phone && <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 shrink-0" /><span>{m.phone}</span></div>}{m.dateOfJoining && <div className="flex items-center gap-1.5"><Calendar className="w-3 h-3 shrink-0" /><span>Joined {m.dateOfJoining}</span></div>}{m.consultationFee != null && <p className="font-semibold text-emerald-600 dark:text-emerald-400">
           ₹{m.consultationFee.toLocaleString("en-IN")} / consult
         </p>}</div></div>;
     })}</div>}{showModal && <StaffFormModal

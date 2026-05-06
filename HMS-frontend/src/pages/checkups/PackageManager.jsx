@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { checkupApi } from "@/utils/api";
 import {
@@ -24,10 +24,10 @@ const CATEGORY_COLORS = {
   GENERAL: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-400",
   CARDIAC: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400",
   DIABETIC: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
-  CANCER_SCREENING: "bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400",
+  CANCER_SCREENING: "bg-slate-100 text-slate-900 dark:text-white dark:bg-slate-900/15 dark:text-slate-400",
   WOMENS_HEALTH: "bg-pink-50 text-pink-700 dark:bg-pink-500/15 dark:text-pink-400",
   SENIOR: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
-  PAEDIATRIC: "bg-cyan-50 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400",
+  PAEDIATRIC: "bg-slate-100 text-slate-700 dark:bg-slate-100/15 dark:text-slate-700",
   COMPREHENSIVE: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
   CUSTOM: "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400",
 };
@@ -198,7 +198,7 @@ function PackageCard({ pkg, onEdit, onToggle, onDelete }) {
               <h3 className="font-bold text-slate-900 dark:text-white text-sm">{pkg.name}</h3>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[pkg.category] || CATEGORY_COLORS.CUSTOM}`}>{label}</span>
               {pkg.targetGender !== "ANY" && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-400">{pkg.targetGender}</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-900/15 text-slate-900 dark:text-white dark:text-slate-300">{pkg.targetGender}</span>
               )}
               {!pkg.active && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#222] text-slate-400">Inactive</span>}
             </div>

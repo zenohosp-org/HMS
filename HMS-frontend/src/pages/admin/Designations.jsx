@@ -10,7 +10,7 @@ const CAT_COLORS = {
   MEDICAL: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
   NURSING: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/20',
   TECHNICAL: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
-  ADMINISTRATIVE: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20',
+  ADMINISTRATIVE: 'bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]',
   SUPPORT: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20',
 }
 
@@ -91,7 +91,7 @@ export default function Designations() {
 
   const existing = new Set(designations.map(d => d.name))
 
-  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all'
+  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-200 transition-all'
   const labelCls = 'block text-xs font-bold text-slate-600 dark:text-[#aaa] uppercase tracking-wider mb-1.5'
 
   return (
@@ -99,7 +99,7 @@ export default function Designations() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Award className="w-6 h-6 text-violet-500" /> Designations
+            <Award className="w-6 h-6 text-slate-700 dark:text-[#cccccc]" /> Designations
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">Job titles and roles across departments</p>
         </div>
@@ -112,13 +112,13 @@ export default function Designations() {
         <div className="flex gap-2 flex-wrap">
           {CATEGORIES.map(c => (
             <button key={c} onClick={() => setActiveTab(c)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${activeTab === c ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-violet-400'}`}>
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${activeTab === c ? 'bg-slate-900 text-white border-slate-900' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-slate-300'}`}>
               {c.charAt(0) + c.slice(1).toLowerCase()} ({grouped[c]?.length ?? 0})
             </button>
           ))}
         </div>
         <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
-          className="ml-auto rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/50">
+          className="ml-auto rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-slate-300/50">
           <option value="">All Departments</option>
           {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
@@ -177,7 +177,7 @@ export default function Designations() {
           <div className="flex flex-wrap gap-2">
             {PRESETS[activeTab]?.filter(p => !existing.has(p)).map(p => (
               <button key={p} onClick={() => openCreate(p)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-400 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 text-xs font-medium transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-400 hover:border-slate-400 hover:text-slate-900 dark:text-white dark:hover:text-slate-400 dark:text-[#888] text-xs font-medium transition-colors">
                 <Plus className="w-3 h-3" /> {p}
               </button>
             ))}

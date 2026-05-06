@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { staffApi, departmentApi, designationApi, doctorsApi, specializationApi } from '@/utils/api'
@@ -140,7 +140,7 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
     }
   }
 
-  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all'
+  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-200 transition-all'
   const labelCls = 'block text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wider mb-2'
   const sectionHead = 'text-sm font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#2a2a2a] pb-2 flex items-center gap-2'
 
@@ -152,7 +152,7 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
   const formBody = (
     <form id="staffForm" onSubmit={handleSubmit} className="space-y-8">
       <div className="space-y-4">
-        <h3 className={sectionHead}><UserIcon className="w-4 h-4 text-violet-500" /> Personal Information</h3>
+        <h3 className={sectionHead}><UserIcon className="w-4 h-4 text-slate-700 dark:text-[#cccccc]" /> Personal Information</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>First Name *</label>
@@ -347,7 +347,7 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1e1e1e]">
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <UserIcon className="w-5 h-5 text-violet-500" /> Add New Staff
+              <UserIcon className="w-5 h-5 text-slate-700 dark:text-[#cccccc]" /> Add New Staff
             </h2>
             <p className="text-xs text-slate-500 dark:text-[#666] mt-0.5">Fill in personal details first, then assign system access and role.</p>
           </div>

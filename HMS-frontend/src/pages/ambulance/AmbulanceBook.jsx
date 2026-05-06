@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { ambulanceApi, patientApi } from "@/utils/api";
@@ -16,7 +16,7 @@ const PAGE_SIZE = 8;
 const STATUS_CONFIG = {
   PENDING: { label: "Pending", color: "text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400", icon: Clock3 },
   DISPATCHED: { label: "Dispatched", color: "text-blue-600 bg-blue-50 dark:bg-blue-500/10 dark:text-blue-400", icon: Truck },
-  EN_ROUTE: { label: "En Route", color: "text-violet-600 bg-violet-50 dark:bg-violet-500/10 dark:text-violet-400", icon: Activity },
+  EN_ROUTE: { label: "En Route", color: "text-slate-900 dark:text-white bg-slate-100 dark:bg-[#1e1e1e] dark:text-slate-300", icon: Activity },
   COMPLETED: { label: "Completed", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400", icon: CheckCircle2 },
   CANCELLED: { label: "Cancelled", color: "text-rose-600 bg-rose-50 dark:bg-rose-500/10 dark:text-rose-400", icon: XCircle },
 };
@@ -654,7 +654,7 @@ function BookingsTab({ hospitalId }) {
   const NEXT_LABEL = { PENDING: "Dispatch", DISPATCHED: "En Route", EN_ROUTE: "Complete" };
   const NEXT_COLOR = {
     PENDING: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20",
-    DISPATCHED: "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20",
+    DISPATCHED: "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-200",
     EN_ROUTE: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20",
   };
 
