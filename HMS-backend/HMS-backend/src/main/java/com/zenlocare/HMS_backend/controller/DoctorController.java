@@ -27,6 +27,13 @@ public class DoctorController {
         return ResponseEntity.ok(dtos);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<DoctorDto>> searchDoctors(@RequestParam UUID hospitalId, @RequestParam String specialization) {
+        List<Doctor> doctors = doctorService.getDoctorsByHospitalAndSpecialization(hospitalId, specialization);
+        List<DoctorDto> dtos = doctors.stream().map(this::mapToDto).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<DoctorDto> getDoctor(@PathVariable UUID id) {
         Doctor doctor = doctorService.getDoctorById(id);

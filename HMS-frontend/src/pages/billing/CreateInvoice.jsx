@@ -7,7 +7,8 @@ import {
   invoiceApi,
   bankApi,
   doctorsApi,
-  hospitalServiceApi
+  hospitalServiceApi,
+  patientServicesApi
 } from "@/utils/api";
 import { generateInvoiceNumber } from "@/utils/validators";
 import {

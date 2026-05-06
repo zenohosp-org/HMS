@@ -180,6 +180,27 @@ const specializationApi = {
     await api.delete(`/specializations/${id}`);
   }
 };
+const patientServicesApi = {
+  list: async (hospitalId) => {
+    const { data } = await api.get(`/patient-services?hospitalId=${hospitalId}`);
+    return data;
+  },
+  create: async (payload) => {
+    const { data } = await api.post("/patient-services", payload);
+    return data;
+  },
+  update: async (id, payload) => {
+    const { data } = await api.put(`/patient-services/${id}`, payload);
+    return data;
+  },
+  delete: async (id) => {
+    await api.delete(`/patient-services/${id}`);
+  },
+  toggleStatus: async (id) => {
+    await api.patch(`/patient-services/${id}/toggle-status`);
+  }
+};
+
 const hospitalServiceApi = {
   list: async (hospitalId) => {
     const { data } = await api.get(`/hospital-services?hospitalId=${hospitalId}`);
@@ -535,6 +556,7 @@ export {
   directoryLogout,
   doctorsApi,
   hospitalServiceApi,
+  patientServicesApi,
   invoiceApi,
   patientApi,
   pricingApi,

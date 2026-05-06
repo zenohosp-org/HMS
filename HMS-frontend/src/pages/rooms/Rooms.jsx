@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import api from "@/utils/api";
+import api, { infrastructureApi } from "@/utils/api";
 import { Bed, Search, CalendarClock, MoreVertical, ScrollText } from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
 import AllocatePatientModal from "./AllocatePatientModal";
@@ -74,6 +74,98 @@ function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate, onDe
   );
 }
 
+function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAllocate, onAssignAttender, onDeallocate, onDelete }) {
+  const isMultiBed = roomData?.bedCount != null && roomData.bedCount > 1;
+  const statusLabel = roomData ? roomData.status : "NOT CREATED";
+  const badgeClass = roomData?.roomType === "ICU"
+    ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
+    : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#888888] dark:border-[#333333]";
+
+  return (
+    <div
+      onClick={() => roomData && onSelect(roomData)}
+      className={`bg-white dark:bg-[#111111] border rounded-lg p-4 flex flex-col gap-3 cursor-pointer transition-colors ${
+        isSelected ? "border-slate-400 dark:border-[#444444]" : "border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 dark:hover:border-[#2a2a2a]"
+      } ${!roomData ? "opacity-90" : ""}`}
+    >
+      <div className="flex items-center gap-3">
+        <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border ${roomData?.status === "AVAILABLE" ? "bg-emerald-50 border-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400" : "bg-slate-50 border-slate-100 text-slate-500 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] dark:text-[#888888]"}`}>
+          <Bed className="w-6 h-6" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-base font-bold text-slate-900 dark:text-white leading-tight">{roomInfo.name}</p>
+            {roomData?.roomCode && (
+              <span className="text-[10px] font-mono font-bold text-slate-600 dark:text-[#999999]">{roomData.roomCode}</span>
+            )}
+            <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${badgeClass}`}>
+              {roomData?.roomType ?? roomInfo.roomType ?? "GENERAL"}
+            </span>
+            {isMultiBed && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20">
+                {roomData.bedCount} beds
+              </span>
+            )}
+          </div>
+          <p className={`text-xs mt-1 font-medium ${
+            roomData?.status === "AVAILABLE"
+              ? "text-emerald-600 dark:text-emerald-400"
+              : roomData?.status === "OCCUPIED"
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-slate-500 dark:text-[#999999]"
+          }`}>
+            {statusLabel}
+          </p>
+        </div>
+      </div>
+
+      {roomData ? (
+        roomData.bedCount > 1 ? (
+          <div className="text-sm text-slate-600 dark:text-[#999999]">Open panel to view beds</div>
+        ) : roomData.status === "OCCUPIED" && roomData.currentPatient ? (
+          <div className="space-y-2 text-sm text-slate-600 dark:text-[#999999]">
+            <div>
+              <p className="text-xs text-slate-500 dark:text-[#666666]">Patient</p>
+              <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{roomData.currentPatient.firstName} {roomData.currentPatient.lastName}</p>
+              <p className="text-[11px] text-slate-600 dark:text-[#999999]">{roomData.currentPatient.mrn}</p>
+            </div>
+            {roomData.attenderName ? (
+              <div>
+                <p className="text-xs text-slate-500 dark:text-[#666666]">Attender</p>
+                <p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">
+                  {roomData.attenderName}
+                  {roomData.attenderRelationship && (
+                    <span className="text-xs text-slate-600 dark:text-[#999999] ml-1">({roomData.attenderRelationship})</span>
+                  )}
+                </p>
+                {roomData.attenderPhone && (
+                  <p className="text-[11px] text-slate-600 dark:text-[#999999]">{roomData.attenderPhone}</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-amber-500 dark:text-amber-400">No attender assigned</p>
+            )}
+          </div>
+        ) : (
+          <div className="text-sm text-slate-600 dark:text-[#999999]">Ready for allocation</div>
+        )
+      ) : (
+        <div className="text-sm text-slate-500 dark:text-[#999999]">Infrastructure room is not yet created in Room Allocation.</div>
+      )}
+
+      {roomData && (
+        <RoomActionMenu
+          room={roomData}
+          onAllocate={() => onAllocate(roomData)}
+          onAssignAttender={() => onAssignAttender(roomData)}
+          onDeallocate={() => onDeallocate(roomData.id)}
+          onDelete={() => onDelete(roomData.id)}
+        />
+      )}
+    </div>
+  );
+}
+
 function Rooms() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -84,21 +176,39 @@ function Rooms() {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [showAllocateModal, setShowAllocateModal] = useState({ open: false, room: null });
   const [showAttenderModal, setShowAttenderModal] = useState({ open: false, room: null });
+  const [infrastructure, setInfrastructure] = useState([]);
+
+  const normalizeKey = (value) => value?.toString()?.trim()?.toLowerCase() || "";
 
   const fetchRooms = async () => {
     try {
-      setLoading(true);
       const { data } = await api.get(`/rooms?hospitalId=${user?.hospitalId}`);
       setRooms(data);
     } catch (error) {
       console.error("Failed to fetch rooms", error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchInfrastructure = async () => {
+    try {
+      const data = await infrastructureApi.get(user.hospitalId);
+      setInfrastructure(data || []);
+    } catch (error) {
+      console.error("Failed to fetch infrastructure", error);
+      setInfrastructure([]);
     }
   };
 
   useEffect(() => {
-    if (user?.hospitalId) fetchRooms();
+    if (!user?.hospitalId) return;
+
+    const load = async () => {
+      setLoading(true);
+      await Promise.all([fetchRooms(), fetchInfrastructure()]);
+      setLoading(false);
+    };
+
+    load();
   }, [user?.hospitalId]);
 
   useEffect(() => {
@@ -132,23 +242,84 @@ function Rooms() {
     }
   };
 
+  const roomMap = useMemo(() => {
+    return new Map(rooms.map((room) => [normalizeKey(room.roomNumber), room]));
+  }, [rooms]);
+
+  const infrastructureRoomKeys = useMemo(() => {
+    const keys = new Set();
+    infrastructure.forEach((building) => {
+      (building.floors || []).forEach((floor) => {
+        (floor.wards || []).forEach((ward) => {
+          (ward.rooms || []).forEach((room) => keys.add(normalizeKey(room.name)));
+        });
+      });
+    });
+    return keys;
+  }, [infrastructure]);
+
+  const matchesSearch = (room, query) => {
+    if (!query) return true;
+    if (room?.roomNumber?.toLowerCase().includes(query)) return true;
+    if (room?.currentPatient) {
+      return [room.currentPatient.firstName, room.currentPatient.lastName, room.currentPatient.mrn].some((value) =>
+        value?.toLowerCase().includes(query)
+      );
+    }
+    return false;
+  };
+
   const filteredRooms = useMemo(() => {
-    return rooms.filter((r) => {
-      if (filter === "AVAILABLE" && r.status !== "AVAILABLE") return false;
-      if (filter === "OCCUPIED" && r.status !== "OCCUPIED") return false;
-      if (search) {
-        const s = search.toLowerCase();
-        const matchRoom = r.roomNumber.toLowerCase().includes(s);
-        const matchPatient = r.currentPatient && (
-          r.currentPatient.firstName.toLowerCase().includes(s) ||
-          r.currentPatient.lastName.toLowerCase().includes(s) ||
-          r.currentPatient.mrn.toLowerCase().includes(s)
-        );
-        return matchRoom || matchPatient;
-      }
-      return true;
-    }).sort((a, b) => a.roomNumber.localeCompare(b.roomNumber));
+    const query = search.trim().toLowerCase();
+    return rooms
+      .filter((r) => {
+        if (filter === "AVAILABLE" && r.status !== "AVAILABLE") return false;
+        if (filter === "OCCUPIED" && r.status !== "OCCUPIED") return false;
+        return matchesSearch(r, query);
+      })
+      .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber));
   }, [rooms, filter, search]);
+
+  const filteredInfrastructure = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return infrastructure
+      .map((building) => ({
+        ...building,
+        floors: (building.floors || [])
+          .map((floor) => ({
+            ...floor,
+            wards: (floor.wards || [])
+              .map((ward) => ({
+                ...ward,
+                rooms: (ward.rooms || [])
+                  .map((room) => ({
+                    ...room,
+                    roomData: roomMap.get(normalizeKey(room.name)),
+                  }))
+                  .filter((room) => {
+                    if (filter === "AVAILABLE" && room.roomData?.status !== "AVAILABLE") return false;
+                    if (filter === "OCCUPIED" && room.roomData?.status !== "OCCUPIED") return false;
+                    if (!query) return true;
+                    return (
+                      room.name?.toLowerCase().includes(query) ||
+                      matchesSearch(room.roomData, query)
+                    );
+                  }),
+              }))
+              .filter((ward) => ward.rooms.length > 0),
+          }))
+          .filter((floor) => floor.wards.length > 0),
+      }))
+      .filter((building) => building.floors.length > 0);
+  }, [infrastructure, roomMap, filter, search]);
+
+  const unmappedRooms = useMemo(() => {
+    return filteredRooms.filter((room) => !infrastructureRoomKeys.has(normalizeKey(room.roomNumber)));
+  }, [filteredRooms, infrastructureRoomKeys]);
+
+  const showInfrastructureView = infrastructure.length > 0;
+  const buildingCount = infrastructure.length;
+  const floorCount = infrastructure.reduce((sum, building) => sum + (building.floors?.length || 0), 0);
 
   const availableCount = rooms.filter((r) => r.status === "AVAILABLE").length;
   const occupiedCount = rooms.filter((r) => r.status === "OCCUPIED").length;
@@ -159,7 +330,10 @@ function Rooms() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-[#f0f0f0]">Room Allocation</h1>
-          <p className="text-sm text-slate-500 dark:text-[#666666]">{rooms.length} total rooms in hospital</p>
+          <p className="text-sm text-slate-500 dark:text-[#666666]">
+            {rooms.length} total rooms in hospital
+            {showInfrastructureView ? ` · ${buildingCount} buildings · ${floorCount} floors` : ""}
+          </p>
         </div>
         <button className="btn-secondary flex items-center gap-2" onClick={() => navigate("/rooms/logs")}>
           <ScrollText className="w-4 h-4" /> Logs
@@ -232,6 +406,94 @@ function Rooms() {
           {loading ? (
             <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-8 text-center">
               <p className="text-slate-500 dark:text-[#666666]">Loading rooms…</p>
+            </div>
+          ) : showInfrastructureView ? (
+            <div className="space-y-4">
+              {filteredInfrastructure.length > 0 && filteredInfrastructure.map((building, bIdx) => (
+                <div key={building.id ?? building.name ?? bIdx} className="rounded-2xl border border-slate-200 dark:border-[#2a2a2a] overflow-hidden bg-white dark:bg-[#111111]">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-slate-50 dark:bg-[#111111] border-b border-slate-200 dark:border-[#1e1e1e]">
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-slate-500 dark:text-[#999999]">Building</p>
+                      <p className="text-lg font-semibold text-slate-900 dark:text-white">{building.name || `Building ${bIdx + 1}`}</p>
+                    </div>
+                    <span className="text-xs text-slate-500 dark:text-[#999999]">{building.floors.length} floors</span>
+                  </div>
+                  <div className="space-y-4 p-4">
+                    {building.floors.map((floor, fIdx) => (
+                      <div key={floor.id ?? floor.name ?? fIdx} className="rounded-2xl border border-slate-200 dark:border-[#2a2a2a] overflow-hidden bg-slate-50 dark:bg-[#0d0d0d]">
+                        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-200 dark:border-[#1e1e1e]">
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-[#999999]">Floor</p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{floor.name || `Floor ${fIdx + 1}`}</p>
+                          </div>
+                          <span className="text-xs text-slate-500 dark:text-[#999999]">{floor.wards.length} ward{floor.wards.length !== 1 ? "s" : ""}</span>
+                        </div>
+                        <div className="p-4 space-y-4">
+                          {floor.wards.map((ward, wIdx) => (
+                            <div key={ward.id ?? ward.name ?? wIdx} className="rounded-2xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] p-4">
+                              <div className="flex items-center justify-between gap-3 mb-4">
+                                <div>
+                                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-[#999999]">Ward</p>
+                                  <p className="font-semibold text-slate-900 dark:text-white">{ward.name || `Ward ${wIdx + 1}`}</p>
+                                </div>
+                                <span className="text-xs text-slate-500 dark:text-[#999999]">{ward.rooms.length} rooms</span>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                                {ward.rooms.map((room) => (
+                                  <InfrastructureRoomCard
+                                    key={room.name}
+                                    roomInfo={room}
+                                    roomData={room.roomData}
+                                    isSelected={selectedRoom?.id === room.roomData?.id}
+                                    onSelect={(room) => setSelectedRoom((prev) => prev?.id === room.id ? null : room)}
+                                    onAllocate={(room) => setShowAllocateModal({ open: true, room })}
+                                    onAssignAttender={(room) => setShowAttenderModal({ open: true, room })}
+                                    onDeallocate={handleDeallocate}
+                                    onDelete={handleDeleteRoom}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {unmappedRooms.length > 0 && (
+                <div className="rounded-2xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] p-4">
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-slate-500 dark:text-[#999999]">Unmapped rooms</p>
+                      <p className="text-lg font-semibold text-slate-900 dark:text-white">Rooms not present in infrastructure mapping</p>
+                    </div>
+                    <span className="text-xs text-slate-500 dark:text-[#999999]">{unmappedRooms.length} rooms</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {unmappedRooms.map((room) => (
+                      <InfrastructureRoomCard
+                        key={room.id}
+                        roomInfo={{ name: room.roomNumber, roomType: room.roomType }}
+                        roomData={room}
+                        isSelected={selectedRoom?.id === room.id}
+                        onSelect={(room) => setSelectedRoom((prev) => prev?.id === room.id ? null : room)}
+                        onAllocate={(room) => setShowAllocateModal({ open: true, room })}
+                        onAssignAttender={(room) => setShowAttenderModal({ open: true, room })}
+                        onDeallocate={handleDeallocate}
+                        onDelete={handleDeleteRoom}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {filteredInfrastructure.length === 0 && unmappedRooms.length === 0 && (
+                <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-8 text-center">
+                  <p className="text-slate-500 dark:text-[#666666]">No rooms found matching criteria.</p>
+                </div>
+              )}
             </div>
           ) : filteredRooms.length === 0 ? (
             <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-8 text-center">

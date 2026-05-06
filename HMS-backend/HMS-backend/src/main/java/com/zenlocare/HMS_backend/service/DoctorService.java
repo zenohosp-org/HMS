@@ -26,6 +26,10 @@ public class DoctorService {
         return doctorRepository.findByHospitalId(hospitalId);
     }
 
+    public List<Doctor> getDoctorsByHospitalAndSpecialization(UUID hospitalId, String specialization) {
+        return doctorRepository.findByHospitalIdAndSpecialization(hospitalId, specialization);
+    }
+
     public Doctor getDoctorById(UUID id) {
         return doctorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { admissionApi, invoiceApi, bankApi, hospitalServiceApi, radiologyApi } from '@/utils/api'
+import { admissionApi, invoiceApi, bankApi, hospitalServiceApi, patientServicesApi, radiologyApi } from '@/utils/api'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { generateInvoiceNumber } from '@/utils/validators'
@@ -68,8 +68,9 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
       bankApi.list(user.hospitalId).catch(() => []),
       admissionApi.get(admission.id).catch(() => null),
       radiologyApi.getByAdmission(admission.id).catch(() => []),
+      patientServicesApi.list(user.hospitalId).catch(() => []),
     ])
-      .then(([suggestions, services, accounts, fullAdmission, radiologyOrders]) => {
+      .then(([suggestions, services, accounts, fullAdmission, radiologyOrders, patientServices]) => {
         const def = accounts.find(a => a.isDefault) ?? accounts[0]
         setBankAccounts(accounts)
         if (def) setBankAccountId(def.id)
@@ -136,6 +137,37 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
             totalPrice: price,
             radiologyOrderId: r.id,
           })
+        })
+
+        // ── Patient Services ─────────────────────────────────────────────────
+        const enabledServices = Array.isArray(patientServices)
+          ? patientServices.filter(s => s.isActive)
+          : []
+        enabledServices.forEach(s => {
+          if (s.type === 'FOOD') {
+            // Food: 3 meals per day × daysStayed
+            const price = s.pricePerMeal || 0
+            const quantity = daysStayed * 3 // 3 meals per day
+            auto.push({
+              key: key++,
+              itemType: 'CUSTOM',
+              description: `${s.name} (${daysStayed} day${daysStayed !== 1 ? 's' : ''} × 3 meals)`,
+              quantity: quantity,
+              unitPrice: price,
+              totalPrice: quantity * price,
+            })
+          } else {
+            // Room Service / Convenience: per day
+            const price = s.pricePerDay || 0
+            auto.push({
+              key: key++,
+              itemType: 'CUSTOM',
+              description: `${s.name} (${daysStayed} day${daysStayed !== 1 ? 's' : ''})`,
+              quantity: daysStayed,
+              unitPrice: price,
+              totalPrice: daysStayed * price,
+            })
+          }
         })
 
         setItems(auto)

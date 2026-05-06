@@ -26,6 +26,7 @@ import {
   Ambulance,
   HeartPulse,
   Settings,
+  ConciergeBell,
 } from "lucide-react";
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
 const CLINICAL_LINKS = [
@@ -40,6 +41,7 @@ const ADMIN_LINKS = [
 ];
 const SETTINGS_LINKS = [
   { label: "Infrastructure", to: "/settings", icon: Building2 },
+  { label: "Patient Services", to: "/settings/patient-services", icon: ConciergeBell },
   { label: "Packages", to: "/checkups/packages", icon: ClipboardList },
 ];
 const ROOMS_LINKS = [
@@ -75,7 +77,7 @@ function Sidebar({ isOpen }) {
   const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
   const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
   const [ambOpen, setAmbOpen] = useState(() => location.pathname.startsWith("/ambulance"));
-  const [settingsOpen, setSettingsOpen] = useState(() => location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages"));
+  const [settingsOpen, setSettingsOpen] = useState(() => location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages") || location.pathname.startsWith("/settings/patient-services"));
   const filteredClinicalLinks = CLINICAL_LINKS.filter((link) => {
     if (user?.role === "hospital_admin" || user?.role === "super_admin") return true;
     const allowedLinks = ["Patients", "Appointments"];
@@ -136,7 +138,7 @@ function Sidebar({ isOpen }) {
   const renderRoomsAccordion = () => renderAccordionSection(ROOMS_LINKS, "IPD Management", BedDouble, roomsOpen, setRoomsOpen, roomsActive);
   const ambActive = location.pathname.startsWith("/ambulance");
   const renderAmbulanceAccordion = () => renderAccordionSection(AMBULANCE_LINKS, "Ambulance", Ambulance, ambOpen, setAmbOpen, ambActive);
-  const settingsActive = location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages");
+  const settingsActive = location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages") || location.pathname.startsWith("/settings/patient-services");
   const renderSettingsAccordion = () => renderAccordionSection(SETTINGS_LINKS, "Settings", Settings, settingsOpen, setSettingsOpen, settingsActive);
   return <aside
     className={`flex flex-col h-full transition-all duration-300 ease-in-out shrink-0
