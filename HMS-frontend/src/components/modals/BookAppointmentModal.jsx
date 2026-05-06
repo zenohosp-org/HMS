@@ -52,10 +52,10 @@ function MiniCalendar({ value, onChange }) {
 }
 
 const TYPE_OPTIONS = [
-  { value: "OPD",        label: "OPD (Fresh Visit)",    desc: "First-time or walk-in" },
-  { value: "FOLLOWUP",   label: "Follow-up",            desc: "Returning patient" },
-  { value: "EMERGENCY",  label: "Emergency",            desc: "Urgent — minimal data" },
-  { value: "TELECONSULT",label: "Teleconsultation",     desc: "Remote consultation" },
+  { value: "OPD",           label: "Fresh Walk-in",   desc: "First-time or walk-in patient" },
+  { value: "FOLLOWUP",      label: "Follow-up",       desc: "Returning patient" },
+  { value: "EMERGENCY",     label: "Emergency",       desc: "Urgent — minimal data" },
+  { value: "HEALTH_CHECKUP",label: "Health Checkup",  desc: "Link a checkup package" },
 ];
 
 export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
@@ -87,8 +87,9 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   const [emergencyName, setEmergencyName]   = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
 
-  const isEmergency = type === "EMERGENCY";
-  const isFollowUp  = type === "FOLLOWUP";
+  const isEmergency     = type === "EMERGENCY";
+  const isFollowUp      = type === "FOLLOWUP";
+  const isHealthCheckup = type === "HEALTH_CHECKUP";
 
   const selectedPatient = patients.find(p => String(p.id) === patientId);
   const selectedDoctor  = doctors.find(d => d.id === doctorId);
@@ -381,6 +382,26 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 </div>
               </div>
 
+              {/* Health Checkup package — only when type is HEALTH_CHECKUP */}
+              {isHealthCheckup && packages.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-2">
+                    Checkup Package <span className="text-rose-500">*</span>
+                  </label>
+                  <select value={packageId} onChange={e => setPackageId(e.target.value)}
+                    className="w-full px-4 py-3 text-sm text-slate-900 dark:text-[#cccccc] bg-white dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#222222] rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                    <option value="">Select a package</option>
+                    {packages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                  {selectedPkg && (
+                    <div className="mt-2 px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+                      <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{selectedPkg.tests?.length || 0} tests included</p>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5 line-clamp-2">{selectedPkg.tests?.map(t => t.testName).join(", ")}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Date */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3 flex items-center gap-2">
@@ -453,28 +474,6 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
             {patientSection}
             <div className="border-t border-slate-200 dark:border-[#1e1e1e]" />
             {doctorSection}
-            {packages.length > 0 && !isEmergency && (
-              <>
-                <div className="border-t border-slate-200 dark:border-[#1e1e1e]" />
-                <div>
-                  <h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">
-                    Health Checkup <span className="text-xs font-medium text-slate-600 dark:text-[#999999]">(optional)</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-[#666666] mb-3">Link a checkup package to auto-create a booking.</p>
-                  <select value={packageId} onChange={e => setPackageId(e.target.value)}
-                    className="w-full px-3 py-2.5 text-sm text-slate-900 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444]">
-                    <option value="">No package</option>
-                    {packages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
-                  {selectedPkg && (
-                    <div className="mt-2 px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
-                      <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{selectedPkg.tests?.length || 0} tests included</p>
-                      <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5 line-clamp-2">{selectedPkg.tests?.map(t => t.testName).join(", ")}</p>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
           </div>
         </div>
 

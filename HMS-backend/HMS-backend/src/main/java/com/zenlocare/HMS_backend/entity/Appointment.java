@@ -96,7 +96,8 @@ public class Appointment {
         OPD,
         FOLLOWUP,
         EMERGENCY,
-        TELECONSULT
+        TELECONSULT,
+        HEALTH_CHECKUP
     }
 
     public enum AppointmentStatus {
