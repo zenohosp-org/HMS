@@ -316,7 +316,7 @@ export default function InfrastructureMapping() {
           })));
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [user.hospitalId]);
 
@@ -473,9 +473,9 @@ export default function InfrastructureMapping() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+      <div className="flex-1 overflow-y-auto space-y-4">
         {/* Building counter */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222]">
+        <div className="flex items-center justify-between p-4 rounded-lg bg-white">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-[#1a1a1a] flex items-center justify-center">
               <Building2 className="w-4 h-4 text-white" />

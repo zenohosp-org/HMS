@@ -21,15 +21,15 @@ const CATEGORIES = [
 const TEST_CATEGORIES = ["BLOOD_TEST", "RADIOLOGY", "CONSULTATION", "PHYSICAL", "VISION", "DENTAL", "GENERAL"];
 
 const CATEGORY_COLORS = {
-  GENERAL:         "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-400",
-  CARDIAC:         "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400",
-  DIABETIC:        "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
-  CANCER_SCREENING:"bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400",
-  WOMENS_HEALTH:   "bg-pink-50 text-pink-700 dark:bg-pink-500/15 dark:text-pink-400",
-  SENIOR:          "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
-  PAEDIATRIC:      "bg-cyan-50 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400",
-  COMPREHENSIVE:   "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
-  CUSTOM:          "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400",
+  GENERAL: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-400",
+  CARDIAC: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400",
+  DIABETIC: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
+  CANCER_SCREENING: "bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400",
+  WOMENS_HEALTH: "bg-pink-50 text-pink-700 dark:bg-pink-500/15 dark:text-pink-400",
+  SENIOR: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
+  PAEDIATRIC: "bg-cyan-50 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400",
+  COMPREHENSIVE: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
+  CUSTOM: "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400",
 };
 
 const EMPTY_TEST = { testName: "", testCategory: "GENERAL", normalRange: "", mandatory: true };
@@ -289,7 +289,7 @@ export default function PackageManager() {
   const filtered = filterCat === "ALL" ? packages : packages.filter(p => p.category === filterCat);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">Health Packages</h1>
@@ -297,7 +297,7 @@ export default function PackageManager() {
         </div>
         <button
           onClick={() => { setEditing(null); setShowForm(true); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98]"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-black text-white text-sm font-bold transition-all active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" /> New Package
         </button>

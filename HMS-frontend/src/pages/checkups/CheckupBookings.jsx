@@ -9,12 +9,12 @@ import {
 } from "lucide-react";
 
 const STATUS_CONFIG = {
-  SCHEDULED:   { label: "Scheduled",   color: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",       dot: "bg-blue-500" },
-  CHECKED_IN:  { label: "Checked In",  color: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",   dot: "bg-amber-500" },
+  SCHEDULED: { label: "Scheduled", color: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400", dot: "bg-blue-500" },
+  CHECKED_IN: { label: "Checked In", color: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400", dot: "bg-amber-500" },
   IN_PROGRESS: { label: "In Progress", color: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400", dot: "bg-violet-500" },
-  COMPLETED:   { label: "Completed",   color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400", dot: "bg-emerald-500" },
-  CANCELLED:   { label: "Cancelled",   color: "bg-slate-100 text-slate-500 dark:bg-[#222] dark:text-[#666]",            dot: "bg-slate-400" },
-  NO_SHOW:     { label: "No Show",     color: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400",        dot: "bg-rose-500" },
+  COMPLETED: { label: "Completed", color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400", dot: "bg-emerald-500" },
+  CANCELLED: { label: "Cancelled", color: "bg-slate-100 text-slate-500 dark:bg-[#222] dark:text-[#666]", dot: "bg-slate-400" },
+  NO_SHOW: { label: "No Show", color: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400", dot: "bg-rose-500" },
 };
 
 function StatusBadge({ status }) {
@@ -226,12 +226,12 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
 function doctorName(d) {
   if (!d) return null;
   const first = d.user?.firstName ?? d.firstName ?? "";
-  const last  = d.user?.lastName  ?? d.lastName  ?? "";
+  const last = d.user?.lastName ?? d.lastName ?? "";
   return `Dr. ${first} ${last}`.trim();
 }
 
 function AssignDoctorCell({ booking, doctors, onAssigned }) {
-  const [open, setOpen]   = useState(false);
+  const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const ref = useRef(null);
 
@@ -322,7 +322,7 @@ export default function CheckupBookings() {
   });
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">Checkup Bookings</h1>
@@ -336,10 +336,10 @@ export default function CheckupBookings() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Today's Checkups", value: stats.today,     icon: Calendar,      color: "bg-blue-50 dark:bg-blue-500/10 text-blue-500" },
-          { label: "Scheduled",        value: stats.scheduled,  icon: Clock3,        color: "bg-amber-50 dark:bg-amber-500/10 text-amber-500" },
-          { label: "In Progress",      value: stats.inProgress, icon: Activity,      color: "bg-violet-50 dark:bg-violet-500/10 text-violet-500" },
-          { label: "Completed",        value: stats.completed,  icon: CheckCircle2,  color: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500" },
+          { label: "Today's Checkups", value: stats.today, icon: Calendar, color: "bg-blue-50 dark:bg-blue-500/10 text-blue-500" },
+          { label: "Scheduled", value: stats.scheduled, icon: Clock3, color: "bg-amber-50 dark:bg-amber-500/10 text-amber-500" },
+          { label: "In Progress", value: stats.inProgress, icon: Activity, color: "bg-violet-50 dark:bg-violet-500/10 text-violet-500" },
+          { label: "Completed", value: stats.completed, icon: CheckCircle2, color: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500" },
         ].map(s => (
           <div key={s.label} className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-lg p-5 flex items-center gap-4">
             <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}>

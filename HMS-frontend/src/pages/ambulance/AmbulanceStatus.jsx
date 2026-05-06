@@ -3,19 +3,19 @@ import { useAuth } from "@/context/AuthContext";
 import { ambulanceApi } from "@/utils/api";
 import {
   Ambulance, Search, CheckCircle2, Clock3, XCircle,
-  Truck, Activity, Filter, RefreshCw, MapPin, Car, Phone, User
+  Truck, Activity, Filter, MapPin, Car, Phone, User
 } from "lucide-react";
 
 const STATUS_CONFIG = {
-  PENDING:    { label: "Pending",    bg: "bg-amber-500",   light: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400",   icon: Clock3 },
-  DISPATCHED: { label: "Dispatched", bg: "bg-blue-500",    light: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",       icon: Truck },
-  EN_ROUTE:   { label: "En Route",   bg: "bg-violet-500",  light: "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400", icon: Activity },
-  COMPLETED:  { label: "Completed",  bg: "bg-emerald-500", light: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400", icon: CheckCircle2 },
-  CANCELLED:  { label: "Cancelled",  bg: "bg-rose-500",    light: "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400",       icon: XCircle },
+  PENDING: { label: "Pending", bg: "bg-amber-500", light: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400", icon: Clock3 },
+  DISPATCHED: { label: "Dispatched", bg: "bg-blue-500", light: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400", icon: Truck },
+  EN_ROUTE: { label: "En Route", bg: "bg-violet-500", light: "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400", icon: Activity },
+  COMPLETED: { label: "Completed", bg: "bg-emerald-500", light: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400", icon: CheckCircle2 },
+  CANCELLED: { label: "Cancelled", bg: "bg-rose-500", light: "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400", icon: XCircle },
 };
 
 const NEXT_STATUS = { PENDING: "DISPATCHED", DISPATCHED: "EN_ROUTE", EN_ROUTE: "COMPLETED" };
-const NEXT_LABEL  = { PENDING: "Dispatch", DISPATCHED: "En Route", EN_ROUTE: "Complete" };
+const NEXT_LABEL = { PENDING: "Dispatch", DISPATCHED: "En Route", EN_ROUTE: "Complete" };
 
 const ALL_STATUSES = ["ALL", "PENDING", "DISPATCHED", "EN_ROUTE", "COMPLETED", "CANCELLED"];
 
@@ -107,7 +107,7 @@ export default function AmbulanceStatus() {
   }, {});
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a] p-6 space-y-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a] space-y-6">
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -120,9 +120,6 @@ export default function AmbulanceStatus() {
             <p className="text-sm text-slate-500 dark:text-[#666]">Live dispatch tracking and status updates</p>
           </div>
         </div>
-        <button onClick={load} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-slate-600 dark:text-[#888] text-sm font-medium hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
-          <RefreshCw className="w-4 h-4" /> Refresh
-        </button>
       </div>
 
       {/* Status summary pills */}
