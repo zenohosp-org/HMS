@@ -357,12 +357,14 @@ public class AdmissionService {
                     .patientMrn(admission.getPatient().getMrn())
                     .performedBy(performedBy)
                     .build());
-        } else {
+        } else if (admission.getPreviousRoom() != null) {
             // No recovery room — return directly to original ward room
-            if (admission.getPreviousRoom() != null) {
-                admission.setRoom(admission.getPreviousRoom());
-                admission.setPreviousRoom(null);
-            }
+            admission.setRoom(admission.getPreviousRoom());
+            admission.setPreviousRoom(null);
+        } else {
+            // Patient was admitted directly to OT (no prior ward room); clear room so
+            // discharge/reassignment can proceed normally
+            admission.setRoom(null);
         }
 
         admission.setOtBookingId(null);
