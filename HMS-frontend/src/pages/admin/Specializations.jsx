@@ -66,7 +66,7 @@ function Specializations() {
       notify("Failed to update status", "error");
     }
   };
-  return <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">{
+  return <div className="flex flex-col h-full bg-white dark:bg-[#050505] gap-6">{
     /* Header Section */
   }<div className="flex flex-col gap-1"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Specializations</h1><span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-100 dark:border-emerald-800/30">
     Total Specializations : {specializations.length}</span></div><button

@@ -77,7 +77,7 @@ function RadiologyReports() {
       /* Patient */
     }<div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0"><User className="w-4 h-4 text-slate-400 dark:text-[#888]" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{order.patientName}</p><p className="text-xs text-slate-600 dark:text-[#999999]">{order.patientMrn}</p></div></div>{
         /* Investigation */
-      }<div><p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">{order.serviceName}</p>{order.billNo && <p className="text-xs font-mono text-slate-600 dark:text-[#999999] mt-0.5">{order.billNo}</p>}</div>{
+      }<div><p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">{order.serviceName}</p>{order.billNo && <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{order.billNo}</p>}</div>{
         /* Referred by */
       }<div className="flex items-center gap-1.5"><p className="text-sm text-slate-600 dark:text-[#aaaaaa]">{order.referredByName ?? "\u2014"}</p></div>{
         /* Completed */

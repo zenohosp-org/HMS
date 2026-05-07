@@ -97,7 +97,7 @@ export default function PatientServices() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">
+    <div className="flex flex-col h-full bg-white dark:bg-[#050505] gap-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

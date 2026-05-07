@@ -10,27 +10,27 @@ import {
 } from "lucide-react";
 
 const STATUS_CONFIG = {
-  SCHEDULED:   { label: "Scheduled",   color: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",        dot: "bg-blue-500",    border: "border-blue-200 dark:border-blue-500/30" },
-  CHECKED_IN:  { label: "Checked In",  color: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",    dot: "bg-amber-500",   border: "border-amber-200 dark:border-amber-500/30" },
-  IN_PROGRESS: { label: "In Progress", color: "bg-slate-100 text-slate-900 dark:text-white dark:bg-[#1e1e1e] dark:text-slate-300", dot: "bg-slate-900",  border: "border-slate-200 dark:border-slate-200/30" },
-  COMPLETED:   { label: "Completed",   color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400", dot: "bg-emerald-500", border: "border-emerald-200 dark:border-emerald-500/30" },
-  CANCELLED:   { label: "Cancelled",   color: "bg-slate-100 text-slate-500 dark:bg-[#222] dark:text-[#666]",             dot: "bg-slate-400",   border: "border-slate-200 dark:border-[#333]" },
-  NO_SHOW:     { label: "No Show",     color: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400",         dot: "bg-rose-500",    border: "border-rose-200 dark:border-rose-500/30" },
+  SCHEDULED: { label: "Scheduled", color: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400", dot: "bg-blue-500", border: "border-blue-200 dark:border-blue-500/30" },
+  CHECKED_IN: { label: "Checked In", color: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400", dot: "bg-amber-500", border: "border-amber-200 dark:border-amber-500/30" },
+  IN_PROGRESS: { label: "In Progress", color: "bg-slate-100 text-slate-900 dark:text-white dark:bg-[#1e1e1e] dark:text-slate-300", dot: "bg-slate-900", border: "border-slate-200 dark:border-slate-200/30" },
+  COMPLETED: { label: "Completed", color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400", dot: "bg-emerald-500", border: "border-emerald-200 dark:border-emerald-500/30" },
+  CANCELLED: { label: "Cancelled", color: "bg-slate-100 text-slate-500 dark:bg-[#222] dark:text-[#666]", dot: "bg-slate-400", border: "border-slate-200 dark:border-[#333]" },
+  NO_SHOW: { label: "No Show", color: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400", dot: "bg-rose-500", border: "border-rose-200 dark:border-rose-500/30" },
 };
 
 const RESULT_STATUS_OPTIONS = ["PENDING", "NORMAL", "ABNORMAL", "CRITICAL", "NOT_APPLICABLE"];
 const RESULT_STATUS_CONFIG = {
-  PENDING:        { label: "Pending",        color: "text-slate-600 dark:text-[#999999]" },
-  NORMAL:         { label: "Normal",         color: "text-emerald-600 dark:text-emerald-400" },
-  ABNORMAL:       { label: "Abnormal",       color: "text-amber-600 dark:text-amber-400" },
-  CRITICAL:       { label: "Critical",       color: "text-rose-600 dark:text-rose-400" },
-  NOT_APPLICABLE: { label: "N/A",            color: "text-slate-600 dark:text-[#999999]" },
+  PENDING: { label: "Pending", color: "text-slate-600 dark:text-[#999999]" },
+  NORMAL: { label: "Normal", color: "text-emerald-600 dark:text-emerald-400" },
+  ABNORMAL: { label: "Abnormal", color: "text-amber-600 dark:text-amber-400" },
+  CRITICAL: { label: "Critical", color: "text-rose-600 dark:text-rose-400" },
+  NOT_APPLICABLE: { label: "N/A", color: "text-slate-600 dark:text-[#999999]" },
 };
 
 const FLOW = {
-  SCHEDULED:   { next: "CHECKED_IN",  label: "Check In",   icon: CheckCircle2, cls: "bg-amber-500 hover:bg-amber-600" },
-  CHECKED_IN:  { next: "IN_PROGRESS", label: "Start Tests", icon: Activity,     cls: "bg-slate-900 hover:bg-slate-900" },
-  IN_PROGRESS: { next: "COMPLETED",   label: "Mark Complete", icon: CheckCircle2, cls: "bg-emerald-500 hover:bg-emerald-600" },
+  SCHEDULED: { next: "CHECKED_IN", label: "Check In", icon: CheckCircle2, cls: "bg-amber-500 hover:bg-amber-600" },
+  CHECKED_IN: { next: "IN_PROGRESS", label: "Start Tests", icon: Activity, cls: "bg-slate-900 hover:bg-slate-900" },
+  IN_PROGRESS: { next: "COMPLETED", label: "Mark Complete", icon: CheckCircle2, cls: "bg-emerald-500 hover:bg-emerald-600" },
 };
 
 function StatusBadge({ status }) {
@@ -249,7 +249,8 @@ export default function CheckupBookingDetail() {
       await checkupApi.updateStatus(booking.id, flow.next);
       await load();
     } finally {
-      setAdvancing(false); }
+      setAdvancing(false);
+    }
   };
 
   const handleCancel = async () => {
@@ -348,7 +349,7 @@ export default function CheckupBookingDetail() {
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg font-bold text-slate-900 dark:text-white font-mono">{booking.bookingNumber}</h1>
+                <h1 className="text-lg font-bold text-slate-900 dark:text-white">{booking.bookingNumber}</h1>
                 <StatusBadge status={booking.status} />
               </div>
               <p className="text-sm text-slate-500 dark:text-[#666] mt-1">{booking.healthPackage?.name}</p>

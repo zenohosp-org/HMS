@@ -47,7 +47,7 @@ function Patients() {
     return p.firstName.toLowerCase().includes(q) || p.lastName.toLowerCase().includes(q) || p.mrn.toLowerCase().includes(q) || (p.phone ?? "").includes(q);
   });
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  return <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">{
+  return <div className="flex flex-col h-full bg-white dark:bg-[#050505] gap-6">{
     /* Header */
   }<div className="flex items-center justify-between"><div className="flex items-center gap-3"><h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Patients</h1><span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-500/20">{patients.length} registered
   </span></div><button className="btn-primary" onClick={() => setModal({ open: true, patient: null })}>

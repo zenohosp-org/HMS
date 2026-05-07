@@ -84,9 +84,8 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
   return (
     <div
       onClick={() => roomData && onSelect(roomData)}
-      className={`bg-white dark:bg-[#111111] border rounded-lg p-4 flex flex-col gap-3 cursor-pointer transition-colors ${
-        isSelected ? "border-slate-400 dark:border-[#444444]" : "border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 dark:hover:border-[#2a2a2a]"
-      } ${!roomData ? "opacity-90" : ""}`}
+      className={`bg-white dark:bg-[#111111] border rounded-lg p-4 flex flex-col gap-3 cursor-pointer transition-colors ${isSelected ? "border-slate-400 dark:border-[#444444]" : "border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 dark:hover:border-[#2a2a2a]"
+        } ${!roomData ? "opacity-90" : ""}`}
     >
       <div className="flex items-center gap-3">
         <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border ${roomData?.status === "AVAILABLE" ? "bg-emerald-50 border-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400" : "bg-slate-50 border-slate-100 text-slate-500 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] dark:text-[#888888]"}`}>
@@ -96,7 +95,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-base font-bold text-slate-900 dark:text-white leading-tight">{roomInfo.name}</p>
             {roomData?.roomCode && (
-              <span className="text-[10px] font-mono font-bold text-slate-600 dark:text-[#999999]">{roomData.roomCode}</span>
+              <span className="text-[10px] font-bold text-slate-600 dark:text-[#999999]">{roomData.roomCode}</span>
             )}
             <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${badgeClass}`}>
               {roomData?.roomType ?? roomInfo.roomType ?? "GENERAL"}
@@ -107,13 +106,12 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
               </span>
             )}
           </div>
-          <p className={`text-xs mt-1 font-medium ${
-            roomData?.status === "AVAILABLE"
-              ? "text-emerald-600 dark:text-emerald-400"
-              : roomData?.status === "OCCUPIED"
+          <p className={`text-xs mt-1 font-medium ${roomData?.status === "AVAILABLE"
+            ? "text-emerald-600 dark:text-emerald-400"
+            : roomData?.status === "OCCUPIED"
               ? "text-blue-600 dark:text-blue-400"
               : "text-slate-500 dark:text-[#999999]"
-          }`}>
+            }`}>
             {statusLabel}
           </p>
         </div>
@@ -410,12 +408,12 @@ function Rooms() {
             <div className="space-y-4">
               {filteredInfrastructure.length > 0 && filteredInfrastructure.map((building, bIdx) => (
                 <div key={building.id ?? building.name ?? bIdx} className="rounded-2xl border border-slate-200 dark:border-[#2a2a2a] overflow-hidden bg-white dark:bg-[#111111]">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-slate-50 dark:bg-[#111111] border-b border-slate-200 dark:border-[#1e1e1e]">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-black dark:bg-[#111111] border-b border-slate-200 dark:border-[#1e1e1e]">
                     <div>
-                      <p className="text-xs uppercase tracking-widest text-slate-500 dark:text-[#999999]">Building</p>
-                      <p className="text-lg font-semibold text-slate-900 dark:text-white">{building.name || `Building ${bIdx + 1}`}</p>
+                      <p className="text-xs uppercase tracking-widest text-white dark:text-[#999999]">Building</p>
+                      <p className="text-lg font-semibold text-white dark:text-white">{building.name || `Building ${bIdx + 1}`}</p>
                     </div>
-                    <span className="text-xs text-slate-500 dark:text-[#999999]">{building.floors.length} floors</span>
+                    <span className="text-xs text-white dark:text-[#999999]">{building.floors.length} floors</span>
                   </div>
                   <div className="space-y-4 p-4">
                     {building.floors.map((floor, fIdx) => (
@@ -523,7 +521,7 @@ function Rooms() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-base font-bold text-slate-900 dark:text-white leading-tight">{room.roomNumber}</p>
                       {room.roomCode && (
-                        <span className="text-[10px] font-mono font-bold text-slate-600 dark:text-[#999999]">{room.roomCode}</span>
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-[#999999]">{room.roomCode}</span>
                       )}
                       <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${room.roomType === "ICU"
                         ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
@@ -577,7 +575,7 @@ function Rooms() {
                         {room.allocationToken && (
                           <div>
                             <p className="text-xs text-slate-500 dark:text-[#666666] mb-0.5">Token</p>
-                            <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333] text-sm font-bold tracking-widest text-slate-900 dark:text-white dark:text-slate-300 font-mono">
+                            <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333] text-sm font-bold tracking-widest text-slate-900 dark:text-white dark:text-slate-300">
                               {room.allocationToken}
                             </span>
                           </div>

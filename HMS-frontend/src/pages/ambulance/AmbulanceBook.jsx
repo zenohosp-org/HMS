@@ -865,7 +865,7 @@ export default function AmbulanceBook() {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">
+    <div className="flex flex-col h-full bg-white dark:bg-[#050505] gap-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shadow-lg">

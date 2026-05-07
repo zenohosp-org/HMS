@@ -194,7 +194,7 @@ function StaffsList() {
         className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-5 hover:border-slate-300 dark:hover:border-[#2a2a2a] transition-colors relative flex flex-col gap-4"
       >{
           /* Top row: avatar + 3-dot */
-        }<div className="flex items-start justify-between"><div className="flex items-center gap-3"><div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-sm font-bold shrink-0 ${getAvatarCls(m.role)}`}>{initials}</div><div className="min-w-0"><p className="text-sm font-bold text-slate-900 dark:text-[#eeeeee] leading-tight truncate">{m.firstName} {m.lastName}</p>{m.employeeCode && <p className="text-[10px] font-mono text-slate-600 dark:text-[#999999] mt-0.5">
+        }<div className="flex items-start justify-between"><div className="flex items-center gap-3"><div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-sm font-bold shrink-0 ${getAvatarCls(m.role)}`}>{initials}</div><div className="min-w-0"><p className="text-sm font-bold text-slate-900 dark:text-[#eeeeee] leading-tight truncate">{m.firstName} {m.lastName}</p>{m.employeeCode && <p className="text-[10px] text-slate-600 dark:text-[#999999] mt-0.5">
           #{m.employeeCode}</p>}</div></div>{
             /* 3-dot menu */
           }<div className="relative" onClick={(e) => e.stopPropagation()}><button

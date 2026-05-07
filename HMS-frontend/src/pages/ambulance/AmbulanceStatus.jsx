@@ -7,11 +7,40 @@ import {
 } from "lucide-react";
 
 const STATUS_CONFIG = {
-  PENDING: { label: "Pending", bg: "bg-amber-500", light: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400", icon: Clock3 },
-  DISPATCHED: { label: "Dispatched", bg: "bg-blue-500", light: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400", icon: Truck },
-  EN_ROUTE: { label: "En Route", bg: "bg-slate-900", light: "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white dark:text-slate-300", icon: Activity },
-  COMPLETED: { label: "Completed", bg: "bg-emerald-500", light: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400", icon: CheckCircle2 },
-  CANCELLED: { label: "Cancelled", bg: "bg-rose-500", light: "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400", icon: XCircle },
+  PENDING: {
+    label: "Pending",
+    bg: "bg-slate-950 dark:bg-white",
+    light: "bg-slate-200 dark:bg-[#1e1e1e] text-slate-900 dark:text-slate-300",
+    icon: Clock3
+  },
+
+  DISPATCHED: {
+    label: "Dispatched",
+    bg: "bg-slate-950 dark:bg-white",
+    light: "bg-slate-200 dark:bg-[#1e1e1e] text-slate-900 dark:text-slate-300",
+    icon: Truck
+  },
+
+  EN_ROUTE: {
+    label: "En Route",
+    bg: "bg-slate-950 dark:bg-white",
+    light: "bg-slate-200 dark:bg-[#1e1e1e] text-slate-900 dark:text-slate-300",
+    icon: Activity
+  },
+
+  COMPLETED: {
+    label: "Completed",
+    bg: "bg-slate-950 dark:bg-white",
+    light: "bg-slate-200 dark:bg-[#1e1e1e] text-slate-900 dark:text-slate-300",
+    icon: CheckCircle2
+  },
+
+  CANCELLED: {
+    label: "Cancelled",
+    bg: "bg-slate-950 dark:bg-white",
+    light: "bg-slate-200 dark:bg-[#1e1e1e] text-slate-900 dark:text-slate-300",
+    icon: XCircle
+  },
 };
 
 const NEXT_STATUS = { PENDING: "DISPATCHED", DISPATCHED: "EN_ROUTE", EN_ROUTE: "COMPLETED" };
@@ -107,7 +136,7 @@ export default function AmbulanceStatus() {
   }, {});
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a] space-y-6">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] space-y-6">
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -143,7 +172,7 @@ export default function AmbulanceStatus() {
         ))}
         {filterStatus !== "ALL" && (
           <button onClick={() => setFilterStatus("ALL")}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors">
+            className="px-4 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-400 dark:hover:text-red-200 transition-colors">
             Clear
           </button>
         )}
@@ -198,7 +227,7 @@ export default function AmbulanceStatus() {
             return (
               <div key={b.id} className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-lg overflow-hidden hover:shadow-md dark:hover:shadow-black/30 transition-shadow">
                 {/* Colored top bar */}
-                <div className={`h-1 w-full ${cfg.bg}`} />
+                <div className={`h-1 w-full bg-black`} />
 
                 <div className="p-5 space-y-4">
                   {/* Top row: date + status */}

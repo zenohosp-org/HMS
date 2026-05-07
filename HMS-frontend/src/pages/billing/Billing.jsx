@@ -230,7 +230,7 @@ export default function Billing() {
   const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left'
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">
+    <div className="flex flex-col h-full bg-white dark:bg-[#050505] gap-6">
 
       {/* Header */}
       <div className="flex items-center justify-between">

@@ -89,7 +89,7 @@ export default function Admissions() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] gap-6">
+    <div className="flex flex-col h-full bg-white dark:bg-[#0d0d0d] gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -195,8 +195,8 @@ export default function Admissions() {
                 <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
                   <div className="text-right">
-                    {a.ipdId && <p className="text-xs font-mono font-bold text-slate-900 dark:text-white dark:text-slate-300">{a.ipdId}</p>}
-                    <p className="text-[10px] font-mono text-slate-400">{a.admissionNumber}</p>
+                    {a.ipdId && <p className="text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300">{a.ipdId}</p>}
+                    <p className="text-[10px] text-slate-400">{a.admissionNumber}</p>
                   </div>
                 </div>
               </div>
@@ -229,8 +229,8 @@ export default function Admissions() {
               {filtered.map(a => (
                 <tr key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
                   <td className="px-4 py-3">
-                    {a.ipdId && <p className="font-mono text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300">{a.ipdId}</p>}
-                    <p className="font-mono text-[10px] text-slate-400">{a.admissionNumber}</p>
+                    {a.ipdId && <p className="text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300">{a.ipdId}</p>}
+                    <p className="text-[10px] text-slate-400">{a.admissionNumber}</p>
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-sm text-slate-900 dark:text-white">{a.patientName}</p>

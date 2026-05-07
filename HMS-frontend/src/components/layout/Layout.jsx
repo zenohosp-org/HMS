@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 import Header from "./Header";
 function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  return <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-[#0f0f0f]">{
+  return <div className="flex h-screen overflow-hidden bg-white dark:bg-[#0f0f0f]">{
     /* Sidebar — hidden on print */
   }<div className="no-print h-full"><Sidebar isOpen={sidebarOpen} /></div>{
       /* Main content area */
