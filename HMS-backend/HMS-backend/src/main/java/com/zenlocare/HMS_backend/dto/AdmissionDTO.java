@@ -41,4 +41,7 @@ public class AdmissionDTO {
     private LocalDateTime actualDischargeDate;
     private LocalDateTime approxDischargeDate;
     private LocalDateTime createdAt;
+    private Long previousRoomId;
+    private UUID otBookingId;
+    private boolean inOt;
 }

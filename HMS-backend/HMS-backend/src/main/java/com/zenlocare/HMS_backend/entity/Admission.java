@@ -42,6 +42,13 @@ public class Admission {
     @JoinColumn(name = "source_appointment_id")
     private Appointment sourceAppointment;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "previous_room_id")
+    private Room previousRoom;
+
+    @Column(name = "ot_booking_id")
+    private UUID otBookingId;
+
     @Column(name = "admission_number", length = 30)
     private String admissionNumber;
 

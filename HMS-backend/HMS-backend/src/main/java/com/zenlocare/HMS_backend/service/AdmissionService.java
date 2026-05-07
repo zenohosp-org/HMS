@@ -265,7 +265,7 @@ public class AdmissionService {
     }
 
     @Transactional
-    public AdmissionDTO moveToOT(UUID admissionId, Long roomId, UUID doctorId, String performedBy) {
+    public AdmissionDTO moveToOT(UUID admissionId, Long roomId, UUID doctorId, UUID otBookingId, String performedBy) {
         Admission admission = admissionRepository.findById(admissionId)
                 .orElseThrow(() -> new RuntimeException("Admission not found"));
         if (admission.getStatus() != AdmissionStatus.ADMITTED)
@@ -278,13 +278,10 @@ public class AdmissionService {
         if (otRoom.getStatus() != RoomStatus.AVAILABLE)
             throw new RuntimeException("OT room is not available");
 
-        // Vacate current room if any
-        roomRepository.findByCurrentPatientId(admission.getPatient().getId()).ifPresent(prev -> {
-            prev.setStatus(RoomStatus.AVAILABLE);
-            prev.setCurrentPatient(null);
-            prev.setApproxDischargeTime(null);
-            roomRepository.save(prev);
-        });
+        // Save current ward room so we can return patient after surgery (do NOT vacate it — bed is held)
+        if (admission.getRoom() != null && admission.getPreviousRoom() == null) {
+            admission.setPreviousRoom(admission.getRoom());
+        }
 
         // Occupy OT room
         otRoom.setStatus(RoomStatus.OCCUPIED);
@@ -292,8 +289,9 @@ public class AdmissionService {
         otRoom.setAdmissionDate(LocalDateTime.now());
         Room savedRoom = roomRepository.save(otRoom);
 
-        // Update admission room and optionally doctor
+        // Update admission to OT room, record OT booking ref
         admission.setRoom(savedRoom);
+        admission.setOtBookingId(otBookingId);
         if (doctorId != null) {
             doctorRepository.findById(doctorId).ifPresent(admission::setAdmittingDoctor);
         }
@@ -308,6 +306,97 @@ public class AdmissionService {
                 .performedBy(performedBy)
                 .build());
 
+        return toDTO(admissionRepository.save(admission));
+    }
+
+    @Transactional
+    public AdmissionDTO returnFromOT(UUID admissionId, Long postOtRoomId, String performedBy) {
+        Admission admission = admissionRepository.findById(admissionId)
+                .orElseThrow(() -> new RuntimeException("Admission not found"));
+
+        // Free the OT room
+        if (admission.getRoom() != null && admission.getRoom().getRoomType() == com.zenlocare.HMS_backend.entity.RoomType.OT) {
+            Room otRoom = admission.getRoom();
+            otRoom.setStatus(RoomStatus.AVAILABLE);
+            otRoom.setCurrentPatient(null);
+            otRoom.setAdmissionDate(null);
+            otRoom.setApproxDischargeTime(null);
+            roomRepository.save(otRoom);
+
+            roomLogRepository.save(com.zenlocare.HMS_backend.entity.RoomLog.builder()
+                    .room(otRoom).hospital(admission.getHospital())
+                    .event(com.zenlocare.HMS_backend.entity.RoomLogEvent.DEALLOCATED)
+                    .roomNumber(otRoom.getRoomNumber())
+                    .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
+                    .patientMrn(admission.getPatient().getMrn())
+                    .performedBy(performedBy)
+                    .build());
+        }
+
+        if (postOtRoomId != null) {
+            // Move to post-OT recovery room (previousRoom stays saved for later return to ward)
+            Room postOtRoom = roomRepository.findById(postOtRoomId)
+                    .orElseThrow(() -> new RuntimeException("Post-OT room not found"));
+            if (postOtRoom.getRoomType() != com.zenlocare.HMS_backend.entity.RoomType.POST_OT)
+                throw new RuntimeException("Selected room is not a POST_OT room");
+            if (postOtRoom.getStatus() != RoomStatus.AVAILABLE)
+                throw new RuntimeException("Post-OT room is not available");
+
+            postOtRoom.setStatus(RoomStatus.OCCUPIED);
+            postOtRoom.setCurrentPatient(admission.getPatient());
+            postOtRoom.setAdmissionDate(LocalDateTime.now());
+            roomRepository.save(postOtRoom);
+
+            admission.setRoom(postOtRoom);
+
+            roomLogRepository.save(com.zenlocare.HMS_backend.entity.RoomLog.builder()
+                    .room(postOtRoom).hospital(admission.getHospital())
+                    .event(com.zenlocare.HMS_backend.entity.RoomLogEvent.ALLOCATED)
+                    .roomNumber(postOtRoom.getRoomNumber())
+                    .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
+                    .patientMrn(admission.getPatient().getMrn())
+                    .performedBy(performedBy)
+                    .build());
+        } else {
+            // No recovery room — return directly to original ward room
+            if (admission.getPreviousRoom() != null) {
+                admission.setRoom(admission.getPreviousRoom());
+                admission.setPreviousRoom(null);
+            }
+        }
+
+        admission.setOtBookingId(null);
+        return toDTO(admissionRepository.save(admission));
+    }
+
+    @Transactional
+    public AdmissionDTO returnToWard(UUID admissionId, String performedBy) {
+        Admission admission = admissionRepository.findById(admissionId)
+                .orElseThrow(() -> new RuntimeException("Admission not found"));
+        if (admission.getPreviousRoom() == null)
+            throw new RuntimeException("No original ward room recorded for this admission");
+
+        // Free post-OT room if currently in one
+        if (admission.getRoom() != null && admission.getRoom().getRoomType() == com.zenlocare.HMS_backend.entity.RoomType.POST_OT) {
+            Room postOtRoom = admission.getRoom();
+            postOtRoom.setStatus(RoomStatus.AVAILABLE);
+            postOtRoom.setCurrentPatient(null);
+            postOtRoom.setAdmissionDate(null);
+            roomRepository.save(postOtRoom);
+
+            roomLogRepository.save(com.zenlocare.HMS_backend.entity.RoomLog.builder()
+                    .room(postOtRoom).hospital(admission.getHospital())
+                    .event(com.zenlocare.HMS_backend.entity.RoomLogEvent.DEALLOCATED)
+                    .roomNumber(postOtRoom.getRoomNumber())
+                    .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
+                    .patientMrn(admission.getPatient().getMrn())
+                    .performedBy(performedBy)
+                    .build());
+        }
+
+        // Restore original ward room (it was held OCCUPIED throughout)
+        admission.setRoom(admission.getPreviousRoom());
+        admission.setPreviousRoom(null);
         return toDTO(admissionRepository.save(admission));
     }
 
@@ -393,6 +482,9 @@ public class AdmissionService {
                 .actualDischargeDate(a.getActualDischargeDate())
                 .approxDischargeDate(a.getApproxDischargeDate())
                 .createdAt(a.getCreatedAt())
+                .previousRoomId(a.getPreviousRoom() != null ? a.getPreviousRoom().getId() : null)
+                .otBookingId(a.getOtBookingId())
+                .inOt(resolvedRoom != null && resolvedRoom.getRoomType() == com.zenlocare.HMS_backend.entity.RoomType.OT)
                 .build();
     }
 }

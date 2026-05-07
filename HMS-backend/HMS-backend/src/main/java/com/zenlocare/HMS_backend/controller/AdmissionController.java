@@ -66,7 +66,23 @@ public class AdmissionController {
                                                   @RequestBody MoveToOTRequest req,
                                                   @AuthenticationPrincipal UserDetails user) {
         String performedBy = user != null ? user.getUsername() : "system";
-        return ResponseEntity.ok(admissionService.moveToOT(id, req.getRoomId(), req.getDoctorId(), performedBy));
+        return ResponseEntity.ok(admissionService.moveToOT(id, req.getRoomId(), req.getDoctorId(), req.getOtBookingId(), performedBy));
+    }
+
+    @PatchMapping("/{id}/return-from-ot")
+    public ResponseEntity<AdmissionDTO> returnFromOT(@PathVariable UUID id,
+                                                      @RequestBody(required = false) ReturnFromOTRequest req,
+                                                      @AuthenticationPrincipal UserDetails user) {
+        String performedBy = user != null ? user.getUsername() : "system";
+        Long postOtRoomId = req != null ? req.getPostOtRoomId() : null;
+        return ResponseEntity.ok(admissionService.returnFromOT(id, postOtRoomId, performedBy));
+    }
+
+    @PatchMapping("/{id}/return-to-ward")
+    public ResponseEntity<AdmissionDTO> returnToWard(@PathVariable UUID id,
+                                                      @AuthenticationPrincipal UserDetails user) {
+        String performedBy = user != null ? user.getUsername() : "system";
+        return ResponseEntity.ok(admissionService.returnToWard(id, performedBy));
     }
 
     @Data
@@ -78,5 +94,11 @@ public class AdmissionController {
     public static class MoveToOTRequest {
         private Long roomId;
         private UUID doctorId;
+        private UUID otBookingId;
+    }
+
+    @Data
+    public static class ReturnFromOTRequest {
+        private Long postOtRoomId;
     }
 }

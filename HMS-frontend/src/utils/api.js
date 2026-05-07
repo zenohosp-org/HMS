@@ -392,9 +392,21 @@ const admissionApi = {
     const { data } = await api.patch(`/admissions/${admissionId}/discharge`, payload);
     return data;
   },
-  moveToOT: async (admissionId, roomId, doctorId) => {
-    const { data } = await api.patch(`/admissions/${admissionId}/move-to-ot`, { roomId, doctorId });
+  moveToOT: async (admissionId, roomId, doctorId, otBookingId) => {
+    const { data } = await api.patch(`/admissions/${admissionId}/move-to-ot`, { roomId, doctorId, otBookingId });
     return data;
+  },
+  returnFromOT: async (admissionId, postOtRoomId) => {
+    const { data } = await api.patch(`/admissions/${admissionId}/return-from-ot`, postOtRoomId ? { postOtRoomId } : {});
+    return data;
+  },
+  returnToWard: async (admissionId) => {
+    const { data } = await api.patch(`/admissions/${admissionId}/return-to-ward`);
+    return data;
+  },
+  getPostOtRooms: async (hospitalId) => {
+    const { data } = await api.get('/rooms', { params: { hospitalId } });
+    return data.filter(r => r.roomType === 'POST_OT' && r.status === 'AVAILABLE');
   }
 };
 

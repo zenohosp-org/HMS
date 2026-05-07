@@ -5,12 +5,12 @@ import { admissionApi } from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import AdmitPatientModal from './AdmitPatientModal'
 import DischargeModal from './DischargeModal'
-// import MoveToOTModal from './MoveToOTModal'
+import MoveToOTModal from './MoveToOTModal'
 import ViewBillingModal from './ViewBillingModal'
 import {
   BedDouble, Plus, Search, LogOut, User, Building2,
   Stethoscope, Clock, CheckCircle2, List, LayoutGrid,
-  Calendar, ChevronRight, AlertCircle, Receipt
+  Calendar, AlertCircle, Receipt, Scissors, RotateCcw, Loader2
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 
@@ -39,8 +39,9 @@ export default function Admissions() {
   const [viewMode, setViewMode] = useState('grid')
   const [showAdmitModal, setShowAdmitModal] = useState(false)
   const [dischargeTarget, setDischargeTarget] = useState(null)
-  // const [otTarget, setOtTarget] = useState(null)
+  const [otTarget, setOtTarget] = useState(null)
   const [billingTarget, setBillingTarget] = useState(null)
+  const [returningToWard, setReturningToWard] = useState(null)
 
   const load = async (all = statusFilter !== 'ADMITTED') => {
     if (!user?.hospitalId) return
@@ -71,6 +72,7 @@ export default function Admissions() {
   const counts = useMemo(() => ({
     ADMITTED: admissions.filter(a => a.status === 'ADMITTED').length,
     DISCHARGED: admissions.filter(a => a.status === 'DISCHARGED').length,
+    inOt: admissions.filter(a => a.inOt).length,
   }), [admissions])
 
   const formatAdmissionDate = (dateStr) => {
@@ -86,6 +88,25 @@ export default function Admissions() {
   const isOverdue = (a) => {
     if (!a.approxDischargeDate || a.status !== 'ADMITTED') return false
     return new Date(a.approxDischargeDate) < new Date()
+  }
+
+  const handleReturnToWard = async (a, e) => {
+    e.stopPropagation()
+    setReturningToWard(a.id)
+    try {
+      await admissionApi.returnToWard(a.id)
+      notify(`${a.patientName} returned to ward`, 'success')
+      load(statusFilter !== 'ADMITTED')
+    } catch (err) {
+      notify(err?.response?.data?.message || 'Failed to return patient to ward', 'error')
+    } finally {
+      setReturningToWard(null)
+    }
+  }
+
+  const roomLabel = (a) => {
+    if (!a.roomNumber) return 'Room not assigned'
+    return `Room ${a.roomNumber} · ${a.roomType}`
   }
 
   return (
@@ -105,9 +126,9 @@ export default function Admissions() {
       <div className="grid grid-cols-4 gap-4">
         {[
           { label: 'Active Admissions', value: counts.ADMITTED, icon: BedDouble, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+          { label: 'In OT Now', value: counts.inOt, icon: Scissors, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-500/10' },
           { label: 'Discharged Today', value: admissions.filter(a => a.status === 'DISCHARGED' && a.actualDischargeDate?.startsWith(new Date().toISOString().slice(0, 10))).length, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-500/10' },
           { label: 'Overdue Discharge', value: admissions.filter(isOverdue).length, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10' },
-          { label: 'Total This Month', value: admissions.filter(a => a.createdAt?.startsWith(new Date().toISOString().slice(0, 7))).length, icon: Calendar, color: 'text-slate-900 dark:text-white', bg: 'bg-slate-100 dark:bg-[#1e1e1e]' },
         ].map(stat => (
           <div key={stat.label} className="rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] p-4 flex items-center gap-4">
             <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${stat.bg}`}>
@@ -157,21 +178,33 @@ export default function Admissions() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-2">
           {filtered.map(a => (
             <div key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)}
-              className={`rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 hover:shadow-md transition-all cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
+              className={`rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 hover:shadow-md transition-all cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''} ${a.inOt ? 'border-l-4 border-l-violet-500' : ''}`}>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0">
-                      <User className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-300" />
+                      <User className="w-5 h-5 text-slate-900 dark:text-slate-300" />
                     </div>
                     <div>
                       <p className="font-semibold text-sm text-slate-900 dark:text-white">{a.patientName}</p>
                       <p className="text-xs text-slate-500">MRN: {a.patientMrn}</p>
                     </div>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${TYPE_COLORS[a.admissionType]}`}>
-                    {a.admissionType}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${TYPE_COLORS[a.admissionType]}`}>
+                      {a.admissionType}
+                    </span>
+                    {a.inOt && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400 border border-violet-200 dark:border-violet-500/20 flex items-center gap-1">
+                        <Scissors className="w-3 h-3" /> In OT
+                      </span>
+                    )}
+                    {a.roomType === 'POST_OT' && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
+                        Recovery
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
                   <div className="flex items-center gap-2">
@@ -180,7 +213,7 @@ export default function Admissions() {
                   </div>
                   <div className="flex items-center gap-2">
                     <BedDouble className="w-3.5 h-3.5 shrink-0" />
-                    <span>{a.roomNumber ? `Room ${a.roomNumber} · ${a.roomType}` : 'Room not assigned'}</span>
+                    <span>{a.roomNumber ? roomLabel(a) : 'Room not assigned'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Stethoscope className="w-3.5 h-3.5 shrink-0" />
@@ -195,17 +228,30 @@ export default function Admissions() {
                 <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
                   <div className="text-right">
-                    {a.ipdId && <p className="text-xs font-mono font-bold text-slate-900 dark:text-white dark:text-slate-300">{a.ipdId}</p>}
+                    {a.ipdId && <p className="text-xs font-mono font-bold text-slate-900 dark:text-slate-300">{a.ipdId}</p>}
                     <p className="text-[10px] font-mono text-slate-400">{a.admissionNumber}</p>
                   </div>
                 </div>
               </div>
               {a.status === 'ADMITTED' && (
-                <div className="px-4 pb-4 flex gap-2" onClick={e => e.stopPropagation()}>
+                <div className="px-4 pb-4 flex gap-2 flex-wrap" onClick={e => e.stopPropagation()}>
                   <button onClick={() => setBillingTarget(a)}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/20 transition-colors">
-                    <Receipt className="w-3.5 h-3.5" /> View Billing
+                    <Receipt className="w-3.5 h-3.5" /> Bill
                   </button>
+                  {!a.inOt && a.roomType !== 'POST_OT' && (
+                    <button onClick={e => { e.stopPropagation(); setOtTarget(a) }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20 border border-violet-200 dark:border-violet-500/20 transition-colors">
+                      <Scissors className="w-3.5 h-3.5" /> Move to OT
+                    </button>
+                  )}
+                  {a.previousRoomId && (
+                    <button onClick={e => handleReturnToWard(a, e)} disabled={returningToWard === a.id}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/20 transition-colors disabled:opacity-50">
+                      {returningToWard === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                      Return to Ward
+                    </button>
+                  )}
                   <button onClick={() => setDischargeTarget(a)}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/20 transition-colors">
                     <LogOut className="w-3.5 h-3.5" /> Discharge
@@ -227,9 +273,9 @@ export default function Admissions() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
               {filtered.map(a => (
-                <tr key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''}`}>
+                <tr key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''} ${a.inOt ? 'border-l-4 border-l-violet-500' : ''}`}>
                   <td className="px-4 py-3">
-                    {a.ipdId && <p className="font-mono text-xs font-bold text-slate-900 dark:text-white dark:text-slate-300">{a.ipdId}</p>}
+                    {a.ipdId && <p className="font-mono text-xs font-bold text-slate-900 dark:text-slate-300">{a.ipdId}</p>}
                     <p className="font-mono text-[10px] text-slate-400">{a.admissionNumber}</p>
                   </td>
                   <td className="px-4 py-3">
@@ -237,7 +283,14 @@ export default function Admissions() {
                     <p className="text-xs text-slate-500">{a.patientMrn}</p>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{a.departmentName || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{a.roomNumber || <span className="text-amber-500 text-xs">Not assigned</span>}</td>
+                  <td className="px-4 py-3">
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{a.roomNumber || <span className="text-amber-500 text-xs">Not assigned</span>}</p>
+                    {a.inOt && (
+                      <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 flex items-center gap-1">
+                        <Scissors className="w-3 h-3" /> In OT
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{a.admittingDoctorName ? `Dr. ${a.admittingDoctorName}` : '—'}</td>
                   <td className="px-4 py-3 text-xs text-slate-500">{formatAdmissionDate(a.admissionDate)}</td>
                   <td className="px-4 py-3">
@@ -250,6 +303,19 @@ export default function Admissions() {
                           className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors">
                           <Receipt className="w-3.5 h-3.5" /> Bill
                         </button>
+                        {!a.inOt && a.roomType !== 'POST_OT' && (
+                          <button onClick={e => { e.stopPropagation(); setOtTarget(a) }}
+                            className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400 transition-colors">
+                            <Scissors className="w-3.5 h-3.5" /> OT
+                          </button>
+                        )}
+                        {a.previousRoomId && (
+                          <button onClick={e => handleReturnToWard(a, e)} disabled={returningToWard === a.id}
+                            className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 transition-colors disabled:opacity-50">
+                            {returningToWard === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                            Ward
+                          </button>
+                        )}
                         <button onClick={() => setDischargeTarget(a)}
                           className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 transition-colors">
                           <LogOut className="w-3.5 h-3.5" /> Discharge
@@ -277,15 +343,13 @@ export default function Admissions() {
           onDischarged={() => { setDischargeTarget(null); notify('Patient discharged', 'success'); load(statusFilter !== 'ADMITTED') }}
         />
       )}
-      {/* MoveToOTModal flow commented out
       {otTarget && (
         <MoveToOTModal
           admission={otTarget}
           onClose={() => setOtTarget(null)}
-          onMoved={() => { setOtTarget(null); load(false) }}
+          onMoved={() => { setOtTarget(null); notify(`${otTarget.patientName} moved to OT`, 'success'); load(false) }}
         />
       )}
-      */}
       {billingTarget && (
         <ViewBillingModal
           admission={billingTarget}

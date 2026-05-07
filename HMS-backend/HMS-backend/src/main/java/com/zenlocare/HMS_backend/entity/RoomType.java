@@ -5,5 +5,6 @@ public enum RoomType {
     ICU,
     PRIVATE,
     WARD,
-    OT
+    OT,
+    POST_OT
 }
