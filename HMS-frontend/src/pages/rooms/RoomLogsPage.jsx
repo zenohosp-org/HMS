@@ -74,7 +74,7 @@ function RoomLogsPage() {
     const s = debouncedSearch.toLowerCase();
     return l.roomNumber?.toLowerCase().includes(s) || l.patientName?.toLowerCase().includes(s) || l.patientMrn?.toLowerCase().includes(s) || l.attenderName?.toLowerCase().includes(s) || l.performedBy?.toLowerCase().includes(s);
   }) : logs;
-  return <div className="space-y-5">{
+  return <div className="flex flex-col h-full min-h-0 gap-5">{
     /* Page header */
   }<div className="flex items-center gap-4"><button
     onClick={() => navigate("/rooms")}
@@ -91,27 +91,39 @@ function RoomLogsPage() {
       autoFocus
     /></div>{
       /* Log table */
-    }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden">{
-      /* Column headers */
-    }<div className="hidden md:grid grid-cols-[2fr_2fr_2fr_1.5fr_1fr] gap-4 px-6 py-3 border-b border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0d0d0d]"><p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999]">Event</p><p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999]">Patient</p><p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999]">Attender</p><p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999]">Performed By</p><p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999] text-right">Time</p></div>{loading ? <div className="flex items-center justify-center py-20 text-slate-400"><Loader2 className="w-5 h-5 animate-spin" /></div> : filteredLogs.length === 0 ? <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-600 dark:text-[#999999]"><CalendarClock className="w-10 h-10 opacity-30" /><p className="text-sm">No log entries found</p>{search && <p className="text-xs">Try clearing the search filter</p>}</div> : <div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredLogs.map((log) => {
-      const meta = EVENT_META[log.event];
-      const Icon = meta.icon;
-      return <div
-        key={log.id}
-        className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors md:grid md:grid-cols-[2fr_2fr_2fr_1.5fr_1fr] md:gap-4 md:items-center space-y-2 md:space-y-0"
-      >{
-          /* Event + room */
-        }<div className="flex items-center gap-2 flex-wrap"><div className="w-7 h-7 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] flex items-center justify-center shrink-0"><Icon className="w-3.5 h-3.5 text-slate-500 dark:text-[#888888]" /></div><div><span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${meta.cls}`}>{meta.label}</span><p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] mt-1">{log.roomNumber}{log.allocationToken && <span className="ml-2 text-slate-900 dark:text-white dark:text-slate-300 font-semibold">
-          #{log.allocationToken}</span>}</p></div></div>{
-          /* Patient */
-        }<div>{log.patientName ? <div className="flex items-start gap-1.5"><User className="w-3.5 h-3.5 text-slate-600 dark:text-[#999999] shrink-0 mt-0.5" /><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{log.patientName}</p>{log.patientMrn && <p className="text-xs text-slate-600 dark:text-[#999999]">{log.patientMrn}</p>}</div></div> : <p className="text-xs text-slate-300 dark:text-[#444444]">—</p>}</div>{
-          /* Attender */
-        }<div>{log.attenderName ? <div className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-slate-600 dark:text-[#999999] shrink-0" /><p className="text-sm text-slate-700 dark:text-[#cccccc]">{log.attenderName}</p></div> : <p className="text-xs text-slate-300 dark:text-[#444444]">—</p>}</div>{
-          /* Performed by */
-        }<div>{log.performedBy ? <p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">{log.performedBy}</p> : <p className="text-xs text-slate-300 dark:text-[#444444]">—</p>}</div>{
-          /* Time */
-        }<div className="md:text-right"><p className="text-xs font-medium text-slate-500 dark:text-[#888888]" title={formatFull(log.createdAt)}>{formatRelative(log.createdAt)}</p><p className="text-[10px] text-slate-600 dark:text-[#999999] mt-0.5">{formatFull(log.createdAt)}</p></div></div>;
-    })}</div>}</div></div>;
+    }<div className="flex-1 min-h-0 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden flex flex-col">
+      <div className="flex-1 overflow-auto">
+        {/* Column headers */}
+        <div className="sticky top-0 z-10 hidden md:grid grid-cols-[2fr_2fr_2fr_1.5fr_1fr] gap-4 px-6 py-3 border-b border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0d0d0d]">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999]">Event</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999]">Patient</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999]">Attender</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999]">Performed By</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999] text-right">Time</p>
+        </div>
+        {loading ? <div className="flex items-center justify-center py-20 text-slate-400">
+          <Loader2 className="w-5 h-5 animate-spin" />
+        </div> : filteredLogs.length === 0 ? <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-600 dark:text-[#999999]">
+          <CalendarClock className="w-10 h-10 opacity-30" />
+          <p className="text-sm">No log entries found</p>{search && <p className="text-xs">Try clearing the search filter</p>}</div> : <div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredLogs.map((log) => {
+            const meta = EVENT_META[log.event];
+            const Icon = meta.icon;
+            return <div
+              key={log.id}
+              className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors md:grid md:grid-cols-[2fr_2fr_2fr_1.5fr_1fr] md:gap-4 md:items-center space-y-2 md:space-y-0"
+            >{
+                /* Event + room */
+              }<div className="flex items-center gap-2 flex-wrap"><div className="w-7 h-7 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] flex items-center justify-center shrink-0"><Icon className="w-3.5 h-3.5 text-slate-500 dark:text-[#888888]" /></div><div><span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${meta.cls}`}>{meta.label}</span><p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] mt-1">{log.roomNumber}{log.allocationToken && <span className="ml-2 text-slate-900 dark:text-white dark:text-slate-300 font-semibold">
+                #{log.allocationToken}</span>}</p></div></div>{
+                /* Patient */
+              }<div>{log.patientName ? <div className="flex items-start gap-1.5"><User className="w-3.5 h-3.5 text-slate-600 dark:text-[#999999] shrink-0 mt-0.5" /><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{log.patientName}</p>{log.patientMrn && <p className="text-xs text-slate-600 dark:text-[#999999]">{log.patientMrn}</p>}</div></div> : <p className="text-xs text-slate-300 dark:text-[#444444]">—</p>}</div>{
+                /* Attender */
+              }<div>{log.attenderName ? <div className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-slate-600 dark:text-[#999999] shrink-0" /><p className="text-sm text-slate-700 dark:text-[#cccccc]">{log.attenderName}</p></div> : <p className="text-xs text-slate-300 dark:text-[#444444]">—</p>}</div>{
+                /* Performed by */
+              }<div>{log.performedBy ? <p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">{log.performedBy}</p> : <p className="text-xs text-slate-300 dark:text-[#444444]">—</p>}</div>{
+                /* Time */
+              }<div className="md:text-right"><p className="text-xs font-medium text-slate-500 dark:text-[#888888]" title={formatFull(log.createdAt)}>{formatRelative(log.createdAt)}</p><p className="text-[10px] text-slate-600 dark:text-[#999999] mt-0.5">{formatFull(log.createdAt)}</p></div></div>;
+          })}</div>}</div></div></div>;
 }
 export {
   RoomLogsPage as default

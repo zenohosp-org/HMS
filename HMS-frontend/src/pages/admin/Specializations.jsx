@@ -97,33 +97,45 @@ function Specializations() {
         onApply={setActiveFilters}
       /></div></div></div>{
       /* Main Content Table */
-    }<div className="flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden flex flex-col"><div className="overflow-x-auto flex-1"><table className="w-full text-left border-collapse"><thead><tr className="border-b border-slate-100 dark:border-[#1a1a1a] bg-slate-50/30 dark:bg-[#0f0f0f]"><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Specialization</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Created Date</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">No of Doctor</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Status</th><th className="px-6 py-4" /></tr></thead><tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{isLoading ? <tr><td colSpan={5} className="py-20 text-center"><div className="flex flex-col items-center gap-3"><Loader2 className="w-8 h-8 animate-spin text-slate-900 dark:text-white" /><p className="text-sm font-medium text-slate-400">Loading specializations...</p></div></td></tr> : filteredSpecs.length === 0 ? <tr><td colSpan={5} className="py-20 text-center"><div className="flex flex-col items-center gap-3"><div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-[#0f0f0f] flex items-center justify-center"><Stethoscope className="w-8 h-8 text-slate-200 dark:text-slate-800" /></div><p className="text-sm font-medium text-slate-400">No specializations found.</p></div></td></tr> : filteredSpecs.map((spec) => <tr key={spec.id} className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all"><td className="px-6 py-4"><div className="flex items-center gap-4"><div className="w-11 h-11 rounded-full bg-slate-100 dark:bg-[#222222] flex items-center justify-center shrink-0"><Stethoscope className="w-5 h-5 text-slate-500 dark:text-slate-400" /></div><div><p className="font-bold text-slate-900 dark:text-white text-[15px]">{spec.name}</p>{spec.description && <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5 line-clamp-1 max-w-[200px]">{spec.description}</p>}</div></div></td><td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">{format(parseISO(spec.createdAt), "dd MMM yyyy")}</td><td className="px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-300">{spec.noOfDoctor}</td><td className="px-6 py-4"><button
-      onClick={() => toggleStatus(spec)}
-      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${spec.isActive ? "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30" : "bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800/30"}`}
-    >{spec.isActive ? "Active" : "Inactive"}</button></td><td className="px-6 py-4 text-right relative"><button
-      onClick={() => setActiveMenuId(activeMenuId === spec.id ? null : spec.id)}
-      className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
-    ><MoreHorizontal className="w-5 h-5" /></button>{activeMenuId === spec.id && <><div
-      className="fixed inset-0 z-10"
-      onClick={() => setActiveMenuId(null)}
-    /><div className="absolute right-6 top-14 w-44 bg-white dark:bg-[#1a1a1a] rounded-lg shadow-xl border border-slate-100 dark:border-[#252525] z-20 py-1.5 animate-in slide-in-from-top-2 duration-150"><button
-      onClick={() => {
-        setEditingSpec(spec);
-        setIsModalOpen(true);
-        setActiveMenuId(null);
-      }}
-      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-[#cccccc] hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
-    ><Edit className="w-4 h-4" />
-      Edit details
-    </button><div className="h-px bg-slate-50 dark:bg-[#252525] my-1" /><button
-      onClick={() => {
-        handleDelete(spec.id);
-        setActiveMenuId(null);
-      }}
-      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
-    ><Trash2 className="w-4 h-4" />
-          Delete
-        </button></div></>}</td></tr>)}</tbody></table></div></div><AddSpecializationModal
+    }<div className="flex-1 min-h-0 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden flex flex-col"><div className="flex-1 overflow-auto"><table className="w-full text-left border-collapse">
+      <thead className="sticky top-0 z-10 bg-white dark:bg-[#111111]">
+        <tr className="border-b border-slate-100 dark:border-[#1a1a1a] bg-slate-50/30 dark:bg-[#0f0f0f]">
+          <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Specialization</th>
+          <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Created Date</th>
+          <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">No of Doctor</th>
+          <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Status</th>
+          <th className="px-6 py-4" />
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
+        {isLoading ? <tr><td colSpan={5} className="py-20 text-center">
+          <div className="flex flex-col items-center gap-3"><Loader2 className="w-8 h-8 animate-spin text-slate-900 dark:text-white" /><p className="text-sm font-medium text-slate-400">Loading specializations...</p></div></td></tr> : filteredSpecs.length === 0 ? <tr><td colSpan={5} className="py-20 text-center"><div className="flex flex-col items-center gap-3"><div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-[#0f0f0f] flex items-center justify-center"><Stethoscope className="w-8 h-8 text-slate-200 dark:text-slate-800" /></div><p className="text-sm font-medium text-slate-400">No specializations found.</p></div></td></tr> : filteredSpecs.map((spec) => <tr key={spec.id} className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all"><td className="px-6 py-4"><div className="flex items-center gap-4"><div className="w-11 h-11 rounded-full bg-slate-100 dark:bg-[#222222] flex items-center justify-center shrink-0"><Stethoscope className="w-5 h-5 text-slate-500 dark:text-slate-400" /></div><div><p className="font-bold text-slate-900 dark:text-white text-[15px]">{spec.name}</p>{spec.description && <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5 line-clamp-1 max-w-[200px]">{spec.description}</p>}</div></div></td><td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">{format(parseISO(spec.createdAt), "dd MMM yyyy")}</td><td className="px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-300">{spec.noOfDoctor}</td><td className="px-6 py-4"><button
+            onClick={() => toggleStatus(spec)}
+            className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${spec.isActive ? "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30" : "bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800/30"}`}
+          >{spec.isActive ? "Active" : "Inactive"}</button></td><td className="px-6 py-4 text-right relative"><button
+            onClick={() => setActiveMenuId(activeMenuId === spec.id ? null : spec.id)}
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
+          ><MoreHorizontal className="w-5 h-5" /></button>{activeMenuId === spec.id && <><div
+            className="fixed inset-0 z-10"
+            onClick={() => setActiveMenuId(null)}
+          /><div className="absolute right-6 top-14 w-44 bg-white dark:bg-[#1a1a1a] rounded-lg shadow-xl border border-slate-100 dark:border-[#252525] z-20 py-1.5 animate-in slide-in-from-top-2 duration-150"><button
+            onClick={() => {
+              setEditingSpec(spec);
+              setIsModalOpen(true);
+              setActiveMenuId(null);
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-[#cccccc] hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
+          ><Edit className="w-4 h-4" />
+            Edit details
+          </button><div className="h-px bg-slate-50 dark:bg-[#252525] my-1" /><button
+            onClick={() => {
+              handleDelete(spec.id);
+              setActiveMenuId(null);
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
+          ><Trash2 className="w-4 h-4" />
+                Delete
+              </button></div></>}</td></tr>)}</tbody></table></div></div><AddSpecializationModal
       isOpen={isModalOpen}
       onClose={() => {
         setIsModalOpen(false);

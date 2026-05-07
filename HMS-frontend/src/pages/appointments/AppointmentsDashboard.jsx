@@ -250,20 +250,66 @@ function AppointmentsDashboard() {
     const index = doctors.findIndex((d) => d.id === doctorId);
     return APPT_COLORS[(index >= 0 ? index : 0) % APPT_COLORS.length];
   };
-  const renderListView = () => <div className="bg-white dark:bg-[#111111] rounded-lg shadow-sm overflow-hidden flex flex-col flex-1"><div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-[#222222]"><h3 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">All Appointments</h3><div className="flex gap-2"><div className="relative"><select
-    value={selectedDoctorId}
-    onChange={(e) => setSelectedDoctorId(e.target.value)}
-    className="appearance-none bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] text-slate-700 dark:text-slate-300 text-sm font-medium py-2 pl-4 pr-10 rounded-lg outline-none focus:ring-2 focus:ring-slate-300/50 transition-all cursor-pointer"
-  ><option value="all">All Doctors</option>{doctors.map((d) => <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>)}</select><Filter className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" /></div></div></div><div className="flex flex-col flex-1 overflow-hidden"><div className="overflow-x-auto flex-1"><table className="w-full text-left border-collapse"><thead><tr className="border-b border-slate-200 dark:border-[#222222] bg-slate-50/50 dark:bg-[#0f0f0f]"><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Patient</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Doctor</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Date &amp; Time</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Status</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Type</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredAppointments.length === 0 ? <tr><td colSpan={6} className="py-12 text-center text-slate-500 dark:text-[#888888]"><CalendarIcon className="w-8 h-8 mx-auto mb-3 opacity-50" />
-    No appointments found for the selected filters.
-  </td></tr> : filteredAppointments.slice((apptPage - 1) * APPT_PAGE_SIZE, apptPage * APPT_PAGE_SIZE).map((appt) => <tr key={appt.id} className="hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors group"><td className="py-3 px-5"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#222222] text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-sm shrink-0">{appt.patientName.charAt(0)}</div><div><p className="font-semibold text-sm text-slate-900 dark:text-white">{appt.patientName}</p>{appt.checkupBookingId && <button onClick={() => navigate(`/checkups/bookings/${appt.checkupBookingId}`)} className="flex items-center gap-1 mt-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"><HeartPulse className="w-3 h-3" />{appt.checkupBookingNumber}</button>}</div></div></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">
-    Dr. {appt.doctorName}</td><td className="py-3 px-5"><p className="text-sm font-medium text-slate-900 dark:text-white">{format(parseISO(appt.apptDate), "yyyy-MM-dd")}</p><p className="text-xs text-slate-500 dark:text-[#888888] mt-0.5">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p></td><td className="py-3 px-5"><span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide ${STATUS_STYLES[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">{TYPE_LABEL[appt.type] ?? appt.type}</td><td className="py-3 px-5"><div className="flex items-center gap-2"><ActionMenu appt={appt} onUpdate={handleStatusUpdate} onAdmit={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), mrn: appt.patientMrn }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })} onViewPatientDetails={() => navigate(`/patients/${appt.patientId}`)} /></div></td></tr>)}</tbody></table></div><div className="px-5 pb-4"><Pagination
-      currentPage={apptPage}
-      totalPages={Math.ceil(filteredAppointments.length / APPT_PAGE_SIZE)}
-      totalItems={filteredAppointments.length}
-      pageSize={APPT_PAGE_SIZE}
-      onPageChange={setApptPage}
-    /></div></div></div>;
+  const renderListView = () => <div className="flex-1 min-h-0 bg-white dark:bg-[#111111] rounded-lg shadow-sm overflow-hidden flex flex-col">
+    <div className="flex items-center justify-between py-5 border-b border-slate-200 dark:border-[#222222]">
+      {viewMode === "list" && <div className="flex gap-2 overflow-x-auto minimal-scrollbar pb-1">{["all", "upcoming", "today", "completed", "cancelled"].map((f) =>
+        <button
+          key={f}
+          onClick={() => setListFilter(f)}
+          className={`px-4 py-2 text-sm font-semibold rounded-lg capitalize transition-all ${listFilter === f ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-md" : "text-slate-600 dark:text-[#888888] hover:bg-slate-100 dark:hover:bg-[#222222]"}`}
+        >{f === "all" ? "All Appointments" : f}</button>)}</div>}
+      <div className="flex items-center gap-3">
+
+        <button
+          onClick={() => setViewMode(viewMode === "list" ? "calendar" : "list")}
+          className="btn-secondary h-10 min-w-[160px] flex items-center justify-center gap-2"
+        >
+          <CalendarIcon className="w-4 h-4" />
+          {viewMode === "list" ? "Calendar View" : "List View"}
+        </button>
+        <div className="relative">
+          <select
+            value={selectedDoctorId}
+            onChange={(e) => setSelectedDoctorId(e.target.value)}
+            className="appearance-none h-10 min-w-[160px] bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] text-slate-700 dark:text-slate-300 text-sm font-medium px-4 rounded-lg outline-none focus:ring-2 focus:ring-slate-300/50 transition-all cursor-pointer"
+          >
+            <option value="all">All Doctors</option>
+
+            {doctors.map((d) => (
+              <option key={d.id} value={d.id}>
+                Dr. {d.firstName} {d.lastName}
+              </option>
+            ))}
+          </select>
+
+          <Filter className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
+
+      </div>
+    </div>
+    <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex-1 overflow-auto">
+        <table className="w-full text-left border-collapse">
+          <thead className="sticky top-0 z-10 bg-white dark:bg-[#111111]"><tr className="border-b border-slate-200 dark:border-[#222222] bg-slate-50/50 dark:bg-[#0f0f0f]">
+            <th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Patient</th>
+            <th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Doctor</th>
+            <th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Date &amp; Time</th>
+            <th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Status</th>
+            <th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Type</th>
+            <th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Actions</th>
+          </tr></thead><tbody className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredAppointments.length === 0 ? <tr>
+            <td colSpan={6} className="py-12 text-center text-slate-500 dark:text-[#888888]">
+              <CalendarIcon className="w-8 h-8 mx-auto mb-3 opacity-50" />
+              No appointments found for the selected filters.
+            </td>
+          </tr> : filteredAppointments.slice((apptPage - 1) * APPT_PAGE_SIZE, apptPage * APPT_PAGE_SIZE).map((appt) => <tr key={appt.id} className="hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors group"><td className="py-3 px-5"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#222222] text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-sm shrink-0">{appt.patientName.charAt(0)}</div><div><p className="font-semibold text-sm text-slate-900 dark:text-white">{appt.patientName}</p>{appt.checkupBookingId && <button onClick={() => navigate(`/checkups/bookings/${appt.checkupBookingId}`)} className="flex items-center gap-1 mt-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"><HeartPulse className="w-3 h-3" />{appt.checkupBookingNumber}</button>}</div></div></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">
+            Dr. {appt.doctorName}</td><td className="py-3 px-5"><p className="text-sm font-medium text-slate-900 dark:text-white">{format(parseISO(appt.apptDate), "yyyy-MM-dd")}</p><p className="text-xs text-slate-500 dark:text-[#888888] mt-0.5">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p></td><td className="py-3 px-5"><span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide ${STATUS_STYLES[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">{TYPE_LABEL[appt.type] ?? appt.type}</td><td className="py-3 px-5"><div className="flex items-center gap-2"><ActionMenu appt={appt} onUpdate={handleStatusUpdate} onAdmit={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), mrn: appt.patientMrn }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })} onViewPatientDetails={() => navigate(`/patients/${appt.patientId}`)} /></div></td></tr>)}</tbody></table></div><div className="px-5 pb-4"><Pagination
+              currentPage={apptPage}
+              totalPages={Math.ceil(filteredAppointments.length / APPT_PAGE_SIZE)}
+              totalItems={filteredAppointments.length}
+              pageSize={APPT_PAGE_SIZE}
+              onPageChange={setApptPage}
+            /></div></div></div>;
   const renderWeekView = () => {
     const startDate = startOfWeek(currentDate);
     const days = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
@@ -305,23 +351,28 @@ function AppointmentsDashboard() {
     }
     return <div className="flex-1 flex flex-col bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] overflow-hidden"><div className="grid grid-cols-7 border-b border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a]">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => <div key={d} className="py-3 text-center text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider border-r last:border-0 border-slate-200 dark:border-[#222222]">{d}</div>)}</div><div className="flex-1 overflow-y-auto minimal-scrollbar">{rows}</div></div>;
   };
-  return <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505]">{
+  return <div className="flex flex-col h-full bg-white dark:bg-[#050505]">{
     /* Header */
-  }<header className="flex-none py-5 bg-white dark:bg-[#111111] border-b border-slate-200 dark:border-[#222222]"><div className="flex items-center justify-between mb-0"><div><h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-400 tracking-tight">{viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}</h1><p className="text-sm text-slate-500 dark:text-[#888888] mt-1 font-medium">{viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}</p></div><div className="flex items-center gap-3"><button
-    onClick={() => setViewMode(viewMode === "list" ? "calendar" : "list")}
-    className="btn-secondary"
-  ><CalendarIcon className="w-4 h-4" />{viewMode === "list" ? "Calendar View" : "List View"}</button><button
-    onClick={() => setIsBookingModalOpen(true)}
-    className="btn-primary"
-  ><Plus className="w-4 h-4" />
-      New Appointment
-    </button></div></div>{viewMode === "list" && <div className="flex gap-2 mt-6 overflow-x-auto minimal-scrollbar pb-1">{["all", "upcoming", "today", "completed", "cancelled"].map((f) => <button
-      key={f}
-      onClick={() => setListFilter(f)}
-      className={`px-4 py-2 text-sm font-semibold rounded-lg capitalize transition-all ${listFilter === f ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-md" : "text-slate-600 dark:text-[#888888] hover:bg-slate-100 dark:hover:bg-[#222222]"}`}
-    >{f === "all" ? "All Appointments" : f}</button>)}</div>}</header>{
+  }<header className="flex-none bg-white dark:bg-[#111111]">
+      <div className="flex items-center justify-between mb-0">
+        <div>
+          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-400 tracking-tight">
+            {viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}</h1>
+          <p className="text-sm text-slate-500 dark:text-[#888888] mt-1 font-medium">
+            {viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsBookingModalOpen(true)}
+            className="btn-primary"
+          ><Plus className="w-4 h-4" />
+            New Appointment
+          </button>
+        </div>
+      </div>
+    </header>{
       /* Content Area */
-    }<div className="flex-1 overflow-hidden flex flex-col gap-6">{viewMode === "calendar" && <div className="flex items-center justify-between pb-2"><div className="flex items-center bg-white dark:bg-[#111111] rounded-lg p-1 shadow-sm border border-slate-200 dark:border-[#333333]">{["day", "week", "month"].map((v) => <button
+    }<div className="flex-1 overflow-hidden flex flex-col gap-6">{viewMode === "calendar" && <div className="flex items-center py-6 justify-between"><div className="flex items-center bg-white dark:bg-[#111111] rounded-lg p-1 shadow-sm border border-slate-200 dark:border-[#333333]">{["day", "week", "month"].map((v) => <button
       key={v}
       onClick={() => setCalendarView(v)}
       className={`px-4 py-1.5 text-sm font-semibold rounded-lg capitalize transition-all ${calendarView === v ? "bg-white dark:bg-white dark:text-slate-950 text-slate-950 shadow-md" : "text-slate-500 dark:text-[#888888] hover:text-slate-700 dark:hover:text-[#cccccc]"}`}

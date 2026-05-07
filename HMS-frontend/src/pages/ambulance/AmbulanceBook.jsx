@@ -476,10 +476,6 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
             {vehicles.length} vehicles
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowTypeModal(true)} className="btn-secondary text-sm">+ Add Type</button>
-          <button onClick={() => { setEditVehicle(null); setShowModal(true); }} className="btn-primary text-sm">+ Add Vehicle</button>
-        </div>
       </div>
 
       <div className="relative">
@@ -867,13 +863,39 @@ export default function AmbulanceBook() {
   return (
     <div className="flex flex-col h-full bg-white dark:bg-[#050505] gap-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shadow-lg">
-          <Ambulance className="w-5 h-5 text-white dark:text-slate-900" />
+      <div className="flex items-center justify-between">
+        {/* Left Side */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shadow-lg">
+            <Ambulance className="w-5 h-5 text-white dark:text-slate-900" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Ambulance
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-[#999999]">
+              Manage fleet and dispatch bookings
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Ambulance</h1>
-          <p className="text-sm text-slate-600 dark:text-[#999999]">Manage fleet and dispatch bookings</p>
+        {/*Right Side*/}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowTypeModal(true)}
+            className="btn-secondary text-sm"
+          >
+            + Add Type
+          </button>
+
+          <button
+            onClick={() => {
+              setEditVehicle(null);
+              setShowModal(true);
+            }}
+            className="btn-primary text-sm"
+          >
+            + Add Vehicle
+          </button>
         </div>
       </div>
 
