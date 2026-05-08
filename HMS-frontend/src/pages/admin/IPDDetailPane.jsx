@@ -59,6 +59,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
   const [logs, setLogs] = useState([])
   const [assets, setAssets] = useState([])
   const [billingItems, setBillingItems] = useState([])
+  const [otInvoices, setOtInvoices] = useState([])
   const [loadingLogs, setLoadingLogs] = useState(true)
   const [loadingAssets, setLoadingAssets] = useState(false)
   const [loadingBilling, setLoadingBilling] = useState(false)
@@ -264,6 +265,19 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     } catch {}
 
     setBillingItems(items)
+
+    // OT invoices — generated at OT completion time
+    const otInvData = await otApi.get('/api/ot/invoices')
+      .then(res => {
+        const all = Array.isArray(res.data) ? res.data : (res.data?.content ?? [])
+        return all.filter(inv =>
+          String(inv.patientId) === String(admission.patientId) ||
+          String(inv.admissionId) === String(admission.id)
+        )
+      })
+      .catch(() => [])
+    setOtInvoices(otInvData)
+
     setBillingFetched(true)
     setLoadingBilling(false)
   }, [admission?.id, user?.hospitalId])
@@ -274,6 +288,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     setLogs([])
     setAssets([])
     setBillingItems([])
+    setOtInvoices([])
     setAssetsFetched(false)
     setBillingFetched(false)
     fetchLogs()
@@ -641,6 +656,62 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                       <p className="text-[11px] text-amber-700 dark:text-amber-300">
                         Some items show ₹0 — add them in Settings → Packages.
                       </p>
+                    </div>
+                  )}
+
+                  {/* OT Invoices */}
+                  {otInvoices.length > 0 && (
+                    <div className="pt-2">
+                      <div className="mb-3">
+                        <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">OT Invoices</p>
+                        <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5">Finalized at time of OT procedure completion</p>
+                      </div>
+                      <div className="space-y-3">
+                        {otInvoices.map(inv => {
+                          const isPaid = inv.status === 'PAID' || inv.paymentStatus === 'PAID'
+                          const invTotal = inv.totalAmount ?? inv.total ?? inv.amount ?? 0
+                          const invItems = Array.isArray(inv.items) ? inv.items : (Array.isArray(inv.lineItems) ? inv.lineItems : [])
+                          return (
+                            <div key={inv.id} className="rounded-lg border border-violet-100 dark:border-violet-500/20 overflow-hidden">
+                              {/* Invoice header */}
+                              <div className="flex items-center justify-between px-4 py-2.5 bg-violet-50 dark:bg-violet-500/5 border-b border-violet-100 dark:border-violet-500/20">
+                                <div>
+                                  <p className="text-xs font-bold text-violet-700 dark:text-violet-400 font-mono">{inv.invoiceNumber || inv.invoiceId || inv.id}</p>
+                                  <p className="text-[10px] text-slate-400 mt-0.5">{fmtDate(inv.createdAt || inv.invoiceDate || inv.date)}</p>
+                                </div>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                  isPaid
+                                    ? 'text-emerald-700 border-emerald-200 bg-emerald-50 dark:text-emerald-400 dark:border-emerald-500/20 dark:bg-emerald-500/5'
+                                    : 'text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-500/20 dark:bg-amber-500/5'
+                                }`}>{isPaid ? 'PAID' : 'UNPAID'}</span>
+                              </div>
+
+                              {/* Line items */}
+                              {invItems.length > 0 && (
+                                <div className="divide-y divide-slate-50 dark:divide-[#141414]">
+                                  {invItems.map((item, i) => (
+                                    <div key={i} className="grid grid-cols-12 gap-2 items-center px-4 py-2 bg-white dark:bg-[#111]">
+                                      <div className="col-span-6 text-xs text-slate-600 dark:text-[#bbb] truncate" title={item.description || item.name}>
+                                        {item.description || item.name || '—'}
+                                      </div>
+                                      <div className="col-span-2 text-xs text-slate-400 text-center tabular-nums">×{item.quantity ?? 1}</div>
+                                      <div className="col-span-4 text-xs font-semibold text-slate-700 dark:text-[#ccc] text-right tabular-nums">
+                                        {fmtMoney(item.totalPrice ?? item.amount ?? item.unitPrice ?? 0)}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Invoice total */}
+                              <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#0a0a0a] flex justify-between items-center border-t border-slate-100 dark:border-[#1e1e1e]">
+                                <span className="text-xs font-bold text-slate-500 dark:text-[#888]">Invoice Total</span>
+                                <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">{fmtMoney(invTotal)}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
                   )}
 
