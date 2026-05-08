@@ -3,12 +3,12 @@ package com.zenlocare.HMS_backend.controller;
 import com.zenlocare.HMS_backend.dto.AdmissionDTO;
 import com.zenlocare.HMS_backend.dto.AdmissionRequest;
 import com.zenlocare.HMS_backend.dto.DischargeRequest;
+import com.zenlocare.HMS_backend.entity.User;
 import com.zenlocare.HMS_backend.service.AdmissionService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
@@ -39,50 +39,49 @@ public class AdmissionController {
     }
 
     @PostMapping
-    public ResponseEntity<AdmissionDTO> admit(@RequestBody AdmissionRequest req,
-                                               @AuthenticationPrincipal UserDetails user) {
-        String performedBy = user != null ? user.getUsername() : "system";
-        return ResponseEntity.ok(admissionService.admit(req, performedBy));
+    public ResponseEntity<AdmissionDTO> admit(@RequestBody AdmissionRequest req, Authentication auth) {
+        return ResponseEntity.ok(admissionService.admit(req, resolveFullName(auth)));
     }
 
     @PatchMapping("/{id}/assign-room")
     public ResponseEntity<AdmissionDTO> assignRoom(@PathVariable UUID id,
                                                     @RequestBody RoomAssignRequest req,
-                                                    @AuthenticationPrincipal UserDetails user) {
-        String performedBy = user != null ? user.getUsername() : "system";
-        return ResponseEntity.ok(admissionService.assignRoom(id, req.getRoomId(), performedBy));
+                                                    Authentication auth) {
+        return ResponseEntity.ok(admissionService.assignRoom(id, req.getRoomId(), resolveFullName(auth)));
     }
 
     @PatchMapping("/{id}/discharge")
     public ResponseEntity<AdmissionDTO> discharge(@PathVariable UUID id,
                                                    @RequestBody DischargeRequest req,
-                                                   @AuthenticationPrincipal UserDetails user) {
-        String performedBy = user != null ? user.getUsername() : "system";
-        return ResponseEntity.ok(admissionService.discharge(id, req, performedBy));
+                                                   Authentication auth) {
+        return ResponseEntity.ok(admissionService.discharge(id, req, resolveFullName(auth)));
     }
 
     @PatchMapping("/{id}/move-to-ot")
     public ResponseEntity<AdmissionDTO> moveToOT(@PathVariable UUID id,
                                                   @RequestBody MoveToOTRequest req,
-                                                  @AuthenticationPrincipal UserDetails user) {
-        String performedBy = user != null ? user.getUsername() : "system";
-        return ResponseEntity.ok(admissionService.moveToOT(id, req.getRoomId(), req.getDoctorId(), req.getOtBookingId(), performedBy));
+                                                  Authentication auth) {
+        return ResponseEntity.ok(admissionService.moveToOT(id, req.getRoomId(), req.getDoctorId(), req.getOtBookingId(), resolveFullName(auth)));
     }
 
     @PatchMapping("/{id}/return-from-ot")
     public ResponseEntity<AdmissionDTO> returnFromOT(@PathVariable UUID id,
                                                       @RequestBody(required = false) ReturnFromOTRequest req,
-                                                      @AuthenticationPrincipal UserDetails user) {
-        String performedBy = user != null ? user.getUsername() : "system";
+                                                      Authentication auth) {
         Long postOtRoomId = req != null ? req.getPostOtRoomId() : null;
-        return ResponseEntity.ok(admissionService.returnFromOT(id, postOtRoomId, performedBy));
+        return ResponseEntity.ok(admissionService.returnFromOT(id, postOtRoomId, resolveFullName(auth)));
     }
 
     @PatchMapping("/{id}/return-to-ward")
-    public ResponseEntity<AdmissionDTO> returnToWard(@PathVariable UUID id,
-                                                      @AuthenticationPrincipal UserDetails user) {
-        String performedBy = user != null ? user.getUsername() : "system";
-        return ResponseEntity.ok(admissionService.returnToWard(id, performedBy));
+    public ResponseEntity<AdmissionDTO> returnToWard(@PathVariable UUID id, Authentication auth) {
+        return ResponseEntity.ok(admissionService.returnToWard(id, resolveFullName(auth)));
+    }
+
+    private String resolveFullName(Authentication auth) {
+        if (auth != null && auth.getPrincipal() instanceof User user) {
+            return user.getFirstName() + " " + user.getLastName();
+        }
+        return "Unknown";
     }
 
     @Data
