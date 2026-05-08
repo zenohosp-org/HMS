@@ -233,31 +233,6 @@ export default function Admissions() {
                   </div>
                 </div>
               </div>
-              {a.status === 'ADMITTED' && (
-                <div className="px-4 pb-4 flex gap-2 flex-wrap" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => setBillingTarget(a)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/20 transition-colors">
-                    <Receipt className="w-3.5 h-3.5" /> Bill
-                  </button>
-                  {!a.inOt && a.roomType !== 'POST_OT' && (
-                    <button onClick={e => { e.stopPropagation(); setOtTarget(a) }}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20 border border-violet-200 dark:border-violet-500/20 transition-colors">
-                      <Scissors className="w-3.5 h-3.5" /> Move to OT
-                    </button>
-                  )}
-                  {a.previousRoomId && (
-                    <button onClick={e => handleReturnToWard(a, e)} disabled={returningToWard === a.id}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/20 transition-colors disabled:opacity-50">
-                      {returningToWard === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
-                      Return to Ward
-                    </button>
-                  )}
-                  <button onClick={() => setDischargeTarget(a)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/20 transition-colors">
-                    <LogOut className="w-3.5 h-3.5" /> Discharge
-                  </button>
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -266,7 +241,7 @@ export default function Admissions() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
-                {['Adm. No.', 'Patient', 'Department', 'Room', 'Doctor', 'Admitted', 'Status', ''].map(h => (
+                {['Adm. No.', 'Patient', 'Department', 'Room', 'Doctor', 'Admitted', 'Status'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -295,33 +270,6 @@ export default function Admissions() {
                   <td className="px-4 py-3 text-xs text-slate-500">{formatAdmissionDate(a.admissionDate)}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
-                  </td>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    {a.status === 'ADMITTED' && (
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setBillingTarget(a)}
-                          className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors">
-                          <Receipt className="w-3.5 h-3.5" /> Bill
-                        </button>
-                        {!a.inOt && a.roomType !== 'POST_OT' && (
-                          <button onClick={e => { e.stopPropagation(); setOtTarget(a) }}
-                            className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400 transition-colors">
-                            <Scissors className="w-3.5 h-3.5" /> OT
-                          </button>
-                        )}
-                        {a.previousRoomId && (
-                          <button onClick={e => handleReturnToWard(a, e)} disabled={returningToWard === a.id}
-                            className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 transition-colors disabled:opacity-50">
-                            {returningToWard === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
-                            Ward
-                          </button>
-                        )}
-                        <button onClick={() => setDischargeTarget(a)}
-                          className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 transition-colors">
-                          <LogOut className="w-3.5 h-3.5" /> Discharge
-                        </button>
-                      </div>
-                    )}
                   </td>
                 </tr>
               ))}
