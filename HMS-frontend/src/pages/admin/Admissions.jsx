@@ -2,11 +2,11 @@ import { useEffect, useState, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { admissionApi } from '@/utils/api'
-import { useNavigate } from 'react-router-dom'
 import AdmitPatientModal from './AdmitPatientModal'
 import DischargeModal from './DischargeModal'
 import MoveToOTModal from './MoveToOTModal'
 import ViewBillingModal from './ViewBillingModal'
+import IPDDetailPane from './IPDDetailPane'
 import {
   BedDouble, Plus, Search, LogOut, User, Building2,
   Stethoscope, Clock, CheckCircle2, List, LayoutGrid,
@@ -31,7 +31,6 @@ const TYPE_COLORS = {
 export default function Admissions() {
   const { user } = useAuth()
   const { notify } = useNotification()
-  const navigate = useNavigate()
   const [admissions, setAdmissions] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -42,6 +41,7 @@ export default function Admissions() {
   const [otTarget, setOtTarget] = useState(null)
   const [billingTarget, setBillingTarget] = useState(null)
   const [returningToWard, setReturningToWard] = useState(null)
+  const [selectedAdmission, setSelectedAdmission] = useState(null)
 
   const load = async (all = statusFilter !== 'ADMITTED') => {
     if (!user?.hospitalId) return
@@ -177,7 +177,7 @@ export default function Admissions() {
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-2">
           {filtered.map(a => (
-            <div key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)}
+            <div key={a.id} onClick={() => setSelectedAdmission(a)}
               className={`rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 hover:shadow-md transition-all cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''} ${a.inOt ? 'border-l-4 border-l-violet-500' : ''}`}>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2 mb-3">
@@ -273,7 +273,7 @@ export default function Admissions() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
               {filtered.map(a => (
-                <tr key={a.id} onClick={() => navigate(`/patients/${a.patientId}`)} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''} ${a.inOt ? 'border-l-4 border-l-violet-500' : ''}`}>
+                <tr key={a.id} onClick={() => setSelectedAdmission(a)} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''} ${a.inOt ? 'border-l-4 border-l-violet-500' : ''}`}>
                   <td className="px-4 py-3">
                     {a.ipdId && <p className="font-mono text-xs font-bold text-slate-900 dark:text-slate-300">{a.ipdId}</p>}
                     <p className="font-mono text-[10px] text-slate-400">{a.admissionNumber}</p>
@@ -354,6 +354,29 @@ export default function Admissions() {
         <ViewBillingModal
           admission={billingTarget}
           onClose={() => setBillingTarget(null)}
+        />
+      )}
+
+      {selectedAdmission && (
+        <IPDDetailPane
+          admission={selectedAdmission}
+          onClose={() => setSelectedAdmission(null)}
+          onDischarge={() => { setDischargeTarget(selectedAdmission); setSelectedAdmission(null) }}
+          onMoveToOT={() => { setOtTarget(selectedAdmission); setSelectedAdmission(null) }}
+          onReturnToWard={async () => {
+            const a = selectedAdmission
+            setSelectedAdmission(null)
+            setReturningToWard(a.id)
+            try {
+              await admissionApi.returnToWard(a.id)
+              notify(`${a.patientName} returned to ward`, 'success')
+              load(statusFilter !== 'ADMITTED')
+            } catch (err) {
+              notify(err?.response?.data?.message || 'Failed to return to ward', 'error')
+            } finally {
+              setReturningToWard(null)
+            }
+          }}
         />
       )}
     </div>
