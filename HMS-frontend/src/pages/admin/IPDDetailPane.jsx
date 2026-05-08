@@ -12,8 +12,14 @@ import {
   hospitalServiceApi, patientServicesApi, admissionApi
 } from '@/utils/api'
 import axios from 'axios'
+import SSOCookieManager from '@/utils/ssoManager'
 
 const otApi = axios.create({ baseURL: 'https://api-ot.zenohosp.com', withCredentials: true })
+otApi.interceptors.request.use(config => {
+  const token = SSOCookieManager.getToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
 
 const TABS = ['IPD Log', 'Attendor Details', 'Room Mapped Assets', 'IPD Billing']
 
@@ -266,15 +272,9 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
 
     setBillingItems(items)
 
-    // OT invoices — generated at OT completion time
-    const otInvData = await otApi.get('/api/ot/invoices')
-      .then(res => {
-        const all = Array.isArray(res.data) ? res.data : (res.data?.content ?? [])
-        return all.filter(inv =>
-          String(inv.patientId) === String(admission.patientId) ||
-          String(inv.admissionId) === String(admission.id)
-        )
-      })
+    // OT invoices — generated at OT completion time, filtered server-side by patientId
+    const otInvData = await otApi.get('/api/ot/invoices', { params: { patientId: admission.patientId } })
+      .then(res => Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
       .catch(() => [])
     setOtInvoices(otInvData)
 
