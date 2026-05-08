@@ -73,6 +73,8 @@ function GenerateRoomsModal({ onClose, onSuccess }) {
               <option value="ICU">ICU</option>
               <option value="PRIVATE">Private</option>
               <option value="WARD">Ward</option>
+              <option value="OT">OT (Operating Theatre)</option>
+              <option value="POST_OT">Post-OT (Recovery)</option>
             </select>
           </div>
 
