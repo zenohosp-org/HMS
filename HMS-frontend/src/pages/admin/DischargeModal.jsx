@@ -576,7 +576,9 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
                               <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{a.accountName}</p>
                               {bankAccountId === a.id && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}
                             </div>
-                            <p className="text-[11px] text-slate-400 dark:text-[#666]">···{a.accountNumber?.slice(-4)}</p>
+                            <p className="text-[11px] text-slate-400 dark:text-[#666]">
+                              {a.accountNumber ? `···${a.accountNumber.slice(-4)}` : a.bankName || 'Cash'}
+                            </p>
                             <p className="text-xs font-semibold text-slate-600 dark:text-[#aaa] mt-1 tabular-nums">{fmt(a.currentBalance)}</p>
                           </button>
                         ))}
