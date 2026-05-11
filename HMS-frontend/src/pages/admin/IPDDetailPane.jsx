@@ -44,6 +44,7 @@ const BILL_TYPE_META = {
   RADIOLOGY:    { label: 'Radiology', Icon: ScanLine,     cls: 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10' },
   LAB_TEST:     { label: 'Lab',       Icon: FlaskConical, cls: 'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10' },
   MEDICINE:     { label: 'Medicine',  Icon: Pill,         cls: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' },
+  OT:           { label: 'OT',        Icon: Scissors,     cls: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10' },
   CUSTOM:       { label: 'Custom',    Icon: Wrench,       cls: 'text-slate-600 dark:text-[#aaa] bg-slate-100 dark:bg-[#222]' },
 }
 
@@ -349,15 +350,29 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
       })
     } catch {}
 
-    setBillingItems(items)
-
     try {
       const res = await otApi.get('/api/ot/invoices', { params: { admissionId: admission.id } })
-      setOtInvoices(Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
+      const otInvs = Array.isArray(res.data) ? res.data : (res.data?.content ?? [])
+      setOtInvoices(otInvs)
       setOtInvoicesError(false)
+      // Merge OT line items directly into the billing estimate
+      otInvs.forEach(inv => {
+        ;(Array.isArray(inv.items) ? inv.items : []).forEach(item => {
+          items.push({
+            key: key++,
+            itemType: 'OT',
+            description: item.description || item.name || 'OT Procedure',
+            quantity: item.quantity ?? 1,
+            unitPrice: item.unitPrice ?? 0,
+            totalPrice: item.totalPrice ?? item.amount ?? 0,
+          })
+        })
+      })
     } catch {
       setOtInvoicesError(true)
     }
+
+    setBillingItems(items)
 
     setBillingFetched(true)
     setLoadingBilling(false)
@@ -758,9 +773,26 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                         )
                       })}
                     </div>
+
+                    {/* OT items appended inline when present */}
+                    {otInvoices.length > 0 && otInvoices.flatMap(inv =>
+                      (Array.isArray(inv.items) ? inv.items : []).map((item, i) => (
+                        <div key={`ot-${inv.id}-${i}`} className="grid grid-cols-12 gap-2 items-center px-4 py-2.5 bg-white dark:bg-[#111] border-t border-slate-50 dark:border-[#141414]">
+                          <div className="col-span-3">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10">
+                              <Scissors className="w-2.5 h-2.5 shrink-0" /> OT
+                            </span>
+                          </div>
+                          <div className="col-span-5 text-xs text-slate-600 dark:text-[#bbb] truncate" title={item.description || item.name}>{item.description || item.name || '—'}</div>
+                          <div className="col-span-1 text-xs text-slate-400 text-center tabular-nums">{item.quantity ?? 1}</div>
+                          <div className="col-span-3 text-xs font-bold text-slate-800 dark:text-white text-right tabular-nums">{fmtMoney(item.totalPrice ?? item.amount ?? 0)}</div>
+                        </div>
+                      ))
+                    )}
+
                     <div className="px-4 py-3 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] space-y-1.5">
                       <div className="flex justify-between text-xs text-slate-500 dark:text-[#888]">
-                        <span>Subtotal</span>
+                        <span>Admission Subtotal</span>
                         <span className="tabular-nums">{fmtMoney(finalInvoice.subtotal)}</span>
                       </div>
                       {Number(finalInvoice.tax) > 0 && (
@@ -775,9 +807,18 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                           <span className="tabular-nums">−{fmtMoney(finalInvoice.discount)}</span>
                         </div>
                       )}
+                      {otInvoices.length > 0 && (
+                        <div className="flex justify-between text-xs text-slate-500 dark:text-[#888]">
+                          <span>OT Charges</span>
+                          <span className="tabular-nums">{fmtMoney(otInvoices.reduce((s, inv) => s + Number(inv.totalAmount ?? inv.total ?? 0), 0))}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-sm font-bold text-slate-900 dark:text-white border-t border-slate-100 dark:border-[#1e1e1e] pt-2 mt-1">
-                        <span>Total</span>
-                        <span className="tabular-nums">{fmtMoney(finalInvoice.total)}</span>
+                        <span>Grand Total</span>
+                        <span className="tabular-nums">{fmtMoney(
+                          Number(finalInvoice.total || 0) +
+                          otInvoices.reduce((s, inv) => s + Number(inv.totalAmount ?? inv.total ?? 0), 0)
+                        )}</span>
                       </div>
                     </div>
                   </div>
@@ -859,72 +900,18 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                 </>
               )}
 
-              {/* OT Invoices — Bug 1: show error with retry instead of silent empty */}
-              {(otInvoicesError || otInvoices.length > 0) && (
-                <div className="pt-2">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">OT Invoices</p>
-                      <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5">Finalized at time of OT procedure completion</p>
-                    </div>
+              {/* OT fetch error — show inline with retry */}
+              {otInvoicesError && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-slate-100 dark:border-[#1e1e1e] bg-white dark:bg-[#111]">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <p className="text-[11px] text-slate-500 dark:text-[#888]">Could not load OT charges</p>
                   </div>
-                  {otInvoicesError ? (
-                    <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-slate-100 dark:border-[#1e1e1e] bg-white dark:bg-[#111]">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <p className="text-[11px] text-slate-500 dark:text-[#888]">Could not load OT invoices</p>
-                      </div>
-                      <button
-                        onClick={retryOtInvoices}
-                        className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors">
-                        <RotateCcw className="w-3 h-3" /> Retry
-                      </button>
-                    </div>
-                  ) : (
-                  <div className="space-y-3">
-                    {otInvoices.map(inv => {
-                      const isPaid = inv.status === 'PAID' || inv.paymentStatus === 'PAID'
-                      const invTotal = inv.totalAmount ?? inv.total ?? inv.amount ?? 0
-                      const invItems = Array.isArray(inv.items) ? inv.items : (Array.isArray(inv.lineItems) ? inv.lineItems : [])
-                      return (
-                        <div key={inv.id} className="rounded-lg border border-violet-100 dark:border-violet-500/20 overflow-hidden">
-                          <div className="flex items-center justify-between px-4 py-2.5 bg-violet-50 dark:bg-violet-500/5 border-b border-violet-100 dark:border-violet-500/20">
-                            <div>
-                              <p className="text-xs font-bold text-violet-700 dark:text-violet-400 font-mono">{inv.invoiceNumber || inv.invoiceId || inv.id}</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">{fmtDate(inv.createdAt || inv.invoiceDate || inv.date)}</p>
-                            </div>
-                            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                              isPaid
-                                ? 'text-emerald-700 border-emerald-200 bg-emerald-50 dark:text-emerald-400 dark:border-emerald-500/20 dark:bg-emerald-500/5'
-                                : 'text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-500/20 dark:bg-amber-500/5'
-                            }`}>
-                              {isPaid ? <><CheckCircle2 className="w-3 h-3" /> PAID</> : <><AlertTriangle className="w-3 h-3" /> UNPAID</>}
-                            </span>
-                          </div>
-                          {invItems.length > 0 && (
-                            <div className="divide-y divide-slate-50 dark:divide-[#141414]">
-                              {invItems.map((item, i) => (
-                                <div key={i} className="grid grid-cols-12 gap-2 items-center px-4 py-2 bg-white dark:bg-[#111]">
-                                  <div className="col-span-6 text-xs text-slate-600 dark:text-[#bbb] truncate" title={item.description || item.name}>
-                                    {item.description || item.name || '—'}
-                                  </div>
-                                  <div className="col-span-2 text-xs text-slate-400 text-center tabular-nums">×{item.quantity ?? 1}</div>
-                                  <div className="col-span-4 text-xs font-semibold text-slate-700 dark:text-[#ccc] text-right tabular-nums">
-                                    {fmtMoney(item.totalPrice ?? item.amount ?? item.unitPrice ?? 0)}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#0a0a0a] flex justify-between items-center border-t border-slate-100 dark:border-[#1e1e1e]">
-                            <span className="text-xs font-bold text-slate-500 dark:text-[#888]">Invoice Total</span>
-                            <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">{fmtMoney(invTotal)}</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  )}
+                  <button
+                    onClick={retryOtInvoices}
+                    className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors">
+                    <RotateCcw className="w-3 h-3" /> Retry
+                  </button>
                 </div>
               )}
             </div>
