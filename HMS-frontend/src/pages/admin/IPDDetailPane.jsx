@@ -218,10 +218,14 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
           })
         })),
 
-      // Ambulance — filter by this patient
+      // Ambulance — filter by patient within this admission's time window
       ambulanceApi.getBookings(user.hospitalId).then(data =>
         data
-          .filter(b => String(b.patient?.id) === String(admission.patientId))
+          .filter(b => {
+            if (String(b.patient?.id) !== String(admission.patientId)) return false
+            const t = new Date(b.createdAt).getTime()
+            return t >= admitStart && t <= admitEnd
+          })
           .forEach(b => events.push({
             id: `amb-${b.id}`,
             type: 'AMBULANCE',
@@ -235,15 +239,22 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
             badge: b.status,
           }))),
 
-      // OT bookings
+      // OT bookings — scoped to this admission to prevent cross-admission bleed
       otApi.get('/api/ot/bookings').then(res => {
         const bookings = Array.isArray(res.data) ? res.data : (res.data?.content ?? [])
         bookings
-          .filter(ob =>
-            (admission.otBookingId && String(ob.id) === String(admission.otBookingId)) ||
-            String(ob.admissionId) === String(admission.id) ||
-            String(ob.patientId) === String(admission.patientId)
-          )
+          .filter(ob => {
+            // Explicit admission link — most reliable, no time check needed
+            if (ob.admissionId) return String(ob.admissionId) === String(admission.id)
+            // Explicit OT booking ID stored on the admission record
+            if (admission.otBookingId && String(ob.id) === String(admission.otBookingId)) return true
+            // Unlinked booking — match patient + fall within this admission's time window
+            if (String(ob.patientId) === String(admission.patientId)) {
+              const t = new Date(ob.scheduledDate || ob.bookingDate || ob.createdAt).getTime()
+              return t >= admitStart && t <= admitEnd
+            }
+            return false
+          })
           .forEach(ob => {
             const procedure = ob.procedureName || ob.surgeryType || ob.procedure || 'Surgical Procedure'
             const surgeon = ob.surgeonName || ob.surgeon
