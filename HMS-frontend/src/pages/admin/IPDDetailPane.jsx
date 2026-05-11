@@ -317,10 +317,10 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
         items.push({ key: key++, itemType: 'ROOM_CHARGE', description: `Room ${roomNumber} (${daysStayed} day${daysStayed !== 1 ? 's' : ''})`, quantity: daysStayed, unitPrice: pricePerDay, totalPrice: daysStayed * pricePerDay })
       }
 
-      const consults = Array.isArray(suggestions.consultations) ? suggestions.consultations : []
-      consults.forEach(c => {
-        const price = c.fee || c.price || 0
-        items.push({ key: key++, itemType: 'CONSULTATION', description: c.description || c.name || 'Consultation', quantity: 1, unitPrice: price, totalPrice: price })
+      const consults = Array.isArray(suggestions.appointments) ? suggestions.appointments : []
+      consults.forEach(a => {
+        const price = a.consultationFee || 0
+        items.push({ key: key++, itemType: 'CONSULTATION', description: a.doctorName ? `Consultation - Dr. ${a.doctorName}` : 'Consultation', quantity: 1, unitPrice: price, totalPrice: price })
       })
 
       const EXCLUDED = ['CANCELLED', 'BILLED'];
