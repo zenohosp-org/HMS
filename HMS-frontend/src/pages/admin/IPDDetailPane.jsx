@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import {
   X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors,
   Activity, Package, Receipt, Phone, User, Loader2, ExternalLink,
-  RotateCcw, Wallet, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle
+  RotateCcw, Wallet, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle,
+  CheckCircle2, ShieldAlert
 } from 'lucide-react'
 import { format } from 'date-fns'
 import {
@@ -38,12 +39,12 @@ const EVENT_META = {
 }
 
 const BILL_TYPE_META = {
-  ROOM_CHARGE:  { label: 'Room',         Icon: BedDouble,    cls: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10' },
-  CONSULTATION: { label: 'Consult',      Icon: Stethoscope,  cls: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10' },
-  RADIOLOGY:    { label: 'Radiology',    Icon: ScanLine,     cls: 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10' },
-  LAB_TEST:     { label: 'Lab',          Icon: FlaskConical, cls: 'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10' },
-  MEDICINE:     { label: 'Medicine',     Icon: Pill,         cls: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' },
-  CUSTOM:       { label: 'Custom',       Icon: Wrench,       cls: 'text-slate-600 dark:text-[#aaa] bg-slate-100 dark:bg-[#222]' },
+  ROOM_CHARGE:  { label: 'Room',      Icon: BedDouble,    cls: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10' },
+  CONSULTATION: { label: 'Consult',   Icon: Stethoscope,  cls: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10' },
+  RADIOLOGY:    { label: 'Radiology', Icon: ScanLine,     cls: 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10' },
+  LAB_TEST:     { label: 'Lab',       Icon: FlaskConical, cls: 'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10' },
+  MEDICINE:     { label: 'Medicine',  Icon: Pill,         cls: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' },
+  CUSTOM:       { label: 'Custom',    Icon: Wrench,       cls: 'text-slate-600 dark:text-[#aaa] bg-slate-100 dark:bg-[#222]' },
 }
 
 function fmt(d) {
@@ -62,17 +63,28 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
   const { user } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('IPD Log')
+
+  // Timeline
   const [logs, setLogs] = useState([])
-  const [assets, setAssets] = useState([])
-  const [billingItems, setBillingItems] = useState([])
-  const [otInvoices, setOtInvoices] = useState([])
   const [loadingLogs, setLoadingLogs] = useState(true)
+
+  // Assets
+  const [assets, setAssets] = useState([])
   const [loadingAssets, setLoadingAssets] = useState(false)
-  const [loadingBilling, setLoadingBilling] = useState(false)
   const [assetsFetched, setAssetsFetched] = useState(false)
+
+  // Billing
+  const [billingItems, setBillingItems] = useState([])
+  const [finalInvoice, setFinalInvoice] = useState(null)
+  const [otInvoices, setOtInvoices] = useState([])
+  const [loadingBilling, setLoadingBilling] = useState(false)
   const [billingFetched, setBillingFetched] = useState(false)
 
-  /* ── Billing totals ── */
+  // Discharge guard
+  const [checkingDischarge, setCheckingDischarge] = useState(false)
+  const [dischargeBlock, setDischargeBlock] = useState(null) // null | { reason: 'no_invoice'|'unpaid', amount }
+
+  /* ── Billing totals (for estimation view) ── */
   const subtotal = useMemo(() => billingItems.reduce((s, i) => s + (i.totalPrice || 0), 0), [billingItems])
   const gst = useMemo(
     () => billingItems.filter(i => i.itemType === 'MEDICINE').reduce((s, i) => s + (i.totalPrice || 0), 0) * GST_RATE,
@@ -81,11 +93,43 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
   const grandTotal = subtotal + gst
   const hasZeroPrice = billingItems.some(i => Number(i.unitPrice) === 0 && i.itemType !== 'CUSTOM')
 
-  /* ── Fetch IPD log (patient-specific) ── */
+  /* ── Discharge guard handler ── */
+  const handleDischargeClick = useCallback(async () => {
+    setCheckingDischarge(true)
+    setDischargeBlock(null)
+    try {
+      const invoices = await invoiceApi.getPatientInvoices(admission.patientId)
+      const admissionInvoices = (invoices || []).filter(inv =>
+        String(inv.admissionId) === String(admission.id)
+      )
+      if (admissionInvoices.length === 0) {
+        setDischargeBlock({ reason: 'no_invoice', amount: null })
+        return
+      }
+      const unpaid = admissionInvoices.find(inv => inv.status !== 'PAID')
+      if (unpaid) {
+        setDischargeBlock({ reason: 'unpaid', amount: Number(unpaid.total || 0) })
+        return
+      }
+      onDischarge()
+    } catch {
+      // On API failure don't block — let the backend enforce
+      onDischarge()
+    } finally {
+      setCheckingDischarge(false)
+    }
+  }, [admission?.id, admission?.patientId, onDischarge])
+
+  /* ── Fetch IPD log (patient-specific, scoped to this admission window) ── */
   const fetchLogs = useCallback(async () => {
     if (!admission) return
     setLoadingLogs(true)
     const events = []
+
+    const admitStart = new Date(admission.admissionDate).getTime()
+    const admitEnd = admission.actualDischargeDate
+      ? new Date(admission.actualDischargeDate).getTime()
+      : Date.now()
 
     events.push({
       id: 'admitted',
@@ -109,11 +153,15 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     }
 
     await Promise.allSettled([
-      // Room logs — filter to this patient only by MRN
+      // Room logs — scoped to this patient AND this admission's time window
       admission.roomId
         ? roomLogsApi.getRoomLogs(admission.roomId, user.hospitalId).then(data =>
             data
-              .filter(l => !l.patientMrn || l.patientMrn === admission.patientMrn)
+              .filter(l => {
+                if (l.patientMrn && l.patientMrn !== admission.patientMrn) return false
+                const t = new Date(l.createdAt).getTime()
+                return t >= admitStart && t <= admitEnd
+              })
               .forEach(l => {
                 let title, subtitle
                 if (l.event === 'ALLOCATED') {
@@ -206,14 +254,39 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     setLoadingLogs(false)
   }, [admission?.id, user?.hospitalId])
 
-  /* ── Fetch billing (mirrors ViewBillingModal logic) ── */
+  /* ── Fetch billing ── */
   const fetchBilling = useCallback(async () => {
     setLoadingBilling(true)
+
+    const isDischarged = !!admission.actualDischargeDate
     const admitMs = new Date(admission.admissionDate).getTime()
-    const daysStayed = Math.max(1, Math.ceil((Date.now() - admitMs) / (1000 * 60 * 60 * 24)))
+    const endMs = isDischarged ? new Date(admission.actualDischargeDate).getTime() : Date.now()
+    const daysStayed = Math.max(1, Math.ceil((endMs - admitMs) / (1000 * 60 * 60 * 24)))
+
+    // For discharged patients — look for a finalized HMS invoice first
+    if (isDischarged) {
+      try {
+        const allInvoices = await invoiceApi.getPatientInvoices(admission.patientId)
+        const match = (allInvoices || []).find(inv =>
+          String(inv.admissionId) === String(admission.id)
+        )
+        if (match) {
+          setFinalInvoice(match)
+          // Still fetch OT invoices
+          const otInvData = await otApi.get('/api/ot/invoices', { params: { patientId: admission.patientId } })
+            .then(res => Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
+            .catch(() => [])
+          setOtInvoices(otInvData)
+          setBillingFetched(true)
+          setLoadingBilling(false)
+          return
+        }
+      } catch {}
+    }
+
+    // Active admission or no finalized invoice — run estimation
     let key = 0
     const items = []
-
     try {
       const [suggestions, services, fullAdmission, radiologyOrders, patientServices] = await Promise.all([
         invoiceApi.getSmartSuggestions(admission.patientId, admission.id).catch(() => ({})),
@@ -223,24 +296,18 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
         patientServicesApi.list(user.hospitalId).catch(() => []),
       ])
 
-      // Room charge
       const roomNumber = admission.roomNumber || fullAdmission?.roomNumber
       if (roomNumber) {
-        const pricePerDay =
-          suggestions.roomCharge?.pricePerDay ||
-          fullAdmission?.roomPricePerDay || 0
-        const label = `Room ${roomNumber} (${daysStayed} day${daysStayed !== 1 ? 's' : ''})`
-        items.push({ key: key++, itemType: 'ROOM_CHARGE', description: label, quantity: daysStayed, unitPrice: pricePerDay, totalPrice: daysStayed * pricePerDay })
+        const pricePerDay = suggestions.roomCharge?.pricePerDay || fullAdmission?.roomPricePerDay || 0
+        items.push({ key: key++, itemType: 'ROOM_CHARGE', description: `Room ${roomNumber} (${daysStayed} day${daysStayed !== 1 ? 's' : ''})`, quantity: daysStayed, unitPrice: pricePerDay, totalPrice: daysStayed * pricePerDay })
       }
 
-      // Consultations from suggestions
       const consults = Array.isArray(suggestions.consultations) ? suggestions.consultations : []
       consults.forEach(c => {
         const price = c.fee || c.price || 0
         items.push({ key: key++, itemType: 'CONSULTATION', description: c.description || c.name || 'Consultation', quantity: 1, unitPrice: price, totalPrice: price })
       })
 
-      // Radiology
       const EXCLUDED = ['CANCELLED', 'BILLED'];
       (Array.isArray(radiologyOrders) ? radiologyOrders : [])
         .filter(r => !EXCLUDED.includes(r.status))
@@ -251,14 +318,12 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
           items.push({ key: key++, itemType: 'RADIOLOGY', description: name, quantity: 1, unitPrice: price, totalPrice: price })
         })
 
-      // Medicines from suggestions
       const meds = Array.isArray(suggestions.medicines) ? suggestions.medicines : []
       meds.forEach(m => {
         const price = m.totalPrice || m.price || 0
         items.push({ key: key++, itemType: 'MEDICINE', description: m.name || 'Medicine', quantity: m.quantity || 1, unitPrice: m.unitPrice || price, totalPrice: price })
       })
 
-      // Patient services (food, etc.)
       const enabledServices = (Array.isArray(patientServices) ? patientServices : []).filter(s => s.isActive)
       enabledServices.forEach(s => {
         if (s.type === 'FOOD') {
@@ -272,7 +337,6 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
 
     setBillingItems(items)
 
-    // OT invoices — generated at OT completion time, filtered server-side by patientId
     const otInvData = await otApi.get('/api/ot/invoices', { params: { patientId: admission.patientId } })
       .then(res => Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
       .catch(() => [])
@@ -288,9 +352,11 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     setLogs([])
     setAssets([])
     setBillingItems([])
+    setFinalInvoice(null)
     setOtInvoices([])
     setAssetsFetched(false)
     setBillingFetched(false)
+    setDischargeBlock(null)
     fetchLogs()
   }, [admission?.id])
 
@@ -316,10 +382,8 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end pointer-events-none">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/25 pointer-events-auto" onClick={onClose} />
 
-      {/* Panel */}
       <div className="relative w-full max-w-lg h-full bg-white dark:bg-[#0f0f0f] shadow-2xl flex flex-col pointer-events-auto border-l border-slate-200 dark:border-[#1e1e1e]">
 
         {/* ── Header ── */}
@@ -346,7 +410,6 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
             </button>
           </div>
 
-          {/* Info strip */}
           <div className="mt-3 space-y-1.5">
             <div className="flex items-center gap-5 text-xs text-slate-500">
               <span className="flex items-center gap-1.5">
@@ -376,7 +439,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
             )}
           </div>
 
-          {/* ID + actions row */}
+          {/* ID + action row */}
           <div className="flex items-center justify-between mt-3.5">
             <div className="flex items-center gap-2">
               {admission.ipdId && (
@@ -391,9 +454,14 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                 <ExternalLink className="w-2.5 h-2.5 opacity-40" />
               </button>
               {isAdmitted && (
-                <button onClick={onDischarge}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
-                  <LogOut className="w-3 h-3" /> Discharge
+                <button
+                  onClick={handleDischargeClick}
+                  disabled={checkingDischarge}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors disabled:opacity-60 disabled:cursor-wait">
+                  {checkingDischarge
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <LogOut className="w-3 h-3" />}
+                  Discharge
                 </button>
               )}
               {canMoveOT && (
@@ -410,6 +478,28 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
               )}
             </div>
           </div>
+
+          {/* Discharge block banner */}
+          {dischargeBlock && (
+            <div className="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-lg border border-rose-200 dark:border-rose-500/25 bg-rose-50 dark:bg-rose-500/5">
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold text-rose-700 dark:text-rose-400">
+                  {dischargeBlock.reason === 'no_invoice'
+                    ? 'No invoice generated for this admission'
+                    : `Pending payment of ${fmtMoney(dischargeBlock.amount)}`}
+                </p>
+                <p className="text-[10px] text-rose-500 dark:text-rose-400/70 mt-0.5">
+                  {dischargeBlock.reason === 'no_invoice'
+                    ? 'Generate and clear the invoice in IPD Billing before discharging.'
+                    : 'Clear the outstanding invoice in IPD Billing before discharging.'}
+                </p>
+              </div>
+              <button onClick={() => setDischargeBlock(null)} className="shrink-0 text-rose-300 hover:text-rose-500 transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── Tabs ── */}
@@ -449,13 +539,10 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                     const isLast = idx === logs.length - 1
                     return (
                       <div key={ev.id} className="flex gap-3">
-                        {/* Dot + line */}
                         <div className="flex flex-col items-center shrink-0 pt-1">
                           <div className="w-2 h-2 rounded-full bg-slate-900 dark:bg-white shrink-0" />
                           {!isLast && <div className="w-px flex-1 bg-slate-100 dark:bg-[#1e1e1e] mt-1 mb-0" />}
                         </div>
-
-                        {/* Card */}
                         <div className={`flex-1 min-w-0 rounded-lg border border-slate-100 dark:border-[#1e1e1e] bg-white dark:bg-[#111] px-4 py-3 ${isLast ? 'mb-0' : 'mb-3'}`}>
                           <div className="flex items-center justify-between gap-2 mb-2">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider border ${meta.badge}`}>
@@ -587,8 +674,75 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
               {loadingBilling ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-2 text-slate-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Detecting pending charges…</span>
+                  <span className="text-sm">Loading billing…</span>
                 </div>
+              ) : finalInvoice ? (
+                /* ── Final invoice (discharged patients) ── */
+                <>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">Final Invoice</p>
+                      <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5 font-mono">{finalInvoice.invoiceNumber} · {fmtDate(finalInvoice.createdAt)}</p>
+                    </div>
+                    <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                      finalInvoice.status === 'PAID'
+                        ? 'text-emerald-700 border-emerald-200 bg-emerald-50 dark:text-emerald-400 dark:border-emerald-500/20 dark:bg-emerald-500/5'
+                        : 'text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-500/20 dark:bg-amber-500/5'
+                    }`}>
+                      {finalInvoice.status === 'PAID'
+                        ? <><CheckCircle2 className="w-3 h-3" /> PAID</>
+                        : <><AlertTriangle className="w-3 h-3" /> UNPAID</>}
+                    </span>
+                  </div>
+
+                  <div className="rounded-lg border border-slate-100 dark:border-[#1e1e1e] overflow-hidden">
+                    <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 dark:bg-[#0a0a0a] border-b border-slate-100 dark:border-[#1e1e1e]">
+                      {[['Type','col-span-3'],['Description','col-span-5'],['Qty','col-span-1 text-center'],['Total','col-span-3 text-right']].map(([h,cls]) => (
+                        <div key={h} className={`text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555] ${cls}`}>{h}</div>
+                      ))}
+                    </div>
+                    <div className="divide-y divide-slate-50 dark:divide-[#141414]">
+                      {(finalInvoice.items || []).map((item, i) => {
+                        const meta = BILL_TYPE_META[item.itemType] ?? BILL_TYPE_META.CUSTOM
+                        return (
+                          <div key={i} className="grid grid-cols-12 gap-2 items-center px-4 py-2.5 bg-white dark:bg-[#111]">
+                            <div className="col-span-3">
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold ${meta.cls}`}>
+                                <meta.Icon className="w-2.5 h-2.5 shrink-0" />
+                                {meta.label}
+                              </span>
+                            </div>
+                            <div className="col-span-5 text-xs text-slate-600 dark:text-[#bbb] truncate" title={item.description}>{item.description}</div>
+                            <div className="col-span-1 text-xs text-slate-400 text-center tabular-nums">{item.quantity}</div>
+                            <div className="col-span-3 text-xs font-bold text-slate-800 dark:text-white text-right tabular-nums">{fmtMoney(item.totalPrice)}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div className="px-4 py-3 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] space-y-1.5">
+                      <div className="flex justify-between text-xs text-slate-500 dark:text-[#888]">
+                        <span>Subtotal</span>
+                        <span className="tabular-nums">{fmtMoney(finalInvoice.subtotal)}</span>
+                      </div>
+                      {Number(finalInvoice.tax) > 0 && (
+                        <div className="flex justify-between text-xs text-slate-500 dark:text-[#888]">
+                          <span>Tax</span>
+                          <span className="tabular-nums">{fmtMoney(finalInvoice.tax)}</span>
+                        </div>
+                      )}
+                      {Number(finalInvoice.discount) > 0 && (
+                        <div className="flex justify-between text-xs text-emerald-600 dark:text-emerald-400">
+                          <span>Discount</span>
+                          <span className="tabular-nums">−{fmtMoney(finalInvoice.discount)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm font-bold text-slate-900 dark:text-white border-t border-slate-100 dark:border-[#1e1e1e] pt-2 mt-1">
+                        <span>Total</span>
+                        <span className="tabular-nums">{fmtMoney(finalInvoice.total)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
               ) : billingItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-slate-400">
                   <Receipt className="w-8 h-8 mb-2 opacity-20" />
@@ -596,22 +750,25 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                   <p className="text-xs mt-1 opacity-60">Charges appear once services are recorded</p>
                 </div>
               ) : (
+                /* ── Pending / estimated charges (active admissions) ── */
                 <>
-                  {/* Header */}
                   <div>
-                    <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">Pending Charges</p>
-                    <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5">Auto-detected from services used during this admission</p>
+                    <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">
+                      {admission.actualDischargeDate ? 'Admission Summary' : 'Pending Charges'}
+                    </p>
+                    <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5">
+                      {admission.actualDischargeDate
+                        ? 'Estimated charges for this admission — no invoice generated yet'
+                        : 'Auto-detected from services used during this admission'}
+                    </p>
                   </div>
 
-                  {/* Items table */}
                   <div className="rounded-lg border border-slate-100 dark:border-[#1e1e1e] overflow-hidden">
-                    {/* Column headers */}
                     <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 dark:bg-[#0a0a0a] border-b border-slate-100 dark:border-[#1e1e1e]">
-                      {[['Type', 'col-span-3'], ['Description', 'col-span-5'], ['Qty', 'col-span-1 text-center'], ['Total', 'col-span-3 text-right']].map(([h, cls]) => (
+                      {[['Type','col-span-3'],['Description','col-span-5'],['Qty','col-span-1 text-center'],['Total','col-span-3 text-right']].map(([h,cls]) => (
                         <div key={h} className={`text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555] ${cls}`}>{h}</div>
                       ))}
                     </div>
-
                     <div className="divide-y divide-slate-50 dark:divide-[#141414]">
                       {billingItems.map(item => {
                         const meta = BILL_TYPE_META[item.itemType] ?? BILL_TYPE_META.CUSTOM
@@ -630,8 +787,6 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                         )
                       })}
                     </div>
-
-                    {/* Totals */}
                     <div className="px-4 py-3 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] space-y-1.5">
                       <div className="flex justify-between text-xs text-slate-500 dark:text-[#888]">
                         <span>Subtotal</span>
@@ -659,66 +814,63 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                     </div>
                   )}
 
-                  {/* OT Invoices */}
-                  {otInvoices.length > 0 && (
-                    <div className="pt-2">
-                      <div className="mb-3">
-                        <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">OT Invoices</p>
-                        <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5">Finalized at time of OT procedure completion</p>
-                      </div>
-                      <div className="space-y-3">
-                        {otInvoices.map(inv => {
-                          const isPaid = inv.status === 'PAID' || inv.paymentStatus === 'PAID'
-                          const invTotal = inv.totalAmount ?? inv.total ?? inv.amount ?? 0
-                          const invItems = Array.isArray(inv.items) ? inv.items : (Array.isArray(inv.lineItems) ? inv.lineItems : [])
-                          return (
-                            <div key={inv.id} className="rounded-lg border border-violet-100 dark:border-violet-500/20 overflow-hidden">
-                              {/* Invoice header */}
-                              <div className="flex items-center justify-between px-4 py-2.5 bg-violet-50 dark:bg-violet-500/5 border-b border-violet-100 dark:border-violet-500/20">
-                                <div>
-                                  <p className="text-xs font-bold text-violet-700 dark:text-violet-400 font-mono">{inv.invoiceNumber || inv.invoiceId || inv.id}</p>
-                                  <p className="text-[10px] text-slate-400 mt-0.5">{fmtDate(inv.createdAt || inv.invoiceDate || inv.date)}</p>
-                                </div>
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                  isPaid
-                                    ? 'text-emerald-700 border-emerald-200 bg-emerald-50 dark:text-emerald-400 dark:border-emerald-500/20 dark:bg-emerald-500/5'
-                                    : 'text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-500/20 dark:bg-amber-500/5'
-                                }`}>{isPaid ? 'PAID' : 'UNPAID'}</span>
-                              </div>
-
-                              {/* Line items */}
-                              {invItems.length > 0 && (
-                                <div className="divide-y divide-slate-50 dark:divide-[#141414]">
-                                  {invItems.map((item, i) => (
-                                    <div key={i} className="grid grid-cols-12 gap-2 items-center px-4 py-2 bg-white dark:bg-[#111]">
-                                      <div className="col-span-6 text-xs text-slate-600 dark:text-[#bbb] truncate" title={item.description || item.name}>
-                                        {item.description || item.name || '—'}
-                                      </div>
-                                      <div className="col-span-2 text-xs text-slate-400 text-center tabular-nums">×{item.quantity ?? 1}</div>
-                                      <div className="col-span-4 text-xs font-semibold text-slate-700 dark:text-[#ccc] text-right tabular-nums">
-                                        {fmtMoney(item.totalPrice ?? item.amount ?? item.unitPrice ?? 0)}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {/* Invoice total */}
-                              <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#0a0a0a] flex justify-between items-center border-t border-slate-100 dark:border-[#1e1e1e]">
-                                <span className="text-xs font-bold text-slate-500 dark:text-[#888]">Invoice Total</span>
-                                <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">{fmtMoney(invTotal)}</span>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
                   <p className="text-[11px] text-slate-400 dark:text-[#555] text-center">
                     Estimated bill based on services used so far. Final amount may vary.
                   </p>
                 </>
+              )}
+
+              {/* OT Invoices — always shown if present */}
+              {otInvoices.length > 0 && (
+                <div className="pt-2">
+                  <div className="mb-3">
+                    <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">OT Invoices</p>
+                    <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5">Finalized at time of OT procedure completion</p>
+                  </div>
+                  <div className="space-y-3">
+                    {otInvoices.map(inv => {
+                      const isPaid = inv.status === 'PAID' || inv.paymentStatus === 'PAID'
+                      const invTotal = inv.totalAmount ?? inv.total ?? inv.amount ?? 0
+                      const invItems = Array.isArray(inv.items) ? inv.items : (Array.isArray(inv.lineItems) ? inv.lineItems : [])
+                      return (
+                        <div key={inv.id} className="rounded-lg border border-violet-100 dark:border-violet-500/20 overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-2.5 bg-violet-50 dark:bg-violet-500/5 border-b border-violet-100 dark:border-violet-500/20">
+                            <div>
+                              <p className="text-xs font-bold text-violet-700 dark:text-violet-400 font-mono">{inv.invoiceNumber || inv.invoiceId || inv.id}</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">{fmtDate(inv.createdAt || inv.invoiceDate || inv.date)}</p>
+                            </div>
+                            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              isPaid
+                                ? 'text-emerald-700 border-emerald-200 bg-emerald-50 dark:text-emerald-400 dark:border-emerald-500/20 dark:bg-emerald-500/5'
+                                : 'text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-500/20 dark:bg-amber-500/5'
+                            }`}>
+                              {isPaid ? <><CheckCircle2 className="w-3 h-3" /> PAID</> : <><AlertTriangle className="w-3 h-3" /> UNPAID</>}
+                            </span>
+                          </div>
+                          {invItems.length > 0 && (
+                            <div className="divide-y divide-slate-50 dark:divide-[#141414]">
+                              {invItems.map((item, i) => (
+                                <div key={i} className="grid grid-cols-12 gap-2 items-center px-4 py-2 bg-white dark:bg-[#111]">
+                                  <div className="col-span-6 text-xs text-slate-600 dark:text-[#bbb] truncate" title={item.description || item.name}>
+                                    {item.description || item.name || '—'}
+                                  </div>
+                                  <div className="col-span-2 text-xs text-slate-400 text-center tabular-nums">×{item.quantity ?? 1}</div>
+                                  <div className="col-span-4 text-xs font-semibold text-slate-700 dark:text-[#ccc] text-right tabular-nums">
+                                    {fmtMoney(item.totalPrice ?? item.amount ?? item.unitPrice ?? 0)}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#0a0a0a] flex justify-between items-center border-t border-slate-100 dark:border-[#1e1e1e]">
+                            <span className="text-xs font-bold text-slate-500 dark:text-[#888]">Invoice Total</span>
+                            <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">{fmtMoney(invTotal)}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               )}
             </div>
           )}
