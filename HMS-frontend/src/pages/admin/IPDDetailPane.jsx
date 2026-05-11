@@ -77,6 +77,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
   const [billingItems, setBillingItems] = useState([])
   const [finalInvoice, setFinalInvoice] = useState(null)
   const [otInvoices, setOtInvoices] = useState([])
+  const [otInvoicesError, setOtInvoicesError] = useState(false)
   const [loadingBilling, setLoadingBilling] = useState(false)
   const [billingFetched, setBillingFetched] = useState(false)
 
@@ -119,6 +120,27 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
       setCheckingDischarge(false)
     }
   }, [admission?.id, admission?.patientId, onDischarge])
+
+  /* ── OT invoice retry (Bug 1 — shows error UI instead of silent empty) ── */
+  const retryOtInvoices = useCallback(async () => {
+    setOtInvoicesError(false)
+    try {
+      const res = await otApi.get('/api/ot/invoices', { params: { admissionId: admission.id } })
+      setOtInvoices(Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
+    } catch {
+      setOtInvoicesError(true)
+    }
+  }, [admission?.id])
+
+  /* ── Full billing refresh (Bug 3 — manual refresh button) ── */
+  const refreshBilling = useCallback(() => {
+    setFinalInvoice(null)
+    setBillingItems([])
+    setOtInvoices([])
+    setOtInvoicesError(false)
+    setBillingFetched(false)
+    fetchBilling()
+  }, [fetchBilling])
 
   /* ── Fetch IPD log (patient-specific, scoped to this admission window) ── */
   const fetchLogs = useCallback(async () => {
@@ -272,11 +294,13 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
         )
         if (match) {
           setFinalInvoice(match)
-          // Still fetch OT invoices
-          const otInvData = await otApi.get('/api/ot/invoices', { params: { patientId: admission.patientId } })
-            .then(res => Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
-            .catch(() => [])
-          setOtInvoices(otInvData)
+          try {
+            const res = await otApi.get('/api/ot/invoices', { params: { admissionId: admission.id } })
+            setOtInvoices(Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
+            setOtInvoicesError(false)
+          } catch {
+            setOtInvoicesError(true)
+          }
           setBillingFetched(true)
           setLoadingBilling(false)
           return
@@ -337,10 +361,13 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
 
     setBillingItems(items)
 
-    const otInvData = await otApi.get('/api/ot/invoices', { params: { patientId: admission.patientId } })
-      .then(res => Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
-      .catch(() => [])
-    setOtInvoices(otInvData)
+    try {
+      const res = await otApi.get('/api/ot/invoices', { params: { admissionId: admission.id } })
+      setOtInvoices(Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
+      setOtInvoicesError(false)
+    } catch {
+      setOtInvoicesError(true)
+    }
 
     setBillingFetched(true)
     setLoadingBilling(false)
@@ -354,6 +381,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     setBillingItems([])
     setFinalInvoice(null)
     setOtInvoices([])
+    setOtInvoicesError(false)
     setAssetsFetched(false)
     setBillingFetched(false)
     setDischargeBlock(null)
@@ -671,6 +699,17 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
           {/* IPD Billing */}
           {activeTab === 'IPD Billing' && (
             <div className="p-5 space-y-4">
+              {/* Refresh button — Bug 3 fix */}
+              {!loadingBilling && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={refreshBilling}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-400 dark:text-[#666] hover:text-slate-600 dark:hover:text-[#aaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] border border-transparent hover:border-slate-200 dark:hover:border-[#2a2a2a] transition-all">
+                    <RotateCcw className="w-3 h-3" />
+                    Refresh
+                  </button>
+                </div>
+              )}
               {loadingBilling ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-2 text-slate-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -820,13 +859,28 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                 </>
               )}
 
-              {/* OT Invoices — always shown if present */}
-              {otInvoices.length > 0 && (
+              {/* OT Invoices — Bug 1: show error with retry instead of silent empty */}
+              {(otInvoicesError || otInvoices.length > 0) && (
                 <div className="pt-2">
-                  <div className="mb-3">
-                    <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">OT Invoices</p>
-                    <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5">Finalized at time of OT procedure completion</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">OT Invoices</p>
+                      <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5">Finalized at time of OT procedure completion</p>
+                    </div>
                   </div>
+                  {otInvoicesError ? (
+                    <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-slate-100 dark:border-[#1e1e1e] bg-white dark:bg-[#111]">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <p className="text-[11px] text-slate-500 dark:text-[#888]">Could not load OT invoices</p>
+                      </div>
+                      <button
+                        onClick={retryOtInvoices}
+                        className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors">
+                        <RotateCcw className="w-3 h-3" /> Retry
+                      </button>
+                    </div>
+                  ) : (
                   <div className="space-y-3">
                     {otInvoices.map(inv => {
                       const isPaid = inv.status === 'PAID' || inv.paymentStatus === 'PAID'
@@ -870,6 +924,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                       )
                     })}
                   </div>
+                  )}
                 </div>
               )}
             </div>
