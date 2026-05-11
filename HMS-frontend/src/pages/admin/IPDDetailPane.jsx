@@ -132,16 +132,6 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     }
   }, [admission?.id])
 
-  /* ── Full billing refresh (Bug 3 — manual refresh button) ── */
-  const refreshBilling = useCallback(() => {
-    setFinalInvoice(null)
-    setBillingItems([])
-    setOtInvoices([])
-    setOtInvoicesError(false)
-    setBillingFetched(false)
-    fetchBilling()
-  }, [fetchBilling])
-
   /* ── Fetch IPD log (patient-specific, scoped to this admission window) ── */
   const fetchLogs = useCallback(async () => {
     if (!admission) return
@@ -372,6 +362,16 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     setBillingFetched(true)
     setLoadingBilling(false)
   }, [admission?.id, user?.hospitalId])
+
+  /* ── Full billing refresh — declared after fetchBilling to avoid TDZ ── */
+  const refreshBilling = useCallback(() => {
+    setFinalInvoice(null)
+    setBillingItems([])
+    setOtInvoices([])
+    setOtInvoicesError(false)
+    setBillingFetched(false)
+    fetchBilling()
+  }, [fetchBilling])
 
   /* ── Reset on admission change ── */
   useEffect(() => {
