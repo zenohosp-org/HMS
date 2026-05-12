@@ -28,6 +28,8 @@ public class AdmissionService {
     private final AppointmentRepository appointmentRepository;
     private final RoomLogRepository roomLogRepository;
     private final UserRepository userRepository;
+    private final InvoiceService invoiceService;
+    private final InvoiceRepository invoiceRepository;
 
     @Transactional
     public AdmissionDTO admit(AdmissionRequest req, String performedBy) {
@@ -131,6 +133,10 @@ public class AdmissionService {
                     .build());
         }
 
+        // Auto-create UNPAID placeholder invoice for IPD billing tracking
+        try { invoiceService.createAdmissionInvoice(req.getHospitalId(), req.getPatientId(), saved.getId(), saved.getAdmissionNumber()); }
+        catch (Exception ignored) {}
+
         return toDTO(saved);
     }
 
@@ -191,6 +197,13 @@ public class AdmissionService {
         if (admission.getStatus() != AdmissionStatus.ADMITTED) {
             throw new RuntimeException("Admission is not active");
         }
+
+        // Gate: invoice must be paid before discharge is permitted
+        invoiceRepository.findByAdmission_Id(admissionId).ifPresent(inv -> {
+            if (InvoiceStatus.UNPAID.equals(inv.getStatus())) {
+                throw new RuntimeException("INVOICE_UNPAID: Patient bill must be paid before discharge. Please settle the bill in the Billing tab.");
+            }
+        });
 
         LocalDateTime dischargeTime = req.getActualDischargeDate() != null
                 ? req.getActualDischargeDate() : LocalDateTime.now();

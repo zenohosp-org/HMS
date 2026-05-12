@@ -26,6 +26,7 @@ public class AppointmentService {
         private final PriceListRepository priceListRepository;
         private final UserRepository userRepository;
         private final HealthCheckupService healthCheckupService;
+        private final InvoiceService invoiceService;
 
         public List<AppointmentDto> getAppointmentsByHospital(UUID hospitalId, LocalDate date) {
                 if (date != null) {
@@ -157,6 +158,7 @@ public class AppointmentService {
                 return AppointmentDto.fromEntity(appointmentRepository.save(appointment));
         }
 
+        @Transactional
         public AppointmentDto updateAppointmentStatus(UUID id, Appointment.AppointmentStatus status,
                         String cancelledReason) {
                 Appointment appointment = appointmentRepository.findById(id)
@@ -167,6 +169,16 @@ public class AppointmentService {
                         appointment.setCancelledReason(cancelledReason);
                 }
 
-                return AppointmentDto.fromEntity(appointmentRepository.save(appointment));
+                AppointmentDto result = AppointmentDto.fromEntity(appointmentRepository.save(appointment));
+
+                // CONFIRMED → create ₹0 placeholder invoice so it appears in the billing tab
+                // COMPLETED → add the consultation fee to the existing (or new) invoice
+                if (status == Appointment.AppointmentStatus.CONFIRMED) {
+                        try { invoiceService.createAppointmentInvoice(id, false); } catch (Exception ignored) {}
+                } else if (status == Appointment.AppointmentStatus.COMPLETED) {
+                        try { invoiceService.createAppointmentInvoice(id, true); } catch (Exception ignored) {}
+                }
+
+                return result;
         }
 }

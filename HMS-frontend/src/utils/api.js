@@ -322,7 +322,23 @@ const invoiceApi = {
   markAsPaid: async (invoiceId, bankAccountId) => {
     const { data } = await api.patch(`/billing/invoices/${invoiceId}/pay`, { bankAccountId });
     return data;
-  }
+  },
+  getDetail: async (id) => {
+    const { data } = await api.get(`/billing/invoices/${id}/detail`);
+    return data;
+  },
+  waiveItem: async (invoiceId, itemId, waiverAmount, waiverReason) => {
+    const { data } = await api.patch(`/billing/invoices/${invoiceId}/items/${itemId}/waive`, { waiverAmount, waiverReason });
+    return data;
+  },
+  getAdmissionInvoice: async (admissionId) => {
+    const { data } = await api.get(`/billing/admissions/${admissionId}/invoice`);
+    return data;
+  },
+  finalizeIPD: async (invoiceId, payload) => {
+    const { data } = await api.put(`/billing/invoices/${invoiceId}/finalize`, payload);
+    return data;
+  },
 };
 const bankApi = {
   list: async (hospitalId) => {

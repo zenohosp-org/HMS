@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -20,4 +21,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     List<Invoice> findByPatientId(Integer patientId);
     List<Invoice> findByPatientIdOrderByCreatedAtDesc(Integer patientId);
     Invoice findByInvoiceNumber(String invoiceNumber);
+    Optional<Invoice> findByAdmission_Id(UUID admissionId);
+    Optional<Invoice> findByAppointment_Id(UUID appointmentId);
+    boolean existsByAppointment_Id(UUID appointmentId);
 }

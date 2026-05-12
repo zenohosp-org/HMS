@@ -48,4 +48,10 @@ public class InvoiceItem {
 
     @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice;
+
+    @Column(name = "waiver_amount", precision = 10, scale = 2)
+    private BigDecimal waiverAmount;
+
+    @Column(name = "waiver_reason", length = 255)
+    private String waiverReason;
 }

@@ -32,11 +32,14 @@ public class InvoiceDTO {
     @Data
     @Builder
     public static class ItemDTO {
+        private UUID id;
         private String itemType;
         private String description;
         private Integer quantity;
         private BigDecimal unitPrice;
         private BigDecimal totalPrice;
+        private BigDecimal waiverAmount;
+        private String waiverReason;
         private UUID serviceId;
         private Long radiologyOrderId;
         private UUID appointmentId;
