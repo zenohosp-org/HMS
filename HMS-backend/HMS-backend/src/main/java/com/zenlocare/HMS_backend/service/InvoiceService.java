@@ -269,6 +269,31 @@ public class InvoiceService {
         }
     }
 
+    // ── Remove consultation from invoice when appointment is CANCELLED ─────────
+    @Transactional
+    public void cancelAppointmentInvoice(UUID appointmentId) {
+        Optional<Invoice> opt = invoiceRepository.findByAppointment_Id(appointmentId);
+        if (opt.isEmpty()) return;
+        Invoice invoice = opt.get();
+        if (InvoiceStatus.PAID.equals(invoice.getStatus())) return;
+        if (invoice.getItems() != null) {
+            invoice.getItems().removeIf(i -> "CONSULTATION".equals(i.getItemType()));
+        }
+        if (invoice.getItems() == null || invoice.getItems().isEmpty()) {
+            invoiceRepository.delete(invoice);
+        } else {
+            BigDecimal newSubtotal = invoice.getItems().stream()
+                    .map(InvoiceItem::getTotalPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            invoice.setSubtotal(newSubtotal);
+            invoice.setTotal(newSubtotal
+                    .add(invoice.getTax() != null ? invoice.getTax() : BigDecimal.ZERO)
+                    .subtract(invoice.getDiscount() != null ? invoice.getDiscount() : BigDecimal.ZERO));
+            invoice.setUpdatedAt(LocalDateTime.now());
+            invoiceRepository.save(invoice);
+        }
+    }
+
     // ── Return the invoice linked to an admission ──────────────────────────────
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Optional<InvoiceDTO> getAdmissionInvoice(UUID admissionId) {

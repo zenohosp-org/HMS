@@ -171,12 +171,12 @@ public class AppointmentService {
 
                 AppointmentDto result = AppointmentDto.fromEntity(appointmentRepository.save(appointment));
 
-                // CONFIRMED → create ₹0 placeholder invoice so it appears in the billing tab
-                // COMPLETED → add the consultation fee to the existing (or new) invoice
+                // CONFIRMED → create invoice with consultation fee immediately
+                // CANCELLED → remove consultation item; delete invoice if it becomes empty
                 if (status == Appointment.AppointmentStatus.CONFIRMED) {
-                        try { invoiceService.createAppointmentInvoice(id, false); } catch (Exception ignored) {}
-                } else if (status == Appointment.AppointmentStatus.COMPLETED) {
                         try { invoiceService.createAppointmentInvoice(id, true); } catch (Exception ignored) {}
+                } else if (status == Appointment.AppointmentStatus.CANCELLED) {
+                        try { invoiceService.cancelAppointmentInvoice(id); } catch (Exception ignored) {}
                 }
 
                 return result;
