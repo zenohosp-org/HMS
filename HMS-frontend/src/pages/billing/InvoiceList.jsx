@@ -139,7 +139,7 @@ function WaiverModal({ item, invoiceId, onClose, onWaived }) {
 }
 
 // ─── Invoice Detail Modal ────────────────────────────────────────────────────
-function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
+export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
   const { notify } = useNotification()
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(true)

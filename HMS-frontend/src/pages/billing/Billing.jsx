@@ -5,11 +5,12 @@ import { invoiceApi, bankApi, admissionApi } from '@/utils/api'
 import Pagination from '@/components/ui/Pagination'
 import CreateInvoiceModal from '@/components/modals/CreateInvoiceModal'
 import FinalizeIPDBillingModal from '@/components/modals/FinalizeIPDBillingModal'
+import { InvoiceDetailModal } from '@/pages/billing/InvoiceList'
 import {
   ReceiptText, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
   BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench,
-  Receipt, ChevronRight,
+  Receipt, ChevronRight, Eye,
 } from 'lucide-react'
 
 const PAGE_SIZE = 8
@@ -89,6 +90,7 @@ export default function Billing() {
   const [activeAdmissions, setActiveAdmissions] = useState([])
   const [loadingAdmissions, setLoadingAdmissions] = useState(false)
   const [finalizeAdmission, setFinalizeAdmission] = useState(null)
+  const [detailInvoiceId, setDetailInvoiceId] = useState(null)
 
   const load = async () => {
     if (!user?.hospitalId) return
@@ -454,6 +456,12 @@ export default function Billing() {
                               </button>
                             )}
                             <button
+                              onClick={() => setDetailInvoiceId(inv.id)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
+                              title="View Details / Apply Waiver">
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
                               onClick={() => printInvoice(inv)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
                               title="Print Invoice">
@@ -541,6 +549,14 @@ export default function Billing() {
               setActiveAdmissions(Array.isArray(data) ? data : [])
             }).catch(() => {})
           }}
+        />
+      )}
+
+      {detailInvoiceId && (
+        <InvoiceDetailModal
+          invoiceId={detailInvoiceId}
+          onClose={() => setDetailInvoiceId(null)}
+          onInvoiceUpdated={load}
         />
       )}
     </div>
