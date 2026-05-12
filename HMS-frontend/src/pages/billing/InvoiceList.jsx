@@ -141,15 +141,25 @@ function WaiverModal({ item, invoiceId, onClose, onWaived }) {
 // ─── Invoice Detail Modal ────────────────────────────────────────────────────
 export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
   const { notify } = useNotification()
+  const { user } = useAuth()
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(true)
   const [waiverItem, setWaiverItem] = useState(null)
+  const [bankAccounts, setBankAccounts] = useState([])
+  const [bankAccountId, setBankAccountId] = useState('')
+  const [paying, setPaying] = useState(false)
 
   const load = async () => {
     setLoading(true)
     try {
-      const d = await invoiceApi.getDetail(invoiceId)
+      const [d, accounts] = await Promise.all([
+        invoiceApi.getDetail(invoiceId),
+        user?.hospitalId ? bankApi.list(user.hospitalId).catch(() => []) : Promise.resolve([]),
+      ])
       setDetail(d)
+      setBankAccounts(accounts)
+      const def = accounts.find(a => a.isDefault) ?? accounts[0]
+      if (def) setBankAccountId(def.id)
     } catch {
       notify('Failed to load invoice details', 'error')
       onClose()
@@ -166,7 +176,22 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
     onInvoiceUpdated?.()
   }
 
+  const handlePay = async () => {
+    setPaying(true)
+    try {
+      await invoiceApi.markAsPaid(invoiceId, bankAccountId || undefined)
+      notify('Invoice marked as paid — bank account credited', 'success')
+      onInvoiceUpdated?.()
+      onClose()
+    } catch (err) {
+      notify(err?.response?.data?.message || 'Failed to mark as paid', 'error')
+    } finally {
+      setPaying(false)
+    }
+  }
+
   const canWaive = detail?.status === 'UNPAID'
+  const canPay   = detail?.status === 'UNPAID'
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -209,7 +234,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
               {canWaive && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg text-xs text-amber-700 dark:text-amber-400 font-medium">
                   <Scissors className="w-3.5 h-3.5 shrink-0" />
-                  Waivers can be applied to individual line items below. Only admin or receptionist should apply waivers.
+                  Hover a line item to apply a waiver. Only admin or receptionist should apply waivers.
                 </div>
               )}
 
@@ -313,6 +338,54 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
             </div>
           )}
         </div>
+
+        {/* Payment footer — only for UNPAID invoices */}
+        {canPay && (
+          <div className="shrink-0 border-t border-slate-100 dark:border-[#1e1e1e] px-6 py-4 bg-slate-50 dark:bg-[#0a0a0a] rounded-b-xl space-y-3">
+            {bankAccounts.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-slate-500 dark:text-[#666] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Landmark className="w-3.5 h-3.5" /> Credit payment to
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {bankAccounts.map(a => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setBankAccountId(a.id)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all ${
+                        bankAccountId === a.id
+                          ? 'border-slate-900 dark:border-white bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white shadow-sm'
+                          : 'border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-slate-500 dark:text-[#888] hover:border-slate-400'
+                      }`}
+                    >
+                      {bankAccountId === a.id && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+                      {a.accountName}
+                      {a.currentBalance != null && (
+                        <span className="text-slate-400 dark:text-[#555]">{fmt(a.currentBalance)}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-500 dark:text-[#888]">
+                Due: <span className="font-bold text-slate-900 dark:text-white tabular-nums">{fmt(detail.total)}</span>
+              </p>
+              <button
+                onClick={handlePay}
+                disabled={paying}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-60 shadow-sm"
+              >
+                {paying
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
+                  : <><CreditCard className="w-4 h-4" /> Mark as Paid</>
+                }
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {waiverItem && (

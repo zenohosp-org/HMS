@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Fragment } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi, bankApi, admissionApi } from '@/utils/api'
@@ -13,21 +13,22 @@ import {
   Receipt, ChevronRight, Eye,
 } from 'lucide-react'
 
-const PAGE_SIZE = 8
+const PAGE_SIZE = 10
+const IPD_PAGE_SIZE = 8
 
 const STATUS_CFG = {
-  PAID: { label: 'Paid', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
-  UNPAID: { label: 'Unpaid', cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20', Icon: Clock },
-  CANCELLED: { label: 'Cancelled', cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20', Icon: XCircle },
+  PAID:      { label: 'Paid',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
+  UNPAID:    { label: 'Unpaid',    cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',             Icon: Clock        },
+  CANCELLED: { label: 'Cancelled', cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',                   Icon: XCircle      },
 }
 
 const TYPE_META = {
-  MEDICINE: { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> },
-  LAB_TEST: { bg: 'bg-slate-100 dark:bg-slate-200', icon: <FlaskConical className="w-3 h-3 text-slate-900 dark:text-white dark:text-slate-300" /> },
-  CONSULTATION: { bg: 'bg-blue-100 dark:bg-blue-500/20', icon: <Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" /> },
-  ROOM_CHARGE: { bg: 'bg-orange-100 dark:bg-orange-500/20', icon: <BedDouble className="w-3 h-3 text-orange-600 dark:text-orange-400" /> },
-  RADIOLOGY: { bg: 'bg-slate-100 dark:bg-slate-900/20', icon: <ScanLine className="w-3 h-3 text-slate-900 dark:text-white dark:text-slate-400" /> },
-  CUSTOM: { bg: 'bg-slate-100 dark:bg-[#222]', icon: <Wrench className="w-3 h-3 text-slate-500" /> },
+  MEDICINE:     { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill        className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> },
+  LAB_TEST:     { bg: 'bg-slate-100 dark:bg-slate-700/40',     icon: <FlaskConical className="w-3 h-3 text-slate-600 dark:text-slate-300" />    },
+  CONSULTATION: { bg: 'bg-blue-100 dark:bg-blue-500/20',       icon: <Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" />       },
+  ROOM_CHARGE:  { bg: 'bg-orange-100 dark:bg-orange-500/20',   icon: <BedDouble   className="w-3 h-3 text-orange-600 dark:text-orange-400" />   },
+  RADIOLOGY:    { bg: 'bg-violet-100 dark:bg-violet-500/20',   icon: <ScanLine    className="w-3 h-3 text-violet-600 dark:text-violet-400" />   },
+  CUSTOM:       { bg: 'bg-slate-100 dark:bg-[#222]',           icon: <Wrench      className="w-3 h-3 text-slate-500" />                          },
 }
 
 function fmt(n) {
@@ -55,10 +56,10 @@ function ItemTypePips({ items }) {
 
 function StatCard({ label, value, sub, Icon, accent }) {
   const accents = {
-    blue: 'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400',
+    blue:    'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400',
     emerald: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-    amber: 'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-600 dark:text-amber-400',
-    rose: 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400',
+    amber:   'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-600 dark:text-amber-400',
+    rose:    'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400',
   }
   return (
     <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] p-5 flex items-center gap-4">
@@ -80,17 +81,19 @@ export default function Billing() {
 
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState('OPD')
+  const [opdFilter, setOpdFilter] = useState('ALL')
+  const [ipdFilter, setIpdFilter] = useState('ALL')
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('ALL')
   const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [expandedId, setExpandedId] = useState(null)
-  const [markingId, setMarkingId] = useState(null)
-  const [bankAccounts, setBankAccounts] = useState([])
   const [activeAdmissions, setActiveAdmissions] = useState([])
   const [loadingAdmissions, setLoadingAdmissions] = useState(false)
   const [finalizeAdmission, setFinalizeAdmission] = useState(null)
   const [detailInvoiceId, setDetailInvoiceId] = useState(null)
+  const [admissionSearch, setAdmissionSearch] = useState('')
+  const [admissionPage, setAdmissionPage] = useState(1)
 
   const load = async () => {
     if (!user?.hospitalId) return
@@ -108,19 +111,25 @@ export default function Billing() {
 
   useEffect(() => {
     if (!user?.hospitalId) return
-    bankApi.list(user.hospitalId).then(setBankAccounts).catch(() => { })
     setLoadingAdmissions(true)
-    admissionApi.list(user.hospitalId, false).then(data => {
-      setActiveAdmissions(Array.isArray(data) ? data : [])
-    }).catch(() => {}).finally(() => setLoadingAdmissions(false))
+    admissionApi.list(user.hospitalId, false)
+      .then(data => setActiveAdmissions(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setLoadingAdmissions(false))
   }, [user?.hospitalId])
+
+  const reloadAdmissions = () => {
+    if (!user?.hospitalId) return
+    admissionApi.list(user.hospitalId, false)
+      .then(data => setActiveAdmissions(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }
 
   const today = new Date().toDateString()
 
   const stats = useMemo(() => {
     const paid = invoices.filter(i => i.status === 'PAID')
     const unpaid = invoices.filter(i => i.status === 'UNPAID')
-    const paidToday = paid.filter(i => new Date(i.createdAt).toDateString() === today)
     return {
       total: invoices.length,
       collected: paid.reduce((s, i) => s + Number(i.total), 0),
@@ -129,35 +138,52 @@ export default function Billing() {
     }
   }, [invoices])
 
+  // Split OPD / IPD by whether the invoice is linked to an admission
+  const opdInvoices = useMemo(() => invoices.filter(i => !i.admissionId), [invoices])
+  const ipdInvoices = useMemo(() => invoices.filter(i => !!i.admissionId), [invoices])
+
+  // Track which admitted patients already have a PAID invoice — show "Paid" badge instead of Finalize button
+  const paidIpdAdmissionIds = useMemo(() => new Set(
+    ipdInvoices.filter(i => i.status === 'PAID').map(i => String(i.admissionId))
+  ), [ipdInvoices])
+
+  const currentInvoices = tab === 'OPD' ? opdInvoices : ipdInvoices
+  const currentFilter = tab === 'OPD' ? opdFilter : ipdFilter
+  const setCurrentFilter = (f) => {
+    if (tab === 'OPD') setOpdFilter(f); else setIpdFilter(f)
+    setPage(1)
+  }
+
   const filtered = useMemo(() => {
-    let list = statusFilter === 'ALL' ? invoices : invoices.filter(i => i.status === statusFilter)
+    let list = currentFilter === 'ALL' ? currentInvoices : currentInvoices.filter(i => i.status === currentFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(i =>
         i.invoiceNumber?.toLowerCase().includes(q) ||
         i.patientName?.toLowerCase().includes(q) ||
-        i.patientMrn?.toLowerCase().includes(q) ||
-        i.paymentMethod?.toLowerCase().includes(q)
+        i.patientMrn?.toLowerCase().includes(q)
       )
     }
     return list
-  }, [invoices, statusFilter, search])
+  }, [currentInvoices, currentFilter, search])
 
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  const handleMarkPaid = async (invoiceId) => {
-    setMarkingId(invoiceId)
-    const defaultAccount = bankAccounts.find(a => a.isDefault) ?? bankAccounts[0]
-    try {
-      await invoiceApi.markAsPaid(invoiceId, defaultAccount?.id)
-      notify('Invoice marked as paid', 'success')
-      load()
-    } catch (e) {
-      notify(e?.response?.data?.message || 'Failed to mark as paid', 'error')
-    } finally {
-      setMarkingId(null)
-    }
-  }
+  // Active IPD admissions — searchable + paginated for large lists
+  const filteredAdmissions = useMemo(() => {
+    if (!admissionSearch.trim()) return activeAdmissions
+    const q = admissionSearch.toLowerCase()
+    return activeAdmissions.filter(a =>
+      a.patientName?.toLowerCase().includes(q) ||
+      a.admissionNumber?.toLowerCase().includes(q) ||
+      a.roomNumber?.toLowerCase().includes(q)
+    )
+  }, [activeAdmissions, admissionSearch])
+
+  const paginatedAdmissions = filteredAdmissions.slice(
+    (admissionPage - 1) * IPD_PAGE_SIZE,
+    admissionPage * IPD_PAGE_SIZE
+  )
 
   const printInvoice = (inv) => {
     const items = inv.items ?? []
@@ -165,7 +191,6 @@ export default function Billing() {
     const discount = Number(inv.discount || 0)
     const subtotal = total + discount
     const statusCls = { PAID: 'background:#d1fae5;color:#065f46', UNPAID: 'background:#fef3c7;color:#92400e', CANCELLED: 'background:#fee2e2;color:#991b1b' }
-
     const itemRows = items.map(item => `
       <tr>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.itemType?.replace('_', ' ') ?? ''}</td>
@@ -174,7 +199,6 @@ export default function Billing() {
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:right">₹${Number(item.unitPrice).toLocaleString('en-IN')}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;font-weight:600;color:#111;text-align:right">₹${Number(item.totalPrice).toLocaleString('en-IN')}</td>
       </tr>`).join('')
-
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
       <title>Invoice ${inv.invoiceNumber}</title>
       <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:36px}table{width:100%;border-collapse:collapse}@media print{body{padding:24px}}</style>
@@ -190,27 +214,24 @@ export default function Billing() {
           <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusCls[inv.status] ?? statusCls.UNPAID}">${inv.status}</span></div>
         </div>
       </div>
-
       <div style="margin-bottom:20px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Billed To</div>
         <div style="font-size:15px;font-weight:700">${inv.patientName ?? '—'}</div>
         ${inv.patientMrn ? `<div style="font-size:12px;color:#6b7280">MRN: ${inv.patientMrn}</div>` : ''}
-        ${inv.paymentMethod ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">Payment Method: ${inv.paymentMethod}</div>` : ''}
+        ${inv.paymentMethod ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">Payment: ${inv.paymentMethod}</div>` : ''}
       </div>
-
       <table>
         <thead>
           <tr style="background:#f3f4f6">
-            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;border-bottom:1px solid #e5e7eb">Type</th>
-            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;border-bottom:1px solid #e5e7eb">Description</th>
-            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;border-bottom:1px solid #e5e7eb">Qty</th>
-            <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;border-bottom:1px solid #e5e7eb">Unit Price</th>
-            <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;border-bottom:1px solid #e5e7eb">Total</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Type</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Description</th>
+            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Qty</th>
+            <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Unit</th>
+            <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Total</th>
           </tr>
         </thead>
         <tbody>${itemRows}</tbody>
       </table>
-
       <div style="display:flex;justify-content:flex-end;margin-top:12px">
         <div style="min-width:220px">
           ${discount > 0 ? `
@@ -219,12 +240,10 @@ export default function Billing() {
           <div style="display:flex;justify-content:space-between;padding:8px 0 4px;font-size:15px;font-weight:800;color:#111;border-top:2px solid #1a1a1a;margin-top:4px"><span>Total</span><span>₹${total.toLocaleString('en-IN')}</span></div>
         </div>
       </div>
-
       <div style="margin-top:40px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center">
         Generated by ZenoHosp HMS · ${window.location.hostname} · Thank you for your payment
       </div>
     </body></html>`
-
     const iframe = document.createElement('iframe')
     iframe.className = 'print-frame'
     document.body.appendChild(iframe)
@@ -256,10 +275,20 @@ export default function Billing() {
         </button>
       </div>
 
-      {/* ── Active IPD Billing ─────────────────────────────────────────────── */}
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        <StatCard label="Total Invoices"    value={stats.total}            sub="all time"               Icon={ReceiptText} accent="blue"    />
+        <StatCard label="Revenue Collected" value={fmt(stats.collected)}   sub="from paid invoices"     Icon={TrendingUp}  accent="emerald" />
+        <StatCard label="Outstanding"       value={fmt(stats.outstanding)} sub="unpaid invoices"        Icon={AlertCircle} accent="amber"   />
+        <StatCard label="Billed Today"      value={stats.todayCount}       sub="invoices created today" Icon={Clock}       accent="rose"    />
+      </div>
+
+      {/* ── Active IPD Billing ─────────────────────────────────────────────────── */}
       {(loadingAdmissions || activeAdmissions.length > 0) && (
         <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-[#1e1e1e]">
+
+          {/* Section header */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-[#1e1e1e]">
             <div className="flex items-center gap-2">
               <BedDouble className="w-4 h-4 text-indigo-500" />
               <span className="text-sm font-bold text-slate-800 dark:text-white">Active IPD Billing</span>
@@ -269,94 +298,162 @@ export default function Billing() {
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-400 dark:text-[#666]">Finalize the bill before discharge</p>
+            {!loadingAdmissions && activeAdmissions.length > 0 && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search patient, room, ADM…"
+                  value={admissionSearch}
+                  onChange={e => { setAdmissionSearch(e.target.value); setAdmissionPage(1) }}
+                  className="pl-9 pr-3 py-1.5 w-56 text-xs rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] text-slate-700 dark:text-[#ccc] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                />
+              </div>
+            )}
           </div>
 
           {loadingAdmissions ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
             </div>
+          ) : filteredAdmissions.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-400">
+              {admissionSearch ? 'No patients match your search.' : 'No admitted patients.'}
+            </p>
           ) : (
-            <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
-              {activeAdmissions.map(adm => {
-                const admitDate = adm.admissionDate ? new Date(adm.admissionDate) : null
-                const daysStayed = admitDate
-                  ? Math.max(1, Math.ceil((Date.now() - admitDate.getTime()) / (1000 * 60 * 60 * 24)))
-                  : 0
-                return (
-                  <div key={adm.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0">
-                        <BedDouble className="w-4 h-4 text-indigo-500" />
+            <>
+              {/* Column headers */}
+              <div className="grid grid-cols-12 gap-3 px-5 py-2 bg-slate-50 dark:bg-[#0a0a0a] border-b border-slate-100 dark:border-[#1a1a1a]">
+                {[['Patient', 'col-span-4'], ['Admission No.', 'col-span-2'], ['Room · Doctor', 'col-span-3'], ['Day', 'col-span-1 text-center'], ['', 'col-span-2']].map(([h, cls]) => (
+                  <div key={h} className={`text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555] ${cls}`}>{h}</div>
+                ))}
+              </div>
+
+              <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
+                {paginatedAdmissions.map(adm => {
+                  const admitDate = adm.admissionDate ? new Date(adm.admissionDate) : null
+                  const daysStayed = admitDate
+                    ? Math.max(1, Math.ceil((Date.now() - admitDate.getTime()) / (1000 * 60 * 60 * 24)))
+                    : 0
+                  const isBillPaid = paidIpdAdmissionIds.has(String(adm.id))
+                  return (
+                    <div key={adm.id} className="grid grid-cols-12 gap-3 items-center px-5 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
+                      <div className="col-span-4 min-w-0">
+                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{adm.patientName}</p>
+                        {adm.patientMrn && <p className="text-[11px] text-slate-400 dark:text-[#666] mt-0.5">{adm.patientMrn}</p>}
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-800 dark:text-white">{adm.patientName}</p>
-                        <p className="text-[11px] text-slate-500 dark:text-[#888] mt-0.5 flex items-center gap-2">
-                          <span>{adm.admissionNumber}</span>
-                          {adm.roomNumber && <span>· Room {adm.roomNumber}</span>}
-                          {adm.admittingDoctorName && <span>· Dr. {adm.admittingDoctorName}</span>}
+                      <div className="col-span-2">
+                        <p className="text-xs font-mono text-slate-500 dark:text-[#888]">{adm.admissionNumber}</p>
+                      </div>
+                      <div className="col-span-3 min-w-0">
+                        <p className="text-xs text-slate-500 dark:text-[#888] truncate">
+                          {[adm.roomNumber && `Room ${adm.roomNumber}`, adm.admittingDoctorName && `Dr. ${adm.admittingDoctorName}`].filter(Boolean).join(' · ') || '—'}
                         </p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-xs font-bold text-slate-700 dark:text-[#ccc]">Day {daysStayed}</p>
-                        <p className="text-[11px] text-slate-400 dark:text-[#666]">
-                          {admitDate ? admitDate.toLocaleDateString('en-IN') : '—'}
-                        </p>
+                      <div className="col-span-1 text-center">
+                        <span className="text-xs font-bold text-slate-600 dark:text-[#aaa]">{daysStayed}</span>
                       </div>
-                      <button
-                        onClick={() => setFinalizeAdmission(adm)}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-500 hover:text-white transition-all text-xs font-bold"
-                      >
-                        <Receipt className="w-3.5 h-3.5" /> Finalize Bill
-                        <ChevronRight className="w-3 h-3" />
-                      </button>
+                      <div className="col-span-2 flex justify-end">
+                        {isBillPaid ? (
+                          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 px-2 py-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Bill Paid
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setFinalizeAdmission(adm)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-500 hover:text-white transition-all text-xs font-bold whitespace-nowrap"
+                          >
+                            <Receipt className="w-3 h-3" /> Finalize
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+
+              {filteredAdmissions.length > IPD_PAGE_SIZE && (
+                <div className="px-5 py-3 border-t border-slate-100 dark:border-[#1a1a1a]">
+                  <Pagination
+                    currentPage={admissionPage}
+                    totalPages={Math.ceil(filteredAdmissions.length / IPD_PAGE_SIZE)}
+                    totalItems={filteredAdmissions.length}
+                    pageSize={IPD_PAGE_SIZE}
+                    onPageChange={setAdmissionPage}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Total Invoices" value={stats.total} sub="all time" Icon={ReceiptText} accent="blue" />
-        <StatCard label="Revenue Collected" value={fmt(stats.collected)} sub="from paid invoices" Icon={TrendingUp} accent="emerald" />
-        <StatCard label="Outstanding" value={fmt(stats.outstanding)} sub="unpaid invoices" Icon={AlertCircle} accent="amber" />
-        <StatCard label="Billed Today" value={stats.todayCount} sub="invoices created today" Icon={Clock} accent="rose" />
-      </div>
+      {/* ── Invoice Table ──────────────────────────────────────────────────────── */}
+      <div className="flex flex-col flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden min-h-0">
 
-      {/* Controls */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-1.5 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg p-1 shadow-sm">
-          {['ALL', 'UNPAID', 'PAID', 'CANCELLED'].map(s => (
-            <button key={s} onClick={() => { setStatusFilter(s); setPage(1) }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === s ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm' : 'text-slate-500 dark:text-[#888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a]'}`}>
-              {s}
-            </button>
-          ))}
-        </div>
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search invoice #, patient name, MRN…"
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
-          />
-        </div>
-      </div>
+        {/* Tab bar + controls */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-[#1a1a1a] gap-3 flex-wrap">
 
-      {/* Table */}
-      <div className="flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden flex flex-col">
-        <div className="overflow-x-auto flex-1">
+          {/* OPD / IPD tabs */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#1a1a1a] rounded-lg p-1">
+            {[['OPD', opdInvoices.length], ['IPD', ipdInvoices.length]].map(([t, count]) => (
+              <button
+                key={t}
+                onClick={() => { setTab(t); setPage(1); setSearch(''); setExpandedId(null) }}
+                className={`flex items-center gap-2 px-5 py-1.5 rounded-md text-sm font-bold transition-all ${
+                  tab === t
+                    ? 'bg-white dark:bg-[#111] text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 dark:text-[#666] hover:text-slate-700 dark:hover:text-[#aaa]'
+                }`}
+              >
+                {t}
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  tab === t
+                    ? 'bg-slate-100 dark:bg-[#222] text-slate-500 dark:text-[#888]'
+                    : 'bg-slate-200 dark:bg-[#2a2a2a] text-slate-400 dark:text-[#666]'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Status filter + search */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#2a2a2a] rounded-lg p-0.5">
+              {['ALL', 'UNPAID', 'PAID', 'CANCELLED'].map(s => (
+                <button
+                  key={s}
+                  onClick={() => setCurrentFilter(s)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                    currentFilter === s
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
+                      : 'text-slate-500 dark:text-[#888] hover:text-slate-700 dark:hover:text-[#aaa]'
+                  }`}
+                >
+                  {s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
+                </button>
+              ))}
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search invoice, patient…"
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1) }}
+                className="pl-9 pr-3 py-2 w-52 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto overflow-y-auto flex-1">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-[#1a1a1a] bg-slate-50/30 dark:bg-[#0f0f0f]">
+            <thead className="sticky top-0 z-10">
+              <tr className="border-b border-slate-100 dark:border-[#1a1a1a] bg-white/95 dark:bg-[#111]/95 backdrop-blur-sm">
                 <th className={thCls}>Invoice</th>
                 <th className={thCls}>Patient</th>
                 <th className={thCls}>Items</th>
@@ -384,7 +481,12 @@ export default function Billing() {
                         <ReceiptText className="w-8 h-8 text-slate-200 dark:text-slate-700" />
                       </div>
                       <p className="text-sm font-medium text-slate-400">
-                        {search ? 'No invoices match your search.' : 'No invoices yet.'}
+                        {search
+                          ? 'No invoices match your search.'
+                          : currentFilter === 'ALL'
+                            ? `No ${tab} invoices yet.`
+                            : `No ${tab} invoices with status ${currentFilter.toLowerCase()}.`
+                        }
                       </p>
                     </div>
                   </td>
@@ -394,36 +496,31 @@ export default function Billing() {
                   const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID
                   const StatusIcon = cfg.Icon
                   const isExpanded = expandedId === inv.id
-
                   return (
-                    <>
-                      <tr key={inv.id}
+                    <Fragment key={inv.id}>
+                      <tr
                         className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all cursor-pointer"
-                        onClick={() => setExpandedId(isExpanded ? null : inv.id)}>
-
+                        onClick={() => setExpandedId(isExpanded ? null : inv.id)}
+                      >
                         <td className="px-5 py-4">
                           <p className="font-bold text-sm text-slate-900 dark:text-white">{inv.invoiceNumber}</p>
                           <p className="text-xs text-slate-400 mt-0.5">
                             {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                           </p>
                         </td>
-
                         <td className="px-5 py-4">
                           <p className="font-semibold text-sm text-slate-900 dark:text-white">{inv.patientName ?? '—'}</p>
                           <p className="text-xs text-slate-400 mt-0.5">{inv.patientMrn ?? ''}</p>
                         </td>
-
                         <td className="px-5 py-4">
                           <ItemTypePips items={inv.items} />
                         </td>
-
                         <td className="px-5 py-4">
                           <p className="font-bold text-sm text-slate-900 dark:text-white">{fmt(inv.total)}</p>
                           {Number(inv.discount) > 0 && (
-                            <p className="text-xs text-red-500 mt-0.5">-{fmt(inv.discount)} disc.</p>
+                            <p className="text-xs text-red-500 mt-0.5">−{fmt(inv.discount)} disc.</p>
                           )}
                         </td>
-
                         <td className="px-5 py-4">
                           {inv.paymentMethod ? (
                             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#1a1a1a] text-xs font-semibold text-slate-600 dark:text-[#aaa]">
@@ -433,7 +530,6 @@ export default function Billing() {
                             <span className="text-slate-300 dark:text-slate-700">—</span>
                           )}
                         </td>
-
                         <td className="px-5 py-4">
                           <div className="flex justify-center">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${cfg.cls}`}>
@@ -441,39 +537,28 @@ export default function Billing() {
                             </span>
                           </div>
                         </td>
-
                         <td className="px-5 py-4">
-                          <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-                            {inv.status === 'UNPAID' && (
-                              <button
-                                onClick={() => handleMarkPaid(inv.id)}
-                                disabled={markingId === inv.id}
-                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold transition-colors">
-                                {markingId === inv.id
-                                  ? <Loader2 className="w-3 h-3 animate-spin" />
-                                  : <CheckCircle2 className="w-3 h-3" />}
-                                Paid
-                              </button>
-                            )}
+                          <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => setDetailInvoiceId(inv.id)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
-                              title="View Details / Apply Waiver">
+                              title="View Details"
+                            >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => printInvoice(inv)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
-                              title="Print Invoice">
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
+                              title="Print"
+                            >
                               <Printer className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
                       </tr>
 
-                      {/* Expanded items row */}
                       {isExpanded && inv.items?.length > 0 && (
-                        <tr key={`${inv.id}-exp`} className="bg-slate-50/70 dark:bg-[#0d0d0d]">
+                        <tr className="bg-slate-50/70 dark:bg-[#0d0d0d]">
                           <td colSpan={7} className="px-5 pb-4 pt-2">
                             <div className="rounded-lg border border-slate-100 dark:border-[#1e1e1e] overflow-hidden">
                               <table className="w-full text-sm">
@@ -510,7 +595,7 @@ export default function Billing() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   )
                 })
               )}
@@ -531,24 +616,14 @@ export default function Billing() {
         )}
       </div>
 
-      {showCreate && (
-        <CreateInvoiceModal
-          onClose={() => setShowCreate(false)}
-          onCreated={load}
-        />
-      )}
+      {/* Modals */}
+      {showCreate && <CreateInvoiceModal onClose={() => setShowCreate(false)} onCreated={load} />}
 
       {finalizeAdmission && (
         <FinalizeIPDBillingModal
           admission={finalizeAdmission}
           onClose={() => setFinalizeAdmission(null)}
-          onFinalized={() => {
-            setFinalizeAdmission(null)
-            load()
-            admissionApi.list(user.hospitalId, false).then(data => {
-              setActiveAdmissions(Array.isArray(data) ? data : [])
-            }).catch(() => {})
-          }}
+          onFinalized={() => { setFinalizeAdmission(null); load(); reloadAdmissions() }}
         />
       )}
 
