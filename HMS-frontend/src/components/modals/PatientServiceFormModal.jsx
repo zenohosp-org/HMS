@@ -5,10 +5,13 @@ import { useNotification } from "@/context/NotificationContext";
 import { patientServicesApi } from "@/utils/api";
 import SidePane from "@/components/SidePane";
 
+const MEAL_DEFAULTS = { BREAKFAST: "08:00", LUNCH: "13:00", DINNER: "20:00" }
+
 const EMPTY_FORM = {
   name: "",
   type: "FOOD",
   mealTime: "BREAKFAST",
+  chargeTime: "08:00",
   pricePerMeal: "",
   pricePerDay: "",
   isActive: true,
@@ -25,6 +28,7 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
         name: service.name,
         type: service.type,
         mealTime: service.mealTime || "BREAKFAST",
+        chargeTime: service.chargeTime || MEAL_DEFAULTS[service.mealTime] || "08:00",
         pricePerMeal: service.pricePerMeal ?? "",
         pricePerDay: service.pricePerDay ?? "",
         isActive: service.isActive,
@@ -43,6 +47,7 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
       name: form.name.trim(),
       type: form.type,
       mealTime: form.type === "FOOD" ? form.mealTime : null,
+      chargeTime: form.type === "FOOD" ? form.chargeTime : null,
       pricePerMeal: form.type === "FOOD" ? parseFloat(form.pricePerMeal) || 0 : null,
       pricePerDay: form.type !== "FOOD" ? parseFloat(form.pricePerDay) || 0 : null,
       isActive: form.isActive,
@@ -98,18 +103,33 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
       </div>
 
       {form.type === "FOOD" && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className={labelCls}>Meal Time <span className="text-rose-500">*</span></label>
-            <select
-              value={form.mealTime}
-              onChange={(e) => set("mealTime", e.target.value)}
-              className={inputCls + " cursor-pointer"}
-            >
-              <option value="BREAKFAST">Breakfast</option>
-              <option value="LUNCH">Lunch</option>
-              <option value="DINNER">Dinner</option>
-            </select>
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className={labelCls}>Meal Time <span className="text-rose-500">*</span></label>
+              <select
+                value={form.mealTime}
+                onChange={(e) => {
+                  set("mealTime", e.target.value)
+                  set("chargeTime", MEAL_DEFAULTS[e.target.value] || "08:00")
+                }}
+                className={inputCls + " cursor-pointer"}
+              >
+                <option value="BREAKFAST">Breakfast</option>
+                <option value="LUNCH">Lunch</option>
+                <option value="DINNER">Dinner</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className={labelCls}>Charge Time <span className="text-rose-500">*</span></label>
+              <input
+                type="time"
+                value={form.chargeTime}
+                onChange={(e) => set("chargeTime", e.target.value)}
+                className={inputCls}
+                required
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className={labelCls}>Price per Meal (₹) <span className="text-rose-500">*</span></label>
@@ -124,7 +144,7 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
               required
             />
           </div>
-        </div>
+        </>
       )}
 
       {form.type !== "FOOD" && (

@@ -33,6 +33,9 @@ public class PatientService {
     @Column(name = "meal_time")
     private MealTime mealTime; // BREAKFAST, LUNCH, DINNER (for FOOD type only)
 
+    @Column(name = "charge_time", length = 5)
+    private String chargeTime; // HH:mm — time of day this meal is served, used for exact meal-slot billing
+
     @Column(name = "price_per_meal", precision = 10, scale = 2)
     private BigDecimal pricePerMeal; // For FOOD services
 

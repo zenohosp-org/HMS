@@ -278,6 +278,23 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     setLoadingLogs(false)
   }, [admission?.id, user?.hospitalId])
 
+  const countMealSlots = (admitDate, dischargeDate, chargeTime) => {
+    if (!chargeTime) return 0
+    const [h, m] = chargeTime.split(':').map(Number)
+    const admit = new Date(admitDate)
+    const discharge = new Date(dischargeDate)
+    let count = 0
+    const day = new Date(admit)
+    day.setHours(0, 0, 0, 0)
+    while (day <= discharge) {
+      const slot = new Date(day)
+      slot.setHours(h, m, 0, 0)
+      if (slot >= admit && slot <= discharge) count++
+      day.setDate(day.getDate() + 1)
+    }
+    return count
+  }
+
   /* ── Fetch billing ── */
   const fetchBilling = useCallback(async () => {
     setLoadingBilling(true)
@@ -353,8 +370,11 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
       const enabledServices = (Array.isArray(patientServices) ? patientServices : []).filter(s => s.isActive)
       enabledServices.forEach(s => {
         if (s.type === 'FOOD') {
-          const qty = daysStayed * 3
-          items.push({ key: key++, itemType: 'CUSTOM', description: `${s.name} (${daysStayed}d × 3 meals)`, quantity: qty, unitPrice: s.pricePerMeal || 0, totalPrice: qty * (s.pricePerMeal || 0) })
+          const endDate = isDischarged ? admission.actualDischargeDate : new Date().toISOString()
+          const qty = s.chargeTime
+            ? countMealSlots(admission.admissionDate, endDate, s.chargeTime)
+            : daysStayed
+          items.push({ key: key++, itemType: 'CUSTOM', description: `${s.name} (${qty} meal${qty !== 1 ? 's' : ''})`, quantity: qty, unitPrice: s.pricePerMeal || 0, totalPrice: qty * (s.pricePerMeal || 0) })
         } else {
           items.push({ key: key++, itemType: 'CUSTOM', description: `${s.name} (${daysStayed}d)`, quantity: daysStayed, unitPrice: s.pricePerDay || 0, totalPrice: daysStayed * (s.pricePerDay || 0) })
         }

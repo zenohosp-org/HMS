@@ -63,6 +63,24 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
   const [submitting, setSubmitting] = useState(false)
   const [invoiceNo] = useState(generateInvoiceNumber)
 
+  // Count how many times a meal slot (HH:mm) falls within the admission window
+  const countMealSlots = (admitDate, dischargeDate, chargeTime) => {
+    if (!chargeTime) return 0
+    const [h, m] = chargeTime.split(':').map(Number)
+    const admit = new Date(admitDate)
+    const discharge = new Date(dischargeDate)
+    let count = 0
+    const day = new Date(admit)
+    day.setHours(0, 0, 0, 0)
+    while (day <= discharge) {
+      const slot = new Date(day)
+      slot.setHours(h, m, 0, 0)
+      if (slot >= admit && slot <= discharge) count++
+      day.setDate(day.getDate() + 1)
+    }
+    return count
+  }
+
   useEffect(() => {
     if (step !== 2 || !user?.hospitalId || !admission.patientId) return
     setLoadingBill(true)
@@ -156,14 +174,15 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
           : []
         enabledServices.forEach(s => {
           if (s.type === 'FOOD') {
-            // Food: 3 meals per day × daysStayed
             const price = s.pricePerMeal || 0
-            const quantity = daysStayed * 3 // 3 meals per day
+            const quantity = s.chargeTime
+              ? countMealSlots(admission.admissionDate, clinical.actualDischargeDate, s.chargeTime)
+              : daysStayed
             auto.push({
               key: key++,
               itemType: 'CUSTOM',
-              description: `${s.name} (${daysStayed} day${daysStayed !== 1 ? 's' : ''} × 3 meals)`,
-              quantity: quantity,
+              description: `${s.name} (${quantity} meal${quantity !== 1 ? 's' : ''})`,
+              quantity,
               unitPrice: price,
               totalPrice: quantity * price,
             })
