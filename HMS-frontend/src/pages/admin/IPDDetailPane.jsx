@@ -147,7 +147,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     events.push({
       id: 'admitted',
       type: 'ADMITTED',
-      title: admission.departmentName ? `Admitted to ${admission.departmentName}` : 'Patient Admitted',
+      title: 'Patient Admitted',
       subtitle: admission.admittingDoctorName ? `Under the care of Dr. ${admission.admittingDoctorName}` : (admission.chiefComplaint || ''),
       timestamp: new Date(admission.admissionDate),
     })
@@ -178,7 +178,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
               .forEach(l => {
                 let title, subtitle
                 if (l.event === 'ALLOCATED') {
-                  title = `Moved into Room ${l.roomNumber}`
+                  title = `Admitted to Room ${l.roomNumber}`
                   subtitle = l.performedBy ? `Allocated by ${l.performedBy}` : ''
                 } else if (l.event === 'DEALLOCATED') {
                   title = `Released from Room ${l.roomNumber}`
