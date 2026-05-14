@@ -10,11 +10,10 @@ import {
   ReceiptText, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
   BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench,
-  Receipt, ChevronRight, Eye,
+  Receipt, Eye,
 } from 'lucide-react'
 
 const PAGE_SIZE = 10
-const IPD_PAGE_SIZE = 8
 
 const STATUS_CFG = {
   PAID:      { label: 'Paid',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
