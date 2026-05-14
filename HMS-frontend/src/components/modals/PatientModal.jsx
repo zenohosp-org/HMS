@@ -195,6 +195,79 @@ function PatientModal({ patient, onClose, onSave }) {
         </div>
       </div>
 
+      {/* ── Financial Profile ── */}
+      <div>
+        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Financial Profile</p>
+        <p className="text-[11px] text-slate-400 dark:text-[#666] mb-3">Assessed at registration to understand patient's payment background</p>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { value: "CASH", label: "Cash Patient", desc: "Weaker financial background — hospital expects periodic payment assurance" },
+            { value: "CREDIT", label: "Credit Patient", desc: "Financially sound — can settle the full bill at end of treatment" },
+          ].map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => set("paymentCategory", opt.value)}
+              className={`text-left p-3 rounded-lg border-2 transition-all ${
+                form.paymentCategory === opt.value
+                  ? opt.value === "CASH"
+                    ? "border-amber-500 bg-amber-50 dark:bg-amber-500/10"
+                    : "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10"
+                  : "border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a]"
+              }`}
+            >
+              <p className={`text-xs font-bold ${
+                form.paymentCategory === opt.value
+                  ? opt.value === "CASH" ? "text-amber-700 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400"
+                  : "text-slate-700 dark:text-[#ccc]"
+              }`}>{opt.label}</p>
+              <p className="text-[10px] text-slate-400 dark:text-[#666] mt-0.5 leading-relaxed">{opt.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Registration Advance (new patient only) ── */}
+      {!isEdit && (
+        <div>
+          <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Registration Advance</p>
+          <p className="text-[11px] text-slate-400 dark:text-[#666] mb-3">
+            Optional — collect upfront if patient is likely to be admitted. Will be deducted from the final IPD bill.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Amount (₹)</label>
+              <input
+                type="number" min="0" step="1"
+                className={inputCls}
+                value={form.advanceAmount}
+                onChange={(e) => set("advanceAmount", e.target.value)}
+                placeholder="0 — leave blank to skip"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Payment Method</label>
+              <select className={inputCls} value={form.advancePaymentMethod} onChange={(e) => set("advancePaymentMethod", e.target.value)}
+                disabled={!form.advanceAmount || Number(form.advanceAmount) === 0}>
+                {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+          {form.advanceAmount && Number(form.advanceAmount) > 0 && (
+            <div className="mt-3">
+              <label className={labelCls}>Note (optional)</label>
+              <input className={inputCls} value={form.advanceNotes} onChange={(e) => set("advanceNotes", e.target.value)}
+                placeholder="e.g. Registration deposit, Pre-surgery advance…" />
+            </div>
+          )}
+          {form.advanceAmount && Number(form.advanceAmount) > 0 && (
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-2">
+              ₹{Number(form.advanceAmount).toLocaleString('en-IN')} will be recorded and auto-linked when patient is admitted.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* ── Emergency Contact ── */}
       <div>
         <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Emergency Contact</p>
@@ -282,78 +355,6 @@ function PatientModal({ patient, onClose, onSave }) {
         </div>
       </div>
 
-      {/* ── Financial Profile ── */}
-      <div>
-        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Financial Profile</p>
-        <p className="text-[11px] text-slate-400 dark:text-[#666] mb-3">Assessed at registration to understand patient's payment background</p>
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { value: "CASH", label: "Cash Patient", desc: "Weaker financial background — hospital expects periodic payment assurance" },
-            { value: "CREDIT", label: "Credit Patient", desc: "Financially sound — can settle the full bill at end of treatment" },
-          ].map(opt => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => set("paymentCategory", opt.value)}
-              className={`text-left p-3 rounded-lg border-2 transition-all ${
-                form.paymentCategory === opt.value
-                  ? opt.value === "CASH"
-                    ? "border-amber-500 bg-amber-50 dark:bg-amber-500/10"
-                    : "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10"
-                  : "border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a]"
-              }`}
-            >
-              <p className={`text-xs font-bold ${
-                form.paymentCategory === opt.value
-                  ? opt.value === "CASH" ? "text-amber-700 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400"
-                  : "text-slate-700 dark:text-[#ccc]"
-              }`}>{opt.label}</p>
-              <p className="text-[10px] text-slate-400 dark:text-[#666] mt-0.5 leading-relaxed">{opt.desc}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Registration Advance (new patient only) ── */}
-      {!isEdit && (
-        <div>
-          <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Registration Advance</p>
-          <p className="text-[11px] text-slate-400 dark:text-[#666] mb-3">
-            Optional — collect upfront if patient is likely to be admitted. Will be deducted from the final IPD bill.
-          </p>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Amount (₹)</label>
-              <input
-                type="number" min="0" step="1"
-                className={inputCls}
-                value={form.advanceAmount}
-                onChange={(e) => set("advanceAmount", e.target.value)}
-                placeholder="0 — leave blank to skip"
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Payment Method</label>
-              <select className={inputCls} value={form.advancePaymentMethod} onChange={(e) => set("advancePaymentMethod", e.target.value)}
-                disabled={!form.advanceAmount || Number(form.advanceAmount) === 0}>
-                {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-          </div>
-          {form.advanceAmount && Number(form.advanceAmount) > 0 && (
-            <div className="mt-3">
-              <label className={labelCls}>Note (optional)</label>
-              <input className={inputCls} value={form.advanceNotes} onChange={(e) => set("advanceNotes", e.target.value)}
-                placeholder="e.g. Registration deposit, Pre-surgery advance…" />
-            </div>
-          )}
-          {form.advanceAmount && Number(form.advanceAmount) > 0 && (
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-2">
-              ₹{Number(form.advanceAmount).toLocaleString('en-IN')} will be recorded and auto-linked when patient is admitted.
-            </p>
-          )}
-        </div>
-      )}
     </form>
   );
 
