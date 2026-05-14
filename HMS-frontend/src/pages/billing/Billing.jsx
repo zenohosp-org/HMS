@@ -18,6 +18,7 @@ const PAGE_SIZE = 10
 const STATUS_CFG = {
   PAID:      { label: 'Paid',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
   UNPAID:    { label: 'Unpaid',    cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',             Icon: Clock        },
+  PARTIAL:   { label: 'Partial',   cls: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20',       Icon: AlertCircle  },
   CANCELLED: { label: 'Cancelled', cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',                   Icon: XCircle      },
 }
 
@@ -155,7 +156,7 @@ export default function Billing() {
 
   const stats = useMemo(() => {
     const paid = invoices.filter(i => i.status === 'PAID')
-    const unpaid = invoices.filter(i => i.status === 'UNPAID')
+    const unpaid = invoices.filter(i => i.status === 'UNPAID' || i.status === 'PARTIAL')
     return {
       total: invoices.length,
       collected: paid.reduce((s, i) => s + Number(i.total), 0),
@@ -200,7 +201,7 @@ export default function Billing() {
     const total = Number(inv.total)
     const discount = Number(inv.discount || 0)
     const subtotal = total + discount
-    const statusCls = { PAID: 'background:#d1fae5;color:#065f46', UNPAID: 'background:#fef3c7;color:#92400e', CANCELLED: 'background:#fee2e2;color:#991b1b' }
+    const statusCls = { PAID: 'background:#d1fae5;color:#065f46', UNPAID: 'background:#fef3c7;color:#92400e', PARTIAL: 'background:#ffedd5;color:#9a3412', CANCELLED: 'background:#fee2e2;color:#991b1b' }
     const itemRows = items.map(item => `
       <tr>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.itemType?.replace('_', ' ') ?? ''}</td>
@@ -326,7 +327,7 @@ export default function Billing() {
           {/* Status filter + search */}
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#2a2a2a] rounded-lg p-0.5">
-              {['ALL', 'UNPAID', 'PAID', 'CANCELLED'].map(s => (
+              {['ALL', 'UNPAID', 'PARTIAL', 'PAID', 'CANCELLED'].map(s => (
                 <button
                   key={s}
                   onClick={() => setCurrentFilter(s)}
@@ -398,7 +399,7 @@ export default function Billing() {
               ) : (
                 paginated.map(inv => {
                   // IPD placeholder: has an admissionId, is unpaid, AND the admission is still active
-                  const isIPDPending = !!inv.admissionId && inv.status === 'UNPAID'
+                  const isIPDPending = !!inv.admissionId && (inv.status === 'UNPAID' || inv.status === 'PARTIAL')
                     && activeAdmissions.some(a => String(a.id) === String(inv.admissionId))
                   const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID
                   const StatusIcon = cfg.Icon
@@ -423,17 +424,20 @@ export default function Billing() {
                           <p className="text-xs text-slate-400 mt-0.5">{inv.patientMrn ?? ''}</p>
                         </td>
                         <td className="px-5 py-4">
-                          {isIPDPending
+                          {isIPDPending && inv.status === 'UNPAID' && !inv.items?.length
                             ? <span className="text-xs text-slate-400 italic">Pending charges</span>
                             : <ItemTypePips items={inv.items} />
                           }
                         </td>
                         <td className="px-5 py-4">
                           <p className="font-bold text-sm text-slate-900 dark:text-white">
-                            {isIPDPending && Number(inv.total) > 0 ? '~' : ''}{fmt(inv.total)}
+                            {isIPDPending && inv.status === 'UNPAID' && Number(inv.total) > 0 ? '~' : ''}{fmt(inv.total)}
                           </p>
-                          {isIPDPending && Number(inv.total) > 0 && (
+                          {isIPDPending && inv.status === 'UNPAID' && Number(inv.total) > 0 && (
                             <p className="text-[11px] text-slate-400 mt-0.5">estimated</p>
+                          )}
+                          {inv.status === 'PARTIAL' && Number(inv.paidAmount) > 0 && (
+                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">{fmt(inv.paidAmount)} paid</p>
                           )}
                           {Number(inv.discount) > 0 && (
                             <p className="text-xs text-red-500 mt-0.5">−{fmt(inv.discount)} disc.</p>
@@ -450,7 +454,7 @@ export default function Billing() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex justify-center">
-                            {isIPDPending ? (
+                            {isIPDPending && inv.status === 'UNPAID' ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20">
                                 <BedDouble className="w-3 h-3" /> Admitted
                               </span>
@@ -468,9 +472,9 @@ export default function Billing() {
                                 onClick={() => admission && setFinalizeAdmission(admission)}
                                 disabled={!admission}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-500 text-white hover:bg-indigo-600 transition-colors disabled:opacity-40"
-                                title="Generate IPD Bill"
+                                title={inv.status === 'PARTIAL' ? 'Continue collecting payment' : 'Generate IPD Bill'}
                               >
-                                <Receipt className="w-3.5 h-3.5" /> Generate Bill
+                                <Receipt className="w-3.5 h-3.5" /> {inv.status === 'PARTIAL' ? 'Continue Bill' : 'Generate Bill'}
                               </button>
                             ) : (
                               <button
