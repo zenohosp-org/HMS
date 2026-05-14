@@ -302,7 +302,9 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     const isDischarged = !!admission.actualDischargeDate
     const admitMs = new Date(admission.admissionDate).getTime()
     const endMs = isDischarged ? new Date(admission.actualDischargeDate).getTime() : Date.now()
-    const daysStayed = Math.max(1, Math.ceil((endMs - admitMs) / (1000 * 60 * 60 * 24)))
+    const elapsedMs = endMs - admitMs
+    const daysStayed = Math.max(1, Math.ceil(elapsedMs / (1000 * 60 * 60 * 24)))
+    const roomDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24))
 
     // For discharged patients — look for a finalized HMS invoice first
     if (isDischarged) {
@@ -340,9 +342,9 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
       ])
 
       const roomNumber = admission.roomNumber || fullAdmission?.roomNumber
-      if (roomNumber) {
+      if (roomNumber && roomDays > 0) {
         const pricePerDay = suggestions.roomCharge?.pricePerDay || fullAdmission?.roomPricePerDay || 0
-        items.push({ key: key++, itemType: 'ROOM_CHARGE', description: `Room ${roomNumber} (${daysStayed} day${daysStayed !== 1 ? 's' : ''})`, quantity: daysStayed, unitPrice: pricePerDay, totalPrice: daysStayed * pricePerDay })
+        items.push({ key: key++, itemType: 'ROOM_CHARGE', description: `Room ${roomNumber} (${roomDays} day${roomDays !== 1 ? 's' : ''})`, quantity: roomDays, unitPrice: pricePerDay, totalPrice: roomDays * pricePerDay })
       }
 
       const consults = Array.isArray(suggestions.appointments) ? suggestions.appointments : []

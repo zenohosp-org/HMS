@@ -18,6 +18,23 @@ const TYPE_META = {
 
 const GST_RATE = 0.18
 
+function countMealSlots(admitDate, dischargeDate, chargeTime) {
+  if (!chargeTime) return 0
+  const [h, m] = chargeTime.split(':').map(Number)
+  const admit = new Date(admitDate)
+  const discharge = new Date(dischargeDate)
+  let count = 0
+  const day = new Date(admit)
+  day.setHours(0, 0, 0, 0)
+  while (day <= discharge) {
+    const slot = new Date(day)
+    slot.setHours(h, m, 0, 0)
+    if (slot >= admit && slot <= discharge) count++
+    day.setDate(day.getDate() + 1)
+  }
+  return count
+}
+
 function fmt(n) {
   return '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -33,7 +50,9 @@ export default function ViewBillingModal({ admission, onClose }) {
     setLoading(true)
 
     const admitMs = new Date(admission.admissionDate).getTime()
-    const daysStayed = Math.max(1, Math.ceil((Date.now() - admitMs) / (1000 * 60 * 60 * 24)))
+    const elapsedMs = Date.now() - admitMs
+    const daysStayed = Math.max(1, Math.ceil(elapsedMs / (1000 * 60 * 60 * 24)))
+    const roomDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24))
 
     Promise.all([
       invoiceApi.getSmartSuggestions(admission.patientId, admission.id).catch(() => ({})),
@@ -46,9 +65,9 @@ export default function ViewBillingModal({ admission, onClose }) {
         let key = 0
         const auto = []
 
-        // Room charge
+        // Room charge — only after 24 hrs (roomDays = full 24-hr periods elapsed)
         const roomNumber = admission.roomNumber || fullAdmission?.roomNumber
-        if (roomNumber) {
+        if (roomNumber && roomDays > 0) {
           const pricePerDay =
             suggestions.roomCharge?.pricePerDay ||
             fullAdmission?.roomPricePerDay ||
@@ -63,10 +82,10 @@ export default function ViewBillingModal({ admission, onClose }) {
           auto.push({
             key: key++,
             itemType: 'ROOM_CHARGE',
-            description: `${roomLabel} — ${daysStayed} day${daysStayed !== 1 ? 's' : ''}`,
-            quantity: daysStayed,
+            description: `${roomLabel} — ${roomDays} day${roomDays !== 1 ? 's' : ''}`,
+            quantity: roomDays,
             unitPrice: pricePerDay,
-            totalPrice: daysStayed * pricePerDay,
+            totalPrice: roomDays * pricePerDay,
           })
         }
 
@@ -105,14 +124,17 @@ export default function ViewBillingModal({ admission, onClose }) {
         const enabledServices = Array.isArray(patientServices)
           ? patientServices.filter(s => s.isActive)
           : []
+        const nowIso = new Date().toISOString()
         enabledServices.forEach(s => {
           if (s.type === 'FOOD') {
             const price = s.pricePerMeal || 0
-            const quantity = daysStayed * 3
+            const quantity = s.chargeTime
+              ? countMealSlots(admission.admissionDate, nowIso, s.chargeTime)
+              : daysStayed * 3
             auto.push({
               key: key++,
               itemType: 'CUSTOM',
-              description: `${s.name} (${daysStayed} day${daysStayed !== 1 ? 's' : ''} × 3 meals)`,
+              description: `${s.name} (${quantity} meal${quantity !== 1 ? 's' : ''})`,
               quantity,
               unitPrice: price,
               totalPrice: quantity * price,

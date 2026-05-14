@@ -111,9 +111,11 @@ export default function Billing() {
               admissionApi.get(inv.admissionId).catch(() => null),
             ])
             const admitDate = admDetails?.admissionDate ? new Date(admDetails.admissionDate) : null
-            const days = admitDate ? Math.max(1, Math.ceil((Date.now() - admitDate.getTime()) / 86400000)) : 1
+            const elapsedMs = admitDate ? Date.now() - admitDate.getTime() : 0
+            const days = admitDate ? Math.max(1, Math.ceil(elapsedMs / 86400000)) : 1
+            const roomDays = Math.floor(elapsedMs / 86400000)
             let total = 0
-            if (suggestions.roomCharge?.pricePerDay) total += Number(suggestions.roomCharge.pricePerDay) * days
+            if (suggestions.roomCharge?.pricePerDay && roomDays > 0) total += Number(suggestions.roomCharge.pricePerDay) * roomDays
             activeServices.forEach(s => {
               if (s.type === 'FOOD') total += Number(s.pricePerMeal || 0) * days * 3
               else if (s.type === 'REGISTRATION' && s.oneTimeCharge) total += Number(s.pricePerDay || 0)
@@ -395,7 +397,9 @@ export default function Billing() {
                 </tr>
               ) : (
                 paginated.map(inv => {
+                  // IPD placeholder: has an admissionId, is unpaid, AND the admission is still active
                   const isIPDPending = !!inv.admissionId && inv.status === 'UNPAID'
+                    && activeAdmissions.some(a => String(a.id) === String(inv.admissionId))
                   const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID
                   const StatusIcon = cfg.Icon
                   const isExpanded = expandedId === inv.id

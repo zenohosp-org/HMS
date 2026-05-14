@@ -77,7 +77,9 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
     const admitMs = new Date(admission.admissionDate).getTime()
     const dischargeMs = new Date(effectiveDischargeDate).getTime()
-    const daysStayed = Math.max(1, Math.ceil((dischargeMs - admitMs) / (1000 * 60 * 60 * 24)))
+    const elapsedMs = dischargeMs - admitMs
+    const daysStayed = Math.max(1, Math.ceil(elapsedMs / (1000 * 60 * 60 * 24)))
+    const roomDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24))
 
     Promise.all([
       invoiceApi.getSmartSuggestions(admission.patientId, admission.id).catch(() => ({})),
@@ -96,16 +98,16 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       let key = 0
       const auto = []
 
-      // Room charge
+      // Room charge — only after 24 hrs (roomDays = full 24-hr periods elapsed)
       const roomNumber = admission.roomNumber
-      if (roomNumber) {
+      if (roomNumber && roomDays > 0) {
         const pricePerDay = suggestions.roomCharge?.pricePerDay || admission.roomPricePerDay || 0
         const roomType = admission.roomType
         const roomLabel = roomType ? `Room ${roomNumber} (${roomType.replace(/_/g, ' ')})` : `Room ${roomNumber}`
         auto.push({
           key: key++, itemType: 'ROOM_CHARGE',
-          description: `${roomLabel} — ${daysStayed} day${daysStayed !== 1 ? 's' : ''}`,
-          quantity: daysStayed, unitPrice: pricePerDay, totalPrice: daysStayed * pricePerDay,
+          description: `${roomLabel} — ${roomDays} day${roomDays !== 1 ? 's' : ''}`,
+          quantity: roomDays, unitPrice: pricePerDay, totalPrice: roomDays * pricePerDay,
         })
       }
 
