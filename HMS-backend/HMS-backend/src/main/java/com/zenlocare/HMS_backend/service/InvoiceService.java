@@ -503,8 +503,8 @@ public class InvoiceService {
         invoice.setPaidAmount(newPaid);
         invoice.setUpdatedAt(LocalDateTime.now());
 
-        BigDecimal advance = invoice.getAdvanceAdjusted();
-        BigDecimal total = invoice.getTotal();
+        BigDecimal advance = invoice.getAdvanceAdjusted() != null ? invoice.getAdvanceAdjusted() : BigDecimal.ZERO;
+        BigDecimal total = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
         boolean fullyPaid = newPaid.add(advance).compareTo(total) >= 0;
         invoice.setStatus(fullyPaid ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL);
 

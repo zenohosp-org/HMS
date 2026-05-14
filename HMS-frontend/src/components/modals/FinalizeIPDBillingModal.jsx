@@ -286,7 +286,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         })
       })
 
-      setItems(auto)
+      setItems(auto.filter(i => Number(i.quantity) > 0 || Number(i.totalPrice) > 0))
       setNextKey(key)
     }).catch(() => {
       notify('Could not load pending charges — add items manually', 'info')
@@ -354,15 +354,17 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
     total: grandTotal,
     advanceAdjusted: advanceAdjusted > 0 ? advanceAdjusted : undefined,
     notes: billNotes || `IPD Bill — Admission ${admission.admissionNumber}`,
-    items: items.map(i => ({
-      itemType: i.itemType,
-      description: i.description,
-      quantity: Number(i.quantity),
-      unitPrice: Number(i.unitPrice),
-      totalPrice: Number(i.totalPrice),
-      radiologyOrderId: i.radiologyOrderId ?? undefined,
-      appointmentId: i.appointmentId ?? undefined,
-    })),
+    items: items
+      .filter(i => Number(i.quantity) > 0 || Number(i.totalPrice) > 0)
+      .map(i => ({
+        itemType: i.itemType,
+        description: i.description,
+        quantity: Number(i.quantity),
+        unitPrice: Number(i.unitPrice),
+        totalPrice: Number(i.totalPrice),
+        radiologyOrderId: i.radiologyOrderId ?? undefined,
+        appointmentId: i.appointmentId ?? undefined,
+      })),
   })
 
   const handleSaveBill = async () => {
