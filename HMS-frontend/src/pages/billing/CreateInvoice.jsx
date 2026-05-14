@@ -37,7 +37,7 @@ import {
   RefreshCw,
   User
 } from "lucide-react";
-const PAYMENT_METHODS = ["Cash", "UPI", "Card", "Bank Transfer", "Insurance", "Cheque"];
+const PAYMENT_METHODS = ["Cash", "UPI", "Card", "Bank Transfer", "Insurance"];
 const GST_RATE = 0.18;
 function fmt(n) {
   return "\u20B9" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

@@ -9,7 +9,7 @@ import {
   Scissors, Tag, ChevronDown, ChevronUp,
 } from "lucide-react";
 
-const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance', 'Cheque']
+const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
 
 const TYPE_COLORS = {
   CONSULTATION: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400',

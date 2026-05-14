@@ -11,7 +11,7 @@ import {
   Scissors, Landmark,
 } from 'lucide-react'
 
-const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance', 'Cheque']
+const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
 const GST_RATE = 0.18
 
 const TYPE_META = {
