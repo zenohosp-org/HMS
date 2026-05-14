@@ -317,6 +317,12 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const gst = (medicineSubtotal - medicineSubtotal * (discountPct / 100)) * GST_RATE
   const grandTotal = subtotal - discountAmt + gst
 
+  // Silently keep billing list estimate in sync as items load/change
+  useEffect(() => {
+    if (!invoiceId || loadingBill || grandTotal <= 0) return
+    invoiceApi.updateEstimate(invoiceId, grandTotal).catch(() => {})
+  }, [grandTotal, invoiceId, loadingBill])
+
   // Remaining advance = total collected minus already applied portions
   const totalAdvance = useMemo(
     () => advances.reduce((s, a) => s + Math.max(0, Number(a.amount || 0) - Number(a.appliedAmount || 0)), 0),
@@ -405,6 +411,13 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
     const amt = Number(payAmount)
     if (!amt || amt <= 0) { notify('Enter a valid amount', 'warning'); return }
     if (!invoiceId) { notify('Save the bill first before collecting payment', 'warning'); return }
+    // If bill is still PAID (new charges added but not saved yet), save first to reset status
+    if (invoiceStatus === 'PAID') {
+      notify('Saving updated bill before collecting payment…', 'info')
+      await handleSaveBill()
+      // handleSaveBill updates invoiceStatus via setInvoiceStatus — re-check after
+      // (state update is async, but invoiceStatus in closure still reads PAID; backend is now UNPAID)
+    }
     setCollectingPayment(true)
     try {
       const needsBank = payMethod === 'Bank Transfer' || payMethod === 'Card'
