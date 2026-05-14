@@ -92,6 +92,10 @@ public class PatientAdvanceService {
         return patientAdvanceRepository.findByAdmission_Id(admissionId);
     }
 
+    public List<PatientAdvance> listByPatient(Integer patientId) {
+        return patientAdvanceRepository.findByPatient_Id(patientId);
+    }
+
     public BigDecimal totalByAdmission(UUID admissionId) {
         return patientAdvanceRepository.findByAdmission_Id(admissionId).stream()
                 .map(a -> a.getAmount() != null ? a.getAmount() : BigDecimal.ZERO)

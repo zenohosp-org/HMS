@@ -55,7 +55,9 @@ public class PatientController {
     @GetMapping("/{id}/advances")
     public ResponseEntity<List<PatientAdvanceDTO>> getPatientAdvances(@PathVariable Integer id) {
         return ResponseEntity.ok(
-                patientAdvanceService.listByAdmission(null) // patient-level listing handled below
+                patientAdvanceService.listByPatient(id)
+                        .stream().map(patientAdvanceService::toDTO)
+                        .collect(java.util.stream.Collectors.toList())
         );
     }
 
