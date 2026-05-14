@@ -1,7 +1,11 @@
-import { useState } from 'react'
-import { admissionApi } from '@/utils/api'
+import { useState, useEffect } from 'react'
+import { admissionApi, invoiceApi } from '@/utils/api'
 import { useNotification } from '@/context/NotificationContext'
-import { X, LogOut, CheckCircle2, Calendar, Loader2, AlertCircle } from 'lucide-react'
+import { X, LogOut, CheckCircle2, Calendar, Loader2, AlertCircle, IndianRupee } from 'lucide-react'
+
+function fmt(n) {
+  return '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })
+}
 
 export default function DischargeModal({ admission, onClose, onDischarged }) {
   const { notify } = useNotification()
@@ -16,6 +20,25 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
 
   const [submitting, setSubmitting] = useState(false)
   const [billError, setBillError] = useState(false)
+
+  // Billing status fetched on open
+  const [billStatus, setBillStatus] = useState(null)   // null | 'UNPAID' | 'PARTIAL' | 'PAID'
+  const [billTotal, setBillTotal] = useState(0)
+  const [billPaid, setBillPaid] = useState(0)
+
+  useEffect(() => {
+    invoiceApi.getAdmissionInvoice(admission.id)
+      .then(inv => {
+        if (!inv) return
+        setBillStatus(inv.status)
+        setBillTotal(Number(inv.total || 0))
+        setBillPaid(Number(inv.paidAmount || 0))
+      })
+      .catch(() => {})
+  }, [admission.id])
+
+  const billClear = billStatus === 'PAID'
+  const balanceDue = Math.max(0, billTotal - billPaid)
 
   const handleDischarge = async () => {
     if (!clinical.actualDischargeDate) { notify('Discharge date is required', 'error'); return }
@@ -36,6 +59,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
       const msg = err?.response?.data?.message || err?.message || ''
       if (msg.includes('INVOICE_UNPAID')) {
         setBillError(true)
+        setBillStatus(prev => prev === 'PAID' ? prev : 'UNPAID')
       } else {
         notify(msg || 'Discharge failed', 'error')
       }
@@ -68,8 +92,26 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
         {/* Clinical fields */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
 
-          {/* Unpaid invoice gate warning */}
-          {billError && (
+          {/* Billing gate banner — shown when bill is not cleared */}
+          {billStatus && !billClear && (
+            <div className="flex items-start gap-3 px-4 py-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-rose-700 dark:text-rose-400">
+                  {billStatus === 'PARTIAL' ? 'Partial payment — balance outstanding' : 'Bill not paid'}
+                </p>
+                <p className="text-xs text-rose-600 dark:text-rose-300 mt-0.5">
+                  {billStatus === 'PARTIAL'
+                    ? <><strong>{fmt(balanceDue)}</strong> still due. Collect the remaining balance in the <strong>Billing</strong> tab before discharging.</>
+                    : <>Finalize and pay the patient's bill in the <strong>Billing</strong> tab before discharging.</>
+                  }
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Backend-rejected gate (extra safety) */}
+          {billError && billClear && (
             <div className="flex items-start gap-3 px-4 py-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg">
               <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
               <div>
@@ -141,8 +183,9 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
           <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
           <button
             onClick={handleDischarge}
-            disabled={submitting || !clinical.actualDischargeDate}
-            className="btn-primary flex items-center gap-2"
+            disabled={submitting || !clinical.actualDischargeDate || (billStatus !== null && !billClear)}
+            title={!billClear && billStatus ? 'Settle the outstanding bill before discharging' : undefined}
+            className="btn-primary flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {submitting
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
@@ -183,11 +226,52 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
           ))}
         </div>
 
-        <div className="px-4 py-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg">
-          <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Billing is separate</p>
-          <p className="text-[11px] text-amber-600 dark:text-amber-300 mt-0.5">
-            Finalize and pay the patient bill in the <strong>Billing</strong> tab before discharging.
-          </p>
+        {/* Billing status card — dynamic */}
+        <div className={`px-4 py-3 rounded-lg border flex items-start gap-3 ${
+          billStatus === null
+            ? 'bg-slate-50 dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a]'
+            : billStatus === 'PAID'
+              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
+              : billStatus === 'PARTIAL'
+                ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/20'
+                : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20'
+        }`}>
+          <IndianRupee className={`w-4 h-4 shrink-0 mt-0.5 ${
+            billStatus === 'PAID' ? 'text-emerald-500'
+              : billStatus === 'PARTIAL' ? 'text-orange-500'
+              : 'text-rose-400'
+          }`} />
+          <div>
+            {billStatus === null && (
+              <>
+                <p className="text-xs font-semibold text-slate-500">Checking bill…</p>
+              </>
+            )}
+            {billStatus === 'PAID' && (
+              <>
+                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Bill fully settled</p>
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-300 mt-0.5">
+                  {fmt(billTotal)} paid — patient can be discharged.
+                </p>
+              </>
+            )}
+            {billStatus === 'PARTIAL' && (
+              <>
+                <p className="text-xs font-semibold text-orange-700 dark:text-orange-400">Partial payment received</p>
+                <p className="text-[11px] text-orange-600 dark:text-orange-300 mt-0.5">
+                  {fmt(billPaid)} paid · <strong>{fmt(balanceDue)} still due</strong>. Collect balance in Billing tab.
+                </p>
+              </>
+            )}
+            {billStatus === 'UNPAID' && (
+              <>
+                <p className="text-xs font-semibold text-rose-700 dark:text-rose-400">Bill not paid</p>
+                <p className="text-[11px] text-rose-600 dark:text-rose-300 mt-0.5">
+                  Finalize and pay {billTotal > 0 ? fmt(billTotal) : 'the bill'} in the Billing tab before discharging.
+                </p>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
