@@ -117,9 +117,9 @@ export default function Billing() {
             let total = 0
             if (suggestions.roomCharge?.pricePerDay && roomDays > 0) total += Number(suggestions.roomCharge.pricePerDay) * roomDays
             activeServices.forEach(s => {
-              if (s.type === 'FOOD') total += Number(s.pricePerMeal || 0) * days * 3
+              if (s.type === 'FOOD') total += Number(s.pricePerMeal || 0) * roomDays * 3
               else if (s.type === 'REGISTRATION' && s.oneTimeCharge) total += Number(s.pricePerDay || 0)
-              else total += Number(s.pricePerDay || 0) * days
+              else total += Number(s.pricePerDay || 0) * roomDays
             })
             if (total > 0) {
               await invoiceApi.updateEstimate(inv.id, total)

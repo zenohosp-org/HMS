@@ -130,7 +130,7 @@ export default function ViewBillingModal({ admission, onClose }) {
             const price = s.pricePerMeal || 0
             const quantity = s.chargeTime
               ? countMealSlots(admission.admissionDate, nowIso, s.chargeTime)
-              : daysStayed * 3
+              : roomDays * 3
             auto.push({
               key: key++,
               itemType: 'CUSTOM',
@@ -151,13 +151,16 @@ export default function ViewBillingModal({ admission, onClose }) {
             })
           } else {
             const price = s.pricePerDay || 0
+            const qty = s.chargeTime
+              ? countMealSlots(admission.admissionDate, nowIso, s.chargeTime)
+              : roomDays
             auto.push({
               key: key++,
               itemType: 'CUSTOM',
-              description: `${s.name} (${daysStayed} day${daysStayed !== 1 ? 's' : ''})`,
-              quantity: daysStayed,
+              description: `${s.name} (${qty} day${qty !== 1 ? 's' : ''})`,
+              quantity: qty,
               unitPrice: price,
-              totalPrice: daysStayed * price,
+              totalPrice: qty * price,
             })
           }
         })

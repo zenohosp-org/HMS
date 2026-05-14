@@ -137,9 +137,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       ;(Array.isArray(patientServices) ? patientServices.filter(s => s.isActive) : []).forEach(s => {
         if (s.type === 'FOOD') {
           const price = s.pricePerMeal || 0
+          // If chargeTime is set: count only slots that fall after admission; else use floor-days × 3
           const quantity = s.chargeTime
             ? countMealSlots(admission.admissionDate, effectiveDischargeDate, s.chargeTime)
-            : daysStayed
+            : roomDays * 3
           auto.push({
             key: key++, itemType: 'CUSTOM',
             description: `${s.name} (${quantity} meal${quantity !== 1 ? 's' : ''})`,
@@ -154,10 +155,14 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           })
         } else {
           const price = s.pricePerDay || 0
+          // If chargeTime is set: count only days where the service slot fired after admission
+          const qty = s.chargeTime
+            ? countMealSlots(admission.admissionDate, effectiveDischargeDate, s.chargeTime)
+            : roomDays
           auto.push({
             key: key++, itemType: 'CUSTOM',
-            description: `${s.name} (${daysStayed} day${daysStayed !== 1 ? 's' : ''})`,
-            quantity: daysStayed, unitPrice: price, totalPrice: daysStayed * price,
+            description: `${s.name} (${qty} day${qty !== 1 ? 's' : ''})`,
+            quantity: qty, unitPrice: price, totalPrice: qty * price,
           })
         }
       })
