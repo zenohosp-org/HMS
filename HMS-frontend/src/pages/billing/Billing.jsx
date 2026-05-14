@@ -89,11 +89,8 @@ export default function Billing() {
   const [showCreate, setShowCreate] = useState(false)
   const [expandedId, setExpandedId] = useState(null)
   const [activeAdmissions, setActiveAdmissions] = useState([])
-  const [loadingAdmissions, setLoadingAdmissions] = useState(false)
   const [finalizeAdmission, setFinalizeAdmission] = useState(null)
   const [detailInvoiceId, setDetailInvoiceId] = useState(null)
-  const [admissionSearch, setAdmissionSearch] = useState('')
-  const [admissionPage, setAdmissionPage] = useState(1)
 
   const load = async () => {
     if (!user?.hospitalId) return
@@ -141,11 +138,9 @@ export default function Billing() {
 
   useEffect(() => {
     if (!user?.hospitalId) return
-    setLoadingAdmissions(true)
     admissionApi.list(user.hospitalId, false)
       .then(data => setActiveAdmissions(Array.isArray(data) ? data : []))
       .catch(() => {})
-      .finally(() => setLoadingAdmissions(false))
   }, [user?.hospitalId])
 
   const reloadAdmissions = () => {
@@ -198,22 +193,6 @@ export default function Billing() {
   }, [currentInvoices, currentFilter, search])
 
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  // Active IPD admissions — searchable + paginated for large lists
-  const filteredAdmissions = useMemo(() => {
-    if (!admissionSearch.trim()) return activeAdmissions
-    const q = admissionSearch.toLowerCase()
-    return activeAdmissions.filter(a =>
-      a.patientName?.toLowerCase().includes(q) ||
-      a.admissionNumber?.toLowerCase().includes(q) ||
-      a.roomNumber?.toLowerCase().includes(q)
-    )
-  }, [activeAdmissions, admissionSearch])
-
-  const paginatedAdmissions = filteredAdmissions.slice(
-    (admissionPage - 1) * IPD_PAGE_SIZE,
-    admissionPage * IPD_PAGE_SIZE
-  )
 
   const printInvoice = (inv) => {
     const items = inv.items ?? []
@@ -312,112 +291,6 @@ export default function Billing() {
         <StatCard label="Outstanding"       value={fmt(stats.outstanding)} sub="unpaid invoices"        Icon={AlertCircle} accent="amber"   />
         <StatCard label="Billed Today"      value={stats.todayCount}       sub="invoices created today" Icon={Clock}       accent="rose"    />
       </div>
-
-      {/* ── Active IPD Billing ─────────────────────────────────────────────────── */}
-      {(loadingAdmissions || activeAdmissions.length > 0) && (
-        <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden">
-
-          {/* Section header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-[#1e1e1e]">
-            <div className="flex items-center gap-2">
-              <BedDouble className="w-4 h-4 text-indigo-500" />
-              <span className="text-sm font-bold text-slate-800 dark:text-white">Active IPD Billing</span>
-              {!loadingAdmissions && (
-                <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold border border-indigo-100 dark:border-indigo-500/20">
-                  {activeAdmissions.length} admitted
-                </span>
-              )}
-            </div>
-            {!loadingAdmissions && activeAdmissions.length > 0 && (
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search patient, room, ADM…"
-                  value={admissionSearch}
-                  onChange={e => { setAdmissionSearch(e.target.value); setAdmissionPage(1) }}
-                  className="pl-9 pr-3 py-1.5 w-56 text-xs rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] text-slate-700 dark:text-[#ccc] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
-                />
-              </div>
-            )}
-          </div>
-
-          {loadingAdmissions ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
-            </div>
-          ) : filteredAdmissions.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-400">
-              {admissionSearch ? 'No patients match your search.' : 'No admitted patients.'}
-            </p>
-          ) : (
-            <>
-              {/* Column headers */}
-              <div className="grid grid-cols-12 gap-3 px-5 py-2 bg-slate-50 dark:bg-[#0a0a0a] border-b border-slate-100 dark:border-[#1a1a1a]">
-                {[['Patient', 'col-span-4'], ['Admission No.', 'col-span-2'], ['Room · Doctor', 'col-span-3'], ['Day', 'col-span-1 text-center'], ['', 'col-span-2']].map(([h, cls]) => (
-                  <div key={h} className={`text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#555] ${cls}`}>{h}</div>
-                ))}
-              </div>
-
-              <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
-                {paginatedAdmissions.map(adm => {
-                  const admitDate = adm.admissionDate ? new Date(adm.admissionDate) : null
-                  const daysStayed = admitDate
-                    ? Math.max(1, Math.ceil((Date.now() - admitDate.getTime()) / (1000 * 60 * 60 * 24)))
-                    : 0
-                  const isBillPaid = paidIpdAdmissionIds.has(String(adm.id))
-                  return (
-                    <div key={adm.id} className="grid grid-cols-12 gap-3 items-center px-5 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
-                      <div className="col-span-4 min-w-0">
-                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{adm.patientName}</p>
-                        {adm.patientMrn && <p className="text-[11px] text-slate-400 dark:text-[#666] mt-0.5">{adm.patientMrn}</p>}
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-xs font-mono text-slate-500 dark:text-[#888]">{adm.admissionNumber}</p>
-                      </div>
-                      <div className="col-span-3 min-w-0">
-                        <p className="text-xs text-slate-500 dark:text-[#888] truncate">
-                          {[adm.roomNumber && `Room ${adm.roomNumber}`, adm.admittingDoctorName && `Dr. ${adm.admittingDoctorName}`].filter(Boolean).join(' · ') || '—'}
-                        </p>
-                      </div>
-                      <div className="col-span-1 text-center">
-                        <span className="text-xs font-bold text-slate-600 dark:text-[#aaa]">{daysStayed}</span>
-                      </div>
-                      <div className="col-span-2 flex justify-end">
-                        {isBillPaid ? (
-                          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 px-2 py-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Bill Paid
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => setFinalizeAdmission(adm)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-500 hover:text-white transition-all text-xs font-bold whitespace-nowrap"
-                          >
-                            <Receipt className="w-3 h-3" /> Finalize
-                            <ChevronRight className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {filteredAdmissions.length > IPD_PAGE_SIZE && (
-                <div className="px-5 py-3 border-t border-slate-100 dark:border-[#1a1a1a]">
-                  <Pagination
-                    currentPage={admissionPage}
-                    totalPages={Math.ceil(filteredAdmissions.length / IPD_PAGE_SIZE)}
-                    totalItems={filteredAdmissions.length}
-                    pageSize={IPD_PAGE_SIZE}
-                    onPageChange={setAdmissionPage}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
 
       {/* ── Invoice Table ──────────────────────────────────────────────────────── */}
       <div className="flex flex-col flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden min-h-0">
@@ -523,14 +396,18 @@ export default function Billing() {
                 </tr>
               ) : (
                 paginated.map(inv => {
+                  const isIPDPending = !!inv.admissionId && inv.status === 'UNPAID'
                   const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID
                   const StatusIcon = cfg.Icon
                   const isExpanded = expandedId === inv.id
+                  const admission = isIPDPending
+                    ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId))
+                    : null
                   return (
                     <Fragment key={inv.id}>
                       <tr
-                        className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all cursor-pointer"
-                        onClick={() => setExpandedId(isExpanded ? null : inv.id)}
+                        className={`group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all ${isIPDPending ? 'cursor-default' : 'cursor-pointer'}`}
+                        onClick={() => { if (!isIPDPending) setExpandedId(isExpanded ? null : inv.id) }}
                       >
                         <td className="px-5 py-4">
                           <p className="font-bold text-sm text-slate-900 dark:text-white">{inv.invoiceNumber}</p>
@@ -543,10 +420,18 @@ export default function Billing() {
                           <p className="text-xs text-slate-400 mt-0.5">{inv.patientMrn ?? ''}</p>
                         </td>
                         <td className="px-5 py-4">
-                          <ItemTypePips items={inv.items} />
+                          {isIPDPending
+                            ? <span className="text-xs text-slate-400 italic">Pending charges</span>
+                            : <ItemTypePips items={inv.items} />
+                          }
                         </td>
                         <td className="px-5 py-4">
-                          <p className="font-bold text-sm text-slate-900 dark:text-white">{fmt(inv.total)}</p>
+                          <p className="font-bold text-sm text-slate-900 dark:text-white">
+                            {isIPDPending && Number(inv.total) > 0 ? '~' : ''}{fmt(inv.total)}
+                          </p>
+                          {isIPDPending && Number(inv.total) > 0 && (
+                            <p className="text-[11px] text-slate-400 mt-0.5">estimated</p>
+                          )}
                           {Number(inv.discount) > 0 && (
                             <p className="text-xs text-red-500 mt-0.5">−{fmt(inv.discount)} disc.</p>
                           )}
@@ -562,20 +447,37 @@ export default function Billing() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex justify-center">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${cfg.cls}`}>
-                              <StatusIcon className="w-3 h-3" /> {cfg.label}
-                            </span>
+                            {isIPDPending ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20">
+                                <BedDouble className="w-3 h-3" /> Admitted
+                              </span>
+                            ) : (
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${cfg.cls}`}>
+                                <StatusIcon className="w-3 h-3" /> {cfg.label}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
-                            <button
-                              onClick={() => setDetailInvoiceId(inv.id)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
-                              title="View Details"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
+                            {isIPDPending ? (
+                              <button
+                                onClick={() => admission && setFinalizeAdmission(admission)}
+                                disabled={!admission}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-500 text-white hover:bg-indigo-600 transition-colors disabled:opacity-40"
+                                title="Generate IPD Bill"
+                              >
+                                <Receipt className="w-3.5 h-3.5" /> Generate Bill
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setDetailInvoiceId(inv.id)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
+                                title="View Details"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                             <button
                               onClick={() => printInvoice(inv)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
