@@ -139,6 +139,27 @@ public class BillingController {
         private String collectedBy;
     }
 
+    @PostMapping("/invoices/{id}/collect")
+    public ResponseEntity<InvoiceDTO> collectAndSave(
+            @PathVariable UUID id,
+            @RequestBody CollectAndSaveRequest req) {
+        try {
+            return ResponseEntity.ok(invoiceService.collectAndSave(
+                    id, req,
+                    req.getAmount(), req.getPaymentMethod(),
+                    req.getBankAccountId(), req.getCollectedBy()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @Data
+    public static class CollectAndSaveRequest extends InvoiceRequest {
+        // paymentMethod and bankAccountId are inherited from InvoiceRequest
+        private BigDecimal amount;
+        private String collectedBy;
+    }
+
     @PatchMapping("/invoices/{invoiceId}/items/{itemId}/waive")
     public ResponseEntity<InvoiceDTO> waiveItem(
             @PathVariable UUID invoiceId,

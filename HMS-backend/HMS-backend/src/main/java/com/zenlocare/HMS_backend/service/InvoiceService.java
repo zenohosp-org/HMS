@@ -454,6 +454,95 @@ public class InvoiceService {
         return toDTO(saved);
     }
 
+    // ── Atomic: update bill items + record payment in one transaction ────────────
+    @Transactional
+    public InvoiceDTO collectAndSave(UUID invoiceId, InvoiceRequest itemsReq,
+                                     BigDecimal amount, String paymentMethod,
+                                     UUID bankAccountId, String collectedBy) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+
+        // Reset PAID → UNPAID so new charges can be applied (discharge gate is the real lock)
+        if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
+            invoice.setStatus(InvoiceStatus.UNPAID);
+        }
+
+        // Replace items
+        if (invoice.getItems() != null) invoice.getItems().clear();
+        else invoice.setItems(new ArrayList<>());
+        if (itemsReq.getItems() != null) {
+            itemsReq.getItems().forEach(ir -> invoice.getItems().add(InvoiceItem.builder()
+                    .invoice(invoice)
+                    .serviceId(ir.getServiceId())
+                    .radiologyOrderId(ir.getRadiologyOrderId())
+                    .appointmentId(ir.getAppointmentId())
+                    .itemType(ir.getItemType())
+                    .description(ir.getDescription())
+                    .quantity(ir.getQuantity())
+                    .unitPrice(ir.getUnitPrice())
+                    .totalPrice(ir.getTotalPrice())
+                    .build()));
+        }
+        invoice.setSubtotal(itemsReq.getSubtotal() != null ? itemsReq.getSubtotal() : BigDecimal.ZERO);
+        invoice.setTax(itemsReq.getTax() != null ? itemsReq.getTax() : BigDecimal.ZERO);
+        invoice.setDiscount(itemsReq.getDiscount() != null ? itemsReq.getDiscount() : BigDecimal.ZERO);
+        invoice.setAdvanceAdjusted(itemsReq.getAdvanceAdjusted() != null ? itemsReq.getAdvanceAdjusted() : BigDecimal.ZERO);
+        invoice.setTotal(itemsReq.getTotal() != null ? itemsReq.getTotal() : BigDecimal.ZERO);
+        if (itemsReq.getNotes() != null) invoice.setNotes(itemsReq.getNotes());
+
+        // Record payment
+        invoicePaymentRepository.save(InvoicePayment.builder()
+                .invoice(invoice)
+                .amount(amount)
+                .paymentMethod(paymentMethod)
+                .bankAccountId(bankAccountId)
+                .collectedBy(collectedBy)
+                .build());
+
+        BigDecimal newPaid = (invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO).add(amount);
+        invoice.setPaidAmount(newPaid);
+        invoice.setUpdatedAt(LocalDateTime.now());
+
+        BigDecimal advance = invoice.getAdvanceAdjusted();
+        BigDecimal total = invoice.getTotal();
+        boolean fullyPaid = newPaid.add(advance).compareTo(total) >= 0;
+        invoice.setStatus(fullyPaid ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL);
+
+        if (fullyPaid && invoice.getAdmission() != null && advance.compareTo(BigDecimal.ZERO) > 0) {
+            try { patientAdvanceService.markAdvancesApplied(invoice.getAdmission().getId(), invoice.getId(), advance); }
+            catch (Exception ignored) {}
+        }
+
+        if (bankAccountId != null) {
+            bankAccountRepository.findById(bankAccountId).ifPresent(account ->
+                bankTransactionRepository.save(BankTransaction.builder()
+                        .hospitalId(account.getHospitalId())
+                        .bankAccountId(bankAccountId)
+                        .amount(amount)
+                        .type("CREDIT")
+                        .description("Payment — " + invoice.getInvoiceNumber())
+                        .referenceNo(invoice.getInvoiceNumber())
+                        .relatedEntityId(invoice.getId())
+                        .relatedEntityType("INVOICE")
+                        .transactionDate(LocalDateTime.now())
+                        .build()));
+        }
+
+        Invoice saved = invoiceRepository.save(invoice);
+
+        // Mark consultations and radiology as BILLED
+        saved.getItems().stream()
+                .filter(i -> "CONSULTATION".equals(i.getItemType()) && i.getAppointmentId() != null)
+                .forEach(i -> appointmentRepository.findById(i.getAppointmentId())
+                        .ifPresent(a -> { a.setStatus(Appointment.AppointmentStatus.BILLED); appointmentRepository.save(a); }));
+        saved.getItems().stream()
+                .filter(i -> "RADIOLOGY".equals(i.getItemType()) && i.getRadiologyOrderId() != null)
+                .forEach(i -> radiologyOrderRepository.findById(i.getRadiologyOrderId())
+                        .ifPresent(o -> { o.setStatus(RadiologyStatus.BILLED); radiologyOrderRepository.save(o); }));
+
+        return toDTO(saved);
+    }
+
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public InvoiceDTO getInvoiceDetail(UUID id) {
         Invoice invoice = invoiceRepository.findById(id)

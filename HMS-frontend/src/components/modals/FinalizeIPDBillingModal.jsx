@@ -411,17 +411,15 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
     const amt = Number(payAmount)
     if (!amt || amt <= 0) { notify('Enter a valid amount', 'warning'); return }
     if (!invoiceId) { notify('Save the bill first before collecting payment', 'warning'); return }
-    // If bill is still PAID (new charges added but not saved yet), save first to reset status
-    if (invoiceStatus === 'PAID') {
-      notify('Saving updated bill before collecting payment…', 'info')
-      await handleSaveBill()
-      // handleSaveBill updates invoiceStatus via setInvoiceStatus — re-check after
-      // (state update is async, but invoiceStatus in closure still reads PAID; backend is now UNPAID)
-    }
+    if (items.length === 0) { notify('Add at least one billing item', 'warning'); return }
+    if (items.some(i => !i.description?.trim())) { notify('All items need a description', 'error'); return }
     setCollectingPayment(true)
     try {
       const needsBank = payMethod === 'Bank Transfer' || payMethod === 'Card'
-      await invoiceApi.collectPayment(invoiceId, {
+      // Atomic: send current bill items + payment in one request.
+      // Backend updates items, resets PAID→UNPAID if needed, records payment, sets status.
+      const result = await invoiceApi.collectAndSave(invoiceId, {
+        ...buildPayload(),
         amount: amt,
         paymentMethod: payMethod,
         bankAccountId: (needsBank && payBankAccountId) ? payBankAccountId : null,
@@ -430,21 +428,20 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
       const newPayment = { id: Date.now(), amount: amt, paymentMethod: payMethod, paidAt: new Date().toISOString() }
       setExistingPayments(prev => [...prev, newPayment])
+      if (result?.status) setInvoiceStatus(result.status)
 
       const newTotalPaid = totalCashPaid + amt
       const newBalance = Math.max(0, grandTotal - advanceAdjusted - newTotalPaid)
 
       if (newBalance <= 0) {
-        setInvoiceStatus('PAID')
         notify('Bill fully paid — patient can now be discharged', 'success')
         onFinalized()
       } else {
-        setInvoiceStatus('PARTIAL')
         notify(`₹${amt.toLocaleString('en-IN')} recorded. Balance remaining: ₹${newBalance.toLocaleString('en-IN')}`, 'success')
         setPayAmount(String(Math.round(newBalance)))
       }
     } catch (err) {
-      notify(err?.response?.data?.message || 'Payment failed', 'error')
+      notify(err?.response?.data?.message || 'Payment failed — please try again', 'error')
     } finally {
       setCollectingPayment(false)
     }
