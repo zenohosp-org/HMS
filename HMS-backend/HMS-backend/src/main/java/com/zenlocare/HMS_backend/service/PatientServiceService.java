@@ -34,9 +34,11 @@ public class PatientServiceService {
         service.setName(details.getName());
         service.setType(details.getType());
         service.setMealTime(details.getMealTime());
+        service.setChargeTime(details.getChargeTime());
         service.setPricePerMeal(details.getPricePerMeal());
         service.setPricePerDay(details.getPricePerDay());
         service.setIsActive(details.getIsActive());
+        service.setOneTimeCharge(details.getOneTimeCharge() != null && details.getOneTimeCharge());
         
         return repository.save(service);
     }

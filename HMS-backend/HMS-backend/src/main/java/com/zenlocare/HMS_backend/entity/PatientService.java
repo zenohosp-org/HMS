@@ -47,6 +47,10 @@ public class PatientService {
     private Boolean isActive = true;
 
     @Builder.Default
+    @Column(name = "one_time_charge")
+    private Boolean oneTimeCharge = false;
+
+    @Builder.Default
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -63,7 +67,8 @@ public class PatientService {
         FOOD,
         ROOM_SERVICE,
         CONVENIENCE,
-        CUSTOM
+        CUSTOM,
+        REGISTRATION
     }
 
     public enum MealTime {

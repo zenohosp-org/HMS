@@ -117,6 +117,16 @@ export default function ViewBillingModal({ admission, onClose }) {
               unitPrice: price,
               totalPrice: quantity * price,
             })
+          } else if (s.type === 'REGISTRATION' && s.oneTimeCharge) {
+            const price = s.pricePerDay || 0
+            auto.push({
+              key: key++,
+              itemType: 'CUSTOM',
+              description: s.name,
+              quantity: 1,
+              unitPrice: price,
+              totalPrice: price,
+            })
           } else {
             const price = s.pricePerDay || 0
             auto.push({

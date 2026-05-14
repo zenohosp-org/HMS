@@ -13,6 +13,7 @@ const TYPE_LABEL = {
   ROOM_SERVICE: "Room Service",
   CONVENIENCE: "Convenience",
   CUSTOM: "Custom",
+  REGISTRATION: "Registration",
 };
 
 const TYPE_BADGE = {
@@ -20,10 +21,12 @@ const TYPE_BADGE = {
   ROOM_SERVICE: "bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/30",
   CONVENIENCE: "bg-purple-50 dark:bg-purple-900/10 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-800/30",
   CUSTOM: "bg-slate-50 dark:bg-slate-900/10 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-800/30",
+  REGISTRATION: "bg-indigo-50 dark:bg-indigo-900/10 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-800/30",
 };
 
 function priceLabel(service) {
   if (service.type === "FOOD") return `₹${service.pricePerMeal ?? 0}/meal`;
+  if (service.type === "REGISTRATION" && service.oneTimeCharge) return `₹${service.pricePerDay ?? 0} one-time`;
   return `₹${service.pricePerDay ?? 0}/day`;
 }
 

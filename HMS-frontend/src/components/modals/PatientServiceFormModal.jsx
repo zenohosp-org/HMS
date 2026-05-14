@@ -15,6 +15,7 @@ const EMPTY_FORM = {
   pricePerMeal: "",
   pricePerDay: "",
   isActive: true,
+  oneTimeCharge: false,
 };
 
 function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSuccess }) {
@@ -32,6 +33,7 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
         pricePerMeal: service.pricePerMeal ?? "",
         pricePerDay: service.pricePerDay ?? "",
         isActive: service.isActive,
+        oneTimeCharge: service.oneTimeCharge ?? false,
       });
     } else {
       setForm(EMPTY_FORM);
@@ -51,6 +53,7 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
       pricePerMeal: form.type === "FOOD" ? parseFloat(form.pricePerMeal) || 0 : null,
       pricePerDay: form.type !== "FOOD" ? parseFloat(form.pricePerDay) || 0 : null,
       isActive: form.isActive,
+      oneTimeCharge: form.type === "REGISTRATION" ? form.oneTimeCharge : false,
     };
     setLoading(true);
     try {
@@ -99,6 +102,7 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
           <option value="ROOM_SERVICE">Room Service</option>
           <option value="CONVENIENCE">Convenience</option>
           <option value="CUSTOM">Custom</option>
+          <option value="REGISTRATION">Registration</option>
         </select>
       </div>
 
@@ -149,7 +153,10 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
 
       {form.type !== "FOOD" && (
         <div className="space-y-1.5">
-          <label className={labelCls}>Price per Day (₹) <span className="text-rose-500">*</span></label>
+          <label className={labelCls}>
+            {form.type === "REGISTRATION" ? "One-time Fee (₹)" : "Price per Day (₹)"}
+            {" "}<span className="text-rose-500">*</span>
+          </label>
           <input
             type="number"
             min="0"
@@ -161,6 +168,21 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
             required
           />
         </div>
+      )}
+
+      {form.type === "REGISTRATION" && (
+        <label className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-lg cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.oneTimeCharge}
+            onChange={(e) => set("oneTimeCharge", e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded accent-indigo-600"
+          />
+          <div>
+            <p className="text-sm font-semibold text-slate-700 dark:text-[#cccccc]">Charge only once on registration</p>
+            <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">When enabled, this fee is billed once per new patient — not per day during admission.</p>
+          </div>
+        </label>
       )}
 
       <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#222222] rounded-lg">

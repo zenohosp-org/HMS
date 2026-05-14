@@ -375,6 +375,8 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
             ? countMealSlots(admission.admissionDate, endDate, s.chargeTime)
             : daysStayed
           items.push({ key: key++, itemType: 'CUSTOM', description: `${s.name} (${qty} meal${qty !== 1 ? 's' : ''})`, quantity: qty, unitPrice: s.pricePerMeal || 0, totalPrice: qty * (s.pricePerMeal || 0) })
+        } else if (s.type === 'REGISTRATION' && s.oneTimeCharge) {
+          items.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: s.pricePerDay || 0, totalPrice: s.pricePerDay || 0 })
         } else {
           items.push({ key: key++, itemType: 'CUSTOM', description: `${s.name} (${daysStayed}d)`, quantity: daysStayed, unitPrice: s.pricePerDay || 0, totalPrice: daysStayed * (s.pricePerDay || 0) })
         }
