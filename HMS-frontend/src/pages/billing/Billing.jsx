@@ -10,7 +10,7 @@ import {
   ReceiptText, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
   BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench,
-  Receipt, Eye,
+  Receipt, Eye, Plus,
 } from 'lucide-react'
 
 const PAGE_SIZE = 10
