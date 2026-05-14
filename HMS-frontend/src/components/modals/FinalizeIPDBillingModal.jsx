@@ -710,6 +710,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                         value={payAmount}
                         onChange={e => setPayAmount(e.target.value)}
                         placeholder={String(Math.round(balanceDue))} />
+                      <p className="text-[11px] text-slate-400 mt-1">Partial payment accepted — enter any amount</p>
                     </div>
                     <div>
                       <label className="label">Payment Method</label>
