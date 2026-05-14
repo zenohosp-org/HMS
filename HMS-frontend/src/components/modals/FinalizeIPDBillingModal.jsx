@@ -333,7 +333,9 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
   const hasZeroPrice = items.some(i => Number(i.unitPrice) === 0 && i.itemType !== 'CUSTOM')
   const hasOpdCarryOver = useMemo(() => items.some(i => i.fromOpd), [items])
-  const isPaid = invoiceStatus === 'PAID'
+  // Bill is only locked after discharge. While patient is admitted, PAID bills can be
+  // reopened to add new charges — the discharge gate prevents leaving with a balance.
+  const isPaid = false
 
   const buildPayload = () => ({
     invoiceNumber: fallbackInvoiceNo,
@@ -364,13 +366,17 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
     try {
       const payload = buildPayload()
       let finalId = invoiceId
+      let savedInvoice
       if (finalId) {
-        await invoiceApi.finalizeIPD(finalId, payload)
+        savedInvoice = await invoiceApi.finalizeIPD(finalId, payload)
       } else {
-        const created = await invoiceApi.create({ ...payload, status: 'UNPAID' })
-        finalId = created.id
+        savedInvoice = await invoiceApi.create({ ...payload, status: 'UNPAID' })
+        finalId = savedInvoice.id
         setInvoiceId(finalId)
       }
+
+      // Sync status from server (PAID bill reopened → backend resets to UNPAID)
+      if (savedInvoice?.status) setInvoiceStatus(savedInvoice.status)
 
       // Mark ambulance bookings as paid
       const ambulanceItems = items.filter(i => i.ambulanceBookingId)
@@ -380,8 +386,13 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         )
       }
 
-      notify('Bill saved — collect payment when ready', 'success')
-      // Pre-fill pay amount with current balance
+      const wasReopened = invoiceStatus === 'PAID'
+      notify(
+        wasReopened
+          ? 'Bill reopened with new charges — collect outstanding balance'
+          : 'Bill saved — collect payment when ready',
+        'success'
+      )
       setPayAmount(String(Math.round(balanceDue)))
     } catch (err) {
       notify(err?.response?.data?.message || 'Failed to save bill', 'error')
@@ -476,12 +487,20 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                       Auto-refreshed with all pending charges — review and adjust
                     </p>
                   </div>
-                  {!isPaid && (
-                    <button onClick={addBlankItem} className="btn-secondary text-xs flex items-center gap-1.5">
-                      <Plus className="w-3.5 h-3.5" /> Add Item
-                    </button>
-                  )}
+                  <button onClick={addBlankItem} className="btn-secondary text-xs flex items-center gap-1.5">
+                    <Plus className="w-3.5 h-3.5" /> Add Item
+                  </button>
                 </div>
+
+                {/* Reopen notice — shown when bill was previously PAID */}
+                {invoiceStatus === 'PAID' && (
+                  <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 mb-3">
+                    <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                      This bill was marked paid ({fmt(totalCashPaid)} collected). Adding new charges and saving will reopen it — patient must settle the new balance before discharge.
+                    </p>
+                  </div>
+                )}
 
                 {hasOpdCarryOver && (
                   <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25 mb-3">

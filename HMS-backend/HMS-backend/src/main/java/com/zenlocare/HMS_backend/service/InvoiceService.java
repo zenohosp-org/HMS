@@ -402,9 +402,10 @@ public class InvoiceService {
     public InvoiceDTO finalizeIPDInvoice(UUID invoiceId, InvoiceRequest req) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
-        // Allow re-saving a PARTIAL bill; block only fully PAID invoices
+        // Reopening a PAID bill (new charges added while patient still admitted) — reset to UNPAID.
+        // Discharge gate enforces that the patient cannot leave until balance is zero again.
         if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
-            throw new RuntimeException("Cannot modify a paid invoice");
+            invoice.setStatus(InvoiceStatus.UNPAID);
         }
         if (invoice.getItems() != null) {
             invoice.getItems().clear();
