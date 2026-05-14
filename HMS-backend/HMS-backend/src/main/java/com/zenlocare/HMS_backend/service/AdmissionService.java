@@ -133,8 +133,10 @@ public class AdmissionService {
                     .build());
         }
 
-        // Auto-create UNPAID placeholder invoice for IPD billing tracking
-        try { invoiceService.createAdmissionInvoice(req.getHospitalId(), req.getPatientId(), saved.getId(), saved.getAdmissionNumber()); }
+        // Auto-create UNPAID placeholder invoice for IPD billing tracking.
+        // Pass sourceAppt ID directly — avoids lazy-loading inside the invoice service.
+        UUID sourceApptId = sourceAppt != null ? sourceAppt.getId() : null;
+        try { invoiceService.createAdmissionInvoice(req.getHospitalId(), req.getPatientId(), saved.getId(), saved.getAdmissionNumber(), sourceApptId); }
         catch (Exception ignored) {}
 
         return toDTO(saved);

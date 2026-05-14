@@ -214,7 +214,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const updateItem = (key, updates) => {
     setItems(prev => prev.map(item => {
       if (item.key !== key) return item
-      const merged = { ...item, ...updates }
+      const merged = { ...item, ...updates, fromOpd: item.fromOpd }
       if ('quantity' in updates || 'unitPrice' in updates)
         merged.totalPrice = (Number(merged.quantity) || 0) * (Number(merged.unitPrice) || 0)
       return merged

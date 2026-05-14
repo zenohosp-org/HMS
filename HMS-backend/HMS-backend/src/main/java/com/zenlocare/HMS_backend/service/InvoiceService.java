@@ -165,8 +165,11 @@ public class InvoiceService {
     // OPD→IPD edge case: if the admission originated from an OPD appointment that
     // already has an unpaid invoice, absorb it — link it to this admission so the
     // consultation fee carries over into the IPD bill. No separate OPD invoice remains.
+    // sourceAppointmentId is passed directly from the caller to avoid lazy-loading the
+    // Admission.sourceAppointment proxy inside this transaction.
     @Transactional
-    public void createAdmissionInvoice(UUID hospitalId, Integer patientId, UUID admissionId, String admissionNumber) {
+    public void createAdmissionInvoice(UUID hospitalId, Integer patientId, UUID admissionId,
+                                       String admissionNumber, UUID sourceAppointmentId) {
         if (invoiceRepository.findByAdmission_Id(admissionId).isPresent()) return;
         Hospital hospital = hospitalRepository.findById(hospitalId).orElse(null);
         Patient patient = patientRepository.findById(patientId).orElse(null);
@@ -174,9 +177,8 @@ public class InvoiceService {
         if (hospital == null || patient == null || admission == null) return;
 
         // Absorb the OPD invoice when this admission was triggered from an OPD appointment
-        if (admission.getSourceAppointment() != null) {
-            Optional<Invoice> opdOpt = invoiceRepository.findByAppointment_Id(
-                    admission.getSourceAppointment().getId());
+        if (sourceAppointmentId != null) {
+            Optional<Invoice> opdOpt = invoiceRepository.findByAppointment_Id(sourceAppointmentId);
             if (opdOpt.isPresent()) {
                 Invoice opdInvoice = opdOpt.get();
                 if (!InvoiceStatus.PAID.equals(opdInvoice.getStatus())) {
@@ -310,6 +312,10 @@ public class InvoiceService {
         if (opt.isEmpty()) return;
         Invoice invoice = opt.get();
         if (InvoiceStatus.PAID.equals(invoice.getStatus())) return;
+        // If this appointment's invoice was absorbed into an IPD admission (OPD→IPD conversion),
+        // do NOT touch it — the IPD invoice lifecycle is managed through the discharge flow.
+        // Deleting or stripping items here would break the discharge gate.
+        if (invoice.getAdmission() != null) return;
         if (invoice.getItems() != null) {
             invoice.getItems().removeIf(i -> "CONSULTATION".equals(i.getItemType()));
         }
