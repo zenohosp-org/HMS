@@ -99,8 +99,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       const auto = []
 
       // OPD → IPD: if existing invoice already has items (e.g. consultation from OPD visit),
-      // carry them forward so they appear in this IPD bill. The appointment is already marked
-      // BILLED so smart suggestions won't re-add it — no duplication risk.
+      // carry them forward so they appear in this IPD bill. Dedup against smart suggestions
+      // below by appointmentId to prevent double-counting.
       if (existingInvoice?.items?.length > 0) {
         existingInvoice.items.forEach(item => {
           auto.push({
@@ -130,8 +130,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         })
       }
 
-      // Consultations
+      // Consultations — skip any already present from OPD carry-over (dedup by appointmentId)
+      const carriedAppointmentIds = new Set(auto.filter(i => i.appointmentId).map(i => String(i.appointmentId)))
       ;(suggestions.appointments || []).forEach(a => {
+        if (carriedAppointmentIds.has(String(a.appointmentId))) return
         auto.push({
           key: key++, itemType: 'CONSULTATION',
           description: `Consultation — Dr. ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ''}`,
