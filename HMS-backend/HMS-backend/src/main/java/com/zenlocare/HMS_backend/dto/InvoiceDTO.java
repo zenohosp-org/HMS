@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.Collections;
 
 @Data
 @Builder
@@ -30,6 +31,17 @@ public class InvoiceDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<ItemDTO> items;
+    private List<PaymentDTO> payments;
+
+    @Data
+    @Builder
+    public static class PaymentDTO {
+        private UUID id;
+        private BigDecimal amount;
+        private String paymentMethod;
+        private String collectedBy;
+        private LocalDateTime paidAt;
+    }
 
     @Data
     @Builder

@@ -4,6 +4,7 @@ import com.zenlocare.HMS_backend.dto.InvoiceDTO;
 import com.zenlocare.HMS_backend.dto.InvoiceRequest;
 import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.entity.Appointment;
+import com.zenlocare.HMS_backend.entity.InvoicePayment;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class InvoiceService {
     private final BankAccountRepository bankAccountRepository;
     private final BankTransactionRepository bankTransactionRepository;
     private final PatientAdvanceService patientAdvanceService;
+    private final InvoicePaymentRepository invoicePaymentRepository;
 
     @Transactional
     public Invoice createInvoice(InvoiceRequest request) {
@@ -128,6 +130,60 @@ public class InvoiceService {
             creditBankAccount(bankAccountId, saved);
         }
         return saved;
+    }
+
+    @Transactional
+    public InvoiceDTO collectPayment(UUID invoiceId, BigDecimal amount, String paymentMethod,
+                                     UUID bankAccountId, String collectedBy) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+        if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
+            throw new RuntimeException("Invoice is already fully paid");
+        }
+
+        invoicePaymentRepository.save(InvoicePayment.builder()
+                .invoice(invoice)
+                .amount(amount)
+                .paymentMethod(paymentMethod)
+                .bankAccountId(bankAccountId)
+                .collectedBy(collectedBy)
+                .build());
+
+        BigDecimal newPaid = (invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO)
+                .add(amount);
+        invoice.setPaidAmount(newPaid);
+        invoice.setUpdatedAt(LocalDateTime.now());
+
+        BigDecimal advance = invoice.getAdvanceAdjusted() != null ? invoice.getAdvanceAdjusted() : BigDecimal.ZERO;
+        BigDecimal total = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
+        boolean fullyPaid = newPaid.add(advance).compareTo(total) >= 0;
+
+        invoice.setStatus(fullyPaid ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL);
+
+        if (fullyPaid && invoice.getAdmission() != null && advance.compareTo(BigDecimal.ZERO) > 0) {
+            try {
+                patientAdvanceService.markAdvancesApplied(
+                        invoice.getAdmission().getId(), invoice.getId(), advance);
+            } catch (Exception ignored) {}
+        }
+
+        if (bankAccountId != null) {
+            bankAccountRepository.findById(bankAccountId).ifPresent(account -> {
+                bankTransactionRepository.save(BankTransaction.builder()
+                        .hospitalId(account.getHospitalId())
+                        .bankAccountId(bankAccountId)
+                        .amount(amount)
+                        .type("CREDIT")
+                        .description("Payment — " + invoice.getInvoiceNumber())
+                        .referenceNo(invoice.getInvoiceNumber())
+                        .relatedEntityId(invoice.getId())
+                        .relatedEntityType("INVOICE")
+                        .transactionDate(LocalDateTime.now())
+                        .build());
+            });
+        }
+
+        return toDTO(invoiceRepository.save(invoice));
     }
 
     private void creditBankAccount(UUID bankAccountId, Invoice invoice) {
@@ -346,6 +402,7 @@ public class InvoiceService {
     public InvoiceDTO finalizeIPDInvoice(UUID invoiceId, InvoiceRequest req) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
+        // Allow re-saving a PARTIAL bill; block only fully PAID invoices
         if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
             throw new RuntimeException("Cannot modify a paid invoice");
         }
@@ -469,6 +526,15 @@ public class InvoiceService {
                                 .appointmentId(item.getAppointmentId())
                                 .build()
                 ).collect(Collectors.toList()) : java.util.Collections.emptyList())
+                .payments(invoicePaymentRepository.findByInvoice_IdOrderByPaidAtAsc(inv.getId())
+                        .stream().map(p -> InvoiceDTO.PaymentDTO.builder()
+                                .id(p.getId())
+                                .amount(p.getAmount())
+                                .paymentMethod(p.getPaymentMethod())
+                                .collectedBy(p.getCollectedBy())
+                                .paidAt(p.getPaidAt())
+                                .build()
+                        ).collect(Collectors.toList()))
                 .build();
     }
 }

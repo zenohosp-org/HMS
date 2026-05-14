@@ -8,7 +8,7 @@ import { generateInvoiceNumber } from '@/utils/validators'
 import {
   X, Receipt, CheckCircle2, Loader2, AlertCircle, Plus, Trash2,
   BedDouble, ScanLine, Stethoscope, Pill, FlaskConical, Wrench,
-  Scissors, Landmark, Wallet,
+  Scissors, Landmark, Wallet, IndianRupee, Clock,
 } from 'lucide-react'
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
@@ -35,6 +35,13 @@ function fmt(n) {
   return '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function fmtTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) +
+    ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+}
+
 function countMealSlots(admitDate, dischargeDate, chargeTime) {
   if (!chargeTime) return 0
   const [h, m] = chargeTime.split(':').map(Number)
@@ -57,19 +64,25 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const { notify } = useNotification()
 
   const [invoiceId, setInvoiceId] = useState(null)
+  const [invoiceStatus, setInvoiceStatus] = useState('UNPAID')
   const [loadingBill, setLoadingBill] = useState(true)
   const [items, setItems] = useState([])
   const [nextKey, setNextKey] = useState(0)
   const [discountPct, setDiscountPct] = useState(0)
-  const [paymentMethod, setPaymentMethod] = useState('Cash')
   const [bankAccounts, setBankAccounts] = useState([])
-  const [bankAccountId, setBankAccountId] = useState('')
   const [billNotes, setBillNotes] = useState('')
   const [advances, setAdvances] = useState([])
-  const [submitting, setSubmitting] = useState(false)
+  const [existingPayments, setExistingPayments] = useState([])
+
+  // Collect payment section
+  const [payAmount, setPayAmount] = useState('')
+  const [payMethod, setPayMethod] = useState('Cash')
+  const [payBankAccountId, setPayBankAccountId] = useState('')
+
+  const [savingBill, setSavingBill] = useState(false)
+  const [collectingPayment, setCollectingPayment] = useState(false)
   const [fallbackInvoiceNo] = useState(generateInvoiceNumber)
 
-  // Use now as the effective discharge date for charge calculation
   const effectiveDischargeDate = new Date().toISOString()
 
   useEffect(() => {
@@ -79,7 +92,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
     const admitMs = new Date(admission.admissionDate).getTime()
     const dischargeMs = new Date(effectiveDischargeDate).getTime()
     const elapsedMs = dischargeMs - admitMs
-    const daysStayed = Math.max(1, Math.ceil(elapsedMs / (1000 * 60 * 60 * 24)))
     const roomDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24))
 
     Promise.all([
@@ -95,19 +107,35 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
     ]).then(([suggestions, services, accounts, radiologyOrders, patientServices, otRes, existingInvoice, ambulanceBookings, advanceList]) => {
       const def = accounts.find(a => a.isDefault) ?? accounts[0]
       setBankAccounts(accounts)
-      if (def) setBankAccountId(def.id)
-      if (existingInvoice?.id) setInvoiceId(existingInvoice.id)
+      if (def) setPayBankAccountId(def.id)
+
+      if (existingInvoice?.id) {
+        setInvoiceId(existingInvoice.id)
+        setInvoiceStatus(existingInvoice.status || 'UNPAID')
+        setExistingPayments(existingInvoice.payments || [])
+        if (existingInvoice.notes) setBillNotes(existingInvoice.notes)
+        // Recalculate discount % from saved values
+        if (existingInvoice.subtotal > 0 && existingInvoice.discount > 0) {
+          setDiscountPct(Math.round((existingInvoice.discount / existingInvoice.subtotal) * 100))
+        }
+      }
       setAdvances(Array.isArray(advanceList) ? advanceList : [])
 
+      // ── Build item list ───────────────────────────────────────────────────────
       let key = 0
-      const auto = []
+      const savedItems = []
 
-      // OPD → IPD: if existing invoice already has items (e.g. consultation from OPD visit),
-      // carry them forward so they appear in this IPD bill. Dedup against smart suggestions
-      // below by appointmentId to prevent double-counting.
+      // Identifiers already committed to the bill
+      const savedAppointmentIds = new Set()
+      const savedRadiologyIds = new Set()
+      const savedOTDescriptions = new Set()
+      const savedAmbulanceIds = new Set()
+      const hasRoomCharge = { value: false }
+      const hasCustomDesc = new Set()
+
       if (existingInvoice?.items?.length > 0) {
         existingInvoice.items.forEach(item => {
-          auto.push({
+          const entry = {
             key: key++,
             itemType: item.itemType,
             description: item.description,
@@ -116,12 +144,41 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
             totalPrice: Number(item.totalPrice || 0),
             appointmentId: item.appointmentId ?? undefined,
             radiologyOrderId: item.radiologyOrderId ?? undefined,
-            fromOpd: true,
-          })
+            fromOpd: false,
+          }
+
+          if (item.itemType === 'ROOM_CHARGE') {
+            // Room/food: always replaced with fresh calculation — skip saving
+            hasRoomCharge.value = true
+            return
+          }
+          if (item.itemType === 'CUSTOM') {
+            // Custom/food: replaced with fresh calculation — skip saving
+            hasCustomDesc.add(item.description)
+            return
+          }
+          if (item.itemType === 'CONSULTATION' && item.appointmentId) {
+            savedAppointmentIds.add(String(item.appointmentId))
+            const isOpd = existingInvoice.admissionNumber &&
+              item.description?.toLowerCase().includes('consultation')
+            entry.fromOpd = isOpd && savedAppointmentIds.size === 1
+          }
+          if (item.itemType === 'RADIOLOGY' && item.radiologyOrderId) {
+            savedRadiologyIds.add(String(item.radiologyOrderId))
+          }
+          if (item.itemType === 'OT') {
+            savedOTDescriptions.add(item.description)
+          }
+          if (item.ambulanceBookingId) {
+            savedAmbulanceIds.add(String(item.ambulanceBookingId))
+          }
+          savedItems.push(entry)
         })
       }
 
-      // Room charge — only after 24 hrs (roomDays = full 24-hr periods elapsed)
+      const auto = [...savedItems]
+
+      // Room charge — recalculate current total days
       const roomNumber = admission.roomNumber
       if (roomNumber && roomDays > 0) {
         const pricePerDay = suggestions.roomCharge?.pricePerDay || admission.roomPricePerDay || 0
@@ -134,10 +191,11 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         })
       }
 
-      // Consultations — skip any already present from OPD carry-over (dedup by appointmentId)
+      // Consultations — skip already saved by appointmentId
       const carriedAppointmentIds = new Set(auto.filter(i => i.appointmentId).map(i => String(i.appointmentId)))
       ;(suggestions.appointments || []).forEach(a => {
         if (carriedAppointmentIds.has(String(a.appointmentId))) return
+        if (savedAppointmentIds.has(String(a.appointmentId))) return
         auto.push({
           key: key++, itemType: 'CONSULTATION',
           description: `Consultation — Dr. ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ''}`,
@@ -146,9 +204,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         })
       })
 
-      // Radiology
+      // Radiology — skip already saved
       const EXCLUDED = ['CANCELLED', 'BILLED']
       ;(Array.isArray(radiologyOrders) ? radiologyOrders.filter(r => !EXCLUDED.includes(r.status)) : []).forEach(r => {
+        if (savedRadiologyIds.has(String(r.id))) return
         const name = r.serviceName || r.investigationName || r.testName || 'Radiology'
         const match = services.find(s => s.name.toLowerCase() === name.toLowerCase())
         const price = match?.price ?? 0
@@ -158,11 +217,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         })
       })
 
-      // Patient services (food + others)
+      // Patient services (food + others) — recalculate fresh quantities
       ;(Array.isArray(patientServices) ? patientServices.filter(s => s.isActive) : []).forEach(s => {
         if (s.type === 'FOOD') {
           const price = s.pricePerMeal || 0
-          // If chargeTime is set: count only slots that fall after admission; else use floor-days × 3
           const quantity = s.chargeTime
             ? countMealSlots(admission.admissionDate, effectiveDischargeDate, s.chargeTime)
             : roomDays * 3
@@ -173,14 +231,9 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           })
         } else if (s.type === 'REGISTRATION' && s.oneTimeCharge) {
           const price = s.pricePerDay || 0
-          auto.push({
-            key: key++, itemType: 'CUSTOM',
-            description: s.name,
-            quantity: 1, unitPrice: price, totalPrice: price,
-          })
+          auto.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: price, totalPrice: price })
         } else {
           const price = s.pricePerDay || 0
-          // If chargeTime is set: count only days where the service slot fired after admission
           const qty = s.chargeTime
             ? countMealSlots(admission.admissionDate, effectiveDischargeDate, s.chargeTime)
             : roomDays
@@ -192,7 +245,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         }
       })
 
-      // Ambulance — COMPLETED bookings for this patient that haven't been paid yet
+      // Ambulance — skip already saved
       const admitDay = new Date(admission.admissionDate)
       admitDay.setHours(0, 0, 0, 0)
       const dayBefore = new Date(admitDay)
@@ -203,6 +256,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           if (String(pid) !== String(admission.patientId)) return false
           if (b.status !== 'COMPLETED') return false
           if (b.paymentStatus === 'PAID') return false
+          if (savedAmbulanceIds.has(String(b.id))) return false
           const bDate = new Date(b.bookingDate)
           return bDate >= dayBefore
         })
@@ -212,19 +266,19 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           const desc = ['Ambulance', typeName, vehicleNo].filter(Boolean).join(' — ')
           const charge = Number(b.charge || 0)
           auto.push({
-            key: key++, itemType: 'CUSTOM',
-            description: desc,
+            key: key++, itemType: 'CUSTOM', description: desc,
             quantity: 1, unitPrice: charge, totalPrice: charge,
             ambulanceBookingId: b.id,
           })
         })
 
-      // OT charges
+      // OT charges — skip already saved descriptions
       ;(Array.isArray(otRes?.data) ? otRes.data : []).forEach(inv => {
         ;(Array.isArray(inv.items) ? inv.items : []).forEach(item => {
+          const desc = item.description || item.name || 'OT Procedure'
+          if (savedOTDescriptions.has(desc)) return
           auto.push({
-            key: key++, itemType: 'OT',
-            description: item.description || item.name || 'OT Procedure',
+            key: key++, itemType: 'OT', description: desc,
             quantity: item.quantity ?? 1,
             unitPrice: item.totalPrice ?? item.amount ?? 0,
             totalPrice: item.totalPrice ?? item.amount ?? 0,
@@ -247,7 +301,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const updateItem = (key, updates) => {
     setItems(prev => prev.map(item => {
       if (item.key !== key) return item
-      const merged = { ...item, ...updates, fromOpd: item.fromOpd }
+      const merged = { ...item, ...updates }
       if ('quantity' in updates || 'unitPrice' in updates)
         merged.totalPrice = (Number(merged.quantity) || 0) * (Number(merged.unitPrice) || 0)
       return merged
@@ -262,55 +316,63 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   )
   const gst = (medicineSubtotal - medicineSubtotal * (discountPct / 100)) * GST_RATE
   const grandTotal = subtotal - discountAmt + gst
+
+  // Remaining advance = total collected minus already applied portions
   const totalAdvance = useMemo(
-    () => advances.reduce((s, a) => s + Number(a.amount || 0), 0),
+    () => advances.reduce((s, a) => s + Math.max(0, Number(a.amount || 0) - Number(a.appliedAmount || 0)), 0),
     [advances]
   )
   const advanceAdjusted = Math.min(totalAdvance, grandTotal)
-  const balanceDue = Math.max(0, grandTotal - advanceAdjusted)
+
+  // Total cash collected so far (from payment history)
+  const totalCashPaid = useMemo(
+    () => existingPayments.reduce((s, p) => s + Number(p.amount || 0), 0),
+    [existingPayments]
+  )
+  const balanceDue = Math.max(0, grandTotal - advanceAdjusted - totalCashPaid)
 
   const hasZeroPrice = items.some(i => Number(i.unitPrice) === 0 && i.itemType !== 'CUSTOM')
   const hasOpdCarryOver = useMemo(() => items.some(i => i.fromOpd), [items])
+  const isPaid = invoiceStatus === 'PAID'
 
-  const handleFinalizeAndPay = async () => {
+  const buildPayload = () => ({
+    invoiceNumber: fallbackInvoiceNo,
+    hospitalId: user.hospitalId,
+    patientId: admission.patientId,
+    admissionId: admission.id,
+    subtotal,
+    tax: gst,
+    discount: discountAmt,
+    total: grandTotal,
+    advanceAdjusted: advanceAdjusted > 0 ? advanceAdjusted : undefined,
+    notes: billNotes || `IPD Bill — Admission ${admission.admissionNumber}`,
+    items: items.map(i => ({
+      itemType: i.itemType,
+      description: i.description,
+      quantity: Number(i.quantity),
+      unitPrice: Number(i.unitPrice),
+      totalPrice: Number(i.totalPrice),
+      radiologyOrderId: i.radiologyOrderId ?? undefined,
+      appointmentId: i.appointmentId ?? undefined,
+    })),
+  })
+
+  const handleSaveBill = async () => {
     if (items.length === 0) { notify('Add at least one billing item', 'warning'); return }
-    if (items.some(i => !i.description.trim())) { notify('All items need a description', 'error'); return }
-    setSubmitting(true)
+    if (items.some(i => !i.description?.trim())) { notify('All items need a description', 'error'); return }
+    setSavingBill(true)
     try {
-      const payload = {
-        invoiceNumber: fallbackInvoiceNo,
-        hospitalId: user.hospitalId,
-        patientId: admission.patientId,
-        admissionId: admission.id,
-        subtotal,
-        tax: gst,
-        discount: discountAmt,
-        total: grandTotal,
-        advanceAdjusted: advanceAdjusted > 0 ? advanceAdjusted : undefined,
-        notes: billNotes || `Discharge bill — Admission ${admission.admissionNumber}`,
-        items: items.map(i => ({
-          itemType: i.itemType,
-          description: i.description,
-          quantity: Number(i.quantity),
-          unitPrice: Number(i.unitPrice),
-          totalPrice: Number(i.totalPrice),
-          radiologyOrderId: i.radiologyOrderId ?? undefined,
-          appointmentId: i.appointmentId ?? undefined,
-          // ambulanceBookingId is internal — not sent to invoice
-        })),
-      }
-
-      let finalInvoiceId = invoiceId
-      if (finalInvoiceId) {
-        await invoiceApi.finalizeIPD(finalInvoiceId, payload)
+      const payload = buildPayload()
+      let finalId = invoiceId
+      if (finalId) {
+        await invoiceApi.finalizeIPD(finalId, payload)
       } else {
         const created = await invoiceApi.create({ ...payload, status: 'UNPAID' })
-        finalInvoiceId = created.id
+        finalId = created.id
+        setInvoiceId(finalId)
       }
 
-      await invoiceApi.markAsPaid(finalInvoiceId, bankAccountId || undefined)
-
-      // Mark any included ambulance bookings as paid
+      // Mark ambulance bookings as paid
       const ambulanceItems = items.filter(i => i.ambulanceBookingId)
       if (ambulanceItems.length > 0) {
         await Promise.allSettled(
@@ -318,14 +380,53 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         )
       }
 
-      notify('Bill finalized and payment recorded — patient can now be discharged', 'success')
-      onFinalized()
+      notify('Bill saved — collect payment when ready', 'success')
+      // Pre-fill pay amount with current balance
+      setPayAmount(String(Math.round(balanceDue)))
     } catch (err) {
-      notify(err?.response?.data?.message || 'Billing failed', 'error')
+      notify(err?.response?.data?.message || 'Failed to save bill', 'error')
     } finally {
-      setSubmitting(false)
+      setSavingBill(false)
     }
   }
+
+  const handleCollectPayment = async () => {
+    const amt = Number(payAmount)
+    if (!amt || amt <= 0) { notify('Enter a valid amount', 'warning'); return }
+    if (!invoiceId) { notify('Save the bill first before collecting payment', 'warning'); return }
+    setCollectingPayment(true)
+    try {
+      const needsBank = payMethod === 'Bank Transfer' || payMethod === 'Card'
+      await invoiceApi.collectPayment(invoiceId, {
+        amount: amt,
+        paymentMethod: payMethod,
+        bankAccountId: (needsBank && payBankAccountId) ? payBankAccountId : null,
+        collectedBy: user?.name || null,
+      })
+
+      const newPayment = { id: Date.now(), amount: amt, paymentMethod: payMethod, paidAt: new Date().toISOString() }
+      setExistingPayments(prev => [...prev, newPayment])
+
+      const newTotalPaid = totalCashPaid + amt
+      const newBalance = Math.max(0, grandTotal - advanceAdjusted - newTotalPaid)
+
+      if (newBalance <= 0) {
+        setInvoiceStatus('PAID')
+        notify('Bill fully paid — patient can now be discharged', 'success')
+        onFinalized()
+      } else {
+        setInvoiceStatus('PARTIAL')
+        notify(`₹${amt.toLocaleString('en-IN')} recorded. Balance remaining: ₹${newBalance.toLocaleString('en-IN')}`, 'success')
+        setPayAmount(String(Math.round(newBalance)))
+      }
+    } catch (err) {
+      notify(err?.response?.data?.message || 'Payment failed', 'error')
+    } finally {
+      setCollectingPayment(false)
+    }
+  }
+
+  const needsBankAccount = payMethod === 'Bank Transfer' || payMethod === 'Card'
 
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-8 bg-black/60 backdrop-blur-sm overflow-y-auto">
@@ -335,22 +436,34 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e]">
           <div>
             <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-indigo-500" /> Finalize IPD Bill
+              <Receipt className="w-4 h-4 text-indigo-500" /> IPD Running Bill
             </h2>
             <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">
               {admission.patientName} · {admission.admissionNumber}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {invoiceStatus === 'PAID' && (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-500/25">
+                Fully Paid
+              </span>
+            )}
+            {invoiceStatus === 'PARTIAL' && (
+              <span className="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold border border-amber-200 dark:border-amber-500/25">
+                Partial
+              </span>
+            )}
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-5">
           {loadingBill ? (
             <div className="flex flex-col items-center gap-3 py-20">
               <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-              <p className="text-sm font-medium text-slate-600 dark:text-[#888]">Detecting all pending charges…</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-[#888]">Loading bill and pending charges…</p>
             </div>
           ) : (
             <>
@@ -360,30 +473,29 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   <div>
                     <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">Bill Items</p>
                     <p className="text-[11px] text-slate-400 dark:text-[#666] mt-0.5">
-                      All pending charges auto-detected — review and adjust
+                      Auto-refreshed with all pending charges — review and adjust
                     </p>
                   </div>
-                  <button onClick={addBlankItem} className="btn-secondary text-xs flex items-center gap-1.5">
-                    <Plus className="w-3.5 h-3.5" /> Add Item
-                  </button>
+                  {!isPaid && (
+                    <button onClick={addBlankItem} className="btn-secondary text-xs flex items-center gap-1.5">
+                      <Plus className="w-3.5 h-3.5" /> Add Item
+                    </button>
+                  )}
                 </div>
 
                 {hasOpdCarryOver && (
                   <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25 mb-3">
-                    <Stethoscope className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-bold text-blue-700 dark:text-blue-400">OPD → IPD Conversion</p>
-                      <p className="text-[11px] text-blue-600/80 dark:text-blue-300/70 mt-0.5">
-                        This admission originated from an OPD consultation. The consultation charge has been carried over and is highlighted below.
-                      </p>
-                    </div>
+                    <Stethoscope className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                    <p className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                      OPD → IPD: consultation charge carried over from the originating OPD visit.
+                    </p>
                   </div>
                 )}
 
                 {items.length === 0 ? (
                   <div className="py-12 text-center border-2 border-dashed border-slate-100 dark:border-[#2a2a2a] rounded-lg">
-                    <p className="text-sm font-medium text-slate-500 dark:text-[#777]">No charges detected</p>
-                    <p className="text-xs text-slate-400 dark:text-[#555] mt-1">Add items manually above</p>
+                    <p className="text-sm font-medium text-slate-500">No charges detected</p>
+                    <p className="text-xs text-slate-400 mt-1">Add items manually above</p>
                   </div>
                 ) : (
                   <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-lg overflow-hidden">
@@ -394,12 +506,13 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                     </div>
                     <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
                       {items.map(item => (
-                        <div key={item.key} className={`grid grid-cols-12 gap-2 items-center px-4 py-2.5 group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors ${item.fromOpd ? 'border-l-2 border-blue-400 dark:border-blue-500/70 bg-blue-50/30 dark:bg-blue-500/5' : ''}`}>
+                        <div key={item.key} className={`grid grid-cols-12 gap-2 items-center px-4 py-2.5 group hover:bg-slate-50/50 dark:hover:bg-[#151515] ${item.fromOpd ? 'border-l-2 border-blue-400 bg-blue-50/30 dark:bg-blue-500/5' : ''}`}>
                           <div className="col-span-2">
                             <select
                               value={item.itemType ?? 'CUSTOM'}
                               onChange={e => updateItem(item.key, { itemType: e.target.value })}
-                              className="w-full text-[10px] rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-1.5 py-1 text-slate-700 dark:text-[#ccc] focus:outline-none"
+                              disabled={isPaid}
+                              className="w-full text-[10px] rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-1.5 py-1 text-slate-700 dark:text-[#ccc] focus:outline-none disabled:opacity-60"
                             >
                               {Object.entries(TYPE_META).map(([k, v]) => (
                                 <option key={k} value={k}>{v.label}</option>
@@ -408,25 +521,30 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                           </div>
                           <div className="col-span-4">
                             <input className="input py-1.5 text-sm" placeholder="Description…" value={item.description}
+                              disabled={isPaid}
                               onChange={e => updateItem(item.key, { description: e.target.value })} />
                           </div>
                           <div className="col-span-2">
                             <input type="number" min={1} className="input py-1.5 text-sm text-center" value={item.quantity}
+                              disabled={isPaid}
                               onChange={e => updateItem(item.key, { quantity: parseInt(e.target.value) || 1 })} />
                           </div>
                           <div className="col-span-2">
                             <input type="number" min={0} step="0.01" className="input py-1.5 text-sm text-right" value={item.unitPrice}
+                              disabled={isPaid}
                               onChange={e => updateItem(item.key, { unitPrice: parseFloat(e.target.value) || 0 })} />
                           </div>
                           <div className="col-span-2 flex items-center justify-end gap-1.5">
                             {item.fromOpd && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 shrink-0">OPD</span>
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-600 shrink-0">OPD</span>
                             )}
                             <span className="text-sm font-bold text-slate-800 dark:text-white tabular-nums">{fmt(item.totalPrice || 0)}</span>
-                            <button onClick={() => removeItem(item.key)}
-                              className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 transition-all">
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+                            {!isPaid && (
+                              <button onClick={() => removeItem(item.key)}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-slate-300 hover:text-rose-500 transition-all">
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -439,11 +557,13 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                           <span>Subtotal</span>
                           <span className="font-semibold tabular-nums">{fmt(subtotal)}</span>
                         </div>
-                        <div className="flex items-center justify-between text-slate-500 dark:text-[#888]">
-                          <span>Discount (%)</span>
-                          <input type="number" min={0} max={100} className="input w-16 py-1 text-sm text-center"
-                            value={discountPct} onChange={e => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))} />
-                        </div>
+                        {!isPaid && (
+                          <div className="flex items-center justify-between text-slate-500 dark:text-[#888]">
+                            <span>Discount (%)</span>
+                            <input type="number" min={0} max={100} className="input w-16 py-1 text-sm text-center"
+                              value={discountPct} onChange={e => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))} />
+                          </div>
+                        )}
                         {discountAmt > 0 && (
                           <div className="flex justify-between text-rose-500 dark:text-rose-400">
                             <span>Discount</span>
@@ -461,30 +581,32 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                           <span className="tabular-nums">{fmt(grandTotal)}</span>
                         </div>
                         {advanceAdjusted > 0 && (
-                          <>
-                            <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
-                              <span className="flex items-center gap-1">
-                                <Wallet className="w-3.5 h-3.5" /> Advance Credit
-                              </span>
-                              <span className="tabular-nums">-{fmt(advanceAdjusted)}</span>
-                            </div>
-                            <div className="flex justify-between font-bold text-blue-600 dark:text-blue-400 text-base border-t border-slate-100 dark:border-[#1a1a1a] pt-2.5 mt-1">
-                              <span>Balance Due</span>
-                              <span className="tabular-nums">{fmt(balanceDue)}</span>
-                            </div>
-                          </>
+                          <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+                            <span className="flex items-center gap-1"><Wallet className="w-3.5 h-3.5" /> Advance Credit</span>
+                            <span className="tabular-nums">-{fmt(advanceAdjusted)}</span>
+                          </div>
                         )}
+                        {totalCashPaid > 0 && (
+                          <div className="flex justify-between text-slate-500 dark:text-[#888]">
+                            <span>Paid so far</span>
+                            <span className="tabular-nums">-{fmt(totalCashPaid)}</span>
+                          </div>
+                        )}
+                        <div className={`flex justify-between font-bold text-base border-t border-slate-100 dark:border-[#1a1a1a] pt-2.5 mt-1 ${isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                          <span>{isPaid ? 'Fully Settled' : 'Balance Due'}</span>
+                          <span className="tabular-nums">{fmt(balanceDue)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {hasZeroPrice && (
+              {hasZeroPrice && !isPaid && (
                 <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
                   <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
-                    Some items have ₹0 — check radiology charges. Add services in Settings → Packages if missing.
+                    Some items have ₹0 — check radiology charges or add unit price manually.
                   </p>
                 </div>
               )}
@@ -495,71 +617,94 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-emerald-100 dark:border-emerald-500/15">
                     <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                      Advance Credits — {fmt(totalAdvance)} collected
+                      Advance Credits — {fmt(totalAdvance)} available
                     </p>
                   </div>
                   <div className="divide-y divide-emerald-100 dark:divide-emerald-500/10">
-                    {advances.map(a => (
-                      <div key={a.id} className="flex items-center justify-between px-4 py-2 text-xs">
-                        <div>
-                          <span className="font-semibold text-emerald-700 dark:text-emerald-300">{a.receiptNumber}</span>
-                          <span className="text-emerald-600/70 dark:text-emerald-400/60 ml-2">
-                            {a.source} · {a.paymentMethod}
-                            {a.notes ? ` · ${a.notes}` : ''}
+                    {advances.map(a => {
+                      const remaining = Math.max(0, Number(a.amount) - Number(a.appliedAmount || 0))
+                      return (
+                        <div key={a.id} className="flex items-center justify-between px-4 py-2 text-xs">
+                          <div>
+                            <span className="font-semibold text-emerald-700 dark:text-emerald-300">{a.receiptNumber}</span>
+                            <span className="text-emerald-600/70 dark:text-emerald-400/60 ml-2">
+                              {a.source} · {a.paymentMethod}
+                            </span>
+                          </div>
+                          <span className="font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
+                            {fmt(remaining)} available
                           </span>
                         </div>
-                        <span className="font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">{fmt(a.amount)}</span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Payment History */}
+              {existingPayments.length > 0 && (
+                <div className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1a1a1a]">
+                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                    <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">
+                      Payment History
+                    </p>
+                  </div>
+                  <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
+                    {existingPayments.map((p, i) => (
+                      <div key={p.id ?? i} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                        <div>
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">{fmt(p.amount)}</span>
+                          <span className="text-slate-400 ml-2 text-xs">{p.paymentMethod}</span>
+                          {p.collectedBy && <span className="text-slate-400 ml-2 text-xs">· {p.collectedBy}</span>}
+                        </div>
+                        <span className="text-xs text-slate-400">{fmtTime(p.paidAt)}</span>
                       </div>
                     ))}
                   </div>
-                  {balanceDue === 0 ? (
-                    <div className="px-4 py-2 bg-emerald-100 dark:bg-emerald-500/15 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                      Bill fully covered by advance — no additional payment needed.
+                </div>
+              )}
+
+              {/* Collect Payment */}
+              {!isPaid && (
+                <div className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] p-4 space-y-3">
+                  <p className="text-xs font-bold text-slate-500 dark:text-[#aaa] uppercase tracking-wider flex items-center gap-1.5">
+                    <IndianRupee className="w-3.5 h-3.5" /> Collect Payment
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Amount (₹)</label>
+                      <input type="number" min="0" step="1" className="input"
+                        value={payAmount}
+                        onChange={e => setPayAmount(e.target.value)}
+                        placeholder={String(Math.round(balanceDue))} />
                     </div>
-                  ) : (
-                    <div className="px-4 py-2 bg-emerald-100 dark:bg-emerald-500/15 text-xs text-emerald-700 dark:text-emerald-300">
-                      Advance deducted. Collect remaining <span className="font-bold">{fmt(balanceDue)}</span> from patient.
+                    <div>
+                      <label className="label">Payment Method</label>
+                      <select className="input" value={payMethod}
+                        onChange={e => { setPayMethod(e.target.value); setPayBankAccountId('') }}>
+                        {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  {needsBankAccount && bankAccounts.length > 0 && (
+                    <div>
+                      <label className="label">Credit to Bank Account</label>
+                      <select className="input" value={payBankAccountId} onChange={e => setPayBankAccountId(e.target.value)}>
+                        <option value="">Select account…</option>
+                        {bankAccounts.map(a => (
+                          <option key={a.id} value={a.id}>{a.accountName} — {a.bankName}</option>
+                        ))}
+                      </select>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Payment */}
               <div>
-                <label className="label">Payment Method</label>
-                <select className="input" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </div>
-
-              {bankAccounts.length > 0 && (
-                <div>
-                  <label className="label flex items-center gap-1.5">
-                    <Landmark className="w-3.5 h-3.5" /> Credit Payment To
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {bankAccounts.map(a => (
-                      <button key={a.id} type="button" onClick={() => setBankAccountId(a.id)}
-                        className={`text-left p-3 rounded-lg border-2 transition-all ${bankAccountId === a.id ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#111]'}`}
-                      >
-                        <div className="flex items-start justify-between gap-1 mb-0.5">
-                          <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{a.accountName}</p>
-                          {bankAccountId === a.id && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}
-                        </div>
-                        <p className="text-[11px] text-slate-400 dark:text-[#666]">
-                          {a.accountNumber ? `···${a.accountNumber.slice(-4)}` : a.bankName || 'Cash'}
-                        </p>
-                        <p className="text-xs font-semibold text-slate-600 dark:text-[#aaa] mt-1 tabular-nums">{fmt(a.currentBalance)}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="label">Billing Notes (optional)</label>
-                <input className="input" placeholder={`Discharge bill — Admission ${admission.admissionNumber}`}
-                  value={billNotes} onChange={e => setBillNotes(e.target.value)} />
+                <label className="label">Bill Notes (optional)</label>
+                <input className="input" placeholder={`IPD Bill — Admission ${admission.admissionNumber}`}
+                  value={billNotes} onChange={e => setBillNotes(e.target.value)} disabled={isPaid} />
               </div>
             </>
           )}
@@ -567,19 +712,29 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] rounded-b-xl">
-          <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-          <button
-            onClick={handleFinalizeAndPay}
-            disabled={submitting || loadingBill || items.length === 0}
-            className="btn-primary flex items-center gap-2"
-          >
-            {submitting
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
-              : balanceDue === 0 && advanceAdjusted > 0
-                ? <><CheckCircle2 className="w-4 h-4" /> Finalize — Covered by Advance</>
-                : <><CheckCircle2 className="w-4 h-4" /> Finalize & Collect {fmt(balanceDue || grandTotal)}</>
-            }
-          </button>
+          <button type="button" onClick={onClose} className="btn-secondary">Close</button>
+          {!isPaid && !loadingBill && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSaveBill}
+                disabled={savingBill || items.length === 0}
+                className="btn-secondary flex items-center gap-2"
+              >
+                {savingBill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
+                {savingBill ? 'Saving…' : 'Save Bill'}
+              </button>
+              <button
+                onClick={handleCollectPayment}
+                disabled={collectingPayment || !Number(payAmount)}
+                className="btn-primary flex items-center gap-2"
+              >
+                {collectingPayment
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Recording…</>
+                  : <><IndianRupee className="w-4 h-4" /> Collect {payAmount ? fmt(Number(payAmount)) : 'Payment'}</>
+                }
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

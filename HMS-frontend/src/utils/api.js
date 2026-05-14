@@ -346,6 +346,10 @@ const invoiceApi = {
     const { data } = await api.get(`/billing/patient/${patientId}/invoices`);
     return data;
   },
+  collectPayment: async (invoiceId, payload) => {
+    const { data } = await api.post(`/billing/invoices/${invoiceId}/payments`, payload);
+    return data;
+  },
 };
 const bankApi = {
   list: async (hospitalId) => {

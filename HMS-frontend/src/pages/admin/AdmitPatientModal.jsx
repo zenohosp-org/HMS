@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, bankApi, patientAdvanceApi } from '@/utils/api'
+import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, patientAdvanceApi } from '@/utils/api'
 import api from '@/utils/api'
 import { X, Search, BedDouble, User, CheckCircle2, Loader2, Wallet } from 'lucide-react'
 
@@ -22,7 +22,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   const [departments, setDepartments] = useState([])
   const [doctors, setDoctors] = useState([])
   const [rooms, setRooms] = useState([])
-  const [banks, setBanks] = useState([])
   const [availableBeds, setAvailableBeds] = useState([])
   const [bedsLoading, setBedsLoading] = useState(false)
   const [patientSearch, setPatientSearch] = useState('')
@@ -44,7 +43,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   // Finance step
   const [advanceAmount, setAdvanceAmount] = useState('')
   const [advancePaymentMethod, setAdvancePaymentMethod] = useState('Cash')
-  const [advanceBankAccountId, setAdvanceBankAccountId] = useState('')
   const [advanceNotes, setAdvanceNotes] = useState('')
 
   const [step, setStep] = useState(1)
@@ -78,11 +76,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
       setRooms(r.data.filter(rm => rm.status === 'AVAILABLE'))
     ).catch(() => {})
   }, [user?.hospitalId])
-
-  useEffect(() => {
-    if (step !== 4 || !user?.hospitalId || banks.length > 0) return
-    bankApi.list(user.hospitalId).then(setBanks).catch(() => {})
-  }, [step, user?.hospitalId])
 
   const selectedDept = departments.find(d => String(d.id) === String(form.departmentId))
   const filteredDoctors = form.departmentId && selectedDept
@@ -136,7 +129,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
           await patientAdvanceApi.createForAdmission(admission.id, {
             amount: amt,
             paymentMethod: advancePaymentMethod,
-            bankAccountId: advanceBankAccountId || null,
             notes: advanceNotes || null,
             collectedBy: user?.name || null,
           })
@@ -154,7 +146,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
 
   const advanceAmt = Number(advanceAmount) || 0
   const paymentCategory = selectedPatient?.paymentCategory ?? 'CASH'
-  const needsBankAccount = advanceAmt > 0 && (advancePaymentMethod === 'Bank Transfer' || advancePaymentMethod === 'Card')
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -446,18 +437,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                     </select>
                   </div>
                 </div>
-
-                {needsBankAccount && banks.length > 0 && (
-                  <div className="mt-3">
-                    <label className="label">Credit to Bank Account</label>
-                    <select className="input" value={advanceBankAccountId} onChange={e => setAdvanceBankAccountId(e.target.value)}>
-                      <option value="">Select account…</option>
-                      {banks.map(b => (
-                        <option key={b.id} value={b.id}>{b.accountName} — {b.bankName}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
 
                 {advanceAmt > 0 && (
                   <div className="mt-3">

@@ -110,9 +110,6 @@ function PatientModal({ patient, onClose, onSave }) {
     }
   };
 
-  const inputCls = "input";
-  const labelCls = "label";
-
   const formContent = (
     <form id="patientForm" onSubmit={handleSubmit} className="space-y-6">
 
@@ -122,25 +119,25 @@ function PatientModal({ patient, onClose, onSave }) {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>First Name *</label>
-              <input className={inputCls} value={form.firstName} onChange={(e) => set("firstName", e.target.value)} />
+              <label className="label">First Name *</label>
+              <input className="input" value={form.firstName} onChange={(e) => set("firstName", e.target.value)} />
               {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
             </div>
             <div>
-              <label className={labelCls}>Last Name *</label>
-              <input className={inputCls} value={form.lastName} onChange={(e) => set("lastName", e.target.value)} />
+              <label className="label">Last Name *</label>
+              <input className="input" value={form.lastName} onChange={(e) => set("lastName", e.target.value)} />
               {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Date of Birth *</label>
-              <input type="date" className={inputCls} value={form.dob} onChange={(e) => set("dob", e.target.value)} />
+              <label className="label">Date of Birth *</label>
+              <input type="date" className="input" value={form.dob} onChange={(e) => set("dob", e.target.value)} />
               {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob}</p>}
             </div>
             <div>
-              <label className={labelCls}>Gender *</label>
-              <select className={inputCls} value={form.gender} onChange={(e) => set("gender", e.target.value)}>
+              <label className="label">Gender *</label>
+              <select className="input" value={form.gender} onChange={(e) => set("gender", e.target.value)}>
                 <option value="">Select gender</option>
                 <option>Male</option>
                 <option>Female</option>
@@ -151,8 +148,8 @@ function PatientModal({ patient, onClose, onSave }) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Marital Status</label>
-              <select className={inputCls} value={form.maritalStatus} onChange={(e) => set("maritalStatus", e.target.value)}>
+              <label className="label">Marital Status</label>
+              <select className="input" value={form.maritalStatus} onChange={(e) => set("maritalStatus", e.target.value)}>
                 <option value="">Select</option>
                 <option>Single</option>
                 <option>Married</option>
@@ -162,8 +159,8 @@ function PatientModal({ patient, onClose, onSave }) {
               </select>
             </div>
             <div>
-              <label className={labelCls}>Occupation</label>
-              <input className={inputCls} value={form.occupation} onChange={(e) => set("occupation", e.target.value)} placeholder="e.g. Farmer, Teacher, Business" />
+              <label className="label">Occupation</label>
+              <input className="input" value={form.occupation} onChange={(e) => set("occupation", e.target.value)} placeholder="e.g. Farmer, Teacher, Business" />
             </div>
           </div>
         </div>
@@ -175,18 +172,18 @@ function PatientModal({ patient, onClose, onSave }) {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Phone *</label>
-              <input className={inputCls} value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91 98765 43210" />
+              <label className="label">Phone *</label>
+              <input className="input" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91 98765 43210" />
               {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
             </div>
             <div>
-              <label className={labelCls}>Email</label>
-              <input type="email" className={inputCls} value={form.email} onChange={(e) => set("email", e.target.value)} />
+              <label className="label">Email</label>
+              <input type="email" className="input" value={form.email} onChange={(e) => set("email", e.target.value)} />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
           </div>
           <div>
-            <label className={labelCls}>Address</label>
+            <label className="label">Address</label>
             <textarea rows={2} className="input resize-none" value={form.address} onChange={(e) => set("address", e.target.value)} />
           </div>
           <StateSelect value={form.state} onChange={(val) => set("state", val)}
@@ -234,29 +231,20 @@ function PatientModal({ patient, onClose, onSave }) {
           <p className="text-[11px] text-slate-400 dark:text-[#666] mb-3">
             Optional — collect upfront if patient is likely to be admitted. Will be deducted from the final IPD bill.
           </p>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Amount (₹)</label>
-              <input
-                type="number" min="0" step="1"
-                className={inputCls}
-                value={form.advanceAmount}
-                onChange={(e) => set("advanceAmount", e.target.value)}
-                placeholder="0 — leave blank to skip"
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Payment Method</label>
-              <select className={inputCls} value={form.advancePaymentMethod} onChange={(e) => set("advancePaymentMethod", e.target.value)}
-                disabled={!form.advanceAmount || Number(form.advanceAmount) === 0}>
-                {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
+          <div>
+            <label className="label">Amount (₹)</label>
+            <input
+              type="number" min="0" step="1"
+              className="input"
+              value={form.advanceAmount}
+              onChange={(e) => set("advanceAmount", e.target.value)}
+              placeholder="0 — leave blank to skip"
+            />
           </div>
           {form.advanceAmount && Number(form.advanceAmount) > 0 && (
             <div className="mt-3">
-              <label className={labelCls}>Note (optional)</label>
-              <input className={inputCls} value={form.advanceNotes} onChange={(e) => set("advanceNotes", e.target.value)}
+              <label className="label">Note (optional)</label>
+              <input className="input" value={form.advanceNotes} onChange={(e) => set("advanceNotes", e.target.value)}
                 placeholder="e.g. Registration deposit, Pre-surgery advance…" />
             </div>
           )}
@@ -273,16 +261,16 @@ function PatientModal({ patient, onClose, onSave }) {
         <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Emergency Contact</p>
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className={labelCls}>Name</label>
-            <input className={inputCls} value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} placeholder="Full name" />
+            <label className="label">Name</label>
+            <input className="input" value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} placeholder="Full name" />
           </div>
           <div>
-            <label className={labelCls}>Phone</label>
-            <input className={inputCls} value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} placeholder="+91 XXXXX XXXXX" />
+            <label className="label">Phone</label>
+            <input className="input" value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} placeholder="+91 XXXXX XXXXX" />
           </div>
           <div>
-            <label className={labelCls}>Relation</label>
-            <select className={inputCls} value={form.emergencyContactRelation} onChange={(e) => set("emergencyContactRelation", e.target.value)}>
+            <label className="label">Relation</label>
+            <select className="input" value={form.emergencyContactRelation} onChange={(e) => set("emergencyContactRelation", e.target.value)}>
               <option value="">Select</option>
               {EMERGENCY_RELATIONS.map((r) => <option key={r}>{r}</option>)}
             </select>
@@ -295,14 +283,14 @@ function PatientModal({ patient, onClose, onSave }) {
         <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Medical Identifiers</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Blood Group</label>
-            <select className={inputCls} value={form.bloodGroup} onChange={(e) => set("bloodGroup", e.target.value)}>
+            <label className="label">Blood Group</label>
+            <select className="input" value={form.bloodGroup} onChange={(e) => set("bloodGroup", e.target.value)}>
               <option value="">Select</option>
               {BLOOD_GROUPS.map((g) => <option key={g}>{g}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelCls}>Aadhaar Number</label>
+            <label className="label">Aadhaar Number</label>
             <input
               className={"input" + (errors.aadhaarNumber ? " border-red-400" : "")}
               value={form.aadhaarNumber}
@@ -323,15 +311,15 @@ function PatientModal({ patient, onClose, onSave }) {
         <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Insurance</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Scheme</label>
-            <select className={inputCls} value={form.insuranceScheme} onChange={(e) => set("insuranceScheme", e.target.value)}>
+            <label className="label">Scheme</label>
+            <select className="input" value={form.insuranceScheme} onChange={(e) => set("insuranceScheme", e.target.value)}>
               <option value="">Select</option>
               {INSURANCE_SCHEMES.map((s) => <option key={s}>{s}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelCls}>Policy / Card Number</label>
-            <input className={inputCls} value={form.insurancePolicyNumber} onChange={(e) => set("insurancePolicyNumber", e.target.value)} placeholder="e.g. PMJAY-XXXXXXXX" />
+            <label className="label">Policy / Card Number</label>
+            <input className="input" value={form.insurancePolicyNumber} onChange={(e) => set("insurancePolicyNumber", e.target.value)} placeholder="e.g. PMJAY-XXXXXXXX" />
           </div>
         </div>
       </div>
@@ -341,16 +329,16 @@ function PatientModal({ patient, onClose, onSave }) {
         <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Clinical History</p>
         <div className="space-y-4">
           <div>
-            <label className={labelCls}>Known Allergies</label>
+            <label className="label">Known Allergies</label>
             <textarea rows={2} className="input resize-none" value={form.allergies} onChange={(e) => set("allergies", e.target.value)} placeholder="e.g. Penicillin, Aspirin, Peanuts — leave blank if none" />
           </div>
           <div>
-            <label className={labelCls}>Chronic Conditions / Medical History</label>
+            <label className="label">Chronic Conditions / Medical History</label>
             <textarea rows={2} className="input resize-none" value={form.chronicConditions} onChange={(e) => set("chronicConditions", e.target.value)} placeholder="e.g. Diabetes Type 2, Hypertension, Asthma" />
           </div>
           <div>
-            <label className={labelCls}>Referred By</label>
-            <input className={inputCls} value={form.referredBy} onChange={(e) => set("referredBy", e.target.value)} placeholder="Doctor name or clinic" />
+            <label className="label">Referred By</label>
+            <input className="input" value={form.referredBy} onChange={(e) => set("referredBy", e.target.value)} placeholder="Doctor name or clinic" />
           </div>
         </div>
       </div>
