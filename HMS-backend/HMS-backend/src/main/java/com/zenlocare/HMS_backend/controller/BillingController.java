@@ -69,6 +69,17 @@ public class BillingController {
         }
     }
 
+    @PatchMapping("/invoices/{id}/estimate")
+    public ResponseEntity<Void> updateEstimate(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
+        try {
+            BigDecimal total = new BigDecimal(body.getOrDefault("total", "0").toString());
+            invoiceService.updateEstimatedTotal(id, total);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.ok().build(); // silent — never block UI
+        }
+    }
+
     @PatchMapping("/invoices/{invoiceId}/items/{itemId}/waive")
     public ResponseEntity<InvoiceDTO> waiveItem(
             @PathVariable UUID invoiceId,

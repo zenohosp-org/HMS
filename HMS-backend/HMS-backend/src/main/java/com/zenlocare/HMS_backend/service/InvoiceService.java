@@ -269,6 +269,17 @@ public class InvoiceService {
         }
     }
 
+    @Transactional
+    public void updateEstimatedTotal(UUID invoiceId, BigDecimal estimatedTotal) {
+        invoiceRepository.findById(invoiceId).ifPresent(invoice -> {
+            if (InvoiceStatus.PAID.equals(invoice.getStatus())) return;
+            invoice.setSubtotal(estimatedTotal);
+            invoice.setTotal(estimatedTotal);
+            invoice.setUpdatedAt(LocalDateTime.now());
+            invoiceRepository.save(invoice);
+        });
+    }
+
     // ── Remove consultation from invoice when appointment is CANCELLED ─────────
     @Transactional
     public void cancelAppointmentInvoice(UUID appointmentId) {

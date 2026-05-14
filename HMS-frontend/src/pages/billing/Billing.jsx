@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, Fragment } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
-import { invoiceApi, bankApi, admissionApi } from '@/utils/api'
+import { invoiceApi, bankApi, admissionApi, patientServicesApi } from '@/utils/api'
 import Pagination from '@/components/ui/Pagination'
 import CreateInvoiceModal from '@/components/modals/CreateInvoiceModal'
 import FinalizeIPDBillingModal from '@/components/modals/FinalizeIPDBillingModal'
@@ -99,7 +99,37 @@ export default function Billing() {
     if (!user?.hospitalId) return
     try {
       setLoading(true)
-      setInvoices(await invoiceApi.getByHospital(user.hospitalId))
+      const data = await invoiceApi.getByHospital(user.hospitalId)
+      const list = Array.isArray(data) ? data : []
+      setInvoices(list)
+
+      // Silently sync estimated totals for ₹0 UNPAID IPD invoices
+      const zeroPending = list.filter(i => !!i.admissionId && i.status === 'UNPAID' && Number(i.total || 0) === 0)
+      if (zeroPending.length > 0) {
+        const patientServices = await patientServicesApi.list(user.hospitalId).catch(() => [])
+        const activeServices = (Array.isArray(patientServices) ? patientServices : []).filter(s => s.isActive)
+        zeroPending.forEach(async (inv) => {
+          try {
+            const [suggestions, admDetails] = await Promise.all([
+              invoiceApi.getSmartSuggestions(inv.patientId, inv.admissionId).catch(() => ({})),
+              admissionApi.get(inv.admissionId).catch(() => null),
+            ])
+            const admitDate = admDetails?.admissionDate ? new Date(admDetails.admissionDate) : null
+            const days = admitDate ? Math.max(1, Math.ceil((Date.now() - admitDate.getTime()) / 86400000)) : 1
+            let total = 0
+            if (suggestions.roomCharge?.pricePerDay) total += Number(suggestions.roomCharge.pricePerDay) * days
+            activeServices.forEach(s => {
+              if (s.type === 'FOOD') total += Number(s.pricePerMeal || 0) * days * 3
+              else if (s.type === 'REGISTRATION' && s.oneTimeCharge) total += Number(s.pricePerDay || 0)
+              else total += Number(s.pricePerDay || 0) * days
+            })
+            if (total > 0) {
+              await invoiceApi.updateEstimate(inv.id, total)
+              setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, total, subtotal: total } : i))
+            }
+          } catch {}
+        })
+      }
     } catch {
       notify('Failed to load invoices', 'error')
     } finally {

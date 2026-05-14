@@ -339,6 +339,13 @@ const invoiceApi = {
     const { data } = await api.put(`/billing/invoices/${invoiceId}/finalize`, payload);
     return data;
   },
+  updateEstimate: async (invoiceId, total) => {
+    await api.patch(`/billing/invoices/${invoiceId}/estimate`, { total });
+  },
+  getPatientInvoices: async (patientId) => {
+    const { data } = await api.get(`/billing/patient/${patientId}/invoices`);
+    return data;
+  },
 };
 const bankApi = {
   list: async (hospitalId) => {

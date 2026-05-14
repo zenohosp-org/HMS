@@ -407,6 +407,14 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
 
     setBillingItems(items)
 
+    // Silently sync estimated total back to the placeholder invoice so Billing list shows correct amount
+    const estimatedTotal = items.reduce((s, i) => s + Number(i.totalPrice || 0), 0)
+    if (estimatedTotal > 0) {
+      invoiceApi.getAdmissionInvoice(admission.id)
+        .then(inv => { if (inv?.id && inv.status !== 'PAID') invoiceApi.updateEstimate(inv.id, estimatedTotal) })
+        .catch(() => {})
+    }
+
     setBillingFetched(true)
     setLoadingBilling(false)
   }, [admission?.id, user?.hospitalId])
