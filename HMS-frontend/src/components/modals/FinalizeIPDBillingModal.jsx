@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import SSOCookieManager from '@/utils/ssoManager'
-import { invoiceApi, bankApi, hospitalServiceApi, patientServicesApi, radiologyApi } from '@/utils/api'
+import { invoiceApi, bankApi, hospitalServiceApi, patientServicesApi, radiologyApi, ambulanceApi } from '@/utils/api'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { generateInvoiceNumber } from '@/utils/validators'
@@ -89,7 +89,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       patientServicesApi.list(user.hospitalId).catch(() => []),
       otApi.get('/api/ot/invoices', { params: { admissionId: admission.id } }).catch(() => ({ data: [] })),
       invoiceApi.getAdmissionInvoice(admission.id).catch(() => null),
-    ]).then(([suggestions, services, accounts, radiologyOrders, patientServices, otRes, existingInvoice]) => {
+      ambulanceApi.getBookings(user.hospitalId).catch(() => []),
+    ]).then(([suggestions, services, accounts, radiologyOrders, patientServices, otRes, existingInvoice, ambulanceBookings]) => {
       const def = accounts.find(a => a.isDefault) ?? accounts[0]
       setBankAccounts(accounts)
       if (def) setBankAccountId(def.id)
@@ -188,6 +189,33 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         }
       })
 
+      // Ambulance — COMPLETED bookings for this patient that haven't been paid yet
+      const admitDay = new Date(admission.admissionDate)
+      admitDay.setHours(0, 0, 0, 0)
+      const dayBefore = new Date(admitDay)
+      dayBefore.setDate(dayBefore.getDate() - 1)
+      ;(Array.isArray(ambulanceBookings) ? ambulanceBookings : [])
+        .filter(b => {
+          const pid = b.patient?.id ?? b.patientId
+          if (String(pid) !== String(admission.patientId)) return false
+          if (b.status !== 'COMPLETED') return false
+          if (b.paymentStatus === 'PAID') return false
+          const bDate = new Date(b.bookingDate)
+          return bDate >= dayBefore
+        })
+        .forEach(b => {
+          const typeName = b.ambulanceType?.name || ''
+          const vehicleNo = b.vehicle?.vehicleNumber || b.vehicleNumber || ''
+          const desc = ['Ambulance', typeName, vehicleNo].filter(Boolean).join(' — ')
+          const charge = Number(b.charge || 0)
+          auto.push({
+            key: key++, itemType: 'CUSTOM',
+            description: desc,
+            quantity: 1, unitPrice: charge, totalPrice: charge,
+            ambulanceBookingId: b.id,
+          })
+        })
+
       // OT charges
       ;(Array.isArray(otRes?.data) ? otRes.data : []).forEach(inv => {
         ;(Array.isArray(inv.items) ? inv.items : []).forEach(item => {
@@ -258,6 +286,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           totalPrice: Number(i.totalPrice),
           radiologyOrderId: i.radiologyOrderId ?? undefined,
           appointmentId: i.appointmentId ?? undefined,
+          // ambulanceBookingId is internal — not sent to invoice
         })),
       }
 
@@ -270,6 +299,15 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       }
 
       await invoiceApi.markAsPaid(finalInvoiceId, bankAccountId || undefined)
+
+      // Mark any included ambulance bookings as paid
+      const ambulanceItems = items.filter(i => i.ambulanceBookingId)
+      if (ambulanceItems.length > 0) {
+        await Promise.allSettled(
+          ambulanceItems.map(i => ambulanceApi.updateStatus(i.ambulanceBookingId, { paymentStatus: 'PAID' }))
+        )
+      }
+
       notify('Bill finalized and payment recorded — patient can now be discharged', 'success')
       onFinalized()
     } catch (err) {
