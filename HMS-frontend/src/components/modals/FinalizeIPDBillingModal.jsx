@@ -98,6 +98,25 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       let key = 0
       const auto = []
 
+      // OPD → IPD: if existing invoice already has items (e.g. consultation from OPD visit),
+      // carry them forward so they appear in this IPD bill. The appointment is already marked
+      // BILLED so smart suggestions won't re-add it — no duplication risk.
+      if (existingInvoice?.items?.length > 0) {
+        existingInvoice.items.forEach(item => {
+          auto.push({
+            key: key++,
+            itemType: item.itemType,
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: Number(item.unitPrice || 0),
+            totalPrice: Number(item.totalPrice || 0),
+            appointmentId: item.appointmentId ?? undefined,
+            radiologyOrderId: item.radiologyOrderId ?? undefined,
+            fromOpd: true,
+          })
+        })
+      }
+
       // Room charge — only after 24 hrs (roomDays = full 24-hr periods elapsed)
       const roomNumber = admission.roomNumber
       if (roomNumber && roomDays > 0) {
@@ -212,6 +231,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const grandTotal = subtotal - discountAmt + gst
 
   const hasZeroPrice = items.some(i => Number(i.unitPrice) === 0 && i.itemType !== 'CUSTOM')
+  const hasOpdCarryOver = useMemo(() => items.some(i => i.fromOpd), [items])
 
   const handleFinalizeAndPay = async () => {
     if (items.length === 0) { notify('Add at least one billing item', 'warning'); return }
@@ -298,6 +318,18 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   </button>
                 </div>
 
+                {hasOpdCarryOver && (
+                  <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25 mb-3">
+                    <Stethoscope className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-bold text-blue-700 dark:text-blue-400">OPD → IPD Conversion</p>
+                      <p className="text-[11px] text-blue-600/80 dark:text-blue-300/70 mt-0.5">
+                        This admission originated from an OPD consultation. The consultation charge has been carried over and is highlighted below.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {items.length === 0 ? (
                   <div className="py-12 text-center border-2 border-dashed border-slate-100 dark:border-[#2a2a2a] rounded-lg">
                     <p className="text-sm font-medium text-slate-500 dark:text-[#777]">No charges detected</p>
@@ -312,7 +344,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                     </div>
                     <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
                       {items.map(item => (
-                        <div key={item.key} className="grid grid-cols-12 gap-2 items-center px-4 py-2.5 group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors">
+                        <div key={item.key} className={`grid grid-cols-12 gap-2 items-center px-4 py-2.5 group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors ${item.fromOpd ? 'border-l-2 border-blue-400 dark:border-blue-500/70 bg-blue-50/30 dark:bg-blue-500/5' : ''}`}>
                           <div className="col-span-2">
                             <select
                               value={item.itemType ?? 'CUSTOM'}
@@ -337,6 +369,9 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                               onChange={e => updateItem(item.key, { unitPrice: parseFloat(e.target.value) || 0 })} />
                           </div>
                           <div className="col-span-2 flex items-center justify-end gap-1.5">
+                            {item.fromOpd && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 shrink-0">OPD</span>
+                            )}
                             <span className="text-sm font-bold text-slate-800 dark:text-white tabular-nums">{fmt(item.totalPrice || 0)}</span>
                             <button onClick={() => removeItem(item.key)}
                               className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 transition-all">

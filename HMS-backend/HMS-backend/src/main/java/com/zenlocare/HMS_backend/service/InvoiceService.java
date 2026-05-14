@@ -162,6 +162,9 @@ public class InvoiceService {
     }
 
     // ── Auto-create a zero-total placeholder invoice when a patient is admitted ──
+    // OPD→IPD edge case: if the admission originated from an OPD appointment that
+    // already has an unpaid invoice, absorb it — link it to this admission so the
+    // consultation fee carries over into the IPD bill. No separate OPD invoice remains.
     @Transactional
     public void createAdmissionInvoice(UUID hospitalId, Integer patientId, UUID admissionId, String admissionNumber) {
         if (invoiceRepository.findByAdmission_Id(admissionId).isPresent()) return;
@@ -169,6 +172,26 @@ public class InvoiceService {
         Patient patient = patientRepository.findById(patientId).orElse(null);
         Admission admission = admissionRepository.findById(admissionId).orElse(null);
         if (hospital == null || patient == null || admission == null) return;
+
+        // Absorb the OPD invoice when this admission was triggered from an OPD appointment
+        if (admission.getSourceAppointment() != null) {
+            Optional<Invoice> opdOpt = invoiceRepository.findByAppointment_Id(
+                    admission.getSourceAppointment().getId());
+            if (opdOpt.isPresent()) {
+                Invoice opdInvoice = opdOpt.get();
+                if (!InvoiceStatus.PAID.equals(opdInvoice.getStatus())) {
+                    // Promote: link OPD invoice to this admission — it becomes the IPD invoice
+                    opdInvoice.setAdmission(admission);
+                    opdInvoice.setInvoiceNumber("IPD-" + admissionNumber);
+                    opdInvoice.setNotes("IPD Admission (converted from OPD) — " + admissionNumber);
+                    opdInvoice.setUpdatedAt(LocalDateTime.now());
+                    invoiceRepository.save(opdInvoice);
+                    return;
+                }
+                // OPD invoice already paid (rare) — fall through and create a fresh IPD placeholder
+            }
+        }
+
         invoiceRepository.save(Invoice.builder()
                 .invoiceNumber("IPD-" + admissionNumber)
                 .hospital(hospital)
