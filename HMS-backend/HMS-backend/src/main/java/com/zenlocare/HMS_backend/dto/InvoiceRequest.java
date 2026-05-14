@@ -22,6 +22,7 @@ public class InvoiceRequest {
     private String paymentMethod;
     private UUID bankAccountId;
     private InvoiceStatus status;
+    private java.math.BigDecimal advanceAdjusted; // total advance deducted at finalization
     private List<InvoiceItemRequest> items;
 
     @Data

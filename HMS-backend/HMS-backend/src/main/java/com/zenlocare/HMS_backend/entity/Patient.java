@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.zenlocare.HMS_backend.entity.PaymentCategory;
 
 @Entity
 @Table(name = "patients", uniqueConstraints = @UniqueConstraint(columnNames = { "hospital_id", "mrn" }))
@@ -87,6 +88,13 @@ public class Patient {
 
     @Column(name = "referred_by", length = 100)
     private String referredBy;
+
+    // Financial profile — assessed at registration; CASH = needs periodic payment assurance,
+    // CREDIT = financially sound, settles at end of treatment
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_category", length = 10)
+    @Builder.Default
+    private PaymentCategory paymentCategory = PaymentCategory.CASH;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -30,6 +30,7 @@ public class AdmissionService {
     private final UserRepository userRepository;
     private final InvoiceService invoiceService;
     private final InvoiceRepository invoiceRepository;
+    private final PatientAdvanceService patientAdvanceService;
 
     @Transactional
     public AdmissionDTO admit(AdmissionRequest req, String performedBy) {
@@ -132,6 +133,11 @@ public class AdmissionService {
                     .performedBy(performedBy)
                     .build());
         }
+
+        // Auto-link any floating registration advances (collected at registration desk before
+        // this admission was created) to this admission so they appear in the final bill.
+        try { patientAdvanceService.linkRegistrationAdvancesToAdmission(req.getPatientId(), saved.getId()); }
+        catch (Exception ignored) {}
 
         // Auto-create UNPAID placeholder invoice for IPD billing tracking.
         // Pass sourceAppt ID directly — avoids lazy-loading inside the invoice service.

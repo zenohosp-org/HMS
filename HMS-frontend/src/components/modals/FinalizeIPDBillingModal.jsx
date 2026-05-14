@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import SSOCookieManager from '@/utils/ssoManager'
-import { invoiceApi, bankApi, hospitalServiceApi, patientServicesApi, radiologyApi, ambulanceApi } from '@/utils/api'
+import { invoiceApi, bankApi, hospitalServiceApi, patientServicesApi, radiologyApi, ambulanceApi, patientAdvanceApi } from '@/utils/api'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { generateInvoiceNumber } from '@/utils/validators'
 import {
   X, Receipt, CheckCircle2, Loader2, AlertCircle, Plus, Trash2,
   BedDouble, ScanLine, Stethoscope, Pill, FlaskConical, Wrench,
-  Scissors, Landmark,
+  Scissors, Landmark, Wallet,
 } from 'lucide-react'
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
@@ -65,6 +65,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const [bankAccounts, setBankAccounts] = useState([])
   const [bankAccountId, setBankAccountId] = useState('')
   const [billNotes, setBillNotes] = useState('')
+  const [advances, setAdvances] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [fallbackInvoiceNo] = useState(generateInvoiceNumber)
 
@@ -90,11 +91,13 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       otApi.get('/api/ot/invoices', { params: { admissionId: admission.id } }).catch(() => ({ data: [] })),
       invoiceApi.getAdmissionInvoice(admission.id).catch(() => null),
       ambulanceApi.getBookings(user.hospitalId).catch(() => []),
-    ]).then(([suggestions, services, accounts, radiologyOrders, patientServices, otRes, existingInvoice, ambulanceBookings]) => {
+      patientAdvanceApi.listForAdmission(admission.id).catch(() => []),
+    ]).then(([suggestions, services, accounts, radiologyOrders, patientServices, otRes, existingInvoice, ambulanceBookings, advanceList]) => {
       const def = accounts.find(a => a.isDefault) ?? accounts[0]
       setBankAccounts(accounts)
       if (def) setBankAccountId(def.id)
       if (existingInvoice?.id) setInvoiceId(existingInvoice.id)
+      setAdvances(Array.isArray(advanceList) ? advanceList : [])
 
       let key = 0
       const auto = []
@@ -259,6 +262,12 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   )
   const gst = (medicineSubtotal - medicineSubtotal * (discountPct / 100)) * GST_RATE
   const grandTotal = subtotal - discountAmt + gst
+  const totalAdvance = useMemo(
+    () => advances.reduce((s, a) => s + Number(a.amount || 0), 0),
+    [advances]
+  )
+  const advanceAdjusted = Math.min(totalAdvance, grandTotal)
+  const balanceDue = Math.max(0, grandTotal - advanceAdjusted)
 
   const hasZeroPrice = items.some(i => Number(i.unitPrice) === 0 && i.itemType !== 'CUSTOM')
   const hasOpdCarryOver = useMemo(() => items.some(i => i.fromOpd), [items])
@@ -277,6 +286,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         tax: gst,
         discount: discountAmt,
         total: grandTotal,
+        advanceAdjusted: advanceAdjusted > 0 ? advanceAdjusted : undefined,
         notes: billNotes || `Discharge bill — Admission ${admission.admissionNumber}`,
         items: items.map(i => ({
           itemType: i.itemType,
@@ -424,9 +434,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
                     {/* Totals */}
                     <div className="px-4 py-4 border-t border-slate-100 dark:border-[#1a1a1a] flex justify-end bg-slate-50/50 dark:bg-[#0a0a0a]">
-                      <div className="w-56 space-y-2 text-sm">
+                      <div className="w-64 space-y-2 text-sm">
                         <div className="flex justify-between text-slate-500 dark:text-[#888]">
-                          <span>Subtotal</span><span className="font-semibold tabular-nums">{fmt(subtotal)}</span>
+                          <span>Subtotal</span>
+                          <span className="font-semibold tabular-nums">{fmt(subtotal)}</span>
                         </div>
                         <div className="flex items-center justify-between text-slate-500 dark:text-[#888]">
                           <span>Discount (%)</span>
@@ -435,18 +446,34 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                         </div>
                         {discountAmt > 0 && (
                           <div className="flex justify-between text-rose-500 dark:text-rose-400">
-                            <span>Discount</span><span className="tabular-nums">-{fmt(discountAmt)}</span>
+                            <span>Discount</span>
+                            <span className="tabular-nums">-{fmt(discountAmt)}</span>
                           </div>
                         )}
                         {medicineSubtotal > 0 && (
                           <div className="flex justify-between text-slate-500 dark:text-[#888]">
-                            <span>GST on medicines (18%)</span><span className="tabular-nums">{fmt(gst)}</span>
+                            <span>GST on medicines (18%)</span>
+                            <span className="tabular-nums">{fmt(gst)}</span>
                           </div>
                         )}
                         <div className="flex justify-between font-bold text-slate-900 dark:text-white text-base border-t border-slate-100 dark:border-[#1a1a1a] pt-2.5 mt-1">
                           <span>Grand Total</span>
-                          <span className="text-blue-600 dark:text-blue-400 tabular-nums">{fmt(grandTotal)}</span>
+                          <span className="tabular-nums">{fmt(grandTotal)}</span>
                         </div>
+                        {advanceAdjusted > 0 && (
+                          <>
+                            <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+                              <span className="flex items-center gap-1">
+                                <Wallet className="w-3.5 h-3.5" /> Advance Credit
+                              </span>
+                              <span className="tabular-nums">-{fmt(advanceAdjusted)}</span>
+                            </div>
+                            <div className="flex justify-between font-bold text-blue-600 dark:text-blue-400 text-base border-t border-slate-100 dark:border-[#1a1a1a] pt-2.5 mt-1">
+                              <span>Balance Due</span>
+                              <span className="tabular-nums">{fmt(balanceDue)}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -459,6 +486,41 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
                     Some items have ₹0 — check radiology charges. Add services in Settings → Packages if missing.
                   </p>
+                </div>
+              )}
+
+              {/* Advance Credits */}
+              {advances.length > 0 && (
+                <div className="rounded-lg border border-emerald-200 dark:border-emerald-500/25 bg-emerald-50 dark:bg-emerald-500/10 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-emerald-100 dark:border-emerald-500/15">
+                    <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                      Advance Credits — {fmt(totalAdvance)} collected
+                    </p>
+                  </div>
+                  <div className="divide-y divide-emerald-100 dark:divide-emerald-500/10">
+                    {advances.map(a => (
+                      <div key={a.id} className="flex items-center justify-between px-4 py-2 text-xs">
+                        <div>
+                          <span className="font-semibold text-emerald-700 dark:text-emerald-300">{a.receiptNumber}</span>
+                          <span className="text-emerald-600/70 dark:text-emerald-400/60 ml-2">
+                            {a.source} · {a.paymentMethod}
+                            {a.notes ? ` · ${a.notes}` : ''}
+                          </span>
+                        </div>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">{fmt(a.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {balanceDue === 0 ? (
+                    <div className="px-4 py-2 bg-emerald-100 dark:bg-emerald-500/15 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                      Bill fully covered by advance — no additional payment needed.
+                    </div>
+                  ) : (
+                    <div className="px-4 py-2 bg-emerald-100 dark:bg-emerald-500/15 text-xs text-emerald-700 dark:text-emerald-300">
+                      Advance deducted. Collect remaining <span className="font-bold">{fmt(balanceDue)}</span> from patient.
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -513,7 +575,9 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           >
             {submitting
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
-              : <><CheckCircle2 className="w-4 h-4" /> Finalize & Mark as Paid</>
+              : balanceDue === 0 && advanceAdjusted > 0
+                ? <><CheckCircle2 className="w-4 h-4" /> Finalize — Covered by Advance</>
+                : <><CheckCircle2 className="w-4 h-4" /> Finalize & Collect {fmt(balanceDue || grandTotal)}</>
             }
           </button>
         </div>

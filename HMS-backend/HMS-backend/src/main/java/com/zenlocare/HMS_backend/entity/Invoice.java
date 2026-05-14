@@ -65,6 +65,16 @@ public class Invoice {
     @Column(name = "payment_method", length = 50)
     private String paymentMethod;
 
+    // Total advance collected and deducted from this bill at finalization
+    @Column(name = "advance_adjusted", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal advanceAdjusted = BigDecimal.ZERO;
+
+    // Running total of payments received (used for PARTIAL payment tracking)
+    @Column(name = "paid_amount", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal paidAmount = BigDecimal.ZERO;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 

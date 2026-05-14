@@ -25,6 +25,8 @@ public class InvoiceDTO {
     private String paymentMethod;
     private String notes;
     private String status;
+    private BigDecimal advanceAdjusted;
+    private BigDecimal paidAmount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<ItemDTO> items;

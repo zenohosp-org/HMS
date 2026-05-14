@@ -30,6 +30,7 @@ public class InvoiceService {
     private final SpecializationRepository specializationRepository;
     private final BankAccountRepository bankAccountRepository;
     private final BankTransactionRepository bankTransactionRepository;
+    private final PatientAdvanceService patientAdvanceService;
 
     @Transactional
     public Invoice createInvoice(InvoiceRequest request) {
@@ -369,10 +370,20 @@ public class InvoiceService {
         invoice.setSubtotal(req.getSubtotal() != null ? req.getSubtotal() : BigDecimal.ZERO);
         invoice.setTax(req.getTax() != null ? req.getTax() : BigDecimal.ZERO);
         invoice.setDiscount(req.getDiscount() != null ? req.getDiscount() : BigDecimal.ZERO);
+        invoice.setAdvanceAdjusted(req.getAdvanceAdjusted() != null ? req.getAdvanceAdjusted() : BigDecimal.ZERO);
+        // total = balance due after advance and discount
         invoice.setTotal(req.getTotal() != null ? req.getTotal() : BigDecimal.ZERO);
         if (req.getNotes() != null) invoice.setNotes(req.getNotes());
         invoice.setUpdatedAt(LocalDateTime.now());
         Invoice saved = invoiceRepository.save(invoice);
+
+        // Mark advances applied if any were deducted
+        if (invoice.getAdmission() != null && invoice.getAdvanceAdjusted().compareTo(BigDecimal.ZERO) > 0) {
+            try {
+                patientAdvanceService.markAdvancesApplied(
+                        invoice.getAdmission().getId(), invoice.getId(), invoice.getAdvanceAdjusted());
+            } catch (Exception ignored) {}
+        }
         // Mark linked appointments and radiology orders as BILLED
         saved.getItems().stream()
                 .filter(i -> "CONSULTATION".equals(i.getItemType()) && i.getAppointmentId() != null)
@@ -439,6 +450,8 @@ public class InvoiceService {
                 .paymentMethod(inv.getPaymentMethod())
                 .notes(inv.getNotes())
                 .status(inv.getStatus().name())
+                .advanceAdjusted(inv.getAdvanceAdjusted())
+                .paidAmount(inv.getPaidAmount())
                 .createdAt(inv.getCreatedAt())
                 .updatedAt(inv.getUpdatedAt())
                 .items(inv.getItems() != null ? inv.getItems().stream().map(item ->

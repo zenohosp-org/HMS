@@ -3,12 +3,15 @@ package com.zenlocare.HMS_backend.service;
 import com.zenlocare.HMS_backend.controller.PatientController.CreatePatientRequest;
 import com.zenlocare.HMS_backend.entity.Hospital;
 import com.zenlocare.HMS_backend.entity.Patient;
+import com.zenlocare.HMS_backend.entity.PaymentCategory;
 import com.zenlocare.HMS_backend.exception.ResourceNotFoundException;
 import com.zenlocare.HMS_backend.repository.HospitalRepository;
 import com.zenlocare.HMS_backend.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +21,7 @@ public class PatientService {
 
     private final PatientRepository patientRepository;
     private final HospitalRepository hospitalRepository;
+    private final PatientAdvanceService patientAdvanceService;
 
     public List<Patient> getPatientsByHospital(UUID hospitalId) {
         return patientRepository.findByHospitalId(hospitalId);
@@ -38,6 +42,7 @@ public class PatientService {
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
     }
 
+    @Transactional
     public Patient createPatient(CreatePatientRequest req) {
         Hospital hospital = hospitalRepository.findById(req.getHospitalId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
@@ -68,9 +73,19 @@ public class PatientService {
                 .allergies(req.getAllergies())
                 .chronicConditions(req.getChronicConditions())
                 .referredBy(req.getReferredBy())
+                .paymentCategory(req.getPaymentCategory() != null ? req.getPaymentCategory() : PaymentCategory.CASH)
                 .build();
 
-        return patientRepository.save(patient);
+        Patient saved = patientRepository.save(patient);
+
+        // If a registration advance was collected, record it now — same transaction
+        if (req.getAdvanceAmount() != null && req.getAdvanceAmount().compareTo(BigDecimal.ZERO) > 0) {
+            patientAdvanceService.createRegistrationAdvance(
+                    saved.getId(), req.getHospitalId(),
+                    req.getAdvanceAmount(), req.getAdvancePaymentMethod(), req.getAdvanceNotes());
+        }
+
+        return saved;
     }
 
     public Patient updatePatient(Integer patientId, CreatePatientRequest req) {
@@ -95,6 +110,7 @@ public class PatientService {
         patient.setAllergies(req.getAllergies());
         patient.setChronicConditions(req.getChronicConditions());
         patient.setReferredBy(req.getReferredBy());
+        if (req.getPaymentCategory() != null) patient.setPaymentCategory(req.getPaymentCategory());
         return patientRepository.save(patient);
     }
 }

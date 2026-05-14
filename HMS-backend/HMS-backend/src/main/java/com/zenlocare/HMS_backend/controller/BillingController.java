@@ -5,7 +5,10 @@ import com.zenlocare.HMS_backend.dto.InvoiceRequest;
 import com.zenlocare.HMS_backend.dto.SmartBillingSuggestion;
 import com.zenlocare.HMS_backend.entity.Invoice;
 import com.zenlocare.HMS_backend.service.InvoiceService;
+import com.zenlocare.HMS_backend.service.PatientAdvanceService;
+import com.zenlocare.HMS_backend.service.PatientAdvanceService.PatientAdvanceDTO;
 import com.zenlocare.HMS_backend.service.SmartBillingService;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +25,7 @@ public class BillingController {
 
     private final SmartBillingService smartBillingService;
     private final InvoiceService invoiceService;
+    private final PatientAdvanceService patientAdvanceService;
 
     @GetMapping("/smart-suggestions")
     public ResponseEntity<SmartBillingSuggestion> getSuggestions(
@@ -78,6 +82,40 @@ public class BillingController {
         } catch (Exception e) {
             return ResponseEntity.ok().build(); // silent — never block UI
         }
+    }
+
+    // ── Advance endpoints ──────────────────────────────────────────────────────
+
+    @GetMapping("/admissions/{admissionId}/advances")
+    public ResponseEntity<List<PatientAdvanceDTO>> getAdvancesForAdmission(@PathVariable UUID admissionId) {
+        return ResponseEntity.ok(
+                patientAdvanceService.listByAdmission(admissionId)
+                        .stream().map(patientAdvanceService::toDTO)
+                        .collect(java.util.stream.Collectors.toList())
+        );
+    }
+
+    @PostMapping("/admissions/{admissionId}/advances")
+    public ResponseEntity<PatientAdvanceDTO> createAdmissionAdvance(
+            @PathVariable UUID admissionId,
+            @RequestBody AdvanceRequest req) {
+        try {
+            return ResponseEntity.ok(patientAdvanceService.toDTO(
+                    patientAdvanceService.createAdmissionAdvance(
+                            admissionId, req.getAmount(), req.getPaymentMethod(),
+                            req.getBankAccountId(), req.getNotes(), req.getCollectedBy())));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @Data
+    public static class AdvanceRequest {
+        private BigDecimal amount;
+        private String paymentMethod;
+        private UUID bankAccountId;
+        private String notes;
+        private String collectedBy;
     }
 
     @PatchMapping("/invoices/{invoiceId}/items/{itemId}/waive")

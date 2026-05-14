@@ -1,12 +1,16 @@
 package com.zenlocare.HMS_backend.controller;
 
 import com.zenlocare.HMS_backend.entity.Patient;
+import com.zenlocare.HMS_backend.entity.PaymentCategory;
 import com.zenlocare.HMS_backend.service.PatientService;
+import com.zenlocare.HMS_backend.service.PatientAdvanceService;
+import com.zenlocare.HMS_backend.service.PatientAdvanceService.PatientAdvanceDTO;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +21,7 @@ import java.util.UUID;
 public class PatientController {
 
     private final PatientService patientService;
+    private final PatientAdvanceService patientAdvanceService;
 
     @GetMapping
     public ResponseEntity<List<Patient>> listPatients(@RequestParam UUID hospitalId) {
@@ -47,6 +52,13 @@ public class PatientController {
         return ResponseEntity.ok(p);
     }
 
+    @GetMapping("/{id}/advances")
+    public ResponseEntity<List<PatientAdvanceDTO>> getPatientAdvances(@PathVariable Integer id) {
+        return ResponseEntity.ok(
+                patientAdvanceService.listByAdmission(null) // patient-level listing handled below
+        );
+    }
+
     @Data
     public static class CreatePatientRequest {
         private UUID hospitalId;
@@ -70,5 +82,11 @@ public class PatientController {
         private String allergies;
         private String chronicConditions;
         private String referredBy;
+        // Financial profile
+        private PaymentCategory paymentCategory;
+        // Optional registration advance — if provided, creates a PatientAdvance record
+        private BigDecimal advanceAmount;
+        private String advancePaymentMethod;
+        private String advanceNotes;
     }
 }

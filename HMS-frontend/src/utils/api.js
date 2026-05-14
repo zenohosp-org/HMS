@@ -573,6 +573,19 @@ const checkupApi = {
   },
 };
 
+const patientAdvanceApi = {
+  // List all advances linked to a specific admission
+  listForAdmission: async (admissionId) => {
+    const { data } = await api.get(`/billing/admissions/${admissionId}/advances`);
+    return data;
+  },
+  // Collect a room/admission advance at IPD admit time (Step 4)
+  createForAdmission: async (admissionId, payload) => {
+    const { data } = await api.post(`/billing/admissions/${admissionId}/advances`, payload);
+    return data;
+  },
+};
+
 var stdin_default = api;
 export {
   admissionApi,
@@ -600,5 +613,6 @@ export {
   roomLogsApi,
   shiftsApi,
   specializationApi,
-  staffApi
+  staffApi,
+  patientAdvanceApi
 };
