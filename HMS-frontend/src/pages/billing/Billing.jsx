@@ -169,10 +169,11 @@ export default function Billing() {
   const opdInvoices = useMemo(() => invoices.filter(i => !i.admissionId), [invoices])
   const ipdInvoices = useMemo(() => invoices.filter(i => !!i.admissionId), [invoices])
 
-  // Track which admitted patients already have a PAID invoice — show "Paid" badge instead of Finalize button
-  const paidIpdAdmissionIds = useMemo(() => new Set(
-    ipdInvoices.filter(i => i.status === 'PAID').map(i => String(i.admissionId))
-  ), [ipdInvoices])
+  // Set of active admission IDs for quick lookup
+  const activeAdmissionIds = useMemo(
+    () => new Set(activeAdmissions.map(a => String(a.id))),
+    [activeAdmissions]
+  )
 
   const currentInvoices = tab === 'OPD' ? opdInvoices : ipdInvoices
   const currentFilter = tab === 'OPD' ? opdFilter : ipdFilter
@@ -399,12 +400,13 @@ export default function Billing() {
               ) : (
                 paginated.map(inv => {
                   // IPD placeholder: has an admissionId, is unpaid, AND the admission is still active
-                  const isIPDPending = !!inv.admissionId && (inv.status === 'UNPAID' || inv.status === 'PARTIAL')
-                    && activeAdmissions.some(a => String(a.id) === String(inv.admissionId))
+                  const isActiveAdmission = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
+                  const isIPDPending = isActiveAdmission && (inv.status === 'UNPAID' || inv.status === 'PARTIAL')
+                  const isIPDPaidAdmitted = isActiveAdmission && inv.status === 'PAID'
                   const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID
                   const StatusIcon = cfg.Icon
                   const isExpanded = expandedId === inv.id
-                  const admission = isIPDPending
+                  const admission = isActiveAdmission
                     ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId))
                     : null
                   return (
@@ -475,6 +477,15 @@ export default function Billing() {
                                 title={inv.status === 'PARTIAL' ? 'Continue collecting payment' : 'Generate IPD Bill'}
                               >
                                 <Receipt className="w-3.5 h-3.5" /> {inv.status === 'PARTIAL' ? 'Continue Bill' : 'Generate Bill'}
+                              </button>
+                            ) : isIPDPaidAdmitted ? (
+                              <button
+                                onClick={() => admission && setFinalizeAdmission(admission)}
+                                disabled={!admission}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-[#2a2a2a] transition-colors disabled:opacity-40"
+                                title="Add new charges to this bill"
+                              >
+                                <Plus className="w-3.5 h-3.5" /> Add Charges
                               </button>
                             ) : (
                               <button
