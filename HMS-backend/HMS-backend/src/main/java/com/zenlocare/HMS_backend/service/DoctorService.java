@@ -67,6 +67,12 @@ public class DoctorService {
                 .availableDays(doctorData.getAvailableDays())
                 .slotDurationMin(doctorData.getSlotDurationMin() != null ? doctorData.getSlotDurationMin() : 15)
                 .maxDailySlots(doctorData.getMaxDailySlots())
+                .workPhone(doctorData.getWorkPhone())
+                .personalPhone(doctorData.getPersonalPhone())
+                .workEmail(doctorData.getWorkEmail())
+                .personalEmail(doctorData.getPersonalEmail())
+                .workAddress(doctorData.getWorkAddress())
+                .residentialAddress(doctorData.getResidentialAddress())
                 .build();
 
         return doctorRepository.save(doctor);
@@ -93,6 +99,18 @@ public class DoctorService {
             doctor.setSlotDurationMin(updatedData.getSlotDurationMin());
         if (updatedData.getMaxDailySlots() != null)
             doctor.setMaxDailySlots(updatedData.getMaxDailySlots());
+        if (updatedData.getWorkPhone() != null)
+            doctor.setWorkPhone(updatedData.getWorkPhone());
+        if (updatedData.getPersonalPhone() != null)
+            doctor.setPersonalPhone(updatedData.getPersonalPhone());
+        if (updatedData.getWorkEmail() != null)
+            doctor.setWorkEmail(updatedData.getWorkEmail());
+        if (updatedData.getPersonalEmail() != null)
+            doctor.setPersonalEmail(updatedData.getPersonalEmail());
+        if (updatedData.getWorkAddress() != null)
+            doctor.setWorkAddress(updatedData.getWorkAddress());
+        if (updatedData.getResidentialAddress() != null)
+            doctor.setResidentialAddress(updatedData.getResidentialAddress());
 
         return doctorRepository.save(doctor);
     }

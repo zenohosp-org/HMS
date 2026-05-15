@@ -59,6 +59,12 @@ public class DoctorController {
         doctorData.setAvailableDays(req.getAvailableDays());
         doctorData.setSlotDurationMin(req.getSlotDurationMin());
         doctorData.setMaxDailySlots(req.getMaxDailySlots());
+        doctorData.setWorkPhone(req.getWorkPhone());
+        doctorData.setPersonalPhone(req.getPersonalPhone());
+        doctorData.setWorkEmail(req.getWorkEmail());
+        doctorData.setPersonalEmail(req.getPersonalEmail());
+        doctorData.setWorkAddress(req.getWorkAddress());
+        doctorData.setResidentialAddress(req.getResidentialAddress());
 
         Doctor doctor = doctorService.createDoctor(req.getUserId(), req.getHospitalId(), doctorData);
         return ResponseEntity.ok(mapToDto(doctor));
@@ -77,6 +83,12 @@ public class DoctorController {
         updatedData.setAvailableDays(req.getAvailableDays());
         updatedData.setSlotDurationMin(req.getSlotDurationMin());
         updatedData.setMaxDailySlots(req.getMaxDailySlots());
+        updatedData.setWorkPhone(req.getWorkPhone());
+        updatedData.setPersonalPhone(req.getPersonalPhone());
+        updatedData.setWorkEmail(req.getWorkEmail());
+        updatedData.setPersonalEmail(req.getPersonalEmail());
+        updatedData.setWorkAddress(req.getWorkAddress());
+        updatedData.setResidentialAddress(req.getResidentialAddress());
 
         Doctor doctor = doctorService.updateDoctor(id, updatedData);
         return ResponseEntity.ok(mapToDto(doctor));
@@ -110,6 +122,12 @@ public class DoctorController {
         dto.setAvailableDays(doctor.getAvailableDays());
         dto.setSlotDurationMin(doctor.getSlotDurationMin());
         dto.setMaxDailySlots(doctor.getMaxDailySlots());
+        dto.setWorkPhone(doctor.getWorkPhone());
+        dto.setPersonalPhone(doctor.getPersonalPhone());
+        dto.setWorkEmail(doctor.getWorkEmail());
+        dto.setPersonalEmail(doctor.getPersonalEmail());
+        dto.setWorkAddress(doctor.getWorkAddress());
+        dto.setResidentialAddress(doctor.getResidentialAddress());
 
         return dto;
     }
@@ -127,6 +145,12 @@ public class DoctorController {
         private String availableDays;
         private Integer slotDurationMin;
         private Integer maxDailySlots;
+        private String workPhone;
+        private String personalPhone;
+        private String workEmail;
+        private String personalEmail;
+        private String workAddress;
+        private String residentialAddress;
     }
 
     @Data
@@ -135,7 +159,6 @@ public class DoctorController {
         private String userId;
         private String hospitalId;
 
-        // Joined user fields for convenience display
         private String firstName;
         private String lastName;
         private String email;
@@ -151,5 +174,11 @@ public class DoctorController {
         private String availableDays;
         private Integer slotDurationMin;
         private Integer maxDailySlots;
+        private String workPhone;
+        private String personalPhone;
+        private String workEmail;
+        private String personalEmail;
+        private String workAddress;
+        private String residentialAddress;
     }
 }

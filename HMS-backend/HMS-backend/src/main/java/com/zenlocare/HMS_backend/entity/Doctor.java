@@ -57,6 +57,24 @@ public class Doctor {
     @Column(name = "max_daily_slots")
     private Integer maxDailySlots;
 
+    @Column(name = "work_phone", length = 20)
+    private String workPhone;
+
+    @Column(name = "personal_phone", length = 20)
+    private String personalPhone;
+
+    @Column(name = "work_email")
+    private String workEmail;
+
+    @Column(name = "personal_email")
+    private String personalEmail;
+
+    @Column(name = "work_address", columnDefinition = "TEXT")
+    private String workAddress;
+
+    @Column(name = "residential_address", columnDefinition = "TEXT")
+    private String residentialAddress;
+
     @Builder.Default
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
