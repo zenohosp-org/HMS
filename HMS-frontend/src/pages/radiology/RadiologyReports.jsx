@@ -11,17 +11,8 @@ const PRIORITY_CLS = {
   URGENT: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
   STAT: "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
 };
-function formatDateTime(iso) {
-  if (!iso) return "\u2014";
-  return new Date(iso).toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  });
-}
+import { fmtDateTime } from '@/utils/date'
+const formatDateTime = fmtDateTime
 function RadiologyReports() {
   const { user } = useAuth();
   const { notify } = useNotification();

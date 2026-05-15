@@ -12,7 +12,7 @@ import {
   Stethoscope, Clock, CheckCircle2, List, LayoutGrid,
   Calendar, AlertCircle, Receipt, Scissors, RotateCcw, Loader2
 } from 'lucide-react'
-import { formatDistanceToNow, format } from 'date-fns'
+import { timeAgo, fmtDateTime } from '@/utils/date'
 
 const STATUS_COLORS = {
   ADMITTED: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
@@ -74,15 +74,8 @@ export default function Admissions() {
     inOt: admissions.filter(a => a.inOt).length,
   }), [admissions])
 
-  const formatAdmissionDate = (dateStr) => {
-    if (!dateStr) return '—'
-    try { return formatDistanceToNow(new Date(dateStr), { addSuffix: true }) } catch { return dateStr }
-  }
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—'
-    try { return format(new Date(dateStr), 'dd MMM yyyy, h:mm a') } catch { return dateStr }
-  }
+  const formatAdmissionDate = (dateStr) => timeAgo(dateStr)
+  const formatDate = (dateStr) => fmtDateTime(dateStr)
 
   const isOverdue = (a) => {
     if (!a.approxDischargeDate || a.status !== 'ADMITTED') return false

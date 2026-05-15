@@ -212,10 +212,10 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
             ['Room / Ward', [admission.roomNumber, admission.wardName].filter(Boolean).join(' · ') || '—'],
             ['Admitting Doctor', admission.admittingDoctorName || admission.doctorName || '—'],
             ['Admitted', admission.admissionDate
-              ? new Date(admission.admissionDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+              ? new Date(admission.admissionDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })
               : '—'],
             ['Discharge', clinical.actualDischargeDate
-              ? new Date(clinical.actualDischargeDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+              ? new Date(clinical.actualDischargeDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })
               : '—'],
             ['Diagnosis', clinical.dischargeDiagnosis || admission.primaryDiagnosis || '—'],
           ].filter(([, v]) => v !== null).map(([label, value]) => (

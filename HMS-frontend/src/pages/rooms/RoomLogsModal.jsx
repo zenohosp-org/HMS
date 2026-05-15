@@ -9,26 +9,9 @@ const EVENT_META = {
   ATTENDER_ASSIGNED: { label: "Attender Assigned", cls: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20", icon: UserCheck },
   ATTENDER_UPDATED: { label: "Attender Updated", cls: "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]", icon: UserCog }
 };
-function formatRelative(iso) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 6e4);
-  if (m < 1) return "Just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
-}
-function formatFull(iso) {
-  return new Date(iso).toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  });
-}
+import { timeAgo, fmtDateTime } from "@/utils/date";
+const formatRelative = timeAgo
+const formatFull = fmtDateTime
 function RoomLogsModal({ onClose, roomId, roomNumber }) {
   const { user } = useAuth();
   const [logs, setLogs] = useState([]);

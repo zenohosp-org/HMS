@@ -37,9 +37,10 @@ function fmt(n) {
 
 function fmtTime(iso) {
   if (!iso) return ''
-  const d = new Date(iso)
-  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) +
-    ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+  return new Date(iso).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+  })
 }
 
 function countMealSlots(admitDate, dischargeDate, chargeTime) {

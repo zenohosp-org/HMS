@@ -7,7 +7,7 @@ import {
   RotateCcw, Wallet, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle,
   CheckCircle2, ShieldAlert
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { fmtDateTime, fmtDateMed } from '@/utils/date'
 import {
   roomLogsApi, radiologyApi, ambulanceApi, assetApi, invoiceApi,
   hospitalServiceApi, patientServicesApi, admissionApi
@@ -48,14 +48,8 @@ const BILL_TYPE_META = {
   CUSTOM:       { label: 'Custom',    Icon: Wrench,       cls: 'text-slate-600 dark:text-[#aaa] bg-slate-100 dark:bg-[#222]' },
 }
 
-function fmt(d) {
-  if (!d) return '—'
-  try { return format(new Date(d), 'dd/MM/yyyy, hh:mm aa') } catch { return d }
-}
-function fmtDate(d) {
-  if (!d) return '—'
-  try { return format(new Date(d), 'dd MMM yyyy') } catch { return d }
-}
+const fmt = fmtDateTime
+const fmtDate = fmtDateMed
 function fmtMoney(n) {
   return '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }

@@ -21,12 +21,7 @@ function calcAge(dob) {
   return `${Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 3600 * 1e3))}y`;
 }
 
-function timeAgo(dateStr) {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
-  if (diff < 1) return "just now";
-  if (diff < 60) return `${diff}m ago`;
-  return `${Math.floor(diff / 60)}h ago`;
-}
+import { timeAgo } from "@/utils/date";
 
 function buildLast14Days(items, dateField) {
   const counts = {};

@@ -8,17 +8,8 @@ const PRIORITY_CLS = {
   URGENT: "bg-amber-50 text-amber-700 border-amber-200",
   STAT: "bg-red-50 text-red-700 border-red-200"
 };
-function fmt(iso) {
-  if (!iso) return "N/A";
-  return new Date(iso).toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  });
-}
+import { fmtDateTime } from '@/utils/date'
+const fmt = fmtDateTime
 function RadiologyReportView() {
   const { id } = useParams();
   const navigate = useNavigate();
