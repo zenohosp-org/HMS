@@ -387,8 +387,9 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
           if (isFirstAdmission) {
             items.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: s.pricePerDay || 0, totalPrice: s.pricePerDay || 0 })
           }
+        } else if (s.oneTimeCharge) {
+          items.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: s.pricePerDay || 0, totalPrice: s.pricePerDay || 0 })
         } else {
-          // If chargeTime set: count days where the daily slot fired after admission
           const qty = s.chargeTime
             ? countMealSlots(admission.admissionDate, svcEndDate, s.chargeTime)
             : roomDays

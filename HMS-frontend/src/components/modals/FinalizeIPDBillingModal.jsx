@@ -238,6 +238,9 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
             const price = s.pricePerDay || 0
             auto.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: price, totalPrice: price })
           }
+        } else if (s.oneTimeCharge) {
+          const price = s.pricePerDay || 0
+          auto.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: price, totalPrice: price })
         } else {
           const price = s.pricePerDay || 0
           const qty = s.chargeTime
