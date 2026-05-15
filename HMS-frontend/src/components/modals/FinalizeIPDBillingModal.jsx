@@ -107,7 +107,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       invoiceApi.getPatientInvoices(admission.patientId).catch(() => []),
     ]).then(([suggestions, services, accounts, radiologyOrders, patientServices, otRes, existingInvoice, ambulanceBookings, advanceList, allPatientInvoices]) => {
       const isFirstAdmission = (allPatientInvoices || []).filter(inv =>
-        String(inv.admissionId) !== String(admission.id)
+        inv.admissionId && String(inv.admissionId) !== String(admission.id)
       ).length === 0
       const def = accounts.find(a => a.isDefault) ?? accounts[0]
       setBankAccounts(accounts)

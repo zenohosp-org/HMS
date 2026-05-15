@@ -343,7 +343,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
       ])
       // Registration fee is one-time: only charge if this patient has no invoices from other admissions
       const isFirstAdmission = (allPatientInvoices || []).filter(inv =>
-        String(inv.admissionId) !== String(admission.id)
+        inv.admissionId && String(inv.admissionId) !== String(admission.id)
       ).length === 0
 
       const roomNumber = admission.roomNumber || fullAdmission?.roomNumber
