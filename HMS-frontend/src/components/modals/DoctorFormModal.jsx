@@ -6,7 +6,7 @@ import StateSelect from "@/components/StateSelect";
 import SidePane from "@/components/SidePane";
 import {
   UserPlus, Stethoscope, Phone, MapPin, Calendar,
-  Briefcase, User, Building2, Home, Lock, Mail,
+  Briefcase, User, Building2, Home, Lock, X,
 } from "lucide-react";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -108,8 +108,12 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
   };
 
   const handleClose = () => {
-    setPaneOpen(false);
-    setTimeout(onClose, 290);
+    if (editDoctor) {
+      setPaneOpen(false);
+      setTimeout(onClose, 290);
+    } else {
+      onClose();
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -120,6 +124,9 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
       if (editDoctor) {
         await doctorsApi.update(editDoctor.id, doctorForm);
         notify("Doctor profile updated", "success");
+        onSaved();
+        setPaneOpen(false);
+        setTimeout(onClose, 290);
       } else {
         const newUser = await staffApi.create({
           ...userForm,
@@ -132,10 +139,9 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
           hospitalId: user.hospitalId,
         });
         notify("Doctor profile created", "success");
+        onSaved();
+        onClose();
       }
-      onSaved();
-      setPaneOpen(false);
-      setTimeout(onClose, 290);
     } catch (error) {
       notify(error.response?.data?.error || "Operation failed", "error");
     } finally {
@@ -447,108 +453,126 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
     </div>
   );
 
-  const formContent = (
-    <form id="doctorForm" onSubmit={handleSubmit} className="space-y-8">
-      {editDoctor && doctorAvatar}
+  // ── Edit mode: SidePane ──────────────────────────────────────────────────
+  if (editDoctor) {
+    return (
+      <SidePane
+        isOpen={paneOpen}
+        onClose={handleClose}
+        title="Edit Doctor Profile"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={handleClose} className="btn-secondary">Cancel</button>
+            <button type="submit" form="doctorForm" disabled={submitting} className="btn-primary min-w-[110px]">
+              {submitting ? "Saving…" : "Save Changes"}
+            </button>
+          </div>
+        }
+      >
+        <form id="doctorForm" onSubmit={handleSubmit} className="space-y-8">
+          {doctorAvatar}
+          {professionalSection}
+          {contactSection}
+          {addressSection}
+          {schedulingSection}
+        </form>
+      </SidePane>
+    );
+  }
 
-      {!editDoctor && (
-        <div className="space-y-2">
-          <SectionHeader icon={UserPlus} title="Account Setup" subtitle="Login credentials for the doctor" />
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            <div>
-              <FieldLabel required>First Name</FieldLabel>
-              <input
-                required
-                type="text"
-                value={userForm.firstName}
-                onChange={(e) => setUserForm((p) => ({ ...p, firstName: e.target.value }))}
-                className={inputBase}
-                placeholder="Arjun"
-              />
+  // ── Create mode: full-page centered modal ─────────────────────────────────
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-6xl max-h-[92vh] bg-white dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-[#222222] shadow-2xl flex flex-col overflow-hidden">
+
+        {/* Modal header */}
+        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 dark:border-[#1a1a1a] shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+              <UserPlus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <FieldLabel required>Last Name</FieldLabel>
-              <input
-                required
-                type="text"
-                value={userForm.lastName}
-                onChange={(e) => setUserForm((p) => ({ ...p, lastName: e.target.value }))}
-                className={inputBase}
-                placeholder="Sharma"
-              />
-            </div>
-            <div>
-              <FieldLabel required>Login Email</FieldLabel>
-              <input
-                required
-                type="email"
-                value={userForm.email}
-                onChange={(e) => setUserForm((p) => ({ ...p, email: e.target.value }))}
-                className={inputBase}
-                placeholder="doctor@hospital.com"
-              />
-            </div>
-            <div>
-              <FieldLabel>Phone</FieldLabel>
-              <input
-                type="tel"
-                value={userForm.phone}
-                onChange={(e) => setUserForm((p) => ({ ...p, phone: e.target.value }))}
-                className={inputBase}
-                placeholder="+91 98765 43210"
-              />
-            </div>
-            <div className="col-span-2">
-              <FieldLabel required>Temporary Password</FieldLabel>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  required
-                  type="password"
-                  value={userForm.password}
-                  onChange={(e) => setUserForm((p) => ({ ...p, password: e.target.value }))}
-                  className={`${inputBase} pl-10`}
-                  placeholder="Min. 6 characters"
-                />
-              </div>
-            </div>
-            <div className="col-span-2">
-              <StateSelect
-                value={userForm.state}
-                onChange={(val) => setUserForm((p) => ({ ...p, state: val }))}
-                inputClassName={inputBase}
-                labelClassName="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5"
-              />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Add New Doctor</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Fill in the details to onboard a doctor to your hospital</p>
             </div>
           </div>
-        </div>
-      )}
-
-      {professionalSection}
-      {contactSection}
-      {addressSection}
-      {schedulingSection}
-    </form>
-  );
-
-  return (
-    <SidePane
-      isOpen={paneOpen}
-      onClose={handleClose}
-      title={editDoctor ? "Edit Doctor Profile" : "Add Doctor"}
-      footer={
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={handleClose} className="btn-secondary">
-            Cancel
-          </button>
-          <button type="submit" form="doctorForm" disabled={submitting} className="btn-primary min-w-[110px]">
-            {submitting ? "Saving…" : editDoctor ? "Save Changes" : "Create Profile"}
+          <button type="button" onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all">
+            <X className="w-5 h-5" />
           </button>
         </div>
-      }
-    >
-      {formContent}
-    </SidePane>
+
+        {/* Modal body — two-column layout */}
+        <form id="doctorForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-2 divide-x divide-slate-100 dark:divide-[#1a1a1a] min-h-full">
+
+            {/* Left column: Account Setup + Professional Identity */}
+            <div className="p-8 space-y-8">
+              <div className="space-y-2">
+                <SectionHeader icon={UserPlus} title="Account Setup" subtitle="Login credentials for the doctor" />
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <FieldLabel required>First Name</FieldLabel>
+                    <input required type="text" value={userForm.firstName}
+                      onChange={(e) => setUserForm((p) => ({ ...p, firstName: e.target.value }))}
+                      className={inputBase} placeholder="Arjun" />
+                  </div>
+                  <div>
+                    <FieldLabel required>Last Name</FieldLabel>
+                    <input required type="text" value={userForm.lastName}
+                      onChange={(e) => setUserForm((p) => ({ ...p, lastName: e.target.value }))}
+                      className={inputBase} placeholder="Sharma" />
+                  </div>
+                  <div>
+                    <FieldLabel required>Login Email</FieldLabel>
+                    <input required type="email" value={userForm.email}
+                      onChange={(e) => setUserForm((p) => ({ ...p, email: e.target.value }))}
+                      className={inputBase} placeholder="doctor@hospital.com" />
+                  </div>
+                  <div>
+                    <FieldLabel>Phone</FieldLabel>
+                    <input type="tel" value={userForm.phone}
+                      onChange={(e) => setUserForm((p) => ({ ...p, phone: e.target.value }))}
+                      className={inputBase} placeholder="+91 98765 43210" />
+                  </div>
+                  <div className="col-span-2">
+                    <FieldLabel required>Temporary Password</FieldLabel>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input required type="password" value={userForm.password}
+                        onChange={(e) => setUserForm((p) => ({ ...p, password: e.target.value }))}
+                        className={`${inputBase} pl-10`} placeholder="Min. 6 characters" />
+                    </div>
+                  </div>
+                  <div className="col-span-2">
+                    <StateSelect value={userForm.state}
+                      onChange={(val) => setUserForm((p) => ({ ...p, state: val }))}
+                      inputClassName={inputBase}
+                      labelClassName="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5" />
+                  </div>
+                </div>
+              </div>
+
+              {professionalSection}
+            </div>
+
+            {/* Right column: Contact + Address + Scheduling */}
+            <div className="p-8 space-y-8">
+              {contactSection}
+              {addressSection}
+              {schedulingSection}
+            </div>
+          </div>
+        </form>
+
+        {/* Modal footer */}
+        <div className="shrink-0 flex items-center justify-end gap-3 px-8 py-5 border-t border-slate-100 dark:border-[#1a1a1a] bg-slate-50/50 dark:bg-[#0a0a0a]">
+          <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+          <button type="submit" form="doctorForm" disabled={submitting} className="btn-primary min-w-[130px]">
+            {submitting ? "Creating…" : "Create Profile"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
