@@ -192,7 +192,7 @@ function DoctorStaffDashboard() {
   const [loading, setLoading] = useState(true);
 
   const isDoctor = user?.role === "doctor";
-  const dateStr = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dateStr = new Date().toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata', weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const greeting = new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 17 ? "Good afternoon" : "Good evening";
 
   useEffect(() => {

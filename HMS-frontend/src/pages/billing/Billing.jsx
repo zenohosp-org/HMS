@@ -226,7 +226,7 @@ export default function Billing() {
         </div>
         <div style="text-align:right">
           <div style="font-size:16px;font-weight:700">${inv.invoiceNumber}</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:4px">${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px">${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'long', year: 'numeric' }) : '—'}</div>
           <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusCls[inv.status] ?? statusCls.UNPAID}">${inv.status}</span></div>
         </div>
       </div>
@@ -422,7 +422,7 @@ export default function Billing() {
                         <td className="px-5 py-4">
                           <p className="font-bold text-sm text-slate-900 dark:text-white">{inv.invoiceNumber}</p>
                           <p className="text-xs text-slate-400 mt-0.5">
-                            {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                            {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                           </p>
                         </td>
                         <td className="px-5 py-4">

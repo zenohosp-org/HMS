@@ -281,7 +281,7 @@ export default function AdminDashboard() {
     ? (((thisMonthPatients - lastMonthPatients) / lastMonthPatients) * 100).toFixed(1)
     : null;
 
-  const dateStr = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dateStr = new Date().toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata', weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   if (loading) {
     return (

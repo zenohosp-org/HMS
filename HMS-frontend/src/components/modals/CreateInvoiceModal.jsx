@@ -592,7 +592,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
           </div>
           <div className="text-right text-sm">
             <p className="font-bold text-lg">#{invoiceNo}</p>
-            <p className="text-gray-500">{new Date().toLocaleDateString('en-IN')}</p>
+            <p className="text-gray-500">{new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
           </div>
         </div>
         <div className="border-t border-gray-200 pt-4 mb-6">

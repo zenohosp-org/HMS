@@ -228,7 +228,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
             </h2>
             {!loading && detail && (
               <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">
-                {detail.patientName} {detail.patientUhid ? `· ${detail.patientUhid}` : ''} · {new Date(detail.createdAt).toLocaleDateString('en-IN')}
+                {detail.patientName} {detail.patientUhid ? `· ${detail.patientUhid}` : ''} · {new Date(detail.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}
               </p>
             )}
           </div>
@@ -372,7 +372,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                   {detail.payments.map(p => (
                     <div key={p.id} className="flex items-center justify-between text-xs">
                       <span className="text-slate-500 dark:text-[#888]">
-                        {new Date(p.paidAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {new Date(p.paidAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })}
                         {p.paymentMethod ? ` · ${p.paymentMethod}` : ''}
                         {p.collectedBy ? ` · ${p.collectedBy}` : ''}
                       </span>
@@ -690,7 +690,7 @@ function InvoiceList() {
                         {inv.patientUhid && <div className="text-[11px] text-slate-400 dark:text-[#666]">{inv.patientUhid}</div>}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600 dark:text-[#aaaaaa]">
-                        {new Date(inv.createdAt).toLocaleDateString('en-IN')}
+                        {new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-bold text-slate-900 dark:text-white tabular-nums">{fmt(inv.total)}</div>
