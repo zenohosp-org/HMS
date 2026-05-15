@@ -68,7 +68,7 @@ public class Admission {
     @Enumerated(EnumType.STRING)
     @Column(name = "admission_type", nullable = false, length = 30)
     @Builder.Default
-    private AdmissionType admissionType = AdmissionType.ELECTIVE;
+    private AdmissionType admissionType = AdmissionType.OPD_REFERRAL;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "admission_source", nullable = false, length = 30)

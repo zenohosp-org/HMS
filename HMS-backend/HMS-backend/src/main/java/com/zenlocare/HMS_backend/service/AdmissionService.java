@@ -85,7 +85,7 @@ public class AdmissionService {
                 .sourceAppointment(sourceAppt)
                 .admissionNumber(admNumber)
                 .ipdId(ipdId)
-                .admissionType(req.getAdmissionType() != null ? req.getAdmissionType() : AdmissionType.ELECTIVE)
+                .admissionType(req.getAdmissionType() != null ? req.getAdmissionType() : AdmissionType.OPD_REFERRAL)
                 .admissionSource(req.getAdmissionSource() != null ? req.getAdmissionSource() : AdmissionSource.DIRECT)
                 .chiefComplaint(req.getChiefComplaint())
                 .approxDischargeDate(req.getApproxDischargeDate())
