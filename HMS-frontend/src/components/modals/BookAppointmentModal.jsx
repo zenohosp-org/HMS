@@ -191,16 +191,27 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   };
 
   const generateTimeSlots = () => {
+    const slotDuration = selectedDoctor?.slotDurationMin || 30;
+    const toMin = t => { const [hh, mm] = t.split(':').map(Number); return hh * 60 + mm; };
     const slots = [];
-    let h = 9, m = 0;
-    while (h < 18) {
+    let totalMin = 9 * 60;
+    while (totalMin < 18 * 60) {
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
       const timeStr = `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:00`;
       const hour12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
       const ampm = h >= 12 ? "PM" : "AM";
       const displayTime = `${String(hour12).padStart(2,"0")}:${String(m).padStart(2,"0")} ${ampm}`;
-      const isBooked = doctorAppointments.some(a => a.apptTime?.substring(0,8) === timeStr);
+      const slotStart = totalMin;
+      const slotEnd = totalMin + slotDuration;
+      const isBooked = doctorAppointments.some(a => {
+        if (!a.apptTime) return false;
+        const aStart = toMin(a.apptTime);
+        const aEnd = a.apptEndTime ? toMin(a.apptEndTime) : aStart + slotDuration;
+        return slotStart < aEnd && slotEnd > aStart;
+      });
       slots.push({ timeStr, displayTime, isBooked });
-      m += 30; if (m >= 60) { m = 0; h++; }
+      totalMin += slotDuration;
     }
     return slots;
   };
