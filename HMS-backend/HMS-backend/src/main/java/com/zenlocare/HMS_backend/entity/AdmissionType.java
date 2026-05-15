@@ -1,8 +1,7 @@
 package com.zenlocare.HMS_backend.entity;
 
 public enum AdmissionType {
-    ELECTIVE,
+    OPD_REFERRAL,
     EMERGENCY,
-    REFERRAL,
-    TRANSFER
+    DIRECT
 }
