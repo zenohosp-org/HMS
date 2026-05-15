@@ -55,10 +55,6 @@ function PatientModal({ patient, onClose, onSave }) {
     chronicConditions: patient?.chronicConditions ?? "",
     referredBy: patient?.referredBy ?? "",
     paymentCategory: patient?.paymentCategory ?? "CASH",
-    // Registration advance — only relevant for new patients
-    advanceAmount: "",
-    advancePaymentMethod: "Cash",
-    advanceNotes: "",
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -224,37 +220,7 @@ function PatientModal({ patient, onClose, onSave }) {
         </div>
       </div>
 
-      {/* ── Registration Advance (new patient only) ── */}
-      {!isEdit && (
-        <div>
-          <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Registration Advance</p>
-          <p className="text-[11px] text-slate-400 dark:text-[#666] mb-3">
-            Optional — collect upfront if patient is likely to be admitted. Will be deducted from the final IPD bill.
-          </p>
-          <div>
-            <label className="label">Amount (₹)</label>
-            <input
-              type="number" min="0" step="1"
-              className="input"
-              value={form.advanceAmount}
-              onChange={(e) => set("advanceAmount", e.target.value)}
-              placeholder="0 — leave blank to skip"
-            />
-          </div>
-          {form.advanceAmount && Number(form.advanceAmount) > 0 && (
-            <div className="mt-3">
-              <label className="label">Note (optional)</label>
-              <input className="input" value={form.advanceNotes} onChange={(e) => set("advanceNotes", e.target.value)}
-                placeholder="e.g. Registration deposit, Pre-surgery advance…" />
-            </div>
-          )}
-          {form.advanceAmount && Number(form.advanceAmount) > 0 && (
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-2">
-              ₹{Number(form.advanceAmount).toLocaleString('en-IN')} will be recorded and auto-linked when patient is admitted.
-            </p>
-          )}
-        </div>
-      )}
+      {/* Registration Advance removed — collected at IPD admission (Step 4) */}
 
       {/* ── Emergency Contact ── */}
       <div>
