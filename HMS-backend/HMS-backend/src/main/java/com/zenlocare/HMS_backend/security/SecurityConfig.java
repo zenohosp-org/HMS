@@ -110,6 +110,8 @@ public class SecurityConfig {
                 "https://*.onrender.com",
                 "https://*.vercel.app",
                 "https://ot.zenohosp.com",
+                "https://pharmacy.zenohosp.com",
+                "https://api-pharmacy.zenohosp.com",
                 frontendUrl));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
