@@ -10,6 +10,7 @@ import com.zenlocare.HMS_backend.service.PatientAdvanceService.PatientAdvanceDTO
 import com.zenlocare.HMS_backend.service.SmartBillingService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/billing")
 @RequiredArgsConstructor
@@ -60,6 +62,7 @@ public class BillingController {
         try {
             return ResponseEntity.ok(invoiceService.finalizeIPDInvoice(id, req));
         } catch (RuntimeException e) {
+            log.error("finalizeIPDInvoice failed for invoiceId={}", id, e);
             return ResponseEntity.badRequest().build();
         }
     }
@@ -127,6 +130,7 @@ public class BillingController {
                     id, req.getAmount(), req.getPaymentMethod(),
                     req.getBankAccountId(), req.getCollectedBy()));
         } catch (RuntimeException e) {
+            log.error("collectPayment failed for invoiceId={}", id, e);
             return ResponseEntity.badRequest().build();
         }
     }
@@ -149,6 +153,7 @@ public class BillingController {
                     req.getAmount(), req.getPaymentMethod(),
                     req.getBankAccountId(), req.getCollectedBy()));
         } catch (RuntimeException e) {
+            log.error("collectAndSave failed for invoiceId={}", id, e);
             return ResponseEntity.badRequest().body(
                     InvoiceDTO.builder().notes(e.getMessage()).build());
         }

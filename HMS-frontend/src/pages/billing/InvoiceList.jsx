@@ -147,6 +147,8 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
   const [waiverItem, setWaiverItem] = useState(null)
   const [bankAccounts, setBankAccounts] = useState([])
   const [bankAccountId, setBankAccountId] = useState('')
+  const [payAmount, setPayAmount] = useState('')
+  const [payMethod, setPayMethod] = useState('Cash')
   const [paying, setPaying] = useState(false)
 
   const load = async () => {
@@ -160,6 +162,8 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
       setBankAccounts(accounts)
       const def = accounts.find(a => a.isDefault) ?? accounts[0]
       if (def) setBankAccountId(def.id)
+      const balance = Math.max(0, Number(d.total || 0) - Number(d.paidAmount || 0))
+      if (balance > 0) setPayAmount(balance.toFixed(2))
     } catch {
       notify('Failed to load invoice details', 'error')
       onClose()
@@ -176,22 +180,41 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
     onInvoiceUpdated?.()
   }
 
-  const handlePay = async () => {
+  const handleCollect = async () => {
+    const amt = parseFloat(payAmount)
+    if (isNaN(amt) || amt <= 0) { notify('Enter a valid payment amount', 'error'); return }
     setPaying(true)
     try {
-      await invoiceApi.markAsPaid(invoiceId, bankAccountId || undefined)
-      notify('Invoice marked as paid — bank account credited', 'success')
+      const updated = await invoiceApi.collectPayment(invoiceId, {
+        amount: amt,
+        paymentMethod: payMethod,
+        bankAccountId: bankAccountId || undefined,
+        collectedBy: user?.name || user?.email,
+      })
+      setDetail(updated)
+      const newBalance = Math.max(0, Number(updated.total || 0) - Number(updated.paidAmount || 0))
+      setPayAmount(newBalance > 0 ? newBalance.toFixed(2) : '')
+      notify('Payment collected successfully', 'success')
       onInvoiceUpdated?.()
-      onClose()
+      if (updated.status === 'PAID') onClose()
     } catch (err) {
-      notify(err?.response?.data?.message || 'Failed to mark as paid', 'error')
+      notify(err?.response?.data?.message || 'Failed to collect payment', 'error')
     } finally {
       setPaying(false)
     }
   }
 
-  const canWaive = detail?.status === 'UNPAID'
-  const canPay   = detail?.status === 'UNPAID'
+  const canWaive = detail?.status === 'UNPAID' || detail?.status === 'PARTIAL'
+  const canPay   = detail?.status === 'UNPAID' || detail?.status === 'PARTIAL'
+  const balanceDue = detail ? Math.max(0, Number(detail.total || 0) - Number(detail.paidAmount || 0)) : 0
+
+  const statusCls = detail?.status === 'PAID'
+    ? 'bg-emerald-500/10 text-emerald-500'
+    : detail?.status === 'PARTIAL'
+      ? 'bg-orange-500/10 text-orange-500'
+      : detail?.status === 'UNPAID'
+        ? 'bg-amber-500/10 text-amber-500'
+        : 'bg-rose-500/10 text-rose-500'
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -211,8 +234,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
           </div>
           <div className="flex items-center gap-3">
             {!loading && detail && (
-              <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
-                ${detail.status === 'PAID' ? 'bg-emerald-500/10 text-emerald-500' : detail.status === 'UNPAID' ? 'bg-amber-500/10 text-amber-500' : 'bg-rose-500/10 text-rose-500'}`}>
+              <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusCls}`}>
                 {detail.status === 'PAID' ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                 {detail.status}
               </span>
@@ -339,13 +361,66 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
           )}
         </div>
 
-        {/* Payment footer — only for UNPAID invoices */}
+        {/* Payment footer */}
         {canPay && (
           <div className="shrink-0 border-t border-slate-100 dark:border-[#1e1e1e] px-6 py-4 bg-slate-50 dark:bg-[#0a0a0a] rounded-b-xl space-y-3">
+            {/* Payment history */}
+            {detail.payments?.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-slate-500 dark:text-[#666] uppercase tracking-wider mb-2">Payment History</p>
+                <div className="space-y-1">
+                  {detail.payments.map(p => (
+                    <div key={p.id} className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 dark:text-[#888]">
+                        {new Date(p.paidAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {p.paymentMethod ? ` · ${p.paymentMethod}` : ''}
+                        {p.collectedBy ? ` · ${p.collectedBy}` : ''}
+                      </span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{fmt(p.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 pt-2 border-t border-slate-200 dark:border-[#2a2a2a] flex justify-between text-xs font-bold text-slate-700 dark:text-[#ccc]">
+                  <span>Balance Due</span>
+                  <span className="tabular-nums text-orange-600 dark:text-orange-400">{fmt(balanceDue)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Amount + method row */}
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <p className="text-xs font-bold text-slate-500 dark:text-[#666] uppercase tracking-wider mb-1.5">Amount</p>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#666] text-sm font-bold">₹</span>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={payAmount}
+                    onChange={e => setPayAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-7 pr-3 py-2 border border-slate-200 dark:border-[#333] rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-slate-500 dark:text-[#666] uppercase tracking-wider mb-1.5">Method</p>
+                <select
+                  value={payMethod}
+                  onChange={e => setPayMethod(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-[#333] rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-white"
+                >
+                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Bank account selector */}
             {bankAccounts.length > 0 && (
               <div>
-                <p className="text-xs font-bold text-slate-500 dark:text-[#666] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Landmark className="w-3.5 h-3.5" /> Credit payment to
+                <p className="text-xs font-bold text-slate-500 dark:text-[#666] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Landmark className="w-3.5 h-3.5" /> Credit to
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {bankAccounts.map(a => (
@@ -361,28 +436,30 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                     >
                       {bankAccountId === a.id && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
                       {a.accountName}
-                      {a.currentBalance != null && (
-                        <span className="text-slate-400 dark:text-[#555]">{fmt(a.currentBalance)}</span>
-                      )}
                     </button>
                   ))}
                 </div>
               </div>
             )}
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500 dark:text-[#888]">
-                Due: <span className="font-bold text-slate-900 dark:text-white tabular-nums">{fmt(detail.total)}</span>
-              </p>
-              <button
-                onClick={handlePay}
-                disabled={paying}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-60 shadow-sm"
-              >
-                {paying
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
-                  : <><CreditCard className="w-4 h-4" /> Mark as Paid</>
-                }
-              </button>
+
+            <div className="flex items-center justify-between pt-1">
+              {!detail.payments?.length && (
+                <p className="text-sm text-slate-500 dark:text-[#888]">
+                  Total: <span className="font-bold text-slate-900 dark:text-white tabular-nums">{fmt(detail.total)}</span>
+                </p>
+              )}
+              <div className="ml-auto">
+                <button
+                  onClick={handleCollect}
+                  disabled={paying}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-60 shadow-sm"
+                >
+                  {paying
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
+                    : <><CreditCard className="w-4 h-4" /> Collect Payment</>
+                  }
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -96,37 +96,41 @@ export default function Billing() {
     if (!user?.hospitalId) return
     try {
       setLoading(true)
-      const data = await invoiceApi.getByHospital(user.hospitalId)
+      const [data, admData] = await Promise.all([
+        invoiceApi.getByHospital(user.hospitalId),
+        admissionApi.list(user.hospitalId, false).catch(() => []),
+      ])
       const list = Array.isArray(data) ? data : []
       setInvoices(list)
+      setActiveAdmissions(Array.isArray(admData) ? admData : [])
 
-      // Silently sync estimated totals for ₹0 UNPAID IPD invoices
+      // Fire-and-forget: silently sync estimated totals for ₹0 UNPAID IPD invoices
       const zeroPending = list.filter(i => !!i.admissionId && i.status === 'UNPAID' && Number(i.total || 0) === 0)
       if (zeroPending.length > 0) {
-        const patientServices = await patientServicesApi.list(user.hospitalId).catch(() => [])
-        const activeServices = (Array.isArray(patientServices) ? patientServices : []).filter(s => s.isActive)
-        zeroPending.forEach(async (inv) => {
-          try {
-            const [suggestions, admDetails] = await Promise.all([
-              invoiceApi.getSmartSuggestions(inv.patientId, inv.admissionId).catch(() => ({})),
-              admissionApi.get(inv.admissionId).catch(() => null),
-            ])
-            const admitDate = admDetails?.admissionDate ? new Date(admDetails.admissionDate) : null
-            const elapsedMs = admitDate ? Date.now() - admitDate.getTime() : 0
-            const days = admitDate ? Math.max(1, Math.ceil(elapsedMs / 86400000)) : 1
-            const roomDays = Math.floor(elapsedMs / 86400000)
-            let total = 0
-            if (suggestions.roomCharge?.pricePerDay && roomDays > 0) total += Number(suggestions.roomCharge.pricePerDay) * roomDays
-            activeServices.forEach(s => {
-              if (s.type === 'FOOD') total += Number(s.pricePerMeal || 0) * roomDays * 3
-              else if (s.type === 'REGISTRATION' && s.oneTimeCharge) total += Number(s.pricePerDay || 0)
-              else total += Number(s.pricePerDay || 0) * roomDays
-            })
-            if (total > 0) {
-              await invoiceApi.updateEstimate(inv.id, total)
-              setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, total, subtotal: total } : i))
-            }
-          } catch {}
+        patientServicesApi.list(user.hospitalId).catch(() => []).then(patientServices => {
+          const activeServices = (Array.isArray(patientServices) ? patientServices : []).filter(s => s.isActive)
+          zeroPending.forEach(async (inv) => {
+            try {
+              const [suggestions, admDetails] = await Promise.all([
+                invoiceApi.getSmartSuggestions(inv.patientId, inv.admissionId).catch(() => ({})),
+                admissionApi.get(inv.admissionId).catch(() => null),
+              ])
+              const admitDate = admDetails?.admissionDate ? new Date(admDetails.admissionDate) : null
+              const elapsedMs = admitDate ? Date.now() - admitDate.getTime() : 0
+              const roomDays = Math.floor(elapsedMs / 86400000)
+              let total = 0
+              if (suggestions.roomCharge?.pricePerDay && roomDays > 0) total += Number(suggestions.roomCharge.pricePerDay) * roomDays
+              activeServices.forEach(s => {
+                if (s.type === 'FOOD') total += Number(s.pricePerMeal || 0) * roomDays * 3
+                else if (s.type === 'REGISTRATION' && s.oneTimeCharge) total += Number(s.pricePerDay || 0)
+                else total += Number(s.pricePerDay || 0) * roomDays
+              })
+              if (total > 0) {
+                await invoiceApi.updateEstimate(inv.id, total)
+                setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, total, subtotal: total } : i))
+              }
+            } catch {}
+          })
         })
       }
     } catch {
@@ -138,19 +142,7 @@ export default function Billing() {
 
   useEffect(() => { load() }, [user?.hospitalId])
 
-  useEffect(() => {
-    if (!user?.hospitalId) return
-    admissionApi.list(user.hospitalId, false)
-      .then(data => setActiveAdmissions(Array.isArray(data) ? data : []))
-      .catch(() => {})
-  }, [user?.hospitalId])
-
-  const reloadAdmissions = () => {
-    if (!user?.hospitalId) return
-    admissionApi.list(user.hospitalId, false)
-      .then(data => setActiveAdmissions(Array.isArray(data) ? data : []))
-      .catch(() => {})
-  }
+  const reloadAdmissions = () => load()
 
   const today = new Date().toDateString()
 
@@ -488,13 +480,24 @@ export default function Billing() {
                                 <Plus className="w-3.5 h-3.5" /> Add Charges
                               </button>
                             ) : (
-                              <button
-                                onClick={() => setDetailInvoiceId(inv.id)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
-                                title="View Details"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
+                              <>
+                                {(inv.status === 'UNPAID' || inv.status === 'PARTIAL') && !inv.admissionId && (
+                                  <button
+                                    onClick={() => setDetailInvoiceId(inv.id)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                                    title="Collect Payment"
+                                  >
+                                    <Receipt className="w-3.5 h-3.5" /> Collect
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => setDetailInvoiceId(inv.id)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
+                                  title="View Details"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              </>
                             )}
                             <button
                               onClick={() => printInvoice(inv)}

@@ -33,6 +33,7 @@ public class InvoiceService {
     private final BankTransactionRepository bankTransactionRepository;
     private final PatientAdvanceService patientAdvanceService;
     private final InvoicePaymentRepository invoicePaymentRepository;
+    private final BankLedgerService bankLedgerService;
 
     @Transactional
     public Invoice createInvoice(InvoiceRequest request) {
@@ -168,19 +169,9 @@ public class InvoiceService {
         }
 
         if (bankAccountId != null) {
-            bankAccountRepository.findById(bankAccountId).ifPresent(account -> {
-                bankTransactionRepository.save(BankTransaction.builder()
-                        .hospitalId(account.getHospitalId())
-                        .bankAccountId(bankAccountId)
-                        .amount(amount)
-                        .type("CREDIT")
-                        .description("Payment — " + invoice.getInvoiceNumber())
-                        .referenceNo(invoice.getInvoiceNumber())
-                        .relatedEntityId(invoice.getId())
-                        .relatedEntityType("INVOICE")
-                        .transactionDate(LocalDateTime.now())
-                        .build());
-            });
+            try { bankLedgerService.creditPayment(bankAccountId, amount,
+                    "Payment — " + invoice.getInvoiceNumber(), invoice.getInvoiceNumber(), invoice.getId());
+            } catch (Exception ignored) {}
         }
 
         return toDTO(invoiceRepository.save(invoice));
@@ -514,18 +505,9 @@ public class InvoiceService {
         }
 
         if (bankAccountId != null) {
-            bankAccountRepository.findById(bankAccountId).ifPresent(account ->
-                bankTransactionRepository.save(BankTransaction.builder()
-                        .hospitalId(account.getHospitalId())
-                        .bankAccountId(bankAccountId)
-                        .amount(amount)
-                        .type("CREDIT")
-                        .description("Payment — " + invoice.getInvoiceNumber())
-                        .referenceNo(invoice.getInvoiceNumber())
-                        .relatedEntityId(invoice.getId())
-                        .relatedEntityType("INVOICE")
-                        .transactionDate(LocalDateTime.now())
-                        .build()));
+            try { bankLedgerService.creditPayment(bankAccountId, amount,
+                    "Payment — " + invoice.getInvoiceNumber(), invoice.getInvoiceNumber(), invoice.getId());
+            } catch (Exception ignored) {}
         }
 
         Invoice saved = invoiceRepository.save(invoice);
