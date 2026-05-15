@@ -149,7 +149,8 @@ public class BillingController {
                     req.getAmount(), req.getPaymentMethod(),
                     req.getBankAccountId(), req.getCollectedBy()));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(
+                    InvoiceDTO.builder().notes(e.getMessage()).build());
         }
     }
 

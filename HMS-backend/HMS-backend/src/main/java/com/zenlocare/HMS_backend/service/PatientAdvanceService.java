@@ -76,7 +76,7 @@ public class PatientAdvanceService {
     }
 
     // Auto-link any floating registration advances to this admission when patient is admitted
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void linkRegistrationAdvancesToAdmission(Integer patientId, UUID admissionId) {
         Admission admission = admissionRepository.findById(admissionId).orElse(null);
         if (admission == null) return;
@@ -102,8 +102,9 @@ public class PatientAdvanceService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // Mark advances as applied when bill is finalized — called from InvoiceService
-    @Transactional
+    // Mark advances as applied when bill is finalized — called from InvoiceService.
+    // REQUIRES_NEW ensures any failure here never poisons the caller's transaction.
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void markAdvancesApplied(UUID admissionId, UUID invoiceId, BigDecimal appliedTotal) {
         List<PatientAdvance> advances = patientAdvanceRepository.findByAdmission_IdAndAppliedFalse(admissionId);
         BigDecimal remaining = appliedTotal;
