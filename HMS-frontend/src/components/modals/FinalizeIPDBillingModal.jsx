@@ -104,7 +104,11 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       invoiceApi.getAdmissionInvoice(admission.id).catch(() => null),
       ambulanceApi.getBookings(user.hospitalId).catch(() => []),
       patientAdvanceApi.listForAdmission(admission.id).catch(() => []),
-    ]).then(([suggestions, services, accounts, radiologyOrders, patientServices, otRes, existingInvoice, ambulanceBookings, advanceList]) => {
+      invoiceApi.getPatientInvoices(admission.patientId).catch(() => []),
+    ]).then(([suggestions, services, accounts, radiologyOrders, patientServices, otRes, existingInvoice, ambulanceBookings, advanceList, allPatientInvoices]) => {
+      const isFirstAdmission = (allPatientInvoices || []).filter(inv =>
+        String(inv.admissionId) !== String(admission.id)
+      ).length === 0
       const def = accounts.find(a => a.isDefault) ?? accounts[0]
       setBankAccounts(accounts)
       if (def) setPayBankAccountId(def.id)
@@ -230,8 +234,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
             quantity, unitPrice: price, totalPrice: quantity * price,
           })
         } else if (s.type === 'REGISTRATION' && s.oneTimeCharge) {
-          const price = s.pricePerDay || 0
-          auto.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: price, totalPrice: price })
+          if (isFirstAdmission) {
+            const price = s.pricePerDay || 0
+            auto.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: price, totalPrice: price })
+          }
         } else {
           const price = s.pricePerDay || 0
           const qty = s.chargeTime

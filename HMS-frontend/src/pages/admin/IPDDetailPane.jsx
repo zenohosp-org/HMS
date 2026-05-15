@@ -333,13 +333,18 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     let key = 0
     const items = []
     try {
-      const [suggestions, services, fullAdmission, radiologyOrders, patientServices] = await Promise.all([
+      const [suggestions, services, fullAdmission, radiologyOrders, patientServices, allPatientInvoices] = await Promise.all([
         invoiceApi.getSmartSuggestions(admission.patientId, admission.id).catch(() => ({})),
         hospitalServiceApi.list(user.hospitalId).catch(() => []),
         admissionApi.get(admission.id).catch(() => null),
         radiologyApi.getByAdmission(admission.id).catch(() => []),
         patientServicesApi.list(user.hospitalId).catch(() => []),
+        invoiceApi.getPatientInvoices(admission.patientId).catch(() => []),
       ])
+      // Registration fee is one-time: only charge if this patient has no invoices from other admissions
+      const isFirstAdmission = (allPatientInvoices || []).filter(inv =>
+        String(inv.admissionId) !== String(admission.id)
+      ).length === 0
 
       const roomNumber = admission.roomNumber || fullAdmission?.roomNumber
       if (roomNumber && roomDays > 0) {
@@ -379,7 +384,9 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
             : roomDays * 3
           items.push({ key: key++, itemType: 'CUSTOM', description: `${s.name} (${qty} meal${qty !== 1 ? 's' : ''})`, quantity: qty, unitPrice: s.pricePerMeal || 0, totalPrice: qty * (s.pricePerMeal || 0) })
         } else if (s.type === 'REGISTRATION' && s.oneTimeCharge) {
-          items.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: s.pricePerDay || 0, totalPrice: s.pricePerDay || 0 })
+          if (isFirstAdmission) {
+            items.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: s.pricePerDay || 0, totalPrice: s.pricePerDay || 0 })
+          }
         } else {
           // If chargeTime set: count days where the daily slot fired after admission
           const qty = s.chargeTime
@@ -412,7 +419,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
       setOtInvoicesError(true)
     }
 
-    setBillingItems(items)
+    setBillingItems(items.filter(i => Number(i.quantity) > 0 || Number(i.totalPrice) > 0))
 
     // Silently sync estimated total back to the placeholder invoice so Billing list shows correct amount
     const estimatedTotal = items.reduce((s, i) => s + Number(i.totalPrice || 0), 0)
