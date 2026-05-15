@@ -4,8 +4,7 @@ import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, patientAdv
 import api from '@/utils/api'
 import { X, Search, BedDouble, User, CheckCircle2, Loader2, Wallet } from 'lucide-react'
 
-const ADMISSION_TYPES = ['ELECTIVE', 'EMERGENCY', 'REFERRAL', 'TRANSFER']
-const ADMISSION_SOURCES = ['OPD_REFERRAL', 'EMERGENCY_WALK_IN', 'DIRECT', 'TRANSFER_IN']
+const ADMISSION_SOURCES = ['OPD_REFERRAL', 'EMERGENCY', 'DIRECT']
 const RELATIONSHIPS = ['Spouse', 'Parent', 'Child', 'Sibling', 'Friend', 'Guardian', 'Other']
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer']
 
@@ -27,8 +26,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   const [patientSearch, setPatientSearch] = useState('')
   const [selectedPatient, setSelectedPatient] = useState(prefill?.patient || null)
   const [form, setForm] = useState({
-    admissionType: prefill?.admissionType || 'ELECTIVE',
-    admissionSource: prefill?.source || 'DIRECT',
+    admissionType: prefill?.admissionType || 'OPD_REFERRAL',
     departmentId: '',
     admittingDoctorId: prefill?.doctorId || '',
     roomId: '',
@@ -115,7 +113,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
         departmentId: form.departmentId || null,
         sourceAppointmentId: prefill?.appointmentId || null,
         admissionType: form.admissionType,
-        admissionSource: form.admissionSource,
         chiefComplaint: form.chiefComplaint,
         approxDischargeDate: form.approxDischargeDate || null,
         attenderName: form.attenderName,
@@ -234,19 +231,11 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Admission Type</label>
-                  <select className="input" value={form.admissionType} onChange={e => setForm({ ...form, admissionType: e.target.value })}>
-                    {ADMISSION_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Admission Source</label>
-                  <select className="input" value={form.admissionSource} onChange={e => setForm({ ...form, admissionSource: e.target.value })}>
-                    {ADMISSION_SOURCES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-                  </select>
-                </div>
+              <div>
+                <label className="label">Admission Source</label>
+                <select className="input" value={form.admissionType} onChange={e => setForm({ ...form, admissionType: e.target.value })}>
+                  {ADMISSION_SOURCES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                </select>
               </div>
             </>
           )}
@@ -363,10 +352,8 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400">
                   <span className="font-medium">Patient:</span>
                   <span>{selectedPatient?.firstName} {selectedPatient?.lastName}</span>
-                  <span className="font-medium">Type:</span>
-                  <span>{form.admissionType}</span>
                   <span className="font-medium">Source:</span>
-                  <span>{form.admissionSource.replace(/_/g, ' ')}</span>
+                  <span>{form.admissionType.replace(/_/g, ' ')}</span>
                   <span className="font-medium">Room:</span>
                   <span>
                     {selectedRoom?.roomNumber || 'To be assigned'}

@@ -23,9 +23,8 @@ const STATUS_COLORS = {
 
 const TYPE_COLORS = {
   EMERGENCY: 'bg-rose-500 text-white',
-  ELECTIVE: 'bg-slate-200 text-slate-700 dark:bg-[#222] dark:text-slate-300',
-  REFERRAL: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
-  TRANSFER: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
+  OPD_REFERRAL: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
+  DIRECT: 'bg-slate-200 text-slate-700 dark:bg-[#222] dark:text-slate-300',
 }
 
 export default function Admissions() {
