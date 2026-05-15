@@ -21,7 +21,7 @@ public interface RoomLogRepository extends JpaRepository<RoomLog, Long> {
     @Query("SELECT l FROM RoomLog l WHERE l.hospital.id = :hospitalId AND (" +
            "LOWER(l.roomNumber)   LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(l.patientName)  LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(l.patientMrn)   LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(l.patientUhid)  LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(l.attenderName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(l.performedBy)  LIKE LOWER(CONCAT('%', :search, '%')))" +
            " ORDER BY l.createdAt DESC")

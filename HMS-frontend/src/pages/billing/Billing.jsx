@@ -193,7 +193,7 @@ export default function Billing() {
       list = list.filter(i =>
         i.invoiceNumber?.toLowerCase().includes(q) ||
         i.patientName?.toLowerCase().includes(q) ||
-        i.patientMrn?.toLowerCase().includes(q)
+        i.patientUhid?.toLowerCase().includes(q)
       )
     }
     return list
@@ -233,7 +233,7 @@ export default function Billing() {
       <div style="margin-bottom:20px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Billed To</div>
         <div style="font-size:15px;font-weight:700">${inv.patientName ?? '—'}</div>
-        ${inv.patientMrn ? `<div style="font-size:12px;color:#6b7280">MRN: ${inv.patientMrn}</div>` : ''}
+        ${inv.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${inv.patientUhid}</div>` : ''}
         ${inv.paymentMethod ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">Payment: ${inv.paymentMethod}</div>` : ''}
       </div>
       <table>
@@ -427,7 +427,7 @@ export default function Billing() {
                         </td>
                         <td className="px-5 py-4">
                           <p className="font-semibold text-sm text-slate-900 dark:text-white">{inv.patientName ?? '—'}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">{inv.patientMrn ?? ''}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{inv.patientUhid ?? ''}</p>
                         </td>
                         <td className="px-5 py-4">
                           {isIPDPending && inv.status === 'UNPAID' && !inv.items?.length

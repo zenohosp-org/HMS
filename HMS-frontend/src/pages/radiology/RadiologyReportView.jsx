@@ -41,7 +41,7 @@ function RadiologyReportView() {
                             </span>{order.reportId && <p className="text-xs text-slate-600 dark:text-[#999999] mt-2 font-mono">
                                     Report ID: <span className="font-bold text-slate-700 dark:text-[#cccccc]">{order.reportId}</span></p>}</div></div></div>{
     /* Patient info grid */
-  }<div className="px-8 py-6 border-b border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0d0d0d]"><div className="grid grid-cols-2 gap-x-8 gap-y-4"><InfoRow label="Patient Name" value={order.patientName} /><InfoRow label="Patient ID" value={order.patientMrn} bold /><InfoRow label="Referred By" value={order.referredByName} /><InfoRow label="Technician" value={order.technicianName ?? "N/A"} /><InfoRow label="Scan Date" value={fmt(order.scannedAt)} /><InfoRow label="Report Date" value={fmt(order.reportedAt)} /></div></div>{
+  }<div className="px-8 py-6 border-b border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0d0d0d]"><div className="grid grid-cols-2 gap-x-8 gap-y-4"><InfoRow label="Patient Name" value={order.patientName} /><InfoRow label="Patient ID" value={order.patientUhid} bold /><InfoRow label="Referred By" value={order.referredByName} /><InfoRow label="Technician" value={order.technicianName ?? "N/A"} /><InfoRow label="Scan Date" value={fmt(order.scannedAt)} /><InfoRow label="Report Date" value={fmt(order.reportedAt)} /></div></div>{
     /* Investigation block */
   }<div className="px-8 py-6 space-y-5">{
     /* Investigation tab */

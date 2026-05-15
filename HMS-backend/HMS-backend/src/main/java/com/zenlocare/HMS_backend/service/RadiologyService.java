@@ -134,7 +134,7 @@ public class RadiologyService {
                 .hospitalId(o.getHospital().getId())
                 .patientId(o.getPatient().getId())
                 .patientName(patientName)
-                .patientMrn(o.getPatient().getMrn())
+                .patientUhid(o.getPatient().getUhid())
                 .admissionId(o.getAdmission() != null ? o.getAdmission().getId() : null)
                 .admissionNumber(o.getAdmission() != null ? o.getAdmission().getAdmissionNumber() : null)
                 .serviceName(o.getServiceName())

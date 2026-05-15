@@ -34,8 +34,8 @@ public class RoomLog {
     @Column(name = "patient_name", length = 200)
     private String patientName;
 
-    @Column(name = "patient_mrn", length = 50)
-    private String patientMrn;
+    @Column(name = "patient_uhid", length = 50)
+    private String patientUhid;
 
     @Column(name = "attender_name", length = 100)
     private String attenderName;

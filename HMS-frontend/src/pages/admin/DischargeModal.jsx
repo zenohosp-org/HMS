@@ -200,8 +200,8 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#666] mb-2">Patient</p>
           <p className="text-xl font-bold text-slate-900 dark:text-white leading-tight">{admission.patientName}</p>
-          {(admission.patientMrn || admission.mrn) && (
-            <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">MRN: {admission.patientMrn || admission.mrn}</p>
+          {(admission.patientUhid || admission.uhid) && (
+            <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">UHID: {admission.patientUhid || admission.uhid}</p>
           )}
         </div>
 

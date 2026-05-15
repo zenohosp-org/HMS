@@ -56,7 +56,7 @@ function RoomLogsPage() {
   }, [fetchLogs]);
   const filteredLogs = roomId && debouncedSearch ? logs.filter((l) => {
     const s = debouncedSearch.toLowerCase();
-    return l.roomNumber?.toLowerCase().includes(s) || l.patientName?.toLowerCase().includes(s) || l.patientMrn?.toLowerCase().includes(s) || l.attenderName?.toLowerCase().includes(s) || l.performedBy?.toLowerCase().includes(s);
+    return l.roomNumber?.toLowerCase().includes(s) || l.patientName?.toLowerCase().includes(s) || l.patientUhid?.toLowerCase().includes(s) || l.attenderName?.toLowerCase().includes(s) || l.performedBy?.toLowerCase().includes(s);
   }) : logs;
   return <div className="space-y-5">{
     /* Page header */
@@ -69,7 +69,7 @@ function RoomLogsPage() {
       className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                             bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc]
                             focus:outline-none focus:ring-2 focus:ring-slate-300/50"
-      placeholder="Search by room, patient, MRN, attender or performed by…"
+      placeholder="Search by room, patient, UHID, attender or performed by…"
       value={search}
       onChange={(e) => setSearch(e.target.value)}
       autoFocus
@@ -88,7 +88,7 @@ function RoomLogsPage() {
         }<div className="flex items-center gap-2 flex-wrap"><div className="w-7 h-7 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] flex items-center justify-center shrink-0"><Icon className="w-3.5 h-3.5 text-slate-500 dark:text-[#888888]" /></div><div><span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${meta.cls}`}>{meta.label}</span><p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] mt-1">{log.roomNumber}{log.allocationToken && <span className="ml-2 font-mono text-slate-900 dark:text-white dark:text-slate-300 font-semibold">
           #{log.allocationToken}</span>}</p></div></div>{
           /* Patient */
-        }<div>{log.patientName ? <div className="flex items-start gap-1.5"><User className="w-3.5 h-3.5 text-slate-600 dark:text-[#999999] shrink-0 mt-0.5" /><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{log.patientName}</p>{log.patientMrn && <p className="text-xs text-slate-600 dark:text-[#999999]">{log.patientMrn}</p>}</div></div> : <p className="text-xs text-slate-300 dark:text-[#444444]">—</p>}</div>{
+        }<div>{log.patientName ? <div className="flex items-start gap-1.5"><User className="w-3.5 h-3.5 text-slate-600 dark:text-[#999999] shrink-0 mt-0.5" /><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{log.patientName}</p>{log.patientUhid && <p className="text-xs text-slate-600 dark:text-[#999999]">{log.patientUhid}</p>}</div></div> : <p className="text-xs text-slate-300 dark:text-[#444444]">—</p>}</div>{
           /* Attender */
         }<div>{log.attenderName ? <div className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-slate-600 dark:text-[#999999] shrink-0" /><p className="text-sm text-slate-700 dark:text-[#cccccc]">{log.attenderName}</p></div> : <p className="text-xs text-slate-300 dark:text-[#444444]">—</p>}</div>{
           /* Performed by */

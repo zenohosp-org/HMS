@@ -248,7 +248,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                           {selectedPatient.firstName} {selectedPatient.lastName}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-[#888]">
-                          {selectedPatient.mrn ?? "New patient"}
+                          {selectedPatient.uhid ?? "New patient"}
                           {selectedPatient.phone ? ` · ${selectedPatient.phone}` : ""}
                         </p>
                       </div>
@@ -288,7 +288,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
               ) : (
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input className={`${inputCls} pl-9`} placeholder="Search by name or MRN…"
+                  <input className={`${inputCls} pl-9`} placeholder="Search by name or UHID…"
                     value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} autoFocus />
                   {patientSearching && (
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-slate-400" />
@@ -307,7 +307,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                               {p.firstName} {p.lastName}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-[#999]">
-                              {p.mrn}{p.phone ? ` · ${p.phone}` : ""}
+                              {p.uhid}{p.phone ? ` · ${p.phone}` : ""}
                             </p>
                           </div>
                         </button>

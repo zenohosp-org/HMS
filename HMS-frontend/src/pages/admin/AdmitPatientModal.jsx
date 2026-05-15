@@ -63,7 +63,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     if (q.length < 2) { setPatients([]); return }
     patientApi.list(user.hospitalId).then(all =>
       setPatients(all.filter(p =>
-        `${p.firstName} ${p.lastName} ${p.mrn}`.toLowerCase().includes(q.toLowerCase())
+        `${p.firstName} ${p.lastName} ${p.uhid}`.toLowerCase().includes(q.toLowerCase())
       ).slice(0, 8))
     )
   }, [patientSearch])
@@ -195,7 +195,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                         <p className="font-semibold text-slate-900 dark:text-white text-sm">
                           {selectedPatient.firstName} {selectedPatient.lastName}
                         </p>
-                        <p className="text-xs text-slate-500">MRN: {selectedPatient.mrn} · {selectedPatient.gender}</p>
+                        <p className="text-xs text-slate-500">UHID: {selectedPatient.uhid} · {selectedPatient.gender}</p>
                       </div>
                     </div>
                     <button onClick={() => setSelectedPatient(null)} className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
@@ -209,7 +209,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                       value={patientSearch}
                       onChange={e => setPatientSearch(e.target.value)}
                       className="input pl-10"
-                      placeholder="Search by name or MRN…"
+                      placeholder="Search by name or UHID…"
                     />
                     {patients.length > 0 && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333] rounded-lg shadow-xl z-10 overflow-hidden">
@@ -222,7 +222,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                             <User className="w-4 h-4 text-slate-400 shrink-0" />
                             <div>
                               <p className="text-sm font-medium text-slate-900 dark:text-white">{p.firstName} {p.lastName}</p>
-                              <p className="text-xs text-slate-500">MRN: {p.mrn}</p>
+                              <p className="text-xs text-slate-500">UHID: {p.uhid}</p>
                             </div>
                           </button>
                         ))}

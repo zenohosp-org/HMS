@@ -165,7 +165,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
         ? roomLogsApi.getRoomLogs(admission.roomId, user.hospitalId).then(data =>
             data
               .filter(l => {
-                if (l.patientMrn && l.patientMrn !== admission.patientMrn) return false
+                if (l.patientUhid && l.patientUhid !== admission.patientUhid) return false
                 const t = new Date(l.createdAt).getTime()
                 return t >= admitStart && t <= admitEnd
               })
@@ -496,7 +496,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                 )}
               </div>
               <h2 className="text-base font-bold text-slate-900 dark:text-white leading-tight">{admission.patientName}</h2>
-              <p className="text-xs text-slate-400 mt-0.5">MRN: {admission.patientMrn}</p>
+              <p className="text-xs text-slate-400 mt-0.5">UHID: {admission.patientUhid}</p>
             </div>
             <button onClick={onClose} className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-[#1e1e1e] text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
               <X className="w-4 h-4" />

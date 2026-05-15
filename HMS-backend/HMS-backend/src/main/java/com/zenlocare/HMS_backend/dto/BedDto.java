@@ -12,7 +12,7 @@ public class BedDto {
     private String status;
     private Integer patientId;
     private String patientName;
-    private String patientMrn;
+    private String patientUhid;
 
     public static BedDto fromEntity(Bed bed) {
         return BedDto.builder()
@@ -23,7 +23,7 @@ public class BedDto {
                 .patientName(bed.getCurrentPatient() != null
                         ? bed.getCurrentPatient().getFirstName() + " " + bed.getCurrentPatient().getLastName()
                         : null)
-                .patientMrn(bed.getCurrentPatient() != null ? bed.getCurrentPatient().getMrn() : null)
+                .patientUhid(bed.getCurrentPatient() != null ? bed.getCurrentPatient().getUhid() : null)
                 .build();
     }
 }

@@ -228,7 +228,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
             </h2>
             {!loading && detail && (
               <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">
-                {detail.patientName} {detail.patientMrn ? `· ${detail.patientMrn}` : ''} · {new Date(detail.createdAt).toLocaleDateString('en-IN')}
+                {detail.patientName} {detail.patientUhid ? `· ${detail.patientUhid}` : ''} · {new Date(detail.createdAt).toLocaleDateString('en-IN')}
               </p>
             )}
           </div>
@@ -687,7 +687,7 @@ function InvoiceList() {
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700 dark:text-[#ccc]">
                         {inv.patientName || '—'}
-                        {inv.patientMrn && <div className="text-[11px] text-slate-400 dark:text-[#666]">{inv.patientMrn}</div>}
+                        {inv.patientUhid && <div className="text-[11px] text-slate-400 dark:text-[#666]">{inv.patientUhid}</div>}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600 dark:text-[#aaaaaa]">
                         {new Date(inv.createdAt).toLocaleDateString('en-IN')}

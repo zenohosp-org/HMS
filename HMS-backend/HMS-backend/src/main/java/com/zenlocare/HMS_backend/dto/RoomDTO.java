@@ -18,7 +18,7 @@ public class RoomDTO {
 @Data
 class PatientSummaryDTO {
     private Integer id;
-    private String mrn;
+    private String uhid;
     private String firstName;
     private String lastName;
 }

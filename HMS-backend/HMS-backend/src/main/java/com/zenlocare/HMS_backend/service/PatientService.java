@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -47,12 +48,11 @@ public class PatientService {
         Hospital hospital = hospitalRepository.findById(req.getHospitalId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
 
-        long count = patientRepository.countByHospitalId(req.getHospitalId());
-        String mrn = "MRN-" + String.format("%04d", count + 1);
+        String uhid = generateUhid(req.getHospitalId());
 
         Patient patient = Patient.builder()
                 .hospital(hospital)
-                .mrn(mrn)
+                .uhid(uhid)
                 .firstName(req.getFirstName())
                 .lastName(req.getLastName())
                 .dob(req.getDob())
@@ -86,6 +86,16 @@ public class PatientService {
         }
 
         return saved;
+    }
+
+    private String generateUhid(UUID hospitalId) {
+        String uhid;
+        do {
+            long value = 10_000_000_000_000L +
+                    ThreadLocalRandom.current().nextLong(90_000_000_000_000L);
+            uhid = String.valueOf(value);
+        } while (patientRepository.findByHospitalIdAndUhid(hospitalId, uhid).isPresent());
+        return uhid;
     }
 
     public Patient updatePatient(Integer patientId, CreatePatientRequest req) {

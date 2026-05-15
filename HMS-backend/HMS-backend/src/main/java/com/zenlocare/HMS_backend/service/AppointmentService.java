@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -73,11 +74,10 @@ public class AppointmentService {
                                         .orElseThrow(() -> new RuntimeException("Patient not found"));
                 } else if (request.getEmergencyPatientName() != null && !request.getEmergencyPatientName().isBlank()) {
                         String[] parts = request.getEmergencyPatientName().trim().split("\\s+", 2);
-                        long count = patientRepository.countByHospitalId(hospital.getId());
-                        String mrn = "MRN-" + String.format("%04d", count + 1);
+                        String uhid = generateUhid(hospital.getId());
                         patient = patientRepository.save(Patient.builder()
                                         .hospital(hospital)
-                                        .mrn(mrn)
+                                        .uhid(uhid)
                                         .firstName(parts[0])
                                         .lastName(parts.length > 1 ? parts[1] : "—")
                                         .dob(LocalDate.now())
@@ -156,6 +156,16 @@ public class AppointmentService {
                                 .build();
 
                 return AppointmentDto.fromEntity(appointmentRepository.save(appointment));
+        }
+
+        private String generateUhid(UUID hospitalId) {
+                String uhid;
+                do {
+                        long value = 10_000_000_000_000L +
+                                        ThreadLocalRandom.current().nextLong(90_000_000_000_000L);
+                        uhid = String.valueOf(value);
+                } while (patientRepository.findByHospitalIdAndUhid(hospitalId, uhid).isPresent());
+                return uhid;
         }
 
         @Transactional

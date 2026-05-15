@@ -65,7 +65,7 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
     setPatientResults(data); setPatientOpen(true);
   };
 
-  const selectPatient = p => { setForm(f => ({ ...f, patient: p })); setPatientQuery(`${p.firstName} ${p.lastName} (${p.mrn})`); setPatientOpen(false); };
+  const selectPatient = p => { setForm(f => ({ ...f, patient: p })); setPatientQuery(`${p.firstName} ${p.lastName} (${p.uhid})`); setPatientOpen(false); };
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -118,14 +118,14 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
                 <label className={labelCls}><User className="inline w-3 h-3 mr-1" />Patient *</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input value={patientQuery} onChange={e => searchPatient(e.target.value)} onFocus={() => patientResults.length && setPatientOpen(true)} placeholder="Search by name, MRN or phone…" className={`${inputCls} pl-9`} />
+                  <input value={patientQuery} onChange={e => searchPatient(e.target.value)} onFocus={() => patientResults.length && setPatientOpen(true)} placeholder="Search by name, UHID or phone…" className={`${inputCls} pl-9`} />
                 </div>
                 {patientOpen && patientResults.length > 0 && (
                   <div className="absolute z-20 mt-1 w-full bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333] rounded-lg shadow-xl overflow-hidden">
                     {patientResults.slice(0, 5).map(p => (
                       <button key={p.id} onClick={() => selectPatient(p)} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222] border-b border-slate-100 dark:border-[#2a2a2a] last:border-0">
                         <p className="text-sm font-semibold text-slate-800 dark:text-white">{p.firstName} {p.lastName}</p>
-                        <p className="text-xs text-slate-400">{p.mrn} · {p.phone}</p>
+                        <p className="text-xs text-slate-400">{p.uhid} · {p.phone}</p>
                       </button>
                     ))}
                   </div>
@@ -316,7 +316,7 @@ export default function CheckupBookings() {
     if (search) {
       const q = search.toLowerCase();
       const name = `${b.patient?.firstName} ${b.patient?.lastName}`.toLowerCase();
-      return name.includes(q) || b.patient?.mrn?.toLowerCase().includes(q) || b.bookingNumber?.toLowerCase().includes(q) || b.healthPackage?.name?.toLowerCase().includes(q);
+      return name.includes(q) || b.patient?.uhid?.toLowerCase().includes(q) || b.bookingNumber?.toLowerCase().includes(q) || b.healthPackage?.name?.toLowerCase().includes(q);
     }
     return true;
   });
@@ -357,7 +357,7 @@ export default function CheckupBookings() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, MRN, booking number…" className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, UHID, booking number…" className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400" />
         </div>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-slate-300/50">
           <option value="ALL">All Status</option>
@@ -395,7 +395,7 @@ export default function CheckupBookings() {
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-sm font-semibold text-slate-800 dark:text-white">{b.patient?.firstName} {b.patient?.lastName}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{b.patient?.mrn}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{b.patient?.uhid}</p>
                     </td>
                     <td className="px-4 py-3 max-w-[160px]">
                       <p className="text-sm text-slate-700 dark:text-[#ccc] truncate">{b.healthPackage?.name}</p>

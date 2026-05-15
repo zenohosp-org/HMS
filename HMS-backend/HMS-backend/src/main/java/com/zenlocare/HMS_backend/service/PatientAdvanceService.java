@@ -136,7 +136,7 @@ public class PatientAdvanceService {
 
     private String generateReceiptNumber(Patient patient) {
         long seq = patientAdvanceRepository.countByPatient_Id(patient.getId()) + 1;
-        return "ADV-" + patient.getMrn() + "-" + String.format("%03d", seq);
+        return "ADV-" + patient.getUhid() + "-" + String.format("%03d", seq);
     }
 
     private void creditBankAccount(UUID bankAccountId, BigDecimal amount, String description, UUID hospitalId) {

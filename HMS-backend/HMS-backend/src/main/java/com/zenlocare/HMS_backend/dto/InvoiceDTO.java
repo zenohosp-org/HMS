@@ -16,7 +16,7 @@ public class InvoiceDTO {
     private String invoiceNumber;
     private Integer patientId;
     private String patientName;
-    private String patientMrn;
+    private String patientUhid;
     private UUID admissionId;
     private String admissionNumber;
     private BigDecimal subtotal;

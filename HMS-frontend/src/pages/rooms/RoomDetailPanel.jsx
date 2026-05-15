@@ -308,7 +308,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs, onRoomUpdated }) {
             {room.currentPatient ? (
               <div className="space-y-1 pl-1">
                 <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{room.currentPatient.firstName} {room.currentPatient.lastName}</p>
-                <p className="text-xs text-slate-600 dark:text-[#999999]">{room.currentPatient.mrn}</p>
+                <p className="text-xs text-slate-600 dark:text-[#999999]">{room.currentPatient.uhid}</p>
               </div>
             ) : <p className="text-sm text-slate-600 dark:text-[#999999] pl-1">No patient assigned</p>}
           </div>

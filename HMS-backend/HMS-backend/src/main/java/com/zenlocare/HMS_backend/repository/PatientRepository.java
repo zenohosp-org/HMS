@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface PatientRepository extends JpaRepository<Patient, Integer> {
     List<Patient> findByHospitalId(UUID hospitalId);
 
-    Optional<Patient> findByHospitalIdAndMrn(UUID hospitalId, String mrn);
+    Optional<Patient> findByHospitalIdAndUhid(UUID hospitalId, String uhid);
 
     Optional<Patient> findByIdAndHospitalId(Integer patientId, UUID hospitalId);
 
@@ -21,7 +21,7 @@ public interface PatientRepository extends JpaRepository<Patient, Integer> {
     @org.springframework.data.jpa.repository.Query("SELECT p FROM Patient p WHERE p.hospital.id = :hospitalId AND " +
             "(LOWER(p.firstName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "OR LOWER(p.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
-            "OR LOWER(p.mrn) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+            "OR LOWER(p.uhid) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "OR LOWER(p.phone) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
     List<Patient> searchPatients(
             @org.springframework.data.repository.query.Param("hospitalId") UUID hospitalId,

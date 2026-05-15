@@ -44,7 +44,7 @@ function Patients() {
   };
   const filtered = patients.filter((p) => {
     const q = search.toLowerCase();
-    return p.firstName.toLowerCase().includes(q) || p.lastName.toLowerCase().includes(q) || p.mrn.toLowerCase().includes(q) || (p.phone ?? "").includes(q);
+    return p.firstName.toLowerCase().includes(q) || p.lastName.toLowerCase().includes(q) || p.uhid.toLowerCase().includes(q) || (p.phone ?? "").includes(q);
   });
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   return <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">{
@@ -56,7 +56,7 @@ function Patients() {
       /* Search */
     }<div className="relative"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" /><input
       type="text"
-      placeholder="Search by name, MRN or phone…"
+      placeholder="Search by name, UHID or phone…"
       value={search}
       onChange={(e) => {
         setSearch(e.target.value);
@@ -71,7 +71,7 @@ function Patients() {
         key={p.id}
         onClick={() => navigate(`/patients/${p.id}`)}
         className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all cursor-pointer"
-      ><td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#222222] border border-slate-200 dark:border-[#2a2a2a] flex items-center justify-center text-sm font-bold text-slate-700 dark:text-[#cccccc] shrink-0">{initials}</div><div><p className="font-bold text-[15px] text-slate-900 dark:text-white leading-tight">{p.firstName} {p.lastName}</p><p className="text-xs text-slate-600 dark:text-slate-500 mt-0.5">{p.mrn}</p></div></div></td><td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{calcAge(p.dob)}y &nbsp;·&nbsp; {p.gender}</td><td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{p.phone ?? <span className="text-slate-500 dark:text-slate-700">—</span>}</td><td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">{formatDate(p.createdAt)}</td><td className="px-6 py-4">{p.bloodGroup ? <span className="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 text-xs font-bold">{p.bloodGroup}</span> : <span className="text-slate-500 dark:text-slate-700">—</span>}</td><td className="px-6 py-4 text-right"><button
+      ><td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#222222] border border-slate-200 dark:border-[#2a2a2a] flex items-center justify-center text-sm font-bold text-slate-700 dark:text-[#cccccc] shrink-0">{initials}</div><div><p className="font-bold text-[15px] text-slate-900 dark:text-white leading-tight">{p.firstName} {p.lastName}</p><p className="text-xs text-slate-600 dark:text-slate-500 mt-0.5">{p.uhid}</p></div></div></td><td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{calcAge(p.dob)}y &nbsp;·&nbsp; {p.gender}</td><td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{p.phone ?? <span className="text-slate-500 dark:text-slate-700">—</span>}</td><td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">{formatDate(p.createdAt)}</td><td className="px-6 py-4">{p.bloodGroup ? <span className="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 text-xs font-bold">{p.bloodGroup}</span> : <span className="text-slate-500 dark:text-slate-700">—</span>}</td><td className="px-6 py-4 text-right"><button
         className="p-2 rounded-lg text-slate-600 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all opacity-0 group-hover:opacity-100"
         onClick={(e) => {
           e.stopPropagation();

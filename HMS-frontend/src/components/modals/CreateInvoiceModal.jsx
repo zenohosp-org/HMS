@@ -262,7 +262,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{patient.firstName} {patient.lastName}</p>
-                      <p className="text-xs text-emerald-600 dark:text-emerald-500">{patient.mrn}{patient.phone ? ` · ${patient.phone}` : ''}</p>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-500">{patient.uhid}{patient.phone ? ` · ${patient.phone}` : ''}</p>
                     </div>
                   </div>
                   <button onClick={() => { setPatient(null); setSuggestions(null) }} className="p-1 text-emerald-500 hover:text-emerald-700 transition-colors">
@@ -272,7 +272,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
               ) : (
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <input className={`${inputCls} pl-9`} placeholder="Search by name or MRN…"
+                  <input className={`${inputCls} pl-9`} placeholder="Search by name or UHID…"
                     value={patientSearch} onChange={e => setPatientSearch(e.target.value)} />
                   {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400" />}
                   {patientResults.length > 0 && (
@@ -281,7 +281,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                         <button key={p.id} type="button" onClick={() => selectPatient(p)}
                           className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0">
                           <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{p.firstName} {p.lastName}</p>
-                          <p className="text-xs text-slate-400">{p.mrn}</p>
+                          <p className="text-xs text-slate-400">{p.uhid}</p>
                         </button>
                       ))}
                     </div>
@@ -598,7 +598,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
         <div className="border-t border-gray-200 pt-4 mb-6">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Bill To</p>
           <p className="font-bold">{patient?.firstName} {patient?.lastName}</p>
-          <p className="text-sm text-gray-500">{patient?.mrn}</p>
+          <p className="text-sm text-gray-500">{patient?.uhid}</p>
         </div>
         <table className="w-full text-sm border-collapse">
           <thead>

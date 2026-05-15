@@ -93,7 +93,7 @@ function PatientSearch({ hospitalId, value, onChange }) {
     finally { setLoading(false); }
   };
 
-  const select = (p) => { onChange(p); setQuery(`${p.firstName} ${p.lastName} (${p.mrn})`); setOpen(false); };
+  const select = (p) => { onChange(p); setQuery(`${p.firstName} ${p.lastName} (${p.uhid})`); setOpen(false); };
   const clear = () => { onChange(null); setQuery(""); setResults([]); };
 
   return (
@@ -104,7 +104,7 @@ function PatientSearch({ hospitalId, value, onChange }) {
           value={query}
           onChange={e => search(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Search by name, MRN, or phone…"
+          placeholder="Search by name, UHID, or phone…"
           className="input pl-9 pr-9"
         />
         {query && <button onClick={clear} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>}
@@ -118,7 +118,7 @@ function PatientSearch({ hospitalId, value, onChange }) {
           ) : results.slice(0, 6).map(p => (
             <button key={p.id} onClick={() => select(p)} className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] border-b border-slate-100 dark:border-[#222] last:border-0 transition-colors">
               <p className="text-sm font-semibold text-slate-800 dark:text-white">{p.firstName} {p.lastName}</p>
-              <p className="text-xs text-slate-600 mt-0.5">{p.mrn} · {p.phone}</p>
+              <p className="text-xs text-slate-600 mt-0.5">{p.uhid} · {p.phone}</p>
             </button>
           ))}
         </div>

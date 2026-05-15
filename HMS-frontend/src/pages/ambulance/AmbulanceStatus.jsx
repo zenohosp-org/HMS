@@ -95,8 +95,8 @@ export default function AmbulanceStatus() {
     if (search) {
       const q = search.toLowerCase();
       const patientName = b.patient ? `${b.patient.firstName} ${b.patient.lastName}`.toLowerCase() : "";
-      const mrn = b.patient?.mrn?.toLowerCase() || "";
-      if (!patientName.includes(q) && !mrn.includes(q) && !(b.vehicleNumber || "").toLowerCase().includes(q) && !(b.driverName || "").toLowerCase().includes(q)) return false;
+      const uhid = b.patient?.uhid?.toLowerCase() || "";
+      if (!patientName.includes(q) && !uhid.includes(q) && !(b.vehicleNumber || "").toLowerCase().includes(q) && !(b.driverName || "").toLowerCase().includes(q)) return false;
     }
     return true;
   });
@@ -218,7 +218,7 @@ export default function AmbulanceStatus() {
                     {b.patient ? (
                       <div>
                         <p className="text-sm font-semibold text-slate-800 dark:text-white">{b.patient.firstName} {b.patient.lastName}</p>
-                        <p className="text-xs text-slate-400">{b.patient.mrn}</p>
+                        <p className="text-xs text-slate-400">{b.patient.uhid}</p>
                       </div>
                     ) : <p className="text-sm text-slate-400 italic">Walk-in / No patient</p>}
                   </div>

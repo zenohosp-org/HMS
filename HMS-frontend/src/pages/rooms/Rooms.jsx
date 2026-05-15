@@ -127,7 +127,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
             <div>
               <p className="text-xs text-slate-500 dark:text-[#666666]">Patient</p>
               <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{roomData.currentPatient.firstName} {roomData.currentPatient.lastName}</p>
-              <p className="text-[11px] text-slate-600 dark:text-[#999999]">{roomData.currentPatient.mrn}</p>
+              <p className="text-[11px] text-slate-600 dark:text-[#999999]">{roomData.currentPatient.uhid}</p>
             </div>
             {roomData.attenderName ? (
               <div>
@@ -262,7 +262,7 @@ function Rooms() {
     if (!query) return true;
     if (room?.roomNumber?.toLowerCase().includes(query)) return true;
     if (room?.currentPatient) {
-      return [room.currentPatient.firstName, room.currentPatient.lastName, room.currentPatient.mrn].some((value) =>
+      return [room.currentPatient.firstName, room.currentPatient.lastName, room.currentPatient.uhid].some((value) =>
         value?.toLowerCase().includes(query)
       );
     }
@@ -554,7 +554,7 @@ function Rooms() {
                           <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">
                             {room.currentPatient.firstName} {room.currentPatient.lastName}
                           </p>
-                          <p className="text-[11px] text-slate-600 dark:text-[#999999]">{room.currentPatient.mrn}</p>
+                          <p className="text-[11px] text-slate-600 dark:text-[#999999]">{room.currentPatient.uhid}</p>
                         </div>
                         {room.attenderName ? (
                           <div>

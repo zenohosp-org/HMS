@@ -39,7 +39,7 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
   }, [fetchLogs]);
   const filteredLogs = roomId && debouncedSearch ? logs.filter((l) => {
     const s = debouncedSearch.toLowerCase();
-    return l.roomNumber?.toLowerCase().includes(s) || l.patientName?.toLowerCase().includes(s) || l.patientMrn?.toLowerCase().includes(s) || l.attenderName?.toLowerCase().includes(s) || l.performedBy?.toLowerCase().includes(s);
+    return l.roomNumber?.toLowerCase().includes(s) || l.patientName?.toLowerCase().includes(s) || l.patientUhid?.toLowerCase().includes(s) || l.attenderName?.toLowerCase().includes(s) || l.performedBy?.toLowerCase().includes(s);
   }) : logs;
   const title = roomId ? `Logs \xB7 Room ${roomNumber}` : "Room Logs";
   return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"><div className="bg-white dark:bg-[#111111] rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#2a2a2a]">{
@@ -53,7 +53,7 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                 bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc]
                                 focus:outline-none focus:ring-2 focus:ring-slate-300/50"
-    placeholder="Search by room, patient, MRN, attender or performed by…"
+    placeholder="Search by room, patient, UHID, attender or performed by…"
     value={search}
     onChange={(e) => setSearch(e.target.value)}
     autoFocus
@@ -70,7 +70,7 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
       /* Room number */
     }<span className="text-xs font-bold text-slate-700 dark:text-[#cccccc] bg-slate-100 dark:bg-[#222222] px-2 py-0.5 rounded-md">{log.roomNumber}</span>{
       /* Token */
-    }{log.allocationToken && <span className="text-[10px] font-bold tracking-widest text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333] px-2 py-0.5 rounded-md font-mono">{log.allocationToken}</span>}</div><div className="flex flex-wrap gap-x-5 gap-y-1 mt-2">{log.patientName && <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#aaaaaa]"><User className="w-3 h-3 text-slate-600 dark:text-[#999999] shrink-0" /><span className="font-medium">{log.patientName}</span>{log.patientMrn && <span className="text-slate-600 dark:text-[#999999]">· {log.patientMrn}</span>}</div>}{log.attenderName && <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#aaaaaa]"><Users className="w-3 h-3 text-slate-600 dark:text-[#999999] shrink-0" /><span>{log.attenderName}</span></div>}</div></div>{
+    }{log.allocationToken && <span className="text-[10px] font-bold tracking-widest text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333] px-2 py-0.5 rounded-md font-mono">{log.allocationToken}</span>}</div><div className="flex flex-wrap gap-x-5 gap-y-1 mt-2">{log.patientName && <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#aaaaaa]"><User className="w-3 h-3 text-slate-600 dark:text-[#999999] shrink-0" /><span className="font-medium">{log.patientName}</span>{log.patientUhid && <span className="text-slate-600 dark:text-[#999999]">· {log.patientUhid}</span>}</div>}{log.attenderName && <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#aaaaaa]"><Users className="w-3 h-3 text-slate-600 dark:text-[#999999] shrink-0" /><span>{log.attenderName}</span></div>}</div></div>{
       /* Right: performed by + time */
     }<div className="text-right shrink-0 space-y-1">{log.performedBy && <p className="text-xs font-medium text-slate-700 dark:text-[#cccccc]">{log.performedBy}</p>}<p className="text-[11px] text-slate-600 dark:text-[#999999]" title={formatFull(log.createdAt)}>{formatRelative(log.createdAt)}</p><p className="text-[10px] text-slate-300 dark:text-[#444444]">{formatFull(log.createdAt)}</p></div></div></div>;
   })}</div>}</div></div></div>;

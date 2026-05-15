@@ -14,7 +14,7 @@ public class RadiologyOrderDTO {
     private UUID hospitalId;
     private Integer patientId;
     private String patientName;
-    private String patientMrn;
+    private String patientUhid;
     private UUID admissionId;
     private String admissionNumber;
     private String serviceName;

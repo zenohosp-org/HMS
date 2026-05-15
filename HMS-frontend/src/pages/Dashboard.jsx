@@ -153,7 +153,7 @@ function PatientRowCard({ p }) {
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-800 dark:text-[#e5e5e5]">{p.firstName} {p.lastName}</p>
-            <p className="text-xs text-slate-600 dark:text-[#999999]">{p.mrn}</p>
+            <p className="text-xs text-slate-600 dark:text-[#999999]">{p.uhid}</p>
           </div>
         </div>
       </td>

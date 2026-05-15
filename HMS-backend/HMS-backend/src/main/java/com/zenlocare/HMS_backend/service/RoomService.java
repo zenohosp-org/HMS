@@ -197,7 +197,7 @@ public class RoomService {
                 .event(RoomLogEvent.ALLOCATED)
                 .roomNumber(saved.getRoomNumber())
                 .patientName(patient.getFirstName() + " " + patient.getLastName())
-                .patientMrn(patient.getMrn())
+                .patientUhid(patient.getUhid())
                 .attenderName(request.getAttenderName())
                 .allocationToken(saved.getAllocationToken())
                 .performedBy(performedBy)
@@ -218,7 +218,7 @@ public class RoomService {
         String patientName = room.getCurrentPatient() != null
                 ? room.getCurrentPatient().getFirstName() + " " + room.getCurrentPatient().getLastName()
                 : null;
-        String patientMrn = room.getCurrentPatient() != null ? room.getCurrentPatient().getMrn() : null;
+        String patientUhid = room.getCurrentPatient() != null ? room.getCurrentPatient().getUhid() : null;
 
         room.setStatus(RoomStatus.AVAILABLE);
         room.setCurrentPatient(null);
@@ -250,7 +250,7 @@ public class RoomService {
                 .event(RoomLogEvent.DEALLOCATED)
                 .roomNumber(saved.getRoomNumber())
                 .patientName(patientName)
-                .patientMrn(patientMrn)
+                .patientUhid(patientUhid)
                 .performedBy(performedBy)
                 .build());
 
@@ -270,7 +270,7 @@ public class RoomService {
         String patientName = bed.getCurrentPatient() != null
                 ? bed.getCurrentPatient().getFirstName() + " " + bed.getCurrentPatient().getLastName()
                 : null;
-        String patientMrn = bed.getCurrentPatient() != null ? bed.getCurrentPatient().getMrn() : null;
+        String patientUhid = bed.getCurrentPatient() != null ? bed.getCurrentPatient().getUhid() : null;
 
         bed.setStatus(BedStatus.AVAILABLE);
         bed.setCurrentPatient(null);
@@ -289,7 +289,7 @@ public class RoomService {
                 .event(RoomLogEvent.DEALLOCATED)
                 .roomNumber(room.getRoomNumber())
                 .patientName(patientName)
-                .patientMrn(patientMrn)
+                .patientUhid(patientUhid)
                 .performedBy(performedBy)
                 .build());
 
@@ -318,7 +318,7 @@ public class RoomService {
         String patientName = saved.getCurrentPatient() != null
                 ? saved.getCurrentPatient().getFirstName() + " " + saved.getCurrentPatient().getLastName()
                 : null;
-        String patientMrn = saved.getCurrentPatient() != null ? saved.getCurrentPatient().getMrn() : null;
+        String patientUhid = saved.getCurrentPatient() != null ? saved.getCurrentPatient().getUhid() : null;
 
         roomLogRepository.save(RoomLog.builder()
                 .room(saved)
@@ -326,7 +326,7 @@ public class RoomService {
                 .event(isNew ? RoomLogEvent.ATTENDER_ASSIGNED : RoomLogEvent.ATTENDER_UPDATED)
                 .roomNumber(saved.getRoomNumber())
                 .patientName(patientName)
-                .patientMrn(patientMrn)
+                .patientUhid(patientUhid)
                 .attenderName(request.getAttenderName())
                 .allocationToken(saved.getAllocationToken())
                 .performedBy(performedBy)
@@ -370,7 +370,7 @@ public class RoomService {
                 .roomNumber(log.getRoomNumber())
                 .event(log.getEvent().name())
                 .patientName(log.getPatientName())
-                .patientMrn(log.getPatientMrn())
+                .patientUhid(log.getPatientUhid())
                 .attenderName(log.getAttenderName())
                 .allocationToken(log.getAllocationToken())
                 .performedBy(log.getPerformedBy())

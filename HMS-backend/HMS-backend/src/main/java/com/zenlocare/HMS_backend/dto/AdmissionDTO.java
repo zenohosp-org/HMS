@@ -15,7 +15,7 @@ public class AdmissionDTO {
     private String ipdId;
     private Integer patientId;
     private String patientName;
-    private String patientMrn;
+    private String patientUhid;
     private Long roomId;
     private String roomNumber;
     private String roomType;

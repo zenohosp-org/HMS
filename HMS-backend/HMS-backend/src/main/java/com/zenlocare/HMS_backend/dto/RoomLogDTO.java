@@ -12,7 +12,7 @@ public class RoomLogDTO {
     private String roomNumber;
     private String event;
     private String patientName;
-    private String patientMrn;
+    private String patientUhid;
     private String attenderName;
     private String allocationToken;
     private String performedBy;

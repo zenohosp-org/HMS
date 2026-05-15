@@ -127,7 +127,7 @@ public class AdmissionService {
                     .event(RoomLogEvent.ALLOCATED)
                     .roomNumber(room.getRoomNumber())
                     .patientName(patient.getFirstName() + " " + patient.getLastName())
-                    .patientMrn(patient.getMrn())
+                    .patientUhid(patient.getUhid())
                     .attenderName(req.getAttenderName())
                     .allocationToken(admNumber)
                     .performedBy(performedBy)
@@ -190,7 +190,7 @@ public class AdmissionService {
                 .event(RoomLogEvent.ALLOCATED)
                 .roomNumber(room.getRoomNumber())
                 .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
-                .patientMrn(admission.getPatient().getMrn())
+                .patientUhid(admission.getPatient().getUhid())
                 .allocationToken(admission.getAdmissionNumber())
                 .performedBy(performedBy)
                 .build());
@@ -245,7 +245,7 @@ public class AdmissionService {
                             .event(RoomLogEvent.DEALLOCATED)
                             .roomNumber(room.getRoomNumber())
                             .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
-                            .patientMrn(admission.getPatient().getMrn())
+                            .patientUhid(admission.getPatient().getUhid())
                             .performedBy(performedBy)
                             .build());
                 }
@@ -277,7 +277,7 @@ public class AdmissionService {
                     .event(RoomLogEvent.DEALLOCATED)
                     .roomNumber(room.getRoomNumber())
                     .patientName(patName)
-                    .patientMrn(admission.getPatient().getMrn())
+                    .patientUhid(admission.getPatient().getUhid())
                     .performedBy(performedBy)
                     .build());
         }
@@ -323,7 +323,7 @@ public class AdmissionService {
                 .event(com.zenlocare.HMS_backend.entity.RoomLogEvent.ALLOCATED)
                 .roomNumber(savedRoom.getRoomNumber())
                 .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
-                .patientMrn(admission.getPatient().getMrn())
+                .patientUhid(admission.getPatient().getUhid())
                 .performedBy(performedBy)
                 .build());
 
@@ -349,7 +349,7 @@ public class AdmissionService {
                     .event(com.zenlocare.HMS_backend.entity.RoomLogEvent.DEALLOCATED)
                     .roomNumber(otRoom.getRoomNumber())
                     .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
-                    .patientMrn(admission.getPatient().getMrn())
+                    .patientUhid(admission.getPatient().getUhid())
                     .performedBy(performedBy)
                     .build());
         }
@@ -375,7 +375,7 @@ public class AdmissionService {
                     .event(com.zenlocare.HMS_backend.entity.RoomLogEvent.ALLOCATED)
                     .roomNumber(postOtRoom.getRoomNumber())
                     .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
-                    .patientMrn(admission.getPatient().getMrn())
+                    .patientUhid(admission.getPatient().getUhid())
                     .performedBy(performedBy)
                     .build());
         } else if (admission.getPreviousRoom() != null) {
@@ -412,7 +412,7 @@ public class AdmissionService {
                     .event(com.zenlocare.HMS_backend.entity.RoomLogEvent.DEALLOCATED)
                     .roomNumber(postOtRoom.getRoomNumber())
                     .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
-                    .patientMrn(admission.getPatient().getMrn())
+                    .patientUhid(admission.getPatient().getUhid())
                     .performedBy(performedBy)
                     .build());
         }
@@ -477,7 +477,7 @@ public class AdmissionService {
                 .ipdId(a.getIpdId())
                 .patientId(a.getPatient().getId())
                 .patientName(a.getPatient().getFirstName() + " " + a.getPatient().getLastName())
-                .patientMrn(a.getPatient().getMrn())
+                .patientUhid(a.getPatient().getUhid())
                 .roomId(resolvedRoom != null ? resolvedRoom.getId() : null)
                 .roomNumber(resolvedRoom != null ? resolvedRoom.getRoomNumber() : null)
                 .roomType(resolvedRoom != null ? resolvedRoom.getRoomType().name() : null)

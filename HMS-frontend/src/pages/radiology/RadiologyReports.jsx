@@ -44,7 +44,7 @@ function RadiologyReports() {
   const filtered = orders.filter((o) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return o.patientName.toLowerCase().includes(q) || o.patientMrn.toLowerCase().includes(q) || o.serviceName.toLowerCase().includes(q) || o.reportId?.toLowerCase().includes(q);
+    return o.patientName.toLowerCase().includes(q) || o.patientUhid.toLowerCase().includes(q) || o.serviceName.toLowerCase().includes(q) || o.reportId?.toLowerCase().includes(q);
   });
   return <div className="space-y-5"><div className="flex items-start justify-between gap-4 flex-wrap"><div><h1 className="text-xl font-bold text-slate-900 dark:text-[#f0f0f0] flex items-center gap-2"><FileText className="w-5 h-5 text-slate-700 dark:text-[#cccccc]" /> Radiology Reports
   </h1><p className="text-sm text-slate-500 dark:text-[#666666] mt-0.5">
@@ -54,7 +54,7 @@ function RadiologyReports() {
       /* Search */
     }<div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
       className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-slate-300/50"
-      placeholder="Search by patient, investigation, MRN, report ID…"
+      placeholder="Search by patient, investigation, UHID, report ID…"
       value={search}
       onChange={(e) => {
         setSearch(e.target.value);
@@ -66,7 +66,7 @@ function RadiologyReports() {
       /* Column headers */
     }<div className="hidden md:grid grid-cols-[2.5fr_2fr_2fr_1.5fr_1fr_auto] gap-4 px-6 py-2.5 bg-slate-50 dark:bg-[#0d0d0d] border-b border-slate-100 dark:border-[#1e1e1e]">{["Patient", "Investigation", "Referred By", "Completed", "Priority", "Action"].map((h) => <p key={h} className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999]">{h}</p>)}</div><div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((order) => <div key={order.id} className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors md:grid md:grid-cols-[2.5fr_2fr_2fr_1.5fr_1fr_auto] md:gap-4 md:items-center space-y-2 md:space-y-0">{
       /* Patient */
-    }<div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0"><User className="w-4 h-4 text-slate-400 dark:text-[#888]" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{order.patientName}</p><p className="text-xs text-slate-600 dark:text-[#999999]">{order.patientMrn}</p></div></div>{
+    }<div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0"><User className="w-4 h-4 text-slate-400 dark:text-[#888]" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{order.patientName}</p><p className="text-xs text-slate-600 dark:text-[#999999]">{order.patientUhid}</p></div></div>{
         /* Investigation */
       }<div><p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">{order.serviceName}</p>{order.billNo && <p className="text-xs font-mono text-slate-600 dark:text-[#999999] mt-0.5">{order.billNo}</p>}</div>{
         /* Referred by */

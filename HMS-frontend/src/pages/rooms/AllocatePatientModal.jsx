@@ -28,7 +28,7 @@ function AllocatePatientModal({ roomId, roomNumber, onClose, onSuccess }) {
   const filteredPatients = patients.filter((p) => {
     if (!search) return true;
     const s = search.toLowerCase();
-    return p.firstName.toLowerCase().includes(s) || p.lastName.toLowerCase().includes(s) || p.mrn.toLowerCase().includes(s);
+    return p.firstName.toLowerCase().includes(s) || p.lastName.toLowerCase().includes(s) || p.uhid.toLowerCase().includes(s);
   });
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,7 +56,7 @@ function AllocatePatientModal({ roomId, roomNumber, onClose, onSuccess }) {
   }<div className="space-y-2"><label className={labelCls}>Select Patient *</label><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
                                     bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-slate-300/50"
-    placeholder="Search by name or MRN..."
+    placeholder="Search by name or UHID..."
     value={search}
     onChange={(e) => setSearch(e.target.value)}
   /></div><div className="h-44 overflow-y-auto space-y-2 border border-slate-100 dark:border-[#222222] rounded-lg p-2 bg-slate-50 dark:bg-[#0d0d0d]">{loading ? <div className="h-full flex items-center justify-center text-slate-400"><Loader2 className="w-5 h-5 animate-spin" /></div> : filteredPatients.length === 0 ? <div className="h-full flex items-center justify-center text-sm text-slate-400">No patients found.</div> : filteredPatients.map((p) => <div
@@ -64,7 +64,7 @@ function AllocatePatientModal({ roomId, roomNumber, onClose, onSuccess }) {
     onClick={() => setSelectedPatientId(p.id)}
     className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between
                                         ${selectedPatientId === p.id ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/30" : "bg-white border-slate-200 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] hover:border-emerald-200 dark:hover:border-emerald-500/20"}`}
-  ><div><p className={`text-sm font-bold ${selectedPatientId === p.id ? "text-emerald-900 dark:text-emerald-400" : "text-slate-800 dark:text-white"}`}>{p.firstName} {p.lastName}</p><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{p.mrn}</p></div><div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0
+  ><div><p className={`text-sm font-bold ${selectedPatientId === p.id ? "text-emerald-900 dark:text-emerald-400" : "text-slate-800 dark:text-white"}`}>{p.firstName} {p.lastName}</p><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{p.uhid}</p></div><div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0
                                         ${selectedPatientId === p.id ? "border-emerald-500 bg-emerald-500" : "border-slate-300 dark:border-[#555555]"}`}>{selectedPatientId === p.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}</div></div>)}</div></div>{
     /* Attender Details */
   }<div className="space-y-3"><h3 className="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#2a2a2a] pb-2">

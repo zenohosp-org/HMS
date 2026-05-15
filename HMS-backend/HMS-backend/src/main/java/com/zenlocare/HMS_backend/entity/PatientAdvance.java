@@ -50,7 +50,7 @@ public class PatientAdvance {
     @Column(length = 255)
     private String notes;
 
-    // Auto-generated: ADV-{MRN}-{seq} — unique receipt handed to patient
+    // Auto-generated: ADV-{UHID}-{seq} — unique receipt handed to patient
     @Column(name = "receipt_number", length = 50, unique = true)
     private String receiptNumber;
 

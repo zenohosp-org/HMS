@@ -97,7 +97,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
 
   const filteredPatients = patients.filter(p => {
     const q = patientSearch.toLowerCase();
-    return p.firstName.toLowerCase().includes(q) || p.lastName?.toLowerCase().includes(q) || p.mrn?.toLowerCase().includes(q);
+    return p.firstName.toLowerCase().includes(q) || p.lastName?.toLowerCase().includes(q) || p.uhid?.toLowerCase().includes(q);
   });
 
   // Doctor list shown depends on type
@@ -247,7 +247,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
       <div className="relative mb-2">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input type="text" value={patientSearch} onChange={e => setPatientSearch(e.target.value)}
-          placeholder="Search by name or MRN..."
+          placeholder="Search by name or UHID..."
           className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none transition-all`}
         />
       </div>
@@ -259,7 +259,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
               <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{p.firstName[0]}</div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">{p.firstName} {p.lastName}</p>
-                <p className="text-[11px] text-slate-400 dark:text-[#666666]">{p.mrn}</p>
+                <p className="text-[11px] text-slate-400 dark:text-[#666666]">{p.uhid}</p>
               </div>
             </button>
           ))}
@@ -270,7 +270,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
           <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400 shrink-0">{selectedPatient.firstName[0]}</div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 truncate">{selectedPatient.firstName} {selectedPatient.lastName}</p>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-500">{selectedPatient.mrn}</p>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-500">{selectedPatient.uhid}</p>
           </div>
           <button type="button" onClick={() => { setPatientId(""); setPastDoctors([]); }} className="text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300"><X className="w-3.5 h-3.5" /></button>
         </div>

@@ -569,7 +569,7 @@ public class InvoiceService {
                 .patientId(inv.getPatient() != null ? inv.getPatient().getId() : null)
                 .patientName(inv.getPatient() != null
                         ? inv.getPatient().getFirstName() + " " + inv.getPatient().getLastName() : null)
-                .patientMrn(inv.getPatient() != null ? inv.getPatient().getMrn() : null)
+                .patientUhid(inv.getPatient() != null ? inv.getPatient().getUhid() : null)
                 .admissionId(inv.getAdmission() != null ? inv.getAdmission().getId() : null)
                 .admissionNumber(inv.getAdmission() != null ? inv.getAdmission().getAdmissionNumber() : null)
                 .subtotal(inv.getSubtotal())

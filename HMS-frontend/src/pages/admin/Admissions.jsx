@@ -179,7 +179,7 @@ export default function Admissions() {
                     </div>
                     <div>
                       <p className="font-semibold text-sm text-slate-900 dark:text-white">{a.patientName}</p>
-                      <p className="text-xs text-slate-500">MRN: {a.patientMrn}</p>
+                      <p className="text-xs text-slate-500">UHID: {a.patientUhid}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
@@ -247,7 +247,7 @@ export default function Admissions() {
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-sm text-slate-900 dark:text-white">{a.patientName}</p>
-                    <p className="text-xs text-slate-500">{a.patientMrn}</p>
+                    <p className="text-xs text-slate-500">{a.patientUhid}</p>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{a.departmentName || '—'}</td>
                   <td className="px-4 py-3">
