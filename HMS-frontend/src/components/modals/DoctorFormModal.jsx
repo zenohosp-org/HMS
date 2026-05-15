@@ -226,7 +226,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
               onChange={(e) => setUser({ phone: e.target.value })}
               className={inputBase} placeholder="+91 98765 43210" />
           </div>
-          <div>
+          <div className="col-span-2">
             <FieldLabel required>Temporary Password</FieldLabel>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -234,12 +234,6 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                 onChange={(e) => setUser({ password: e.target.value })}
                 className={`${inputBase} pl-11`} placeholder="Min. 6 characters" />
             </div>
-          </div>
-          <div>
-            <StateSelect value={userForm.state}
-              onChange={(val) => setUser({ state: val })}
-              inputClassName={inputBase}
-              labelClassName="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5" />
           </div>
         </div>
       </div>
@@ -382,6 +376,12 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
             className={`${textareaBase} ${sameAddress ? "opacity-40 cursor-not-allowed" : ""}`}
             placeholder="Home address, street, area, city, pincode" />
         </div>
+        <StateSelect
+          value={userForm.state}
+          onChange={(val) => setUser({ state: val })}
+          inputClassName={inputBase}
+          labelClassName="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5"
+        />
       </div>
     ),
 
