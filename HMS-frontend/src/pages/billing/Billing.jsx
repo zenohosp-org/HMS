@@ -157,15 +157,27 @@ export default function Billing() {
     }
   }, [invoices])
 
-  // Split OPD / IPD by whether the invoice is linked to an admission
-  const opdInvoices = useMemo(() => invoices.filter(i => !i.admissionId), [invoices])
-  const ipdInvoices = useMemo(() => invoices.filter(i => !!i.admissionId), [invoices])
-
-  // Set of active admission IDs for quick lookup
+  // Set of active admission IDs and patient IDs for quick lookup
   const activeAdmissionIds = useMemo(
     () => new Set(activeAdmissions.map(a => String(a.id))),
     [activeAdmissions]
   )
+  const activeAdmissionPatientIds = useMemo(
+    () => new Set(activeAdmissions.map(a => String(a.patientId))),
+    [activeAdmissions]
+  )
+
+  // Split OPD / IPD by whether the invoice is linked to an admission.
+  // Hide unpaid/partial OPD invoices for patients who are currently admitted —
+  // those consultation charges are absorbed into the IPD bill.
+  const opdInvoices = useMemo(() => invoices.filter(i =>
+    !i.admissionId &&
+    !(
+      (i.status === 'UNPAID' || i.status === 'PARTIAL') &&
+      activeAdmissionPatientIds.has(String(i.patientId))
+    )
+  ), [invoices, activeAdmissionPatientIds])
+  const ipdInvoices = useMemo(() => invoices.filter(i => !!i.admissionId), [invoices])
 
   const currentInvoices = tab === 'OPD' ? opdInvoices : ipdInvoices
   const currentFilter = tab === 'OPD' ? opdFilter : ipdFilter
