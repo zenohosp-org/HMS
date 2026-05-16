@@ -7,7 +7,7 @@ import DoctorFormModal from "@/components/modals/DoctorFormModal";
 import Pagination from "@/components/ui/Pagination";
 import {
   MoreHorizontal, CheckCircle, XCircle, Trash2, Loader2,
-  Stethoscope, Search, Pencil, AlertTriangle, X,
+  Stethoscope, Search, Pencil, AlertTriangle, X, ExternalLink,
 } from "lucide-react";
 
 const PAGE_SIZE = 8;
@@ -205,8 +205,7 @@ function DoctorsList() {
                   return (
                     <tr
                       key={d.id}
-                      onClick={() => navigate(`/doctors/${d.id}`)}
-                      className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all cursor-pointer"
+                      className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -265,6 +264,15 @@ function DoctorsList() {
                               >
                                 <Pencil className="w-4 h-4" /> Edit Profile
                               </button>
+                              <button
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  navigate(`/doctors/${d.id}`);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
+                              >
+                                <ExternalLink className="w-4 h-4" /> View Profile
+                              </button>
                               <div className="h-px bg-slate-50 dark:bg-[#252525] my-1" />
                               {d.userIsActive ? (
                                 <button
@@ -272,7 +280,7 @@ function DoctorsList() {
                                     setOpenMenuId(null);
                                     handleDeactivate(d.userId);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-all"
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
                                 >
                                   <XCircle className="w-4 h-4" /> Deactivate Login
                                 </button>
@@ -282,7 +290,7 @@ function DoctorsList() {
                                     setOpenMenuId(null);
                                     handleActivate(d.userId);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-all"
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
                                 >
                                   <CheckCircle className="w-4 h-4" /> Activate Login
                                 </button>
