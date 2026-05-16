@@ -60,7 +60,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
 
   useEffect(() => {
     if (!user?.hospitalId) return
-    doctorsApi.list(user.hospitalId).then(setDoctors).catch(() => {})
+    doctorsApi.list(user.hospitalId).then(docs => setDoctors(docs.filter(d => d.userIsActive))).catch(() => {})
     hospitalServiceApi.list(user.hospitalId).then(setServices).catch(() => {})
     bankApi.list(user.hospitalId).then(accounts => {
       setBankAccounts(accounts)

@@ -49,7 +49,7 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
     Promise.all([
       checkupApi.getPackages(hospitalId, true),
       doctorsApi.list(hospitalId),
-    ]).then(([pkgs, docs]) => { setPackages(pkgs); setDoctors(docs); });
+    ]).then(([pkgs, docs]) => { setPackages(pkgs); setDoctors(docs.filter(d => d.userIsActive)); });
   }, [hospitalId]);
 
   useEffect(() => {
@@ -307,7 +307,7 @@ export default function CheckupBookings() {
       checkupApi.getStats(hospitalId).catch(() => ({ today: 0, scheduled: 0, inProgress: 0, completed: 0 })),
       doctorsApi.list(hospitalId).catch(() => []),
     ]);
-    setBookings(b); setStats(s); setDoctors(docs); setLoading(false);
+    setBookings(b); setStats(s); setDoctors(docs.filter(d => d.userIsActive)); setLoading(false);
   };
 
   const filtered = bookings.filter(b => {

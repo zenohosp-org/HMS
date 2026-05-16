@@ -22,7 +22,7 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
       doctorsApi.list(user.hospitalId),
     ]).then(([rooms, docs]) => {
       setOtRooms(rooms.filter(r => r.roomType === 'OT' && r.status === 'AVAILABLE'))
-      setDoctors(docs)
+      setDoctors(docs.filter(d => d.userIsActive))
     }).catch(() => {
       notify('Failed to load OT rooms or doctors', 'error')
     }).finally(() => setLoading(false))

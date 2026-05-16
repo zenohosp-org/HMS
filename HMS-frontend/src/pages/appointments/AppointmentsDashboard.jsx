@@ -168,7 +168,7 @@ function AppointmentsDashboard() {
         doctorsApi.list(user.hospitalId)
       ]);
       setAppointments(appts);
-      setDoctors(docs);
+      setDoctors(docs.filter(d => d.userIsActive));
       if (location.state?.filterMine && user.role === "doctor") {
         const doc = docs.find((d) => d.userId === user.userId);
         if (doc) {

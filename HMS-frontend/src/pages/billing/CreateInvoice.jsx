@@ -109,7 +109,7 @@ function CreateInvoice() {
   }, [user?.hospitalId]);
   useEffect(() => {
     if (!user?.hospitalId) return;
-    doctorsApi.list(user.hospitalId).then(setDoctors).catch(() => {
+    doctorsApi.list(user.hospitalId).then(docs => setDoctors(docs.filter(d => d.userIsActive))).catch(() => {
     });
     hospitalServiceApi.list(user.hospitalId).then(setServices).catch(() => {
     });

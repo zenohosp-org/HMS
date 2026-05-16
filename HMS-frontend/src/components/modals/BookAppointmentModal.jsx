@@ -116,7 +116,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
       doctorsApi.list(user.hospitalId),
       checkupApi.getPackages(user.hospitalId, true),
     ]).then(([p, d, pk]) => {
-      setPatients(p); setDoctors(d); setPackages(pk);
+      setPatients(p); setDoctors(d.filter(x => x.userIsActive)); setPackages(pk);
       if (user.role === "doctor") {
         const doc = d.find(x => x.userId === user.userId);
         if (doc) setDoctorId(doc.id);

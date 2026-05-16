@@ -53,7 +53,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
       doctorsApi.list(user.hospitalId),
     ]).then(([depts, docs]) => {
       setDepartments(depts)
-      setDoctors(docs)
+      setDoctors(docs.filter(d => d.userIsActive))
     })
   }, [user?.hospitalId])
 
