@@ -686,13 +686,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
             })}
           </div>
 
-          {/* Hint */}
           <div className="px-4 pb-6">
-            <div className="rounded-xl bg-white/5 border border-white/8 p-4">
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Click any completed step to go back and edit. Required fields are marked with <span className="text-rose-400">*</span>
-              </p>
-            </div>
           </div>
         </div>
 
