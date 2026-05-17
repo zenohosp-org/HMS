@@ -368,9 +368,9 @@ function Rooms() {
                         <div key={floorKey} className="rounded-lg border border-slate-100 dark:border-[#1e1e1e]">
 
                           {/* Floor header — click to collapse */}
-                          <button
+                          <div
                             onClick={() => toggleFloor(floorKey)}
-                            className="w-full flex items-center justify-between px-3 py-2 bg-slate-50/80 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1e1e1e] rounded-t-lg hover:bg-slate-100 dark:hover:bg-[#141414] transition-colors"
+                            className="flex items-center justify-between px-3 py-2 bg-slate-50/80 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1e1e1e] rounded-t-lg hover:bg-slate-100 dark:hover:bg-[#141414] transition-colors cursor-pointer select-none"
                           >
                             <div className="flex items-center gap-1.5">
                               <Layers className="w-3 h-3 text-slate-400" />
@@ -380,7 +380,7 @@ function Rooms() {
                               <SectionLabel icon={LayoutGrid} label="wards" count={floor.wards.length} />
                               {floorCollapsed ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
                             </div>
-                          </button>
+                          </div>
 
                           {!floorCollapsed && (
                             <div className="p-3 space-y-3">
@@ -390,9 +390,9 @@ function Rooms() {
                                 return (
                                   <div key={wardKey}>
                                     {/* Ward header — click to collapse */}
-                                    <button
+                                    <div
                                       onClick={() => toggleWard(wardKey)}
-                                      className="w-full flex items-center justify-between mb-2 px-1 py-1 rounded-lg hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                                      className="flex items-center justify-between mb-2 px-1 py-1 rounded-lg hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors cursor-pointer select-none"
                                     >
                                       <div className="flex items-center gap-1.5">
                                         <LayoutGrid className="w-3 h-3 text-slate-400" />
@@ -400,7 +400,7 @@ function Rooms() {
                                         <span className="text-[10px] text-slate-400 dark:text-slate-600">· {ward.rooms.length} rooms</span>
                                       </div>
                                       {wardCollapsed ? <ChevronRight className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
-                                    </button>
+                                    </div>
 
                                     {!wardCollapsed && (
                                       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2">
