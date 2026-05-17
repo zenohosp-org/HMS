@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { createPortal } from "react-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api, { infrastructureApi } from "@/utils/api";
@@ -11,101 +10,6 @@ import { formatDateTime } from "@/utils/validators";
 import AllocatePatientModal from "./AllocatePatientModal";
 import AssignAttenderModal from "./AssignAttenderModal";
 import RoomDetailPanel from "./RoomDetailPanel";
-
-function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate, onDelete, compact }) {
-  const [open, setOpen] = useState(false);
-  const [menuStyle, setMenuStyle] = useState({});
-  const btnRef = useRef(null);
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e) => {
-      if (!btnRef.current?.contains(e.target) && !menuRef.current?.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
-  const handleToggle = (e) => {
-    e.stopPropagation();
-    if (!open && btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      const flipUp = window.innerHeight - r.bottom < 180;
-      setMenuStyle(
-        flipUp
-          ? { position: "fixed", bottom: window.innerHeight - r.top + 4, right: window.innerWidth - r.right, zIndex: 9999 }
-          : { position: "fixed", top: r.bottom + 4, right: window.innerWidth - r.right, zIndex: 9999 }
-      );
-    }
-    setOpen((v) => !v);
-  };
-
-  const isMultiBed = room.bedCount != null && room.bedCount > 1;
-
-  const menuItems = (
-    <div
-      ref={menuRef}
-      style={menuStyle}
-      className="w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-slate-100 dark:border-[#252525] py-1.5"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {room.status === "AVAILABLE" && (
-        <button
-          onClick={() => { setOpen(false); onAllocate(); }}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
-        >
-          {isMultiBed ? "Assign to Bed" : "Allocate Patient"}
-        </button>
-      )}
-      {room.status === "OCCUPIED" && !isMultiBed && (
-        <button
-          onClick={() => { setOpen(false); onAssignAttender(); }}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
-        >
-          {room.attenderName ? "Edit Attender" : "Assign Attender"}
-        </button>
-      )}
-      {room.status === "OCCUPIED" && !isMultiBed && (
-        <>
-          <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
-          <button
-            onClick={() => { setOpen(false); onDeallocate(); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
-          >
-            Deallocate
-          </button>
-        </>
-      )}
-      {room.status === "AVAILABLE" && (
-        <>
-          <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
-          <button
-            onClick={() => { setOpen(false); onDelete(); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
-          >
-            Delete Room
-          </button>
-        </>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="shrink-0">
-      <button
-        ref={btnRef}
-        onClick={handleToggle}
-        className={`rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all ${compact ? "p-2" : "p-2"}`}
-      >
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
-      {open && createPortal(menuItems, document.body)}
-    </div>
-  );
-}
 
 const STATUS_DOT = {
   AVAILABLE: "bg-emerald-500",
@@ -124,7 +28,20 @@ const TYPE_BADGE = {
   OT:  "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
 };
 
-function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAllocate, onAssignAttender, onDeallocate, onDelete }) {
+function MenuButton({ room, onOpen }) {
+  const btnRef = useRef(null);
+  return (
+    <button
+      ref={btnRef}
+      onClick={(e) => { e.stopPropagation(); onOpen(room, btnRef.current); }}
+      className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
+    >
+      <MoreHorizontal className="w-4 h-4" />
+    </button>
+  );
+}
+
+function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onMenuOpen }) {
   const isMultiBed = roomData?.bedCount != null && roomData.bedCount > 1;
   const status = roomData?.status;
   const roomType = roomData?.roomType ?? roomInfo.roomType ?? "GENERAL";
@@ -132,7 +49,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
   return (
     <div
       onClick={() => roomData && onSelect(roomData)}
-      className={`relative bg-white dark:bg-[#111111] border rounded-xl p-3.5 transition-all group ${
+      className={`bg-white dark:bg-[#111111] border rounded-xl p-3.5 transition-all ${
         !roomData ? "opacity-60 cursor-default" : "cursor-pointer"
       } ${
         isSelected
@@ -140,7 +57,6 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
           : "border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 dark:hover:border-[#2a2a2a]"
       }`}
     >
-      {/* Top row */}
       <div className="flex items-start gap-2">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
           ICON_CLASS[status] ?? "bg-slate-50 border-slate-100 text-slate-400 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] dark:text-slate-600"
@@ -149,7 +65,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1 flex-wrap leading-none">
+          <div className="flex items-center gap-1 leading-none">
             <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{roomInfo.name}</p>
             {roomData?.roomCode && (
               <span className="text-[9px] font-mono text-slate-400 dark:text-[#888888]">{roomData.roomCode}</span>
@@ -177,19 +93,11 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
 
         {roomData && (
           <div onClick={(e) => e.stopPropagation()}>
-            <RoomActionMenu
-              compact
-              room={roomData}
-              onAllocate={() => onAllocate(roomData)}
-              onAssignAttender={() => onAssignAttender(roomData)}
-              onDeallocate={() => onDeallocate(roomData.id)}
-              onDelete={() => onDelete(roomData.id)}
-            />
+            <MenuButton room={roomData} onOpen={onMenuOpen} />
           </div>
         )}
       </div>
 
-      {/* Patient info */}
       {roomData && status === "OCCUPIED" && roomData.currentPatient && !isMultiBed && (
         <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-[#1a1a1a] space-y-1">
           <div className="flex items-baseline gap-1.5 min-w-0">
@@ -230,9 +138,7 @@ function SectionLabel({ icon: Icon, label, count }) {
     <div className="flex items-center gap-1.5">
       <Icon className="w-3 h-3 text-slate-400 dark:text-slate-600" />
       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-600">{label}</span>
-      {count != null && (
-        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600">· {count}</span>
-      )}
+      {count != null && <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600">· {count}</span>}
     </div>
   );
 }
@@ -250,27 +156,30 @@ function Rooms() {
   const [infrastructure, setInfrastructure] = useState([]);
   const [collapsedFloors, setCollapsedFloors] = useState(new Set());
   const [collapsedWards, setCollapsedWards] = useState(new Set());
+  const [menuState, setMenuState] = useState(null); // { room, top?, bottom?, right }
 
-  const normalizeKey = (value) => value?.toString()?.trim()?.toLowerCase() || "";
+  const normalizeKey = (v) => v?.toString()?.trim()?.toLowerCase() || "";
 
-  const toggleFloor = (key) => setCollapsedFloors((prev) => {
-    const next = new Set(prev);
-    next.has(key) ? next.delete(key) : next.add(key);
-    return next;
-  });
+  const openMenu = (room, btnEl) => {
+    const r = btnEl.getBoundingClientRect();
+    const flipUp = window.innerHeight - r.bottom < 160;
+    setMenuState({
+      room,
+      right: window.innerWidth - r.right,
+      ...(flipUp ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }),
+    });
+  };
+  const closeMenu = () => setMenuState(null);
 
-  const toggleWard = (key) => setCollapsedWards((prev) => {
-    const next = new Set(prev);
-    next.has(key) ? next.delete(key) : next.add(key);
-    return next;
-  });
+  const toggleFloor = (key) => setCollapsedFloors((prev) => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+  const toggleWard  = (key) => setCollapsedWards((prev)  => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   const fetchRooms = async () => {
     try {
       const { data } = await api.get(`/rooms?hospitalId=${user?.hospitalId}`);
       setRooms(data);
-    } catch (error) {
-      console.error("Failed to fetch rooms", error);
+    } catch (e) {
+      console.error("Failed to fetch rooms", e);
     }
   };
 
@@ -285,11 +194,7 @@ function Rooms() {
 
   useEffect(() => {
     if (!user?.hospitalId) return;
-    const load = async () => {
-      setLoading(true);
-      await Promise.all([fetchRooms(), fetchInfrastructure()]);
-      setLoading(false);
-    };
+    const load = async () => { setLoading(true); await Promise.all([fetchRooms(), fetchInfrastructure()]); setLoading(false); };
     load();
   }, [user?.hospitalId]);
 
@@ -302,117 +207,90 @@ function Rooms() {
 
   const handleDeallocate = async (roomId) => {
     if (!confirm("Deallocate this room?")) return;
+    closeMenu();
     try {
       await api.post(`/rooms/${roomId}/deallocate?hospitalId=${user?.hospitalId}`);
       if (selectedRoom?.id === roomId) setSelectedRoom(null);
       fetchRooms();
-    } catch {
-      alert("Failed to deallocate room");
-    }
+    } catch { alert("Failed to deallocate room"); }
   };
 
   const handleDeleteRoom = async (roomId) => {
     if (!confirm("Permanently delete this room?")) return;
+    closeMenu();
     try {
       await api.delete(`/rooms/${roomId}?hospitalId=${user?.hospitalId}`);
       if (selectedRoom?.id === roomId) setSelectedRoom(null);
       fetchRooms();
-    } catch (error) {
-      alert(error?.response?.data?.message || "Failed to delete room");
-    }
+    } catch (error) { alert(error?.response?.data?.message || "Failed to delete room"); }
   };
 
   const roomMap = useMemo(() => new Map(rooms.map((r) => [normalizeKey(r.roomNumber), r])), [rooms]);
 
   const infrastructureRoomKeys = useMemo(() => {
     const keys = new Set();
-    infrastructure.forEach((b) =>
-      (b.floors || []).forEach((f) =>
-        (f.wards || []).forEach((w) =>
-          (w.rooms || []).forEach((r) => keys.add(normalizeKey(r.name)))
-        )
-      )
-    );
+    infrastructure.forEach((b) => (b.floors || []).forEach((f) => (f.wards || []).forEach((w) => (w.rooms || []).forEach((r) => keys.add(normalizeKey(r.name))))));
     return keys;
   }, [infrastructure]);
 
-  const matchesSearch = (room, query) => {
-    if (!query) return true;
-    if (room?.roomNumber?.toLowerCase().includes(query)) return true;
-    if (room?.currentPatient) {
-      return [room.currentPatient.firstName, room.currentPatient.lastName, room.currentPatient.uhid]
-        .some((v) => v?.toLowerCase().includes(query));
-    }
+  const matchesSearch = (room, q) => {
+    if (!q) return true;
+    if (room?.roomNumber?.toLowerCase().includes(q)) return true;
+    if (room?.currentPatient) return [room.currentPatient.firstName, room.currentPatient.lastName, room.currentPatient.uhid].some((v) => v?.toLowerCase().includes(q));
     return false;
   };
 
   const filteredRooms = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return rooms
-      .filter((r) => {
-        if (filter === "AVAILABLE" && r.status !== "AVAILABLE") return false;
-        if (filter === "OCCUPIED" && r.status !== "OCCUPIED") return false;
-        return matchesSearch(r, query);
-      })
-      .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber));
+    const q = search.trim().toLowerCase();
+    return rooms.filter((r) => {
+      if (filter === "AVAILABLE" && r.status !== "AVAILABLE") return false;
+      if (filter === "OCCUPIED"  && r.status !== "OCCUPIED")  return false;
+      return matchesSearch(r, q);
+    }).sort((a, b) => a.roomNumber.localeCompare(b.roomNumber));
   }, [rooms, filter, search]);
 
   const filteredInfrastructure = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return infrastructure
-      .map((building) => ({
-        ...building,
-        floors: (building.floors || [])
-          .map((floor) => ({
-            ...floor,
-            wards: (floor.wards || [])
-              .map((ward) => ({
-                ...ward,
-                rooms: (ward.rooms || [])
-                  .map((room) => ({ ...room, roomData: roomMap.get(normalizeKey(room.name)) }))
-                  .filter((room) => {
-                    if (filter === "AVAILABLE" && room.roomData?.status !== "AVAILABLE") return false;
-                    if (filter === "OCCUPIED" && room.roomData?.status !== "OCCUPIED") return false;
-                    if (!query) return true;
-                    return room.name?.toLowerCase().includes(query) || matchesSearch(room.roomData, query);
-                  }),
-              }))
-              .filter((ward) => ward.rooms.length > 0),
-          }))
-          .filter((floor) => floor.wards.length > 0),
-      }))
-      .filter((building) => building.floors.length > 0);
+    const q = search.trim().toLowerCase();
+    return infrastructure.map((building) => ({
+      ...building,
+      floors: (building.floors || []).map((floor) => ({
+        ...floor,
+        wards: (floor.wards || []).map((ward) => ({
+          ...ward,
+          rooms: (ward.rooms || [])
+            .map((room) => ({ ...room, roomData: roomMap.get(normalizeKey(room.name)) }))
+            .filter((room) => {
+              if (filter === "AVAILABLE" && room.roomData?.status !== "AVAILABLE") return false;
+              if (filter === "OCCUPIED"  && room.roomData?.status !== "OCCUPIED")  return false;
+              return !q || room.name?.toLowerCase().includes(q) || matchesSearch(room.roomData, q);
+            }),
+        })).filter((w) => w.rooms.length > 0),
+      })).filter((f) => f.wards.length > 0),
+    })).filter((b) => b.floors.length > 0);
   }, [infrastructure, roomMap, filter, search]);
 
-  const unmappedRooms = useMemo(() =>
-    filteredRooms.filter((r) => !infrastructureRoomKeys.has(normalizeKey(r.roomNumber))),
-    [filteredRooms, infrastructureRoomKeys]
-  );
+  const unmappedRooms = useMemo(() => filteredRooms.filter((r) => !infrastructureRoomKeys.has(normalizeKey(r.roomNumber))), [filteredRooms, infrastructureRoomKeys]);
 
   const showInfrastructureView = infrastructure.length > 0;
   const availableCount = rooms.filter((r) => r.status === "AVAILABLE").length;
   const occupiedCount  = rooms.filter((r) => r.status === "OCCUPIED").length;
 
-  const roomCardProps = (room, roomData) => ({
-    isSelected: selectedRoom?.id === (roomData ?? room).id,
+  const cardProps = (roomData) => ({
+    isSelected: selectedRoom?.id === roomData?.id,
     onSelect: (r) => setSelectedRoom((prev) => prev?.id === r.id ? null : r),
-    onAllocate: (r) => setShowAllocateModal({ open: true, room: r }),
-    onAssignAttender: (r) => setShowAttenderModal({ open: true, room: r }),
-    onDeallocate: handleDeallocate,
-    onDelete: handleDeleteRoom,
+    onMenuOpen: openMenu,
   });
 
   return (
     <div className="space-y-5">
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-[#f0f0f0]">Room Allocation</h1>
           <p className="text-sm text-slate-500 dark:text-[#666666]">
             {rooms.length} total rooms
-            {showInfrastructureView
-              ? ` · ${infrastructure.length} buildings · ${infrastructure.reduce((s, b) => s + (b.floors?.length || 0), 0)} floors`
-              : ""}
+            {showInfrastructureView ? ` · ${infrastructure.length} buildings · ${infrastructure.reduce((s, b) => s + (b.floors?.length || 0), 0)} floors` : ""}
           </p>
         </div>
         <button className="btn-secondary flex items-center gap-2" onClick={() => navigate("/rooms/logs")}>
@@ -423,9 +301,9 @@ function Rooms() {
       {/* Metrics */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Total Rooms", value: rooms.length, cls: "bg-white dark:bg-[#111111] border-slate-200 dark:border-[#1e1e1e]", text: "text-slate-800 dark:text-[#e0e0e0]", sub: "text-slate-500 dark:text-[#666666]", dot: "bg-slate-400" },
-          { label: "Available",   value: availableCount, cls: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20", text: "text-emerald-800 dark:text-emerald-300", sub: "text-emerald-600 dark:text-emerald-500", dot: "bg-emerald-500" },
-          { label: "Occupied",    value: occupiedCount,  cls: "bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20", text: "text-blue-800 dark:text-blue-300", sub: "text-blue-600 dark:text-blue-500", dot: "bg-blue-500" },
+          { label: "Total Rooms", value: rooms.length,    cls: "bg-white dark:bg-[#111111] border-slate-200 dark:border-[#1e1e1e]",                         text: "text-slate-800 dark:text-[#e0e0e0]",   sub: "text-slate-500 dark:text-[#666666]",   dot: "bg-slate-400"   },
+          { label: "Available",   value: availableCount,  cls: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20",          text: "text-emerald-800 dark:text-emerald-300", sub: "text-emerald-600 dark:text-emerald-500", dot: "bg-emerald-500" },
+          { label: "Occupied",    value: occupiedCount,   cls: "bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20",                     text: "text-blue-800 dark:text-blue-300",     sub: "text-blue-600 dark:text-blue-500",     dot: "bg-blue-500"   },
         ].map(({ label, value, cls, text, sub, dot }) => (
           <div key={label} className={`border rounded-xl p-4 flex items-center justify-between ${cls}`}>
             <div>
@@ -441,17 +319,13 @@ function Rooms() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex gap-2">
           {["ALL", "AVAILABLE", "OCCUPIED"].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
+            <button key={f} onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 filter === f
                   ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-md"
                   : "bg-white text-slate-500 border border-slate-200 dark:bg-[#111111] dark:border-[#222222] hover:bg-slate-50 dark:hover:bg-[#1a1a1a]"
               }`}
-            >
-              {f}
-            </button>
+            >{f}</button>
           ))}
         </div>
         <div className="flex-1 relative">
@@ -481,9 +355,7 @@ function Rooms() {
                   <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-[#0d0d0d] border-b border-slate-200 dark:border-[#1e1e1e] rounded-t-xl">
                     <div className="flex items-center gap-2">
                       <Building2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                      <span className="text-sm font-bold text-slate-900 dark:text-white">
-                        {building.name || `Building ${bIdx + 1}`}
-                      </span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">{building.name || `Building ${bIdx + 1}`}</span>
                     </div>
                     <SectionLabel icon={Layers} label="floors" count={building.floors.length} />
                   </div>
@@ -495,23 +367,18 @@ function Rooms() {
                       return (
                         <div key={floorKey} className="rounded-lg border border-slate-100 dark:border-[#1e1e1e]">
 
-                          {/* Floor header — clickable to collapse */}
+                          {/* Floor header — click to collapse */}
                           <button
                             onClick={() => toggleFloor(floorKey)}
                             className="w-full flex items-center justify-between px-3 py-2 bg-slate-50/80 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1e1e1e] rounded-t-lg hover:bg-slate-100 dark:hover:bg-[#141414] transition-colors"
                           >
                             <div className="flex items-center gap-1.5">
                               <Layers className="w-3 h-3 text-slate-400" />
-                              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                {floor.name || `Floor ${fIdx + 1}`}
-                              </span>
+                              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{floor.name || `Floor ${fIdx + 1}`}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <SectionLabel icon={LayoutGrid} label="wards" count={floor.wards.length} />
-                              {floorCollapsed
-                                ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                                : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                              }
+                              {floorCollapsed ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
                             </div>
                           </button>
 
@@ -522,22 +389,17 @@ function Rooms() {
                                 const wardCollapsed = collapsedWards.has(wardKey);
                                 return (
                                   <div key={wardKey}>
-                                    {/* Ward header — clickable to collapse */}
+                                    {/* Ward header — click to collapse */}
                                     <button
                                       onClick={() => toggleWard(wardKey)}
                                       className="w-full flex items-center justify-between mb-2 px-1 py-1 rounded-lg hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
                                     >
                                       <div className="flex items-center gap-1.5">
                                         <LayoutGrid className="w-3 h-3 text-slate-400" />
-                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                          {ward.name || `Ward ${wIdx + 1}`}
-                                        </span>
+                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{ward.name || `Ward ${wIdx + 1}`}</span>
                                         <span className="text-[10px] text-slate-400 dark:text-slate-600">· {ward.rooms.length} rooms</span>
                                       </div>
-                                      {wardCollapsed
-                                        ? <ChevronRight className="w-3 h-3 text-slate-400" />
-                                        : <ChevronDown className="w-3 h-3 text-slate-400" />
-                                      }
+                                      {wardCollapsed ? <ChevronRight className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
                                     </button>
 
                                     {!wardCollapsed && (
@@ -547,7 +409,7 @@ function Rooms() {
                                             key={room.name}
                                             roomInfo={room}
                                             roomData={room.roomData}
-                                            {...roomCardProps(room, room.roomData)}
+                                            {...cardProps(room.roomData)}
                                           />
                                         ))}
                                       </div>
@@ -576,7 +438,7 @@ function Rooms() {
                         key={room.id}
                         roomInfo={{ name: room.roomNumber, roomType: room.roomType }}
                         roomData={room}
-                        {...roomCardProps(room, room)}
+                        {...cardProps(room)}
                       />
                     ))}
                   </div>
@@ -644,9 +506,7 @@ function Rooms() {
                         <div className="space-y-1">
                           <div>
                             <p className="text-[10px] text-slate-400 dark:text-[#666666] uppercase tracking-wide">Patient</p>
-                            <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">
-                              {room.currentPatient.firstName} {room.currentPatient.lastName}
-                            </p>
+                            <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{room.currentPatient.firstName} {room.currentPatient.lastName}</p>
                             <p className="text-[11px] text-slate-500 dark:text-[#999999] font-mono">{room.currentPatient.uhid}</p>
                           </div>
                           {room.attenderName ? (
@@ -687,13 +547,9 @@ function Rooms() {
                     </div>
                   )}
 
-                  <RoomActionMenu
-                    room={room}
-                    onAllocate={() => setShowAllocateModal({ open: true, room })}
-                    onAssignAttender={() => setShowAttenderModal({ open: true, room })}
-                    onDeallocate={() => handleDeallocate(room.id)}
-                    onDelete={() => handleDeleteRoom(room.id)}
-                  />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <MenuButton room={room} onOpen={openMenu} />
+                  </div>
                 </div>
               );
             })
@@ -709,6 +565,61 @@ function Rooms() {
           />
         )}
       </div>
+
+      {/* Global room action menu — rendered outside all card containers */}
+      {menuState && (() => {
+        const room = menuState.room;
+        const isMultiBed = room.bedCount != null && room.bedCount > 1;
+        const { right, top, bottom } = menuState;
+        return (
+          <>
+            <div className="fixed inset-0 z-40" onClick={closeMenu} />
+            <div
+              style={{ position: "fixed", right, ...(top !== undefined ? { top } : { bottom }), zIndex: 50 }}
+              className="w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-slate-100 dark:border-[#252525] py-1.5"
+            >
+              {room.status === "AVAILABLE" && (
+                <button
+                  onClick={() => { closeMenu(); setShowAllocateModal({ open: true, room }); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
+                >
+                  {isMultiBed ? "Assign to Bed" : "Allocate Patient"}
+                </button>
+              )}
+              {room.status === "OCCUPIED" && !isMultiBed && (
+                <button
+                  onClick={() => { closeMenu(); setShowAttenderModal({ open: true, room }); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
+                >
+                  {room.attenderName ? "Edit Attender" : "Assign Attender"}
+                </button>
+              )}
+              {room.status === "OCCUPIED" && !isMultiBed && (
+                <>
+                  <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
+                  <button
+                    onClick={() => handleDeallocate(room.id)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
+                  >
+                    Deallocate
+                  </button>
+                </>
+              )}
+              {room.status === "AVAILABLE" && (
+                <>
+                  <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
+                  <button
+                    onClick={() => handleDeleteRoom(room.id)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
+                  >
+                    Delete Room
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        );
+      })()}
 
       {showAllocateModal.open && showAllocateModal.room && (
         <AllocatePatientModal
