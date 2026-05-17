@@ -12,7 +12,7 @@ function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate, onDe
   const [open, setOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
   const ref = useRef(null);
-  const btnRef = useRef(null);
+  const dropRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
@@ -21,12 +21,15 @@ function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate, onDe
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  useEffect(() => {
+    if (!open || !dropRef.current) return;
+    const rect = dropRef.current.getBoundingClientRect();
+    if (rect.bottom > window.innerHeight - 8) setOpenUp(true);
+  }, [open]);
+
   const handleToggle = (e) => {
     e.stopPropagation();
-    if (!open && btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setOpenUp(window.innerHeight - rect.bottom < 180);
-    }
+    if (!open) setOpenUp(false);
     setOpen((v) => !v);
   };
 
@@ -35,14 +38,13 @@ function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate, onDe
   return (
     <div ref={ref} className="relative shrink-0">
       <button
-        ref={btnRef}
         onClick={handleToggle}
         className={`rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all ${compact ? "p-1.5" : "p-2"}`}
       >
         <MoreHorizontal className={compact ? "w-4 h-4" : "w-5 h-5"} />
       </button>
       {open && (
-        <div className={`absolute right-0 z-30 w-48 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-xl border border-slate-100 dark:border-[#252525] py-1.5 overflow-hidden ${openUp ? "bottom-full mb-1" : "top-full mt-1"}`}>
+        <div ref={dropRef} className={`absolute right-0 z-30 w-48 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-xl border border-slate-100 dark:border-[#252525] py-1.5 overflow-hidden ${openUp ? "bottom-full mb-1" : "top-full mt-1"}`}>
           {room.status === "AVAILABLE" && (
             <button
               onClick={() => { setOpen(false); onAllocate(); }}
