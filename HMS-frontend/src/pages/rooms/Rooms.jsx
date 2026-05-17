@@ -578,14 +578,25 @@ function Rooms() {
               style={{ position: "fixed", right, ...(top !== undefined ? { top } : { bottom }), zIndex: 50 }}
               className="w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-slate-100 dark:border-[#252525] py-1.5"
             >
-              {room.status === "AVAILABLE" && (
+              {/* Multi-bed: view beds in panel */}
+              {isMultiBed && (
+                <button
+                  onClick={() => { closeMenu(); setSelectedRoom(room); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
+                >
+                  View Beds
+                </button>
+              )}
+              {/* Single-bed available: allocate */}
+              {room.status === "AVAILABLE" && !isMultiBed && (
                 <button
                   onClick={() => { closeMenu(); setShowAllocateModal({ open: true, room }); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
                 >
-                  {isMultiBed ? "Assign to Bed" : "Allocate Patient"}
+                  Allocate Patient
                 </button>
               )}
+              {/* Single-bed occupied: attender */}
               {room.status === "OCCUPIED" && !isMultiBed && (
                 <button
                   onClick={() => { closeMenu(); setShowAttenderModal({ open: true, room }); }}
@@ -594,6 +605,7 @@ function Rooms() {
                   {room.attenderName ? "Edit Attender" : "Assign Attender"}
                 </button>
               )}
+              {/* Single-bed occupied: deallocate */}
               {room.status === "OCCUPIED" && !isMultiBed && (
                 <>
                   <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
@@ -605,6 +617,7 @@ function Rooms() {
                   </button>
                 </>
               )}
+              {/* Available rooms (any): delete */}
               {room.status === "AVAILABLE" && (
                 <>
                   <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
