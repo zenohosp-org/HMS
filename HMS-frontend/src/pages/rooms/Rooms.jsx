@@ -1,8 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api, { infrastructureApi } from "@/utils/api";
-import { Bed, Search, CalendarClock, MoreHorizontal, ScrollText, Building2, Layers, LayoutGrid } from "lucide-react";
+import {
+  Bed, Search, CalendarClock, MoreHorizontal, ScrollText,
+  Building2, Layers, LayoutGrid, ChevronDown, ChevronRight,
+} from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
 import AllocatePatientModal from "./AllocatePatientModal";
 import AssignAttenderModal from "./AssignAttenderModal";
@@ -10,81 +14,95 @@ import RoomDetailPanel from "./RoomDetailPanel";
 
 function RoomActionMenu({ room, onAllocate, onAssignAttender, onDeallocate, onDelete, compact }) {
   const [open, setOpen] = useState(false);
-  const [openUp, setOpenUp] = useState(false);
-  const ref = useRef(null);
-  const dropRef = useRef(null);
+  const [menuStyle, setMenuStyle] = useState({});
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !dropRef.current) return;
-    const rect = dropRef.current.getBoundingClientRect();
-    if (rect.bottom > window.innerHeight - 8) setOpenUp(true);
+    const close = (e) => {
+      if (!btnRef.current?.contains(e.target) && !menuRef.current?.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
   const handleToggle = (e) => {
     e.stopPropagation();
-    if (!open) setOpenUp(false);
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      const flipUp = window.innerHeight - r.bottom < 180;
+      setMenuStyle(
+        flipUp
+          ? { position: "fixed", bottom: window.innerHeight - r.top + 4, right: window.innerWidth - r.right, zIndex: 9999 }
+          : { position: "fixed", top: r.bottom + 4, right: window.innerWidth - r.right, zIndex: 9999 }
+      );
+    }
     setOpen((v) => !v);
   };
 
   const isMultiBed = room.bedCount != null && room.bedCount > 1;
 
-  return (
-    <div ref={ref} className="relative shrink-0">
-      <button
-        onClick={handleToggle}
-        className={`rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all ${compact ? "p-1.5" : "p-2"}`}
-      >
-        <MoreHorizontal className={compact ? "w-4 h-4" : "w-5 h-5"} />
-      </button>
-      {open && (
-        <div ref={dropRef} className={`absolute right-0 z-30 w-48 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-xl border border-slate-100 dark:border-[#252525] py-1.5 overflow-hidden ${openUp ? "bottom-full mb-1" : "top-full mt-1"}`}>
-          {room.status === "AVAILABLE" && (
-            <button
-              onClick={() => { setOpen(false); onAllocate(); }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
-            >
-              {isMultiBed ? "Assign to Bed" : "Allocate Patient"}
-            </button>
-          )}
-          {room.status === "OCCUPIED" && !isMultiBed && (
-            <button
-              onClick={() => { setOpen(false); onAssignAttender(); }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
-            >
-              {room.attenderName ? "Edit Attender" : "Assign Attender"}
-            </button>
-          )}
-          {room.status === "OCCUPIED" && !isMultiBed && (
-            <>
-              <div className="h-px bg-slate-50 dark:bg-[#252525] my-1" />
-              <button
-                onClick={() => { setOpen(false); onDeallocate(); }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
-              >
-                Deallocate
-              </button>
-            </>
-          )}
-          {room.status === "AVAILABLE" && (
-            <>
-              <div className="h-px bg-slate-50 dark:bg-[#252525] my-1" />
-              <button
-                onClick={() => { setOpen(false); onDelete(); }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
-              >
-                Delete Room
-              </button>
-            </>
-          )}
-        </div>
+  const menuItems = (
+    <div
+      ref={menuRef}
+      style={menuStyle}
+      className="w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-slate-100 dark:border-[#252525] py-1.5"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {room.status === "AVAILABLE" && (
+        <button
+          onClick={() => { setOpen(false); onAllocate(); }}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
+        >
+          {isMultiBed ? "Assign to Bed" : "Allocate Patient"}
+        </button>
       )}
+      {room.status === "OCCUPIED" && !isMultiBed && (
+        <button
+          onClick={() => { setOpen(false); onAssignAttender(); }}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
+        >
+          {room.attenderName ? "Edit Attender" : "Assign Attender"}
+        </button>
+      )}
+      {room.status === "OCCUPIED" && !isMultiBed && (
+        <>
+          <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
+          <button
+            onClick={() => { setOpen(false); onDeallocate(); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
+          >
+            Deallocate
+          </button>
+        </>
+      )}
+      {room.status === "AVAILABLE" && (
+        <>
+          <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
+          <button
+            onClick={() => { setOpen(false); onDelete(); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
+          >
+            Delete Room
+          </button>
+        </>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="shrink-0">
+      <button
+        ref={btnRef}
+        onClick={handleToggle}
+        className={`rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all ${compact ? "p-2" : "p-2"}`}
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+      {open && createPortal(menuItems, document.body)}
     </div>
   );
 }
@@ -114,7 +132,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
   return (
     <div
       onClick={() => roomData && onSelect(roomData)}
-      className={`relative bg-white dark:bg-[#111111] border rounded-xl p-3 transition-all group ${
+      className={`relative bg-white dark:bg-[#111111] border rounded-xl p-3.5 transition-all group ${
         !roomData ? "opacity-60 cursor-default" : "cursor-pointer"
       } ${
         isSelected
@@ -124,10 +142,10 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
     >
       {/* Top row */}
       <div className="flex items-start gap-2">
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
           ICON_CLASS[status] ?? "bg-slate-50 border-slate-100 text-slate-400 dark:bg-[#1a1a1a] dark:border-[#2a2a2a] dark:text-slate-600"
         }`}>
-          <Bed className="w-3.5 h-3.5" />
+          <Bed className="w-4 h-4" />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -137,7 +155,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
               <span className="text-[9px] font-mono text-slate-400 dark:text-[#888888]">{roomData.roomCode}</span>
             )}
           </div>
-          <div className="flex items-center gap-1 mt-1 flex-wrap">
+          <div className="flex items-center gap-1 mt-1.5 flex-wrap">
             <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border ${
               TYPE_BADGE[roomType] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-[#1e1e1e] dark:text-[#888888] dark:border-[#2a2a2a]"
             }`}>
@@ -159,7 +177,8 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
 
         {roomData && (
           <div onClick={(e) => e.stopPropagation()}>
-            <RoomActionMenu compact
+            <RoomActionMenu
+              compact
               room={roomData}
               onAllocate={() => onAllocate(roomData)}
               onAssignAttender={() => onAssignAttender(roomData)}
@@ -172,7 +191,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onAl
 
       {/* Patient info */}
       {roomData && status === "OCCUPIED" && roomData.currentPatient && !isMultiBed && (
-        <div className="mt-2 pt-2 border-t border-slate-100 dark:border-[#1a1a1a] space-y-1">
+        <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-[#1a1a1a] space-y-1">
           <div className="flex items-baseline gap-1.5 min-w-0">
             <span className="text-[9px] uppercase tracking-wide text-slate-400 dark:text-slate-600 shrink-0 w-11">Patient</span>
             <span className="text-[11px] font-semibold text-slate-800 dark:text-[#dddddd] truncate">
@@ -229,8 +248,22 @@ function Rooms() {
   const [showAllocateModal, setShowAllocateModal] = useState({ open: false, room: null });
   const [showAttenderModal, setShowAttenderModal] = useState({ open: false, room: null });
   const [infrastructure, setInfrastructure] = useState([]);
+  const [collapsedFloors, setCollapsedFloors] = useState(new Set());
+  const [collapsedWards, setCollapsedWards] = useState(new Set());
 
   const normalizeKey = (value) => value?.toString()?.trim()?.toLowerCase() || "";
+
+  const toggleFloor = (key) => setCollapsedFloors((prev) => {
+    const next = new Set(prev);
+    next.has(key) ? next.delete(key) : next.add(key);
+    return next;
+  });
+
+  const toggleWard = (key) => setCollapsedWards((prev) => {
+    const next = new Set(prev);
+    next.has(key) ? next.delete(key) : next.add(key);
+    return next;
+  });
 
   const fetchRooms = async () => {
     try {
@@ -443,6 +476,7 @@ function Rooms() {
             <div className="space-y-3">
               {filteredInfrastructure.map((building, bIdx) => (
                 <div key={building.id ?? bIdx} className="rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111]">
+
                   {/* Building header */}
                   <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-[#0d0d0d] border-b border-slate-200 dark:border-[#1e1e1e] rounded-t-xl">
                     <div className="flex items-center gap-2">
@@ -454,48 +488,78 @@ function Rooms() {
                     <SectionLabel icon={Layers} label="floors" count={building.floors.length} />
                   </div>
 
-                  <div className="p-3 space-y-3">
-                    {building.floors.map((floor, fIdx) => (
-                      <div key={floor.id ?? fIdx} className="rounded-lg border border-slate-100 dark:border-[#1e1e1e]">
-                        {/* Floor header */}
-                        <div className="flex items-center justify-between px-3 py-2 bg-slate-50/80 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1e1e1e] rounded-t-lg">
-                          <div className="flex items-center gap-1.5">
-                            <Layers className="w-3 h-3 text-slate-400" />
-                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                              {floor.name || `Floor ${fIdx + 1}`}
-                            </span>
-                          </div>
-                          <SectionLabel icon={LayoutGrid} label="wards" count={floor.wards.length} />
-                        </div>
+                  <div className="p-3 space-y-2">
+                    {building.floors.map((floor, fIdx) => {
+                      const floorKey = floor.id ?? `${bIdx}-${fIdx}`;
+                      const floorCollapsed = collapsedFloors.has(floorKey);
+                      return (
+                        <div key={floorKey} className="rounded-lg border border-slate-100 dark:border-[#1e1e1e]">
 
-                        <div className="p-3 space-y-3">
-                          {floor.wards.map((ward, wIdx) => (
-                            <div key={ward.id ?? wIdx}>
-                              {/* Ward label */}
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-1.5">
-                                  <LayoutGrid className="w-3 h-3 text-slate-400" />
-                                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                    {ward.name || `Ward ${wIdx + 1}`}
-                                  </span>
-                                </div>
-                                <span className="text-[10px] text-slate-400 dark:text-slate-600">{ward.rooms.length} rooms</span>
-                              </div>
-                              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2">
-                                {ward.rooms.map((room) => (
-                                  <InfrastructureRoomCard
-                                    key={room.name}
-                                    roomInfo={room}
-                                    roomData={room.roomData}
-                                    {...roomCardProps(room, room.roomData)}
-                                  />
-                                ))}
-                              </div>
+                          {/* Floor header — clickable to collapse */}
+                          <button
+                            onClick={() => toggleFloor(floorKey)}
+                            className="w-full flex items-center justify-between px-3 py-2 bg-slate-50/80 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1e1e1e] rounded-t-lg hover:bg-slate-100 dark:hover:bg-[#141414] transition-colors"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <Layers className="w-3 h-3 text-slate-400" />
+                              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                {floor.name || `Floor ${fIdx + 1}`}
+                              </span>
                             </div>
-                          ))}
+                            <div className="flex items-center gap-2">
+                              <SectionLabel icon={LayoutGrid} label="wards" count={floor.wards.length} />
+                              {floorCollapsed
+                                ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                                : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                              }
+                            </div>
+                          </button>
+
+                          {!floorCollapsed && (
+                            <div className="p-3 space-y-3">
+                              {floor.wards.map((ward, wIdx) => {
+                                const wardKey = ward.id ?? `${bIdx}-${fIdx}-${wIdx}`;
+                                const wardCollapsed = collapsedWards.has(wardKey);
+                                return (
+                                  <div key={wardKey}>
+                                    {/* Ward header — clickable to collapse */}
+                                    <button
+                                      onClick={() => toggleWard(wardKey)}
+                                      className="w-full flex items-center justify-between mb-2 px-1 py-1 rounded-lg hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        <LayoutGrid className="w-3 h-3 text-slate-400" />
+                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                          {ward.name || `Ward ${wIdx + 1}`}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 dark:text-slate-600">· {ward.rooms.length} rooms</span>
+                                      </div>
+                                      {wardCollapsed
+                                        ? <ChevronRight className="w-3 h-3 text-slate-400" />
+                                        : <ChevronDown className="w-3 h-3 text-slate-400" />
+                                      }
+                                    </button>
+
+                                    {!wardCollapsed && (
+                                      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2">
+                                        {ward.rooms.map((room) => (
+                                          <InfrastructureRoomCard
+                                            key={room.name}
+                                            roomInfo={room}
+                                            roomData={room.roomData}
+                                            {...roomCardProps(room, room.roomData)}
+                                          />
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
