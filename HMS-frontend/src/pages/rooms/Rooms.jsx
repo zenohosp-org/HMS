@@ -578,6 +578,15 @@ function Rooms() {
               style={{ position: "fixed", right, ...(top !== undefined ? { top } : { bottom }), zIndex: 50 }}
               className="w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-slate-100 dark:border-[#252525] py-1.5"
             >
+              {/* Multi-bed: allocate to a specific bed */}
+              {isMultiBed && (
+                <button
+                  onClick={() => { closeMenu(); setShowAllocateModal({ open: true, room }); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
+                >
+                  Allocate Patient
+                </button>
+              )}
               {/* Multi-bed: view beds in panel */}
               {isMultiBed && (
                 <button
