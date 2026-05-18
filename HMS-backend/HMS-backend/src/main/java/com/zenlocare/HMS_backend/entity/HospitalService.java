@@ -32,6 +32,10 @@ public class HospitalService {
     private BigDecimal price;
 
     @Builder.Default
+    @Column(name = "gst_rate", precision = 5, scale = 2)
+    private BigDecimal gstRate = BigDecimal.ZERO;
+
+    @Builder.Default
     private Boolean isActive = true;
 
     @Builder.Default

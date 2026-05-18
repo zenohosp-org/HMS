@@ -28,6 +28,7 @@ public class HospitalServiceService {
         service.setName(details.getName());
         service.setSpecializationId(details.getSpecializationId());
         service.setPrice(details.getPrice());
+        service.setGstRate(details.getGstRate());
         service.setIsActive(details.getIsActive());
         
         return repository.save(service);
