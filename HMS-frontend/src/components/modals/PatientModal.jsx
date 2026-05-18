@@ -3,8 +3,6 @@ import { validateEmail, validateRequired, validatePhone } from "@/utils/validato
 import StateSelect from "@/components/StateSelect";
 import SidePane from "@/components/SidePane";
 
-const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
-
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 const INSURANCE_SCHEMES = [
@@ -187,40 +185,6 @@ function PatientModal({ patient, onClose, onSave }) {
             labelClassName="label" />
         </div>
       </div>
-
-      {/* ── Financial Profile ── */}
-      <div>
-        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Financial Profile</p>
-        <p className="text-[11px] text-slate-400 dark:text-[#666] mb-3">Assessed at registration to understand patient's payment background</p>
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { value: "CASH", label: "Cash Patient", desc: "Weaker financial background — hospital expects periodic payment assurance" },
-            { value: "CREDIT", label: "Credit Patient", desc: "Financially sound — can settle the full bill at end of treatment" },
-          ].map(opt => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => set("paymentCategory", opt.value)}
-              className={`text-left p-3 rounded-lg border-2 transition-all ${
-                form.paymentCategory === opt.value
-                  ? opt.value === "CASH"
-                    ? "border-amber-500 bg-amber-50 dark:bg-amber-500/10"
-                    : "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10"
-                  : "border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a]"
-              }`}
-            >
-              <p className={`text-xs font-bold ${
-                form.paymentCategory === opt.value
-                  ? opt.value === "CASH" ? "text-amber-700 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400"
-                  : "text-slate-700 dark:text-[#ccc]"
-              }`}>{opt.label}</p>
-              <p className="text-[10px] text-slate-400 dark:text-[#666] mt-0.5 leading-relaxed">{opt.desc}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Registration Advance removed — collected at IPD admission (Step 4) */}
 
       {/* ── Emergency Contact ── */}
       <div>

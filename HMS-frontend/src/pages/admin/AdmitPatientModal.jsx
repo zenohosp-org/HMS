@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, patientAdvanceApi } from '@/utils/api'
 import api from '@/utils/api'
-import { X, Search, BedDouble, User, CheckCircle2, Loader2, Wallet } from 'lucide-react'
+import { X, Search, BedDouble, User, CheckCircle2, Loader2 } from 'lucide-react'
 
 const ADMISSION_SOURCES = ['OPD_REFERRAL', 'EMERGENCY', 'DIRECT']
 const RELATIONSHIPS = ['Spouse', 'Parent', 'Child', 'Sibling', 'Friend', 'Guardian', 'Other']
@@ -39,6 +39,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   })
 
   // Finance step
+  const [paymentCategory, setPaymentCategory] = useState('CASH')
   const [advanceAmount, setAdvanceAmount] = useState('')
   const [advancePaymentMethod, setAdvancePaymentMethod] = useState('Cash')
   const [advanceNotes, setAdvanceNotes] = useState('')
@@ -96,6 +97,10 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
       .finally(() => setBedsLoading(false))
   }, [form.roomId, isMultiBed, user?.hospitalId])
 
+  useEffect(() => {
+    if (selectedPatient) setPaymentCategory(selectedPatient.paymentCategory || 'CASH')
+  }, [selectedPatient])
+
   const handleSubmit = async () => {
     if (!selectedPatient) return
     if (isMultiBed && !form.bedId) {
@@ -133,6 +138,17 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
           // Advance failure must not block admission success
         }
       }
+
+      try {
+        await patientApi.update(selectedPatient.id, {
+          ...selectedPatient,
+          paymentCategory,
+          hospitalId: user.hospitalId,
+        })
+      } catch {
+        // Non-blocking — category can be updated from patient profile
+      }
+
       onAdmitted()
     } catch (err) {
       alert(err.response?.data?.message || 'Admission failed')
@@ -142,7 +158,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   }
 
   const advanceAmt = Number(advanceAmount) || 0
-  const paymentCategory = selectedPatient?.paymentCategory ?? 'CASH'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -370,24 +385,33 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
           {step === 4 && (
             <div className="space-y-6">
 
-              {/* Financial category (read-only) */}
+              {/* Payment Category */}
               <div>
                 <p className="text-xs font-bold text-slate-500 dark:text-[#aaa] uppercase tracking-wider mb-2">
-                  Patient Financial Profile
+                  Payment Category
                 </p>
-                <div className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold ${
-                  paymentCategory === 'CREDIT'
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400'
-                    : 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400'
-                }`}>
-                  <Wallet className="w-4 h-4" />
-                  {paymentCategory === 'CREDIT'
-                    ? 'Credit Patient — settles full bill at discharge'
-                    : 'Cash Patient — periodic payment assurance required'}
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: 'CASH',   label: 'Cash',   desc: 'Periodic payments during stay' },
+                    { value: 'CREDIT', label: 'Credit', desc: 'Full bill settled at discharge' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setPaymentCategory(opt.value)}
+                      className={`text-left p-3 rounded-lg border-2 transition-all ${
+                        paymentCategory === opt.value
+                          ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1e1e1e]'
+                          : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a]'
+                      }`}
+                    >
+                      <p className={`text-sm font-bold ${paymentCategory === opt.value ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-[#aaa]'}`}>
+                        {opt.label}
+                      </p>
+                      <p className="text-xs text-slate-400 dark:text-[#666] mt-0.5">{opt.desc}</p>
+                    </button>
+                  ))}
                 </div>
-                <p className="text-xs text-slate-400 dark:text-[#666] mt-1.5">
-                  Category set at registration. Update in patient profile if needed.
-                </p>
               </div>
 
               {/* Admission advance (optional) */}
@@ -418,7 +442,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                       className="input"
                       value={advancePaymentMethod}
                       disabled={advanceAmt === 0}
-                      onChange={e => { setAdvancePaymentMethod(e.target.value); setAdvanceBankAccountId('') }}
+                      onChange={e => setAdvancePaymentMethod(e.target.value)}
                     >
                       {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
