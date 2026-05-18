@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -134,9 +134,9 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
   }, [admission?.id])
 
   /* ── Fetch IPD log (patient-specific, scoped to this admission window) ── */
-  const fetchLogs = useCallback(async () => {
+  const fetchLogs = useCallback(async (silent = false) => {
     if (!admission) return
-    setLoadingLogs(true)
+    if (!silent) setLoadingLogs(true)
     const events = []
 
     const admitStart = new Date(admission.admissionDate).getTime()
@@ -292,7 +292,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
 
     events.sort((a, b) => b.timestamp - a.timestamp)
     setLogs(events)
-    setLoadingLogs(false)
+    if (!silent) setLoadingLogs(false)
   }, [admission?.id, user?.hospitalId])
 
   const countMealSlots = (admitDate, dischargeDate, chargeTime) => {
@@ -466,7 +466,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     if (!recordForm.description.trim()) return
     setSavingRecord(true)
     try {
-      await recordApi.create({
+      const saved = await recordApi.create({
         patientId: admission.patientId,
         hospitalId: user.hospitalId,
         historyType: recordForm.historyType,
@@ -475,16 +475,42 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
         admissionId: admission.id,
         admissionNumber: admission.admissionNumber || admission.ipdId,
       })
+
+      // Optimistic insert — timeline updates instantly, no spinner
+      const creatorName = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ')
+      const optimisticEvent = {
+        id: `rec-${saved?.id ?? Date.now()}`,
+        type: 'RECORD',
+        title: recordForm.historyType.replace('_', ' '),
+        subtitle: [saved?.mrn, creatorName].filter(Boolean).join(' · '),
+        description: recordForm.description,
+        timestamp: new Date(),
+      }
+      setLogs(prev => [optimisticEvent, ...prev])
+
       notify('Record added', 'success')
       setShowAddRecord(false)
       setRecordForm({ historyType: 'CONSULTATION', description: '', nextVisitDate: '' })
-      fetchLogs()
+
+      // Silent background resync to reconcile full server state
+      fetchLogs(true)
     } catch {
       notify('Failed to add record', 'error')
     } finally {
       setSavingRecord(false)
     }
   }
+
+  // Keep a stable ref so the polling interval always calls the latest fetchLogs
+  const fetchLogsRef = useRef(fetchLogs)
+  useEffect(() => { fetchLogsRef.current = fetchLogs }, [fetchLogs])
+
+  // Poll every 30 s while IPD Log tab is visible — updates radiology/OT/room events silently
+  useEffect(() => {
+    if (activeTab !== 'IPD Log') return
+    const id = setInterval(() => fetchLogsRef.current(true), 30_000)
+    return () => clearInterval(id)
+  }, [activeTab])
 
   /* ── Reset on admission change ── */
   useEffect(() => {
