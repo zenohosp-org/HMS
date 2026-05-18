@@ -303,33 +303,13 @@ export default function Billing() {
           <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-800/30">
             {invoices.length} invoices
           </span>
-        </div>
-        <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-2">
-          <ReceiptText className="w-4 h-4" /> New Invoice
-        </button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Total Invoices"    value={stats.total}            sub="all time"               Icon={ReceiptText} accent="blue"    />
-        <StatCard label="Revenue Collected" value={fmt(stats.collected)}   sub="from paid invoices"     Icon={TrendingUp}  accent="emerald" />
-        <StatCard label="Outstanding"       value={fmt(stats.outstanding)} sub="unpaid invoices"        Icon={AlertCircle} accent="amber"   />
-        <StatCard label="Billed Today"      value={stats.todayCount}       sub="invoices created today" Icon={Clock}       accent="rose"    />
-      </div>
-
-      {/* ── Invoice Table ──────────────────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden min-h-0">
-
-        {/* Tab bar + controls */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-[#1a1a1a] gap-3 flex-wrap">
 
           {/* OPD / IPD dropdown */}
           <div className="relative">
             <button
               onClick={(e) => { e.stopPropagation(); setShowTabMenu(v => !v) }}
-              className="flex items-center gap-2.5 h-9 px-4 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm font-bold text-slate-800 dark:text-white hover:border-slate-300 dark:hover:border-[#3a3a3a] transition-all"
+              className="flex items-center gap-2 h-8 px-3 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm font-bold text-slate-700 dark:text-white hover:border-slate-300 dark:hover:border-[#3a3a3a] transition-all"
             >
-              <span className="text-[10px] font-bold text-slate-400 dark:text-[#666] uppercase tracking-widest">Type</span>
               <span>{tab}</span>
               <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-[#1a1a1a] text-slate-500 dark:text-[#888] text-[10px] font-bold">
                 {tab === 'OPD' ? opdInvoices.length : ipdInvoices.length}
@@ -366,6 +346,25 @@ export default function Billing() {
               </>
             )}
           </div>
+        </div>
+        <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-2">
+          <ReceiptText className="w-4 h-4" /> New Invoice
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        <StatCard label="Total Invoices"    value={stats.total}            sub="all time"               Icon={ReceiptText} accent="blue"    />
+        <StatCard label="Revenue Collected" value={fmt(stats.collected)}   sub="from paid invoices"     Icon={TrendingUp}  accent="emerald" />
+        <StatCard label="Outstanding"       value={fmt(stats.outstanding)} sub="unpaid invoices"        Icon={AlertCircle} accent="amber"   />
+        <StatCard label="Billed Today"      value={stats.todayCount}       sub="invoices created today" Icon={Clock}       accent="rose"    />
+      </div>
+
+      {/* ── Invoice Table ──────────────────────────────────────────────────────── */}
+      <div className="flex flex-col flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden min-h-0">
+
+        {/* Controls bar */}
+        <div className="flex items-center justify-end px-5 py-3 border-b border-slate-100 dark:border-[#1a1a1a] gap-3 flex-wrap">
 
           {/* Status filter + search */}
           <div className="flex items-center gap-2">
