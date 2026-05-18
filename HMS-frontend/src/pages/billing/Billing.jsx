@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, Fragment } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
@@ -89,7 +89,6 @@ export default function Billing() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
-  const [expandedId, setExpandedId] = useState(null)
   const [activeAdmissions, setActiveAdmissions] = useState([])
   const [finalizeAdmission, setFinalizeAdmission] = useState(null)
   const [detailInvoiceId, setDetailInvoiceId] = useState(null)
@@ -404,16 +403,14 @@ export default function Billing() {
                   const isIPDPaidAdmitted = isActiveAdmission && inv.status === 'PAID'
                   const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID
                   const StatusIcon = cfg.Icon
-                  const isExpanded = expandedId === inv.id
                   const admission = isActiveAdmission
                     ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId))
                     : null
                   return (
-                    <Fragment key={inv.id}>
-                      <tr
-                        className={`group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all ${isIPDPending ? 'cursor-default' : 'cursor-pointer'}`}
-                        onClick={() => { if (!isIPDPending) setExpandedId(isExpanded ? null : inv.id) }}
-                      >
+                    <tr
+                      key={inv.id}
+                      className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all"
+                    >
                         <td className="px-5 py-4">
                           <p className="font-bold text-sm text-slate-900 dark:text-white">{inv.invoiceNumber}</p>
                           <p className="text-xs text-slate-400 mt-0.5">
@@ -474,47 +471,7 @@ export default function Billing() {
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                         </td>
-                      </tr>
-
-                      {isExpanded && inv.items?.length > 0 && (
-                        <tr className="bg-slate-50/70 dark:bg-[#0d0d0d]">
-                          <td colSpan={7} className="px-5 pb-4 pt-2">
-                            <div className="rounded-lg border border-slate-100 dark:border-[#1e1e1e] overflow-hidden">
-                              <table className="w-full text-sm">
-                                <thead>
-                                  <tr className="bg-slate-100/60 dark:bg-[#1a1a1a] text-[11px] text-slate-400 uppercase tracking-widest">
-                                    <th className="text-left px-4 py-2 font-bold">Type</th>
-                                    <th className="text-left px-4 py-2 font-bold">Description</th>
-                                    <th className="text-center px-4 py-2 font-bold">Qty</th>
-                                    <th className="text-right px-4 py-2 font-bold">Unit</th>
-                                    <th className="text-right px-4 py-2 font-bold">Total</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
-                                  {inv.items.map((item, idx) => {
-                                    const m = TYPE_META[item.itemType] ?? TYPE_META.CUSTOM
-                                    return (
-                                      <tr key={idx} className="bg-white dark:bg-[#111]">
-                                        <td className="px-4 py-2.5">
-                                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${m.bg}`}>
-                                            {m.icon}
-                                            <span className="text-slate-600 dark:text-[#aaa]">{item.itemType?.replace('_', ' ')}</span>
-                                          </span>
-                                        </td>
-                                        <td className="px-4 py-2.5 text-slate-700 dark:text-[#ccc]">{item.description}</td>
-                                        <td className="px-4 py-2.5 text-center text-slate-500 dark:text-[#888]">×{item.quantity}</td>
-                                        <td className="px-4 py-2.5 text-right text-slate-500 dark:text-[#888]">₹{Number(item.unitPrice).toLocaleString('en-IN')}</td>
-                                        <td className="px-4 py-2.5 text-right font-semibold text-slate-800 dark:text-white">₹{Number(item.totalPrice).toLocaleString('en-IN')}</td>
-                                      </tr>
-                                    )
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
+                    </tr>
                   )
                 })
               )}

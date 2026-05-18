@@ -291,7 +291,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#111] rounded-xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col border border-slate-200 dark:border-[#2a2a2a]">
+      <div className="bg-white dark:bg-[#111] rounded-xl shadow-2xl w-full max-w-8xl max-h-[92vh] flex flex-col border border-slate-200 dark:border-[#2a2a2a]">
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
