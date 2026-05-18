@@ -22,7 +22,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
   const [billError, setBillError] = useState(false)
 
   // Billing status fetched on open
-  const [billStatus, setBillStatus] = useState(null)   // null | 'UNPAID' | 'PARTIAL' | 'PAID'
+  const [billStatus, setBillStatus] = useState(null)   // null | 'UNPAID' | 'PARTIAL' | 'PAID' | 'SETTLED' | 'UNSETTLED'
   const [billTotal, setBillTotal] = useState(0)
   const [billPaid, setBillPaid] = useState(0)
 
@@ -37,7 +37,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
       .catch(() => {})
   }, [admission.id])
 
-  const billClear = billStatus === 'PAID'
+  const billClear = billStatus === 'PAID' || billStatus === 'SETTLED'
   const balanceDue = Math.max(0, billTotal - billPaid)
 
   const handleDischarge = async () => {
@@ -59,7 +59,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
       const msg = err?.response?.data?.message || err?.message || ''
       if (msg.includes('INVOICE_UNPAID')) {
         setBillError(true)
-        setBillStatus(prev => prev === 'PAID' ? prev : 'UNPAID')
+        setBillStatus(prev => (prev === 'PAID' || prev === 'SETTLED') ? prev : 'UNSETTLED')
       } else {
         notify(msg || 'Discharge failed', 'error')
       }
@@ -98,12 +98,12 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
               <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-rose-700 dark:text-rose-400">
-                  {billStatus === 'PARTIAL' ? 'Partial payment — balance outstanding' : 'Bill not paid'}
+                  {billStatus === 'PARTIAL' ? 'Partial payment — balance outstanding' : 'Bill not settled'}
                 </p>
                 <p className="text-xs text-rose-600 dark:text-rose-300 mt-0.5">
                   {billStatus === 'PARTIAL'
                     ? <><strong>{fmt(balanceDue)}</strong> still due. Collect the remaining balance in the <strong>Billing</strong> tab before discharging.</>
-                    : <>Finalize and pay the patient's bill in the <strong>Billing</strong> tab before discharging.</>
+                    : <>Finalize and settle the patient's bill in the <strong>Billing</strong> tab before discharging.</>
                   }
                 </p>
               </div>
@@ -230,28 +230,26 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
         <div className={`px-4 py-3 rounded-lg border flex items-start gap-3 ${
           billStatus === null
             ? 'bg-slate-50 dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a]'
-            : billStatus === 'PAID'
+            : billClear
               ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
               : billStatus === 'PARTIAL'
                 ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/20'
                 : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20'
         }`}>
           <IndianRupee className={`w-4 h-4 shrink-0 mt-0.5 ${
-            billStatus === 'PAID' ? 'text-emerald-500'
+            billClear ? 'text-emerald-500'
               : billStatus === 'PARTIAL' ? 'text-orange-500'
               : 'text-rose-400'
           }`} />
           <div>
             {billStatus === null && (
-              <>
-                <p className="text-xs font-semibold text-slate-500">Checking bill…</p>
-              </>
+              <p className="text-xs font-semibold text-slate-500">Checking bill…</p>
             )}
-            {billStatus === 'PAID' && (
+            {billClear && (
               <>
                 <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Bill fully settled</p>
                 <p className="text-[11px] text-emerald-600 dark:text-emerald-300 mt-0.5">
-                  {fmt(billTotal)} paid — patient can be discharged.
+                  {fmt(billTotal)} settled — patient can be discharged.
                 </p>
               </>
             )}
@@ -263,11 +261,11 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
                 </p>
               </>
             )}
-            {billStatus === 'UNPAID' && (
+            {(billStatus === 'UNPAID' || billStatus === 'UNSETTLED') && (
               <>
-                <p className="text-xs font-semibold text-rose-700 dark:text-rose-400">Bill not paid</p>
+                <p className="text-xs font-semibold text-rose-700 dark:text-rose-400">Bill not settled</p>
                 <p className="text-[11px] text-rose-600 dark:text-rose-300 mt-0.5">
-                  Finalize and pay {billTotal > 0 ? fmt(billTotal) : 'the bill'} in the Billing tab before discharging.
+                  Finalize and settle {billTotal > 0 ? fmt(billTotal) : 'the bill'} in the Billing tab before discharging.
                 </p>
               </>
             )}
