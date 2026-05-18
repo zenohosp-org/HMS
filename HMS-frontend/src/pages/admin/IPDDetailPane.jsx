@@ -5,12 +5,12 @@ import {
   X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors,
   Activity, Package, Receipt, Phone, User, Loader2, ExternalLink,
   RotateCcw, Wallet, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle,
-  CheckCircle2, ShieldAlert
+  CheckCircle2, ShieldAlert, Plus, FileText
 } from 'lucide-react'
 import { fmtDateTime, fmtDateMed } from '@/utils/date'
 import {
   roomLogsApi, radiologyApi, ambulanceApi, assetApi, invoiceApi,
-  hospitalServiceApi, patientServicesApi, admissionApi
+  hospitalServiceApi, patientServicesApi, admissionApi, recordApi
 } from '@/utils/api'
 import axios from 'axios'
 import SSOCookieManager from '@/utils/ssoManager'
@@ -36,6 +36,7 @@ const EVENT_META = {
   AMBULANCE:         { label: 'AMBULANCE',          badge: 'text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/5' },
   OT:                { label: 'OT PROCEDURE',       badge: 'text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/5' },
   DISCHARGED:        { label: 'DISCHARGED',         badge: 'text-slate-600 dark:text-slate-400 border-slate-200 dark:border-[#2a2a2a] bg-slate-100 dark:bg-[#1a1a1a]' },
+  RECORD:            { label: 'MEDICAL RECORD',     badge: 'text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/5' },
 }
 
 const BILL_TYPE_META = {
@@ -75,6 +76,11 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
   const [otInvoicesError, setOtInvoicesError] = useState(false)
   const [loadingBilling, setLoadingBilling] = useState(false)
   const [billingFetched, setBillingFetched] = useState(false)
+
+  // Add record
+  const [showAddRecord, setShowAddRecord] = useState(false)
+  const [recordForm, setRecordForm] = useState({ historyType: 'CONSULTATION', description: '', nextVisitDate: '' })
+  const [savingRecord, setSavingRecord] = useState(false)
 
   // Discharge guard
   const [checkingDischarge, setCheckingDischarge] = useState(false)
@@ -232,6 +238,23 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
             timestamp: new Date(b.createdAt),
             badge: b.status,
           }))),
+
+      // Medical records scoped to this admission
+      recordApi.list(admission.patientId, user.hospitalId).then(records => {
+        records
+          .filter(r => r.admissionId && String(r.admissionId) === String(admission.id))
+          .forEach(r => {
+            const creator = r.createdBy ? `${r.createdBy.firstName} ${r.createdBy.lastName}` : ''
+            events.push({
+              id: `rec-${r.id}`,
+              type: 'RECORD',
+              title: (r.historyType || 'OTHER').replace('_', ' '),
+              subtitle: [r.mrn, creator].filter(Boolean).join(' · '),
+              description: r.description || '',
+              timestamp: new Date(r.createdAt),
+            })
+          })
+      }).catch(() => {}),
 
       // OT bookings — scoped to this admission to prevent cross-admission bleed
       otApi.get('/api/ot/bookings').then(res => {
@@ -438,6 +461,31 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     fetchBilling()
   }, [fetchBilling])
 
+  const handleSaveRecord = async (e) => {
+    e.preventDefault()
+    if (!recordForm.description.trim()) return
+    setSavingRecord(true)
+    try {
+      await recordApi.create({
+        patientId: admission.patientId,
+        hospitalId: user.hospitalId,
+        historyType: recordForm.historyType,
+        description: recordForm.description,
+        nextVisitDate: recordForm.nextVisitDate || undefined,
+        admissionId: admission.id,
+        admissionNumber: admission.admissionNumber || admission.ipdId,
+      })
+      notify('Record added', 'success')
+      setShowAddRecord(false)
+      setRecordForm({ historyType: 'CONSULTATION', description: '', nextVisitDate: '' })
+      fetchLogs()
+    } catch {
+      notify('Failed to add record', 'error')
+    } finally {
+      setSavingRecord(false)
+    }
+  }
+
   /* ── Reset on admission change ── */
   useEffect(() => {
     setActiveTab('IPD Log')
@@ -450,6 +498,8 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     setAssetsFetched(false)
     setBillingFetched(false)
     setDischargeBlock(null)
+    setShowAddRecord(false)
+    setRecordForm({ historyType: 'CONSULTATION', description: '', nextVisitDate: '' })
     fetchLogs()
   }, [admission?.id])
 
@@ -615,6 +665,68 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
           {/* IPD Log */}
           {activeTab === 'IPD Log' && (
             <div className="p-5">
+              {/* Add Record button + form */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555]">Timeline</p>
+                  <button
+                    onClick={() => setShowAddRecord(v => !v)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] hover:bg-slate-100 dark:hover:bg-[#222] transition-colors"
+                  >
+                    {showAddRecord ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                    {showAddRecord ? 'Cancel' : 'Add Record'}
+                  </button>
+                </div>
+                {showAddRecord && (
+                  <form onSubmit={handleSaveRecord} className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] p-4 space-y-3 mb-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FileText className="w-3.5 h-3.5 text-slate-400" />
+                      <p className="text-xs font-semibold text-slate-700 dark:text-[#ccc]">New Medical Record</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="label text-[11px]">Type</label>
+                        <select
+                          className="input text-sm"
+                          value={recordForm.historyType}
+                          onChange={e => setRecordForm(p => ({ ...p, historyType: e.target.value }))}
+                        >
+                          {['CONSULTATION','PRESCRIPTION','LAB_RESULT','SURGERY','DIAGNOSIS','OTHER'].map(t => (
+                            <option key={t} value={t}>{t.replace('_', ' ')}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label text-[11px]">Next Visit Date</label>
+                        <input
+                          type="datetime-local"
+                          className="input text-sm"
+                          value={recordForm.nextVisitDate}
+                          onChange={e => setRecordForm(p => ({ ...p, nextVisitDate: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="label text-[11px]">Notes / Description <span className="text-rose-500">*</span></label>
+                      <textarea
+                        rows={3}
+                        className="input text-sm resize-none"
+                        placeholder="Enter notes or description…"
+                        value={recordForm.description}
+                        onChange={e => setRecordForm(p => ({ ...p, description: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button type="button" className="btn-secondary text-xs" onClick={() => setShowAddRecord(false)}>Cancel</button>
+                      <button type="submit" className="btn-primary text-xs" disabled={savingRecord}>
+                        {savingRecord ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save Record'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
               {loadingLogs ? (
                 <div className="flex items-center justify-center py-16 gap-2 text-slate-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -649,6 +761,9 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                           <p className="text-sm font-semibold text-slate-800 dark:text-[#ddd] leading-snug">{ev.title}</p>
                           {ev.subtitle && (
                             <p className="text-xs text-slate-400 dark:text-[#666] mt-1 leading-snug">{ev.subtitle}</p>
+                          )}
+                          {ev.description && (
+                            <p className="text-xs text-slate-600 dark:text-[#bbb] mt-1.5 leading-snug">{ev.description}</p>
                           )}
                           {ev.badge && ev.badge !== ev.subtitle && (
                             <p className="text-[10px] text-slate-300 dark:text-[#555] mt-1 uppercase tracking-wider">{ev.badge}</p>

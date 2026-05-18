@@ -85,13 +85,38 @@ function SectionHeader({ icon, title }) {
 }
 function RecordCard({ record }) {
   const meta = TYPE_META[record.historyType] ?? TYPE_META.OTHER;
-  return <div className="flex gap-4 group">{
-    /* Timeline dot */
-  }<div className="flex flex-col items-center"><div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${meta.dot}`} /><div className="w-px flex-1 bg-slate-200 dark:bg-[#1e1e1e] mt-1" /></div>{
-    /* Card */
-  }<div className="flex-1 pb-5"><div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e]
-                    rounded-lg p-5 hover:border-slate-300 dark:hover:border-[#2a2a2a] transition-colors"><div className="flex items-start justify-between gap-3 mb-3"><span className={`text-[11px] font-semibold uppercase tracking-wide px-3 py-1 rounded-full border
-                            ${meta.color} ${meta.darkColor}`}>{meta.label}</span><span className="text-xs text-slate-600 dark:text-[#999999] shrink-0 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{formatDateTime(record.createdAt)}</span></div>{record.description && <p className="text-base font-semibold text-slate-800 dark:text-[#e0e0e0] leading-snug whitespace-pre-wrap mt-2">{record.description}</p>}{record.nextVisitDate && <div className="flex items-center gap-1.5 mt-4 text-xs font-semibold text-emerald-600 dark:text-emerald-400"><Calendar className="w-4 h-4" /><span>Next visit: {formatDateTime(record.nextVisitDate)}</span></div>}<div className="flex items-center gap-1.5 mt-3 text-xs text-slate-600 dark:text-[#999999]"><Stethoscope className="w-4 h-4 text-slate-500" /><span>{record.createdBy.firstName} {record.createdBy.lastName}<span className="text-slate-300 dark:text-[#444444]"> · {record.createdBy.role}</span></span></div></div></div></div>;
+  return (
+    <div className="flex gap-3 group">
+      <div className="flex flex-col items-center shrink-0">
+        <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${meta.dot}`} />
+        <div className="w-px flex-1 bg-slate-100 dark:bg-[#1e1e1e] mt-1" />
+      </div>
+      <div className="flex-1 pb-3">
+        <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-4 hover:border-slate-300 dark:hover:border-[#2a2a2a] transition-colors">
+          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border ${meta.color} ${meta.darkColor}`}>{meta.label}</span>
+              {record.mrn && <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-[#1a1a1a] text-slate-500 dark:text-[#888] border border-slate-200 dark:border-[#2a2a2a]">{record.mrn}</span>}
+            </div>
+            <span className="text-xs text-slate-400 dark:text-[#666] flex items-center gap-1"><Clock className="w-3 h-3" />{formatDateTime(record.createdAt)}</span>
+          </div>
+          {record.description && <p className="text-sm text-slate-700 dark:text-[#ccc] leading-snug whitespace-pre-wrap">{record.description}</p>}
+          <div className="flex items-center justify-between mt-2.5">
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-[#666]">
+              <Stethoscope className="w-3 h-3" />
+              <span>{record.createdBy.firstName} {record.createdBy.lastName} · {record.createdBy.role}</span>
+            </div>
+            {record.nextVisitDate && (
+              <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                <Calendar className="w-3 h-3" />
+                <span>{formatDate(record.nextVisitDate)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 function AddRecordForm({ patientId, hospitalId, onSaved, onCancel }) {
   const { notify } = useNotification();
@@ -220,6 +245,19 @@ function PatientDetails() {
   const latestRecord = records[0] ?? null;
   const prescriptions = records.filter((r) => r.historyType === "PRESCRIPTION");
   const labResults = records.filter((r) => r.historyType === "LAB_RESULT");
+  const groupedRecords = useMemo(() => {
+    const ipdMap = new Map();
+    const general = [];
+    records.forEach(r => {
+      if (r.admissionNumber) {
+        if (!ipdMap.has(r.admissionNumber)) ipdMap.set(r.admissionNumber, []);
+        ipdMap.get(r.admissionNumber).push(r);
+      } else {
+        general.push(r);
+      }
+    });
+    return { ipdGroups: [...ipdMap.entries()], general };
+  }, [records]);
   const blood = patient?.bloodGroup ?? null;
   const bloodDarkClass = blood ? BLOOD_DARK[blood] ?? "dark:bg-[#2a2a2a] dark:text-[#888888] dark:border-[#333333]" : "";
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#444444]" /></div>;
@@ -344,7 +382,7 @@ function PatientDetails() {
     onCancel={() => setShowAddRecord(false)}
   />}{
     /* Timeline */
-  }{recordsLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : records.length === 0 ? <div className="py-16 text-center"><ClipboardList className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No records yet</p><p className="text-xs text-slate-400 dark:text-[#444444] mt-1">Add the first medical record above.</p></div> : <div>{records.map((r) => <RecordCard key={r.id} record={r} />)}</div>}</div>}{
+  }{recordsLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : records.length === 0 ? <div className="py-16 text-center"><ClipboardList className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No records yet</p><p className="text-xs text-slate-400 dark:text-[#444444] mt-1">Add the first medical record above.</p></div> : <div className="space-y-6">{groupedRecords.ipdGroups.map(([admNum, recs]) => <div key={admNum}><div className="flex items-center gap-2 mb-3"><span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900">{admNum}</span><div className="flex-1 h-px bg-slate-100 dark:bg-[#1e1e1e]" /><span className="text-[10px] text-slate-400 dark:text-[#555]">{recs.length} record{recs.length !== 1 ? "s" : ""}</span></div><div>{recs.map(r => <RecordCard key={r.id} record={r} />)}</div></div>)}{groupedRecords.general.length > 0 && <div>{groupedRecords.ipdGroups.length > 0 && <div className="flex items-center gap-2 mb-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-slate-500 dark:text-[#666] border border-slate-200 dark:border-[#2a2a2a]">General</span><div className="flex-1 h-px bg-slate-100 dark:bg-[#1e1e1e]" /></div>}<div>{groupedRecords.general.map(r => <RecordCard key={r.id} record={r} />)}</div></div>}</div>}</div>}{
     /* ── APPOINTMENTS TAB ── */
   }{tab === "appointments" && <div className="w-full max-w-5xl"><div className="flex items-center justify-between mb-5"><div><h3 className="font-semibold text-slate-800 dark:text-[#e5e5e5]">Appointments</h3><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{appointments.length} appointment{appointments.length !== 1 ? "s" : ""} for {patient.firstName}</p></div></div>{appointmentsLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : appointments.length === 0 ? <div className="py-16 text-center"><Calendar className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No appointments yet</p><p className="text-xs text-slate-400 dark:text-[#444444] mt-1">Book an appointment from the Appointments Dashboard.</p></div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{appointments.map((appt) => <div key={appt.id} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg p-5 hover:border-slate-300 dark:hover:border-[#333333] transition-colors relative overflow-hidden">{
     /* Status indicator line */
