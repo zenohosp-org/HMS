@@ -108,7 +108,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
         setDischargeBlock({ reason: 'no_invoice', amount: null })
         return
       }
-      const unpaid = admissionInvoices.find(inv => inv.status !== 'PAID')
+      const unpaid = admissionInvoices.find(inv => inv.status !== 'PAID' && inv.status !== 'SETTLED')
       if (unpaid) {
         setDischargeBlock({ reason: 'unpaid', amount: Number(unpaid.total || 0) })
         return
@@ -443,7 +443,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     const estimatedTotal = items.reduce((s, i) => s + Number(i.totalPrice || 0), 0)
     if (estimatedTotal > 0) {
       invoiceApi.getAdmissionInvoice(admission.id)
-        .then(inv => { if (inv?.id && inv.status !== 'PAID') invoiceApi.updateEstimate(inv.id, estimatedTotal) })
+        .then(inv => { if (inv?.id && inv.status !== 'PAID' && inv.status !== 'SETTLED') invoiceApi.updateEstimate(inv.id, estimatedTotal) })
         .catch(() => {})
     }
 
@@ -930,13 +930,13 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                       <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5 font-mono">{finalInvoice.invoiceNumber} · {fmtDate(finalInvoice.createdAt)}</p>
                     </div>
                     <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                      finalInvoice.status === 'PAID'
+                      (finalInvoice.status === 'PAID' || finalInvoice.status === 'SETTLED')
                         ? 'text-emerald-700 border-emerald-200 bg-emerald-50 dark:text-emerald-400 dark:border-emerald-500/20 dark:bg-emerald-500/5'
                         : 'text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-500/20 dark:bg-amber-500/5'
                     }`}>
-                      {finalInvoice.status === 'PAID'
-                        ? <><CheckCircle2 className="w-3 h-3" /> PAID</>
-                        : <><AlertTriangle className="w-3 h-3" /> UNPAID</>}
+                      {(finalInvoice.status === 'PAID' || finalInvoice.status === 'SETTLED')
+                        ? <><CheckCircle2 className="w-3 h-3" /> SETTLED</>
+                        : <><AlertTriangle className="w-3 h-3" /> UNSETTLED</>}
                     </span>
                   </div>
 
