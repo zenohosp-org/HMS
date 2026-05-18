@@ -28,7 +28,8 @@ public class RecordService {
     }
 
     public PatientRecord createRecord(UUID hospitalId, Integer patientId, User createdBy,
-            String historyType, String description, LocalDateTime nextVisitDate) {
+            String historyType, String description, LocalDateTime nextVisitDate,
+            java.util.UUID admissionId, String admissionNumber) {
 
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
@@ -43,6 +44,8 @@ public class RecordService {
                 .historyType(historyType)
                 .description(description)
                 .nextVisitDate(nextVisitDate)
+                .admissionId(admissionId)
+                .admissionNumber(admissionNumber)
                 .createdAt(LocalDateTime.now())
                 .build();
 

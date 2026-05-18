@@ -40,6 +40,12 @@ public class PatientRecord {
     @Column(name = "next_visit_date")
     private LocalDateTime nextVisitDate;
 
+    @Column(name = "admission_id")
+    private UUID admissionId;
+
+    @Column(name = "admission_number", length = 50)
+    private String admissionNumber;
+
     @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

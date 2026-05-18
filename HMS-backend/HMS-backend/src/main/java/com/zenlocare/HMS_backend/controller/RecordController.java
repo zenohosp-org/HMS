@@ -38,7 +38,8 @@ public class RecordController {
 
         PatientRecord record = recordService.createRecord(
                 req.getHospitalId(), req.getPatientId(), user,
-                req.getHistoryType(), req.getDescription(), req.getNextVisitDate());
+                req.getHistoryType(), req.getDescription(), req.getNextVisitDate(),
+                req.getAdmissionId(), req.getAdmissionNumber());
         return ResponseEntity.ok(mapToDto(record));
     }
 
@@ -49,6 +50,8 @@ public class RecordController {
         dto.setDescription(record.getDescription());
         dto.setNextVisitDate(record.getNextVisitDate() != null ? record.getNextVisitDate().toString() : null);
         dto.setCreatedAt(record.getCreatedAt().toString());
+        dto.setAdmissionId(record.getAdmissionId() != null ? record.getAdmissionId().toString() : null);
+        dto.setAdmissionNumber(record.getAdmissionNumber());
 
         RecordDto.CreatorDto creator = new RecordDto.CreatorDto();
         creator.setFirstName(record.getCreatedBy().getFirstName());
@@ -66,6 +69,8 @@ public class RecordController {
         private String historyType;
         private String description;
         private LocalDateTime nextVisitDate;
+        private UUID admissionId;
+        private String admissionNumber;
     }
 
     @Data
@@ -75,6 +80,8 @@ public class RecordController {
         private String description;
         private String nextVisitDate;
         private String createdAt;
+        private String admissionId;
+        private String admissionNumber;
         private CreatorDto createdBy;
 
         @Data
