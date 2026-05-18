@@ -1,27 +1,46 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { hospitalServiceApi } from "@/utils/api";
 import SidePane from "@/components/SidePane";
 
+// Indian GST common rates for quick selection
+const GST_PRESETS = [
+  { label: "0%",  value: 0,  note: "Clinical & diagnostic" },
+  { label: "5%",  value: 5,  note: "Food & basic services" },
+  { label: "12%", value: 12, note: "Medicines" },
+  { label: "18%", value: 18, note: "General amenities" },
+]
+
 function AddServiceModal({ isOpen, onClose, service, specializations, onSuccess }) {
   const { user } = useAuth();
   const { notify } = useNotification();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: "", specializationId: "", price: "" });
+  const [formData, setFormData] = useState({ name: "", specializationId: "", price: "", gstRate: 0 });
 
   useEffect(() => {
     if (service) {
-      setFormData({ name: service.name, specializationId: service.specializationId, price: service.price.toString() });
+      setFormData({
+        name: service.name,
+        specializationId: service.specializationId,
+        price: service.price.toString(),
+        gstRate: service.gstRate ?? 0,
+      });
     } else {
-      setFormData({ name: "", specializationId: "", price: "" });
+      setFormData({ name: "", specializationId: "", price: "", gstRate: 0 });
     }
   }, [service, isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const payload = { ...formData, hospitalId: user.hospitalId, price: parseFloat(formData.price), isActive: service ? service.isActive : true };
+    const payload = {
+      ...formData,
+      hospitalId: user.hospitalId,
+      price: parseFloat(formData.price),
+      gstRate: Number(formData.gstRate),
+      isActive: service ? service.isActive : true,
+    };
     setLoading(true);
     try {
       if (service) {
@@ -62,6 +81,40 @@ function AddServiceModal({ isOpen, onClose, service, specializations, onSuccess 
         <label className={labelCls}>Price (₹) <span className="text-rose-500">*</span></label>
         <input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData((p) => ({ ...p, price: e.target.value }))}
           placeholder="0.00" className={inputCls} required />
+      </div>
+      <div className="space-y-2">
+        <label className={labelCls}>GST Rate</label>
+        <div className="flex gap-2">
+          {GST_PRESETS.map(({ label, value }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setFormData((p) => ({ ...p, gstRate: value }))}
+              className={`flex-1 py-2 rounded-lg border-2 text-sm font-bold transition-all ${
+                Number(formData.gstRate) === value
+                  ? "border-slate-900 dark:border-white bg-slate-900 dark:bg-white text-white dark:text-slate-900"
+                  : "border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888] hover:border-slate-400 dark:hover:border-[#444]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min="0"
+            max="28"
+            step="0.5"
+            value={formData.gstRate}
+            onChange={(e) => setFormData((p) => ({ ...p, gstRate: Math.min(28, parseFloat(e.target.value) || 0) }))}
+            className={inputCls + " w-24"}
+          />
+          <span className="text-sm text-slate-500 dark:text-[#888]">%</span>
+          <p className="text-xs text-slate-400 dark:text-[#666] flex-1">
+            Most clinical services: 0% · Medicines: 12% · Amenities: 18%
+          </p>
+        </div>
       </div>
     </form>
   );

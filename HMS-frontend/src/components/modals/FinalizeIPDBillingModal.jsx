@@ -84,6 +84,9 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const [collectingPayment, setCollectingPayment] = useState(false)
   const [fallbackInvoiceNo] = useState(generateInvoiceNumber)
 
+  // Credit patient early payment override
+  const [showEarlyCollect, setShowEarlyCollect] = useState(false)
+
   const effectiveDischargeDate = new Date().toISOString()
 
   useEffect(() => {
@@ -460,13 +463,74 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   }
 
   const needsBankAccount = payMethod === 'Bank Transfer' || payMethod === 'Card'
+  const isCash = (admission.paymentCategory || 'CASH') === 'CASH'
+
+  // ── Collect Payment form (shared between Cash and Credit early-collect) ──────
+  const CollectForm = () => (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label">Amount (₹)</label>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            className="input"
+            value={payAmount}
+            onChange={e => setPayAmount(e.target.value)}
+            placeholder={String(Math.round(balanceDue))}
+          />
+        </div>
+        <div>
+          <label className="label">Payment Method</label>
+          <select
+            className="input"
+            value={payMethod}
+            onChange={e => { setPayMethod(e.target.value); setPayBankAccountId('') }}
+          >
+            {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+      </div>
+      {needsBankAccount && bankAccounts.length > 0 && (
+        <div>
+          <label className="label flex items-center gap-1.5">
+            <Landmark className="w-3 h-3" /> Credit to
+          </label>
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {bankAccounts.map(a => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => setPayBankAccountId(a.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all ${
+                  payBankAccountId === a.id
+                    ? 'border-slate-900 dark:border-white bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                    : 'border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-slate-500 dark:text-[#888] hover:border-slate-400'
+                }`}
+              >
+                {payBankAccountId === a.id && <CheckCircle2 className="w-3 h-3 shrink-0" />}
+                {a.accountName}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {balanceDue > 0 && (
+        <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-100 dark:border-[#1e1e1e]">
+          <span className="text-slate-500 dark:text-[#888] font-medium">Balance due</span>
+          <span className="font-bold text-blue-600 dark:text-blue-400 tabular-nums">{fmt(balanceDue)}</span>
+        </div>
+      )}
+    </div>
+  )
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-8 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white dark:bg-[#111] rounded-xl shadow-2xl w-full max-w-3xl border border-slate-200 dark:border-[#2a2a2a] mb-8">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-[#111] rounded-xl shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col border border-slate-200 dark:border-[#2a2a2a]">
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e]">
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
           <div>
             <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Receipt className="w-4 h-4 text-indigo-500" /> IPD Running Bill
@@ -492,63 +556,82 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           </div>
         </div>
 
-        <div className="p-6 space-y-5">
-          {loadingBill ? (
-            <div className="flex flex-col items-center gap-3 py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-              <p className="text-sm font-medium text-slate-600 dark:text-[#888]">Loading bill and pending charges…</p>
-            </div>
-          ) : (
-            <>
-              {/* Items table */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">Bill Items</p>
-                    <p className="text-[11px] text-slate-400 dark:text-[#666] mt-0.5">
-                      Auto-refreshed with all pending charges — review and adjust
-                    </p>
-                  </div>
-                  <button onClick={addBlankItem} className="btn-secondary text-xs flex items-center gap-1.5">
-                    <Plus className="w-3.5 h-3.5" /> Add Item
-                  </button>
-                </div>
+        {/* ── Body ── */}
+        {loadingBill ? (
+          <div className="flex flex-col items-center gap-3 py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+            <p className="text-sm font-medium text-slate-600 dark:text-[#888]">Loading bill and pending charges…</p>
+          </div>
+        ) : (
+          <div className="flex flex-1 overflow-hidden min-h-0">
 
-                {/* Reopen notice — shown when bill was previously PAID */}
+            {/* ════ LEFT PANEL ════ */}
+            <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-slate-100 dark:border-[#1e1e1e]">
+
+              {/* Left sub-header */}
+              <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
+                <p className="font-bold text-slate-900 dark:text-white">Bill Items</p>
+                <button onClick={addBlankItem} className="btn-secondary text-xs flex items-center gap-1.5">
+                  <Plus className="w-3.5 h-3.5" /> Add Item
+                </button>
+              </div>
+
+              {/* Alerts (shrink-0) */}
+              <div className="shrink-0">
                 {invoiceStatus === 'PAID' && (
-                  <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 mb-3">
+                  <div className="flex items-start gap-2.5 mx-5 mt-3 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
                     <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                     <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
                       This bill was marked paid ({fmt(totalCashPaid)} collected). Adding new charges and saving will reopen it — patient must settle the new balance before discharge.
                     </p>
                   </div>
                 )}
-
                 {hasOpdCarryOver && (
-                  <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25 mb-3">
+                  <div className="flex items-start gap-2.5 mx-5 mt-3 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25">
                     <Stethoscope className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                     <p className="text-xs font-medium text-blue-700 dark:text-blue-400">
                       OPD → IPD: consultation charge carried over from the originating OPD visit.
                     </p>
                   </div>
                 )}
+                {hasZeroPrice && !isPaid && (
+                  <div className="flex items-start gap-2.5 mx-5 mt-3 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+                    <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                      Some items have ₹0 — check radiology charges or add unit price manually.
+                    </p>
+                  </div>
+                )}
+              </div>
 
+              {/* Scrollable items table */}
+              <div className="flex-1 overflow-y-auto">
                 {items.length === 0 ? (
-                  <div className="py-12 text-center border-2 border-dashed border-slate-100 dark:border-[#2a2a2a] rounded-lg">
+                  <div className="py-16 mx-6 mt-4 text-center border-2 border-dashed border-slate-100 dark:border-[#2a2a2a] rounded-lg">
                     <p className="text-sm font-medium text-slate-500">No charges detected</p>
                     <p className="text-xs text-slate-400 mt-1">Add items manually above</p>
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-lg overflow-hidden">
-                    <div className="grid grid-cols-12 gap-2 px-4 py-2.5 bg-slate-50 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1a1a1a]">
-                      {['Type', 'Description', 'Qty', 'Unit ₹', 'Total'].map((h, i) => (
-                        <div key={h} className={`text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#666] ${i === 0 ? 'col-span-2' : i === 1 ? 'col-span-4' : i === 2 ? 'col-span-2 text-center' : i === 3 ? 'col-span-2 text-right' : 'col-span-2 text-right'}`}>{h}</div>
-                      ))}
-                    </div>
-                    <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
-                      {items.map(item => (
-                        <div key={item.key} className={`grid grid-cols-12 gap-2 items-center px-4 py-2.5 group hover:bg-slate-50/50 dark:hover:bg-[#151515] ${item.fromOpd ? 'border-l-2 border-blue-400 bg-blue-50/30 dark:bg-blue-500/5' : ''}`}>
-                          <div className="col-span-2">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-white dark:bg-[#111] z-10">
+                      <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-8">No</th>
+                        <th className="px-2 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-28">Type</th>
+                        <th className="px-2 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Description</th>
+                        <th className="px-2 py-3 text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-16">Qty</th>
+                        <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-24">Unit ₹</th>
+                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-24">Total</th>
+                        <th className="px-2 py-3 w-8" />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
+                      {items.map((item, idx) => (
+                        <tr
+                          key={item.key}
+                          className={`group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors ${item.fromOpd ? 'border-l-2 border-blue-400 bg-blue-50/30 dark:bg-blue-500/5' : ''}`}
+                        >
+                          <td className="px-4 py-2.5 text-xs text-slate-400 dark:text-[#555]">{idx + 1}</td>
+                          <td className="px-2 py-2.5">
                             <select
                               value={item.itemType ?? 'CUSTOM'}
                               onChange={e => updateItem(item.key, { itemType: e.target.value })}
@@ -559,225 +642,281 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                                 <option key={k} value={k}>{v.label}</option>
                               ))}
                             </select>
-                          </div>
-                          <div className="col-span-4">
-                            <input className="input py-1.5 text-sm" placeholder="Description…" value={item.description}
+                          </td>
+                          <td className="px-2 py-2.5">
+                            <div className="flex items-center gap-1.5">
+                              {item.fromOpd && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-600 shrink-0">OPD</span>
+                              )}
+                              <input
+                                className="input py-1.5 text-sm"
+                                placeholder="Description…"
+                                value={item.description}
+                                disabled={isPaid}
+                                onChange={e => updateItem(item.key, { description: e.target.value })}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-2 py-2.5">
+                            <input
+                              type="number"
+                              min={1}
+                              className="input py-1.5 text-sm text-center"
+                              value={item.quantity}
                               disabled={isPaid}
-                              onChange={e => updateItem(item.key, { description: e.target.value })} />
-                          </div>
-                          <div className="col-span-2">
-                            <input type="number" min={1} className="input py-1.5 text-sm text-center" value={item.quantity}
+                              onChange={e => updateItem(item.key, { quantity: parseInt(e.target.value) || 1 })}
+                            />
+                          </td>
+                          <td className="px-2 py-2.5">
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              className="input py-1.5 text-sm text-right"
+                              value={item.unitPrice}
                               disabled={isPaid}
-                              onChange={e => updateItem(item.key, { quantity: parseInt(e.target.value) || 1 })} />
-                          </div>
-                          <div className="col-span-2">
-                            <input type="number" min={0} step="0.01" className="input py-1.5 text-sm text-right" value={item.unitPrice}
-                              disabled={isPaid}
-                              onChange={e => updateItem(item.key, { unitPrice: parseFloat(e.target.value) || 0 })} />
-                          </div>
-                          <div className="col-span-2 flex items-center justify-end gap-1.5">
-                            {item.fromOpd && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-600 shrink-0">OPD</span>
-                            )}
+                              onChange={e => updateItem(item.key, { unitPrice: parseFloat(e.target.value) || 0 })}
+                            />
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
                             <span className="text-sm font-bold text-slate-800 dark:text-white tabular-nums">{fmt(item.totalPrice || 0)}</span>
+                          </td>
+                          <td className="px-2 py-2.5">
                             {!isPaid && (
-                              <button onClick={() => removeItem(item.key)}
-                                className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-slate-300 hover:text-rose-500 transition-all">
-                                <Trash2 className="w-3 h-3" />
+                              <button
+                                onClick={() => removeItem(item.key)}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-slate-300 hover:text-rose-500 transition-all"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
-                          </div>
-                        </div>
+                          </td>
+                        </tr>
                       ))}
-                    </div>
-
-                    {/* Totals */}
-                    <div className="px-4 py-4 border-t border-slate-100 dark:border-[#1a1a1a] flex justify-end bg-slate-50/50 dark:bg-[#0a0a0a]">
-                      <div className="w-64 space-y-2 text-sm">
-                        <div className="flex justify-between text-slate-500 dark:text-[#888]">
-                          <span>Subtotal</span>
-                          <span className="font-semibold tabular-nums">{fmt(subtotal)}</span>
-                        </div>
-                        {!isPaid && (
-                          <div className="flex items-center justify-between text-slate-500 dark:text-[#888]">
-                            <span>Discount (%)</span>
-                            <input type="number" min={0} max={100} className="input w-16 py-1 text-sm text-center"
-                              value={discountPct} onChange={e => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))} />
-                          </div>
-                        )}
-                        {discountAmt > 0 && (
-                          <div className="flex justify-between text-rose-500 dark:text-rose-400">
-                            <span>Discount</span>
-                            <span className="tabular-nums">-{fmt(discountAmt)}</span>
-                          </div>
-                        )}
-                        {medicineSubtotal > 0 && (
-                          <div className="flex justify-between text-slate-500 dark:text-[#888]">
-                            <span>GST on medicines (18%)</span>
-                            <span className="tabular-nums">{fmt(gst)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between font-bold text-slate-900 dark:text-white text-base border-t border-slate-100 dark:border-[#1a1a1a] pt-2.5 mt-1">
-                          <span>Grand Total</span>
-                          <span className="tabular-nums">{fmt(grandTotal)}</span>
-                        </div>
-                        {advanceAdjusted > 0 && (
-                          <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
-                            <span className="flex items-center gap-1"><Wallet className="w-3.5 h-3.5" /> Advance Credit</span>
-                            <span className="tabular-nums">-{fmt(advanceAdjusted)}</span>
-                          </div>
-                        )}
-                        {totalCashPaid > 0 && (
-                          <div className="flex justify-between text-slate-500 dark:text-[#888]">
-                            <span>Paid so far</span>
-                            <span className="tabular-nums">-{fmt(totalCashPaid)}</span>
-                          </div>
-                        )}
-                        <div className={`flex justify-between font-bold text-base border-t border-slate-100 dark:border-[#1a1a1a] pt-2.5 mt-1 ${isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}`}>
-                          <span>{isPaid ? 'Fully Settled' : 'Balance Due'}</span>
-                          <span className="tabular-nums">{fmt(balanceDue)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    </tbody>
+                  </table>
                 )}
               </div>
 
-              {hasZeroPrice && !isPaid && (
-                <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
-                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
-                    Some items have ₹0 — check radiology charges or add unit price manually.
-                  </p>
+              {/* Totals footer */}
+              <div className="shrink-0 border-t border-slate-100 dark:border-[#1e1e1e] px-6 py-4 space-y-2 bg-slate-50/60 dark:bg-[#0a0a0a]">
+                <div className="flex justify-between text-sm text-slate-500 dark:text-[#888]">
+                  <span>Subtotal</span>
+                  <span className="font-semibold tabular-nums">{fmt(subtotal)}</span>
                 </div>
-              )}
-
-              {/* Advance Credits */}
-              {advances.length > 0 && (
-                <div className="rounded-lg border border-emerald-200 dark:border-emerald-500/25 bg-emerald-50 dark:bg-emerald-500/10 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-emerald-100 dark:border-emerald-500/15">
-                    <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                      Advance Credits — {fmt(totalAdvance)} available
-                    </p>
+                {!isPaid && (
+                  <div className="flex items-center justify-between text-sm text-slate-500 dark:text-[#888]">
+                    <span>Discount (%)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      className="input w-16 py-1 text-sm text-center"
+                      value={discountPct}
+                      onChange={e => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))}
+                    />
                   </div>
-                  <div className="divide-y divide-emerald-100 dark:divide-emerald-500/10">
-                    {advances.map(a => {
-                      const remaining = Math.max(0, Number(a.amount) - Number(a.appliedAmount || 0))
-                      return (
-                        <div key={a.id} className="flex items-center justify-between px-4 py-2 text-xs">
-                          <div>
-                            <span className="font-semibold text-emerald-700 dark:text-emerald-300">{a.receiptNumber}</span>
-                            <span className="text-emerald-600/70 dark:text-emerald-400/60 ml-2">
-                              {a.source} · {a.paymentMethod}
+                )}
+                {discountAmt > 0 && (
+                  <div className="flex justify-between text-sm text-rose-500 dark:text-rose-400">
+                    <span>Discount</span>
+                    <span className="tabular-nums">-{fmt(discountAmt)}</span>
+                  </div>
+                )}
+                {medicineSubtotal > 0 && (
+                  <div className="flex justify-between text-sm text-slate-500 dark:text-[#888]">
+                    <span>GST on medicines (18%)</span>
+                    <span className="tabular-nums">{fmt(gst)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center font-bold text-base text-slate-900 dark:text-white border-t border-slate-100 dark:border-[#1a1a1a] pt-2.5 mt-1">
+                  <span>Grand Total</span>
+                  <span className="tabular-nums">{fmt(grandTotal)}</span>
+                </div>
+                {advanceAdjusted > 0 && (
+                  <div className="flex justify-between text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                    <span className="flex items-center gap-1"><Wallet className="w-3.5 h-3.5" /> Advance Credit</span>
+                    <span className="tabular-nums">-{fmt(advanceAdjusted)}</span>
+                  </div>
+                )}
+                {totalCashPaid > 0 && (
+                  <div className="flex justify-between text-sm text-slate-500 dark:text-[#888]">
+                    <span>Paid so far</span>
+                    <span className="tabular-nums">-{fmt(totalCashPaid)}</span>
+                  </div>
+                )}
+                <div className={`flex justify-between font-bold text-base border-t border-slate-100 dark:border-[#1a1a1a] pt-2.5 mt-1 ${isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                  <span>{isPaid ? 'Fully Settled' : 'Balance Due'}</span>
+                  <span className="tabular-nums">{fmt(balanceDue)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ════ RIGHT PANEL ════ */}
+            <div className="w-96 shrink-0 flex flex-col overflow-hidden">
+
+              {/* Right sub-header */}
+              <div className="px-5 py-3.5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
+                <p className="font-bold text-slate-900 dark:text-white">Payment details</p>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+
+                {/* 1. Payment category badge */}
+                {isCash ? (
+                  <div className="flex items-center gap-2.5 px-4 py-3 rounded-lg bg-slate-900 dark:bg-white">
+                    <Wallet className="w-3.5 h-3.5 text-white dark:text-slate-900 shrink-0" />
+                    <span className="text-xs font-semibold text-white dark:text-slate-900">
+                      Cash · Pay during stay
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2.5 px-4 py-3 rounded-lg bg-amber-100 dark:bg-amber-500/20 border border-amber-200 dark:border-amber-500/30">
+                    <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                    <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                      Credit · Payment due at discharge
+                    </span>
+                  </div>
+                )}
+
+                {/* 2. Advance Credits */}
+                {advances.length > 0 && (
+                  <div className="rounded-lg border border-emerald-200 dark:border-emerald-500/25 bg-emerald-50 dark:bg-emerald-500/10 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-emerald-100 dark:border-emerald-500/15">
+                      <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                        Advance Credits — {fmt(totalAdvance)} available
+                      </p>
+                    </div>
+                    <div className="divide-y divide-emerald-100 dark:divide-emerald-500/10">
+                      {advances.map(a => {
+                        const remaining = Math.max(0, Number(a.amount) - Number(a.appliedAmount || 0))
+                        return (
+                          <div key={a.id} className="flex items-center justify-between px-4 py-2 text-xs">
+                            <div>
+                              <span className="font-semibold text-emerald-700 dark:text-emerald-300">{a.receiptNumber}</span>
+                              <span className="text-emerald-600/70 dark:text-emerald-400/60 ml-2">
+                                {a.source} · {a.paymentMethod}
+                              </span>
+                            </div>
+                            <span className="font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
+                              {fmt(remaining)} available
                             </span>
                           </div>
-                          <span className="font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
-                            {fmt(remaining)} available
-                          </span>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Payment History */}
-              {existingPayments.length > 0 && (
-                <div className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1a1a1a]">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
-                    <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">
-                      Payment History
+                {/* 3. Payment History */}
+                {existingPayments.length > 0 && (
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white mb-3">Payment History</p>
+                    <div className="space-y-3">
+                      {existingPayments.map((p, i) => (
+                        <div key={p.id ?? i} className="flex items-start gap-4">
+                          <p className="text-sm text-slate-600 dark:text-[#aaa] whitespace-nowrap shrink-0 tabular-nums">
+                            {fmtTime(p.paidAt)}
+                          </p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-slate-400 dark:text-[#666] mt-0.5">{p.paymentMethod}</p>
+                            {p.collectedBy && (
+                              <p className="text-xs text-slate-400 dark:text-[#666]">· {p.collectedBy}</p>
+                            )}
+                          </div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white tabular-nums shrink-0">{fmt(p.amount)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4a. CASH patients — Collect Payment */}
+                {isCash && !isPaid && (
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <IndianRupee className="w-3.5 h-3.5" /> Collect Payment
                     </p>
+                    <CollectForm />
                   </div>
-                  <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
-                    {existingPayments.map((p, i) => (
-                      <div key={p.id ?? i} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                        <div>
-                          <span className="font-semibold text-slate-700 dark:text-slate-200">{fmt(p.amount)}</span>
-                          <span className="text-slate-400 ml-2 text-xs">{p.paymentMethod}</span>
-                          {p.collectedBy && <span className="text-slate-400 ml-2 text-xs">· {p.collectedBy}</span>}
-                        </div>
-                        <span className="text-xs text-slate-400">{fmtTime(p.paidAt)}</span>
+                )}
+
+                {/* 4b. CREDIT patients — Deferred notice + optional early collect */}
+                {!isCash && !isPaid && (
+                  <div className="space-y-3">
+                    <div className="px-4 py-3.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+                      <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                        Payment deferred to discharge. The full balance will be collected when the patient is discharged.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowEarlyCollect(v => !v)}
+                      className="text-xs text-slate-500 dark:text-[#888] hover:text-slate-700 dark:hover:text-[#ccc] transition-colors"
+                    >
+                      {showEarlyCollect ? '− Hide early payment' : '+ Collect early payment'}
+                    </button>
+                    {showEarlyCollect && (
+                      <div className="pt-1">
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                          <IndianRupee className="w-3.5 h-3.5" /> Collect Early Payment
+                        </p>
+                        <CollectForm />
                       </div>
-                    ))}
+                    )}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Collect Payment */}
-              {!isPaid && (
-                <div className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] p-4 space-y-3">
-                  <p className="text-xs font-bold text-slate-500 dark:text-[#aaa] uppercase tracking-wider flex items-center gap-1.5">
-                    <IndianRupee className="w-3.5 h-3.5" /> Collect Payment
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="label">Amount (₹)</label>
-                      <input type="number" min="0" step="1" className="input"
-                        value={payAmount}
-                        onChange={e => setPayAmount(e.target.value)}
-                        placeholder={String(Math.round(balanceDue))} />
-                      <p className="text-[11px] text-slate-400 mt-1">Partial payment accepted — enter any amount</p>
-                    </div>
-                    <div>
-                      <label className="label">Payment Method</label>
-                      <select className="input" value={payMethod}
-                        onChange={e => { setPayMethod(e.target.value); setPayBankAccountId('') }}>
-                        {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  {needsBankAccount && bankAccounts.length > 0 && (
-                    <div>
-                      <label className="label">Credit to Bank Account</label>
-                      <select className="input" value={payBankAccountId} onChange={e => setPayBankAccountId(e.target.value)}>
-                        <option value="">Select account…</option>
-                        {bankAccounts.map(a => (
-                          <option key={a.id} value={a.id}>{a.accountName} — {a.bankName}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                {/* 5. Bill Notes */}
+                <div>
+                  <label className="label">Bill Notes (optional)</label>
+                  <input
+                    className="input"
+                    placeholder={`IPD Bill — Admission ${admission.admissionNumber}`}
+                    value={billNotes}
+                    onChange={e => setBillNotes(e.target.value)}
+                    disabled={isPaid}
+                  />
                 </div>
-              )}
 
-              <div>
-                <label className="label">Bill Notes (optional)</label>
-                <input className="input" placeholder={`IPD Bill — Admission ${admission.admissionNumber}`}
-                  value={billNotes} onChange={e => setBillNotes(e.target.value)} disabled={isPaid} />
               </div>
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] rounded-b-xl">
-          <button type="button" onClick={onClose} className="btn-secondary">Close</button>
-          {!isPaid && !loadingBill && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSaveBill}
-                disabled={savingBill || items.length === 0}
-                className="btn-secondary flex items-center gap-2"
-              >
-                {savingBill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
-                {savingBill ? 'Saving…' : 'Save Bill'}
-              </button>
-              <button
-                onClick={handleCollectPayment}
-                disabled={collectingPayment || !Number(payAmount)}
-                className="btn-primary flex items-center gap-2"
-              >
-                {collectingPayment
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Recording…</>
-                  : <><IndianRupee className="w-4 h-4" /> Collect {payAmount ? fmt(Number(payAmount)) : 'Payment'}</>
-                }
-              </button>
             </div>
-          )}
-        </div>
+
+          </div>
+        )}
+
+        {/* ── Footer ── */}
+        {!loadingBill && (
+          <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] rounded-b-xl shrink-0">
+            <button type="button" onClick={onClose} className="btn-secondary">Close</button>
+            {!isPaid && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSaveBill}
+                  disabled={savingBill || items.length === 0}
+                  className="btn-secondary flex items-center gap-2"
+                >
+                  {savingBill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
+                  {savingBill ? 'Saving…' : 'Save Bill'}
+                </button>
+                {(isCash || showEarlyCollect) && (
+                  <button
+                    onClick={handleCollectPayment}
+                    disabled={collectingPayment || !Number(payAmount)}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    {collectingPayment
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Recording…</>
+                      : <><IndianRupee className="w-4 h-4" /> Collect {payAmount ? fmt(Number(payAmount)) : 'Payment'}</>
+                    }
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   )

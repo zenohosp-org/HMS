@@ -206,6 +206,7 @@ function Services() {
                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Service Name</th>
                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Department</th>
                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Price</th>
+                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">GST %</th>
                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4" />
               </tr>
@@ -213,7 +214,7 @@ function Services() {
             <tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-20 text-center">
+                  <td colSpan={6} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <Loader2 className="w-8 h-8 animate-spin text-slate-900 dark:text-white" />
                       <p className="text-sm font-medium text-slate-600">Loading services…</p>
@@ -222,7 +223,7 @@ function Services() {
                 </tr>
               ) : filteredServices.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-20 text-center">
+                  <td colSpan={6} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-[#0f0f0f] flex items-center justify-center">
                         <Settings2 className="w-8 h-8 text-slate-200 dark:text-slate-800" />
@@ -246,6 +247,15 @@ function Services() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-bold text-slate-900 dark:text-white text-sm">₹{s.price}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${
+                        Number(s.gstRate || 0) > 0
+                          ? "bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/30"
+                          : "bg-slate-50 dark:bg-[#1a1a1a] text-slate-400 dark:text-[#666] border-slate-200 dark:border-[#2a2a2a]"
+                      }`}>
+                        {Number(s.gstRate || 0)}%
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${
