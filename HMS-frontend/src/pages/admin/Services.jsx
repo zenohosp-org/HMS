@@ -249,13 +249,13 @@ function Services() {
                       <p className="font-bold text-slate-900 dark:text-white text-sm">₹{s.price}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                        Number(s.gstRate || 0) > 0
-                          ? "bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/30"
-                          : "bg-slate-50 dark:bg-[#1a1a1a] text-slate-400 dark:text-[#666] border-slate-200 dark:border-[#2a2a2a]"
-                      }`}>
-                        {Number(s.gstRate || 0)}%
-                      </span>
+                      {Number(s.gstRate || 0) > 0 ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/30">
+                          {Number(s.gstRate)}%
+                        </span>
+                      ) : (
+                        <span className="text-slate-300 dark:text-[#444] text-sm">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${
