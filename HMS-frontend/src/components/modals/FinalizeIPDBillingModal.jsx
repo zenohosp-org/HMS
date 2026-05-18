@@ -533,7 +533,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
           <div>
             <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-indigo-500" /> IPD Running Bill
+              <Receipt className="w-4 h-4 text-indigo-500" /> IPD Bill
             </h2>
             <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">
               {admission.patientName} · {admission.admissionNumber}
@@ -563,10 +563,11 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
             <p className="text-sm font-medium text-slate-600 dark:text-[#888]">Loading bill and pending charges…</p>
           </div>
         ) : (
-          <div className="flex flex-1 overflow-hidden min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex">
 
             {/* ════ LEFT PANEL ════ */}
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-slate-100 dark:border-[#1e1e1e]">
+            <div className="flex flex-col flex-1 min-w-0 border-r border-slate-100 dark:border-[#1e1e1e]">
 
               {/* Left sub-header */}
               <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
@@ -578,14 +579,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
               {/* Alerts (shrink-0) */}
               <div className="shrink-0">
-                {(invoiceStatus === 'PAID' || invoiceStatus === 'SETTLED') && (
-                  <div className="flex items-start gap-2.5 mx-5 mt-3 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
-                    <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                      This bill is settled ({fmt(totalCashPaid)} collected). Adding new charges and saving will reopen it — patient must settle the new balance before discharge.
-                    </p>
-                  </div>
-                )}
                 {hasOpdCarryOver && (
                   <div className="flex items-start gap-2.5 mx-5 mt-3 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25">
                     <Stethoscope className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
@@ -604,8 +597,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                 )}
               </div>
 
-              {/* Scrollable items table */}
-              <div className="flex-1 overflow-y-auto">
+              {/* Items table */}
+              <div>
                 {items.length === 0 ? (
                   <div className="py-16 mx-6 mt-4 text-center border-2 border-dashed border-slate-100 dark:border-[#2a2a2a] rounded-lg">
                     <p className="text-sm font-medium text-slate-500">No charges detected</p>
@@ -618,7 +611,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                         <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-8">No</th>
                         <th className="px-2 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-28">Type</th>
                         <th className="px-2 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Description</th>
-                        <th className="px-2 py-3 text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-16">Qty</th>
+                        <th className="px-2 py-3 text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-20">Qty</th>
                         <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-24">Unit ₹</th>
                         <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-24">Total</th>
                         <th className="px-2 py-3 w-8" />
@@ -661,7 +654,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                             <input
                               type="number"
                               min={1}
-                              className="input py-1.5 text-sm text-center"
+                              className="input py-1.5 text-sm text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               value={item.quantity}
                               disabled={isPaid}
                               onChange={e => updateItem(item.key, { quantity: parseInt(e.target.value) || 1 })}
@@ -711,7 +704,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                       type="number"
                       min={0}
                       max={100}
-                      className="input w-16 py-1 text-sm text-center"
+                      className="input !w-16 shrink-0 py-1 text-sm text-center"
                       value={discountPct}
                       onChange={e => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))}
                     />
@@ -753,14 +746,14 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
             </div>
 
             {/* ════ RIGHT PANEL ════ */}
-            <div className="w-96 shrink-0 flex flex-col overflow-hidden">
+            <div className="w-96 shrink-0 flex flex-col">
 
               {/* Right sub-header */}
               <div className="px-5 py-3.5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
                 <p className="font-bold text-slate-900 dark:text-white">Payment details</p>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              <div className="p-5 space-y-5">
 
                 {/* 1. Payment category badge */}
                 {isCash ? (
@@ -836,7 +829,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                 {isCash && !isPaid && (
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <IndianRupee className="w-3.5 h-3.5" /> Collect Payment
+                      <IndianRupee className="w-3.5 h-3.5" /> Amount Paid
                     </p>
                     <CollectForm />
                   </div>
@@ -860,7 +853,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                     {showEarlyCollect && (
                       <div className="pt-1">
                         <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                          <IndianRupee className="w-3.5 h-3.5" /> Collect Early Payment
+                          <IndianRupee className="w-3.5 h-3.5" /> Amount Paid
                         </p>
                         <CollectForm />
                       </div>
@@ -883,6 +876,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
               </div>
             </div>
 
+            </div>
           </div>
         )}
 
@@ -908,7 +902,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   >
                     {collectingPayment
                       ? <><Loader2 className="w-4 h-4 animate-spin" /> Recording…</>
-                      : <><IndianRupee className="w-4 h-4" /> Collect {payAmount ? fmt(Number(payAmount)) : 'Payment'}</>
+                      : <><IndianRupee className="w-4 h-4" /> Amount Paid</>
+
                     }
                   </button>
                 )}

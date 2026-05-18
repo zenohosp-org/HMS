@@ -340,7 +340,7 @@ export default function Billing() {
             <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#2a2a2a] rounded-lg p-0.5">
               {(tab === 'IPD'
                 ? [{ key: 'ALL', label: 'All' }, { key: 'NOT_SETTLED', label: 'Not Settled' }, { key: 'SETTLED', label: 'Settled' }]
-                : [{ key: 'ALL', label: 'All' }, { key: 'UNPAID', label: 'Unpaid' }, { key: 'PARTIAL', label: 'Partial' }, { key: 'PAID', label: 'Paid' }, { key: 'CANCELLED', label: 'Cancelled' }]
+                : [{ key: 'ALL', label: 'All' }, { key: 'UNPAID', label: 'Unpaid' }, { key: 'PAID', label: 'Paid' }, { key: 'CANCELLED', label: 'Cancelled' }]
               ).map(({ key, label }) => (
                 <button
                   key={key}
