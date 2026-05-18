@@ -10,7 +10,7 @@ import {
   ReceiptText, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
   BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench,
-  Receipt, Eye, Plus,
+  Receipt, Eye, Plus, MoreHorizontal, ChevronDown,
 } from 'lucide-react'
 
 const PAGE_SIZE = 10
@@ -91,6 +91,8 @@ export default function Billing() {
   const [activeAdmissions, setActiveAdmissions] = useState([])
   const [finalizeAdmission, setFinalizeAdmission] = useState(null)
   const [detailInvoiceId, setDetailInvoiceId] = useState(null)
+  const [menuState, setMenuState] = useState(null)
+  const [showTabMenu, setShowTabMenu] = useState(false)
 
   const load = async () => {
     if (!user?.hospitalId) return
@@ -141,6 +143,22 @@ export default function Billing() {
   }
 
   useEffect(() => { load() }, [user?.hospitalId])
+
+  useEffect(() => {
+    const close = () => { setMenuState(null); setShowTabMenu(false) }
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [])
+
+  const openRowMenu = (inv, btnEl) => {
+    const r = btnEl.getBoundingClientRect()
+    const flipUp = window.innerHeight - r.bottom < 210
+    setMenuState({
+      inv,
+      right: window.innerWidth - r.right,
+      ...(flipUp ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }),
+    })
+  }
 
   const reloadAdmissions = () => load()
 
@@ -305,28 +323,48 @@ export default function Billing() {
         {/* Tab bar + controls */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-[#1a1a1a] gap-3 flex-wrap">
 
-          {/* OPD / IPD tabs */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#1a1a1a] rounded-lg p-1">
-            {[['OPD', opdInvoices.length], ['IPD', ipdInvoices.length]].map(([t, count]) => (
-              <button
-                key={t}
-                onClick={() => { setTab(t); setPage(1); setSearch(''); setExpandedId(null) }}
-                className={`flex items-center gap-2 px-5 py-1.5 rounded-md text-sm font-bold transition-all ${
-                  tab === t
-                    ? 'bg-white dark:bg-[#111] text-slate-900 dark:text-white shadow-sm'
-                    : 'text-slate-500 dark:text-[#666] hover:text-slate-700 dark:hover:text-[#aaa]'
-                }`}
-              >
-                {t}
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                  tab === t
-                    ? 'bg-slate-100 dark:bg-[#222] text-slate-500 dark:text-[#888]'
-                    : 'bg-slate-200 dark:bg-[#2a2a2a] text-slate-400 dark:text-[#666]'
-                }`}>
-                  {count}
-                </span>
-              </button>
-            ))}
+          {/* OPD / IPD dropdown */}
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowTabMenu(v => !v) }}
+              className="flex items-center gap-2.5 h-9 px-4 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm font-bold text-slate-800 dark:text-white hover:border-slate-300 dark:hover:border-[#3a3a3a] transition-all"
+            >
+              <span className="text-[10px] font-bold text-slate-400 dark:text-[#666] uppercase tracking-widest">Type</span>
+              <span>{tab}</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-[#1a1a1a] text-slate-500 dark:text-[#888] text-[10px] font-bold">
+                {tab === 'OPD' ? opdInvoices.length : ipdInvoices.length}
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${showTabMenu ? 'rotate-180' : ''}`} />
+            </button>
+            {showTabMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowTabMenu(false)} />
+                <div className="absolute left-0 top-full mt-1.5 w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-xl border border-slate-100 dark:border-[#252525] z-20 py-1.5 overflow-hidden">
+                  {[
+                    { key: 'OPD', label: 'OPD', sub: 'Outpatient invoices', count: opdInvoices.length },
+                    { key: 'IPD', label: 'IPD', sub: 'Inpatient / admission', count: ipdInvoices.length },
+                  ].map(({ key, label, sub, count }) => (
+                    <button
+                      key={key}
+                      onClick={() => { setTab(key); setPage(1); setSearch(''); setExpandedId(null); setShowTabMenu(false) }}
+                      className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${
+                        tab === key ? 'bg-slate-50 dark:bg-[#222]' : 'hover:bg-slate-50 dark:hover:bg-[#1e1e1e]'
+                      }`}
+                    >
+                      <div>
+                        <p className={`text-sm font-bold leading-tight ${tab === key ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-[#aaa]'}`}>{label}</p>
+                        <p className="text-[11px] text-slate-400 dark:text-[#666] mt-0.5">{sub}</p>
+                      </div>
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        tab === key
+                          ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                          : 'bg-slate-200 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#666]'
+                      }`}>{count}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Status filter + search */}
@@ -471,54 +509,13 @@ export default function Billing() {
                             )}
                           </div>
                         </td>
-                        <td className="px-5 py-4">
-                          <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
-                            {isIPDPending ? (
-                              <button
-                                onClick={() => admission && setFinalizeAdmission(admission)}
-                                disabled={!admission}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-500 text-white hover:bg-indigo-600 transition-colors disabled:opacity-40"
-                                title={inv.status === 'PARTIAL' ? 'Continue collecting payment' : 'Generate IPD Bill'}
-                              >
-                                <Receipt className="w-3.5 h-3.5" /> {inv.status === 'PARTIAL' ? 'Continue Bill' : 'Generate Bill'}
-                              </button>
-                            ) : isIPDPaidAdmitted ? (
-                              <button
-                                onClick={() => admission && setFinalizeAdmission(admission)}
-                                disabled={!admission}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-[#2a2a2a] transition-colors disabled:opacity-40"
-                                title="Add new charges to this bill"
-                              >
-                                <Plus className="w-3.5 h-3.5" /> Add Charges
-                              </button>
-                            ) : (
-                              <>
-                                {(inv.status === 'UNPAID' || inv.status === 'PARTIAL') && !inv.admissionId && (
-                                  <button
-                                    onClick={() => setDetailInvoiceId(inv.id)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
-                                    title="Collect Payment"
-                                  >
-                                    <Receipt className="w-3.5 h-3.5" /> Collect
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => setDetailInvoiceId(inv.id)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
-                                  title="View Details"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            )}
-                            <button
-                              onClick={() => printInvoice(inv)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
-                              title="Print"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                        <td className="px-5 py-4 text-right" onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openRowMenu(inv, e.currentTarget) }}
+                            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
                         </td>
                       </tr>
 
@@ -580,6 +577,51 @@ export default function Billing() {
           </div>
         )}
       </div>
+
+      {/* Global row action menu */}
+      {menuState && (() => {
+        const { inv, right, top, bottom } = menuState
+        const isActiveAdm  = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
+        const isPending    = isActiveAdm && (inv.status === 'UNPAID' || inv.status === 'PARTIAL')
+        const isPaidAdmit  = isActiveAdm && inv.status === 'PAID'
+        const admission    = isActiveAdm ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId)) : null
+        const item = "w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222] transition-colors text-left disabled:opacity-40"
+        return (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setMenuState(null)} />
+            <div
+              style={{ position: 'fixed', right, ...(top !== undefined ? { top } : { bottom }), zIndex: 50 }}
+              className="w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-slate-100 dark:border-[#252525] py-1.5"
+            >
+              {isPending && (
+                <button onClick={() => { setMenuState(null); admission && setFinalizeAdmission(admission) }} disabled={!admission} className={item}>
+                  <Receipt className="w-4 h-4 shrink-0" />
+                  {inv.status === 'PARTIAL' ? 'Continue Bill' : 'Generate Bill'}
+                </button>
+              )}
+              {isPaidAdmit && (
+                <button onClick={() => { setMenuState(null); admission && setFinalizeAdmission(admission) }} disabled={!admission} className={item}>
+                  <Plus className="w-4 h-4 shrink-0" /> Add Charges
+                </button>
+              )}
+              {!inv.admissionId && (inv.status === 'UNPAID' || inv.status === 'PARTIAL') && (
+                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className={item}>
+                  <Receipt className="w-4 h-4 shrink-0" /> Collect Payment
+                </button>
+              )}
+              {!isPending && (
+                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className={item}>
+                  <Eye className="w-4 h-4 shrink-0" /> View Details
+                </button>
+              )}
+              <div className="h-px bg-slate-100 dark:bg-[#252525] mx-3 my-1" />
+              <button onClick={() => { setMenuState(null); printInvoice(inv) }} className={item}>
+                <Printer className="w-4 h-4 shrink-0" /> Print Invoice
+              </button>
+            </div>
+          </>
+        )
+      })()}
 
       {/* Modals */}
       {showCreate && <CreateInvoiceModal onClose={() => setShowCreate(false)} onCreated={load} />}
