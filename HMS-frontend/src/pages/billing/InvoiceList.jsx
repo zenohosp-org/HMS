@@ -6,7 +6,7 @@ import { useNotification } from "@/context/NotificationContext";
 import {
   Search, ChevronLeft, Printer, Eye, FileText,
   CheckCircle2, Clock, XCircle, CreditCard, X, Landmark, Loader2,
-  Scissors, Tag, ChevronDown, ChevronUp,
+  Scissors, Plus,
 } from "lucide-react";
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
@@ -149,7 +149,9 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
   const [bankAccountId, setBankAccountId] = useState('')
   const [payAmount, setPayAmount] = useState('')
   const [payMethod, setPayMethod] = useState('Cash')
+  const [referenceNumber, setReferenceNumber] = useState('')
   const [paying, setPaying] = useState(false)
+  const [showRecordPayment, setShowRecordPayment] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -189,11 +191,14 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
         amount: amt,
         paymentMethod: payMethod,
         bankAccountId: bankAccountId || undefined,
+        referenceNumber: referenceNumber || undefined,
         collectedBy: user?.name || user?.email,
       })
       setDetail(updated)
       const newBalance = Math.max(0, Number(updated.total || 0) - Number(updated.paidAmount || 0))
       setPayAmount(newBalance > 0 ? newBalance.toFixed(2) : '')
+      setReferenceNumber('')
+      setShowRecordPayment(false)
       notify('Payment collected successfully', 'success')
       onInvoiceUpdated?.()
       if (updated.status === 'PAID') onClose()
@@ -204,39 +209,106 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
     }
   }
 
+  const printInvoice = () => {
+    if (!detail) return
+    const items = detail.items ?? []
+    const total = Number(detail.total)
+    const discount = Number(detail.discount || 0)
+    const subtotalAmt = total + discount
+    const statusStyle = {
+      PAID: 'background:#d1fae5;color:#065f46', UNPAID: 'background:#fef3c7;color:#92400e',
+      PARTIAL: 'background:#ffedd5;color:#9a3412', CANCELLED: 'background:#fee2e2;color:#991b1b',
+    }
+    const rows = items.map(item => `
+      <tr>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.itemType?.replace('_', ' ') ?? ''}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.description ?? ''}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:center">×${item.quantity}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:right">₹${Number(item.unitPrice).toLocaleString('en-IN')}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;font-weight:600;color:#111;text-align:right">₹${Number(item.totalPrice).toLocaleString('en-IN')}</td>
+      </tr>`).join('')
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Invoice ${detail.invoiceNumber}</title>
+      <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:36px}table{width:100%;border-collapse:collapse}@media print{body{padding:24px}}</style>
+      </head><body>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #10b981">
+        <div><div style="font-size:22px;font-weight:800;color:#10b981">ZenoHosp HMS</div><div style="font-size:11px;color:#6b7280;margin-top:2px">${user?.hospitalName ?? ''}</div></div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:700">${detail.invoiceNumber}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px">${detail.createdAt ? new Date(detail.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'long', year: 'numeric' }) : ''}</div>
+          <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusStyle[detail.status] ?? statusStyle.UNPAID}">${detail.status}</span></div>
+        </div>
+      </div>
+      <div style="margin-bottom:20px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Billed To</div>
+        <div style="font-size:15px;font-weight:700">${detail.patientName ?? '—'}</div>
+        ${detail.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${detail.patientUhid}</div>` : ''}
+      </div>
+      <table><thead><tr style="background:#f3f4f6">
+        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Type</th>
+        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Description</th>
+        <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Qty</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Unit</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Total</th>
+      </tr></thead><tbody>${rows}</tbody></table>
+      <div style="display:flex;justify-content:flex-end;margin-top:12px"><div style="min-width:220px">
+        ${discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#4b5563"><span>Subtotal</span><span>₹${subtotalAmt.toLocaleString('en-IN')}</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#ef4444"><span>Waivers</span><span>−₹${discount.toLocaleString('en-IN')}</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;padding:8px 0 4px;font-size:15px;font-weight:800;color:#111;border-top:2px solid #1a1a1a;margin-top:4px"><span>Total</span><span>₹${total.toLocaleString('en-IN')}</span></div>
+      </div></div>
+      <div style="margin-top:40px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center">
+        Generated by ZenoHosp HMS · ${window.location.hostname} · Thank you for your payment
+      </div></body></html>`
+    const iframe = document.createElement('iframe')
+    iframe.className = 'print-frame'
+    document.body.appendChild(iframe)
+    iframe.contentDocument.open()
+    iframe.contentDocument.write(html)
+    iframe.contentDocument.close()
+    setTimeout(() => {
+      iframe.contentWindow.focus()
+      iframe.contentWindow.print()
+      iframe.contentWindow.onafterprint = () => document.body.removeChild(iframe)
+    }, 250)
+  }
+
   const canWaive = detail?.status === 'UNPAID' || detail?.status === 'PARTIAL'
   const canPay   = detail?.status === 'UNPAID' || detail?.status === 'PARTIAL'
   const balanceDue = detail ? Math.max(0, Number(detail.total || 0) - Number(detail.paidAmount || 0)) : 0
+  const invoiceDate = detail?.createdAt
+    ? new Date(detail.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '—'
+  const tax  = Number(detail?.tax || 0)
+  const sgst = tax / 2
+  const cgst = tax / 2
 
-  const statusCls = detail?.status === 'PAID'
-    ? 'bg-emerald-500/10 text-emerald-500'
-    : detail?.status === 'PARTIAL'
-      ? 'bg-orange-500/10 text-orange-500'
-      : detail?.status === 'UNPAID'
-        ? 'bg-amber-500/10 text-amber-500'
-        : 'bg-rose-500/10 text-rose-500'
+  const STATUS_CFG = {
+    PAID:      { cls: 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
+    PARTIAL:   { cls: 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20',   Icon: Clock        },
+    UNPAID:    { cls: 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',           Icon: Clock        },
+    CANCELLED: { cls: 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',                 Icon: XCircle      },
+  }
+  const sc = STATUS_CFG[detail?.status] ?? STATUS_CFG.UNPAID
+  const StatusIcon = sc?.Icon ?? Clock
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#111] rounded-xl shadow-2xl w-full max-w-2xl border border-slate-200 dark:border-[#2a2a2a] max-h-[90vh] flex flex-col">
-        {/* Header */}
+      <div className="bg-white dark:bg-[#111] rounded-xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col border border-slate-200 dark:border-[#2a2a2a]">
+
+        {/* ── Header ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
           <div>
-            <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <FileText className="w-4 h-4 text-indigo-500" />
+            <h2 className="font-bold text-slate-900 dark:text-white text-base">
               {loading ? 'Loading…' : detail?.invoiceNumber}
             </h2>
             {!loading && detail && (
               <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">
-                {detail.patientName} {detail.patientUhid ? `· ${detail.patientUhid}` : ''} · {new Date(detail.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                {detail.patientName}{detail.patientUhid ? ` · ${detail.patientUhid}` : ''} · {invoiceDate}
               </p>
             )}
           </div>
           <div className="flex items-center gap-3">
             {!loading && detail && (
-              <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusCls}`}>
-                {detail.status === 'PAID' ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                {detail.status}
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${sc.cls}`}>
+                <StatusIcon className="w-3 h-3" />{detail.status}
               </span>
             )}
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">
@@ -245,220 +317,283 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
           </div>
         </div>
 
-        {/* Body */}
-        <div className="overflow-y-auto flex-1 p-6">
-          {loading ? (
-            <div className="flex items-center justify-center h-40">
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
-            </div>
-          ) : (
-            <div className="space-y-4">
+        {/* ── Body ── */}
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <div className="flex flex-1 overflow-hidden min-h-0">
+
+            {/* ════ Left Panel: Services & Bills ════ */}
+            <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-slate-100 dark:border-[#1e1e1e]">
+              <div className="px-6 py-3.5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
+                <p className="font-bold text-slate-900 dark:text-white">Services and Bills</p>
+              </div>
+
               {canWaive && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg text-xs text-amber-700 dark:text-amber-400 font-medium">
+                <div className="mx-6 mt-3 flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg text-xs text-amber-700 dark:text-amber-400 font-medium shrink-0">
                   <Scissors className="w-3.5 h-3.5 shrink-0" />
-                  Hover a line item to apply a waiver. Only admin or receptionist should apply waivers.
+                  Hover a row to apply a waiver on that line item.
                 </div>
               )}
 
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 dark:border-[#2a2a2a]">
-                    <th className="pb-2 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Description</th>
-                    <th className="pb-2 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-12">Qty</th>
-                    <th className="pb-2 text-right text-xs font-bold text-slate-400 uppercase tracking-wider w-24">Unit</th>
-                    <th className="pb-2 text-right text-xs font-bold text-slate-400 uppercase tracking-wider w-24">Total</th>
-                    <th className="pb-2 text-right text-xs font-bold text-slate-400 uppercase tracking-wider w-24">Waived</th>
-                    {canWaive && <th className="pb-2 w-16" />}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-[#1e1e1e]">
-                  {(detail.items || []).map((item) => {
-                    const waived = Number(item.waiverAmount || 0)
-                    const effective = Number(item.totalPrice || 0) - waived
-                    return (
-                      <tr key={item.id} className="group">
-                        <td className="py-3 pr-4">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${TYPE_COLORS[item.itemType] || TYPE_COLORS.CUSTOM}`}>
-                              {item.itemType?.replace('_', ' ')}
-                            </span>
-                            <span className="text-slate-700 dark:text-[#ccc]">{item.description}</span>
-                          </div>
-                          {item.waiverReason && (
-                            <p className="text-[11px] text-rose-500 dark:text-rose-400 mt-0.5 flex items-center gap-1">
-                              <Scissors className="w-3 h-3 shrink-0" /> {item.waiverReason}
-                            </p>
-                          )}
+              <div className="overflow-y-auto flex-1">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-white dark:bg-[#111] z-10">
+                    <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-10">No</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-24">Date</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Services Name</th>
+                      <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-24">Amount</th>
+                      <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-16">Gst %</th>
+                      <th className={`px-6 py-3 text-right text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider ${canWaive ? 'w-24' : 'w-28'}`}>Total</th>
+                      {canWaive && <th className="px-4 py-3 w-10" />}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
+                    {(detail.items || []).length === 0 ? (
+                      <tr>
+                        <td colSpan={canWaive ? 7 : 6} className="px-6 py-12 text-center text-sm text-slate-400 dark:text-[#666]">
+                          No line items on this invoice.
                         </td>
-                        <td className="py-3 text-center text-slate-600 dark:text-[#aaa]">{item.quantity}</td>
-                        <td className="py-3 text-right text-slate-600 dark:text-[#aaa] tabular-nums">{fmt(item.unitPrice)}</td>
-                        <td className="py-3 text-right font-semibold text-slate-800 dark:text-white tabular-nums">
-                          {waived > 0 ? (
-                            <span>
-                              <span className="line-through text-slate-400 dark:text-[#555] text-xs mr-1">{fmt(item.totalPrice)}</span>
-                              {fmt(effective)}
-                            </span>
-                          ) : fmt(item.totalPrice)}
-                        </td>
-                        <td className="py-3 text-right tabular-nums">
-                          {waived > 0
-                            ? <span className="text-rose-500 dark:text-rose-400 font-semibold">-{fmt(waived)}</span>
-                            : <span className="text-slate-300 dark:text-[#444]">—</span>
-                          }
-                        </td>
-                        {canWaive && (
-                          <td className="py-3 text-right">
-                            <button
-                              onClick={() => setWaiverItem(item)}
-                              title={waived > 0 ? 'Edit waiver' : 'Apply waiver'}
-                              className={`p-1.5 rounded-md text-xs font-semibold transition-all opacity-0 group-hover:opacity-100
-                                ${waived > 0
-                                  ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-500 hover:bg-rose-500 hover:text-white'
-                                  : 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-500 dark:text-[#666] hover:bg-rose-500 hover:text-white'
-                                }`}
-                            >
-                              <Scissors className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        )}
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                    ) : (
+                      (detail.items || []).map((item, idx) => {
+                        const waived   = Number(item.waiverAmount || 0)
+                        const effective = Number(item.totalPrice || 0) - waived
+                        const typeColor = TYPE_COLORS[item.itemType] ?? TYPE_COLORS.CUSTOM
+                        return (
+                          <tr key={item.id} className="group hover:bg-slate-50/60 dark:hover:bg-[#0d0d0d] transition-colors">
+                            <td className="px-6 py-4 text-slate-400 dark:text-[#555] text-xs">{idx + 1}</td>
+                            <td className="px-4 py-4 text-slate-500 dark:text-[#888] text-xs whitespace-nowrap">{invoiceDate}</td>
+                            <td className="px-4 py-4">
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`self-start inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${typeColor}`}>
+                                  {item.itemType?.replace('_', ' ')}
+                                </span>
+                                <span className="text-sm text-slate-800 dark:text-[#ddd]">{item.description}</span>
+                                {item.quantity > 1 && (
+                                  <span className="text-[11px] text-slate-400 dark:text-[#666]">×{item.quantity} units</span>
+                                )}
+                                {item.waiverReason && (
+                                  <span className="text-[11px] text-rose-500 dark:text-rose-400 flex items-center gap-0.5 mt-0.5">
+                                    <Scissors className="w-2.5 h-2.5 shrink-0" />{item.waiverReason}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 text-right text-slate-600 dark:text-[#aaa] tabular-nums">
+                              {fmt(item.unitPrice)}
+                            </td>
+                            <td className="px-4 py-4 text-center text-slate-400 dark:text-[#555] text-xs">—</td>
+                            <td className="px-6 py-4 text-right tabular-nums">
+                              {waived > 0 ? (
+                                <span className="flex flex-col items-end gap-0.5">
+                                  <span className="line-through text-slate-300 dark:text-[#444] text-xs">{fmt(item.totalPrice)}</span>
+                                  <span className="font-semibold text-slate-900 dark:text-white">{fmt(effective)}</span>
+                                </span>
+                              ) : (
+                                <span className="font-semibold text-slate-900 dark:text-white">{fmt(item.totalPrice)}</span>
+                              )}
+                            </td>
+                            {canWaive && (
+                              <td className="px-4 py-4">
+                                <button
+                                  onClick={() => setWaiverItem(item)}
+                                  title={waived > 0 ? 'Edit waiver' : 'Apply waiver'}
+                                  className={`p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-all ${
+                                    waived > 0
+                                      ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-500 hover:bg-rose-500 hover:text-white'
+                                      : 'bg-slate-100 dark:bg-[#1e1e1e] text-slate-400 dark:text-[#666] hover:bg-rose-500 hover:text-white'
+                                  }`}
+                                >
+                                  <Scissors className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-              {/* Totals */}
-              <div className="border-t border-slate-100 dark:border-[#2a2a2a] pt-4 space-y-1.5 text-sm">
-                <div className="flex justify-between text-slate-600 dark:text-[#aaa]">
-                  <span>Subtotal</span>
-                  <span className="tabular-nums">{fmt(detail.subtotal)}</span>
+              {/* ── Totals footer ── */}
+              <div className="shrink-0 border-t border-slate-100 dark:border-[#1e1e1e] px-6 py-4 space-y-2 bg-slate-50/60 dark:bg-[#0a0a0a]">
+                <div className="flex justify-between text-sm text-slate-600 dark:text-[#aaa]">
+                  <span className="font-medium">Subtotal:</span>
+                  <span className="tabular-nums">{fmt(detail.subtotal ?? detail.total)}</span>
                 </div>
-                {Number(detail.tax || 0) > 0 && (
-                  <div className="flex justify-between text-slate-600 dark:text-[#aaa]">
-                    <span>Tax</span>
-                    <span className="tabular-nums">{fmt(detail.tax)}</span>
-                  </div>
+                {tax > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm text-slate-600 dark:text-[#aaa]">
+                      <span className="font-medium">SGST:</span>
+                      <span className="tabular-nums">{fmt(sgst)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-slate-600 dark:text-[#aaa]">
+                      <span className="font-medium">CGST:</span>
+                      <span className="tabular-nums">{fmt(cgst)}</span>
+                    </div>
+                  </>
                 )}
                 {Number(detail.discount || 0) > 0 && (
-                  <div className="flex justify-between text-rose-500 dark:text-rose-400">
-                    <span className="flex items-center gap-1"><Scissors className="w-3.5 h-3.5" /> Total Waivers</span>
-                    <span className="tabular-nums font-semibold">-{fmt(detail.discount)}</span>
+                  <div className="flex justify-between text-sm text-rose-500 dark:text-rose-400">
+                    <span className="font-medium flex items-center gap-1.5"><Scissors className="w-3 h-3" />Total Waivers:</span>
+                    <span className="tabular-nums font-semibold">−{fmt(detail.discount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between font-bold text-base text-slate-900 dark:text-white pt-1 border-t border-slate-100 dark:border-[#2a2a2a]">
-                  <span>Total</span>
-                  <span className="tabular-nums">{fmt(detail.total)}</span>
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-[#222]">
+                  <span className="font-bold text-base text-slate-900 dark:text-white">Total:</span>
+                  <span className="tabular-nums font-bold text-base text-slate-900 dark:text-white">{fmt(detail.total)}</span>
                 </div>
-              </div>
-
-              {detail.notes && (
-                <div className="px-4 py-3 bg-slate-50 dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#222] rounded-lg">
-                  <p className="text-xs text-slate-500 dark:text-[#666] font-semibold uppercase tracking-wider mb-1">Notes</p>
-                  <p className="text-sm text-slate-700 dark:text-[#ccc]">{detail.notes}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Payment footer */}
-        {canPay && (
-          <div className="shrink-0 border-t border-slate-100 dark:border-[#1e1e1e] px-6 py-4 bg-slate-50 dark:bg-[#0a0a0a] rounded-b-xl space-y-3">
-            {/* Payment history */}
-            {detail.payments?.length > 0 && (
-              <div>
-                <p className="text-xs font-bold text-slate-500 dark:text-[#666] uppercase tracking-wider mb-2">Payment History</p>
-                <div className="space-y-1">
-                  {detail.payments.map(p => (
-                    <div key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500 dark:text-[#888]">
-                        {new Date(p.paidAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })}
-                        {p.paymentMethod ? ` · ${p.paymentMethod}` : ''}
-                        {p.collectedBy ? ` · ${p.collectedBy}` : ''}
-                      </span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{fmt(p.amount)}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-2 pt-2 border-t border-slate-200 dark:border-[#2a2a2a] flex justify-between text-xs font-bold text-slate-700 dark:text-[#ccc]">
-                  <span>Balance Due</span>
-                  <span className="tabular-nums text-orange-600 dark:text-orange-400">{fmt(balanceDue)}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Amount + method row */}
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <p className="text-xs font-bold text-slate-500 dark:text-[#666] uppercase tracking-wider mb-1.5">Amount</p>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#666] text-sm font-bold">₹</span>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={payAmount}
-                    onChange={e => setPayAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full pl-7 pr-3 py-2 border border-slate-200 dark:border-[#333] rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-white"
-                  />
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-slate-500 dark:text-[#666] uppercase tracking-wider mb-1.5">Method</p>
-                <select
-                  value={payMethod}
-                  onChange={e => setPayMethod(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-[#333] rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-white"
-                >
-                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
               </div>
             </div>
 
-            {/* Bank account selector */}
-            {bankAccounts.length > 0 && (
-              <div>
-                <p className="text-xs font-bold text-slate-500 dark:text-[#666] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                  <Landmark className="w-3.5 h-3.5" /> Credit to
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {bankAccounts.map(a => (
+            {/* ════ Right Panel: Payment Details ════ */}
+            <div className="w-96 shrink-0 flex flex-col overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
+                <p className="font-bold text-slate-900 dark:text-white">Payment details</p>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+
+                {/* IPD note */}
+                {detail.admissionId && (
+                  <div className="border border-slate-200 dark:border-[#2a2a2a] rounded-lg px-4 py-2.5">
+                    <p className="text-xs text-center text-slate-500 dark:text-[#888]">
+                      Patient billing is mapped as cash during admission
+                    </p>
+                  </div>
+                )}
+
+                {/* Payment History header + Record Payment toggle */}
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-slate-900 dark:text-white">Payment History</p>
+                  {canPay && (
                     <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => setBankAccountId(a.id)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all ${
-                        bankAccountId === a.id
-                          ? 'border-slate-900 dark:border-white bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white shadow-sm'
-                          : 'border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-slate-500 dark:text-[#888] hover:border-slate-400'
-                      }`}
+                      onClick={() => setShowRecordPayment(p => !p)}
+                      className="flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                     >
-                      {bankAccountId === a.id && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
-                      {a.accountName}
+                      <Plus className="w-3.5 h-3.5" /> Record Payment
                     </button>
-                  ))}
+                  )}
                 </div>
-              </div>
-            )}
 
-            <div className="flex items-center justify-between pt-1">
-              {!detail.payments?.length && (
-                <p className="text-sm text-slate-500 dark:text-[#888]">
-                  Total: <span className="font-bold text-slate-900 dark:text-white tabular-nums">{fmt(detail.total)}</span>
-                </p>
-              )}
-              <div className="ml-auto">
-                <button
-                  onClick={handleCollect}
-                  disabled={paying}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-60 shadow-sm"
-                >
-                  {paying
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
-                    : <><CreditCard className="w-4 h-4" /> Collect Payment</>
-                  }
-                </button>
+                {/* Collapsible record payment form */}
+                {showRecordPayment && canPay && (
+                  <div className="space-y-3 p-4 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#0a0a0a]">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="label">Amount</label>
+                        <input
+                          type="number"
+                          className="input"
+                          value={payAmount}
+                          onChange={e => setPayAmount(e.target.value)}
+                          placeholder="0.00"
+                          min="0.01"
+                          step="0.01"
+                        />
+                      </div>
+                      <div>
+                        <label className="label">Payment Type</label>
+                        <select className="input" value={payMethod} onChange={e => setPayMethod(e.target.value)}>
+                          {PAYMENT_METHODS.map(m => <option key={m}>{m}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="label">Reference Number</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={referenceNumber}
+                        onChange={e => setReferenceNumber(e.target.value)}
+                        placeholder="UTR / Cheque no. / Transaction ID"
+                      />
+                    </div>
+                    {bankAccounts.length > 0 && (
+                      <div>
+                        <label className="label flex items-center gap-1.5"><Landmark className="w-3 h-3" />Credit to</label>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {bankAccounts.map(a => (
+                            <button
+                              key={a.id}
+                              type="button"
+                              onClick={() => setBankAccountId(a.id)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all ${
+                                bankAccountId === a.id
+                                  ? 'border-slate-900 dark:border-white bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                                  : 'border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-slate-500 dark:text-[#888] hover:border-slate-400'
+                              }`}
+                            >
+                              {bankAccountId === a.id && <CheckCircle2 className="w-3 h-3 shrink-0" />}
+                              {a.accountName}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={handleCollect}
+                        disabled={paying}
+                        className="btn-primary flex-1 flex items-center justify-center gap-2"
+                      >
+                        {paying
+                          ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…</>
+                          : 'Payment Received'
+                        }
+                      </button>
+                      <button onClick={printInvoice} className="btn-secondary flex items-center gap-1.5">
+                        <Printer className="w-3.5 h-3.5" /> Print Invoice
+                      </button>
+                    </div>
+                    {balanceDue > 0 && (
+                      <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200 dark:border-[#222]">
+                        <span className="text-slate-500 dark:text-[#888] font-medium">Balance due</span>
+                        <span className="font-bold text-orange-600 dark:text-orange-400 tabular-nums">{fmt(balanceDue)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Payment history entries */}
+                {detail.payments?.length > 0 ? (
+                  <div className="space-y-4">
+                    {detail.payments.map(p => (
+                      <div key={p.id} className="flex items-start gap-4">
+                        <p className="text-sm text-slate-600 dark:text-[#aaa] whitespace-nowrap shrink-0 tabular-nums">
+                          {new Date(p.paidAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-slate-500 dark:text-[#888] truncate">{p.referenceNumber || p.notes || 'Notes'}</p>
+                          <p className="text-xs text-slate-400 dark:text-[#666] mt-0.5">{p.paymentMethod}</p>
+                        </div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white tabular-nums shrink-0">{fmt(p.amount)}</p>
+                      </div>
+                    ))}
+                    {balanceDue > 0 && !showRecordPayment && (
+                      <div className="flex justify-between items-center text-xs pt-3 border-t border-slate-100 dark:border-[#1e1e1e]">
+                        <span className="text-slate-500 dark:text-[#888] font-medium">Balance Due</span>
+                        <span className="font-bold text-orange-600 dark:text-orange-400 tabular-nums">{fmt(balanceDue)}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  !showRecordPayment && (
+                    <p className="text-sm text-slate-400 dark:text-[#666]">No payments recorded yet.</p>
+                  )
+                )}
+
+                {/* PAID invoices: just show print */}
+                {!canPay && (
+                  <button onClick={printInvoice} className="btn-secondary w-full flex items-center justify-center gap-2">
+                    <Printer className="w-4 h-4" /> Print Invoice
+                  </button>
+                )}
               </div>
             </div>
           </div>
