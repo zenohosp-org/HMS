@@ -2,7 +2,9 @@ package com.zenlocare.HMS_backend.entity;
 
 public enum InvoiceStatus {
     UNPAID,
-    PARTIAL,   // Part of balance collected; remainder outstanding
+    PARTIAL,    // OPD: part of balance collected; remainder outstanding
     PAID,
-    CANCELLED
+    CANCELLED,
+    SETTLED,    // IPD: bill fully cleared
+    UNSETTLED   // IPD: balance outstanding (replaces UNPAID/PARTIAL for admissions)
 }

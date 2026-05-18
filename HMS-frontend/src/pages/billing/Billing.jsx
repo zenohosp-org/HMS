@@ -112,7 +112,7 @@ export default function Billing() {
       setActiveAdmissions(Array.isArray(admData) ? admData : [])
 
       // Fire-and-forget: silently sync estimated totals for ₹0 UNPAID IPD invoices
-      const zeroPending = list.filter(i => !!i.admissionId && i.status === 'UNPAID' && Number(i.total || 0) === 0)
+      const zeroPending = list.filter(i => !!i.admissionId && (i.status === 'UNPAID' || i.status === 'UNSETTLED') && Number(i.total || 0) === 0)
       if (zeroPending.length > 0) {
         patientServicesApi.list(user.hospitalId).catch(() => []).then(patientServices => {
           const activeServices = (Array.isArray(patientServices) ? patientServices : []).filter(s => s.isActive)
@@ -170,8 +170,8 @@ export default function Billing() {
   const today = new Date().toDateString()
 
   const stats = useMemo(() => {
-    const paid = invoices.filter(i => i.status === 'PAID')
-    const unpaid = invoices.filter(i => i.status === 'UNPAID' || i.status === 'PARTIAL')
+    const paid = invoices.filter(i => i.status === 'PAID' || i.status === 'SETTLED')
+    const unpaid = invoices.filter(i => i.status === 'UNPAID' || i.status === 'PARTIAL' || i.status === 'UNSETTLED')
     return {
       total: invoices.length,
       collected: paid.reduce((s, i) => s + Number(i.total), 0),
@@ -212,8 +212,8 @@ export default function Billing() {
   const filtered = useMemo(() => {
     let list
     if (tab === 'IPD') {
-      if (currentFilter === 'SETTLED') list = currentInvoices.filter(i => i.status === 'PAID')
-      else if (currentFilter === 'NOT_SETTLED') list = currentInvoices.filter(i => i.status === 'UNPAID' || i.status === 'PARTIAL')
+      if (currentFilter === 'SETTLED') list = currentInvoices.filter(i => i.status === 'PAID' || i.status === 'SETTLED')
+      else if (currentFilter === 'NOT_SETTLED') list = currentInvoices.filter(i => i.status === 'UNPAID' || i.status === 'PARTIAL' || i.status === 'UNSETTLED')
       else list = currentInvoices
     } else {
       list = currentFilter === 'ALL' ? currentInvoices : currentInvoices.filter(i => i.status === currentFilter)
@@ -236,7 +236,7 @@ export default function Billing() {
     const total = Number(inv.total)
     const discount = Number(inv.discount || 0)
     const subtotal = total + discount
-    const statusCls = { PAID: 'background:#d1fae5;color:#065f46', UNPAID: 'background:#fef3c7;color:#92400e', PARTIAL: 'background:#ffedd5;color:#9a3412', CANCELLED: 'background:#fee2e2;color:#991b1b' }
+    const statusCls = { PAID: 'background:#d1fae5;color:#065f46', SETTLED: 'background:#d1fae5;color:#065f46', UNPAID: 'background:#fef3c7;color:#92400e', UNSETTLED: 'background:#fef3c7;color:#92400e', PARTIAL: 'background:#ffedd5;color:#9a3412', CANCELLED: 'background:#fee2e2;color:#991b1b' }
     const itemRows = items.map(item => `
       <tr>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.itemType?.replace('_', ' ') ?? ''}</td>
@@ -414,8 +414,8 @@ export default function Billing() {
                 paginated.map(inv => {
                   // IPD placeholder: has an admissionId, is unpaid, AND the admission is still active
                   const isActiveAdmission = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
-                  const isIPDPending = isActiveAdmission && (inv.status === 'UNPAID' || inv.status === 'PARTIAL')
-                  const isIPDPaidAdmitted = isActiveAdmission && inv.status === 'PAID'
+                  const isIPDPending = isActiveAdmission && (inv.status === 'UNPAID' || inv.status === 'PARTIAL' || inv.status === 'UNSETTLED')
+                  const isIPDPaidAdmitted = isActiveAdmission && (inv.status === 'PAID' || inv.status === 'SETTLED')
                   const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID
                   const StatusIcon = cfg.Icon
                   const admission = isActiveAdmission
@@ -437,19 +437,19 @@ export default function Billing() {
                           <p className="text-xs text-slate-400 mt-0.5">{inv.patientUhid ?? ''}</p>
                         </td>
                         <td className="px-5 py-4">
-                          {isIPDPending && inv.status === 'UNPAID' && !inv.items?.length
+                          {isIPDPending && (inv.status === 'UNPAID' || inv.status === 'UNSETTLED') && !inv.items?.length
                             ? <span className="text-xs text-slate-400 italic">Pending charges</span>
                             : <ItemTypePips items={inv.items} />
                           }
                         </td>
                         <td className="px-5 py-4">
                           <p className="font-bold text-sm text-slate-900 dark:text-white">
-                            {isIPDPending && inv.status === 'UNPAID' && Number(inv.total) > 0 ? '~' : ''}{fmt(inv.total)}
+                            {isIPDPending && (inv.status === 'UNPAID' || inv.status === 'UNSETTLED') && Number(inv.total) > 0 ? '~' : ''}{fmt(inv.total)}
                           </p>
-                          {isIPDPending && inv.status === 'UNPAID' && Number(inv.total) > 0 && (
+                          {isIPDPending && (inv.status === 'UNPAID' || inv.status === 'UNSETTLED') && Number(inv.total) > 0 && (
                             <p className="text-[11px] text-slate-400 mt-0.5">estimated</p>
                           )}
-                          {inv.status === 'PARTIAL' && Number(inv.paidAmount) > 0 && (
+                          {(inv.status === 'PARTIAL' || inv.status === 'UNSETTLED') && Number(inv.paidAmount) > 0 && (
                             <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">{fmt(inv.paidAmount)} paid</p>
                           )}
                           {Number(inv.discount) > 0 && (
@@ -467,12 +467,12 @@ export default function Billing() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex justify-center">
-                            {isIPDPending && inv.status === 'UNPAID' ? (
+                            {isIPDPending && (inv.status === 'UNPAID' || inv.status === 'UNSETTLED') ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20">
                                 <BedDouble className="w-3 h-3" /> Admitted
                               </span>
                             ) : tab === 'IPD' ? (() => {
-                              const ipdCfg = inv.status === 'PAID' ? STATUS_CFG_IPD.SETTLED : STATUS_CFG_IPD.NOT_SETTLED
+                              const ipdCfg = (inv.status === 'PAID' || inv.status === 'SETTLED') ? STATUS_CFG_IPD.SETTLED : STATUS_CFG_IPD.NOT_SETTLED
                               return (
                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${ipdCfg.cls}`}>
                                   <ipdCfg.Icon className="w-3 h-3" /> {ipdCfg.label}
@@ -518,8 +518,8 @@ export default function Billing() {
       {menuState && (() => {
         const { inv, right, top, bottom } = menuState
         const isActiveAdm  = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
-        const isPending    = isActiveAdm && (inv.status === 'UNPAID' || inv.status === 'PARTIAL')
-        const isPaidAdmit  = isActiveAdm && inv.status === 'PAID'
+        const isPending    = isActiveAdm && (inv.status === 'UNPAID' || inv.status === 'PARTIAL' || inv.status === 'UNSETTLED')
+        const isPaidAdmit  = isActiveAdm && (inv.status === 'PAID' || inv.status === 'SETTLED')
         const admission    = isActiveAdm ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId)) : null
         const item = "w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222] transition-colors text-left disabled:opacity-40"
         return (
@@ -532,7 +532,7 @@ export default function Billing() {
               {isPending && (
                 <button onClick={() => { setMenuState(null); admission && setFinalizeAdmission(admission) }} disabled={!admission} className={item}>
                   <Receipt className="w-4 h-4 shrink-0" />
-                  {inv.status === 'PARTIAL' ? 'Continue Bill' : 'Generate Bill'}
+                  {(inv.status === 'PARTIAL' || inv.status === 'UNSETTLED') ? 'Continue Bill' : 'Generate Bill'}
                 </button>
               )}
               {isPaidAdmit && (

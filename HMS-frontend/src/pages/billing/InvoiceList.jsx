@@ -282,8 +282,10 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
 
   const STATUS_CFG = {
     PAID:      { cls: 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
+    SETTLED:   { cls: 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
     PARTIAL:   { cls: 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20',   Icon: Clock        },
     UNPAID:    { cls: 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',           Icon: Clock        },
+    UNSETTLED: { cls: 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',           Icon: Clock        },
     CANCELLED: { cls: 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',                 Icon: XCircle      },
   }
   const sc = STATUS_CFG[detail?.status] ?? STATUS_CFG.UNPAID

@@ -65,7 +65,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const { notify } = useNotification()
 
   const [invoiceId, setInvoiceId] = useState(null)
-  const [invoiceStatus, setInvoiceStatus] = useState('UNPAID')
+  const [invoiceStatus, setInvoiceStatus] = useState('UNSETTLED')
   const [loadingBill, setLoadingBill] = useState(true)
   const [items, setItems] = useState([])
   const [nextKey, setNextKey] = useState(0)
@@ -119,7 +119,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
       if (existingInvoice?.id) {
         setInvoiceId(existingInvoice.id)
-        setInvoiceStatus(existingInvoice.status || 'UNPAID')
+        setInvoiceStatus(existingInvoice.status || 'UNSETTLED')
         setExistingPayments(existingInvoice.payments || [])
         if (existingInvoice.notes) setBillNotes(existingInvoice.notes)
         // Recalculate discount % from saved values
@@ -391,7 +391,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       if (finalId) {
         savedInvoice = await invoiceApi.finalizeIPD(finalId, payload)
       } else {
-        savedInvoice = await invoiceApi.create({ ...payload, status: 'UNPAID' })
+        savedInvoice = await invoiceApi.create({ ...payload, status: 'UNSETTLED' })
         finalId = savedInvoice.id
         setInvoiceId(finalId)
       }
@@ -407,7 +407,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         )
       }
 
-      const wasReopened = invoiceStatus === 'PAID'
+      const wasReopened = invoiceStatus === 'PAID' || invoiceStatus === 'SETTLED'
       notify(
         wasReopened
           ? 'Bill reopened with new charges — collect outstanding balance'
@@ -540,14 +540,14 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {invoiceStatus === 'PAID' && (
+            {(invoiceStatus === 'PAID' || invoiceStatus === 'SETTLED') && (
               <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-500/25">
-                Fully Paid
+                Settled
               </span>
             )}
-            {invoiceStatus === 'PARTIAL' && (
+            {(invoiceStatus === 'PARTIAL' || invoiceStatus === 'UNSETTLED') && (
               <span className="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold border border-amber-200 dark:border-amber-500/25">
-                Partial
+                Not Settled
               </span>
             )}
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">
@@ -578,11 +578,11 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
               {/* Alerts (shrink-0) */}
               <div className="shrink-0">
-                {invoiceStatus === 'PAID' && (
+                {(invoiceStatus === 'PAID' || invoiceStatus === 'SETTLED') && (
                   <div className="flex items-start gap-2.5 mx-5 mt-3 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
                     <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                     <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                      This bill was marked paid ({fmt(totalCashPaid)} collected). Adding new charges and saving will reopen it — patient must settle the new balance before discharge.
+                      This bill is settled ({fmt(totalCashPaid)} collected). Adding new charges and saving will reopen it — patient must settle the new balance before discharge.
                     </p>
                   </div>
                 )}

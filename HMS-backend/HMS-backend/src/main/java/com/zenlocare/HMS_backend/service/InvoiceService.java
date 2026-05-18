@@ -121,10 +121,10 @@ public class InvoiceService {
     public Invoice markAsPaid(UUID invoiceId, UUID bankAccountId) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
-        if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
+        if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
             throw new RuntimeException("Invoice is already paid");
         }
-        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setStatus(invoice.getAdmission() != null ? InvoiceStatus.SETTLED : InvoiceStatus.PAID);
         invoice.setUpdatedAt(LocalDateTime.now());
         Invoice saved = invoiceRepository.save(invoice);
         if (bankAccountId != null) {
@@ -138,7 +138,7 @@ public class InvoiceService {
                                      UUID bankAccountId, String collectedBy) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
-        if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
+        if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
             throw new RuntimeException("Invoice is already fully paid");
         }
 
@@ -159,9 +159,12 @@ public class InvoiceService {
         BigDecimal total = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
         boolean fullyPaid = newPaid.add(advance).compareTo(total) >= 0;
 
-        invoice.setStatus(fullyPaid ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL);
+        boolean isIpd = invoice.getAdmission() != null;
+        invoice.setStatus(fullyPaid
+                ? (isIpd ? InvoiceStatus.SETTLED  : InvoiceStatus.PAID)
+                : (isIpd ? InvoiceStatus.UNSETTLED : InvoiceStatus.PARTIAL));
 
-        if (fullyPaid && invoice.getAdmission() != null && advance.compareTo(BigDecimal.ZERO) > 0) {
+        if (fullyPaid && isIpd && advance.compareTo(BigDecimal.ZERO) > 0) {
             try {
                 patientAdvanceService.markAdvancesApplied(
                         invoice.getAdmission().getId(), invoice.getId(), advance);
@@ -229,7 +232,7 @@ public class InvoiceService {
             Optional<Invoice> opdOpt = invoiceRepository.findByAppointment_Id(sourceAppointmentId);
             if (opdOpt.isPresent()) {
                 Invoice opdInvoice = opdOpt.get();
-                if (!InvoiceStatus.PAID.equals(opdInvoice.getStatus())) {
+                if (!InvoiceStatus.PAID.equals(opdInvoice.getStatus()) && !InvoiceStatus.SETTLED.equals(opdInvoice.getStatus())) {
                     // Promote: link OPD invoice to this admission — it becomes the IPD invoice
                     opdInvoice.setAdmission(admission);
                     opdInvoice.setInvoiceNumber("IPD-" + admissionNumber);
@@ -251,7 +254,7 @@ public class InvoiceService {
                 .tax(BigDecimal.ZERO)
                 .discount(BigDecimal.ZERO)
                 .total(BigDecimal.ZERO)
-                .status(InvoiceStatus.UNPAID)
+                .status(InvoiceStatus.UNSETTLED)
                 .notes("IPD Admission — " + admissionNumber)
                 .build());
     }
@@ -345,7 +348,7 @@ public class InvoiceService {
     @Transactional
     public void updateEstimatedTotal(UUID invoiceId, BigDecimal estimatedTotal) {
         invoiceRepository.findById(invoiceId).ifPresent(invoice -> {
-            if (InvoiceStatus.PAID.equals(invoice.getStatus())) return;
+            if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) return;
             invoice.setSubtotal(estimatedTotal);
             invoice.setTotal(estimatedTotal);
             invoice.setUpdatedAt(LocalDateTime.now());
@@ -359,7 +362,7 @@ public class InvoiceService {
         Optional<Invoice> opt = invoiceRepository.findByAppointment_Id(appointmentId);
         if (opt.isEmpty()) return;
         Invoice invoice = opt.get();
-        if (InvoiceStatus.PAID.equals(invoice.getStatus())) return;
+        if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) return;
         // If this appointment's invoice was absorbed into an IPD admission (OPD→IPD conversion),
         // do NOT touch it — the IPD invoice lifecycle is managed through the discharge flow.
         // Deleting or stripping items here would break the discharge gate.
@@ -393,10 +396,10 @@ public class InvoiceService {
     public InvoiceDTO finalizeIPDInvoice(UUID invoiceId, InvoiceRequest req) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
-        // Reopening a PAID bill (new charges added while patient still admitted) — reset to UNPAID.
+        // Reopening a SETTLED bill (new charges added while patient still admitted) — reset to UNSETTLED.
         // Discharge gate enforces that the patient cannot leave until balance is zero again.
-        if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
-            invoice.setStatus(InvoiceStatus.UNPAID);
+        if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
+            invoice.setStatus(InvoiceStatus.UNSETTLED);
         }
         if (invoice.getItems() != null) {
             invoice.getItems().clear();
@@ -453,9 +456,9 @@ public class InvoiceService {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
 
-        // Reset PAID → UNPAID so new charges can be applied (discharge gate is the real lock)
-        if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
-            invoice.setStatus(InvoiceStatus.UNPAID);
+        // Reset SETTLED → UNSETTLED so new charges can be applied (discharge gate is the real lock)
+        if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
+            invoice.setStatus(InvoiceStatus.UNSETTLED);
         }
 
         // Replace items
@@ -497,7 +500,8 @@ public class InvoiceService {
         BigDecimal advance = invoice.getAdvanceAdjusted() != null ? invoice.getAdvanceAdjusted() : BigDecimal.ZERO;
         BigDecimal total = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
         boolean fullyPaid = newPaid.add(advance).compareTo(total) >= 0;
-        invoice.setStatus(fullyPaid ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL);
+        // collectAndSave is exclusively called for IPD invoices — always use SETTLED/UNSETTLED
+        invoice.setStatus(fullyPaid ? InvoiceStatus.SETTLED : InvoiceStatus.UNSETTLED);
 
         if (fullyPaid && invoice.getAdmission() != null && advance.compareTo(BigDecimal.ZERO) > 0) {
             try { patientAdvanceService.markAdvancesApplied(invoice.getAdmission().getId(), invoice.getId(), advance); }
@@ -536,7 +540,7 @@ public class InvoiceService {
     public InvoiceDTO applyWaiver(UUID invoiceId, UUID itemId, java.math.BigDecimal waiverAmount, String waiverReason) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
-        if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
+        if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
             throw new RuntimeException("Cannot modify a paid invoice");
         }
         InvoiceItem target = invoice.getItems().stream()

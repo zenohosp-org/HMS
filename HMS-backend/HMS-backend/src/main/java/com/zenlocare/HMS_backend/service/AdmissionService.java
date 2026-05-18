@@ -206,10 +206,12 @@ public class AdmissionService {
             throw new RuntimeException("Admission is not active");
         }
 
-        // Gate: invoice must be fully paid before discharge is permitted
+        // Gate: invoice must be fully settled before discharge is permitted
         invoiceRepository.findByAdmission_Id(admissionId).ifPresent(inv -> {
-            if (InvoiceStatus.UNPAID.equals(inv.getStatus()) || InvoiceStatus.PARTIAL.equals(inv.getStatus())) {
-                throw new RuntimeException("INVOICE_UNPAID: Patient bill must be fully paid before discharge. Please settle the outstanding balance in the Billing tab.");
+            if (InvoiceStatus.UNPAID.equals(inv.getStatus())
+                    || InvoiceStatus.PARTIAL.equals(inv.getStatus())
+                    || InvoiceStatus.UNSETTLED.equals(inv.getStatus())) {
+                throw new RuntimeException("INVOICE_UNPAID: Patient bill must be fully settled before discharge. Please settle the outstanding balance in the Billing tab.");
             }
         });
 
