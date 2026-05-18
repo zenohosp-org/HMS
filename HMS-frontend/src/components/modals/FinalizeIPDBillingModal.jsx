@@ -466,7 +466,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const isCash = (admission.paymentCategory || 'CASH') === 'CASH'
 
   // ── Collect Payment form (shared between Cash and Credit early-collect) ──────
-  const CollectForm = () => (
+  const collectFormJSX = (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -831,7 +831,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                     <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                       <IndianRupee className="w-3.5 h-3.5" /> Amount Paid
                     </p>
-                    <CollectForm />
+                    {collectFormJSX}
                   </div>
                 )}
 
@@ -855,7 +855,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                         <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                           <IndianRupee className="w-3.5 h-3.5" /> Amount Paid
                         </p>
-                        <CollectForm />
+                        {collectFormJSX}
                       </div>
                     )}
                   </div>
