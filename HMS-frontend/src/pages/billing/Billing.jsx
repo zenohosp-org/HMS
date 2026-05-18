@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, Fragment } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi, bankApi, admissionApi, patientServicesApi } from '@/utils/api'
@@ -10,7 +11,7 @@ import {
   ReceiptText, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
   BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench,
-  Receipt, Eye, Plus, MoreHorizontal, ChevronDown,
+  Receipt, Eye, Plus, MoreHorizontal,
 } from 'lucide-react'
 
 const PAGE_SIZE = 10
@@ -79,9 +80,10 @@ export default function Billing() {
   const { user } = useAuth()
   const { notify } = useNotification()
 
+  const [searchParams] = useSearchParams()
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState('OPD')
+  const tab = searchParams.get('tab') === 'IPD' ? 'IPD' : 'OPD'
   const [opdFilter, setOpdFilter] = useState('ALL')
   const [ipdFilter, setIpdFilter] = useState('ALL')
   const [search, setSearch] = useState('')
@@ -92,7 +94,6 @@ export default function Billing() {
   const [finalizeAdmission, setFinalizeAdmission] = useState(null)
   const [detailInvoiceId, setDetailInvoiceId] = useState(null)
   const [menuState, setMenuState] = useState(null)
-  const [showTabMenu, setShowTabMenu] = useState(false)
 
   const load = async () => {
     if (!user?.hospitalId) return
@@ -145,7 +146,7 @@ export default function Billing() {
   useEffect(() => { load() }, [user?.hospitalId])
 
   useEffect(() => {
-    const close = () => { setMenuState(null); setShowTabMenu(false) }
+    const close = () => { setMenuState(null) }
     document.addEventListener('click', close)
     return () => document.removeEventListener('click', close)
   }, [])
@@ -303,49 +304,6 @@ export default function Billing() {
           <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-800/30">
             {invoices.length} invoices
           </span>
-
-          {/* OPD / IPD dropdown */}
-          <div className="relative">
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowTabMenu(v => !v) }}
-              className="flex items-center gap-2 h-8 px-3 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm font-bold text-slate-700 dark:text-white hover:border-slate-300 dark:hover:border-[#3a3a3a] transition-all"
-            >
-              <span>{tab}</span>
-              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-[#1a1a1a] text-slate-500 dark:text-[#888] text-[10px] font-bold">
-                {tab === 'OPD' ? opdInvoices.length : ipdInvoices.length}
-              </span>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${showTabMenu ? 'rotate-180' : ''}`} />
-            </button>
-            {showTabMenu && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowTabMenu(false)} />
-                <div className="absolute left-0 top-full mt-1.5 w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-xl border border-slate-100 dark:border-[#252525] z-20 py-1.5 overflow-hidden">
-                  {[
-                    { key: 'OPD', label: 'OPD', sub: 'Outpatient invoices', count: opdInvoices.length },
-                    { key: 'IPD', label: 'IPD', sub: 'Inpatient / admission', count: ipdInvoices.length },
-                  ].map(({ key, label, sub, count }) => (
-                    <button
-                      key={key}
-                      onClick={() => { setTab(key); setPage(1); setSearch(''); setExpandedId(null); setShowTabMenu(false) }}
-                      className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${
-                        tab === key ? 'bg-slate-50 dark:bg-[#222]' : 'hover:bg-slate-50 dark:hover:bg-[#1e1e1e]'
-                      }`}
-                    >
-                      <div>
-                        <p className={`text-sm font-bold leading-tight ${tab === key ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-[#aaa]'}`}>{label}</p>
-                        <p className="text-[11px] text-slate-400 dark:text-[#666] mt-0.5">{sub}</p>
-                      </div>
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        tab === key
-                          ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
-                          : 'bg-slate-200 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#666]'
-                      }`}>{count}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
         </div>
         <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-2">
           <ReceiptText className="w-4 h-4" /> New Invoice

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   Home,
@@ -35,7 +35,6 @@ const CLINICAL_LINKS = [
   { label: "Appointments", to: "/appointments", icon: Calendar },
 ];
 const ADMIN_LINKS = [
-  { label: "Billing", to: "/billing", icon: ReceiptText },
   { label: "Specializations", to: "/specializations", icon: Stethoscope },
   { label: "Services", to: "/services", icon: ClipboardList },
 ];
@@ -78,6 +77,7 @@ function Sidebar({ isOpen }) {
   const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
   const [ambOpen, setAmbOpen] = useState(() => location.pathname.startsWith("/ambulance"));
   const [settingsOpen, setSettingsOpen] = useState(() => location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages") || location.pathname.startsWith("/settings/patient-services"));
+  const [billingOpen, setBillingOpen] = useState(() => location.pathname === "/billing");
   const filteredClinicalLinks = CLINICAL_LINKS.filter((link) => {
     if (user?.role === "hospital_admin" || user?.role === "super_admin") return true;
     const allowedLinks = ["Patients", "Appointments"];
@@ -140,6 +140,39 @@ function Sidebar({ isOpen }) {
   const renderAmbulanceAccordion = () => renderAccordionSection(AMBULANCE_LINKS, "Ambulance", Ambulance, ambOpen, setAmbOpen, ambActive);
   const settingsActive = location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages") || location.pathname.startsWith("/settings/patient-services");
   const renderSettingsAccordion = () => renderAccordionSection(SETTINGS_LINKS, "Settings", Settings, settingsOpen, setSettingsOpen, settingsActive);
+  const billingActive = location.pathname === "/billing";
+  const billingTab = new URLSearchParams(location.search).get("tab") || "OPD";
+  const renderBillingAccordion = () => {
+    if (!isOpen) return renderLink({ label: "Billing", to: "/billing", icon: ReceiptText });
+    return (
+      <div>
+        <button
+          onClick={() => setBillingOpen(o => !o)}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${billingActive ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white"}`}
+        >
+          <ReceiptText className={`w-4 h-4 shrink-0 ${billingActive ? "text-slate-700 dark:text-white" : ""}`} />
+          <span className="flex-1 text-left truncate">Billing</span>
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${billingOpen ? "rotate-180" : ""} opacity-50`} />
+        </button>
+        {billingOpen && (
+          <div className="mt-0.5 space-y-0.5">
+            {[{ label: "OPD", tab: "OPD" }, { label: "IPD", tab: "IPD" }].map(({ label, tab }) => {
+              const active = billingActive && billingTab === tab;
+              return (
+                <Link
+                  key={tab}
+                  to={`/billing?tab=${tab}`}
+                  className={`flex items-center gap-3 px-3 pl-8 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${active ? "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white" : "text-slate-700 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white"}`}
+                >
+                  <span className="truncate">{label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
   return <aside
     className={`flex flex-col h-full transition-all duration-300 ease-in-out shrink-0
                 bg-white dark:bg-[#111111] border-r border-slate-200 dark:border-[#222222]
@@ -148,7 +181,7 @@ function Sidebar({ isOpen }) {
     /* Logo */
   }<div className={`flex items-center border-b border-slate-200 dark:border-[#222222] h-14 ${isOpen ? "gap-3 px-4" : "justify-center"}`}><div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0"><Activity className="w-4 h-4 text-white dark:text-slate-900" /></div>{isOpen && <div className="overflow-hidden"><p className="font-bold text-sm leading-tight tracking-wider text-slate-900 dark:text-white">ZenoHosp</p><p className="text-xs text-slate-600 dark:text-[#888888] truncate mt-0.5">{user?.hospitalName}</p></div>}</div>{
     /* Navigation */
-  }<nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Main Menu</div>}{renderLink(DASHBOARD_LINK)}{isOpen && <div className="px-3 mb-2 mt-10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Hospital</div>}{filteredClinicalLinks.map((link) => renderLink(link))}{renderRoomsAccordion()}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{renderAmbulanceAccordion()}{renderLink(CHECKUP_LINK)}{filteredAdminLinks.map((link) => renderLink(link))}{isHrAdmin && renderHrAccordion()}{isHrAdmin && renderSettingsAccordion()}</nav>{
+  }<nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Main Menu</div>}{renderLink(DASHBOARD_LINK)}{isOpen && <div className="px-3 mb-2 mt-10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Hospital</div>}{filteredClinicalLinks.map((link) => renderLink(link))}{renderRoomsAccordion()}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{renderAmbulanceAccordion()}{renderLink(CHECKUP_LINK)}{renderBillingAccordion()}{filteredAdminLinks.map((link) => renderLink(link))}{isHrAdmin && renderHrAccordion()}{isHrAdmin && renderSettingsAccordion()}</nav>{
     /* Other Apps at bottom */
   }<div className="border-t border-slate-200 dark:border-[#222222] p-2 space-y-0.5 shrink-0">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Other Apps</div>}{EXTERNAL_APPS.map((app) => renderExternalApp(app))}</div></aside>;
 }
