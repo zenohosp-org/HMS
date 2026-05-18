@@ -78,7 +78,7 @@ function Patients() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Patients</h1>
           <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-500/20">
-            {patients.length} registered
+            {patients.length}
           </span>
         </div>
         <button className="btn-primary" onClick={() => setModal({ open: true, patient: null })}>

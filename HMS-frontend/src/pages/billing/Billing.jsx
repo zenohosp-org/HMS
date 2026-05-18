@@ -23,6 +23,11 @@ const STATUS_CFG = {
   CANCELLED: { label: 'Cancelled', cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',                   Icon: XCircle      },
 }
 
+const STATUS_CFG_IPD = {
+  SETTLED:     { label: 'Settled',     cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
+  NOT_SETTLED: { label: 'Not Settled', cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',             Icon: Clock        },
+}
+
 const TYPE_META = {
   MEDICINE:     { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill        className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> },
   LAB_TEST:     { bg: 'bg-slate-100 dark:bg-slate-700/40',     icon: <FlaskConical className="w-3 h-3 text-slate-600 dark:text-slate-300" />    },
@@ -205,7 +210,14 @@ export default function Billing() {
   }
 
   const filtered = useMemo(() => {
-    let list = currentFilter === 'ALL' ? currentInvoices : currentInvoices.filter(i => i.status === currentFilter)
+    let list
+    if (tab === 'IPD') {
+      if (currentFilter === 'SETTLED') list = currentInvoices.filter(i => i.status === 'PAID')
+      else if (currentFilter === 'NOT_SETTLED') list = currentInvoices.filter(i => i.status === 'UNPAID' || i.status === 'PARTIAL')
+      else list = currentInvoices
+    } else {
+      list = currentFilter === 'ALL' ? currentInvoices : currentInvoices.filter(i => i.status === currentFilter)
+    }
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(i =>
@@ -215,7 +227,7 @@ export default function Billing() {
       )
     }
     return list
-  }, [currentInvoices, currentFilter, search])
+  }, [currentInvoices, currentFilter, search, tab])
 
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
@@ -326,17 +338,20 @@ export default function Billing() {
           {/* Status filter + search */}
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#2a2a2a] rounded-lg p-0.5">
-              {['ALL', 'UNPAID', 'PARTIAL', 'PAID', 'CANCELLED'].map(s => (
+              {(tab === 'IPD'
+                ? [{ key: 'ALL', label: 'All' }, { key: 'NOT_SETTLED', label: 'Not Settled' }, { key: 'SETTLED', label: 'Settled' }]
+                : [{ key: 'ALL', label: 'All' }, { key: 'UNPAID', label: 'Unpaid' }, { key: 'PARTIAL', label: 'Partial' }, { key: 'PAID', label: 'Paid' }, { key: 'CANCELLED', label: 'Cancelled' }]
+              ).map(({ key, label }) => (
                 <button
-                  key={s}
-                  onClick={() => setCurrentFilter(s)}
+                  key={key}
+                  onClick={() => setCurrentFilter(key)}
                   className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                    currentFilter === s
+                    currentFilter === key
                       ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
                       : 'text-slate-500 dark:text-[#888] hover:text-slate-700 dark:hover:text-[#aaa]'
                   }`}
                 >
-                  {s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
+                  {label}
                 </button>
               ))}
             </div>
@@ -389,7 +404,7 @@ export default function Billing() {
                           ? 'No invoices match your search.'
                           : currentFilter === 'ALL'
                             ? `No ${tab} invoices yet.`
-                            : `No ${tab} invoices with status ${currentFilter.toLowerCase()}.`
+                            : `No ${tab} invoices with status ${{ SETTLED: 'settled', NOT_SETTLED: 'not settled' }[currentFilter] ?? currentFilter.toLowerCase()}.`
                         }
                       </p>
                     </div>
@@ -456,7 +471,14 @@ export default function Billing() {
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20">
                                 <BedDouble className="w-3 h-3" /> Admitted
                               </span>
-                            ) : (
+                            ) : tab === 'IPD' ? (() => {
+                              const ipdCfg = inv.status === 'PAID' ? STATUS_CFG_IPD.SETTLED : STATUS_CFG_IPD.NOT_SETTLED
+                              return (
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${ipdCfg.cls}`}>
+                                  <ipdCfg.Icon className="w-3 h-3" /> {ipdCfg.label}
+                                </span>
+                              )
+                            })() : (
                               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${cfg.cls}`}>
                                 <StatusIcon className="w-3 h-3" /> {cfg.label}
                               </span>
@@ -543,7 +565,7 @@ export default function Billing() {
       {finalizeAdmission && (
         <FinalizeIPDBillingModal
           admission={finalizeAdmission}
-          onClose={() => setFinalizeAdmission(null)}
+          onClose={() => { setFinalizeAdmission(null); load() }}
           onFinalized={() => { setFinalizeAdmission(null); load(); reloadAdmissions() }}
         />
       )}
