@@ -46,6 +46,9 @@ public class PatientRecord {
     @Column(name = "admission_number", length = 50)
     private String admissionNumber;
 
+    @Column(name = "mrn", length = 30, unique = true)
+    private String mrn;
+
     @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

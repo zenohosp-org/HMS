@@ -31,6 +31,16 @@ public class RecordController {
         return ResponseEntity.ok(dtos);
     }
 
+    @GetMapping("/by-user")
+    public ResponseEntity<List<RecordDto>> getRecordsByUser(
+            @RequestParam UUID userId,
+            @RequestParam UUID hospitalId) {
+
+        List<PatientRecord> records = recordService.getRecordsByUser(userId, hospitalId);
+        List<RecordDto> dtos = records.stream().map(this::mapToDto).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
     @PostMapping
     public ResponseEntity<RecordDto> createRecord(
             @RequestBody CreateRecordRequest req,
@@ -52,6 +62,7 @@ public class RecordController {
         dto.setCreatedAt(record.getCreatedAt().toString());
         dto.setAdmissionId(record.getAdmissionId() != null ? record.getAdmissionId().toString() : null);
         dto.setAdmissionNumber(record.getAdmissionNumber());
+        dto.setMrn(record.getMrn());
 
         RecordDto.CreatorDto creator = new RecordDto.CreatorDto();
         creator.setFirstName(record.getCreatedBy().getFirstName());
@@ -82,6 +93,7 @@ public class RecordController {
         private String createdAt;
         private String admissionId;
         private String admissionNumber;
+        private String mrn;
         private CreatorDto createdBy;
 
         @Data

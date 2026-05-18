@@ -15,6 +15,8 @@ public interface PatientRecordRepository extends JpaRepository<PatientRecord, In
 
     List<PatientRecord> findByHospitalId(UUID hospitalId);
 
+    List<PatientRecord> findByCreatedByIdAndHospitalIdOrderByCreatedAtDesc(UUID createdById, UUID hospitalId);
+
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT pr.patient.id) FROM PatientRecord pr WHERE pr.createdBy.id = :userId")
     long countUniquePatientsByDoctor(@org.springframework.data.repository.query.Param("userId") UUID userId);
 }

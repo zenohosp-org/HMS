@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,10 @@ public class RecordService {
         return recordRepository.findByPatientIdAndHospitalId(patientId, hospitalId);
     }
 
+    public List<PatientRecord> getRecordsByUser(UUID userId, UUID hospitalId) {
+        return recordRepository.findByCreatedByIdAndHospitalIdOrderByCreatedAtDesc(userId, hospitalId);
+    }
+
     public PatientRecord createRecord(UUID hospitalId, Integer patientId, User createdBy,
             String historyType, String description, LocalDateTime nextVisitDate,
             java.util.UUID admissionId, String admissionNumber) {
@@ -37,6 +42,8 @@ public class RecordService {
         Patient patient = patientRepository.findByIdAndHospitalId(patientId, hospitalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
 
+        String mrn = generateMrn();
+
         PatientRecord record = PatientRecord.builder()
                 .hospital(hospital)
                 .patient(patient)
@@ -46,9 +53,16 @@ public class RecordService {
                 .nextVisitDate(nextVisitDate)
                 .admissionId(admissionId)
                 .admissionNumber(admissionNumber)
+                .mrn(mrn)
                 .createdAt(LocalDateTime.now())
                 .build();
 
         return recordRepository.save(record);
+    }
+
+    private String generateMrn() {
+        int year = LocalDateTime.now().getYear();
+        long seq = recordRepository.count() + 1 + ThreadLocalRandom.current().nextInt(100);
+        return String.format("MRN-%d-%05d", year, seq);
     }
 }
