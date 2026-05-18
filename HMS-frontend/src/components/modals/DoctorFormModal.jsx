@@ -5,7 +5,7 @@ import { doctorsApi, staffApi } from "@/utils/api";
 import StateSelect from "@/components/StateSelect";
 import SidePane from "@/components/SidePane";
 import {
-  Stethoscope, Briefcase, User, Building2, Home, Lock, X,
+  Briefcase, User, Building2, Home,
 } from "lucide-react";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -317,274 +317,221 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
 
   // ── Create mode: single-view modal ───────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-[#111111] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#222222] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="card w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100 dark:border-[#1a1a1a] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center shadow-md shadow-blue-500/20">
-              <Stethoscope className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white leading-tight">Add New Doctor</h2>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Fill in all details to create the doctor's profile</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all">
-            <X className="w-5 h-5" />
-          </button>
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Add New Doctor</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-7 py-6 space-y-7">
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-6">
 
-          {/* ── Account Setup ── */}
-          <div>
-            <SectionTitle>Account Setup</SectionTitle>
-            <div className="space-y-4">
+            {/* ── Account Setup ── */}
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Account Setup</p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">First Name *</label>
+                    <input autoFocus type="text" className="input" value={userForm.firstName}
+                      onChange={(e) => setUser({ firstName: e.target.value })} placeholder="Arjun" />
+                  </div>
+                  <div>
+                    <label className="label">Last Name *</label>
+                    <input type="text" className="input" value={userForm.lastName}
+                      onChange={(e) => setUser({ lastName: e.target.value })} placeholder="Sharma" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Email Address *</label>
+                    <input type="email" className="input" value={userForm.email}
+                      onChange={(e) => setUser({ email: e.target.value })} placeholder="doctor@hospital.com" />
+                  </div>
+                  <div>
+                    <label className="label">Phone Number</label>
+                    <input type="tel" className="input" value={userForm.phone}
+                      onChange={(e) => setUser({ phone: e.target.value })} placeholder="+91 98765 43210" />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Temporary Password *</label>
+                  <input type="password" className="input" value={userForm.password}
+                    onChange={(e) => setUser({ password: e.target.value })} placeholder="Min. 6 characters" />
+                </div>
+              </div>
+            </div>
+
+            {/* ── Professional Identity ── */}
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Professional Identity</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <FieldLabel required>First Name</FieldLabel>
-                  <input autoFocus type="text" value={userForm.firstName}
-                    onChange={(e) => setUser({ firstName: e.target.value })}
-                    className={inputBase} placeholder="Arjun" />
+                  <label className="label">Specialization *</label>
+                  <input type="text" className="input" value={doctorForm.specialization}
+                    onChange={(e) => setDoc({ specialization: e.target.value })} placeholder="e.g. Cardiologist" />
                 </div>
                 <div>
-                  <FieldLabel required>Last Name</FieldLabel>
-                  <input type="text" value={userForm.lastName}
-                    onChange={(e) => setUser({ lastName: e.target.value })}
-                    className={inputBase} placeholder="Sharma" />
+                  <label className="label">Qualification *</label>
+                  <input type="text" className="input" value={doctorForm.qualification}
+                    onChange={(e) => setDoc({ qualification: e.target.value })} placeholder="e.g. MBBS, MD" />
+                </div>
+                <div>
+                  <label className="label">Registration Number *</label>
+                  <input type="text" className="input" value={doctorForm.medicalRegistrationNumber}
+                    onChange={(e) => setDoc({ medicalRegistrationNumber: e.target.value })} placeholder="MRC-XXXXXX" />
+                </div>
+                <div>
+                  <label className="label">Registration Council *</label>
+                  <input type="text" className="input" value={doctorForm.registrationCouncil}
+                    onChange={(e) => setDoc({ registrationCouncil: e.target.value })} placeholder="e.g. Tamil Nadu Medical Council" />
                 </div>
               </div>
+            </div>
+
+            {/* ── Contact Information ── */}
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Contact Information</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <FieldLabel required>Email Address</FieldLabel>
-                  <input type="email" value={userForm.email}
-                    onChange={(e) => setUser({ email: e.target.value })}
-                    className={inputBase} placeholder="doctor@hospital.com" />
+                  <label className="label">Work Phone</label>
+                  <input type="tel" className="input" value={doctorForm.workPhone}
+                    onChange={(e) => setDoc({ workPhone: e.target.value })} placeholder="+91 98765 43210" />
                 </div>
                 <div>
-                  <FieldLabel>Phone Number</FieldLabel>
-                  <input type="tel" value={userForm.phone}
-                    onChange={(e) => setUser({ phone: e.target.value })}
-                    className={inputBase} placeholder="+91 98765 43210" />
+                  <label className="label">Work Email</label>
+                  <input type="email" className="input" value={doctorForm.workEmail}
+                    onChange={(e) => setDoc({ workEmail: e.target.value })} placeholder="dr.name@hospital.com" />
                 </div>
-              </div>
-              <div>
-                <FieldLabel required>Temporary Password</FieldLabel>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input type="password" value={userForm.password}
-                    onChange={(e) => setUser({ password: e.target.value })}
-                    className={`${inputBase} pl-11`} placeholder="Min. 6 characters" />
+                <div>
+                  <label className="label">Personal Phone</label>
+                  <input type="tel" className="input" value={doctorForm.personalPhone}
+                    onChange={(e) => setDoc({ personalPhone: e.target.value })} placeholder="+91 99999 00000" />
+                </div>
+                <div>
+                  <label className="label">Personal Email</label>
+                  <input type="email" className="input" value={doctorForm.personalEmail}
+                    onChange={(e) => setDoc({ personalEmail: e.target.value })} placeholder="name@personal.com" />
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="h-px bg-slate-100 dark:bg-[#1e1e1e]" />
-
-          {/* ── Professional Identity ── */}
-          <div>
-            <SectionTitle>Professional Identity</SectionTitle>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <FieldLabel required>Specialization</FieldLabel>
-                <input type="text" value={doctorForm.specialization}
-                  onChange={(e) => setDoc({ specialization: e.target.value })}
-                  className={inputBase} placeholder="e.g. Cardiologist" />
-              </div>
-              <div>
-                <FieldLabel required>Qualification</FieldLabel>
-                <input type="text" value={doctorForm.qualification}
-                  onChange={(e) => setDoc({ qualification: e.target.value })}
-                  className={inputBase} placeholder="e.g. MBBS, MD" />
-              </div>
-              <div>
-                <FieldLabel required>Registration Number</FieldLabel>
-                <input type="text" value={doctorForm.medicalRegistrationNumber}
-                  onChange={(e) => setDoc({ medicalRegistrationNumber: e.target.value })}
-                  className={inputBase} placeholder="MRC-XXXXXX" />
-              </div>
-              <div>
-                <FieldLabel required>Registration Council</FieldLabel>
-                <input type="text" value={doctorForm.registrationCouncil}
-                  onChange={(e) => setDoc({ registrationCouncil: e.target.value })}
-                  className={inputBase} placeholder="e.g. Tamil Nadu Medical Council" />
+            {/* ── Address ── */}
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Address</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="label">Work / Clinic Address</label>
+                  <textarea rows={2} className="input resize-none" value={doctorForm.workAddress}
+                    onChange={(e) => { setDoc({ workAddress: e.target.value }); if (sameAddress) setDoc({ residentialAddress: e.target.value }); }}
+                    placeholder="Hospital/clinic name, street, area, city, pincode" />
+                </div>
+                <label className="flex items-center gap-2.5 cursor-pointer group w-fit select-none">
+                  <div
+                    onClick={() => { const n = !sameAddress; setSameAddress(n); if (n) setDoc({ residentialAddress: doctorForm.workAddress }); }}
+                    className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all shrink-0 ${
+                      sameAddress ? "bg-slate-800 border-slate-800 dark:bg-white dark:border-white" : "border-slate-300 dark:border-[#3a3a3a] group-hover:border-slate-500"
+                    }`}
+                  >
+                    {sameAddress && <svg className="w-2.5 h-2.5 text-white dark:text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                  </div>
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Residential address same as work address</span>
+                </label>
+                <div>
+                  <label className="label">Residential Address</label>
+                  <textarea rows={2} className={`input resize-none${sameAddress ? " opacity-40 cursor-not-allowed" : ""}`}
+                    value={doctorForm.residentialAddress}
+                    onChange={(e) => setDoc({ residentialAddress: e.target.value })}
+                    disabled={sameAddress}
+                    placeholder="Home address, street, area, city, pincode" />
+                </div>
+                <StateSelect
+                  value={userForm.state}
+                  onChange={(val) => setUser({ state: val })}
+                  inputClassName="input w-full flex items-center justify-between text-left"
+                  labelClassName="label"
+                />
               </div>
             </div>
-          </div>
 
-          <div className="h-px bg-slate-100 dark:bg-[#1e1e1e]" />
-
-          {/* ── Contact Information ── */}
-          <div>
-            <SectionTitle>Contact Information</SectionTitle>
-            <div className="grid grid-cols-2 gap-4">
-              <ContactGroup icon={Briefcase} label="Work" colorClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
-                <div>
-                  <FieldLabel>Work Phone</FieldLabel>
-                  <input type="tel" value={doctorForm.workPhone}
-                    onChange={(e) => setDoc({ workPhone: e.target.value })}
-                    className={inputBase} placeholder="+91 98765 43210" />
+            {/* ── Schedule & Fees ── */}
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Schedule & Fees</p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Consultation Fee (₹) *</label>
+                    <input type="number" min="1" step="0.01" className="input" value={doctorForm.consultationFee || ""}
+                      onChange={(e) => setDoc({ consultationFee: parseFloat(e.target.value) || 0 })} placeholder="500" />
+                  </div>
+                  <div>
+                    <label className="label">Follow-up Fee (₹) *</label>
+                    <input type="number" min="1" step="0.01" className="input" value={doctorForm.followUpFee || ""}
+                      onChange={(e) => setDoc({ followUpFee: parseFloat(e.target.value) || 0 })} placeholder="300" />
+                  </div>
+                  <div>
+                    <label className="label">Slot Duration (min) *</label>
+                    <input type="number" min="5" step="5" className="input" value={doctorForm.slotDurationMin || ""}
+                      onChange={(e) => setDoc({ slotDurationMin: parseInt(e.target.value) || 0 })} placeholder="15" />
+                  </div>
+                  <div>
+                    <label className="label">Max Daily Slots *</label>
+                    <input type="number" min="1" className="input" value={doctorForm.maxDailySlots || ""}
+                      onChange={(e) => setDoc({ maxDailySlots: parseInt(e.target.value) || 0 })} placeholder="40" />
+                  </div>
                 </div>
                 <div>
-                  <FieldLabel>Work Email</FieldLabel>
-                  <input type="email" value={doctorForm.workEmail}
-                    onChange={(e) => setDoc({ workEmail: e.target.value })}
-                    className={inputBase} placeholder="dr.name@hospital.com" />
+                  <label className="label">Available Days *</label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {DAYS.map((day) => {
+                      const active = activeDays.includes(day);
+                      return (
+                        <button key={day} type="button" onClick={() => toggleDay(day)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                            active
+                              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white"
+                              : "bg-white dark:bg-[#1e1e1e] text-slate-400 border-slate-200 dark:border-[#333] hover:border-slate-400 dark:hover:border-[#555]"
+                          }`}>
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </ContactGroup>
-              <ContactGroup icon={User} label="Personal" colorClass="bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400">
-                <div>
-                  <FieldLabel>Personal Phone</FieldLabel>
-                  <input type="tel" value={doctorForm.personalPhone}
-                    onChange={(e) => setDoc({ personalPhone: e.target.value })}
-                    className={inputBase} placeholder="+91 99999 00000" />
-                </div>
-                <div>
-                  <FieldLabel>Personal Email</FieldLabel>
-                  <input type="email" value={doctorForm.personalEmail}
-                    onChange={(e) => setDoc({ personalEmail: e.target.value })}
-                    className={inputBase} placeholder="name@personal.com" />
-                </div>
-              </ContactGroup>
-            </div>
-          </div>
-
-          <div className="h-px bg-slate-100 dark:bg-[#1e1e1e]" />
-
-          {/* ── Address ── */}
-          <div>
-            <SectionTitle>Address</SectionTitle>
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-blue-500" />
-                  <FieldLabel>Work / Clinic Address</FieldLabel>
-                </div>
-                <textarea rows={3} value={doctorForm.workAddress}
-                  onChange={(e) => { setDoc({ workAddress: e.target.value }); if (sameAddress) setDoc({ residentialAddress: e.target.value }); }}
-                  className={textareaBase} placeholder="Hospital/clinic name, street, area, city, pincode" />
-              </div>
-              <label className="flex items-center gap-3 cursor-pointer group w-fit select-none">
-                <div
-                  onClick={() => { const n = !sameAddress; setSameAddress(n); if (n) setDoc({ residentialAddress: doctorForm.workAddress }); }}
-                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${
-                    sameAddress ? "bg-blue-500 border-blue-500" : "border-slate-300 dark:border-[#3a3a3a] group-hover:border-blue-400"
-                  }`}
-                >
-                  {sameAddress && (
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Residential address same as work address</span>
-              </label>
-              <div>
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Home className="w-3.5 h-3.5 text-violet-500" />
-                  <FieldLabel>Residential Address</FieldLabel>
-                </div>
-                <textarea rows={3} value={doctorForm.residentialAddress}
-                  onChange={(e) => setDoc({ residentialAddress: e.target.value })}
-                  disabled={sameAddress}
-                  className={`${textareaBase} ${sameAddress ? "opacity-40 cursor-not-allowed" : ""}`}
-                  placeholder="Home address, street, area, city, pincode" />
-              </div>
-              <StateSelect
-                value={userForm.state}
-                onChange={(val) => setUser({ state: val })}
-                inputClassName={`${inputBase} flex items-center justify-between text-left`}
-                labelClassName="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5"
-              />
-            </div>
-          </div>
-
-          <div className="h-px bg-slate-100 dark:bg-[#1e1e1e]" />
-
-          {/* ── Schedule & Fees ── */}
-          <div>
-            <SectionTitle>Schedule & Fees</SectionTitle>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <FieldLabel required>Consultation Fee (₹)</FieldLabel>
-                  <input type="number" min="1" step="0.01" value={doctorForm.consultationFee || ""}
-                    onChange={(e) => setDoc({ consultationFee: parseFloat(e.target.value) || 0 })}
-                    className={inputBase} placeholder="500" />
-                </div>
-                <div>
-                  <FieldLabel required>Follow-up Fee (₹)</FieldLabel>
-                  <input type="number" min="1" step="0.01" value={doctorForm.followUpFee || ""}
-                    onChange={(e) => setDoc({ followUpFee: parseFloat(e.target.value) || 0 })}
-                    className={inputBase} placeholder="300" />
-                </div>
-                <div>
-                  <FieldLabel required>Slot Duration (min)</FieldLabel>
-                  <input type="number" min="5" step="5" value={doctorForm.slotDurationMin || ""}
-                    onChange={(e) => setDoc({ slotDurationMin: parseInt(e.target.value) || 0 })}
-                    className={inputBase} placeholder="15" />
-                </div>
-                <div>
-                  <FieldLabel required>Max Daily Slots</FieldLabel>
-                  <input type="number" min="1" value={doctorForm.maxDailySlots || ""}
-                    onChange={(e) => setDoc({ maxDailySlots: parseInt(e.target.value) || 0 })}
-                    className={inputBase} placeholder="40" />
-                </div>
-              </div>
-              <div>
-                <FieldLabel required>Available Days</FieldLabel>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {DAYS.map((day) => {
-                    const active = activeDays.includes(day);
-                    return (
-                      <button key={day} type="button" onClick={() => toggleDay(day)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                          active
-                            ? "bg-blue-500 text-white border-blue-500 shadow-sm shadow-blue-200 dark:shadow-blue-900/30"
-                            : "bg-white dark:bg-[#161616] text-slate-400 border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a]"
-                        }`}>
-                        {day}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 border border-emerald-100 dark:border-emerald-800/20 p-5">
-                <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest mb-4">
-                  Weekly Schedule Preview
-                </p>
-                <div className="grid grid-cols-4 gap-3">
-                  {[
-                    { label: "Slot",      value: slotMin > 0 ? `${slotMin} min` : "—" },
-                    { label: "Per Day",   value: slotsPerDay > 0 ? slotsPerDay : "—" },
-                    { label: "Hrs / Day", value: fmtDuration(totalMinPerDay) },
-                    { label: "Days / Wk", value: activeDays.length > 0 ? activeDays.length : "—" },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="bg-white/70 dark:bg-black/20 rounded-xl p-3 text-center">
-                      <p className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">{label}</p>
-                      <p className="text-base font-bold text-slate-900 dark:text-white mt-1">{value}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 pt-4 border-t border-emerald-100 dark:border-emerald-800/20 flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total clinical hours / week</span>
-                  <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtDuration(totalMinPerWeek)}</span>
+                <div className="rounded-lg border-2 border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] p-4">
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Weekly Schedule Preview</p>
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { label: "Slot",      value: slotMin > 0 ? `${slotMin} min` : "—" },
+                      { label: "Per Day",   value: slotsPerDay > 0 ? slotsPerDay : "—" },
+                      { label: "Hrs / Day", value: fmtDuration(totalMinPerDay) },
+                      { label: "Days / Wk", value: activeDays.length > 0 ? activeDays.length : "—" },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#2a2a2a] p-3 text-center">
+                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">{label}</p>
+                        <p className="text-base font-bold text-slate-900 dark:text-white mt-1">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-[#2a2a2a] flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total clinical hours / week</span>
+                    <span className="text-lg font-bold text-slate-900 dark:text-white">{fmtDuration(totalMinPerWeek)}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 flex justify-end gap-3 px-7 py-5 border-t border-slate-100 dark:border-[#1a1a1a] bg-slate-50/50 dark:bg-[#0a0a0a]">
-          <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-          <button type="button" onClick={handleCreate} disabled={submitting}
-            className="btn-primary min-w-[140px] justify-center">
+        <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0">
+          <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn-primary" onClick={handleCreate} disabled={submitting}>
             {submitting ? "Creating…" : "Create Profile"}
           </button>
         </div>
