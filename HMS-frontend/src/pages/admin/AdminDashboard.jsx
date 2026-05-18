@@ -39,7 +39,7 @@ function buildLast6Months(invoices) {
   invoices.forEach((inv) => {
     const key = format(parseISO(inv.createdAt), "MMM yy");
     if (key in months) {
-      if (inv.status === "PAID") months[key].paid += Number(inv.total ?? 0);
+      if (inv.status === "PAID" || inv.status === "SETTLED") months[key].paid += Number(inv.total ?? 0);
       else months[key].unpaid += Number(inv.total ?? 0);
     }
   });
@@ -267,11 +267,11 @@ export default function AdminDashboard() {
   }, [staff]);
 
   const totalRevenue = useMemo(
-    () => invoices.filter((i) => i.status === "PAID").reduce((s, i) => s + Number(i.total ?? 0), 0),
+    () => invoices.filter((i) => i.status === "PAID" || i.status === "SETTLED").reduce((s, i) => s + Number(i.total ?? 0), 0),
     [invoices]
   );
   const outstanding = useMemo(
-    () => invoices.filter((i) => i.status !== "PAID" && i.status !== "CANCELLED").reduce((s, i) => s + Number(i.total ?? 0), 0),
+    () => invoices.filter((i) => i.status !== "PAID" && i.status !== "SETTLED" && i.status !== "CANCELLED").reduce((s, i) => s + Number(i.total ?? 0), 0),
     [invoices]
   );
   const activeAdmissions = admissions.filter((a) => !a.dischargeDate).length;
@@ -338,7 +338,7 @@ export default function AdminDashboard() {
           icon={<ReceiptText className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-300" />}
           accent="bg-slate-100 dark:bg-[#1e1e1e]"
           trend={outstanding > totalRevenue ? "down" : "up"}
-          trendLabel={invoices.length > 0 ? `${invoices.filter((i) => i.status === "PAID").length}/${invoices.length} paid` : null}
+          trendLabel={invoices.length > 0 ? `${invoices.filter((i) => i.status === "PAID" || i.status === "SETTLED").length}/${invoices.length} paid` : null}
         />
         <KpiCard
           label="IPD Admissions"

@@ -201,7 +201,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
       setShowRecordPayment(false)
       notify('Payment collected successfully', 'success')
       onInvoiceUpdated?.()
-      if (updated.status === 'PAID') onClose()
+      if (updated.status === 'PAID' || updated.status === 'SETTLED') onClose()
     } catch (err) {
       notify(err?.response?.data?.message || 'Failed to collect payment', 'error')
     } finally {
@@ -270,8 +270,8 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
     }, 250)
   }
 
-  const canWaive = detail?.status === 'UNPAID' || detail?.status === 'PARTIAL'
-  const canPay   = detail?.status === 'UNPAID' || detail?.status === 'PARTIAL'
+  const canWaive = detail?.status === 'UNPAID' || detail?.status === 'PARTIAL' || detail?.status === 'UNSETTLED'
+  const canPay   = detail?.status === 'UNPAID' || detail?.status === 'PARTIAL' || detail?.status === 'UNSETTLED'
   const balanceDue = detail ? Math.max(0, Number(detail.total || 0) - Number(detail.paidAmount || 0)) : 0
   const invoiceDate = detail?.createdAt
     ? new Date(detail.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' })
