@@ -25,6 +25,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   const [bedsLoading, setBedsLoading] = useState(false)
   const [patientSearch, setPatientSearch] = useState('')
   const [selectedPatient, setSelectedPatient] = useState(prefill?.patient || null)
+  const [admittedPatientIds, setAdmittedPatientIds] = useState(new Set())
   const [form, setForm] = useState({
     admissionType: prefill?.admissionType || 'OPD_REFERRAL',
     departmentId: '',
@@ -52,9 +53,11 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     Promise.all([
       departmentApi.list(user.hospitalId, true),
       doctorsApi.list(user.hospitalId),
-    ]).then(([depts, docs]) => {
+      admissionApi.list(user.hospitalId, false),
+    ]).then(([depts, docs, activeAdmissions]) => {
       setDepartments(depts)
       setDoctors(docs.filter(d => d.userIsActive))
+      setAdmittedPatientIds(new Set(activeAdmissions.map(a => a.patientId)))
     })
   }, [user?.hospitalId])
 
@@ -64,10 +67,11 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     if (q.length < 2) { setPatients([]); return }
     patientApi.list(user.hospitalId).then(all =>
       setPatients(all.filter(p =>
+        !admittedPatientIds.has(p.id) &&
         `${p.firstName} ${p.lastName} ${p.uhid}`.toLowerCase().includes(q.toLowerCase())
       ).slice(0, 8))
     )
-  }, [patientSearch])
+  }, [patientSearch, admittedPatientIds])
 
   useEffect(() => {
     if (!user?.hospitalId) return
