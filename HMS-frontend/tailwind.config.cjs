@@ -24,6 +24,9 @@ module.exports = {
             fontFamily: {
                 sans: ['Inter', '"Inter Fallback"', 'system-ui', 'sans-serif'],
             },
+            maxWidth: {
+                '8xl': '96rem',
+            },
         },
     },
     plugins: [],
