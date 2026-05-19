@@ -207,7 +207,8 @@ public class AdmissionService {
         }
 
         // Gate: invoice must be fully settled before discharge is permitted
-        invoiceRepository.findByAdmission_Id(admissionId).ifPresent(inv -> {
+        invoiceRepository.findAllByAdmission_IdOrderByCreatedAtDesc(admissionId)
+                .stream().findFirst().ifPresent(inv -> {
             if (InvoiceStatus.UNPAID.equals(inv.getStatus())
                     || InvoiceStatus.PARTIAL.equals(inv.getStatus())
                     || InvoiceStatus.UNSETTLED.equals(inv.getStatus())) {
