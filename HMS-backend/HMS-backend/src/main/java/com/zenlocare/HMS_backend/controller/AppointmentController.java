@@ -6,6 +6,9 @@ import com.zenlocare.HMS_backend.entity.Appointment;
 import com.zenlocare.HMS_backend.entity.User;
 import com.zenlocare.HMS_backend.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +24,17 @@ import java.util.UUID;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
+
+    @GetMapping("/paginated")
+    public ResponseEntity<Page<AppointmentDto>> getPaginatedAppointments(
+            @RequestParam UUID hospitalId,
+            @RequestParam(required = false) UUID doctorId,
+            @RequestParam(required = false, defaultValue = "ALL") String dateFilter,
+            @RequestParam(required = false, defaultValue = "") String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(appointmentService.getPaginatedAppointments(
+                hospitalId, doctorId, dateFilter, search, pageable));
+    }
 
     @GetMapping("/hospital/{hospitalId}")
     public ResponseEntity<List<AppointmentDto>> getHospitalAppointments(

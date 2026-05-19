@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse } from "lucide-react";
+import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search } from "lucide-react";
 import BookAppointmentModal from "@/components/modals/BookAppointmentModal";
 import AdmitPatientModal from "@/pages/admin/AdmitPatientModal";
 import Pagination from "@/components/ui/Pagination";
@@ -159,22 +159,52 @@ function AppointmentsDashboard() {
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setApptPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const loadData = async () => {
     if (!user?.hospitalId) return;
     setIsLoading(true);
     try {
-      const [appts, docs] = await Promise.all([
-        appointmentsApi.getByHospital(user.hospitalId),
-        doctorsApi.list(user.hospitalId)
-      ]);
-      setAppointments(appts);
-      setDoctors(docs.filter(d => d.userIsActive));
-      if (location.state?.filterMine && user.role === "doctor") {
-        const doc = docs.find((d) => d.userId === user.userId);
-        if (doc) {
-          setSelectedDoctorId(doc.id);
+      if (viewMode === "list") {
+        const params = {
+          page: apptPage - 1,
+          size: APPT_PAGE_SIZE,
+          dateFilter: listFilter.toUpperCase(),
+          search: debouncedSearch,
+        };
+        if (selectedDoctorId !== "all") {
+          params.doctorId = selectedDoctorId;
         }
-        navigate(location.pathname, { replace: true, state: {} });
+        const [res, docs] = await Promise.all([
+          appointmentsApi.listPaginated(user.hospitalId, params),
+          doctors.length === 0 ? doctorsApi.list(user.hospitalId) : Promise.resolve(doctors)
+        ]);
+        setAppointments(res.content || []);
+        setTotalItems(res.totalElements || 0);
+        setTotalPages(res.totalPages || 0);
+        if (doctors.length === 0) {
+          setDoctors(docs.filter(d => d.userIsActive));
+        }
+      } else {
+        const [appts, docs] = await Promise.all([
+          appointmentsApi.getByHospital(user.hospitalId),
+          doctors.length === 0 ? doctorsApi.list(user.hospitalId) : Promise.resolve(doctors)
+        ]);
+        setAppointments(appts);
+        if (doctors.length === 0) {
+          setDoctors(docs.filter(d => d.userIsActive));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -183,9 +213,20 @@ function AppointmentsDashboard() {
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
     loadData();
-  }, [user]);
+  }, [user?.hospitalId, viewMode, apptPage, listFilter, selectedDoctorId, debouncedSearch]);
+
+  useEffect(() => {
+    if (location.state?.filterMine && user?.role === "doctor" && doctors.length > 0) {
+      const doc = doctors.find((d) => d.userId === user.userId);
+      if (doc) {
+        setSelectedDoctorId(doc.id);
+      }
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [doctors, user, location]);
   const handleStatusUpdate = async (id, status, cancelledReason) => {
     const snapshot = appointments.find((a) => String(a.id) === id);
     setAppointments((prev) => prev.map((a) => String(a.id) === id ? { ...a, status } : a));
@@ -200,31 +241,16 @@ function AppointmentsDashboard() {
   useEffect(() => {
     setApptPage(1);
   }, [listFilter, selectedDoctorId]);
+
   const filteredAppointments = useMemo(() => {
     let appts = appointments;
-    if (selectedDoctorId !== "all") {
-      appts = appts.filter((a) => a.doctorId === selectedDoctorId);
-    }
-    if (viewMode === "list") {
-      const today = /* @__PURE__ */ new Date();
-      switch (listFilter) {
-        case "today":
-          appts = appts.filter((a) => isSameDay(parseISO(a.apptDate), today));
-          break;
-        case "upcoming":
-          appts = appts.filter((a) => parseISO(a.apptDate) > today || isSameDay(parseISO(a.apptDate), today) && a.status === "SCHEDULED");
-          break;
-        case "completed":
-          appts = appts.filter((a) => a.status === "COMPLETED");
-          break;
-        case "cancelled":
-          appts = appts.filter((a) => ["CANCELLED", "NO_SHOW"].includes(a.status));
-          break;
+    if (viewMode === "calendar") {
+      if (selectedDoctorId !== "all") {
+        appts = appts.filter((a) => a.doctorId === selectedDoctorId);
       }
-      appts = [...appts].sort((a, b) => (/* @__PURE__ */ new Date(`${b.apptDate}T${b.apptTime}`)).getTime() - (/* @__PURE__ */ new Date(`${a.apptDate}T${a.apptTime}`)).getTime());
     }
     return appts;
-  }, [appointments, selectedDoctorId, viewMode, listFilter]);
+  }, [appointments, selectedDoctorId, viewMode]);
   const nextPeriod = () => {
     if (calendarView === "day") setCurrentDate(addDays(currentDate, 1));
     if (calendarView === "week") setCurrentDate(addWeeks(currentDate, 1));
@@ -250,17 +276,23 @@ function AppointmentsDashboard() {
     const index = doctors.findIndex((d) => d.id === doctorId);
     return APPT_COLORS[(index >= 0 ? index : 0) % APPT_COLORS.length];
   };
-  const renderListView = () => <div className="bg-white dark:bg-[#111111] rounded-lg shadow-sm overflow-hidden flex flex-col flex-1"><div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-[#222222]"><h3 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">All Appointments</h3><div className="flex gap-2"><div className="relative"><select
+  const renderListView = () => <div className="bg-white dark:bg-[#111111] rounded-lg shadow-sm overflow-hidden flex flex-col flex-1"><div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-[#222222]"><h3 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">All Appointments</h3><div className="flex gap-3 items-center w-full max-w-lg justify-end"><div className="relative flex-1 max-w-xs"><Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" /><input
+    type="text"
+    placeholder="Search patient, UHID, doctor..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="w-full pl-9 pr-4 py-1.5 text-sm border border-slate-200 dark:border-[#333333] rounded-lg bg-slate-50 dark:bg-[#1a1a1a] text-slate-900 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-300/50 transition-all"
+  /></div><div className="relative"><select
     value={selectedDoctorId}
     onChange={(e) => setSelectedDoctorId(e.target.value)}
     className="appearance-none bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] text-slate-700 dark:text-slate-300 text-sm font-medium py-2 pl-4 pr-10 rounded-lg outline-none focus:ring-2 focus:ring-slate-300/50 transition-all cursor-pointer"
   ><option value="all">All Doctors</option>{doctors.map((d) => <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>)}</select><Filter className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" /></div></div></div><div className="flex flex-col flex-1 overflow-hidden"><div className="overflow-x-auto flex-1"><table className="w-full text-left border-collapse"><thead><tr className="border-b border-slate-200 dark:border-[#222222] bg-slate-50/50 dark:bg-[#0f0f0f]"><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Patient</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Doctor</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Date &amp; Time</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Status</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Type</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredAppointments.length === 0 ? <tr><td colSpan={6} className="py-12 text-center text-slate-500 dark:text-[#888888]"><CalendarIcon className="w-8 h-8 mx-auto mb-3 opacity-50" />
     No appointments found for the selected filters.
-  </td></tr> : filteredAppointments.slice((apptPage - 1) * APPT_PAGE_SIZE, apptPage * APPT_PAGE_SIZE).map((appt) => <tr key={appt.id} className="hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors group"><td className="py-3 px-5"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#222222] text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-sm shrink-0">{appt.patientName.charAt(0)}</div><div><p className="font-semibold text-sm text-slate-900 dark:text-white">{appt.patientName}</p>{appt.checkupBookingId && <button onClick={() => navigate(`/checkups/bookings/${appt.checkupBookingId}`)} className="flex items-center gap-1 mt-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"><HeartPulse className="w-3 h-3" />{appt.checkupBookingNumber}</button>}</div></div></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">
+  </td></tr> : filteredAppointments.map((appt) => <tr key={appt.id} className="hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors group"><td className="py-3 px-5"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#222222] text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-sm shrink-0">{appt.patientName.charAt(0)}</div><div><p className="font-semibold text-sm text-slate-900 dark:text-white">{appt.patientName}</p>{appt.checkupBookingId && <button onClick={() => navigate(`/checkups/bookings/${appt.checkupBookingId}`)} className="flex items-center gap-1 mt-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"><HeartPulse className="w-3 h-3" />{appt.checkupBookingNumber}</button>}</div></div></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">
     Dr. {appt.doctorName}</td><td className="py-3 px-5"><p className="text-sm font-medium text-slate-900 dark:text-white">{format(parseISO(appt.apptDate), "yyyy-MM-dd")}</p><p className="text-xs text-slate-500 dark:text-[#888888] mt-0.5">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p></td><td className="py-3 px-5"><span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide ${STATUS_STYLES[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">{TYPE_LABEL[appt.type] ?? appt.type}</td><td className="py-3 px-5"><div className="flex items-center gap-2"><ActionMenu appt={appt} onUpdate={handleStatusUpdate} onAdmit={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), uhid: appt.patientUhid }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })} onViewPatientDetails={() => navigate(`/patients/${appt.patientId}`)} /></div></td></tr>)}</tbody></table></div><div className="px-5 pb-4"><Pagination
       currentPage={apptPage}
-      totalPages={Math.ceil(filteredAppointments.length / APPT_PAGE_SIZE)}
-      totalItems={filteredAppointments.length}
+      totalPages={totalPages}
+      totalItems={totalItems}
       pageSize={APPT_PAGE_SIZE}
       onPageChange={setApptPage}
     /></div></div></div>;

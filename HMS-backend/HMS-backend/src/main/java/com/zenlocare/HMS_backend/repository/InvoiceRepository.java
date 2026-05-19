@@ -64,6 +64,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
              OR CAST(i.status AS string) = :status)
         AND (
             LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
             LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
                 LIKE LOWER(CONCAT('%', :search, '%')) OR
             LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
@@ -85,6 +87,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
              OR CAST(i.status AS string) = :status)
         AND (
             LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
             LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
                 LIKE LOWER(CONCAT('%', :search, '%')) OR
             LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))

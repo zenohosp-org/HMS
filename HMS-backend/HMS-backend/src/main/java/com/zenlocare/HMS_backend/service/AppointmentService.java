@@ -5,6 +5,8 @@ import com.zenlocare.HMS_backend.dto.AppointmentRequest;
 import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,23 @@ public class AppointmentService {
                 return appointmentRepository.findByHospitalId(hospitalId).stream()
                                 .map(AppointmentDto::fromEntity)
                                 .collect(Collectors.toList());
+        }
+
+        public Page<AppointmentDto> getPaginatedAppointments(
+                        UUID hospitalId,
+                        UUID doctorId,
+                        String dateFilter,
+                        String search,
+                        Pageable pageable) {
+                LocalDate today = LocalDate.now();
+                Page<Appointment> page = appointmentRepository.searchAppointments(
+                                hospitalId,
+                                doctorId,
+                                dateFilter != null ? dateFilter.toUpperCase() : "ALL",
+                                today,
+                                search != null ? search : "",
+                                pageable);
+                return page.map(AppointmentDto::fromEntity);
         }
 
         public List<AppointmentDto> getAppointmentsByDoctor(UUID doctorId, LocalDate date) {

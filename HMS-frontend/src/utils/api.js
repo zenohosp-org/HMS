@@ -145,6 +145,12 @@ const pricingApi = {
   }
 };
 const appointmentsApi = {
+  listPaginated: async (hospitalId, params) => {
+    const { data } = await api.get("/appointments/paginated", {
+      params: { hospitalId, ...params }
+    });
+    return data;
+  },
   getByHospital: async (hospitalId, date) => {
     const url = date ? `/appointments/hospital/${hospitalId}?date=${date}` : `/appointments/hospital/${hospitalId}`;
     const { data } = await api.get(url);

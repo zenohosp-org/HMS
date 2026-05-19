@@ -64,6 +64,14 @@ This section tracks high-impact performance optimizations and structural cleanup
   - Placed `OPDBilling.jsx` (`/billing/opd`) and `IPDBilling.jsx` (`/billing/ipd`) as nested sub-menus with indented styling (`pl-8`).
   - Implemented the accordion visual styling, using a dynamic chevron that automatically rotates 180° when expanded or collapsed, keeping the global design system elegant and consistent.
 
+### F. Database Query & Schema Index Optimization
+* **Problem**: Standard database tables (like `invoices` and `patients`) do not automatically index foreign keys (`hospital_id`, `patient_id`, `admission_id`) or text search columns (`first_name`, `last_name`, `phone`) in PostgreSQL. Under large production datasets, paginated searches and metric lookups required CPU-heavy full-table sequential scans.
+* **Fix**: Added explicit database index metadata to JPA entities and optimized the search query execution plan.
+* **Details**:
+  - Annotated `Invoice.java` with Indexes on `hospital_id`, `patient_id`, `admission_id`, `status`, and `created_at DESC` sorting.
+  - Annotated `Patient.java` with Indexes on `first_name`, `last_name`, and `phone` columns.
+  - Re-engineered JPQL search queries in `InvoiceRepository.java` to search matching `firstName` and `lastName` fields individually *before* executing the full-name string concatenation. This allows the PostgreSQL query planner to execute index scans instead of table scans, resulting in lightning-fast, sub-millisecond response speeds.
+
 ---
 
 ## 3. Directory Layout Reference
