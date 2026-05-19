@@ -221,6 +221,23 @@ public class AmbulanceController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/bookings/by-patient/{patientId}")
+    public ResponseEntity<List<AmbulanceBooking>> getByPatient(
+            @PathVariable Integer patientId,
+            @RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(bookingRepo.findByPatient_IdAndHospital_Id(patientId, hospitalId));
+    }
+
+    @Transactional
+    @PatchMapping("/{id}/merge-ipd")
+    public ResponseEntity<Void> mergeToIpd(@PathVariable Long id) {
+        bookingRepo.findById(id).ifPresent(b -> {
+            b.setMergedToIpd(true);
+            bookingRepo.save(b);
+        });
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Long>> getStats(@RequestParam UUID hospitalId) {
         long total = bookingRepo.findByHospital_IdOrderByCreatedAtDesc(hospitalId).size();

@@ -87,7 +87,7 @@ export default function AmbulanceBilling() {
   }, [])
 
   const filtered = useMemo(() => {
-    let list = bookings
+    let list = bookings.filter(b => !b.mergedToIpd)
     if (payFilter === 'PAID')   list = list.filter(b => b.paymentStatus === 'PAID')
     if (payFilter === 'UNPAID') list = list.filter(b => b.paymentStatus !== 'PAID')
     if (search.trim()) {

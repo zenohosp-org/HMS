@@ -21,4 +21,6 @@ public interface AmbulanceBookingRepository extends JpaRepository<AmbulanceBooki
     long countByHospitalIdAndDate(UUID hospitalId, LocalDate date);
 
     long countByHospital_IdAndStatus(UUID hospitalId, AmbulanceBookingStatus status);
+
+    List<AmbulanceBooking> findByPatient_IdAndHospital_Id(Integer patientId, UUID hospitalId);
 }

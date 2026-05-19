@@ -559,6 +559,14 @@ const ambulanceApi = {
     return data;
   },
   deleteVehicle: async (id) => api.delete(`/ambulance/vehicles/${id}`),
+
+  getBookingsByPatient: async (hospitalId, patientId) => {
+    const { data } = await api.get(`/ambulance/bookings/by-patient/${patientId}`, { params: { hospitalId } });
+    return data;
+  },
+  markMergedToIpd: async (id) => {
+    await api.patch(`/ambulance/${id}/merge-ipd`);
+  },
 };
 
 const checkupApi = {

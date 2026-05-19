@@ -76,6 +76,10 @@ public class AmbulanceBooking {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "merged_to_ipd")
+    @Builder.Default
+    private Boolean mergedToIpd = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
