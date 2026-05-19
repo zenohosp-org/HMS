@@ -39,12 +39,12 @@ const ADMIN_LINKS = [
   { label: "Services", to: "/services", icon: ClipboardList },
 ];
 const SETTINGS_LINKS = [
-  { label: "Infrastructure", to: "/settings", icon: Building2 },
+  { label: "Infrastructure", to: "/settings/infrastructure", icon: Building2 },
   { label: "Patient Services", to: "/settings/patient-services", icon: ConciergeBell },
   { label: "Packages", to: "/checkups/packages", icon: ClipboardList },
 ];
 const ROOMS_LINKS = [
-  { label: "Room Allocation", to: "/rooms", icon: Bed },
+  { label: "Room Allocation", to: "/rooms/allocation", icon: Bed },
   { label: "Room Logs", to: "/rooms/logs", icon: ClipboardList },
   { label: "IPD Admissions", to: "/admissions", icon: BedDouble },
 ];
@@ -54,11 +54,11 @@ const AMBULANCE_LINKS = [
 ];
 const CHECKUP_LINK = { label: "Health Checkups", to: "/checkups/bookings", icon: HeartPulse };
 const RADIOLOGY_LINKS = [
-  { label: "Imaging Queue", to: "/radiology", icon: ScanLine },
+  { label: "Imaging Queue", to: "/radiology/imaging-queue", icon: ScanLine },
   { label: "Reports", to: "/radiology/reports", icon: FileText }
 ];
 const HR_LINKS = [
-  { label: "Staff Directory", to: "/staffs", icon: UserSquare2 },
+  { label: "Staff Directory", to: "/staffs/directory", icon: UserSquare2 },
   { label: "Shift Roster", to: "/staffs/roster", icon: CalendarDays },
   { label: "Departments", to: "/staffs/departments", icon: Building2 },
   { label: "Designations", to: "/staffs/designations", icon: Award },
@@ -101,14 +101,14 @@ function Sidebar({ isOpen }) {
     return isOpen ? <NavLink
       key={link.to}
       to={link.to}
-      end={link.to === "/staffs"}
+      end
       className={({ isActive }) => `flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
                     ${indent ? "px-3 pl-8" : "px-3"}
                     ${isActive ? "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white" : "text-slate-700 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white"}`}
     >{({ isActive }) => <><Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-slate-700 dark:text-white" : ""}`} /><span className="truncate">{link.label}</span></>}</NavLink> : <NavLink
       key={link.to}
       to={link.to}
-      end={link.to === "/staffs"}
+      end
       title={link.label}
       className={({ isActive }) => `flex items-center justify-center w-full py-3 rounded-lg transition-colors duration-150 ${isActive ? "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white" : "text-slate-700 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white"}`}
     ><Icon className="w-4 h-4 text-inherit" /></NavLink>;
