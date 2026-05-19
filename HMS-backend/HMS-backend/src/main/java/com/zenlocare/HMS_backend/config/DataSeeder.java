@@ -22,10 +22,17 @@ public class DataSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
     public void run(String... args) {
+        try {
+            jdbcTemplate.execute("ALTER TABLE patients ALTER COLUMN dob DROP NOT NULL");
+            log.info("✅ Dropped NOT NULL constraint on patients.dob column");
+        } catch (Exception e) {
+            log.warn("Could not alter patients.dob constraint: " + e.getMessage());
+        }
         seedRoles();
         seedHospitalAdmin();
     }

@@ -31,11 +31,13 @@ const formatDateTime = (iso) => {
   });
 };
 const calcAge = (dob) => {
+  if (!dob) return null;
   const birth = new Date(dob);
+  if (isNaN(birth.getTime())) return null;
   const now = /* @__PURE__ */ new Date();
   let age = now.getFullYear() - birth.getFullYear();
   const m = now.getMonth() - birth.getMonth();
-  if (m < 0 || m === 0 && now.getDate() < birth.getDate()) age--;
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
   return age;
 };
 const generateInvoiceNumber = () => {

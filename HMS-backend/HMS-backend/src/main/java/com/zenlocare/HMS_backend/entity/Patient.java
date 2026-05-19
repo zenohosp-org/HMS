@@ -39,7 +39,7 @@ public class Patient {
     @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
 
-    @Column(nullable = false)
+    @Column(name = "dob")
     private LocalDate dob;
 
     @Column(nullable = false, length = 10)

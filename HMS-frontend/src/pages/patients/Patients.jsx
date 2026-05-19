@@ -167,7 +167,7 @@ function Patients() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
-                        {calcAge(p.dob)}y &nbsp;·&nbsp; {p.gender}
+                        {p.dob ? `${calcAge(p.dob)}y` : "—"} &nbsp;·&nbsp; {p.gender}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                         {p.phone ?? <span className="text-slate-400 dark:text-slate-700">—</span>}
