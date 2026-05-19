@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -221,7 +222,7 @@ public class InvoiceService {
     @Transactional
     public void createAdmissionInvoice(UUID hospitalId, Integer patientId, UUID admissionId,
                                        String admissionNumber, UUID sourceAppointmentId) {
-        if (invoiceRepository.findByAdmission_Id(admissionId).isPresent()) return;
+        if (!invoiceRepository.findAllByAdmission_IdOrderByCreatedAtDesc(admissionId).isEmpty()) return;
         Hospital hospital = hospitalRepository.findById(hospitalId).orElse(null);
         Patient patient = patientRepository.findById(patientId).orElse(null);
         Admission admission = admissionRepository.findById(admissionId).orElse(null);
@@ -349,8 +350,20 @@ public class InvoiceService {
     public void updateEstimatedTotal(UUID invoiceId, BigDecimal estimatedTotal) {
         invoiceRepository.findById(invoiceId).ifPresent(invoice -> {
             if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) return;
-            invoice.setSubtotal(estimatedTotal);
-            invoice.setTotal(estimatedTotal);
+            // Add items already committed to this invoice (e.g., consultation fee carried over
+            // from a promoted OPD invoice) so the billing-list total stays accurate before
+            // the user opens and finalizes the IPD Bill modal.
+            // ROOM_CHARGE and CUSTOM are excluded because estimatedTotal already covers them.
+            BigDecimal committedItemsTotal = invoice.getItems() != null
+                    ? invoice.getItems().stream()
+                            .filter(i -> !"ROOM_CHARGE".equals(i.getItemType()) && !"CUSTOM".equals(i.getItemType()))
+                            .map(InvoiceItem::getTotalPrice)
+                            .filter(Objects::nonNull)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    : BigDecimal.ZERO;
+            BigDecimal newTotal = committedItemsTotal.add(estimatedTotal);
+            invoice.setSubtotal(newTotal);
+            invoice.setTotal(newTotal);
             invoice.setUpdatedAt(LocalDateTime.now());
             invoiceRepository.save(invoice);
         });
@@ -388,7 +401,8 @@ public class InvoiceService {
     // ── Return the invoice linked to an admission ──────────────────────────────
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Optional<InvoiceDTO> getAdmissionInvoice(UUID admissionId) {
-        return invoiceRepository.findByAdmission_Id(admissionId).map(this::toDTO);
+        return invoiceRepository.findAllByAdmission_IdOrderByCreatedAtDesc(admissionId)
+                .stream().findFirst().map(this::toDTO);
     }
 
     // ── Replace all items on an IPD invoice and recalculate totals ─────────────

@@ -5,6 +5,7 @@ import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,6 +22,7 @@ public class SmartBillingService {
     private final AppointmentRepository appointmentRepository;
     private final AdmissionRepository admissionRepository;
 
+    @Transactional(readOnly = true)
     public SmartBillingSuggestion getSuggestions(Integer patientId, UUID admissionId) {
         LocalDate appointmentFrom = admissionId != null
                 ? admissionRepository.findById(admissionId)
@@ -63,7 +65,7 @@ public class SmartBillingService {
                         .collect(Collectors.toList());
 
         // ── Recent appointments (last 60 days, COMPLETED) ───────────────
-        List<SmartBillingSuggestion.AppointmentSuggestion> apptSuggestions =
+        List<SmartBillingSuggestion.AppointmentSuggestion> apptSuggestions = new ArrayList<>(
                 appointmentRepository.findByPatientIdOrderByApptDateDescApptTimeDesc(patientId)
                         .stream()
                         .filter(a -> a.getStatus() == Appointment.AppointmentStatus.COMPLETED
@@ -84,7 +86,39 @@ public class SmartBillingService {
                                     .apptDate(a.getApptDate().toString())
                                     .build();
                         })
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toList()));
+
+        // ── Source appointment for OPD→IPD conversions ───────────────────
+        // The source appointment may still be CONFIRMED (not yet COMPLETED) when the
+        // patient is admitted directly from OPD. That status excludes it from the
+        // COMPLETED filter above, so we inject it here — always at index 0 — to
+        // guarantee the consultation fee surfaces in the IPD bill regardless of status.
+        if (admissionId != null) {
+            admissionRepository.findById(admissionId).ifPresent(adm -> {
+                Appointment src = adm.getSourceAppointment();
+                if (src != null && src.getDoctor() != null) {
+                    String srcId = src.getId().toString();
+                    boolean alreadyPresent = apptSuggestions.stream()
+                            .anyMatch(s -> srcId.equals(s.getAppointmentId()));
+                    if (!alreadyPresent) {
+                        Doctor doc = src.getDoctor();
+                        BigDecimal fee = doc.getConsultationFee() != null ? doc.getConsultationFee() : BigDecimal.ZERO;
+                        if (fee.compareTo(BigDecimal.ZERO) > 0) {
+                            String docName = doc.getUser() != null
+                                    ? doc.getUser().getFirstName() + (doc.getUser().getLastName() != null ? " " + doc.getUser().getLastName() : "")
+                                    : "Unknown";
+                            apptSuggestions.add(0, SmartBillingSuggestion.AppointmentSuggestion.builder()
+                                    .appointmentId(srcId)
+                                    .doctorName(docName)
+                                    .specialization(doc.getSpecialization())
+                                    .consultationFee(fee)
+                                    .apptDate(src.getApptDate() != null ? src.getApptDate().toString() : null)
+                                    .build());
+                        }
+                    }
+                }
+            });
+        }
 
         return SmartBillingSuggestion.builder()
                 .roomCharge(roomSuggestion)
