@@ -8,7 +8,7 @@ import {
   User, Phone, Car, CreditCard, FileText,
   CheckCircle2, AlertCircle, Clock3, XCircle, Truck,
   Activity, MoreHorizontal,
-  Wrench, Trash2, Loader2, Edit2, ChevronRight,
+  Wrench, Trash2, Loader2, Edit2, ChevronRight, UserPlus,
 } from "lucide-react";
 
 const PAGE_SIZE = 8;
@@ -40,6 +40,9 @@ const EMPTY_FORM = {
   driverPhone: "",
   paymentStatus: "UNPAID",
   notes: "",
+  emergencyFirstName: "",
+  emergencyLastName: "",
+  emergencyPhone: "",
 };
 
 // ── Shared sub-components ────────────────────────────────────────────────────
@@ -133,6 +136,7 @@ function BookingModal({ hospitalId, availableVehicles, onClose, onSaved }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showEmergency, setShowEmergency] = useState(false);
 
   const set = (field, val) => setForm(f => ({ ...f, [field]: val }));
 
@@ -141,11 +145,26 @@ function BookingModal({ hospitalId, availableVehicles, onClose, onSaved }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.bookingDate || !form.bookingTime) return;
+    if (showEmergency && !form.patient && !form.emergencyFirstName.trim()) {
+      setError("Enter a patient name or search for an existing patient.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
+      let patientId = form.patient?.id ?? null;
+      if (!patientId && showEmergency && form.emergencyFirstName.trim()) {
+        const created = await patientApi.create({
+          hospitalId,
+          firstName: form.emergencyFirstName.trim(),
+          lastName: form.emergencyLastName.trim() || ".",
+          phone: form.emergencyPhone.trim() || null,
+          gender: "UNKNOWN",
+        });
+        patientId = created.id;
+      }
       await ambulanceApi.createBooking(hospitalId, {
-        patientId: form.patient?.id ?? null,
+        patientId,
         bookingDate: form.bookingDate,
         bookingTime: form.bookingTime,
         pickupAddress: form.pickupAddress,
@@ -194,7 +213,57 @@ function BookingModal({ hospitalId, availableVehicles, onClose, onSaved }) {
             <div className="space-y-4">
               <div>
                 <label className={labelCls}>Patient (optional)</label>
-                <PatientSearch hospitalId={hospitalId} value={form.patient} onChange={p => set("patient", p)} />
+                <PatientSearch
+                  hospitalId={hospitalId}
+                  value={form.patient}
+                  onChange={p => { set("patient", p); if (p) setShowEmergency(false); }}
+                />
+                {!form.patient && (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmergency(s => !s)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      {showEmergency ? "Cancel new patient" : "New / Emergency Patient"}
+                    </button>
+                    {showEmergency && (
+                      <div className="mt-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 space-y-3">
+                        <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">A new patient record will be created automatically.</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className={labelCls}>First Name *</label>
+                            <input
+                              className={inputCls}
+                              value={form.emergencyFirstName}
+                              onChange={e => set("emergencyFirstName", e.target.value)}
+                              placeholder="First name"
+                            />
+                          </div>
+                          <div>
+                            <label className={labelCls}>Last Name</label>
+                            <input
+                              className={inputCls}
+                              value={form.emergencyLastName}
+                              onChange={e => set("emergencyLastName", e.target.value)}
+                              placeholder="Last name"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className={labelCls}>Phone</label>
+                          <input
+                            className={inputCls}
+                            value={form.emergencyPhone}
+                            onChange={e => set("emergencyPhone", e.target.value)}
+                            placeholder="+91 XXXXX XXXXX"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
