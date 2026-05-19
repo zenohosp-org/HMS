@@ -1,64 +1,17 @@
-﻿import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { staffApi, patientApi, doctorsApi, appointmentsApi, invoiceApi, admissionApi } from "@/utils/api";
+import { dashboardApi } from "@/utils/api";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import {
-  Users, Stethoscope, Building2, BedDouble, TrendingUp,
-  TrendingDown, ArrowRight, Calendar, ReceiptText, Activity,
+  Users, Stethoscope, BedDouble, TrendingUp,
+  TrendingDown, ArrowRight, Calendar, ReceiptText,
   Loader2, Plus, UserCheck
 } from "lucide-react";
-import { format, subDays, parseISO, startOfMonth, isSameMonth } from "date-fns";
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function buildLast30Days(items, dateField) {
-  const counts = {};
-  for (let i = 29; i >= 0; i--) {
-    const key = format(subDays(new Date(), i), "MMM d");
-    counts[key] = 0;
-  }
-  items.forEach((item) => {
-    const key = format(parseISO(item[dateField]), "MMM d");
-    if (key in counts) counts[key]++;
-  });
-  return Object.entries(counts).map(([date, count]) => ({ date, count }));
-}
-
-function buildLast6Months(invoices) {
-  const months = {};
-  for (let i = 5; i >= 0; i--) {
-    const d = subDays(new Date(), i * 30);
-    const key = format(d, "MMM yy");
-    months[key] = { month: key, paid: 0, unpaid: 0 };
-  }
-  invoices.forEach((inv) => {
-    const key = format(parseISO(inv.createdAt), "MMM yy");
-    if (key in months) {
-      if (inv.status === "PAID" || inv.status === "SETTLED") months[key].paid += Number(inv.total ?? 0);
-      else months[key].unpaid += Number(inv.total ?? 0);
-    }
-  });
-  return Object.values(months);
-}
-
-function buildAgeGroups(patients) {
-  const groups = { "0–17": 0, "18–34": 0, "35–54": 0, "55–74": 0, "75+": 0 };
-  patients.forEach((p) => {
-    if (!p.dob) return;
-    const age = Math.floor((Date.now() - new Date(p.dob).getTime()) / (365.25 * 24 * 3600 * 1e3));
-    if (age < 18) groups["0–17"]++;
-    else if (age < 35) groups["18–34"]++;
-    else if (age < 55) groups["35–54"]++;
-    else if (age < 75) groups["55–74"]++;
-    else groups["75+"]++;
-  });
-  return Object.entries(groups).map(([name, value]) => ({ name, value }));
-}
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
@@ -131,7 +84,7 @@ function RevenueTooltip({ active, payload, label }) {
       <p className="font-bold text-slate-700 dark:text-[#ccc] mb-2">{label}</p>
       {payload.map((p) => (
         <p key={p.name} style={{ color: p.color }}>
-          {p.name === "paid" ? "Paid" : "Unpaid"}: ₹{Number(p.value).toLocaleString("en-IN")}
+          {p.name === "paid" ? "Paid" : "Outstanding"}: ₹{Number(p.value).toLocaleString("en-IN")}
         </p>
       ))}
     </div>
@@ -207,83 +160,23 @@ export default function AdminDashboard() {
   const { notify } = useNotification();
   const navigate = useNavigate();
 
-  const [staff, setStaff] = useState([]);
-  const [doctors, setDoctors] = useState([]);
-  const [patients, setPatients] = useState([]);
-  const [appointments, setAppointments] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [admissions, setAdmissions] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user?.hospitalId) return;
-    Promise.all([
-      staffApi.list(user.hospitalId),
-      doctorsApi.list(user.hospitalId),
-      patientApi.list(user.hospitalId),
-      appointmentsApi.getByHospital(user.hospitalId),
-      invoiceApi.getByHospital(user.hospitalId).catch(() => []),
-      admissionApi.list(user.hospitalId, true).catch(() => []),
-    ]).then(([s, d, p, a, inv, adm]) => {
-      setStaff(s.filter((u) => u.role !== "SUPER_ADMIN"));
-      setDoctors(d);
-      setPatients(p);
-      setAppointments(Array.isArray(a) ? a : []);
-      setInvoices(Array.isArray(inv) ? inv : []);
-      setAdmissions(Array.isArray(adm) ? adm : []);
-    }).catch(() => notify("Failed to load dashboard", "error")).finally(() => setLoading(false));
+    setLoading(true);
+    dashboardApi.getSummary(user.hospitalId)
+      .then((data) => {
+        setSummary(data);
+      })
+      .catch(() => notify("Failed to load dashboard statistics", "error"))
+      .finally(() => setLoading(false));
   }, [user?.hospitalId]);
-
-  // ── Derived data ───────────────────────────────────────────────────────
-
-  const patientTrend = useMemo(() => buildLast30Days(patients, "createdAt"), [patients]);
-  const revenueTrend = useMemo(() => buildLast6Months(invoices), [invoices]);
-  const ageGroups = useMemo(() => buildAgeGroups(patients), [patients]);
-
-  const todayPatients = useMemo(
-    () => patients.filter((p) => {
-      const d = new Date(p.createdAt);
-      const n = new Date();
-      return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
-    }),
-    [patients]
-  );
-
-  const appointmentStatus = useMemo(() => {
-    const counts = {};
-    appointments.forEach((a) => {
-      counts[a.status] = (counts[a.status] ?? 0) + 1;
-    });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, [appointments]);
-
-  const roleData = useMemo(() => {
-    const counts = {};
-    staff.forEach((s) => {
-      const r = s.roleDisplay ?? s.role ?? "Unknown";
-      counts[r] = (counts[r] ?? 0) + 1;
-    });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, [staff]);
-
-  const totalRevenue = useMemo(
-    () => invoices.filter((i) => i.status === "PAID" || i.status === "SETTLED").reduce((s, i) => s + Number(i.total ?? 0), 0),
-    [invoices]
-  );
-  const outstanding = useMemo(
-    () => invoices.filter((i) => i.status !== "PAID" && i.status !== "SETTLED" && i.status !== "CANCELLED").reduce((s, i) => s + Number(i.total ?? 0), 0),
-    [invoices]
-  );
-  const activeAdmissions = admissions.filter((a) => !a.dischargeDate).length;
-  const thisMonthPatients = patients.filter((p) => isSameMonth(parseISO(p.createdAt), new Date())).length;
-  const lastMonthPatients = patients.filter((p) => isSameMonth(parseISO(p.createdAt), subDays(new Date(), 30))).length;
-  const patientGrowth = lastMonthPatients > 0
-    ? (((thisMonthPatients - lastMonthPatients) / lastMonthPatients) * 100).toFixed(1)
-    : null;
 
   const dateStr = new Date().toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata', weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-  if (loading) {
+  if (loading || !summary) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-slate-900 dark:text-white" />
@@ -317,33 +210,33 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           label="Total Patients"
-          value={patients.length.toLocaleString()}
-          sub={`${todayPatients.length} registered today`}
+          value={summary.totalPatients.toLocaleString()}
+          sub={`${summary.todaysNewPatients} registered today`}
           icon={<Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
           accent="bg-blue-50 dark:bg-blue-500/10"
-          trend={patientGrowth >= 0 ? "up" : "down"}
-          trendLabel={patientGrowth != null ? `${Math.abs(patientGrowth)}% MoM` : null}
+          trend={summary.patientMoMGrowthPercent >= 0 ? "up" : "down"}
+          trendLabel={summary.patientMoMGrowthPercent !== 0.0 ? `${Math.abs(summary.patientMoMGrowthPercent)}% MoM` : null}
         />
         <KpiCard
           label="Doctors"
-          value={doctors.length}
-          sub={`${staff.filter((s) => s.isActive).length} active staff`}
+          value={summary.totalDoctors}
+          sub={`${summary.totalActiveStaff} active staff`}
           icon={<Stethoscope className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
           accent="bg-emerald-50 dark:bg-emerald-500/10"
         />
         <KpiCard
           label="Revenue Collected"
-          value={`₹${(totalRevenue / 1000).toFixed(1)}k`}
-          sub={`₹${(outstanding / 1000).toFixed(1)}k outstanding`}
+          value={`₹${(summary.totalRevenueCollected / 1000).toFixed(1)}k`}
+          sub={`₹${(summary.totalOutstandingRevenue / 1000).toFixed(1)}k outstanding`}
           icon={<ReceiptText className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-300" />}
           accent="bg-slate-100 dark:bg-[#1e1e1e]"
-          trend={outstanding > totalRevenue ? "down" : "up"}
-          trendLabel={invoices.length > 0 ? `${invoices.filter((i) => i.status === "PAID" || i.status === "SETTLED").length}/${invoices.length} paid` : null}
+          trend={summary.totalOutstandingRevenue > summary.totalRevenueCollected ? "down" : "up"}
+          trendLabel={`${(summary.totalRevenueCollected / (summary.totalRevenueCollected + summary.totalOutstandingRevenue || 1) * 100).toFixed(0)}% paid`}
         />
         <KpiCard
           label="IPD Admissions"
-          value={activeAdmissions}
-          sub={`${admissions.length} total this period`}
+          value={summary.activeAdmissions}
+          sub="Currently admitted in wards"
           icon={<BedDouble className="w-5 h-5 text-amber-600 dark:text-amber-400" />}
           accent="bg-amber-50 dark:bg-amber-500/10"
         />
@@ -357,7 +250,7 @@ export default function AdminDashboard() {
         actionLabel="All patients"
       >
         <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={patientTrend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+          <AreaChart data={summary.patientRegistrationsTrend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="patGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
@@ -400,11 +293,11 @@ export default function AdminDashboard() {
           <ChartCard
             title="Revenue Overview"
             subtitle="Paid vs outstanding — last 6 months"
-            action="/billing"
+            action="/billing/opd"
             actionLabel="Billing"
           >
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={revenueTrend} margin={{ top: 4, right: 4, left: -10, bottom: 0 }} barGap={3}>
+              <BarChart data={summary.revenueOverview} margin={{ top: 4, right: 4, left: -10, bottom: 0 }} barGap={3}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
                 <YAxis
@@ -415,7 +308,7 @@ export default function AdminDashboard() {
                 />
                 <Tooltip content={<RevenueTooltip />} cursor={{ fill: "rgba(148,163,184,0.05)" }} />
                 <Bar dataKey="paid" name="paid" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={20} />
-                <Bar dataKey="unpaid" name="unpaid" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={20} opacity={0.7} />
+                <Bar dataKey="outstanding" name="outstanding" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={20} opacity={0.7} />
               </BarChart>
             </ResponsiveContainer>
             <div className="flex items-center gap-4 mt-1">
@@ -432,22 +325,22 @@ export default function AdminDashboard() {
         {/* Appointment status donut */}
         <div className="lg:col-span-2">
           <ChartCard title="Appointments" subtitle="By status — all time" action="/appointments" actionLabel="View all">
-            {appointmentStatus.length > 0 ? (
+            {summary.appointmentsBreakdown.length > 0 ? (
               <>
                 <DonutChart
-                  data={appointmentStatus}
-                  colors={appointmentStatus.map((d) => STATUS_COLORS[d.name] ?? "#94a3b8")}
+                  data={summary.appointmentsBreakdown}
+                  colors={summary.appointmentsBreakdown.map((d) => STATUS_COLORS[d.name] ?? "#94a3b8")}
                   centerLabel="total"
-                  centerValue={appointments.length}
+                  centerValue={summary.appointmentsBreakdown.reduce((sum, d) => sum + d.value, 0)}
                 />
                 <div className="space-y-2 mt-1">
-                  {appointmentStatus.map((d, i) => (
+                  {summary.appointmentsBreakdown.map((d, i) => (
                     <LegendDot
                       key={d.name}
                       color={STATUS_COLORS[d.name] ?? "#94a3b8"}
                       label={d.name.charAt(0) + d.name.slice(1).toLowerCase().replace("_", " ")}
                       value={d.value}
-                      total={appointments.length}
+                      total={summary.appointmentsBreakdown.reduce((sum, item) => sum + item.value, 0)}
                     />
                   ))}
                 </div>
@@ -468,7 +361,7 @@ export default function AdminDashboard() {
         {/* Patient age distribution */}
         <ChartCard title="Patient Age Groups" subtitle="Distribution across all patients">
           <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={ageGroups} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <BarChart data={summary.patientAgeGroups} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} allowDecimals={false} />
@@ -489,22 +382,22 @@ export default function AdminDashboard() {
 
         {/* Staff role breakdown */}
         <ChartCard title="Staff by Role" subtitle="Headcount distribution">
-          {roleData.length > 0 ? (
+          {summary.staffByRole.length > 0 ? (
             <>
               <DonutChart
-                data={roleData}
+                data={summary.staffByRole}
                 colors={ROLE_COLORS}
                 centerLabel="staff"
-                centerValue={staff.length}
+                centerValue={summary.totalActiveStaff}
               />
               <div className="space-y-2">
-                {roleData.map((d, i) => (
+                {summary.staffByRole.map((d, i) => (
                   <LegendDot
                     key={d.name}
                     color={ROLE_COLORS[i % ROLE_COLORS.length]}
                     label={d.name}
                     value={d.value}
-                    total={staff.length}
+                    total={summary.totalActiveStaff}
                   />
                 ))}
               </div>
@@ -528,7 +421,7 @@ export default function AdminDashboard() {
               { label: "Add Doctor", sub: "Register a new doctor", to: "/doctors", icon: <Stethoscope className="w-4 h-4" />, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" },
               { label: "Add Staff", sub: "Onboard a team member", to: "/staffs", icon: <UserCheck className="w-4 h-4" />, color: "text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e]" },
               { label: "Register Patient", sub: "New patient registration", to: "/patients", icon: <Users className="w-4 h-4" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
-              { label: "Create Invoice", sub: "Bill a patient visit", to: "/billing", icon: <ReceiptText className="w-4 h-4" />, color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" },
+              { label: "Create Invoice", sub: "Bill a patient visit", to: "/billing/opd", icon: <ReceiptText className="w-4 h-4" />, color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" },
               { label: "IPD Admission", sub: "Admit a patient", to: "/admissions", icon: <BedDouble className="w-4 h-4" />, color: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10" },
             ].map((item) => (
               <button

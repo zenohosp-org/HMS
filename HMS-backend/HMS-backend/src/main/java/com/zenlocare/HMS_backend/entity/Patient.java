@@ -9,7 +9,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.zenlocare.HMS_backend.entity.PaymentCategory;
 
 @Entity
-@Table(name = "patients", uniqueConstraints = @UniqueConstraint(columnNames = { "hospital_id", "uhid" }))
+@Table(name = "patients", uniqueConstraints = @UniqueConstraint(columnNames = { "hospital_id", "uhid" }), indexes = {
+    @Index(name = "idx_patients_first_name", columnList = "first_name"),
+    @Index(name = "idx_patients_last_name", columnList = "last_name"),
+    @Index(name = "idx_patients_phone", columnList = "phone")
+})
 @Data
 @Builder
 @NoArgsConstructor

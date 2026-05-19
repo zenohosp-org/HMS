@@ -40,6 +40,18 @@ public class PatientController {
         return ResponseEntity.ok(patientService.getPatientById(id, hospitalId));
     }
 
+    @GetMapping("/paginated")
+    public ResponseEntity<java.util.Map<String, Object>> getPaginated(
+            @RequestParam UUID hospitalId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "") String search
+    ) {
+        return ResponseEntity.ok(
+                patientService.getPaginatedPatients(hospitalId, page, size, search)
+        );
+    }
+
     @PostMapping
     public ResponseEntity<Patient> createPatient(@RequestBody CreatePatientRequest req) {
         Patient p = patientService.createPatient(req);

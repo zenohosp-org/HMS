@@ -17,6 +17,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import java.util.stream.Collectors;
 
 @Service
@@ -626,5 +632,47 @@ public class InvoiceService {
                                 .build()
                         ).collect(Collectors.toList()))
                 .build();
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public Map<String, Object> getPaginatedOpdInvoices(
+        UUID hospitalId, int page, int size, String status, String search
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        String safeSearch = (search == null) ? "" : search.trim();
+        String safeStatus = (status == null || status.isBlank()) ? "ALL" : status.trim();
+
+        Page<Invoice> result = invoiceRepository.searchOpdInvoices(
+            hospitalId, safeStatus, safeSearch, pageable
+        );
+
+        return buildPageResponse(result);
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public Map<String, Object> getPaginatedIpdInvoices(
+        UUID hospitalId, int page, int size, String status, String search
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        String safeSearch = (search == null) ? "" : search.trim();
+        String safeStatus = (status == null || status.isBlank()) ? "ALL" : status.trim();
+
+        Page<Invoice> result = invoiceRepository.searchIpdInvoices(
+            hospitalId, safeStatus, safeSearch, pageable
+        );
+
+        return buildPageResponse(result);
+    }
+
+    private Map<String, Object> buildPageResponse(Page<Invoice> result) {
+        Map<String, Object> response = new HashMap<>();
+        List<InvoiceDTO> dtos = result.getContent().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+        response.put("invoices", dtos);
+        response.put("totalElements", result.getTotalElements());
+        response.put("totalPages", result.getTotalPages());
+        response.put("currentPage", result.getNumber());
+        return response;
     }
 }

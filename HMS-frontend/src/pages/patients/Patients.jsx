@@ -8,7 +8,7 @@ import Pagination from "@/components/ui/Pagination";
 import { calcAge, formatDate } from "@/utils/validators";
 import { Search, Loader2, Users, MoreHorizontal, Pencil, ExternalLink } from "lucide-react";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 30;
 
 function Patients() {
   const { user } = useAuth();
@@ -19,19 +19,42 @@ function Patients() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);                  // UI is 1-based
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   const [modal, setModal] = useState({ open: false, patient: null });
   const [openMenuId, setOpenMenuId] = useState(null);
 
   const load = () => {
     if (!user?.hospitalId) return;
-    patientApi.list(user.hospitalId)
-      .then(setPatients)
+    setLoading(true);
+    patientApi.listPaginated(
+      user.hospitalId,
+      page - 1,            // backend is 0-based, UI is 1-based
+      PAGE_SIZE,
+      debouncedSearch
+    )
+      .then((data) => {
+        setPatients(data.patients);
+        setTotalPages(data.totalPages);
+        setTotalElements(data.totalElements);
+      })
       .catch(() => notify("Failed to load patients", "error"))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [user?.hospitalId]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);         // reset to first page on new search
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    load();
+  }, [user?.hospitalId, page, debouncedSearch]);
 
   useEffect(() => {
     if (location.state?.openRegistration) {
@@ -58,17 +81,7 @@ function Patients() {
     load();
   };
 
-  const filtered = patients.filter((p) => {
-    const q = search.toLowerCase();
-    return (
-      p.firstName.toLowerCase().includes(q) ||
-      p.lastName.toLowerCase().includes(q) ||
-      p.uhid.toLowerCase().includes(q) ||
-      (p.phone ?? "").includes(q)
-    );
-  });
-
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Client-side filtering and slicing deleted: handled on backend
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">
@@ -78,7 +91,7 @@ function Patients() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Patients</h1>
           <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-500/20">
-            {patients.length}
+            {totalElements}
           </span>
         </div>
         <button className="btn-primary" onClick={() => setModal({ open: true, patient: null })}>
@@ -122,7 +135,7 @@ function Patients() {
                     </div>
                   </td>
                 </tr>
-              ) : filtered.length === 0 ? (
+              ) : patients.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
@@ -136,7 +149,7 @@ function Patients() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((p) => {
+                patients.map((p) => {
                   const initials = `${p.firstName[0]}${p.lastName?.[0] ?? ""}`.toUpperCase();
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all">
@@ -209,12 +222,12 @@ function Patients() {
           </table>
         </div>
 
-        {!loading && filtered.length > 0 && (
+        {!loading && totalElements > 0 && (
           <div className="px-6 py-3 border-t border-slate-100 dark:border-[#1a1a1a]">
             <Pagination
               currentPage={page}
-              totalPages={Math.ceil(filtered.length / PAGE_SIZE)}
-              totalItems={filtered.length}
+              totalPages={totalPages}
+              totalItems={totalElements}
               pageSize={PAGE_SIZE}
               onPageChange={setPage}
             />

@@ -22,6 +22,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     List<User> findByRoleName(String roleName);
 
+    long countByHospitalIdAndRoleName(UUID hospitalId, String roleName);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM User u WHERE u.hospital.id = :hospitalId AND u.role.name != 'super_admin' AND u.isActive = true")
+    long countActiveStaffExcludingSuperAdmin(@org.springframework.data.repository.query.Param("hospitalId") UUID hospitalId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT r.displayName, COUNT(u) FROM User u JOIN u.role r WHERE u.hospital.id = :hospitalId AND r.name != 'super_admin' GROUP BY r.displayName, r.name")
+    List<Object[]> getStaffByRole(@org.springframework.data.repository.query.Param("hospitalId") UUID hospitalId);
+
     boolean existsByEmail(String email);
 
     boolean existsByEmailAndHospital(String email, Hospital hospital);

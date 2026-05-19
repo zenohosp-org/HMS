@@ -65,7 +65,11 @@ const patientApi = {
   search: async (hospitalId, q) => {
     const res = await api.get("/patients/search", { params: { hospitalId, q } });
     return res.data;
-  }
+  },
+  listPaginated: (hospitalId, page = 0, size = 8, search = "") =>
+    api.get(`/patients/paginated`, {
+      params: { hospitalId, page, size, search }
+    }).then(res => res.data),
 };
 const recordApi = {
   list: async (patientId, hospitalId) => {
@@ -141,6 +145,12 @@ const pricingApi = {
   }
 };
 const appointmentsApi = {
+  listPaginated: async (hospitalId, params) => {
+    const { data } = await api.get("/appointments/paginated", {
+      params: { hospitalId, ...params }
+    });
+    return data;
+  },
   getByHospital: async (hospitalId, date) => {
     const url = date ? `/appointments/hospital/${hospitalId}?date=${date}` : `/appointments/hospital/${hospitalId}`;
     const { data } = await api.get(url);
@@ -301,6 +311,18 @@ const shiftsApi = {
   }
 };
 const invoiceApi = {
+  listOpdPaginated: async (hospitalId, page = 0, size = 10, status = 'ALL', search = '') => {
+    const { data } = await api.get("/invoices/opd/paginated", {
+      params: { hospitalId, page, size, status, search }
+    });
+    return data;
+  },
+  listIpdPaginated: async (hospitalId, page = 0, size = 10, status = 'ALL', search = '') => {
+    const { data } = await api.get("/invoices/ipd/paginated", {
+      params: { hospitalId, page, size, status, search }
+    });
+    return data;
+  },
   create: async (payload) => {
     const { data } = await api.post("/invoices", payload);
     return data;
@@ -598,6 +620,13 @@ const patientAdvanceApi = {
   },
 };
 
+const dashboardApi = {
+  getSummary: async (hospitalId) => {
+    const { data } = await api.get("/dashboard/summary", { params: { hospitalId } });
+    return data;
+  }
+};
+
 var stdin_default = api;
 export {
   admissionApi,
@@ -626,5 +655,6 @@ export {
   shiftsApi,
   specializationApi,
   staffApi,
-  patientAdvanceApi
+  patientAdvanceApi,
+  dashboardApi
 };
