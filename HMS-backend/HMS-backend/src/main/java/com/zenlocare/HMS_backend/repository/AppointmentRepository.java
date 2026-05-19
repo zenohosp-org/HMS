@@ -50,9 +50,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         LEFT JOIN FETCH a.doctor d
         LEFT JOIN FETCH d.user du
         LEFT JOIN FETCH a.createdBy cb
-        LEFT JOIN FETCH a.priceList pl
-        LEFT JOIN FETCH a.checkupBooking cbk
-        LEFT JOIN FETCH cbk.healthPackage hp
         WHERE a.hospital.id = :hospitalId
         AND (:doctorId IS NULL OR a.doctor.id = :doctorId)
         AND (:dateFilter = 'ALL'
