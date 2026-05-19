@@ -419,7 +419,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col gap-2 flex-1">
             {[
               { label: "Add Doctor", sub: "Register a new doctor", to: "/doctors", icon: <Stethoscope className="w-4 h-4" />, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" },
-              { label: "Add Staff", sub: "Onboard a team member", to: "/staffs", icon: <UserCheck className="w-4 h-4" />, color: "text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e]" },
+              { label: "Add Staff", sub: "Onboard a team member", to: "/staffs/directory", icon: <UserCheck className="w-4 h-4" />, color: "text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e]" },
               { label: "Register Patient", sub: "New patient registration", to: "/patients", icon: <Users className="w-4 h-4" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
               { label: "Create Invoice", sub: "Bill a patient visit", to: "/billing/opd", icon: <ReceiptText className="w-4 h-4" />, color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" },
               { label: "IPD Admission", sub: "Admit a patient", to: "/admissions", icon: <BedDouble className="w-4 h-4" />, color: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10" },

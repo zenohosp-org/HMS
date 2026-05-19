@@ -41,7 +41,68 @@ function App() {
     /* Public */
   }<Route path="/login" element={<Login />} /><Route path="/unauthorized" element={<Unauthorized />} /><Route path="/sso/callback" element={<SsoCallback />} />{
     /* Protected — authenticated + hospital assigned */
-  }<Route element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><Layout /></ProtectedRoute>}><Route index element={<Navigate to="/dashboard" replace />} /><Route path="dashboard" element={<Dashboard />} /><Route path="patients" element={<Patients />} /><Route path="patients/:id" element={<PatientDetails />} /><Route path="settings" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Settings /></ProtectedRoute>} /><Route path="settings/patient-services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><PatientServices /></ProtectedRoute>} /><Route path="ipd/infrastructure" element={<Navigate to="/settings" replace />} /><Route path="ambulance/book" element={<AmbulanceBook />} /><Route path="ambulance/status" element={<AmbulanceStatus />} /><Route path="checkups/packages" element={<PackageManager />} /><Route path="checkups/bookings" element={<CheckupBookings />} /><Route path="checkups/bookings/:id" element={<CheckupBookingDetail />} /><Route path="rooms" element={<Rooms />} /><Route path="rooms/logs" element={<RoomLogsPage />} /><Route path="billing/opd" element={<OPDBilling />} /><Route path="billing/ipd" element={<IPDBilling />} /><Route path="appointments" element={<AppointmentsDashboard />} /><Route path="radiology" element={<RadiologyQueue />} /><Route path="radiology/reports" element={<RadiologyReports />} /><Route path="radiology/reports/:id" element={<RadiologyReportView />} /><Route path="doctors" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><DoctorsList /></ProtectedRoute>} /><Route path="doctors/:id" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor"]}><DoctorDetails /></ProtectedRoute>} /><Route path="staffs" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><StaffsList /></ProtectedRoute>} /><Route path="staffs/roster" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><ShiftRoster /></ProtectedRoute>} /><Route path="staffs/departments" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Departments /></ProtectedRoute>} /><Route path="staffs/designations" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Designations /></ProtectedRoute>} /><Route path="admissions" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><Admissions /></ProtectedRoute>} /><Route path="specializations" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Specializations /></ProtectedRoute>} /><Route path="services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Services /></ProtectedRoute>} /></Route>{
+  }<Route element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><Layout /></ProtectedRoute>}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          
+          {/* Patients */}
+          <Route path="patients" element={<Patients />} />
+          <Route path="patients/:id" element={<PatientDetails />} />
+          
+          {/* Settings */}
+          <Route path="settings" element={<Navigate to="/settings/infrastructure" replace />} />
+          <Route path="settings/infrastructure" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Settings /></ProtectedRoute>} />
+          <Route path="settings/patient-services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><PatientServices /></ProtectedRoute>} />
+          <Route path="ipd/infrastructure" element={<Navigate to="/settings/infrastructure" replace />} />
+          
+          {/* Ambulance */}
+          <Route path="ambulance" element={<Navigate to="/ambulance/book" replace />} />
+          <Route path="ambulance/book" element={<AmbulanceBook />} />
+          <Route path="ambulance/status" element={<AmbulanceStatus />} />
+          
+          {/* Health Checkups */}
+          <Route path="checkups/packages" element={<PackageManager />} />
+          <Route path="checkups/bookings" element={<CheckupBookings />} />
+          <Route path="checkups/bookings/:id" element={<CheckupBookingDetail />} />
+          
+          {/* Rooms */}
+          <Route path="rooms" element={<Navigate to="/rooms/allocation" replace />} />
+          <Route path="rooms/allocation" element={<Rooms />} />
+          <Route path="rooms/logs" element={<RoomLogsPage />} />
+          
+          {/* Billing */}
+          <Route path="billing" element={<Navigate to="/billing/opd" replace />} />
+          <Route path="billing/opd" element={<OPDBilling />} />
+          <Route path="billing/ipd" element={<IPDBilling />} />
+          
+          {/* Appointments */}
+          <Route path="appointments" element={<AppointmentsDashboard />} />
+          
+          {/* Radiology */}
+          <Route path="radiology" element={<Navigate to="/radiology/imaging-queue" replace />} />
+          <Route path="radiology/imaging-queue" element={<RadiologyQueue />} />
+          <Route path="radiology/imagin-queue" element={<RadiologyQueue />} />
+          <Route path="radiology/reports" element={<RadiologyReports />} />
+          <Route path="radiology/reports/:id" element={<RadiologyReportView />} />
+          
+          {/* Doctors */}
+          <Route path="doctors" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><DoctorsList /></ProtectedRoute>} />
+          <Route path="doctors/:id" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor"]}><DoctorDetails /></ProtectedRoute>} />
+          
+          {/* Staffs / HR */}
+          <Route path="staffs" element={<Navigate to="/staffs/directory" replace />} />
+          <Route path="staffs/directory" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><StaffsList /></ProtectedRoute>} />
+          <Route path="staffs/roster" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><ShiftRoster /></ProtectedRoute>} />
+          <Route path="staffs/departments" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Departments /></ProtectedRoute>} />
+          <Route path="staffs/designations" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Designations /></ProtectedRoute>} />
+          
+          {/* Admissions */}
+          <Route path="admissions" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><Admissions /></ProtectedRoute>} />
+          
+          {/* Admin Metadata */}
+          <Route path="specializations" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Specializations /></ProtectedRoute>} />
+          <Route path="services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Services /></ProtectedRoute>} />
+        </Route>{
     /* Fallback */
   }<Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></BrowserRouter></NotificationProvider></AuthProvider></ThemeProvider></ErrorBoundary>;
 }

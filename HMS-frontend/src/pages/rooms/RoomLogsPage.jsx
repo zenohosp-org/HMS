@@ -89,7 +89,7 @@ function RoomLogsPage() {
       {/* Page header */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate("/rooms")}
+          onClick={() => navigate("/rooms/allocation")}
           className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-[#888888] dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
