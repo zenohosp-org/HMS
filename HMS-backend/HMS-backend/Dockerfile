@@ -20,4 +20,4 @@ COPY --from=build /app/target/HMS-backend-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 9001
 
 # Run the application, ensuring it listens on the PORT provided by the environment
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-XX:+UseContainerSupport", "-Dserver.port=${PORT:9001}", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx220m", "-XX:MaxMetaspaceSize=128m", "-XX:ReservedCodeCacheSize=64m", "-XX:+UseContainerSupport", "-Dserver.port=${PORT:9001}", "-jar", "app.jar"]
