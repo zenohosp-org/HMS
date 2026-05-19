@@ -765,7 +765,7 @@ function InvoiceList() {
       <div className="flex items-center justify-between">
         <div>
           <button
-            onClick={() => navigate("/billing")}
+            onClick={() => navigate("/billing/opd")}
             className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-emerald-500 mb-2 transition-colors"
           >
             <ChevronLeft className="w-3 h-3" /> Back to Billing

@@ -10,6 +10,11 @@ import com.zenlocare.HMS_backend.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -122,5 +127,27 @@ public class PatientService {
         patient.setReferredBy(req.getReferredBy());
         if (req.getPaymentCategory() != null) patient.setPaymentCategory(req.getPaymentCategory());
         return patientRepository.save(patient);
+    }
+
+    public Map<String, Object> getPaginatedPatients(
+        UUID hospitalId,
+        int page,
+        int size,
+        String search
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        String safeSearch = (search == null) ? "" : search.trim();
+
+        Page<Patient> result = patientRepository.searchByHospital(
+            hospitalId, safeSearch, pageable
+        );
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("patients", result.getContent());
+        response.put("totalElements", result.getTotalElements());
+        response.put("totalPages", result.getTotalPages());
+        response.put("currentPage", result.getNumber());
+
+        return response;
     }
 }

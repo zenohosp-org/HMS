@@ -92,4 +92,29 @@ public class SmartBillingService {
                 .appointments(apptSuggestions)
                 .build();
     }
+
+    /**
+     * Computes the full estimated total for an active IPD admission.
+     * Combines room charges and completed consultation fees.
+     * Returns BigDecimal.ZERO if no admission or room data is found.
+     */
+    public BigDecimal computeEstimatedTotal(Integer patientId, UUID admissionId) {
+        try {
+            BigDecimal total = BigDecimal.ZERO;
+            SmartBillingSuggestion suggestions = getSuggestions(patientId, admissionId);
+            if (suggestions.getRoomCharge() != null && suggestions.getRoomCharge().getTotalCharge() != null) {
+                total = total.add(suggestions.getRoomCharge().getTotalCharge());
+            }
+            if (suggestions.getAppointments() != null) {
+                for (SmartBillingSuggestion.AppointmentSuggestion appt : suggestions.getAppointments()) {
+                    if (appt.getConsultationFee() != null) {
+                        total = total.add(appt.getConsultationFee());
+                    }
+                }
+            }
+            return total;
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
+    }
 }

@@ -18,6 +18,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
     List<Appointment> findByHospitalId(UUID hospitalId);
 
+    @Query("SELECT a.status, COUNT(a) FROM Appointment a WHERE a.hospital.id = :hid GROUP BY a.status")
+    List<Object[]> getStatusBreakdown(@Param("hid") UUID hospitalId);
+
     List<Appointment> findByHospitalIdAndApptDate(UUID hospitalId, LocalDate apptDate);
 
     List<Appointment> findByDoctorIdAndApptDate(UUID doctorId, LocalDate apptDate);

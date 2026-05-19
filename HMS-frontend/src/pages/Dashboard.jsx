@@ -476,7 +476,7 @@ function DoctorStaffDashboard() {
         {[
           { label: "Patients", sub: "Register or find a patient", to: "/patients", icon: <Users className="w-5 h-5" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
           ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e]" }] : []),
-          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 dark:text-white bg-slate-100 dark:bg-[#1e1e1e]" },
+          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing/opd", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 dark:text-white bg-slate-100 dark:bg-[#1e1e1e]" },
         ].map((item) => (
           <button
             key={item.to}

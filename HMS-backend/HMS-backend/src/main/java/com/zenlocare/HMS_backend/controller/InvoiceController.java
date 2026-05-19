@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -36,5 +37,31 @@ public class InvoiceController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/opd/paginated")
+    public ResponseEntity<Map<String, Object>> getPaginatedOpd(
+        @RequestParam UUID hospitalId,
+        @RequestParam(defaultValue = "0")   int page,
+        @RequestParam(defaultValue = "10")  int size,
+        @RequestParam(defaultValue = "ALL") String status,
+        @RequestParam(defaultValue = "")    String search
+    ) {
+        return ResponseEntity.ok(
+            invoiceService.getPaginatedOpdInvoices(hospitalId, page, size, status, search)
+        );
+    }
+
+    @GetMapping("/ipd/paginated")
+    public ResponseEntity<Map<String, Object>> getPaginatedIpd(
+        @RequestParam UUID hospitalId,
+        @RequestParam(defaultValue = "0")    int page,
+        @RequestParam(defaultValue = "10")   int size,
+        @RequestParam(defaultValue = "ALL")  String status,
+        @RequestParam(defaultValue = "")     String search
+    ) {
+        return ResponseEntity.ok(
+            invoiceService.getPaginatedIpdInvoices(hospitalId, page, size, status, search)
+        );
     }
 }

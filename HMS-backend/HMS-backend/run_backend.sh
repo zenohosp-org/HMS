@@ -1,7 +1,7 @@
 #!/bin/bash
 # ZenoHosp HMS — Backend (macOS)
 
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 export PATH="$JAVA_HOME/bin:$PATH"
 
 cd "$(dirname "$0")"

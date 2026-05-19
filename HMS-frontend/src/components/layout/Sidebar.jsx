@@ -63,6 +63,10 @@ const HR_LINKS = [
   { label: "Departments", to: "/staffs/departments", icon: Building2 },
   { label: "Designations", to: "/staffs/designations", icon: Award },
 ];
+const BILLING_LINKS = [
+  { label: "OPD Billing", to: "/billing/opd", icon: ReceiptText },
+  { label: "IPD Billing", to: "/billing/ipd", icon: ReceiptText },
+];
 const EXTERNAL_APPS = [
   { label: "Finance", href: "https://finance.zenohosp.com", icon: BarChart2 },
   { label: "Inventory", href: "https://inventory.zenohosp.com", icon: Boxes },
@@ -77,7 +81,7 @@ function Sidebar({ isOpen }) {
   const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
   const [ambOpen, setAmbOpen] = useState(() => location.pathname.startsWith("/ambulance"));
   const [settingsOpen, setSettingsOpen] = useState(() => location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages") || location.pathname.startsWith("/settings/patient-services"));
-  const [billingOpen, setBillingOpen] = useState(() => location.pathname === "/billing");
+  const [billingOpen, setBillingOpen] = useState(() => location.pathname.startsWith("/billing"));
   const filteredClinicalLinks = CLINICAL_LINKS.filter((link) => {
     if (user?.role === "hospital_admin" || user?.role === "super_admin") return true;
     const allowedLinks = ["Patients", "Appointments"];
@@ -140,39 +144,8 @@ function Sidebar({ isOpen }) {
   const renderAmbulanceAccordion = () => renderAccordionSection(AMBULANCE_LINKS, "Ambulance", Ambulance, ambOpen, setAmbOpen, ambActive);
   const settingsActive = location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages") || location.pathname.startsWith("/settings/patient-services");
   const renderSettingsAccordion = () => renderAccordionSection(SETTINGS_LINKS, "Settings", Settings, settingsOpen, setSettingsOpen, settingsActive);
-  const billingActive = location.pathname === "/billing";
-  const billingTab = new URLSearchParams(location.search).get("tab") || "OPD";
-  const renderBillingAccordion = () => {
-    if (!isOpen) return renderLink({ label: "Billing", to: "/billing", icon: ReceiptText });
-    return (
-      <div>
-        <button
-          onClick={() => setBillingOpen(o => !o)}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${billingActive ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white"}`}
-        >
-          <ReceiptText className={`w-4 h-4 shrink-0 ${billingActive ? "text-slate-700 dark:text-white" : ""}`} />
-          <span className="flex-1 text-left truncate">Billing</span>
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${billingOpen ? "rotate-180" : ""} opacity-50`} />
-        </button>
-        {billingOpen && (
-          <div className="mt-0.5 space-y-0.5">
-            {[{ label: "OPD", tab: "OPD" }, { label: "IPD", tab: "IPD" }].map(({ label, tab }) => {
-              const active = billingActive && billingTab === tab;
-              return (
-                <Link
-                  key={tab}
-                  to={`/billing?tab=${tab}`}
-                  className={`flex items-center gap-3 px-3 pl-8 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${active ? "bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white" : "text-slate-700 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white"}`}
-                >
-                  <span className="truncate">{label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  };
+  const billingActive = location.pathname.startsWith("/billing");
+  const renderBillingAccordion = () => renderAccordionSection(BILLING_LINKS, "Billing", ReceiptText, billingOpen, setBillingOpen, billingActive);
   return <aside
     className={`flex flex-col h-full transition-all duration-300 ease-in-out shrink-0
                 bg-white dark:bg-[#111111] border-r border-slate-200 dark:border-[#222222]

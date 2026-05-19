@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api, { patientApi, recordApi, appointmentsApi, radiologyApi, invoiceApi } from "@/utils/api";
 import { useNotification } from "@/context/NotificationContext";
@@ -297,7 +297,7 @@ function PatientDetails() {
                                     Add Record
                                 </button><button
     onClick={() => {
-      navigate(`/billing?patientId=${patient.id}&name=${patient.firstName}+${patient.lastName}&uhid=${patient.uhid}`);
+      navigate(`/billing/opd?patientId=${patient.id}&name=${patient.firstName}+${patient.lastName}&uhid=${patient.uhid}`);
       setMenuOpen(false);
     }}
     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm
@@ -406,11 +406,11 @@ function PatientDetails() {
   })}</div></div>}</div>}{
     /* ── Billing tab ── */
   }{tab === "billing" && <div className="p-6 space-y-4"><div className="flex items-center justify-between"><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">Invoice History</p><button
-    onClick={() => navigate(`/billing?patientId=${id}`)}
+    onClick={() => navigate(`/billing/opd?patientId=${id}`)}
     className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
   >
                                     + New Invoice
-                                </button></div>{invoicesLoading ? <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-slate-300" /></div> : invoices.length === 0 ? <div className="py-12 text-center"><p className="text-sm text-slate-600 dark:text-[#999999]">No invoices yet</p><button onClick={() => navigate(`/billing?patientId=${id}`)} className="mt-3 text-sm font-semibold text-slate-900 dark:text-white hover:underline">
+                                </button></div>{invoicesLoading ? <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-slate-300" /></div> : invoices.length === 0 ? <div className="py-12 text-center"><p className="text-sm text-slate-600 dark:text-[#999999]">No invoices yet</p><button onClick={() => navigate(`/billing/opd?patientId=${id}`)} className="mt-3 text-sm font-semibold text-slate-900 dark:text-white hover:underline">
                                         Create first invoice
                                     </button></div> : <div className="space-y-2">{invoices.map((inv) => {
     const statusCls = (inv.status === "PAID" || inv.status === "SETTLED") ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" : inv.status === "CANCELLED" ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20" : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
