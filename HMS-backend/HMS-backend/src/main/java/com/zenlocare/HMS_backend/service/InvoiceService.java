@@ -286,15 +286,19 @@ public class InvoiceService {
             if (alreadyHasFee) return;
             Doctor doc = appt.getDoctor();
             if (doc == null) return;
-            BigDecimal fee = doc.getConsultationFee() != null ? doc.getConsultationFee() : BigDecimal.ZERO;
+            boolean isFollowUp = appt.getType() == Appointment.AppointmentType.FOLLOWUP;
+            BigDecimal fee = (isFollowUp && doc.getFollowUpFee() != null && doc.getFollowUpFee().compareTo(BigDecimal.ZERO) > 0)
+                    ? doc.getFollowUpFee()
+                    : (doc.getConsultationFee() != null ? doc.getConsultationFee() : BigDecimal.ZERO);
             if (fee.compareTo(BigDecimal.ZERO) == 0) return;
+            String feeLabel = isFollowUp ? "Follow-up" : "Consultation";
             String docName = doc.getUser() != null
                     ? doc.getUser().getFirstName() + " " + doc.getUser().getLastName() : "Doctor";
             if (invoice.getItems() == null) invoice.setItems(new ArrayList<>());
             invoice.getItems().add(InvoiceItem.builder()
                     .invoice(invoice)
                     .itemType("CONSULTATION")
-                    .description("Consultation - Dr. " + docName)
+                    .description(feeLabel + " - Dr. " + docName)
                     .quantity(1)
                     .unitPrice(fee)
                     .totalPrice(fee)
@@ -311,7 +315,11 @@ public class InvoiceService {
         } else {
             if (includeConsultation && appt.getDoctor() != null) {
                 Doctor doc = appt.getDoctor();
-                BigDecimal fee = doc.getConsultationFee() != null ? doc.getConsultationFee() : BigDecimal.ZERO;
+                boolean isFollowUp = appt.getType() == Appointment.AppointmentType.FOLLOWUP;
+                BigDecimal fee = (isFollowUp && doc.getFollowUpFee() != null && doc.getFollowUpFee().compareTo(BigDecimal.ZERO) > 0)
+                        ? doc.getFollowUpFee()
+                        : (doc.getConsultationFee() != null ? doc.getConsultationFee() : BigDecimal.ZERO);
+                String feeLabel = isFollowUp ? "Follow-up" : "Consultation";
                 String docName = doc.getUser() != null
                         ? doc.getUser().getFirstName() + " " + doc.getUser().getLastName() : "Doctor";
                 Invoice invoice = Invoice.builder()
@@ -328,7 +336,7 @@ public class InvoiceService {
                 invoice.setItems(new ArrayList<>(List.of(InvoiceItem.builder()
                         .invoice(invoice)
                         .itemType("CONSULTATION")
-                        .description("Consultation - Dr. " + docName)
+                        .description(feeLabel + " - Dr. " + docName)
                         .quantity(1)
                         .unitPrice(fee)
                         .totalPrice(fee)

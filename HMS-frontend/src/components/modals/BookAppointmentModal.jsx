@@ -368,12 +368,22 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
               <p className="text-xs text-slate-500 dark:text-[#888888]">{selectedDoctor.specialization}</p>
             </div>
           </div>
-          {selectedDoctor.consultationFee != null && (
-            <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] grid grid-cols-2 gap-2">
-              <div><p className="text-[10px] font-bold uppercase text-slate-600 dark:text-[#999999]">Fee</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.consultationFee}</p></div>
-              <div><p className="text-[10px] font-bold uppercase text-slate-600 dark:text-[#999999]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div>
-            </div>
-          )}
+          {(() => {
+            const displayFee = isFollowUp && selectedDoctor.followUpFee != null
+              ? selectedDoctor.followUpFee
+              : selectedDoctor.consultationFee;
+            return displayFee != null ? (
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-slate-600 dark:text-[#999999]">
+                    {isFollowUp ? "Follow-up Fee" : "Consultation Fee"}
+                  </p>
+                  <p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">₹{displayFee}</p>
+                </div>
+                <div><p className="text-[10px] font-bold uppercase text-slate-600 dark:text-[#999999]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div>
+              </div>
+            ) : null;
+          })()}
         </div>
       )}
     </div>
