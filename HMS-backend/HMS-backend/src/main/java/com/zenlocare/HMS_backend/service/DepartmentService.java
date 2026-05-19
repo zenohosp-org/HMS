@@ -8,10 +8,12 @@ import com.zenlocare.HMS_backend.repository.DepartmentRepository;
 import com.zenlocare.HMS_backend.repository.HospitalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class DepartmentService {
@@ -29,6 +31,7 @@ public class DepartmentService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    @Transactional
     public DepartmentDTO create(DepartmentRequest req) {
         Hospital hospital = hospitalRepository.findById(req.getHospitalId())
                 .orElseThrow(() -> new RuntimeException("Hospital not found"));
@@ -45,6 +48,7 @@ public class DepartmentService {
         return toDTO(departmentRepository.save(dept));
     }
 
+    @Transactional
     public DepartmentDTO toggle(UUID id) {
         Department dept = departmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Department not found"));
@@ -52,6 +56,7 @@ public class DepartmentService {
         return toDTO(departmentRepository.save(dept));
     }
 
+    @Transactional
     public DepartmentDTO update(UUID id, DepartmentRequest req) {
         Department dept = departmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Department not found"));

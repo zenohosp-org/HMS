@@ -6,12 +6,14 @@ import com.zenlocare.HMS_backend.repository.BankAccountRepository;
 import com.zenlocare.HMS_backend.repository.BankTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class BankAccountService {

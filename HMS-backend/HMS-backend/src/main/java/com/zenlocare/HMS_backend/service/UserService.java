@@ -7,10 +7,12 @@ import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -42,6 +44,7 @@ public class UserService {
         return userRepository.searchUsers(hospitalId, query.trim(), role, limit);
     }
 
+    @Transactional
     public User createUser(String email, String password, String firstName, String lastName,
             String roleName, UUID hospitalId, String phone, String employeeCode, String designation,
             String gender, java.time.LocalDate dateOfJoining, UUID branchId, UUID departmentId, UUID designationId,
@@ -88,6 +91,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     public User updateUser(UUID userId, String firstName, String lastName, String phone,
             String roleName, String employeeCode, String designation,
             String gender, java.time.LocalDate dateOfJoining, String state,
@@ -119,6 +123,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     public void deactivateUser(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -126,6 +131,7 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void activateUser(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));

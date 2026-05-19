@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class AdmissionService {
@@ -431,16 +432,19 @@ public class AdmissionService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<AdmissionDTO> getAll(UUID hospitalId) {
         return admissionRepository.findByHospitalIdOrderByAdmissionDateDesc(hospitalId)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<AdmissionDTO> getByPatient(Integer patientId) {
         return admissionRepository.findByPatientIdOrderByAdmissionDateDesc(patientId)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public AdmissionDTO get(UUID id) {
         return toDTO(admissionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Admission not found")));

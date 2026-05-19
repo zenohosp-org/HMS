@@ -10,12 +10,14 @@ import com.zenlocare.HMS_backend.repository.PatientRecordRepository;
 import com.zenlocare.HMS_backend.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class RecordService {
@@ -32,6 +34,7 @@ public class RecordService {
         return recordRepository.findByCreatedByIdAndHospitalIdOrderByCreatedAtDesc(userId, hospitalId);
     }
 
+    @Transactional
     public PatientRecord createRecord(UUID hospitalId, Integer patientId, User createdBy,
             String historyType, String description, LocalDateTime nextVisitDate,
             java.util.UUID admissionId, String admissionNumber) {

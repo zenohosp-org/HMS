@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class PatientService {
@@ -103,6 +104,7 @@ public class PatientService {
         return uhid;
     }
 
+    @Transactional
     public Patient updatePatient(Integer patientId, CreatePatientRequest req) {
         Patient patient = getPatientById(patientId, req.getHospitalId());
         if (req.getFirstName() != null) patient.setFirstName(req.getFirstName());

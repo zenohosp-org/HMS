@@ -18,6 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class RadiologyService {
@@ -29,7 +30,6 @@ public class RadiologyService {
     private final PatientRepository patientRepository;
     private final AdmissionRepository admissionRepository;
 
-    @Transactional(readOnly = true)
     public List<RadiologyOrderDTO> getOrders(UUID hospitalId, String status) {
         if (status != null && !status.isBlank()) {
             RadiologyStatus rs = RadiologyStatus.valueOf(status);
@@ -40,19 +40,16 @@ public class RadiologyService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public List<RadiologyOrderDTO> getByPatient(Integer patientId) {
         return orderRepository.findByPatientIdOrderByCreatedAtDesc(patientId)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public List<RadiologyOrderDTO> getByAdmission(UUID admissionId) {
         return orderRepository.findByAdmissionIdOrderByCreatedAtDesc(admissionId)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public RadiologyOrderDTO getOrder(Long id) {
         return toDTO(orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Radiology order not found")));

@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class PatientServiceService {
@@ -24,10 +25,12 @@ public class PatientServiceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Patient service not found"));
     }
 
+    @Transactional
     public PatientService createService(PatientService service) {
         return repository.save(service);
     }
 
+    @Transactional
     public PatientService updateService(UUID id, PatientService details) {
         PatientService service = getServiceById(id);
         
@@ -43,10 +46,12 @@ public class PatientServiceService {
         return repository.save(service);
     }
 
+    @Transactional
     public void deleteService(UUID id) {
         repository.deleteById(id);
     }
 
+    @Transactional
     public void toggleStatus(UUID id) {
         PatientService service = getServiceById(id);
         service.setIsActive(!service.getIsActive());

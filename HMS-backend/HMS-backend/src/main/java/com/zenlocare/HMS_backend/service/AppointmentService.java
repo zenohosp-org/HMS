@@ -18,6 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class AppointmentService {

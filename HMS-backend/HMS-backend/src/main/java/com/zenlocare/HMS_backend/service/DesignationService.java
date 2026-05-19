@@ -10,10 +10,12 @@ import com.zenlocare.HMS_backend.repository.DesignationRepository;
 import com.zenlocare.HMS_backend.repository.HospitalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class DesignationService {
@@ -37,6 +39,7 @@ public class DesignationService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    @Transactional
     public DesignationDTO create(DesignationRequest req) {
         Hospital hospital = hospitalRepository.findById(req.getHospitalId())
                 .orElseThrow(() -> new RuntimeException("Hospital not found"));
@@ -52,6 +55,7 @@ public class DesignationService {
         return toDTO(designationRepository.save(d));
     }
 
+    @Transactional
     public DesignationDTO toggle(UUID id) {
         Designation d = designationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Designation not found"));

@@ -12,11 +12,13 @@ import com.zenlocare.HMS_backend.repository.PriceListItemRepository;
 import com.zenlocare.HMS_backend.repository.PriceListRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class PricingService {
@@ -37,6 +39,7 @@ public class PricingService {
         return PriceListDto.fromEntity(list);
     }
 
+    @Transactional
     public PriceListDto createPriceList(PriceListRequest request) {
         Hospital hospital = hospitalRepository.findById(request.getHospitalId())
                 .orElseThrow(() -> new RuntimeException("Hospital not found"));
@@ -54,6 +57,7 @@ public class PricingService {
         return PriceListDto.fromEntity(priceListRepository.save(priceList));
     }
 
+    @Transactional
     public PriceListDto updatePriceList(UUID id, PriceListRequest request) {
         PriceList priceList = priceListRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Price List not found"));
@@ -70,6 +74,7 @@ public class PricingService {
         return PriceListDto.fromEntity(priceListRepository.save(priceList));
     }
 
+    @Transactional
     public void deletePriceList(UUID id) {
         priceListRepository.deleteById(id);
     }
@@ -81,6 +86,7 @@ public class PricingService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public PriceListItemDto createPriceListItem(PriceListItemRequest request) {
         PriceList priceList = priceListRepository.findById(request.getPriceListId())
                 .orElseThrow(() -> new RuntimeException("Price List not found"));
@@ -97,6 +103,7 @@ public class PricingService {
         return PriceListItemDto.fromEntity(priceListItemRepository.save(item));
     }
 
+    @Transactional
     public PriceListItemDto updatePriceListItem(UUID id, PriceListItemRequest request) {
         PriceListItem item = priceListItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
@@ -115,6 +122,7 @@ public class PricingService {
         return PriceListItemDto.fromEntity(priceListItemRepository.save(item));
     }
 
+    @Transactional
     public void deletePriceListItem(UUID id) {
         priceListItemRepository.deleteById(id);
     }

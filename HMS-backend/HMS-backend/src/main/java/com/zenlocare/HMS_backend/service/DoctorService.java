@@ -10,10 +10,12 @@ import com.zenlocare.HMS_backend.repository.HospitalRepository;
 import com.zenlocare.HMS_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class DoctorService {
@@ -40,6 +42,7 @@ public class DoctorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found for user: " + userId));
     }
 
+    @Transactional
     public Doctor createDoctor(UUID userId, UUID hospitalId, Doctor doctorData) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
@@ -78,6 +81,7 @@ public class DoctorService {
         return doctorRepository.save(doctor);
     }
 
+    @Transactional
     public Doctor updateDoctor(UUID id, Doctor updatedData) {
         Doctor doctor = getDoctorById(id);
 
@@ -115,6 +119,7 @@ public class DoctorService {
         return doctorRepository.save(doctor);
     }
 
+    @Transactional
     public void deleteDoctor(UUID id) {
         Doctor doctor = getDoctorById(id);
         doctorRepository.delete(doctor);

@@ -16,6 +16,7 @@ import java.util.UUID;
  * Isolated bank ledger writes — always in their own transaction (REQUIRES_NEW)
  * so a schema mismatch or constraint failure never poisons the caller's transaction.
  */
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class BankLedgerService {
