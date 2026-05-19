@@ -8,7 +8,7 @@ import { generateInvoiceNumber } from '@/utils/validators'
 import {
   X, Receipt, CheckCircle2, Loader2, AlertCircle, Plus, Trash2,
   BedDouble, ScanLine, Stethoscope, Pill, FlaskConical, Wrench,
-  Scissors, Landmark, Wallet, IndianRupee, Clock,
+  Scissors, Landmark, Wallet, IndianRupee, Clock, UserCheck,
 } from 'lucide-react'
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
@@ -22,6 +22,7 @@ const TYPE_META = {
   MEDICINE:     { label: 'Medicine',     icon: Pill        },
   OT:           { label: 'OT / Surgery', icon: Scissors    },
   CUSTOM:       { label: 'Custom',       icon: Wrench      },
+  REGISTRATION: { label: 'Registration', icon: UserCheck   },
 }
 
 const otApi = axios.create({ baseURL: 'https://api-ot.zenohosp.com', withCredentials: true })
@@ -238,7 +239,9 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
             quantity, unitPrice: price, totalPrice: quantity * price,
           })
         } else if (s.type === 'REGISTRATION' && s.oneTimeCharge) {
-          if (isFirstAdmission) {
+          // Skip if backend already added a REGISTRATION item to the invoice
+          const backendAlreadyCharged = savedItems.some(i => i.itemType === 'REGISTRATION')
+          if (isFirstAdmission && !backendAlreadyCharged) {
             const price = s.pricePerDay || 0
             auto.push({ key: key++, itemType: 'CUSTOM', description: s.name, quantity: 1, unitPrice: price, totalPrice: price })
           }
@@ -492,6 +495,12 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           </select>
         </div>
       </div>
+      {bankAccounts.length === 0 && (
+        <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+          <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-700 dark:text-amber-400">No payment accounts configured — add accounts in Finance to audit billing.</p>
+        </div>
+      )}
       {needsBankAccount && bankAccounts.length > 0 && (
         <div>
           <label className="label flex items-center gap-1.5">

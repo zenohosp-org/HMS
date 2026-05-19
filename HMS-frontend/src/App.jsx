@@ -20,6 +20,7 @@ import Rooms from "@/pages/rooms/Rooms";
 import RoomLogsPage from "@/pages/rooms/RoomLogsPage";
 import OPDBilling from "./pages/billing/OPDBilling";
 import IPDBilling from "./pages/billing/IPDBilling";
+import AmbulanceBilling from "./pages/billing/AmbulanceBilling";
 import AppointmentsDashboard from "@/pages/appointments/AppointmentsDashboard";
 import ShiftRoster from "@/pages/admin/ShiftRoster";
 import Departments from "@/pages/admin/Departments";
@@ -74,6 +75,7 @@ function App() {
           <Route path="billing" element={<Navigate to="/billing/opd" replace />} />
           <Route path="billing/opd" element={<OPDBilling />} />
           <Route path="billing/ipd" element={<IPDBilling />} />
+          <Route path="billing/ambulance" element={<AmbulanceBilling />} />
           
           {/* Appointments */}
           <Route path="appointments" element={<AppointmentsDashboard />} />

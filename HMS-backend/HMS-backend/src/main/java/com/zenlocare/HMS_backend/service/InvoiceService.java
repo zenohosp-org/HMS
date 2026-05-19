@@ -41,6 +41,7 @@ public class InvoiceService {
     private final PatientAdvanceService patientAdvanceService;
     private final InvoicePaymentRepository invoicePaymentRepository;
     private final BankLedgerService bankLedgerService;
+    private final PatientServiceRepository patientServiceRepository;
 
     @Transactional
     public Invoice createInvoice(InvoiceRequest request) {
@@ -252,18 +253,34 @@ public class InvoiceService {
             }
         }
 
-        invoiceRepository.save(Invoice.builder()
+        // Direct IPD admission (no OPD source) — add one-time registration fee if never charged
+        Optional<BigDecimal> regFeeOpt = findRegistrationFee(hospitalId);
+        BigDecimal regFee = regFeeOpt.orElse(null);
+        boolean addReg = regFee != null
+                && !invoiceRepository.existsRegistrationFeeForPatient(patientId);
+        Invoice admissionInvoice = Invoice.builder()
                 .invoiceNumber("IPD-" + admissionNumber)
                 .hospital(hospital)
                 .patient(patient)
                 .admission(admission)
-                .subtotal(BigDecimal.ZERO)
+                .subtotal(addReg ? regFee : BigDecimal.ZERO)
                 .tax(BigDecimal.ZERO)
                 .discount(BigDecimal.ZERO)
-                .total(BigDecimal.ZERO)
+                .total(addReg ? regFee : BigDecimal.ZERO)
                 .status(InvoiceStatus.UNSETTLED)
                 .notes("IPD Admission — " + admissionNumber)
-                .build());
+                .build();
+        if (addReg) {
+            admissionInvoice.setItems(new ArrayList<>(List.of(InvoiceItem.builder()
+                    .invoice(admissionInvoice)
+                    .itemType("REGISTRATION")
+                    .description("Registration Fee")
+                    .quantity(1)
+                    .unitPrice(regFee)
+                    .totalPrice(regFee)
+                    .build())));
+        }
+        invoiceRepository.save(admissionInvoice);
     }
 
     // ── Two-stage OPD invoice creation ─────────────────────────────────────────
@@ -305,6 +322,21 @@ public class InvoiceService {
                     .appointmentId(appt.getId())
                     .build());
             BigDecimal newSubtotal = invoice.getSubtotal().add(fee);
+            // Add one-time registration fee if this patient has never been charged it
+            Optional<BigDecimal> regFeeOptE = findRegistrationFee(appt.getHospital().getId());
+            if (regFeeOptE.isPresent()
+                    && !invoiceRepository.existsRegistrationFeeForPatient(appt.getPatient().getId())) {
+                BigDecimal regFee = regFeeOptE.get();
+                invoice.getItems().add(InvoiceItem.builder()
+                        .invoice(invoice)
+                        .itemType("REGISTRATION")
+                        .description("Registration Fee")
+                        .quantity(1)
+                        .unitPrice(regFee)
+                        .totalPrice(regFee)
+                        .build());
+                newSubtotal = newSubtotal.add(regFee);
+            }
             invoice.setSubtotal(newSubtotal);
             invoice.setTotal(newSubtotal.add(invoice.getTax() != null ? invoice.getTax() : BigDecimal.ZERO)
                     .subtract(invoice.getDiscount() != null ? invoice.getDiscount() : BigDecimal.ZERO));
@@ -322,6 +354,7 @@ public class InvoiceService {
                 String feeLabel = isFollowUp ? "Follow-up" : "Consultation";
                 String docName = doc.getUser() != null
                         ? doc.getUser().getFirstName() + " " + doc.getUser().getLastName() : "Doctor";
+                List<InvoiceItem> newItems = new ArrayList<>();
                 Invoice invoice = Invoice.builder()
                         .invoiceNumber(invoiceNum)
                         .hospital(appt.getHospital())
@@ -333,7 +366,7 @@ public class InvoiceService {
                         .total(fee)
                         .status(InvoiceStatus.UNPAID)
                         .build();
-                invoice.setItems(new ArrayList<>(List.of(InvoiceItem.builder()
+                newItems.add(InvoiceItem.builder()
                         .invoice(invoice)
                         .itemType("CONSULTATION")
                         .description(feeLabel + " - Dr. " + docName)
@@ -341,7 +374,24 @@ public class InvoiceService {
                         .unitPrice(fee)
                         .totalPrice(fee)
                         .appointmentId(appt.getId())
-                        .build())));
+                        .build());
+                // Add one-time registration fee if this patient has never been charged it
+                Optional<BigDecimal> regFeeOptN = findRegistrationFee(appt.getHospital().getId());
+                if (regFeeOptN.isPresent()
+                        && !invoiceRepository.existsRegistrationFeeForPatient(appt.getPatient().getId())) {
+                    BigDecimal regFee = regFeeOptN.get();
+                    newItems.add(InvoiceItem.builder()
+                            .invoice(invoice)
+                            .itemType("REGISTRATION")
+                            .description("Registration Fee")
+                            .quantity(1)
+                            .unitPrice(regFee)
+                            .totalPrice(regFee)
+                            .build());
+                    invoice.setSubtotal(fee.add(regFee));
+                    invoice.setTotal(fee.add(regFee));
+                }
+                invoice.setItems(newItems);
                 invoiceRepository.save(invoice);
             } else {
                 invoiceRepository.save(Invoice.builder()
@@ -594,6 +644,18 @@ public class InvoiceService {
         return toDTO(invoice);
     }
 
+    // Look up the hospital's active one-time REGISTRATION patient service price.
+    // Returns empty if not configured — registration fee is skipped in that case.
+    private Optional<BigDecimal> findRegistrationFee(UUID hospitalId) {
+        return patientServiceRepository.findByHospitalId(hospitalId).stream()
+                .filter(s -> com.zenlocare.HMS_backend.entity.PatientService.ServiceType.REGISTRATION == s.getType()
+                          && Boolean.TRUE.equals(s.getOneTimeCharge())
+                          && Boolean.TRUE.equals(s.getIsActive()))
+                .map(com.zenlocare.HMS_backend.entity.PatientService::getPricePerDay)
+                .filter(p -> p != null && p.compareTo(BigDecimal.ZERO) > 0)
+                .findFirst();
+    }
+
     private InvoiceDTO toDTO(Invoice inv) {
         return InvoiceDTO.builder()
                 .id(inv.getId().toString())
@@ -616,29 +678,29 @@ public class InvoiceService {
                 .createdAt(inv.getCreatedAt())
                 .updatedAt(inv.getUpdatedAt())
                 .items(inv.getItems() != null ? inv.getItems().stream().map(item ->
-                        InvoiceDTO.ItemDTO.builder()
-                                .id(item.getId())
-                                .itemType(item.getItemType())
-                                .description(item.getDescription())
-                                .quantity(item.getQuantity())
-                                .unitPrice(item.getUnitPrice())
-                                .totalPrice(item.getTotalPrice())
-                                .waiverAmount(item.getWaiverAmount())
-                                .waiverReason(item.getWaiverReason())
-                                .serviceId(item.getServiceId())
-                                .radiologyOrderId(item.getRadiologyOrderId())
-                                .appointmentId(item.getAppointmentId())
-                                .build()
+                        new InvoiceDTO.ItemDTO(
+                                item.getId(),
+                                item.getItemType(),
+                                item.getDescription(),
+                                item.getQuantity(),
+                                item.getUnitPrice(),
+                                item.getTotalPrice(),
+                                item.getWaiverAmount(),
+                                item.getWaiverReason(),
+                                item.getServiceId(),
+                                item.getRadiologyOrderId(),
+                                item.getAppointmentId(),
+                                item.getAmbulanceBookingId()
+                        )
                 ).collect(Collectors.toList()) : java.util.Collections.emptyList())
                 .payments(invoicePaymentRepository.findByInvoice_IdOrderByPaidAtAsc(inv.getId())
-                        .stream().map(p -> InvoiceDTO.PaymentDTO.builder()
-                                .id(p.getId())
-                                .amount(p.getAmount())
-                                .paymentMethod(p.getPaymentMethod())
-                                .collectedBy(p.getCollectedBy())
-                                .paidAt(p.getPaidAt())
-                                .build()
-                        ).collect(Collectors.toList()))
+                        .stream().map(p -> new InvoiceDTO.PaymentDTO(
+                                p.getId(),
+                                p.getAmount(),
+                                p.getPaymentMethod(),
+                                p.getCollectedBy(),
+                                p.getPaidAt()
+                        )).collect(Collectors.toList()))
                 .build();
     }
 

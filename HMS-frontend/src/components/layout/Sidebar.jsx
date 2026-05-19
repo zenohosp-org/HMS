@@ -64,8 +64,9 @@ const HR_LINKS = [
   { label: "Designations", to: "/staffs/designations", icon: Award },
 ];
 const BILLING_LINKS = [
-  { label: "OPD Billing", to: "/billing/opd", icon: ReceiptText },
-  { label: "IPD Billing", to: "/billing/ipd", icon: ReceiptText },
+  { label: "OPD Billing",       to: "/billing/opd",       icon: ReceiptText },
+  { label: "IPD Billing",       to: "/billing/ipd",       icon: ReceiptText },
+  { label: "Ambulance Billing", to: "/billing/ambulance", icon: Ambulance   },
 ];
 const EXTERNAL_APPS = [
   { label: "Finance", href: "https://finance.zenohosp.com", icon: BarChart2 },

@@ -44,6 +44,13 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     Optional<Invoice> findByAppointment_Id(UUID appointmentId);
     boolean existsByAppointment_Id(UUID appointmentId);
 
+    @Query("""
+        SELECT CASE WHEN COUNT(ii) > 0 THEN TRUE ELSE FALSE END
+        FROM Invoice inv JOIN inv.items ii
+        WHERE inv.patient.id = :patientId AND ii.itemType = 'REGISTRATION'
+        """)
+    boolean existsRegistrationFeeForPatient(@Param("patientId") Integer patientId);
+
     /**
      * Returns all IPD invoices (linked to an admission) that are unpaid/unsettled
      * and have a zero or null total — candidates for estimate sync.

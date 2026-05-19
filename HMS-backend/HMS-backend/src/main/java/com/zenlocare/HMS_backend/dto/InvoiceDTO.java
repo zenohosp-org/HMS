@@ -1,16 +1,19 @@
 package com.zenlocare.HMS_backend.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.Collections;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class InvoiceDTO {
     private String id;
     private String invoiceNumber;
@@ -34,7 +37,8 @@ public class InvoiceDTO {
     private List<PaymentDTO> payments;
 
     @Data
-    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class PaymentDTO {
         private UUID id;
         private BigDecimal amount;
@@ -44,7 +48,8 @@ public class InvoiceDTO {
     }
 
     @Data
-    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class ItemDTO {
         private UUID id;
         private String itemType;
@@ -57,5 +62,6 @@ public class InvoiceDTO {
         private UUID serviceId;
         private Long radiologyOrderId;
         private UUID appointmentId;
+        private Long ambulanceBookingId;
     }
 }

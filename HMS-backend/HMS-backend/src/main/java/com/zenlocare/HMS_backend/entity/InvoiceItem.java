@@ -34,6 +34,9 @@ public class InvoiceItem {
     @Column(name = "appointment_id")
     private UUID appointmentId;
 
+    @Column(name = "ambulance_booking_id")
+    private Long ambulanceBookingId;
+
     @Column(name = "item_type", length = 30)
     private String itemType; // MEDICINE, LAB_TEST, CONSULTATION, ROOM_CHARGE, RADIOLOGY, CUSTOM
 
