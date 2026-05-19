@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { X, Calendar, Clock, FileText, Search, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -80,6 +80,10 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   const [packageId, setPackageId]       = useState("");
   const [patientSearch, setPatientSearch] = useState("");
   const [doctorSearch, setDoctorSearch]   = useState("");
+  const [patientOpen, setPatientOpen]     = useState(false);
+  const [doctorOpen, setDoctorOpen]       = useState(false);
+  const patientRef = useRef(null);
+  const doctorRef  = useRef(null);
   const [isLoading, setIsLoading]       = useState(false);
   const [errors, setErrors]             = useState({});
 
@@ -136,7 +140,17 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   }, [isFollowUp, patientId, user?.hospitalId, doctors]);
 
   // Reset past-doctor filter when type changes
-  useEffect(() => { setPastDoctors([]); setShowAllDoctors(false); setDoctorSearch(""); }, [type]);
+  useEffect(() => { setPastDoctors([]); setShowAllDoctors(false); setDoctorSearch(""); setDoctorOpen(false); }, [type]);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (patientRef.current && !patientRef.current.contains(e.target)) setPatientOpen(false);
+      if (doctorRef.current  && !doctorRef.current.contains(e.target))  setDoctorOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   // Load booked slots for selected doctor
   useEffect(() => {
@@ -255,27 +269,31 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
     <div>
       <h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">Select Patient</h3>
       <p className="text-xs text-slate-500 dark:text-[#666666] mb-4">Search and select a patient for this appointment.</p>
-      <div className="relative mb-2">
+      <div className="relative mb-2" ref={patientRef}>
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" value={patientSearch} onChange={e => setPatientSearch(e.target.value)}
+        <input type="text" value={patientSearch}
+          onChange={e => { setPatientSearch(e.target.value); setPatientOpen(true); }}
+          onFocus={() => setPatientOpen(true)}
           placeholder="Search by name or UHID..."
           className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none transition-all`}
         />
+        {patientOpen && filteredPatients.length > 0 && (
+          <div className="absolute z-10 w-full mt-1 border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#111111] shadow-lg max-h-44 overflow-y-auto">
+            {(patientSearch ? filteredPatients : filteredPatients.slice(0, 5)).map(p => (
+              <button key={p.id} type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => { setPatientId(String(p.id)); setPatientSearch(""); setPatientOpen(false); setErrors(e => ({...e, patient:""})); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left border-b last:border-b-0 border-slate-100 dark:border-[#1a1a1a]">
+                <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{p.firstName[0]}</div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">{p.firstName} {p.lastName}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-[#666666]">{p.uhid}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      {patientSearch && filteredPatients.length > 0 && (
-        <div className="border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden mb-2 bg-white dark:bg-[#111111] max-h-44 overflow-y-auto">
-          {filteredPatients.slice(0,8).map(p => (
-            <button key={p.id} type="button" onClick={() => { setPatientId(String(p.id)); setPatientSearch(""); setErrors(e => ({...e, patient:""})); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left border-b last:border-b-0 border-slate-100 dark:border-[#1a1a1a]">
-              <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{p.firstName[0]}</div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">{p.firstName} {p.lastName}</p>
-                <p className="text-[11px] text-slate-400 dark:text-[#666666]">{p.uhid}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
       {selectedPatient && (
         <div className="flex items-center gap-3 px-3 py-2.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg mb-2">
           <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400 shrink-0">{selectedPatient.firstName[0]}</div>
@@ -314,24 +332,31 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
             : "Showing all available doctors."}
         </p>
       )}
-      {!isFollowUp && (
-        <div className="relative mb-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input type="text" value={doctorSearch} onChange={e => setDoctorSearch(e.target.value)}
-            placeholder="Search by name or specialization..."
-            className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none"
-          />
-        </div>
-      )}
-      <div className={`border ${errors.doctor ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} rounded-lg overflow-hidden bg-white dark:bg-[#111111]`}>
-        <select value={doctorId} onChange={e => { setDoctorId(e.target.value); setApptTime(""); setErrors(p => ({...p, doctor:""})); }}
+      <div className="relative mb-2" ref={doctorRef}>
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input type="text" value={doctorSearch}
+          onChange={e => { setDoctorSearch(e.target.value); setDoctorOpen(true); }}
+          onFocus={() => { if (!selectedDoctor && user?.role !== "doctor") setDoctorOpen(true); }}
           disabled={user?.role === "doctor"}
-          className="w-full px-4 py-3 text-sm text-slate-900 dark:text-[#cccccc] bg-transparent outline-none disabled:opacity-60 disabled:cursor-not-allowed">
-          <option value="">{isEmergency ? "— Assign later —" : "Select a doctor"}</option>
-          {filteredDoctors.map(d => (
-            <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName} — {d.specialization}</option>
-          ))}
-        </select>
+          placeholder="Search by name or specialization..."
+          className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.doctor ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none disabled:opacity-60 disabled:cursor-not-allowed`}
+        />
+        {doctorOpen && filteredDoctors.length > 0 && (
+          <div className="absolute z-10 w-full mt-1 border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#111111] shadow-lg max-h-44 overflow-y-auto">
+            {(doctorSearch ? filteredDoctors : filteredDoctors.slice(0, 5)).map(d => (
+              <button key={d.id} type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => { setDoctorId(d.id); setDoctorSearch(""); setDoctorOpen(false); setApptTime(""); setErrors(p => ({...p, doctor:""})); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left border-b last:border-b-0 border-slate-100 dark:border-[#1a1a1a]">
+                <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{d.firstName[0]}</div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">Dr. {d.firstName} {d.lastName}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-[#666666]">{d.specialization}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {errors.doctor && <p className="text-xs text-red-500 mt-1">{errors.doctor}</p>}
       {selectedDoctor && (
