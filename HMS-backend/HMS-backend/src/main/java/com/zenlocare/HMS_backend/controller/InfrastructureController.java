@@ -48,6 +48,8 @@ public class InfrastructureController {
         private Long id;
         private String name;
         private String roomType;
+        private java.math.BigDecimal dailyCharge;
+        private Integer bedCount;
         private List<RoomDto> rooms = List.of();
     }
 
