@@ -100,6 +100,15 @@ public class Patient {
     @Builder.Default
     private PaymentCategory paymentCategory = PaymentCategory.CASH;
 
+    // GENERAL | CASUALTY | NEWBORN
+    @Column(name = "patient_type", length = 20)
+    @Builder.Default
+    private String patientType = "GENERAL";
+
+    // Only set for NEWBORN patients — references the mother's patient_id
+    @Column(name = "mother_patient_id")
+    private Integer motherPatientId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

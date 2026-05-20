@@ -66,10 +66,26 @@ const patientApi = {
     const res = await api.get("/patients/search", { params: { hospitalId, q } });
     return res.data;
   },
-  listPaginated: (hospitalId, page = 0, size = 8, search = "") =>
+  listPaginated: (hospitalId, page = 0, size = 8, search = "", patientType = "") =>
     api.get(`/patients/paginated`, {
-      params: { hospitalId, page, size, search }
+      params: { hospitalId, page, size, search, ...(patientType ? { patientType } : {}) }
     }).then(res => res.data),
+  updateType: (id, hospitalId, patientType) =>
+    api.patch(`/patients/${id}/type`, null, { params: { hospitalId, patientType } }).then(r => r.data),
+};
+
+const casualtyApi = {
+  get: (patientId, hospitalId) =>
+    api.get(`/patients/${patientId}/casualty`, { params: { hospitalId } }).then(r => r.data),
+  save: (patientId, hospitalId, payload) =>
+    api.post(`/patients/${patientId}/casualty`, payload, { params: { hospitalId } }).then(r => r.data),
+};
+
+const birthApi = {
+  list: (patientId, hospitalId) =>
+    api.get(`/patients/${patientId}/birth`, { params: { hospitalId } }).then(r => r.data),
+  create: (patientId, hospitalId, payload) =>
+    api.post(`/patients/${patientId}/birth`, payload, { params: { hospitalId } }).then(r => r.data),
 };
 const recordApi = {
   list: async (patientId, hospitalId) => {
@@ -664,5 +680,7 @@ export {
   specializationApi,
   staffApi,
   patientAdvanceApi,
-  dashboardApi
+  dashboardApi,
+  casualtyApi,
+  birthApi
 };

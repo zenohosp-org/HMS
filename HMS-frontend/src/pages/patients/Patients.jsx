@@ -25,6 +25,7 @@ function Patients() {
   const [totalElements, setTotalElements] = useState(0);
   const [modal, setModal] = useState({ open: false, patient: null });
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [patientTypeFilter, setPatientTypeFilter] = useState(null); // null = All
 
   const load = () => {
     if (!user?.hospitalId) return;
@@ -33,7 +34,8 @@ function Patients() {
       user.hospitalId,
       page - 1,            // backend is 0-based, UI is 1-based
       PAGE_SIZE,
-      debouncedSearch
+      debouncedSearch,
+      patientTypeFilter
     )
       .then((data) => {
         setPatients(data.patients);
@@ -54,7 +56,7 @@ function Patients() {
 
   useEffect(() => {
     load();
-  }, [user?.hospitalId, page, debouncedSearch]);
+  }, [user?.hospitalId, page, debouncedSearch, patientTypeFilter]);
 
   useEffect(() => {
     if (location.state?.openRegistration) {
@@ -99,16 +101,37 @@ function Patients() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Search by name, UHID or phone…"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all shadow-sm"
-        />
+      {/* Search + Type filter */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by name, UHID or phone…"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all shadow-sm"
+          />
+        </div>
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] shadow-sm shrink-0">
+          {[
+            { label: "All", value: null },
+            { label: "Casualty", value: "CASUALTY" },
+            { label: "Birth & Newborn", value: "NEWBORN" },
+          ].map(({ label, value }) => (
+            <button
+              key={label}
+              onClick={() => { setPatientTypeFilter(value); setPage(1); }}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                patientTypeFilter === value
+                  ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Table card */}
@@ -159,9 +182,21 @@ function Patients() {
                             {initials}
                           </div>
                           <div>
-                            <p className="font-bold text-[15px] text-slate-900 dark:text-white leading-tight">
-                              {p.firstName} {p.lastName}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-[15px] text-slate-900 dark:text-white leading-tight">
+                                {p.firstName} {p.lastName}
+                              </p>
+                              {p.patientType === "CASUALTY" && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20">
+                                  Casualty
+                                </span>
+                              )}
+                              {p.patientType === "NEWBORN" && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-pink-50 text-pink-600 border border-pink-200 dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/20">
+                                  Newborn
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-slate-600 dark:text-slate-500 mt-0.5">{p.uhid}</p>
                           </div>
                         </div>

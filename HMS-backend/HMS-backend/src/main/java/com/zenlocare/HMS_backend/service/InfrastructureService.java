@@ -178,8 +178,11 @@ public class InfrastructureService {
         dto.setName(w.getName());
         dto.setDailyCharge(w.getDailyCharge());
         List<Room> wardRooms = roomRepo.findByHospitalWard_Id(w.getId());
-        // Derive bedCount from first room (all rooms in a ward share the same count)
+        // Derive bedCount and roomType from first room (all rooms in a ward share the same values)
         dto.setBedCount(wardRooms.isEmpty() ? 1 : Optional.ofNullable(wardRooms.get(0).getBedCount()).orElse(1));
+        if (!wardRooms.isEmpty() && wardRooms.get(0).getRoomType() != null) {
+            dto.setRoomType(wardRooms.get(0).getRoomType().name());
+        }
         List<RoomDto> rooms = wardRooms.stream()
                 .map(r -> {
                     RoomDto rd = new RoomDto();

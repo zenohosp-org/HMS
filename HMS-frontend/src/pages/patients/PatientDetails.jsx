@@ -5,6 +5,7 @@ import { useNotification } from "@/context/NotificationContext";
 import { useAuth } from "@/context/AuthContext";
 import { calcAge, formatDate, formatDateTime } from "@/utils/validators";
 import PatientModal from "@/components/modals/PatientModal";
+import AddRecordForm from "@/components/modals/AddRecordForm";
 import {
   Loader2,
   ArrowLeft,
@@ -24,7 +25,6 @@ import {
   AlertCircle,
   Stethoscope,
   Plus,
-  X,
   MoreHorizontal,
   Bed,
   CalendarClock,
@@ -66,9 +66,20 @@ const TYPE_META = {
     color: "bg-slate-100 text-slate-600 border-slate-200",
     darkColor: "dark:bg-[#2a2a2a] dark:text-[#888888] dark:border-[#333333]",
     dot: "bg-slate-400"
+  },
+  CASUALTY: {
+    label: "Casualty",
+    color: "bg-rose-50 text-rose-700 border-rose-200",
+    darkColor: "dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
+    dot: "bg-rose-500"
+  },
+  BIRTH: {
+    label: "Birth",
+    color: "bg-pink-50 text-pink-700 border-pink-200",
+    darkColor: "dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/20",
+    dot: "bg-pink-400"
   }
 };
-const HISTORY_TYPES = ["CONSULTATION", "PRESCRIPTION", "LAB_RESULT", "SURGERY", "DIAGNOSIS", "OTHER"];
 const BLOOD_DARK = {
   "A+": "dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
   "A-": "dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
@@ -117,46 +128,6 @@ function RecordCard({ record }) {
       </div>
     </div>
   );
-}
-function AddRecordForm({ patientId, hospitalId, onSaved, onCancel }) {
-  const { notify } = useNotification();
-  const [form, setForm] = useState({ historyType: "CONSULTATION", description: "", nextVisitDate: "" });
-  const [saving, setSaving] = useState(false);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await recordApi.create({
-        patientId,
-        hospitalId,
-        historyType: form.historyType,
-        description: form.description || void 0,
-        nextVisitDate: form.nextVisitDate || void 0
-      });
-      notify("Record added", "success");
-      onSaved();
-    } catch {
-      notify("Failed to add record", "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-  return <div className="bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#2a2a2a] rounded-lg p-5 mb-5"><div className="flex items-center justify-between mb-4"><h3 className="text-sm font-semibold text-slate-700 dark:text-[#cccccc]">Add New Record</h3><button onClick={onCancel} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#aaaaaa] transition-colors"><X className="w-4 h-4" /></button></div><form onSubmit={handleSubmit} className="space-y-4"><div className="grid grid-cols-2 gap-4"><div><label className="label text-xs">Record Type *</label><select
-    className="input text-sm"
-    value={form.historyType}
-    onChange={(e) => setForm((p) => ({ ...p, historyType: e.target.value }))}
-  >{HISTORY_TYPES.map((t) => <option key={t} value={t}>{t.replace("_", " ")}</option>)}</select></div><div><label className="label text-xs">Next Visit Date</label><input
-    type="datetime-local"
-    className="input text-sm"
-    value={form.nextVisitDate}
-    onChange={(e) => setForm((p) => ({ ...p, nextVisitDate: e.target.value }))}
-  /></div></div><div><label className="label text-xs">Notes / Description</label><textarea
-    rows={3}
-    className="input text-sm resize-none"
-    placeholder="Enter description or notes..."
-    value={form.description}
-    onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-  /></div><div className="flex justify-end gap-3"><button type="button" className="btn-secondary text-xs" onClick={onCancel}>Cancel</button><button type="submit" className="btn-primary text-xs" disabled={saving}>{saving ? "Saving\u2026" : "Save Record"}</button></div></form></div>;
 }
 function PatientDetails() {
   const { id } = useParams();

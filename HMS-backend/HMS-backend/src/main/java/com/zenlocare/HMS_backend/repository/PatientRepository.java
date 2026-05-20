@@ -78,4 +78,23 @@ public interface PatientRepository extends JpaRepository<Patient, Integer> {
         @org.springframework.data.repository.query.Param("search") String search,
         Pageable pageable
     );
+
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT p FROM Patient p
+        WHERE p.hospital.id = :hospitalId
+        AND p.patientType = :patientType
+        AND (
+            LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.lastName)  LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.uhid)      LIKE LOWER(CONCAT('%', :search, '%')) OR
+            p.phone            LIKE CONCAT('%', :search, '%')
+        )
+        ORDER BY p.createdAt DESC
+        """)
+    Page<Patient> searchByHospitalAndType(
+        @org.springframework.data.repository.query.Param("hospitalId") UUID hospitalId,
+        @org.springframework.data.repository.query.Param("patientType") String patientType,
+        @org.springframework.data.repository.query.Param("search") String search,
+        Pageable pageable
+    );
 }

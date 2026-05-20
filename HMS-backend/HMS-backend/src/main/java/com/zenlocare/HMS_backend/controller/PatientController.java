@@ -45,10 +45,11 @@ public class PatientController {
             @RequestParam UUID hospitalId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
-            @RequestParam(defaultValue = "") String search
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(required = false) String patientType
     ) {
         return ResponseEntity.ok(
-                patientService.getPaginatedPatients(hospitalId, page, size, search)
+                patientService.getPaginatedPatients(hospitalId, page, size, search, patientType)
         );
     }
 
@@ -102,5 +103,17 @@ public class PatientController {
         private BigDecimal advanceAmount;
         private String advancePaymentMethod;
         private String advanceNotes;
+        // GENERAL | CASUALTY | NEWBORN — defaults to GENERAL when omitted
+        private String patientType;
+        // Only set for NEWBORN patients
+        private Integer motherPatientId;
+    }
+
+    @PatchMapping("/{id}/type")
+    public ResponseEntity<Patient> updateType(
+            @PathVariable Integer id,
+            @RequestParam UUID hospitalId,
+            @RequestParam String patientType) {
+        return ResponseEntity.ok(patientService.updatePatientType(id, hospitalId, patientType));
     }
 }

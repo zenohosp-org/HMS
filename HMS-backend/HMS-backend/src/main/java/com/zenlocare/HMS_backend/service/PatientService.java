@@ -80,6 +80,8 @@ public class PatientService {
                 .chronicConditions(req.getChronicConditions())
                 .referredBy(req.getReferredBy())
                 .paymentCategory(req.getPaymentCategory() != null ? req.getPaymentCategory() : PaymentCategory.CASH)
+                .patientType(req.getPatientType() != null ? req.getPatientType().toUpperCase() : "GENERAL")
+                .motherPatientId(req.getMotherPatientId())
                 .build();
 
         Patient saved = patientRepository.save(patient);
@@ -135,14 +137,15 @@ public class PatientService {
         UUID hospitalId,
         int page,
         int size,
-        String search
+        String search,
+        String patientType
     ) {
         Pageable pageable = PageRequest.of(page, size);
         String safeSearch = (search == null) ? "" : search.trim();
 
-        Page<Patient> result = patientRepository.searchByHospital(
-            hospitalId, safeSearch, pageable
-        );
+        Page<Patient> result = (patientType != null && !patientType.isBlank())
+            ? patientRepository.searchByHospitalAndType(hospitalId, patientType.trim().toUpperCase(), safeSearch, pageable)
+            : patientRepository.searchByHospital(hospitalId, safeSearch, pageable);
 
         Map<String, Object> response = new HashMap<>();
         response.put("patients", result.getContent());
@@ -151,5 +154,12 @@ public class PatientService {
         response.put("currentPage", result.getNumber());
 
         return response;
+    }
+
+    @Transactional
+    public Patient updatePatientType(Integer patientId, UUID hospitalId, String patientType) {
+        Patient patient = getPatientById(patientId, hospitalId);
+        patient.setPatientType(patientType);
+        return patientRepository.save(patient);
     }
 }

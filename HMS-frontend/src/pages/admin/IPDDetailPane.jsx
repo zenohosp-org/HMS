@@ -12,6 +12,7 @@ import {
   roomLogsApi, radiologyApi, ambulanceApi, assetApi, invoiceApi,
   hospitalServiceApi, patientServicesApi, admissionApi, recordApi
 } from '@/utils/api'
+import AddRecordForm from '@/components/modals/AddRecordForm'
 import axios from 'axios'
 import SSOCookieManager from '@/utils/ssoManager'
 
@@ -79,8 +80,6 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
 
   // Add record
   const [showAddRecord, setShowAddRecord] = useState(false)
-  const [recordForm, setRecordForm] = useState({ historyType: 'CONSULTATION', description: '', nextVisitDate: '' })
-  const [savingRecord, setSavingRecord] = useState(false)
 
   // Discharge guard
   const [checkingDischarge, setCheckingDischarge] = useState(false)
@@ -461,46 +460,6 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     fetchBilling()
   }, [fetchBilling])
 
-  const handleSaveRecord = async (e) => {
-    e.preventDefault()
-    if (!recordForm.description.trim()) return
-    setSavingRecord(true)
-    try {
-      const saved = await recordApi.create({
-        patientId: admission.patientId,
-        hospitalId: user.hospitalId,
-        historyType: recordForm.historyType,
-        description: recordForm.description,
-        nextVisitDate: recordForm.nextVisitDate || undefined,
-        admissionId: admission.id,
-        admissionNumber: admission.admissionNumber || admission.ipdId,
-      })
-
-      // Optimistic insert — timeline updates instantly, no spinner
-      const creatorName = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ')
-      const optimisticEvent = {
-        id: `rec-${saved?.id ?? Date.now()}`,
-        type: 'RECORD',
-        title: recordForm.historyType.replace('_', ' '),
-        subtitle: [saved?.mrn, creatorName].filter(Boolean).join(' · '),
-        description: recordForm.description,
-        timestamp: new Date(),
-      }
-      setLogs(prev => [optimisticEvent, ...prev])
-
-      notify('Record added', 'success')
-      setShowAddRecord(false)
-      setRecordForm({ historyType: 'CONSULTATION', description: '', nextVisitDate: '' })
-
-      // Silent background resync to reconcile full server state
-      fetchLogs(true)
-    } catch {
-      notify('Failed to add record', 'error')
-    } finally {
-      setSavingRecord(false)
-    }
-  }
-
   // Keep a stable ref so the polling interval always calls the latest fetchLogs
   const fetchLogsRef = useRef(fetchLogs)
   useEffect(() => { fetchLogsRef.current = fetchLogs }, [fetchLogs])
@@ -704,52 +663,17 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                   </button>
                 </div>
                 {showAddRecord && (
-                  <form onSubmit={handleSaveRecord} className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] p-4 space-y-3 mb-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <FileText className="w-3.5 h-3.5 text-slate-400" />
-                      <p className="text-xs font-semibold text-slate-700 dark:text-[#ccc]">New Medical Record</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="label text-[11px]">Type</label>
-                        <select
-                          className="input text-sm"
-                          value={recordForm.historyType}
-                          onChange={e => setRecordForm(p => ({ ...p, historyType: e.target.value }))}
-                        >
-                          {['CONSULTATION','PRESCRIPTION','LAB_RESULT','SURGERY','DIAGNOSIS','OTHER'].map(t => (
-                            <option key={t} value={t}>{t.replace('_', ' ')}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="label text-[11px]">Next Visit Date</label>
-                        <input
-                          type="datetime-local"
-                          className="input text-sm"
-                          value={recordForm.nextVisitDate}
-                          onChange={e => setRecordForm(p => ({ ...p, nextVisitDate: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="label text-[11px]">Notes / Description <span className="text-rose-500">*</span></label>
-                      <textarea
-                        rows={3}
-                        className="input text-sm resize-none"
-                        placeholder="Enter notes or description…"
-                        value={recordForm.description}
-                        onChange={e => setRecordForm(p => ({ ...p, description: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <button type="button" className="btn-secondary text-xs" onClick={() => setShowAddRecord(false)}>Cancel</button>
-                      <button type="submit" className="btn-primary text-xs" disabled={savingRecord}>
-                        {savingRecord ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save Record'}
-                      </button>
-                    </div>
-                  </form>
+                  <AddRecordForm
+                    patientId={admission.patientId}
+                    hospitalId={user.hospitalId}
+                    admissionId={admission.id}
+                    admissionNumber={admission.admissionNumber || admission.ipdId}
+                    onSaved={() => {
+                      setShowAddRecord(false)
+                      fetchLogs(true)
+                    }}
+                    onCancel={() => setShowAddRecord(false)}
+                  />
                 )}
               </div>
 
