@@ -46,6 +46,12 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception e) {
             log.warn("Could not drop rooms_room_type_check: " + e.getMessage());
         }
+        try {
+            jdbcTemplate.execute("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS admission_id UUID REFERENCES admissions(id)");
+            log.info("✅ Added admission_id column to appointments table");
+        } catch (Exception e) {
+            log.warn("Could not add admission_id to appointments: " + e.getMessage());
+        }
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
