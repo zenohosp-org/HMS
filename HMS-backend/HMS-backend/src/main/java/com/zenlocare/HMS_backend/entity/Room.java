@@ -31,9 +31,8 @@ public class Room {
     @Column(name = "room_code", length = 20, unique = true)
     private String roomCode;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "room_type", nullable = false, length = 30)
-    private RoomType roomType;
+    private String roomType;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

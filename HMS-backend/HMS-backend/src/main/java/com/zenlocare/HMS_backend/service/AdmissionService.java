@@ -9,9 +9,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @Transactional(readOnly = true)
@@ -298,7 +302,7 @@ public class AdmissionService {
 
         Room otRoom = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("OT room not found"));
-        if (otRoom.getRoomType() != com.zenlocare.HMS_backend.entity.RoomType.OT)
+        if (!"OT".equals(otRoom.getRoomType()))
             throw new RuntimeException("Selected room is not an OT room");
         if (otRoom.getStatus() != RoomStatus.AVAILABLE)
             throw new RuntimeException("OT room is not available");
@@ -340,7 +344,7 @@ public class AdmissionService {
                 .orElseThrow(() -> new RuntimeException("Admission not found"));
 
         // Free the OT room
-        if (admission.getRoom() != null && admission.getRoom().getRoomType() == com.zenlocare.HMS_backend.entity.RoomType.OT) {
+        if (admission.getRoom() != null && "OT".equals(admission.getRoom().getRoomType())) {
             Room otRoom = admission.getRoom();
             otRoom.setStatus(RoomStatus.AVAILABLE);
             otRoom.setCurrentPatient(null);
@@ -362,7 +366,7 @@ public class AdmissionService {
             // Move to post-OT recovery room (previousRoom stays saved for later return to ward)
             Room postOtRoom = roomRepository.findById(postOtRoomId)
                     .orElseThrow(() -> new RuntimeException("Post-OT room not found"));
-            if (postOtRoom.getRoomType() != com.zenlocare.HMS_backend.entity.RoomType.POST_OT)
+            if (!"POST_OT".equals(postOtRoom.getRoomType()))
                 throw new RuntimeException("Selected room is not a POST_OT room");
             if (postOtRoom.getStatus() != RoomStatus.AVAILABLE)
                 throw new RuntimeException("Post-OT room is not available");
@@ -404,7 +408,7 @@ public class AdmissionService {
             throw new RuntimeException("No original ward room recorded for this admission");
 
         // Free post-OT room if currently in one
-        if (admission.getRoom() != null && admission.getRoom().getRoomType() == com.zenlocare.HMS_backend.entity.RoomType.POST_OT) {
+        if (admission.getRoom() != null && "POST_OT".equals(admission.getRoom().getRoomType())) {
             Room postOtRoom = admission.getRoom();
             postOtRoom.setStatus(RoomStatus.AVAILABLE);
             postOtRoom.setCurrentPatient(null);
@@ -430,6 +434,45 @@ public class AdmissionService {
     public List<AdmissionDTO> getActive(UUID hospitalId) {
         return admissionRepository.findByHospitalIdAndStatusOrderByAdmissionDateDesc(hospitalId, AdmissionStatus.ADMITTED)
                 .stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getPaginated(UUID hospitalId, String statusStr, String search, Pageable pageable) {
+        AdmissionStatus status = null;
+        try {
+            if (statusStr != null && !statusStr.equalsIgnoreCase("ALL")) {
+                status = AdmissionStatus.valueOf(statusStr.toUpperCase());
+            }
+        } catch (IllegalArgumentException e) {
+            statusStr = "ALL";
+        }
+
+        Page<Admission> page = admissionRepository.searchAdmissions(
+                hospitalId,
+                status,
+                statusStr != null ? statusStr.toUpperCase() : "ALL",
+                search != null ? search.trim() : "",
+                pageable
+        );
+
+        Page<AdmissionDTO> pageDto = page.map(this::toDTO);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+
+        long totalAdmitted = admissionRepository.countActiveByHospital(hospitalId);
+        long totalInOt = admissionRepository.countActiveInOtByHospital(hospitalId);
+        long dischargedToday = admissionRepository.countDischargedTodayByHospital(hospitalId, startOfDay);
+        long overdueDischarge = admissionRepository.countOverdueByHospital(hospitalId, now);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("page", pageDto);
+        result.put("totalAdmitted", totalAdmitted);
+        result.put("totalInOt", totalInOt);
+        result.put("dischargedToday", dischargedToday);
+        result.put("overdueDischarge", overdueDischarge);
+
+        return result;
     }
 
     @Transactional(readOnly = true)
@@ -487,7 +530,7 @@ public class AdmissionService {
                 .patientUhid(a.getPatient().getUhid())
                 .roomId(resolvedRoom != null ? resolvedRoom.getId() : null)
                 .roomNumber(resolvedRoom != null ? resolvedRoom.getRoomNumber() : null)
-                .roomType(resolvedRoom != null ? resolvedRoom.getRoomType().name() : null)
+                .roomType(resolvedRoom != null ? resolvedRoom.getRoomType() : null)
                 .roomPricePerDay(resolvedRoom != null ? resolvedRoom.getPricePerDay() : null)
                 .bedId(resolvedBed != null ? resolvedBed.getId() : null)
                 .bedNumber(resolvedBed != null ? resolvedBed.getBedNumber() : null)
@@ -514,7 +557,7 @@ public class AdmissionService {
                 .createdAt(a.getCreatedAt())
                 .previousRoomId(a.getPreviousRoom() != null ? a.getPreviousRoom().getId() : null)
                 .otBookingId(a.getOtBookingId())
-                .inOt(resolvedRoom != null && resolvedRoom.getRoomType() == com.zenlocare.HMS_backend.entity.RoomType.OT)
+                .inOt(resolvedRoom != null && "OT".equals(resolvedRoom.getRoomType()))
                 .build();
     }
 }

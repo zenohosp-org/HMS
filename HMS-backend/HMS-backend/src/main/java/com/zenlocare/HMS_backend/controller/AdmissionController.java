@@ -10,7 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -26,6 +29,15 @@ public class AdmissionController {
         return ResponseEntity.ok(all
                 ? admissionService.getAll(hospitalId)
                 : admissionService.getActive(hospitalId));
+    }
+
+    @GetMapping("/paginated")
+    public ResponseEntity<Map<String, Object>> listPaginated(
+            @RequestParam UUID hospitalId,
+            @RequestParam(required = false, defaultValue = "ADMITTED") String status,
+            @RequestParam(required = false, defaultValue = "") String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(admissionService.getPaginated(hospitalId, status, search, pageable));
     }
 
     @GetMapping("/{id}")

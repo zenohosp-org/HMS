@@ -7,6 +7,7 @@ import DischargeModal from './DischargeModal'
 import MoveToOTModal from './MoveToOTModal'
 import ViewBillingModal from './ViewBillingModal'
 import IPDDetailPane from './IPDDetailPane'
+import Pagination from '@/components/ui/Pagination'
 import {
   BedDouble, Plus, Search, LogOut, User, Building2,
   Stethoscope, Clock, CheckCircle2, List, LayoutGrid,
@@ -33,6 +34,7 @@ export default function Admissions() {
   const [admissions, setAdmissions] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('ADMITTED')
   const [viewMode, setViewMode] = useState('grid')
   const [showAdmitModal, setShowAdmitModal] = useState(false)
@@ -42,37 +44,70 @@ export default function Admissions() {
   const [returningToWard, setReturningToWard] = useState(null)
   const [selectedAdmission, setSelectedAdmission] = useState(null)
 
-  const load = async (all = statusFilter !== 'ADMITTED') => {
+  // Pagination states
+  const [page, setPage] = useState(0)
+  const [size, setSize] = useState(10)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+
+  // Stats counts
+  const [serverCounts, setServerCounts] = useState({
+    ADMITTED: 0,
+    inOt: 0,
+    dischargedToday: 0,
+    overdueDischarge: 0,
+  })
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(0)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const load = async () => {
     if (!user?.hospitalId) return
     try {
       setLoading(true)
-      setAdmissions(await admissionApi.list(user.hospitalId, all || statusFilter === 'ALL'))
+      const res = await admissionApi.listPaginated(
+        user.hospitalId,
+        statusFilter,
+        debouncedSearch,
+        page,
+        size
+      )
+      if (res) {
+        setAdmissions(res.page?.content || [])
+        setTotalPages(res.page?.totalPages || 0)
+        setTotalElements(res.page?.totalElements || 0)
+        setServerCounts({
+          ADMITTED: res.totalAdmitted || 0,
+          inOt: res.totalInOt || 0,
+          dischargedToday: res.dischargedToday || 0,
+          overdueDischarge: res.overdueDischarge || 0,
+        })
+      }
+    } catch (err) {
+      notify(err?.response?.data?.message || 'Failed to load admissions', 'error')
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { load(statusFilter === 'ALL' || statusFilter === 'DISCHARGED') }, [user?.hospitalId, statusFilter])
+  useEffect(() => {
+    load()
+  }, [user?.hospitalId, statusFilter, debouncedSearch, page, size])
 
-  const filtered = useMemo(() => {
-    let list = statusFilter === 'ALL' ? admissions : admissions.filter(a => a.status === statusFilter)
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      list = list.filter(a =>
-        a.patientName?.toLowerCase().includes(q) ||
-        a.admissionNumber?.toLowerCase().includes(q) ||
-        a.departmentName?.toLowerCase().includes(q) ||
-        a.roomNumber?.toLowerCase().includes(q)
-      )
-    }
-    return list
-  }, [admissions, statusFilter, search])
+  const filtered = admissions
 
   const counts = useMemo(() => ({
-    ADMITTED: admissions.filter(a => a.status === 'ADMITTED').length,
-    DISCHARGED: admissions.filter(a => a.status === 'DISCHARGED').length,
-    inOt: admissions.filter(a => a.inOt).length,
-  }), [admissions])
+    ADMITTED: serverCounts.ADMITTED,
+    inOt: serverCounts.inOt,
+    dischargedToday: serverCounts.dischargedToday,
+    overdueDischarge: serverCounts.overdueDischarge,
+  }), [serverCounts])
 
   const formatAdmissionDate = (dateStr) => timeAgo(dateStr)
   const formatDate = (dateStr) => fmtDateTime(dateStr)
@@ -88,7 +123,7 @@ export default function Admissions() {
     try {
       await admissionApi.returnToWard(a.id)
       notify(`${a.patientName} returned to ward`, 'success')
-      load(statusFilter !== 'ADMITTED')
+      load()
     } catch (err) {
       notify(err?.response?.data?.message || 'Failed to return patient to ward', 'error')
     } finally {
@@ -119,8 +154,8 @@ export default function Admissions() {
         {[
           { label: 'Active Admissions', value: counts.ADMITTED, icon: BedDouble, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
           { label: 'In OT Now', value: counts.inOt, icon: Scissors, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-500/10' },
-          { label: 'Discharged Today', value: admissions.filter(a => a.status === 'DISCHARGED' && a.actualDischargeDate?.startsWith(new Date().toISOString().slice(0, 10))).length, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-500/10' },
-          { label: 'Overdue Discharge', value: admissions.filter(isOverdue).length, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10' },
+          { label: 'Discharged Today', value: counts.dischargedToday, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+          { label: 'Overdue Discharge', value: counts.overdueDischarge, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10' },
         ].map(stat => (
           <div key={stat.label} className="rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] p-4 flex items-center gap-4">
             <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${stat.bg}`}>
@@ -142,7 +177,7 @@ export default function Admissions() {
             placeholder="Search by patient, admission no., department, room…" />
         </div>
         {['ADMITTED', 'DISCHARGED', 'ALL'].map(s => (
-          <button key={s} onClick={() => setStatusFilter(s)}
+          <button key={s} onClick={() => { setStatusFilter(s); setPage(0); }}
             className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-slate-900 text-white border-slate-900' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-slate-300'}`}>
             {s.charAt(0) + s.slice(1).toLowerCase()}
             {s === 'ADMITTED' && counts.ADMITTED > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-white dark:bg-[#111] text-black dark:text-white text-xs">{counts.ADMITTED}</span>}
@@ -270,24 +305,34 @@ export default function Admissions() {
         </div>
       )}
 
+      {!loading && totalElements > 0 && (
+        <Pagination
+          currentPage={page + 1}
+          totalPages={totalPages}
+          totalItems={totalElements}
+          pageSize={size}
+          onPageChange={(p) => setPage(p - 1)}
+        />
+      )}
+
       {showAdmitModal && (
         <AdmitPatientModal
           onClose={() => setShowAdmitModal(false)}
-          onAdmitted={() => { setShowAdmitModal(false); notify('Patient admitted successfully', 'success'); load(statusFilter !== 'ADMITTED') }}
+          onAdmitted={() => { setShowAdmitModal(false); notify('Patient admitted successfully', 'success'); load() }}
         />
       )}
       {dischargeTarget && (
         <DischargeModal
           admission={dischargeTarget}
           onClose={() => setDischargeTarget(null)}
-          onDischarged={() => { setDischargeTarget(null); notify('Patient discharged', 'success'); load(statusFilter !== 'ADMITTED') }}
+          onDischarged={() => { setDischargeTarget(null); notify('Patient discharged', 'success'); load() }}
         />
       )}
       {otTarget && (
         <MoveToOTModal
           admission={otTarget}
           onClose={() => setOtTarget(null)}
-          onMoved={() => { setOtTarget(null); notify(`${otTarget.patientName} moved to OT`, 'success'); load(false) }}
+          onMoved={() => { setOtTarget(null); notify(`${otTarget.patientName} moved to OT`, 'success'); load() }}
         />
       )}
       {billingTarget && (
@@ -310,7 +355,7 @@ export default function Admissions() {
             try {
               await admissionApi.returnToWard(a.id)
               notify(`${a.patientName} returned to ward`, 'success')
-              load(statusFilter !== 'ADMITTED')
+              load()
             } catch (err) {
               notify(err?.response?.data?.message || 'Failed to return to ward', 'error')
             } finally {

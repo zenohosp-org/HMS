@@ -429,6 +429,10 @@ const admissionApi = {
     const { data } = await api.get("/admissions", { params: { hospitalId, all } });
     return data;
   },
+  listPaginated: async (hospitalId, status = "ADMITTED", search = "", page = 0, size = 10) => {
+    const { data } = await api.get("/admissions/paginated", { params: { hospitalId, status, search, page, size } });
+    return data;
+  },
   get: async (id) => {
     const { data } = await api.get(`/admissions/${id}`);
     return data;
@@ -482,6 +486,24 @@ const infrastructureApi = {
   save: async (hospitalId, buildings) => {
     const { data } = await api.post("/ipd/infrastructure", buildings, { params: { hospitalId } });
     return data;
+  },
+};
+
+const roomTypeApi = {
+  getAll: async (hospitalId) => {
+    const { data } = await api.get("/settings/room-types", { params: { hospitalId } });
+    return data;
+  },
+  create: async (hospitalId, payload) => {
+    const { data } = await api.post("/settings/room-types", payload, { params: { hospitalId } });
+    return data;
+  },
+  update: async (id, payload) => {
+    const { data } = await api.put(`/settings/room-types/${id}`, payload);
+    return data;
+  },
+  delete: async (id) => {
+    await api.delete(`/settings/room-types/${id}`);
   },
 };
 
@@ -664,5 +686,6 @@ export {
   specializationApi,
   staffApi,
   patientAdvanceApi,
-  dashboardApi
+  dashboardApi,
+  roomTypeApi
 };

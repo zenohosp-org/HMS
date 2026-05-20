@@ -1,15 +1,33 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { infrastructureApi } from "@/utils/api";
-import { Building2, Layers, Minus, Plus, Save, AlertTriangle, Network, Bed, Scissors, X } from "lucide-react";
+import { infrastructureApi, roomTypeApi } from "@/utils/api";
+import { 
+  Building2, 
+  Layers, 
+  Minus, 
+  Plus, 
+  Save, 
+  AlertTriangle, 
+  Network, 
+  Bed, 
+  Scissors, 
+  X, 
+  ChevronDown, 
+  ChevronRight, 
+  Trash2, 
+  Package, 
+  Search, 
+  SlidersHorizontal,
+  Home
+} from "lucide-react";
 
-const ROOM_TYPES = [
-  { value: "GENERAL", label: "General" },
-  { value: "WARD", label: "Ward" },
-  { value: "PRIVATE", label: "Private" },
-  { value: "ICU", label: "ICU" },
-  { value: "OT", label: "OT" },
+// Fallback room types used while API loads
+const FALLBACK_ROOM_TYPES = [
+  { value: "GENERAL", label: "General Ward", category: "WARD" },
+  { value: "ICU", label: "ICU", category: "WARD" },
+  { value: "OT", label: "Operating Theatre", category: "OT" },
+  { value: "STORE", label: "Inventory Store", category: "STORE" },
 ];
 
 function resizeTo(arr, n, makeDefault) {
@@ -21,13 +39,13 @@ function resizeTo(arr, n, makeDefault) {
 function Stepper({ value, onChange, min = 0, max = 20, variant = "default" }) {
   const dark = variant === "dark";
   const btn = dark
-    ? "w-7 h-7 flex items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+    ? "w-7 h-7 flex items-center justify-center rounded-md text-white/50 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
     : "w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed";
   const num = dark
     ? "w-8 text-center text-sm font-bold text-white tabular-nums"
     : "w-7 text-center text-sm font-semibold text-slate-700 dark:text-[#cccccc] tabular-nums";
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
       <button type="button" className={btn} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}>
         <Minus className="w-3 h-3" />
       </button>
@@ -39,26 +57,62 @@ function Stepper({ value, onChange, min = 0, max = 20, variant = "default" }) {
   );
 }
 
-function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom }) {
+function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom, roomType, showBeds = true }) {
   if (!rooms.length) return null;
+
+  // Determine icon & color based on roomType
+  let CardIcon = Bed;
+  let themeClass = "hover:border-emerald-300 dark:hover:border-emerald-500/40 focus-within:border-emerald-400 dark:focus-within:border-emerald-500/60";
+  let iconClass = "text-slate-300 dark:text-[#444444] group-hover:text-emerald-400 dark:group-hover:text-emerald-500";
+
+  if (roomType === "OT") {
+    CardIcon = Scissors;
+    themeClass = "hover:border-rose-300 dark:hover:border-rose-500/40 focus-within:border-rose-400 dark:focus-within:border-rose-500/60";
+    iconClass = "text-rose-300 dark:text-rose-900 group-hover:text-rose-500";
+  } else if (roomType === "STORE") {
+    CardIcon = Package;
+    themeClass = "hover:border-amber-300 dark:hover:border-amber-500/40 focus-within:border-amber-400 dark:focus-within:border-amber-500/60";
+    iconClass = "text-amber-300 dark:text-amber-900 group-hover:text-amber-500";
+  }
+
   return (
-    <div className="border-t border-slate-100 dark:border-[#1e1e1e] p-3 bg-slate-50/50 dark:bg-[#0a0a0a]">
-      <p className="text-[10px] font-bold text-slate-600 dark:text-[#999999] uppercase tracking-widest mb-2.5">
-        Rooms · {rooms.length}
-      </p>
-      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="border-t border-slate-100 dark:border-[#1e1e1e] p-3 bg-slate-50/50 dark:bg-[#0a0a0a]/30">
+      <div className="flex justify-between items-center mb-2.5">
+        <p className="text-[10px] font-bold text-slate-400 dark:text-[#666666] uppercase tracking-widest">
+          Rooms · {rooms.length}
+        </p>
+        <p className="text-[10px] font-bold text-slate-400 dark:text-[#666666] uppercase tracking-widest">
+          {showBeds ? "Beds" : ""}
+        </p>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {rooms.map((room, rIdx) => (
           <div
             key={rIdx}
-            className="flex items-center gap-2 bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#252525] rounded-lg px-2.5 py-2 group hover:border-emerald-300 dark:hover:border-emerald-500/40 focus-within:border-emerald-400 dark:focus-within:border-emerald-500/60 transition-colors"
+            className={`flex items-stretch bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#252525] rounded-lg group transition-all overflow-hidden ${themeClass}`}
           >
-            <Bed className="w-3 h-3 text-slate-300 dark:text-[#444444] shrink-0 group-hover:text-emerald-400 dark:group-hover:text-emerald-500 transition-colors" />
-            <input
-              className="flex-1 text-xs text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0 font-medium"
-              value={room.name}
-              onChange={(e) => updateRoom(bIdx, fIdx, wIdx, rIdx, e.target.value)}
-              placeholder={`Room ${rIdx + 1}`}
-            />
+            <div className="flex items-center gap-2 px-2.5 py-2 w-1/3 min-w-[100px] border-r border-slate-200 dark:border-[#252525] bg-slate-50/50 dark:bg-[#111]">
+              <CardIcon className={`w-3.5 h-3.5 shrink-0 transition-colors ${iconClass}`} />
+              <input
+                className="flex-1 text-xs text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#444] min-w-0 font-medium"
+                value={room.name}
+                onChange={(e) => updateRoom(bIdx, fIdx, wIdx, rIdx, "name", e.target.value)}
+                placeholder={`Room ${rIdx + 1}`}
+              />
+            </div>
+            <div className="flex-1 px-4 py-2 flex items-center justify-end gap-3">
+              {showBeds && (
+                <>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Beds</span>
+                  <Stepper
+                    value={room.bedCount || 1}
+                    onChange={(n) => updateRoom(bIdx, fIdx, wIdx, rIdx, "bedCount", n)}
+                    min={0}
+                    max={50}
+                  />
+                </>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -66,93 +120,122 @@ function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom }) {
   );
 }
 
-function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom }) {
-  const wardRooms = parseInt(ward.rooms?.length) || 0;
+function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom, removeWard, roomTypes }) {
+  // Theme based on type
+  let badgeColor = "bg-blue-500/10 text-blue-500 border-blue-500/20";
+  let themeName = "GENERAL";
+
+  const selectedType = roomTypes.find(t => t.value === ward.roomType);
+  const showBeds = selectedType ? selectedType.category === "WARD" : true;
+
+  if (ward.roomType === "ICU") {
+    badgeColor = "bg-rose-500/10 text-rose-500 border-rose-500/20";
+    themeName = "ICU";
+  } else if (ward.roomType === "PRIVATE") {
+    badgeColor = "bg-purple-500/10 text-purple-500 border-purple-500/20";
+    themeName = "PRIVATE";
+  } else if (ward.roomType === "OT") {
+    badgeColor = "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+    themeName = "OT";
+  } else if (ward.roomType === "STORE") {
+    badgeColor = "bg-amber-500/10 text-amber-500 border-amber-500/20";
+    themeName = "STORE";
+  }
+
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-[#252525] overflow-hidden bg-white dark:bg-[#111111]">
-      <div className="flex items-stretch divide-x divide-slate-100 dark:divide-[#1e1e1e]">
-        {/* Ward name */}
-        <div className="flex items-center gap-2 px-4 py-2.5 flex-1 min-w-0">
-          <div className="w-5 h-5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+    <div className="rounded-xl border border-slate-200 dark:border-[#252525] overflow-hidden bg-white dark:bg-[#121212] shadow-sm hover:shadow-md transition-all duration-200">
+      <div className="flex flex-wrap items-center divide-y divide-slate-100 dark:divide-[#1e1e1e] md:divide-y-0 md:flex-nowrap">
+        {/* Title / Name */}
+        <div className="flex items-center gap-2.5 px-4 py-3 flex-1 min-w-[200px]">
+          <div className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md border ${badgeColor}`}>
+            {themeName}
           </div>
           <input
-            className="flex-1 text-sm font-medium text-slate-800 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0"
+            className="flex-1 text-sm font-semibold text-slate-800 dark:text-[#eeeeee] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#444] min-w-0"
             value={ward.name}
             onChange={(e) => updateWard(bIdx, fIdx, wIdx, "name", e.target.value)}
             placeholder={`Ward ${wIdx + 1}`}
           />
         </div>
-        {/* Room type */}
-        <div className="flex items-center px-3 py-2.5 w-32 shrink-0">
+
+        {/* Type select */}
+        <div className="flex items-center px-3 py-3 w-36 shrink-0">
           <select
-            className="w-full text-xs text-slate-600 dark:text-[#aaaaaa] bg-transparent focus:outline-none cursor-pointer"
+            className="w-full text-xs text-slate-600 dark:text-[#aaaaaa] bg-transparent focus:outline-none cursor-pointer font-medium"
             value={ward.roomType || "GENERAL"}
             onChange={(e) => updateWard(bIdx, fIdx, wIdx, "roomType", e.target.value)}
           >
-            {ROOM_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {roomTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
-        {/* Daily charge */}
-        <div className="flex items-center gap-1.5 px-3 py-2.5 w-36 shrink-0">
-          <span className="text-xs font-semibold text-slate-400">₹</span>
-          <input
-            type="number"
-            min="0"
-            className="flex-1 text-sm text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] tabular-nums min-w-0"
-            value={ward.dailyCharge}
-            onChange={(e) => updateWard(bIdx, fIdx, wIdx, "dailyCharge", e.target.value)}
-            placeholder="0"
-          />
-          <span className="text-[10px] text-slate-400">/day</span>
+
+        {/* Rooms Stepper */}
+        <div className="flex items-center gap-2 px-4 py-3 shrink-0 border-l border-slate-100 dark:border-[#1e1e1e]">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rooms</span>
+          <Stepper value={(ward.rooms || []).length} onChange={(n) => setRoomCount(bIdx, fIdx, wIdx, n)} min={0} max={50} />
         </div>
-        {/* Beds per room stepper */}
-        <div className="flex items-center gap-2 px-3 py-2.5 shrink-0">
-          <span className="text-xs font-semibold text-slate-400 hidden sm:block">Beds/Room</span>
-          <Stepper value={parseInt(ward.bedCount) || 1} onChange={(n) => updateWard(bIdx, fIdx, wIdx, "bedCount", n)} min={1} max={20} />
-        </div>
-        {/* Room stepper */}
-        <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
-          <Bed className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs font-semibold text-slate-400 hidden sm:block">Rooms</span>
-          <Stepper value={wardRooms} onChange={(n) => setRoomCount(bIdx, fIdx, wIdx, n)} min={0} max={50} />
+
+        {/* Remove Ward button */}
+        <div className="flex items-center justify-center px-3 py-3 shrink-0">
+          <button
+            type="button"
+            onClick={removeWard}
+            className="p-1.5 text-slate-300 hover:text-rose-500 dark:text-[#444] dark:hover:text-rose-400 transition-colors"
+            title="Delete Ward Section"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      <RoomGrid rooms={ward.rooms || []} bIdx={bIdx} fIdx={fIdx} wIdx={wIdx} updateRoom={updateRoom} />
+
+
+      <RoomGrid rooms={ward.rooms || []} bIdx={bIdx} fIdx={fIdx} wIdx={wIdx} updateRoom={updateRoom} roomType={ward.roomType} showBeds={showBeds} />
     </div>
   );
 }
 
-function SpecialRoomCard({ room, onUpdate, onRemove }) {
+function SpecialRoomCard({ room, onUpdate, onRemove, roomTypes }) {
+  // Theme based on type
+  let badgeColor = "bg-rose-500/10 text-rose-500 border-rose-500/20";
+  let CardIcon = Scissors;
+
+  if (room.roomType === "STORE") {
+    badgeColor = "bg-amber-500/10 text-amber-500 border-amber-500/20";
+    CardIcon = Package;
+  }
+
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-200/25 overflow-hidden bg-white dark:bg-[#111111]">
+    <div className="rounded-xl border border-slate-200 dark:border-[#252525] overflow-hidden bg-white dark:bg-[#121212] shadow-sm hover:shadow-md transition-all duration-200">
       <div className="flex items-stretch divide-x divide-slate-100 dark:divide-[#1e1e1e]">
-        <div className="flex items-center gap-2 px-4 py-2.5 flex-1 min-w-0">
-          <div className="w-5 h-5 rounded-md bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0">
-            <Scissors className="w-3 h-3 text-slate-400 dark:text-[#888]" />
+        <div className="flex items-center gap-2.5 px-4 py-3 flex-1 min-w-0">
+          <div className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md border shrink-0 ${badgeColor}`}>
+            SPECIAL
+          </div>
+          <div className="w-5 h-5 rounded-md bg-slate-50 dark:bg-[#1a1a1a] flex items-center justify-center shrink-0">
+            <CardIcon className="w-3.5 h-3.5 text-slate-400 dark:text-[#888]" />
           </div>
           <input
-            className="flex-1 text-sm font-medium text-slate-800 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0"
+            className="flex-1 text-sm font-semibold text-slate-800 dark:text-[#eeeeee] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0"
             value={room.name}
             onChange={(e) => onUpdate("name", e.target.value)}
-            placeholder="Room name (e.g. OT-1)"
+            placeholder="Special Room name (e.g. OT-1 or Main Store)"
           />
         </div>
-        <div className="flex items-center px-3 py-2.5 w-32 shrink-0">
+        <div className="flex items-center px-3 py-3 w-36 shrink-0">
           <select
-            className="w-full text-xs text-slate-600 dark:text-[#aaaaaa] bg-transparent focus:outline-none cursor-pointer"
+            className="w-full text-xs text-slate-600 dark:text-[#aaaaaa] bg-transparent focus:outline-none cursor-pointer font-medium"
             value={room.roomType}
             onChange={(e) => onUpdate("roomType", e.target.value)}
           >
-            {ROOM_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {roomTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-2.5 w-36 shrink-0">
+        <div className="flex items-center gap-1.5 px-3 py-3 w-36 shrink-0">
           <span className="text-xs font-semibold text-slate-400">₹</span>
           <input
             type="number" min="0"
-            className="flex-1 text-sm text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] tabular-nums min-w-0"
+            className="flex-1 text-sm text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] tabular-nums min-w-0 font-medium"
             value={room.dailyCharge}
             onChange={(e) => onUpdate("dailyCharge", e.target.value)}
             placeholder="0"
@@ -160,122 +243,80 @@ function SpecialRoomCard({ room, onUpdate, onRemove }) {
           <span className="text-[10px] text-slate-400">/day</span>
         </div>
         <button type="button" onClick={onRemove}
-          className="flex items-center justify-center px-3 text-slate-300 hover:text-rose-500 dark:text-[#444] dark:hover:text-rose-400 transition-colors">
-          <X className="w-3.5 h-3.5" />
+          className="flex items-center justify-center px-4 text-slate-300 hover:text-rose-500 dark:text-[#444] dark:hover:text-rose-400 transition-colors">
+          <X className="w-4 h-4" />
         </button>
       </div>
     </div>
   );
 }
 
-function FloorSection({ floor, bIdx, fIdx, updateFloor, setWardCount, updateWard, setRoomCount, updateRoom, addSpecialRoom, updateSpecialRoom, removeSpecialRoom }) {
+function FloorSection({ 
+  floor, 
+  bIdx, 
+  fIdx, 
+  updateFloor, 
+  setWardCount, 
+  updateWard, 
+  setRoomCount, 
+  updateRoom, 
+  removeWard,
+  roomTypes
+}) {
+  const [expanded, setExpanded] = useState(true);
+
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 dark:bg-[#1a1a1a] border-b border-slate-200 dark:border-[#1e1e1e]">
+    <div className="rounded-xl border border-slate-200 dark:border-[#2a2a2a] overflow-hidden shadow-sm bg-white dark:bg-[#0d0d0d] transition-all">
+      <div 
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-3 px-4 py-3 bg-slate-50/80 dark:bg-[#1a1a1a]/80 border-b border-slate-200 dark:border-[#1e1e1e] cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-[#202020] transition-colors"
+      >
         <div className="flex items-center gap-2 shrink-0">
           <Layers className="w-3.5 h-3.5 text-slate-400" />
           <span className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-widest">Floor {fIdx + 1}</span>
         </div>
-        <input
-          className="flex-1 min-w-0 text-sm text-slate-700 dark:text-[#cccccc] bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-200/20 rounded-md px-2.5 py-1 focus:outline-none focus:border-slate-200 placeholder-slate-300 dark:placeholder-[#3a3a3a]"
-          value={floor.name}
-          onChange={(e) => updateFloor(bIdx, fIdx, "name", e.target.value)}
-          placeholder={`Floor ${fIdx}`}
-        />
+        <div onClick={(e) => e.stopPropagation()} className="flex-1 min-w-0">
+          <input
+            className="w-full text-sm text-slate-800 dark:text-[#eeeeee] bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-200/20 rounded-md px-2.5 py-1 focus:outline-none focus:border-slate-300 placeholder-slate-300 dark:placeholder-[#3a3a3a] font-semibold"
+            value={floor.name}
+            onChange={(e) => updateFloor(bIdx, fIdx, "name", e.target.value)}
+            placeholder={`Floor ${fIdx + 1}`}
+          />
+        </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Wards</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Wards</span>
           <Stepper value={floor.wards.length} onChange={(n) => setWardCount(bIdx, fIdx, n)} min={0} max={20} />
         </div>
-      </div>
-
-      <div className="bg-white dark:bg-[#0d0d0d]">
-        {floor.wards.length > 0 ? (
-          <div className="p-3 space-y-2">
-            {floor.wards.map((ward, wIdx) => (
-              <WardCard key={wIdx} ward={ward} bIdx={bIdx} fIdx={fIdx} wIdx={wIdx}
-                updateWard={updateWard} setRoomCount={setRoomCount} updateRoom={updateRoom} />
-            ))}
-          </div>
-        ) : (
-          <div className="py-4 text-center text-xs text-slate-400 dark:text-[#555555]">
-            Set ward count above to add wards
-          </div>
-        )}
-
-        {/* Special Rooms (OT, etc.) */}
-        {(floor.specialRooms?.length > 0) && (
-          <div className="px-3 pb-2 space-y-2 border-t border-slate-100 dark:border-[#1a1a1a] pt-3">
-            <p className="text-[10px] font-bold text-slate-700 dark:text-[#cccccc] dark:text-slate-300 uppercase tracking-widest px-1">Special Rooms</p>
-            {floor.specialRooms.map((sr, srIdx) => (
-              <SpecialRoomCard key={srIdx} room={sr}
-                onUpdate={(field, val) => updateSpecialRoom(bIdx, fIdx, srIdx, field, val)}
-                onRemove={() => removeSpecialRoom(bIdx, fIdx, srIdx)} />
-            ))}
-          </div>
-        )}
-
-        <div className="px-3 pb-3 pt-2">
-          <button type="button" onClick={() => addSpecialRoom(bIdx, fIdx)}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-[#cccccc] hover:text-slate-900 dark:text-white dark:hover:text-slate-200 transition-colors">
-            <Plus className="w-3.5 h-3.5" /> Add Special Room (OT / Procedure)
-          </button>
+        <div className="text-slate-400 shrink-0 ml-1">
+          {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </div>
       </div>
-    </div>
-  );
-}
 
-function BuildingCard({ building, bIdx, updateBuilding, setFloorCount, updateFloor, setWardCount, updateWard, setRoomCount, updateRoom, addSpecialRoom, updateSpecialRoom, removeSpecialRoom }) {
-  const roomsInBuilding = (building.floors || []).reduce(
-    (s, f) => s + (f.wards || []).reduce((ws, w) => ws + (w.rooms?.length || 0), 0) + (f.specialRooms?.length || 0), 0
-  );
-
-  return (
-    <div className="rounded-lg border border-slate-200 dark:border-[#222222] overflow-hidden shadow-sm">
-      <div className="flex items-center gap-3 px-4 py-3 bg-slate-900 dark:bg-[#0a0a0a]">
-        <div className="flex items-center gap-2 shrink-0">
-          <Building2 className="w-4 h-4 text-slate-400" />
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Building {bIdx + 1}</span>
-        </div>
-        <input
-          className="flex-1 min-w-0 text-sm font-semibold text-white bg-transparent border-b border-white/10 pb-0.5 focus:outline-none focus:border-white/30 placeholder-white/20"
-          value={building.name}
-          onChange={(e) => updateBuilding(bIdx, "name", e.target.value)}
-          placeholder={`Building ${bIdx + 1}`}
-        />
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Floors</span>
-          <Stepper value={(building.floors || []).length} onChange={(n) => setFloorCount(bIdx, n)} min={0} max={10} variant="dark" />
-        </div>
-        {roomsInBuilding > 0 && (
-          <div className="shrink-0 ml-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25">
-            <span className="text-xs font-bold text-emerald-400">{roomsInBuilding} rooms</span>
-          </div>
-        )}
-      </div>
-
-      {(building.floors || []).length > 0 ? (
-        <div className="p-4 space-y-3 bg-white dark:bg-[#111111]">
-          {building.floors.map((floor, fIdx) => (
-            <FloorSection
-              key={fIdx}
-              floor={floor}
-              bIdx={bIdx}
-              fIdx={fIdx}
-              updateFloor={updateFloor}
-              setWardCount={setWardCount}
-              updateWard={updateWard}
-              setRoomCount={setRoomCount}
-              updateRoom={updateRoom}
-              addSpecialRoom={addSpecialRoom}
-              updateSpecialRoom={updateSpecialRoom}
-              removeSpecialRoom={removeSpecialRoom}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="py-8 text-center text-sm text-slate-600 dark:text-[#999999] bg-white dark:bg-[#111111]">
-          Set floor count above to configure this building
+      {expanded && (
+        <div className="p-4 space-y-4">
+          {/* Wards Section */}
+          {floor.wards.length > 0 ? (
+            <div className="space-y-3">
+              {floor.wards.map((ward, wIdx) => (
+                <WardCard 
+                  key={wIdx} 
+                  ward={ward} 
+                  bIdx={bIdx} 
+                  fIdx={fIdx} 
+                  wIdx={wIdx}
+                  updateWard={updateWard} 
+                  setRoomCount={setRoomCount} 
+                  updateRoom={updateRoom} 
+                  removeWard={() => removeWard(bIdx, fIdx, wIdx)}
+                  roomTypes={roomTypes}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="py-6 text-center text-xs text-slate-400 dark:text-[#555555] border-2 border-dashed border-slate-100 dark:border-[#1a1a1a] rounded-xl">
+              Set Ward Count to generate Wards on this floor
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -288,8 +329,29 @@ export default function InfrastructureMapping() {
   const [buildings, setBuildings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [roomTypes, setRoomTypes] = useState(FALLBACK_ROOM_TYPES);
+
+  // Search & Navigation States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeBuildingIdx, setActiveBuildingIdx] = useState(0);
+  const [activeFloorIdx, setActiveFloorIdx] = useState(0);
+
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    message: "",
+    onConfirm: null,
+  });
 
   useEffect(() => {
+    // Load dynamic room types
+    roomTypeApi.getAll(user.hospitalId)
+      .then((data) => {
+        if (data?.length) {
+          setRoomTypes(Array.from(new Map(data.map(t => [t.code, t])).values()).map(t => ({ value: t.code, label: t.label, category: t.category, color: t.color, icon: t.icon, isSystem: t.isSystem })));
+        }
+      })
+      .catch(() => {});
+
     infrastructureApi.get(user.hospitalId)
       .then((data) => {
         if (data?.length) {
@@ -297,20 +359,17 @@ export default function InfrastructureMapping() {
             name: b.name,
             floors: (b.floors ?? []).map((f) => {
               const allWards = f.wards ?? [];
-              const wards = allWards.filter(w => w.roomType !== "OT" || (w.rooms?.length ?? 0) > 1);
-              const specialRooms = allWards
-                .filter(w => w.roomType === "OT" && (w.rooms?.length ?? 0) <= 1)
-                .map(w => ({ id: w.rooms?.[0]?.id ?? null, name: w.name, roomType: "OT", dailyCharge: String(w.dailyCharge ?? "0") }));
               return {
                 name: f.name,
-                wards: wards.map(w => ({
+                wards: allWards.map(w => ({
                   name: w.name,
-                  dailyCharge: String(w.dailyCharge ?? "500"),
                   roomType: w.roomType ?? "GENERAL",
-                  bedCount: w.bedCount ?? 1,
-                  rooms: (w.rooms ?? []).map((r) => ({ id: r.id, name: r.name })),
+                  rooms: (w.rooms ?? []).map((r) => ({ 
+                    id: r.id, 
+                    name: r.name,
+                    bedCount: (r.bedNames ?? []).length || 1
+                  })),
                 })),
-                specialRooms,
               };
             }),
           })));
@@ -320,40 +379,173 @@ export default function InfrastructureMapping() {
       .finally(() => setLoading(false));
   }, [user.hospitalId]);
 
-  const totalRooms = useMemo(() =>
-    buildings.reduce((s, b) => s + (b.floors || []).reduce((fs, f) => fs + (f.wards || []).reduce((ws, w) => ws + (w.rooms?.length || 0), 0), 0), 0),
-    [buildings]
-  );
-  const totalFloors = useMemo(() =>
-    buildings.reduce((s, b) => s + (b.floors || []).length, 0),
-    [buildings]
-  );
-  const totalWards = useMemo(() =>
-    buildings.reduce((s, b) => s + (b.floors || []).reduce((fs, f) => fs + (f.wards || []).length, 0), 0),
-    [buildings]
-  );
+  // Calculations
+  const stats = useMemo(() => {
+    let rooms = 0;
+    let floors = 0;
+    let wards = 0;
+    let ots = 0;
+    let stores = 0;
 
-  const setBuildingCount = (n) =>
+    buildings.forEach(b => {
+      floors += (b.floors || []).length;
+      (b.floors || []).forEach(f => {
+        wards += (f.wards || []).length;
+        (f.wards || []).forEach(w => {
+          rooms += (w.rooms?.length || 0);
+          if (w.roomType === "OT") ots += 1;
+          if (w.roomType === "STORE") stores += 1;
+        });
+      });
+    });
+
+    return { rooms, floors, wards, ots, stores };
+  }, [buildings]);
+
+  // Filtered Tree representation based on query
+  const filteredTree = useMemo(() => {
+    if (!searchQuery) return buildings;
+    const query = searchQuery.toLowerCase();
+
+    return buildings.map((b, bIdx) => {
+      const floors = (b.floors || []).map((f, fIdx) => {
+        const wards = (f.wards || []).filter(w => 
+          w.name.toLowerCase().includes(query) || 
+          w.roomType.toLowerCase().includes(query) ||
+          w.rooms.some(r => r.name.toLowerCase().includes(query) || (r.bedNamesInput || "").toLowerCase().includes(query))
+        );
+        return { ...f, wards, originalIdx: fIdx };
+      }).filter(f => f.wards.length > 0 || f.name.toLowerCase().includes(query));
+
+      return { ...b, floors, originalIdx: bIdx };
+    }).filter(b => b.floors.length > 0 || b.name.toLowerCase().includes(query));
+  }, [buildings, searchQuery]);
+
+  const confirmReduction = (message, onConfirm) => {
+    setConfirmModal({
+      show: true,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal({ show: false, message: "", onConfirm: null });
+      }
+    });
+  };
+
+  const handleSetBuildingCount = (n) => {
+    if (n < buildings.length) {
+      const willDelete = buildings.slice(n);
+      const hasData = willDelete.some(b => (b.name !== "" && !b.name.startsWith("Building ")) || b.floors.length > 0);
+      if (hasData) {
+        confirmReduction(
+          "Reducing the building count will discard the trailing buildings and all their floors, wards, and rooms. Are you sure?",
+          () => {
+            setBuildings((p) => resizeTo(p, n, (i) => ({ name: `Building ${i + 1}`, floors: [] })));
+            if (activeBuildingIdx >= n) {
+              setActiveBuildingIdx(Math.max(0, n - 1));
+              setActiveFloorIdx(0);
+            }
+          }
+        );
+        return;
+      }
+    }
     setBuildings((p) => resizeTo(p, n, (i) => ({ name: `Building ${i + 1}`, floors: [] })));
+  };
 
-  const setFloorCount = (bIdx, n) =>
-    setBuildings((p) => p.map((b, i) => i !== bIdx ? b : { ...b, floors: resizeTo(b.floors, n, (j) => ({ name: `Floor ${j}`, wards: [], specialRooms: [] })) }));
+  const handleSetFloorCount = (bIdx, n) => {
+    const currentFloors = buildings[bIdx].floors;
+    if (n < currentFloors.length) {
+      const willDelete = currentFloors.slice(n);
+      const hasData = willDelete.some(f => (f.name !== "" && !f.name.startsWith("Floor ")) || f.wards.length > 0 || f.specialRooms?.length > 0);
+      if (hasData) {
+        confirmReduction(
+          "Reducing the floor count will delete the trailing floors and all configured wards and rooms on them. Are you sure?",
+          () => {
+            setBuildings((p) => p.map((b, i) => i !== bIdx ? b : { ...b, floors: resizeTo(b.floors, n, (j) => ({ name: `Floor ${j + 1}`, wards: [], specialRooms: [] })) }));
+            if (activeFloorIdx >= n) {
+              setActiveFloorIdx(Math.max(0, n - 1));
+            }
+          }
+        );
+        return;
+      }
+    }
+    setBuildings((p) => p.map((b, i) => i !== bIdx ? b : { ...b, floors: resizeTo(b.floors, n, (j) => ({ name: `Floor ${j + 1}`, wards: [], specialRooms: [] })) }));
+  };
 
-  const setWardCount = (bIdx, fIdx, n) =>
+  const handleSetWardCount = (bIdx, fIdx, n) => {
+    const currentWards = buildings[bIdx].floors[fIdx].wards;
+    if (n < currentWards.length) {
+      const willDelete = currentWards.slice(n);
+      const hasData = willDelete.some(w => w.name !== "" || w.rooms.length > 0);
+      if (hasData) {
+        confirmReduction(
+          "Reducing the ward count will delete the trailing wards and all their rooms. Are you sure?",
+          () => setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
+            ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
+              ...f, wards: resizeTo(f.wards, n, () => ({ name: "", dailyCharge: "500", roomType: "GENERAL", bedCount: 1, rooms: [] }))
+            })
+          }))
+        );
+        return;
+      }
+    }
     setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
       ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
         ...f, wards: resizeTo(f.wards, n, () => ({ name: "", dailyCharge: "500", roomType: "GENERAL", bedCount: 1, rooms: [] }))
       })
     }));
+  };
 
-  const setRoomCount = (bIdx, fIdx, wIdx, n) =>
+  const removeWard = (bIdx, fIdx, wIdx) => {
+    const ward = buildings[bIdx].floors[fIdx].wards[wIdx];
+    const executeDelete = () => {
+      setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
+        ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
+          ...f, wards: f.wards.filter((_, k) => k !== wIdx)
+        })
+      }));
+    };
+
+    if (ward.name !== "" || ward.rooms.length > 0) {
+      confirmReduction(
+        `Are you sure you want to delete ${ward.name || `Ward ${wIdx + 1}`}? This will permanently discard all configured rooms/beds in it.`,
+        executeDelete
+      );
+    } else {
+      executeDelete();
+    }
+  };
+
+  const handleSetRoomCount = (bIdx, fIdx, wIdx, n) => {
     setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
       ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
         ...f, wards: f.wards.map((w, k) => k !== wIdx ? w : {
-          ...w, rooms: resizeTo(w.rooms, n, () => ({ id: null, name: "" }))
+          ...w, rooms: resizeTo(w.rooms, n, (rIdx) => ({ id: null, name: `Room ${rIdx + 1}`, bedCount: 1 }))
         })
       })
     }));
+  };
+
+  const deleteBuilding = (bIdx) => {
+    const b = buildings[bIdx];
+    const hasData = (b.name !== "" && !b.name.startsWith("Building ")) || b.floors.length > 0;
+    const executeDelete = () => {
+      setBuildings((p) => p.filter((_, i) => i !== bIdx));
+      setActiveBuildingIdx((prev) => Math.max(0, prev - 1));
+      setActiveFloorIdx(0);
+    };
+
+    if (hasData) {
+      confirmReduction(
+        `Are you sure you want to delete ${b.name || `Building ${bIdx + 1}`}? This will permanently discard all configured floors, wards, and rooms under it.`,
+        executeDelete
+      );
+    } else {
+      executeDelete();
+    }
+  };
 
   const updateBuilding = (bIdx, field, value) =>
     setBuildings((p) => p.map((b, i) => i === bIdx ? { ...b, [field]: value } : b));
@@ -370,38 +562,25 @@ export default function InfrastructureMapping() {
       })
     }));
 
-  const addSpecialRoom = (bIdx, fIdx) =>
+  const addSpecialRoom = (bIdx, fIdx, type) =>
     setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
       ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
-        ...f, specialRooms: [...(f.specialRooms || []), { id: null, name: "", roomType: "OT", dailyCharge: "0" }]
+        ...f, specialRooms: [...(f.specialRooms || []), { id: null, name: "", roomType: type || "OT", dailyCharge: "0" }]
       })
     }));
 
-  const updateSpecialRoom = (bIdx, fIdx, srIdx, field, value) =>
-    setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
-      ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
-        ...f, specialRooms: (f.specialRooms || []).map((sr, k) => k === srIdx ? { ...sr, [field]: value } : sr)
-      })
-    }));
-
-  const removeSpecialRoom = (bIdx, fIdx, srIdx) =>
-    setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
-      ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
-        ...f, specialRooms: (f.specialRooms || []).filter((_, k) => k !== srIdx)
-      })
-    }));
-
-  const updateRoom = (bIdx, fIdx, wIdx, rIdx, name) =>
+  const updateRoom = (bIdx, fIdx, wIdx, rIdx, field, value) =>
     setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
       ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
         ...f, wards: f.wards.map((w, k) => k !== wIdx ? w : {
-          ...w, rooms: w.rooms.map((r, l) => l === rIdx ? { ...r, name } : r)
+          ...w, rooms: w.rooms.map((r, l) => l === rIdx ? { ...r, [field]: value } : r)
         })
       })
     }));
 
   const handleSave = async () => {
     setSaving(true);
+    let globalBedCounter = 1;
     try {
       const payload = buildings.map((b) => ({
         name: b.name || "Building",
@@ -410,134 +589,348 @@ export default function InfrastructureMapping() {
           wards: [
             ...(f.wards || []).map((w) => ({
               name: w.name || "Ward",
-              dailyCharge: parseFloat(w.dailyCharge) || 0,
               roomType: w.roomType || "GENERAL",
-              bedCount: parseInt(w.bedCount) || 1,
-              rooms: (w.rooms || []).map((r) => ({ id: r.id || null, name: r.name || "" })),
-            })),
-            ...(f.specialRooms || []).map((sr) => ({
-              name: sr.name || "Special Room",
-              dailyCharge: parseFloat(sr.dailyCharge) || 0,
-              roomType: sr.roomType || "OT",
-              bedCount: 1,
-              rooms: [{ id: sr.id || null, name: sr.name || "OT" }],
+              rooms: (w.rooms || []).map((r) => {
+                const bedCount = r.bedCount || 0;
+                const bedNames = [];
+                for (let i = 0; i < bedCount; i++) {
+                  bedNames.push(`Bed ${globalBedCounter++}`);
+                }
+                return { 
+                  id: r.id || null, 
+                  name: r.name || "",
+                  bedNames
+                };
+              }),
             })),
           ],
         })),
       }));
       await infrastructureApi.save(user.hospitalId, payload);
-      notify("Infrastructure saved — rooms created in Room Allocation", "success");
+      notify("Hospital infrastructure updated and synced successfully!", "success");
     } catch {
-      notify("Failed to save infrastructure", "error");
+      notify("Failed to save infrastructure configuration", "error");
     } finally {
       setSaving(false);
     }
   };
 
+  const activeBuilding = buildings[activeBuildingIdx];
+  const activeFloor = activeBuilding?.floors?.[activeFloorIdx];
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-sm text-slate-400 dark:text-[#666666]">Loading infrastructure…</p>
+      <div className="flex items-center justify-center h-full bg-[#fafbfe] dark:bg-[#0b0c10]">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm font-semibold text-slate-500 dark:text-[#888888]">Loading master structure…</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0 bg-white dark:bg-[#111111] border-b border-slate-200 dark:border-[#222222] px-6 py-5">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Network className="w-5 h-5 text-slate-400" />
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">Hospital Infrastructure</h1>
+    <div className="flex flex-col h-full bg-[#f8fafc] dark:bg-[#09090b] text-slate-900 dark:text-slate-100 overflow-hidden">
+      {/* Header Banner */}
+      <div className="shrink-0 bg-white/80 dark:bg-[#0e0e11]/80 backdrop-blur-md border-b border-slate-200 dark:border-[#1e1e24] px-6 py-4 flex items-center justify-between gap-6 flex-wrap z-10">
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <Network className="w-5 h-5 text-emerald-500" />
+            <h1 className="text-lg font-bold tracking-tight">Hospital Infrastructure Master</h1>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-[#888888]">
+            Configure core building maps. Updates reflect in OT and Store modules.
+          </p>
+        </div>
+
+        {/* Stats Panel */}
+        <div className="flex items-center gap-1.5 shrink-0 bg-slate-100/80 dark:bg-[#1a1a22]/80 p-1 rounded-xl border border-slate-200/50 dark:border-[#2a2a35]/50">
+          {[
+            { label: "Bldgs", value: buildings.length, color: "text-slate-600 dark:text-slate-400" },
+            { label: "Floors", value: stats.floors, color: "text-blue-500" },
+            { label: "Rooms", value: stats.rooms, color: "text-purple-500" },
+            { label: "OTs", value: stats.ots, color: "text-emerald-500" },
+            { label: "Stores", value: stats.stores, color: "text-amber-500" }
+          ].map(({ label, value, color }) => (
+            <div key={label} className="px-3 py-1.5 text-center bg-white dark:bg-[#121217] rounded-lg shadow-sm border border-slate-200/10 min-w-[64px]">
+              <p className={`text-sm font-extrabold tabular-nums ${color}`}>{value}</p>
+              <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{label}</p>
             </div>
-            <p className="text-sm text-slate-500 dark:text-[#888888]">
-              Define your hospital layout · Buildings → Floors → Wards → Rooms
-            </p>
-          </div>
-          <div className="shrink-0 grid grid-cols-4 gap-px rounded-lg overflow-hidden border border-emerald-100 dark:border-emerald-500/20 bg-emerald-100 dark:bg-emerald-500/10">
-            {[
-              { label: "Buildings", value: buildings.length },
-              { label: "Floors", value: totalFloors },
-              { label: "Wards", value: totalWards },
-              { label: "Rooms", value: totalRooms },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-emerald-50 dark:bg-emerald-500/5 px-5 py-3 text-center">
-                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{value}</p>
-                <p className="text-[10px] font-bold text-emerald-600/60 dark:text-emerald-400/60 uppercase tracking-wider mt-0.5">{label}</p>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto space-y-4">
-        {/* Building counter */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-white">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-[#1a1a1a] flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">Number of Buildings / Blocks</p>
-              <p className="text-xs text-slate-400 dark:text-[#666666]">Each building maps to a physical block in your hospital</p>
-            </div>
-          </div>
-          <Stepper value={buildings.length} onChange={setBuildingCount} min={0} max={10} />
-        </div>
-
-        {/* Buildings */}
-        {buildings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 rounded-lg border-2 border-dashed border-slate-200 dark:border-[#2a2a2a]">
-            <div className="w-16 h-16 rounded-lg bg-slate-100 dark:bg-[#1a1a1a] flex items-center justify-center mb-4">
-              <Building2 className="w-8 h-8 text-slate-300 dark:text-[#333333]" />
-            </div>
-            <p className="text-sm font-semibold text-slate-600 dark:text-[#999999]">No buildings configured</p>
-            <p className="text-xs text-slate-300 dark:text-[#3a3a3a] mt-1">Increase the building count above to get started</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {buildings.map((building, bIdx) => (
-              <BuildingCard
-                key={bIdx}
-                building={building}
-                bIdx={bIdx}
-                updateBuilding={updateBuilding}
-                setFloorCount={setFloorCount}
-                updateFloor={updateFloor}
-                setWardCount={setWardCount}
-                updateWard={updateWard}
-                setRoomCount={setRoomCount}
-                updateRoom={updateRoom}
-                addSpecialRoom={addSpecialRoom}
-                updateSpecialRoom={updateSpecialRoom}
-                removeSpecialRoom={removeSpecialRoom}
+      {/* Main Split-Pane Workspace */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Side Tree Navigation Pane */}
+        <div className="w-64 border-r border-slate-200 dark:border-[#1e1e24] bg-white dark:bg-[#0c0c0e] flex flex-col shrink-0">
+          <div className="p-3 border-b border-slate-100 dark:border-[#18181c] space-y-2 shrink-0">
+            {/* Search filter */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search wards, rooms..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-[#141416] border border-slate-200 dark:border-[#25252b] rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-700 dark:text-[#cccccc] focus:outline-none focus:border-slate-300 placeholder-slate-400"
               />
-            ))}
-          </div>
-        )}
-
-        {/* Save bar */}
-        {buildings.length > 0 && (
-          <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222]">
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">Saving will overwrite your existing IPD structure.</p>
-                <p className="text-xs text-slate-400 dark:text-[#666666] mt-0.5">
-                  Occupied rooms will be preserved. {totalRooms > 0 && `${totalRooms} rooms will be active in Room Allocation.`}
-                </p>
-              </div>
             </div>
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-primary shrink-0">
-              <Save className="w-4 h-4" />
-              {saving ? "Saving…" : "Save & Update Structure"}
+
+            {/* Quick add Block button */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextIdx = buildings.length;
+                handleSetBuildingCount(nextIdx + 1);
+                setActiveBuildingIdx(nextIdx);
+                setActiveFloorIdx(0);
+              }}
+              className="w-full py-1.5 text-xs font-bold bg-slate-900 text-white dark:bg-[#1e1e24] hover:bg-slate-800 dark:hover:bg-[#25252b] rounded-lg transition-colors flex items-center justify-center gap-1.5 border border-slate-200/10"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Block
             </button>
           </div>
-        )}
+
+          {/* Tree list */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {filteredTree.length === 0 ? (
+              <p className="text-center text-xs text-slate-400 py-8">No matching records</p>
+            ) : (
+              filteredTree.map((b, bIdx) => {
+                const actualBIdx = b.originalIdx !== undefined ? b.originalIdx : bIdx;
+                const isBActive = activeBuildingIdx === actualBIdx;
+
+                return (
+                  <div key={actualBIdx} className="space-y-1">
+                    {/* Building Header */}
+                    <div
+                      onClick={() => {
+                        setActiveBuildingIdx(actualBIdx);
+                        setActiveFloorIdx(0);
+                      }}
+                      className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${
+                        isBActive
+                          ? "bg-slate-100 dark:bg-[#1c1c24]/50 border-l-2 border-emerald-500"
+                          : "hover:bg-slate-50 dark:hover:bg-[#121215]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="text-xs font-bold truncate text-slate-800 dark:text-[#dddddd]">
+                          {b.name || `Building ${actualBIdx + 1}`}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 dark:text-[#555] font-semibold">
+                        {(b.floors || []).length} flr
+                      </span>
+                    </div>
+
+                    {/* Floor items under building */}
+                    {isBActive && (
+                      <div className="pl-3.5 space-y-0.5 border-l border-slate-100 dark:border-[#1e1e24] ml-4">
+                        {(b.floors || []).map((f, fIdx) => {
+                          const actualFIdx = f.originalIdx !== undefined ? f.originalIdx : fIdx;
+                          const isFActive = activeFloorIdx === actualFIdx;
+
+                          return (
+                            <div
+                              key={actualFIdx}
+                              onClick={() => setActiveFloorIdx(actualFIdx)}
+                              className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md cursor-pointer transition-colors ${
+                                isFActive
+                                  ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
+                                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#121215]"
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <Layers className="w-3.5 h-3.5 shrink-0" />
+                                <span className="text-xs truncate">
+                                  {f.name || `Floor ${actualFIdx + 1}`}
+                                </span>
+                              </div>
+                              <span className="text-[9px] px-1 rounded bg-slate-100 dark:bg-[#1c1c24] text-slate-400 dark:text-[#666]">
+                                {(f.wards || []).length + (f.specialRooms || []).length}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {/* Quick add floor under active building */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextFlr = (b.floors || []).length;
+                            handleSetFloorCount(actualBIdx, nextFlr + 1);
+                            setActiveFloorIdx(nextFlr);
+                          }}
+                          className="flex items-center gap-1 text-[10px] text-emerald-500 hover:text-emerald-600 font-bold py-1 px-2.5 mt-1"
+                        >
+                          <Plus className="w-3 h-3" /> Add Floor
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Right Side Visual Canvas / Detail Editor Pane */}
+        <div className="flex-1 flex flex-col bg-[#fbfcfd] dark:bg-[#0c0c0e] overflow-hidden">
+          {activeBuilding ? (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Floor Header Controls */}
+              <div className="shrink-0 bg-white dark:bg-[#0f0f12] border-b border-slate-200/60 dark:border-[#1e1e24] p-4 flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <div className="bg-emerald-50 dark:bg-emerald-500/10 p-2 rounded-lg text-emerald-600 dark:text-emerald-400">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-bold">{activeBuilding.name}</h2>
+                      <span className="text-slate-300 dark:text-slate-700">/</span>
+                      <input
+                        type="text"
+                        value={activeFloor?.name || ""}
+                        onChange={(e) => updateFloor(activeBuildingIdx, activeFloorIdx, "name", e.target.value)}
+                        placeholder={`Floor ${activeFloorIdx + 1}`}
+                        className="text-sm font-semibold text-slate-800 dark:text-white bg-transparent border-b border-transparent hover:border-slate-200 dark:hover:border-slate-800 focus:border-emerald-500 focus:outline-none pb-0.5 w-32"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Edit floor layout, manage wards, OTs and stores below</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Floors</span>
+                    <Stepper 
+                      value={(activeBuilding.floors || []).length} 
+                      onChange={(n) => handleSetFloorCount(activeBuildingIdx, n)} 
+                      min={1} 
+                      max={10} 
+                    />
+                  </div>
+                  <div className="h-6 w-px bg-slate-200 dark:bg-slate-800"></div>
+                  <button
+                    type="button"
+                    onClick={() => deleteBuilding(activeBuildingIdx)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-[#2a2a35] hover:border-rose-500 hover:text-rose-500 dark:hover:border-rose-500/40 text-xs font-bold rounded-lg transition-colors text-slate-500 dark:text-slate-400"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete Block
+                  </button>
+                </div>
+              </div>
+
+              {/* Visual Floor Canvas Area */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {/* Active Building Edit Section */}
+                <div className="bg-slate-50 dark:bg-[#141416]/50 rounded-xl border border-slate-200/50 dark:border-[#22222a]/50 p-4 mb-4 flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-slate-400" />
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Configure Block Details:</span>
+                    <input
+                      type="text"
+                      value={activeBuilding.name}
+                      onChange={(e) => updateBuilding(activeBuildingIdx, "name", e.target.value)}
+                      placeholder="Building name"
+                      className="text-sm font-semibold bg-white dark:bg-[#121214] border border-slate-200 dark:border-[#222] rounded-lg px-2.5 py-1 focus:outline-none focus:border-slate-300 w-64"
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Building Index {activeBuildingIdx + 1}</span>
+                </div>
+
+                {activeFloor ? (
+                  <FloorSection
+                    floor={activeFloor}
+                    bIdx={activeBuildingIdx}
+                    fIdx={activeFloorIdx}
+                    updateFloor={updateFloor}
+                    setWardCount={handleSetWardCount}
+                    updateWard={updateWard}
+                    setRoomCount={handleSetRoomCount}
+                    updateRoom={updateRoom}
+                    removeWard={removeWard}
+                    roomTypes={roomTypes}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-[#111114]/30 rounded-xl border-2 border-dashed border-slate-200 dark:border-[#222]">
+                    <Layers className="w-10 h-10 text-slate-300 dark:text-[#333] mb-3" />
+                    <p className="text-xs font-semibold text-slate-500">No floor selected</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Select or add a floor from the left pane</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white dark:bg-[#0c0c0e]">
+              <div className="w-16 h-16 rounded-xl bg-slate-50 dark:bg-[#1a1a24]/50 flex items-center justify-center mb-4 border border-slate-100 dark:border-[#252530]">
+                <Building2 className="w-8 h-8 text-slate-300 dark:text-[#444]" />
+              </div>
+              <p className="text-sm font-bold text-slate-700 dark:text-[#dddddd]">No Buildings Configured</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs text-center mt-1">
+                Add a hospital block or building from the left panel to begin mapping out zones, wards, and rooms.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Sticky Save Bar */}
+      {buildings.length > 0 && (
+        <div className="shrink-0 bg-white dark:bg-[#0e0e11] border-t border-slate-200 dark:border-[#1e1e24] px-6 py-4 flex items-center justify-between gap-4 z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+            <div>
+              <p className="text-xs font-semibold text-slate-700 dark:text-[#cccccc]">Sync core master settings.</p>
+              <p className="text-[10px] text-slate-400 dark:text-[#666666] mt-0.5">
+                Saved changes automatically reflect across surgical OTs and warehouse inventory stores.
+              </p>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            onClick={handleSave} 
+            disabled={saving} 
+            className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl transition-all shadow-sm flex items-center gap-1.5 border border-emerald-500/10"
+          >
+            <Save className="w-4 h-4" />
+            {saving ? "Saving Changes…" : "Save Master Layout"}
+          </button>
+        </div>
+      )}
+
+      {/* Safety Confirmation Modal */}
+      {confirmModal.show && (
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#17171c] rounded-2xl border border-slate-200 dark:border-[#2a2a35] shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 text-rose-500 mb-3">
+              <AlertTriangle className="w-6 h-6" />
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Confirm Removal</h3>
+            </div>
+            <p className="text-sm text-slate-600 dark:text-[#aaaaaa] leading-relaxed">
+              {confirmModal.message}
+            </p>
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setConfirmModal({ show: false, message: "", onConfirm: null })}
+                className="px-4 py-2 text-xs font-bold text-slate-500 border border-slate-200 dark:border-[#2a2a35] rounded-xl hover:bg-slate-50 dark:hover:bg-[#1c1c24] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmModal.onConfirm}
+                className="px-4 py-2 text-xs font-bold bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition-colors"
+              >
+                Confirm Removal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

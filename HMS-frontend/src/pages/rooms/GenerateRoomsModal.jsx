@@ -1,5 +1,5 @@
-import { useState } from "react";
-import api from "@/utils/api";
+import { useState, useEffect } from "react";
+import api, { roomTypeApi } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext";
 import { X, Loader2 } from "lucide-react";
 
@@ -11,12 +11,21 @@ const labelCls = "block text-sm font-semibold text-slate-700 dark:text-[#cccccc]
 function GenerateRoomsModal({ onClose, onSuccess }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [roomTypes, setRoomTypes] = useState([]);
   const [formData, setFormData] = useState({
     roomPrefix: "GEN",
     roomType: "GENERAL",
     count: 5,
     pricePerDay: 0,
   });
+
+  useEffect(() => {
+    roomTypeApi.getAll(user.hospitalId)
+      .then((data) => {
+        if (data?.length) setRoomTypes(data);
+      })
+      .catch(() => {});
+  }, [user.hospitalId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,12 +78,15 @@ function GenerateRoomsModal({ onClose, onSuccess }) {
               value={formData.roomType}
               onChange={(e) => setFormData({ ...formData, roomType: e.target.value })}
             >
-              <option value="GENERAL">General</option>
-              <option value="ICU">ICU</option>
-              <option value="PRIVATE">Private</option>
-              <option value="WARD">Ward</option>
-              <option value="OT">OT (Operating Theatre)</option>
-              <option value="POST_OT">Post-OT (Recovery)</option>
+              {roomTypes.length > 0
+                ? roomTypes.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)
+                : <>
+                    <option value="GENERAL">General</option>
+                    <option value="ICU">ICU</option>
+                    <option value="PRIVATE">Private</option>
+                    <option value="OT">OT (Operating Theatre)</option>
+                  </>
+              }
             </select>
           </div>
 

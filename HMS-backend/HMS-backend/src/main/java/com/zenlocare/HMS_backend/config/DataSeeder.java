@@ -33,8 +33,79 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception e) {
             log.warn("Could not alter patients.dob constraint: " + e.getMessage());
         }
+        try {
+            jdbcTemplate.execute("ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS room_id bigint");
+            log.info("✅ Added room_id column to stores table");
+        } catch (Exception e) {
+            log.warn("Could not alter stores table to add room_id: " + e.getMessage());
+        }
+        // Drop the old hardcoded room_type CHECK constraint — types are now dynamic
+        try {
+            jdbcTemplate.execute("ALTER TABLE rooms DROP CONSTRAINT IF EXISTS rooms_room_type_check");
+            log.info("✅ Dropped rooms_room_type_check constraint (now dynamic)");
+        } catch (Exception e) {
+            log.warn("Could not drop rooms_room_type_check: " + e.getMessage());
+        }
+        seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
+    }
+
+    /**
+     * Creates the room_type_configs table and seeds system-wide default room types.
+     */
+    private void seedRoomTypeConfigs() {
+        try {
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS room_type_configs (
+                    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    hospital_id   UUID REFERENCES hospitals(id),
+                    code          VARCHAR(30)  NOT NULL,
+                    label         VARCHAR(100) NOT NULL,
+                    category      VARCHAR(20)  DEFAULT 'WARD',
+                    icon          VARCHAR(50),
+                    color         VARCHAR(20),
+                    is_system     BOOLEAN      DEFAULT false,
+                    is_active     BOOLEAN      DEFAULT true,
+                    display_order INTEGER      DEFAULT 0,
+                    created_at    TIMESTAMP    DEFAULT now(),
+                    UNIQUE(hospital_id, code)
+                )
+            """);
+        } catch (Exception e) {
+            log.warn("room_type_configs table may already exist: " + e.getMessage());
+        }
+
+        // Seed system-wide defaults (hospital_id IS NULL)
+        String[][] defaults = {
+            {"GENERAL",      "General Ward",        "WARD",  "bed-double",  "#3b82f6",  "0"},
+            {"WARD",         "Shared Ward",         "WARD",  "bed-double",  "#6366f1",  "1"},
+            {"SEMI_PRIVATE", "Semi-Private Room",   "WARD",  "bed-single",  "#8b5cf6",  "2"},
+            {"PRIVATE",      "Private Room",        "WARD",  "bed-single",  "#a855f7",  "3"},
+            {"DELUXE",       "Deluxe / VIP Room",   "WARD",  "crown",       "#f59e0b",  "4"},
+            {"ICU",          "ICU",                 "WARD",  "heart-pulse", "#ef4444",  "5"},
+            {"NICU",         "Neonatal ICU",        "WARD",  "baby",        "#f87171",  "6"},
+            {"ISOLATION",    "Isolation Room",      "WARD",  "shield",      "#f97316",  "7"},
+            {"EMERGENCY",    "Emergency / ER",      "WARD",  "siren",       "#dc2626",  "8"},
+            {"LABOUR",       "Labour & Delivery",   "WARD",  "heart",       "#ec4899",  "9"},
+            {"OT",           "Operating Theatre",   "OT",    "scissors",    "#10b981", "10"},
+            {"POST_OT",      "Post-Op Recovery",    "OT",    "activity",    "#14b8a6", "11"},
+            {"STORE",        "Inventory Store",     "STORE", "package",     "#f59e0b", "12"},
+        };
+
+        for (String[] d : defaults) {
+            try {
+                jdbcTemplate.update("""
+                    INSERT INTO room_type_configs (hospital_id, code, label, category, icon, color, is_system, is_active, display_order)
+                    VALUES (NULL, ?, ?, ?, ?, ?, true, true, ?)
+                    ON CONFLICT (hospital_id, code) DO UPDATE SET label = EXCLUDED.label, category = EXCLUDED.category,
+                        icon = EXCLUDED.icon, color = EXCLUDED.color, is_system = true, display_order = EXCLUDED.display_order
+                """, d[0], d[1], d[2], d[3], d[4], Integer.parseInt(d[5]));
+            } catch (Exception e) {
+                log.warn("Could not seed room type " + d[0] + ": " + e.getMessage());
+            }
+        }
+        log.info("✅ Room type configs seeded (13 system defaults).");
     }
 
     private void seedRoles() {

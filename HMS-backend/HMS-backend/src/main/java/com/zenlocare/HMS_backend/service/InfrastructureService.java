@@ -24,6 +24,7 @@ public class InfrastructureService {
     private final HospitalRepository hospitalRepo;
     private final RoomRepository roomRepo;
     private final BedRepository bedRepo;
+    private final StoreRepository storeRepo;
 
     @Transactional(readOnly = true)
     public List<BuildingDto> get(UUID hospitalId) {
@@ -80,7 +81,7 @@ public class InfrastructureService {
                 for (int k = 0; k < floor.getWards().size(); k++) {
                     HospitalWard ward = floor.getWards().get(k);
                     WardDto wDto = fDto.getWards().get(k);
-                    RoomType roomType = parseRoomType(wDto.getRoomType());
+                    String roomType = wDto.getRoomType() != null ? wDto.getRoomType() : "GENERAL";
                     int wardBedCount = wDto.getBedCount() != null && wDto.getBedCount() > 0
                             ? wDto.getBedCount() : 1;
 
@@ -101,13 +102,27 @@ public class InfrastructureService {
 
                         room.setRoomNumber(rDto.getName());
                         room.setRoomType(roomType);
-                        room.setPricePerDay(wDto.getDailyCharge());
                         room.setWard(wDto.getName());
                         room.setHospitalWard(ward);
-                        room.setBedCount(wardBedCount);
+                        room.setBedCount(rDto.getBedNames().size());
                         Room saved = roomRepo.save(room);
 
-                        syncBeds(saved, wardBedCount);
+                        syncBeds(saved, rDto.getBedNames());
+
+                        if ("STORE".equals(roomType)) {
+                            Store store = storeRepo.findByRoomId(saved.getId()).orElse(null);
+                            if (store == null) {
+                                store = new Store();
+                                store.setRoomId(saved.getId());
+                            }
+                            store.setHospital(hospital);
+                            store.setName(saved.getRoomNumber());
+                            store.setIsActive(true);
+                            store.setType("STORE");
+                            storeRepo.save(store);
+                        } else {
+                            storeRepo.deleteByRoomId(saved.getId());
+                        }
 
                         if (saved.getId() != null) reassignedRoomIds.add(saved.getId());
                     }
@@ -119,6 +134,7 @@ public class InfrastructureService {
             Long id = room.getId();
             if (id != null && !reassignedRoomIds.contains(id)) {
                 if (room.getStatus() == RoomStatus.AVAILABLE) {
+                    storeRepo.deleteByRoomId(id);
                     bedRepo.findByRoomIdOrderByBedNumberAsc(id).forEach(bedRepo::delete);
                     roomRepo.deleteById(id);
                 }
@@ -128,33 +144,32 @@ public class InfrastructureService {
         return get(hospitalId);
     }
 
-    private void syncBeds(Room room, int targetCount) {
+    private void syncBeds(Room room, List<String> targetBedNames) {
         List<Bed> existing = bedRepo.findByRoomIdOrderByBedNumberAsc(room.getId());
-        int currentCount = existing.size();
-
-        if (targetCount > currentCount) {
-            for (int b = currentCount + 1; b <= targetCount; b++) {
-                bedRepo.save(Bed.builder()
-                        .room(room)
-                        .bedNumber("Bed " + b)
-                        .status(BedStatus.AVAILABLE)
-                        .build());
-            }
-        } else if (targetCount < currentCount) {
-            // Remove excess beds from the end, only if AVAILABLE
-            List<Bed> excess = existing.subList(targetCount, currentCount);
-            for (Bed bed : excess) {
+        
+        // Remove beds that are no longer in the target list (only if AVAILABLE)
+        for (Bed bed : existing) {
+            if (!targetBedNames.contains(bed.getBedNumber())) {
                 if (bed.getStatus() == BedStatus.AVAILABLE) {
                     bedRepo.delete(bed);
                 }
             }
         }
+        
+        // Add new beds
+        for (String bedName : targetBedNames) {
+            boolean exists = existing.stream().anyMatch(b -> b.getBedNumber().equals(bedName));
+            if (!exists) {
+                bedRepo.save(Bed.builder()
+                        .room(room)
+                        .bedNumber(bedName)
+                        .status(BedStatus.AVAILABLE)
+                        .build());
+            }
+        }
     }
 
-    private RoomType parseRoomType(String type) {
-        if (type == null) return RoomType.GENERAL;
-        try { return RoomType.valueOf(type); } catch (IllegalArgumentException e) { return RoomType.GENERAL; }
-    }
+    // roomType is now a plain String — no enum parsing needed
 
     private BuildingDto toDto(HospitalBuilding b, UUID hospitalId) {
         BuildingDto dto = new BuildingDto();
@@ -176,16 +191,17 @@ public class InfrastructureService {
         WardDto dto = new WardDto();
         dto.setId(w.getId());
         dto.setName(w.getName());
-        dto.setDailyCharge(w.getDailyCharge());
         List<Room> wardRooms = roomRepo.findByHospitalWard_Id(w.getId());
-        // Derive bedCount from first room (all rooms in a ward share the same count)
-        dto.setBedCount(wardRooms.isEmpty() ? 1 : Optional.ofNullable(wardRooms.get(0).getBedCount()).orElse(1));
+        dto.setRoomType(wardRooms.isEmpty() ? "GENERAL"
+                : Optional.ofNullable(wardRooms.get(0).getRoomType()).orElse("GENERAL"));
         List<RoomDto> rooms = wardRooms.stream()
                 .map(r -> {
                     RoomDto rd = new RoomDto();
                     rd.setId(r.getId());
                     rd.setName(r.getRoomNumber());
-                    rd.setBedCount(Optional.ofNullable(r.getBedCount()).orElse(1));
+                    List<String> bedNames = bedRepo.findByRoomIdOrderByBedNumberAsc(r.getId())
+                            .stream().map(Bed::getBedNumber).collect(Collectors.toList());
+                    rd.setBedNames(bedNames);
                     return rd;
                 })
                 .collect(Collectors.toList());

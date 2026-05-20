@@ -42,7 +42,7 @@ public class SmartBillingService {
                 BigDecimal total = room.getPricePerDay().multiply(BigDecimal.valueOf(days));
                 roomSuggestion = SmartBillingSuggestion.RoomSuggestion.builder()
                         .roomNumber(room.getRoomNumber())
-                        .roomType(room.getRoomType().name())
+                        .roomType(room.getRoomType())
                         .pricePerDay(room.getPricePerDay())
                         .daysStayed(days)
                         .totalCharge(total)
