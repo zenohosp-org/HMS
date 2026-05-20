@@ -150,22 +150,6 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
           </select>
         </div>
 
-        {/* Daily Charge — WARD types only */}
-        {isWard && (
-          <div className="flex items-center gap-1.5 px-3 py-3 w-36 shrink-0 border-l border-slate-100 dark:border-[#1e1e1e]">
-            <span className="text-xs font-semibold text-slate-400">₹</span>
-            <input
-              type="number"
-              min="0"
-              className="flex-1 text-sm text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#444] tabular-nums min-w-0 font-medium"
-              value={ward.dailyCharge || ""}
-              onChange={(e) => updateWard(bIdx, fIdx, wIdx, "dailyCharge", e.target.value ? parseFloat(e.target.value) : null)}
-              placeholder="0"
-            />
-            <span className="text-[10px] text-slate-400 shrink-0">/day</span>
-          </div>
-        )}
-
         {/* Rooms Stepper */}
         <div className="flex items-center gap-2 px-4 py-3 shrink-0 border-l border-slate-100 dark:border-[#1e1e1e]">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rooms</span>
