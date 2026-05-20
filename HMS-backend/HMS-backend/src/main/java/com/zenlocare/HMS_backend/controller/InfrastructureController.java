@@ -49,7 +49,6 @@ public class InfrastructureController {
         private String name;
         private String roomType;
         private java.math.BigDecimal dailyCharge;
-        private Integer bedCount;
         private List<RoomDto> rooms = List.of();
     }
 

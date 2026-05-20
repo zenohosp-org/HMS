@@ -57,10 +57,9 @@ function Stepper({ value, onChange, min = 0, max = 20, variant = "default" }) {
   );
 }
 
-function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom, roomType, showBeds = true }) {
+function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom, roomType }) {
   if (!rooms.length) return null;
 
-  // Determine icon & color based on roomType
   let CardIcon = Bed;
   let themeClass = "hover:border-emerald-300 dark:hover:border-emerald-500/40 focus-within:border-emerald-400 dark:focus-within:border-emerald-500/60";
   let iconClass = "text-slate-300 dark:text-[#444444] group-hover:text-emerald-400 dark:group-hover:text-emerald-500";
@@ -77,21 +76,16 @@ function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom, roomType, showBeds = tr
 
   return (
     <div className="border-t border-slate-100 dark:border-[#1e1e1e] p-3 bg-slate-50/50 dark:bg-[#0a0a0a]/30">
-      <div className="flex justify-between items-center mb-2.5">
-        <p className="text-[10px] font-bold text-slate-400 dark:text-[#666666] uppercase tracking-widest">
-          Rooms · {rooms.length}
-        </p>
-        <p className="text-[10px] font-bold text-slate-400 dark:text-[#666666] uppercase tracking-widest">
-          {showBeds ? "Beds" : ""}
-        </p>
-      </div>
+      <p className="text-[10px] font-bold text-slate-400 dark:text-[#666666] uppercase tracking-widest mb-2.5">
+        Rooms · {rooms.length}
+      </p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {rooms.map((room, rIdx) => (
           <div
             key={rIdx}
-            className={`flex items-stretch bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#252525] rounded-lg group transition-all overflow-hidden ${themeClass}`}
+            className={`flex items-center bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#252525] rounded-lg group transition-all overflow-hidden ${themeClass}`}
           >
-            <div className="flex items-center gap-2 px-2.5 py-2 w-1/3 min-w-[100px] border-r border-slate-200 dark:border-[#252525] bg-slate-50/50 dark:bg-[#111]">
+            <div className="flex items-center gap-2 px-3 py-2.5 flex-1">
               <CardIcon className={`w-3.5 h-3.5 shrink-0 transition-colors ${iconClass}`} />
               <input
                 className="flex-1 text-xs text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#444] min-w-0 font-medium"
@@ -99,19 +93,6 @@ function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom, roomType, showBeds = tr
                 onChange={(e) => updateRoom(bIdx, fIdx, wIdx, rIdx, "name", e.target.value)}
                 placeholder={`Room ${rIdx + 1}`}
               />
-            </div>
-            <div className="flex-1 px-4 py-2 flex items-center justify-end gap-3">
-              {showBeds && (
-                <>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Beds</span>
-                  <Stepper
-                    value={room.bedCount || 1}
-                    onChange={(n) => updateRoom(bIdx, fIdx, wIdx, rIdx, "bedCount", n)}
-                    min={0}
-                    max={50}
-                  />
-                </>
-              )}
             </div>
           </div>
         ))}
@@ -126,7 +107,7 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
   let themeName = "GENERAL";
 
   const selectedType = roomTypes.find(t => t.value === ward.roomType);
-  const showBeds = selectedType ? selectedType.category === "WARD" : true;
+  const isWard = selectedType ? selectedType.category === "WARD" : true;
 
   if (ward.roomType === "ICU") {
     badgeColor = "bg-rose-500/10 text-rose-500 border-rose-500/20";
@@ -169,6 +150,22 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
           </select>
         </div>
 
+        {/* Daily Charge — WARD types only */}
+        {isWard && (
+          <div className="flex items-center gap-1.5 px-3 py-3 w-36 shrink-0 border-l border-slate-100 dark:border-[#1e1e1e]">
+            <span className="text-xs font-semibold text-slate-400">₹</span>
+            <input
+              type="number"
+              min="0"
+              className="flex-1 text-sm text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#444] tabular-nums min-w-0 font-medium"
+              value={ward.dailyCharge || ""}
+              onChange={(e) => updateWard(bIdx, fIdx, wIdx, "dailyCharge", e.target.value ? parseFloat(e.target.value) : null)}
+              placeholder="0"
+            />
+            <span className="text-[10px] text-slate-400 shrink-0">/day</span>
+          </div>
+        )}
+
         {/* Rooms Stepper */}
         <div className="flex items-center gap-2 px-4 py-3 shrink-0 border-l border-slate-100 dark:border-[#1e1e1e]">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rooms</span>
@@ -190,7 +187,7 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
 
 
 
-      <RoomGrid rooms={ward.rooms || []} bIdx={bIdx} fIdx={fIdx} wIdx={wIdx} updateRoom={updateRoom} roomType={ward.roomType} showBeds={showBeds} />
+      <RoomGrid rooms={ward.rooms || []} bIdx={bIdx} fIdx={fIdx} wIdx={wIdx} updateRoom={updateRoom} roomType={ward.roomType} />
     </div>
   );
 }
@@ -364,10 +361,10 @@ export default function InfrastructureMapping() {
                 wards: allWards.map(w => ({
                   name: w.name,
                   roomType: w.roomType ?? "GENERAL",
-                  rooms: (w.rooms ?? []).map((r) => ({ 
-                    id: r.id, 
+                  rooms: (w.rooms ?? []).map((r) => ({
+                    id: r.id,
                     name: r.name,
-                    bedCount: (r.bedNames ?? []).length || 1
+                    bedNames: r.bedNames ?? [],
                   })),
                 })),
               };
@@ -484,7 +481,7 @@ export default function InfrastructureMapping() {
           "Reducing the ward count will delete the trailing wards and all their rooms. Are you sure?",
           () => setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
             ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
-              ...f, wards: resizeTo(f.wards, n, () => ({ name: "", dailyCharge: "500", roomType: "GENERAL", bedCount: 1, rooms: [] }))
+              ...f, wards: resizeTo(f.wards, n, () => ({ name: "", dailyCharge: "", roomType: "GENERAL", rooms: [] }))
             })
           }))
         );
@@ -493,7 +490,7 @@ export default function InfrastructureMapping() {
     }
     setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
       ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
-        ...f, wards: resizeTo(f.wards, n, () => ({ name: "", dailyCharge: "500", roomType: "GENERAL", bedCount: 1, rooms: [] }))
+        ...f, wards: resizeTo(f.wards, n, () => ({ name: "", dailyCharge: "", roomType: "GENERAL", rooms: [] }))
       })
     }));
   };
@@ -522,7 +519,7 @@ export default function InfrastructureMapping() {
     setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
       ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
         ...f, wards: f.wards.map((w, k) => k !== wIdx ? w : {
-          ...w, rooms: resizeTo(w.rooms, n, (rIdx) => ({ id: null, name: `Room ${rIdx + 1}`, bedCount: 1 }))
+          ...w, rooms: resizeTo(w.rooms, n, (rIdx) => ({ id: null, name: `Room ${rIdx + 1}`, bedNames: [] }))
         })
       })
     }));
@@ -580,7 +577,6 @@ export default function InfrastructureMapping() {
 
   const handleSave = async () => {
     setSaving(true);
-    let globalBedCounter = 1;
     try {
       const payload = buildings.map((b) => ({
         name: b.name || "Building",
@@ -590,18 +586,11 @@ export default function InfrastructureMapping() {
             ...(f.wards || []).map((w) => ({
               name: w.name || "Ward",
               roomType: w.roomType || "GENERAL",
-              rooms: (w.rooms || []).map((r) => {
-                const bedCount = r.bedCount || 0;
-                const bedNames = [];
-                for (let i = 0; i < bedCount; i++) {
-                  bedNames.push(`Bed ${globalBedCounter++}`);
-                }
-                return { 
-                  id: r.id || null, 
-                  name: r.name || "",
-                  bedNames
-                };
-              }),
+              rooms: (w.rooms || []).map((r) => ({
+                id: r.id || null,
+                name: r.name || "",
+                bedNames: r.bedNames || [],
+              })),
             })),
           ],
         })),

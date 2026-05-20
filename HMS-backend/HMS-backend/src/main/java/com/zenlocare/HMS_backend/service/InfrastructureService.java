@@ -82,8 +82,6 @@ public class InfrastructureService {
                     HospitalWard ward = floor.getWards().get(k);
                     WardDto wDto = fDto.getWards().get(k);
                     String roomType = wDto.getRoomType() != null ? wDto.getRoomType() : "GENERAL";
-                    int wardBedCount = wDto.getBedCount() != null && wDto.getBedCount() > 0
-                            ? wDto.getBedCount() : 1;
 
                     for (RoomDto rDto : wDto.getRooms()) {
                         Room room = null;
@@ -191,6 +189,7 @@ public class InfrastructureService {
         WardDto dto = new WardDto();
         dto.setId(w.getId());
         dto.setName(w.getName());
+        dto.setDailyCharge(w.getDailyCharge());
         List<Room> wardRooms = roomRepo.findByHospitalWard_Id(w.getId());
         dto.setRoomType(wardRooms.isEmpty() ? "GENERAL"
                 : Optional.ofNullable(wardRooms.get(0).getRoomType()).orElse("GENERAL"));
