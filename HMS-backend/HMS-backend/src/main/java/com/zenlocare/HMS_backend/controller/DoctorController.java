@@ -67,7 +67,7 @@ public class DoctorController {
         doctorData.setRegistrationCouncil(req.getRegistrationCouncil());
         doctorData.setConsultationFee(req.getConsultationFee());
         doctorData.setFollowUpFee(req.getFollowUpFee());
-        doctorData.setAvailableDays(req.getAvailableDays());
+        doctorData.setAvailableDaysMask(req.getAvailableDaysMask() != null ? req.getAvailableDaysMask() : 31);
         doctorData.setSlotDurationMin(req.getSlotDurationMin());
         doctorData.setMaxDailySlots(req.getMaxDailySlots());
         doctorData.setPersonalPhone(req.getPersonalPhone());
@@ -93,7 +93,7 @@ public class DoctorController {
         updatedData.setRegistrationCouncil(req.getRegistrationCouncil());
         updatedData.setConsultationFee(req.getConsultationFee());
         updatedData.setFollowUpFee(req.getFollowUpFee());
-        updatedData.setAvailableDays(req.getAvailableDays());
+        updatedData.setAvailableDaysMask(req.getAvailableDaysMask() != null ? req.getAvailableDaysMask() : 31);
         updatedData.setSlotDurationMin(req.getSlotDurationMin());
         updatedData.setMaxDailySlots(req.getMaxDailySlots());
         updatedData.setWorkPhone(req.getWorkPhone());
@@ -133,7 +133,7 @@ public class DoctorController {
         dto.setRegistrationCouncil(doctor.getRegistrationCouncil());
         dto.setConsultationFee(doctor.getConsultationFee());
         dto.setFollowUpFee(doctor.getFollowUpFee());
-        dto.setAvailableDays(doctor.getAvailableDays());
+        dto.setAvailableDaysMask(doctor.getAvailableDaysMask() != null ? doctor.getAvailableDaysMask() : 31);
         dto.setSlotDurationMin(doctor.getSlotDurationMin());
         dto.setMaxDailySlots(doctor.getMaxDailySlots());
         dto.setWorkPhone(doctor.getWorkPhone());
@@ -178,7 +178,7 @@ public class DoctorController {
         private String registrationCouncil;
         private BigDecimal consultationFee;
         private BigDecimal followUpFee;
-        private String availableDays;
+        private Integer availableDaysMask;  // bitmask: MON=1,TUE=2,WED=4,THU=8,FRI=16,SAT=32,SUN=64
         private Integer slotDurationMin;
         private Integer maxDailySlots;
         private String personalPhone;
@@ -205,7 +205,7 @@ public class DoctorController {
         private String registrationCouncil;
         private BigDecimal consultationFee;
         private BigDecimal followUpFee;
-        private String availableDays;
+        private Integer availableDaysMask;  // bitmask: MON=1,TUE=2,WED=4,THU=8,FRI=16,SAT=32,SUN=64
         private Integer slotDurationMin;
         private Integer maxDailySlots;
         private String workPhone;

@@ -73,7 +73,7 @@ public class DoctorService {
                 .registrationCouncil(doctorData.getRegistrationCouncil())
                 .consultationFee(doctorData.getConsultationFee())
                 .followUpFee(doctorData.getFollowUpFee())
-                .availableDays(doctorData.getAvailableDays())
+                .availableDaysMask(doctorData.getAvailableDaysMask() != null ? doctorData.getAvailableDaysMask() : 31)
                 .slotDurationMin(doctorData.getSlotDurationMin() != null ? doctorData.getSlotDurationMin() : 15)
                 .maxDailySlots(doctorData.getMaxDailySlots())
                 .workPhone(doctorData.getWorkPhone())
@@ -111,8 +111,8 @@ public class DoctorService {
             doctor.setConsultationFee(updatedData.getConsultationFee());
         if (updatedData.getFollowUpFee() != null)
             doctor.setFollowUpFee(updatedData.getFollowUpFee());
-        if (updatedData.getAvailableDays() != null)
-            doctor.setAvailableDays(updatedData.getAvailableDays());
+        if (updatedData.getAvailableDaysMask() != null)
+            doctor.setAvailableDaysMask(updatedData.getAvailableDaysMask());
         if (updatedData.getSlotDurationMin() != null)
             doctor.setSlotDurationMin(updatedData.getSlotDurationMin());
         if (updatedData.getMaxDailySlots() != null)

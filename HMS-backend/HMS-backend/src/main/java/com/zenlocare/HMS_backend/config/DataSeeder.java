@@ -31,6 +31,22 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception e) {
             log.warn("Could not alter users.last_name: " + e.getMessage());
         }
+        // Migrate available_days string → available_days_mask bitmask (MON=1,TUE=2,WED=4,THU=8,FRI=16,SAT=32,SUN=64)
+        try {
+            jdbcTemplate.execute(
+                "UPDATE doctors SET available_days_mask = " +
+                "  (CASE WHEN available_days LIKE '%MON%' THEN 1  ELSE 0 END) +" +
+                "  (CASE WHEN available_days LIKE '%TUE%' THEN 2  ELSE 0 END) +" +
+                "  (CASE WHEN available_days LIKE '%WED%' THEN 4  ELSE 0 END) +" +
+                "  (CASE WHEN available_days LIKE '%THU%' THEN 8  ELSE 0 END) +" +
+                "  (CASE WHEN available_days LIKE '%FRI%' THEN 16 ELSE 0 END) +" +
+                "  (CASE WHEN available_days LIKE '%SAT%' THEN 32 ELSE 0 END) +" +
+                "  (CASE WHEN available_days LIKE '%SUN%' THEN 64 ELSE 0 END) " +
+                "WHERE available_days IS NOT NULL AND available_days_mask IS NULL");
+            log.info("✅ Migrated available_days string → available_days_mask bitmask");
+        } catch (Exception e) {
+            log.warn("Could not migrate available_days to bitmask: " + e.getMessage());
+        }
         // Migrate old single specialization_id → specialization_id_1 (existing rows only)
         try {
             jdbcTemplate.execute(

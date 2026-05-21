@@ -53,9 +53,10 @@ public class Doctor {
     @Column(name = "follow_up_fee", precision = 10, scale = 2)
     private BigDecimal followUpFee;
 
-    // e.g., "MON,TUE,WED,THU,FRI"
-    @Column(name = "available_days")
-    private String availableDays;
+    // Bitmask: MON=1,TUE=2,WED=4,THU=8,FRI=16,SAT=32,SUN=64  (Mon–Fri default = 31)
+    @Column(name = "available_days_mask")
+    @Builder.Default
+    private Integer availableDaysMask = 31;
 
     @Column(name = "slot_duration_min")
     @Builder.Default

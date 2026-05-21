@@ -7,7 +7,16 @@ import SidePane from "@/components/SidePane";
 import { Home, X } from "lucide-react";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 
-const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+// MON=bit0=1, TUE=bit1=2, WED=bit2=4, THU=bit3=8, FRI=bit4=16, SAT=bit5=32, SUN=bit6=64
+const DAYS = [
+  { label: "MON", bit: 1 },
+  { label: "TUE", bit: 2 },
+  { label: "WED", bit: 4 },
+  { label: "THU", bit: 8 },
+  { label: "FRI", bit: 16 },
+  { label: "SAT", bit: 32 },
+  { label: "SUN", bit: 64 },
+];
 const MAX_SPECS = 6;
 
 const inputBase =
@@ -109,7 +118,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
     residentialAddress:        editDoctor?.residentialAddress || "",
     consultationFee:           editDoctor?.consultationFee || 500,
     followUpFee:               editDoctor?.followUpFee || 300,
-    availableDays:             editDoctor?.availableDays || "MON,TUE,WED,THU,FRI",
+    availableDaysMask:         editDoctor?.availableDaysMask ?? 31,
     slotDurationMin:           editDoctor?.slotDurationMin || 15,
     maxDailySlots:             editDoctor?.maxDailySlots || 40,
   });
@@ -126,18 +135,14 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
   const setDoc = (patch) => setDoctorForm((p) => ({ ...p, ...patch }));
   const setUser = (patch) => setUserForm((p) => ({ ...p, ...patch }));
 
-  const activeDays = doctorForm.availableDays.split(",").map((d) => d.trim()).filter(Boolean);
+  const mask = doctorForm.availableDaysMask || 0;
+  const activeDayCount = DAYS.filter((d) => mask & d.bit).length;
   const slotMin = doctorForm.slotDurationMin || 0;
   const slotsPerDay = doctorForm.maxDailySlots || 0;
   const totalMinPerDay = slotMin * slotsPerDay;
-  const totalMinPerWeek = totalMinPerDay * activeDays.length;
+  const totalMinPerWeek = totalMinPerDay * activeDayCount;
 
-  const toggleDay = (day) => {
-    const next = activeDays.includes(day)
-      ? activeDays.filter((d) => d !== day)
-      : [...activeDays, day];
-    setDoc({ availableDays: DAYS.filter((d) => next.includes(d)).join(",") });
-  };
+  const toggleDay = (bit) => setDoc({ availableDaysMask: mask ^ bit });
 
   const handleClose = () => {
     if (editDoctor) { setPaneOpen(false); setTimeout(onClose, 290); }
@@ -158,7 +163,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
     if (!doctorForm.qualification.trim() || !doctorForm.medicalRegistrationNumber.trim() || !doctorForm.registrationCouncil.trim()) {
       notify("Please fill in all professional details", "error"); return false;
     }
-    if (!doctorForm.consultationFee || !doctorForm.slotDurationMin || !doctorForm.maxDailySlots || activeDays.length === 0) {
+    if (!doctorForm.consultationFee || !doctorForm.slotDurationMin || !doctorForm.maxDailySlots || activeDayCount === 0) {
       notify("Please complete scheduling & fee details", "error"); return false;
     }
     return true;
@@ -171,11 +176,11 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
       const newUser = await staffApi.create({ ...userForm, role: "DOCTOR", hospitalId: user.hospitalId });
       const { specializationIds, qualification, medicalRegistrationNumber, registrationCouncil,
               personalPhone, personalEmail, residentialAddress,
-              consultationFee, followUpFee, availableDays, slotDurationMin, maxDailySlots } = doctorForm;
+              consultationFee, followUpFee, availableDaysMask, slotDurationMin, maxDailySlots } = doctorForm;
       await doctorsApi.create({
         specializationIds, qualification, medicalRegistrationNumber, registrationCouncil,
         personalPhone, personalEmail, residentialAddress,
-        consultationFee, followUpFee, availableDays, slotDurationMin, maxDailySlots,
+        consultationFee, followUpFee, availableDaysMask, slotDurationMin, maxDailySlots,
         userId: newUser.id, hospitalId: user.hospitalId,
       });
       notify("Doctor profile created", "success");
@@ -322,14 +327,14 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
             <div>
               <FieldLabel required>Available Days</FieldLabel>
               <div className="flex flex-wrap gap-2 mt-1.5">
-                {DAYS.map((day) => {
-                  const active = activeDays.includes(day);
+                {DAYS.map(({ label, bit }) => {
+                  const active = !!(mask & bit);
                   return (
-                    <button key={day} type="button" onClick={() => toggleDay(day)}
+                    <button key={bit} type="button" onClick={() => toggleDay(bit)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                         active ? "bg-blue-500 text-white border-blue-500" : "bg-white dark:bg-[#161616] text-slate-400 border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300"
                       }`}>
-                      {day}
+                      {label}
                     </button>
                   );
                 })}
@@ -491,16 +496,16 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                 <div>
                   <label className="label">Available Days *</label>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {DAYS.map((day) => {
-                      const active = activeDays.includes(day);
+                    {DAYS.map(({ label, bit }) => {
+                      const active = !!(mask & bit);
                       return (
-                        <button key={day} type="button" onClick={() => toggleDay(day)}
+                        <button key={bit} type="button" onClick={() => toggleDay(bit)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                             active
                               ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white"
                               : "bg-white dark:bg-[#1e1e1e] text-slate-400 border-slate-200 dark:border-[#333] hover:border-slate-400 dark:hover:border-[#555]"
                           }`}>
-                          {day}
+                          {label}
                         </button>
                       );
                     })}
@@ -513,7 +518,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                       { label: "Slot",      value: slotMin > 0 ? `${slotMin} min` : "—" },
                       { label: "Per Day",   value: slotsPerDay > 0 ? slotsPerDay : "—" },
                       { label: "Hrs / Day", value: fmtDuration(totalMinPerDay) },
-                      { label: "Days / Wk", value: activeDays.length > 0 ? activeDays.length : "—" },
+                      { label: "Days / Wk", value: activeDayCount > 0 ? activeDayCount : "—" },
                     ].map(({ label, value }) => (
                       <div key={label} className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#2a2a2a] p-3 text-center">
                         <p className="text-[10px] text-slate-400 uppercase tracking-wider">{label}</p>
