@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Loader2, Stethoscope } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Loader2, Stethoscope } from "lucide-react";
 import { specializationApi } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import AddSpecializationModal from "@/components/modals/AddSpecializationModal";
-import SpecializationFilters from "@/components/specializations/SpecializationFilters";
-import { format, parseISO, isSameDay } from "date-fns";
+import { format, parseISO } from "date-fns";
 function Specializations() {
   const { user } = useAuth();
   const { notify } = useNotification();
@@ -13,10 +12,8 @@ function Specializations() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [editingSpec, setEditingSpec] = useState(null);
   const [activeMenuId, setActiveMenuId] = useState(null);
-  const [activeFilters, setActiveFilters] = useState({ date: null });
   const loadData = async () => {
     if (!user?.hospitalId) return;
     setIsLoading(true);
@@ -33,12 +30,11 @@ function Specializations() {
     loadData();
   }, [user]);
   const filteredSpecs = useMemo(() => {
-    return specializations.filter((s) => {
-      const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesDate = !activeFilters.date || isSameDay(parseISO(s.createdAt), parseISO(activeFilters.date));
-      return matchesSearch && matchesDate;
-    });
-  }, [specializations, searchQuery, activeFilters]);
+    return specializations.filter((s) =>
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [specializations, searchQuery]);
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this specialization?")) return;
     try {
@@ -60,25 +56,14 @@ function Specializations() {
       className="btn-primary"
     ><Plus className="w-4 h-4" /> Add New Specialization
     </button></div></div>{
-      /* Filters Bar */
-    }<div className="flex items-center justify-between gap-4"><div className="relative flex-1"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
+      /* Search Bar */
+    }<div className="relative"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
       type="text"
       placeholder="Search by name or department..."
       value={searchQuery}
       onChange={(e) => setSearchQuery(e.target.value)}
       className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all shadow-sm"
-    /></div><div className="flex items-center gap-2"><div className="relative"><button
-      onClick={() => setIsFilterOpen(!isFilterOpen)}
-      className={`btn-secondary ${isFilterOpen || activeFilters.date ? "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 border-emerald-100 dark:border-emerald-800/30" : ""}`}
-    ><Filter className="w-4 h-4" />
-      Filters
-      {activeFilters.date && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}</button>
-      <SpecializationFilters
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        initialFilters={activeFilters}
-        onApply={setActiveFilters}
-      /></div></div></div>{
+    /></div>{
       /* Main Content Table */
     }<div className="flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden flex flex-col"><div className="overflow-x-auto flex-1"><table className="w-full text-left border-collapse"><thead><tr className="border-b border-slate-100 dark:border-[#1a1a1a] bg-slate-50/30 dark:bg-[#0f0f0f]"><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Specialization</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Created Date</th><th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">No of Doctor</th><th className="px-6 py-4" /></tr></thead><tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{isLoading ? <tr><td colSpan={4} className="py-20 text-center"><div className="flex flex-col items-center gap-3"><Loader2 className="w-8 h-8 animate-spin text-slate-900 dark:text-white" /><p className="text-sm font-medium text-slate-400">Loading specializations...</p></div></td></tr> : filteredSpecs.length === 0 ? <tr><td colSpan={4} className="py-20 text-center"><div className="flex flex-col items-center gap-3"><div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-[#0f0f0f] flex items-center justify-center"><Stethoscope className="w-8 h-8 text-slate-200 dark:text-slate-800" /></div><p className="text-sm font-medium text-slate-400">No specializations found.</p></div></td></tr> : filteredSpecs.map((spec) => <tr key={spec.id} className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all"><td className="px-6 py-4"><div className="flex items-center gap-4"><div className="w-11 h-11 rounded-full bg-slate-100 dark:bg-[#222222] flex items-center justify-center shrink-0"><Stethoscope className="w-5 h-5 text-slate-500 dark:text-slate-400" /></div><div><p className="font-bold text-slate-900 dark:text-white text-[15px]">{spec.name}</p>{spec.description && <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5 line-clamp-1 max-w-[200px]">{spec.description}</p>}</div></div></td><td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">{format(parseISO(spec.createdAt), "dd MMM yyyy")}</td><td className="px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-300">{spec.noOfDoctor}</td><td className="px-6 py-4 text-right relative"><button
       onClick={() => setActiveMenuId(activeMenuId === spec.id ? null : spec.id)}
