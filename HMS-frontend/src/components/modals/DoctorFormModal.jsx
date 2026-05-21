@@ -88,7 +88,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
   useEffect(() => {
     if (!user?.hospitalId) return;
     setSpecsLoading(true);
-    specializationApi.getAll(user.hospitalId)
+    specializationApi.list(user.hospitalId)
       .then((data) => setSpecializations(data))
       .catch(() => setSpecializations([]))
       .finally(() => setSpecsLoading(false));
