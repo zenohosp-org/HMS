@@ -38,7 +38,6 @@ public class SpecializationService {
         
         specialization.setName(specializationData.getName());
         specialization.setDescription(specializationData.getDescription());
-        specialization.setIsActive(specializationData.getIsActive());
         
         return specializationRepository.save(specialization);
     }

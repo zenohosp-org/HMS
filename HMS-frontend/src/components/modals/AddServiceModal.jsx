@@ -67,7 +67,7 @@ function AddServiceModal({ isOpen, onClose, service, specializations, onSuccess 
         <SearchableSelect
           value={formData.specializationId}
           onChange={(v) => setFormData((p) => ({ ...p, specializationId: v }))}
-          options={specializations.filter((s) => s.isActive).map((s) => ({ value: s.id, label: s.name }))}
+          options={specializations.map((s) => ({ value: s.id, label: s.name }))}
           placeholder="Select Department"
           className={inputCls}
         />

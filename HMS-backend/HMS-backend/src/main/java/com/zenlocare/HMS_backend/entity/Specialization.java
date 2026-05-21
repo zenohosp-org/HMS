@@ -28,9 +28,6 @@ public class Specialization {
     private String description;
 
     @Builder.Default
-    private Boolean isActive = true;
-
-    @Builder.Default
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 

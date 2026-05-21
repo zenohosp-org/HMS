@@ -57,7 +57,6 @@ public class SpecializationController {
         dto.setHospitalId(specialization.getHospitalId());
         dto.setName(specialization.getName());
         dto.setDescription(specialization.getDescription());
-        dto.setIsActive(specialization.getIsActive());
         dto.setCreatedAt(specialization.getCreatedAt().toString());
         return dto;
     }
@@ -68,7 +67,6 @@ public class SpecializationController {
         private UUID hospitalId;
         private String name;
         private String description;
-        private Boolean isActive;
         private String createdAt;
         private long noOfDoctor;
     }
