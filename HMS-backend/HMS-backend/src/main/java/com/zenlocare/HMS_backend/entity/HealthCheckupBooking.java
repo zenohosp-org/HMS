@@ -54,8 +54,8 @@ public class HealthCheckupBooking {
     @Column(name = "scheduled_time")
     private LocalTime scheduledTime;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Convert(converter = com.zenlocare.HMS_backend.converter.CheckupBookingStatusConverter.class)
+    @Column(name = "status_id")
     @Builder.Default
     private CheckupBookingStatus status = CheckupBookingStatus.SCHEDULED;
 

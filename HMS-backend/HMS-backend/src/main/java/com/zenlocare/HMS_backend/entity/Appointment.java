@@ -1,5 +1,7 @@
 package com.zenlocare.HMS_backend.entity;
 
+import com.zenlocare.HMS_backend.converter.AppointmentStatusConverter;
+import com.zenlocare.HMS_backend.converter.AppointmentTypeConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -45,12 +47,12 @@ public class Appointment {
     @Column(name = "appt_end_time")
     private LocalTime apptEndTime;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Convert(converter = AppointmentTypeConverter.class)
+    @Column(name = "type_id")
     private AppointmentType type;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Convert(converter = AppointmentStatusConverter.class)
+    @Column(name = "status_id")
     @Builder.Default
     private AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
@@ -93,21 +95,33 @@ public class Appointment {
     }
 
     public enum AppointmentType {
-        OPD,
-        FOLLOWUP,
-        EMERGENCY,
-        TELECONSULT,
-        HEALTH_CHECKUP
+        OPD(1), FOLLOWUP(2), EMERGENCY(3), TELECONSULT(4), HEALTH_CHECKUP(5);
+
+        public final int id;
+
+        AppointmentType(int id) { this.id = id; }
+
+        public static AppointmentType fromId(int id) {
+            for (AppointmentType t : values()) {
+                if (t.id == id) return t;
+            }
+            throw new IllegalArgumentException("Unknown AppointmentType id: " + id);
+        }
     }
 
     public enum AppointmentStatus {
-        SCHEDULED,
-        CONFIRMED,
-        CHECKED_IN,
-        IN_PROGRESS,
-        COMPLETED,
-        CANCELLED,
-        NO_SHOW,
-        BILLED
+        SCHEDULED(1), CONFIRMED(2), CHECKED_IN(3), IN_PROGRESS(4),
+        COMPLETED(5), CANCELLED(6), NO_SHOW(7), BILLED(8);
+
+        public final int id;
+
+        AppointmentStatus(int id) { this.id = id; }
+
+        public static AppointmentStatus fromId(int id) {
+            for (AppointmentStatus s : values()) {
+                if (s.id == id) return s;
+            }
+            throw new IllegalArgumentException("Unknown AppointmentStatus id: " + id);
+        }
     }
 }

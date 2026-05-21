@@ -3,6 +3,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { ReferenceDataProvider } from "@/context/ReferenceDataContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/layout/Layout";
 import Login from "@/pages/Login";
@@ -38,7 +39,7 @@ import PackageManager from "@/pages/checkups/PackageManager";
 import CheckupBookings from "@/pages/checkups/CheckupBookings";
 import CheckupBookingDetail from "@/pages/checkups/CheckupBookingDetail";
 function App() {
-  return <ErrorBoundary><ThemeProvider><AuthProvider><NotificationProvider><BrowserRouter><Routes>{
+  return <ErrorBoundary><ThemeProvider><AuthProvider><NotificationProvider><ReferenceDataProvider><BrowserRouter><Routes>{
     /* Public */
   }<Route path="/login" element={<Login />} /><Route path="/unauthorized" element={<Unauthorized />} /><Route path="/sso/callback" element={<SsoCallback />} />{
     /* Protected — authenticated + hospital assigned */
@@ -106,7 +107,7 @@ function App() {
           <Route path="services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Services /></ProtectedRoute>} />
         </Route>{
     /* Fallback */
-  }<Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></BrowserRouter></NotificationProvider></AuthProvider></ThemeProvider></ErrorBoundary>;
+  }<Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></BrowserRouter></ReferenceDataProvider></NotificationProvider></AuthProvider></ThemeProvider></ErrorBoundary>;
 }
 export {
   App as default

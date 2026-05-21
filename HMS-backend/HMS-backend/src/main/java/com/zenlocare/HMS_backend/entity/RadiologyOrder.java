@@ -45,13 +45,13 @@ public class RadiologyOrder {
     @Column(name = "technician_name", length = 200)
     private String technicianName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Convert(converter = com.zenlocare.HMS_backend.converter.RadiologyPriorityConverter.class)
+    @Column(name = "priority_id")
     @Builder.Default
     private RadiologyPriority priority = RadiologyPriority.ROUTINE;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 25)
+    @Convert(converter = com.zenlocare.HMS_backend.converter.RadiologyStatusConverter.class)
+    @Column(name = "status_id")
     @Builder.Default
     private RadiologyStatus status = RadiologyStatus.PENDING_SCAN;
 

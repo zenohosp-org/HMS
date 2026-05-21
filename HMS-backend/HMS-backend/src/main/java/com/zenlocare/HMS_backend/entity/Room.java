@@ -34,8 +34,8 @@ public class Room {
     @Column(name = "room_type", nullable = false, length = 30)
     private String roomType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Convert(converter = com.zenlocare.HMS_backend.converter.RoomStatusConverter.class)
+    @Column(name = "status_id")
     private RoomStatus status;
 
     @OneToOne(fetch = FetchType.EAGER)

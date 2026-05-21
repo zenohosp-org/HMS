@@ -65,13 +65,13 @@ public class Admission {
     @Column(name = "approx_discharge_date")
     private LocalDateTime approxDischargeDate;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "admission_type", nullable = false, length = 30)
+    @Convert(converter = com.zenlocare.HMS_backend.converter.AdmissionTypeConverter.class)
+    @Column(name = "admission_type_id")
     @Builder.Default
     private AdmissionType admissionType = AdmissionType.OPD_REFERRAL;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "admission_source", nullable = false, length = 30)
+    @Convert(converter = com.zenlocare.HMS_backend.converter.AdmissionSourceConverter.class)
+    @Column(name = "admission_source_id")
     @Builder.Default
     private AdmissionSource admissionSource = AdmissionSource.DIRECT;
 
@@ -96,8 +96,8 @@ public class Admission {
     @Column(name = "attender_relationship", length = 50)
     private String attenderRelationship;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Convert(converter = com.zenlocare.HMS_backend.converter.AdmissionStatusConverter.class)
+    @Column(name = "status_id")
     @Builder.Default
     private AdmissionStatus status = AdmissionStatus.ADMITTED;
 

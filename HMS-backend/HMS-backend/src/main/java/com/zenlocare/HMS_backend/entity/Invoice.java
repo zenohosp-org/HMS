@@ -14,7 +14,7 @@ import java.util.List;
     @Index(name = "idx_invoices_hospital_id", columnList = "hospital_id"),
     @Index(name = "idx_invoices_patient_id", columnList = "patient_id"),
     @Index(name = "idx_invoices_admission_id", columnList = "admission_id"),
-    @Index(name = "idx_invoices_status", columnList = "status"),
+    @Index(name = "idx_invoices_status", columnList = "status_id"),
     @Index(name = "idx_invoices_created_at", columnList = "created_at DESC")
 })
 @Getter
@@ -84,8 +84,8 @@ public class Invoice {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Convert(converter = com.zenlocare.HMS_backend.converter.InvoiceStatusConverter.class)
+    @Column(name = "status_id")
     @Builder.Default
     private InvoiceStatus status = InvoiceStatus.UNPAID;
 

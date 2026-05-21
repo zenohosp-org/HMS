@@ -38,8 +38,8 @@ public class AmbulanceVehicle {
     @Column(name = "default_charge", precision = 10, scale = 2)
     private BigDecimal defaultCharge;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Convert(converter = com.zenlocare.HMS_backend.converter.AmbulanceVehicleStatusConverter.class)
+    @Column(name = "status_id")
     @Builder.Default
     private AmbulanceVehicleStatus status = AmbulanceVehicleStatus.AVAILABLE;
 

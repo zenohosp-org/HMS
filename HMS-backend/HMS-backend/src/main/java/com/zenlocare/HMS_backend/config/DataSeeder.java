@@ -31,7 +31,6 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception e) {
             log.warn("Could not alter users.last_name: " + e.getMessage());
         }
-        // Migrate available_days string → available_days_mask bitmask (MON=1,TUE=2,WED=4,THU=8,FRI=16,SAT=32,SUN=64)
         try {
             jdbcTemplate.execute(
                 "UPDATE doctors SET available_days_mask = " +
@@ -43,52 +42,159 @@ public class DataSeeder implements CommandLineRunner {
                 "  (CASE WHEN available_days LIKE '%SAT%' THEN 32 ELSE 0 END) +" +
                 "  (CASE WHEN available_days LIKE '%SUN%' THEN 64 ELSE 0 END) " +
                 "WHERE available_days IS NOT NULL AND available_days_mask IS NULL");
-            log.info("✅ Migrated available_days string → available_days_mask bitmask");
+            log.info("✅ Migrated available_days → available_days_mask bitmask");
         } catch (Exception e) {
             log.warn("Could not migrate available_days to bitmask: " + e.getMessage());
         }
-        // Migrate old single specialization_id → specialization_id_1 (existing rows only)
         try {
             jdbcTemplate.execute(
                 "UPDATE doctors SET specialization_id_1 = specialization_id " +
                 "WHERE specialization_id_1 IS NULL AND specialization_id IS NOT NULL");
             log.info("✅ Migrated specialization_id → specialization_id_1");
         } catch (Exception e) {
-            log.warn("Could not migrate specialization_id (may not exist yet): " + e.getMessage());
+            log.warn("Could not migrate specialization_id: " + e.getMessage());
         }
         try {
             jdbcTemplate.execute("ALTER TABLE patients ALTER COLUMN dob DROP NOT NULL");
-            log.info("✅ Dropped NOT NULL constraint on patients.dob column");
+            log.info("✅ Dropped NOT NULL on patients.dob");
         } catch (Exception e) {
-            log.warn("Could not alter patients.dob constraint: " + e.getMessage());
+            log.warn("Could not alter patients.dob: " + e.getMessage());
         }
         try {
             jdbcTemplate.execute("ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS room_id bigint");
-            log.info("✅ Added room_id column to stores table");
+            log.info("✅ Added room_id to stores");
         } catch (Exception e) {
-            log.warn("Could not alter stores table to add room_id: " + e.getMessage());
+            log.warn("Could not add room_id to stores: " + e.getMessage());
         }
-        // Drop the old hardcoded room_type CHECK constraint — types are now dynamic
         try {
             jdbcTemplate.execute("ALTER TABLE rooms DROP CONSTRAINT IF EXISTS rooms_room_type_check");
-            log.info("✅ Dropped rooms_room_type_check constraint (now dynamic)");
+            log.info("✅ Dropped rooms_room_type_check constraint");
         } catch (Exception e) {
             log.warn("Could not drop rooms_room_type_check: " + e.getMessage());
         }
         try {
             jdbcTemplate.execute("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS admission_id UUID REFERENCES admissions(id)");
-            log.info("✅ Added admission_id column to appointments table");
+            log.info("✅ Added admission_id to appointments");
         } catch (Exception e) {
             log.warn("Could not add admission_id to appointments: " + e.getMessage());
         }
+
+        seedReferenceTables();
+        migrateStatusColumns();
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
     }
 
-    /**
-     * Creates the room_type_configs table and seeds system-wide default room types.
-     */
+    private void seedReferenceTables() {
+        seedRefTable("appointment_statuses", new Object[][]{
+            {1, "SCHEDULED"}, {2, "CONFIRMED"}, {3, "CHECKED_IN"}, {4, "IN_PROGRESS"},
+            {5, "COMPLETED"}, {6, "CANCELLED"}, {7, "NO_SHOW"}, {8, "BILLED"}
+        });
+        seedRefTable("appointment_types", new Object[][]{
+            {1, "OPD"}, {2, "FOLLOWUP"}, {3, "EMERGENCY"}, {4, "TELECONSULT"}, {5, "HEALTH_CHECKUP"}
+        });
+        seedRefTable("invoice_statuses", new Object[][]{
+            {1, "UNPAID"}, {2, "PARTIAL"}, {3, "PAID"}, {4, "CANCELLED"}, {5, "SETTLED"}, {6, "UNSETTLED"}
+        });
+        seedRefTable("room_statuses", new Object[][]{
+            {1, "AVAILABLE"}, {2, "OCCUPIED"}, {3, "MAINTENANCE"}
+        });
+        seedRefTable("bed_statuses", new Object[][]{
+            {1, "AVAILABLE"}, {2, "OCCUPIED"}
+        });
+        seedRefTable("radiology_statuses", new Object[][]{
+            {1, "PENDING_SCAN"}, {2, "AWAITING_REPORT"}, {3, "REPORT_GENERATED"}, {4, "BILLED"}
+        });
+        seedRefTable("radiology_priorities", new Object[][]{
+            {1, "ROUTINE"}, {2, "URGENT"}, {3, "STAT"}
+        });
+        seedRefTable("ambulance_booking_statuses", new Object[][]{
+            {1, "PENDING"}, {2, "DISPATCHED"}, {3, "EN_ROUTE"}, {4, "COMPLETED"}, {5, "CANCELLED"}
+        });
+        seedRefTable("ambulance_vehicle_statuses", new Object[][]{
+            {1, "AVAILABLE"}, {2, "IN_USE"}, {3, "MAINTENANCE"}
+        });
+        seedRefTable("checkup_booking_statuses", new Object[][]{
+            {1, "SCHEDULED"}, {2, "CHECKED_IN"}, {3, "IN_PROGRESS"},
+            {4, "COMPLETED"}, {5, "CANCELLED"}, {6, "NO_SHOW"}
+        });
+        seedRefTable("admission_statuses", new Object[][]{
+            {1, "ADMITTED"}, {2, "DISCHARGED"}, {3, "TRANSFERRED"}, {4, "ABSCONDED"}
+        });
+        seedRefTable("admission_types", new Object[][]{
+            {1, "OPD_REFERRAL"}, {2, "EMERGENCY"}, {3, "DIRECT"}
+        });
+        seedRefTable("admission_sources", new Object[][]{
+            {1, "OPD_REFERRAL"}, {2, "EMERGENCY_WALK_IN"}, {3, "DIRECT"}, {4, "TRANSFER_IN"}
+        });
+        log.info("✅ Reference tables seeded (13 tables).");
+    }
+
+    private void seedRefTable(String tableName, Object[][] rows) {
+        try {
+            jdbcTemplate.execute(
+                "CREATE TABLE IF NOT EXISTS " + tableName + " (id INTEGER PRIMARY KEY, code VARCHAR(50) NOT NULL)"
+            );
+            for (Object[] row : rows) {
+                jdbcTemplate.update(
+                    "INSERT INTO " + tableName + " (id, code) VALUES (?, ?) ON CONFLICT (id) DO NOTHING",
+                    row[0], row[1]
+                );
+            }
+        } catch (Exception e) {
+            log.warn("Could not seed " + tableName + ": " + e.getMessage());
+        }
+    }
+
+    private void migrateStatusColumns() {
+        migrateColumn("appointments", "status_id", "status",
+            new Object[][]{{1,"SCHEDULED"},{2,"CONFIRMED"},{3,"CHECKED_IN"},{4,"IN_PROGRESS"},
+                           {5,"COMPLETED"},{6,"CANCELLED"},{7,"NO_SHOW"},{8,"BILLED"}});
+        migrateColumn("appointments", "type_id", "type",
+            new Object[][]{{1,"OPD"},{2,"FOLLOWUP"},{3,"EMERGENCY"},{4,"TELECONSULT"},{5,"HEALTH_CHECKUP"}});
+        migrateColumn("invoices", "status_id", "status",
+            new Object[][]{{1,"UNPAID"},{2,"PARTIAL"},{3,"PAID"},{4,"CANCELLED"},{5,"SETTLED"},{6,"UNSETTLED"}});
+        migrateColumn("rooms", "status_id", "status",
+            new Object[][]{{1,"AVAILABLE"},{2,"OCCUPIED"},{3,"MAINTENANCE"}});
+        migrateColumn("beds", "status_id", "status",
+            new Object[][]{{1,"AVAILABLE"},{2,"OCCUPIED"}});
+        migrateColumn("radiology_orders", "status_id", "status",
+            new Object[][]{{1,"PENDING_SCAN"},{2,"AWAITING_REPORT"},{3,"REPORT_GENERATED"},{4,"BILLED"}});
+        migrateColumn("radiology_orders", "priority_id", "priority",
+            new Object[][]{{1,"ROUTINE"},{2,"URGENT"},{3,"STAT"}});
+        migrateColumn("ambulance_bookings", "status_id", "status",
+            new Object[][]{{1,"PENDING"},{2,"DISPATCHED"},{3,"EN_ROUTE"},{4,"COMPLETED"},{5,"CANCELLED"}});
+        migrateColumn("ambulance_vehicles", "status_id", "status",
+            new Object[][]{{1,"AVAILABLE"},{2,"IN_USE"},{3,"MAINTENANCE"}});
+        migrateColumn("health_checkup_bookings", "status_id", "status",
+            new Object[][]{{1,"SCHEDULED"},{2,"CHECKED_IN"},{3,"IN_PROGRESS"},
+                           {4,"COMPLETED"},{5,"CANCELLED"},{6,"NO_SHOW"}});
+        migrateColumn("admissions", "status_id", "status",
+            new Object[][]{{1,"ADMITTED"},{2,"DISCHARGED"},{3,"TRANSFERRED"},{4,"ABSCONDED"}});
+        migrateColumn("admissions", "admission_type_id", "admission_type",
+            new Object[][]{{1,"OPD_REFERRAL"},{2,"EMERGENCY"},{3,"DIRECT"}});
+        migrateColumn("admissions", "admission_source_id", "admission_source",
+            new Object[][]{{1,"OPD_REFERRAL"},{2,"EMERGENCY_WALK_IN"},{3,"DIRECT"},{4,"TRANSFER_IN"}});
+        log.info("✅ Status columns migrated to integer IDs.");
+    }
+
+    private void migrateColumn(String table, String newCol, String oldCol, Object[][] mapping) {
+        try {
+            StringBuilder sql = new StringBuilder(
+                "UPDATE " + table + " SET " + newCol + " = CASE " + oldCol
+            );
+            for (Object[] entry : mapping) {
+                sql.append(" WHEN '").append(entry[1]).append("' THEN ").append(entry[0]);
+            }
+            sql.append(" ELSE NULL END WHERE ").append(newCol).append(" IS NULL AND ")
+               .append(oldCol).append(" IS NOT NULL");
+            jdbcTemplate.execute(sql.toString());
+        } catch (Exception e) {
+            log.warn("Could not migrate " + table + "." + oldCol + " → " + newCol + ": " + e.getMessage());
+        }
+    }
+
     private void seedRoomTypeConfigs() {
         try {
             jdbcTemplate.execute("""
@@ -111,7 +217,6 @@ public class DataSeeder implements CommandLineRunner {
             log.warn("room_type_configs table may already exist: " + e.getMessage());
         }
 
-        // Seed system-wide defaults (hospital_id IS NULL)
         String[][] defaults = {
             {"GENERAL",      "General Ward",        "WARD",  "bed-double",  "#3b82f6",  "0"},
             {"WARD",         "Shared Ward",         "WARD",  "bed-double",  "#6366f1",  "1"},
@@ -144,12 +249,11 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedRoles() {
-        createRoleIfAbsent("super_admin", "Super Admin", "Full system access", true, true, true, true, true, true);
-        createRoleIfAbsent("hospital_admin", "Hospital Admin", "Administrative access for hospital", true, true, true,
-                true, true, true);
-        createRoleIfAbsent("doctor", "Doctor", "Medical professional access", true, true, false, false, true, false);
-        createRoleIfAbsent("staff", "Staff", "General staff access", true, true, false, true, false, true);
-        createRoleIfAbsent("technician", "Technician", "Technical staff access", true, true, false, false, true, true);
+        createRoleIfAbsent("super_admin",    "Super Admin",    "Full system access",                    true, true, true,  true,  true, true);
+        createRoleIfAbsent("hospital_admin", "Hospital Admin", "Administrative access for hospital",    true, true, true,  true,  true, true);
+        createRoleIfAbsent("doctor",         "Doctor",         "Medical professional access",           true, true, false, false, true, false);
+        createRoleIfAbsent("staff",          "Staff",          "General staff access",                  true, true, false, true,  false, true);
+        createRoleIfAbsent("technician",     "Technician",     "Technical staff access",                true, true, false, false, true, true);
         log.info("✅ Roles seeded.");
     }
 
@@ -180,9 +284,7 @@ public class DataSeeder implements CommandLineRunner {
         Role adminRole = roleRepository.findByName("hospital_admin")
                 .orElseThrow(() -> new IllegalStateException("hospital_admin role not found after seed"));
 
-        // Unique constraint is (email, hospital_id) — check both to avoid duplicates
-        boolean exists = userRepository.existsByEmailAndHospital(
-                "admin@gmail.com", hospital);
+        boolean exists = userRepository.existsByEmailAndHospital("admin@gmail.com", hospital);
         if (exists) {
             log.info("ℹ️  Hospital admin already exists — skipping.");
             return;

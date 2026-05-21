@@ -25,8 +25,8 @@ public class Bed {
     @Column(name = "bed_number", nullable = false, length = 20)
     private String bedNumber;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Convert(converter = com.zenlocare.HMS_backend.converter.BedStatusConverter.class)
+    @Column(name = "status_id")
     @Builder.Default
     private BedStatus status = BedStatus.AVAILABLE;
 
