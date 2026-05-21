@@ -79,6 +79,7 @@ public class DataSeeder implements CommandLineRunner {
             log.warn("Could not add admission_id to appointments: " + e.getMessage());
         }
 
+        dropGhostStatusNotNullConstraints();
         seedReferenceTables();
         migrateStatusColumns();
         seedRoomTypeConfigs();
@@ -144,6 +145,32 @@ public class DataSeeder implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.warn("Could not seed " + tableName + ": " + e.getMessage());
+        }
+    }
+
+    private void dropGhostStatusNotNullConstraints() {
+        String[][] cols = {
+            {"invoices",               "status"},
+            {"appointments",           "status"},
+            {"appointments",           "type"},
+            {"rooms",                  "status"},
+            {"beds",                   "status"},
+            {"radiology_orders",       "status"},
+            {"radiology_orders",       "priority"},
+            {"ambulance_bookings",     "status"},
+            {"ambulance_vehicles",     "status"},
+            {"health_checkup_bookings","status"},
+            {"admissions",             "status"},
+            {"admissions",             "admission_type"},
+            {"admissions",             "admission_source"},
+        };
+        for (String[] col : cols) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE " + col[0] + " ALTER COLUMN " + col[1] + " DROP NOT NULL");
+                log.info("✅ Dropped NOT NULL on " + col[0] + "." + col[1]);
+            } catch (Exception e) {
+                log.warn("Could not drop NOT NULL on " + col[0] + "." + col[1] + ": " + e.getMessage());
+            }
         }
     }
 
