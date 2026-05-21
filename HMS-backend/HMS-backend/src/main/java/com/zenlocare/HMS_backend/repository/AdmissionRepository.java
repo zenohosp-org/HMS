@@ -20,22 +20,30 @@ public interface AdmissionRepository extends JpaRepository<Admission, UUID> {
 
     List<Admission> findByRoomId(Long roomId);
 
-    @Query("SELECT a FROM Admission a WHERE a.hospital.id = :hospitalId AND a.status = 'ADMITTED' " +
+    @Query("SELECT a FROM Admission a WHERE a.hospital.id = :hospitalId " +
+           "AND a.status = com.zenlocare.HMS_backend.entity.AdmissionStatus.ADMITTED " +
            "AND (LOWER(a.patient.firstName) LIKE LOWER(CONCAT('%',:q,'%')) " +
            "OR LOWER(a.patient.lastName) LIKE LOWER(CONCAT('%',:q,'%')) " +
            "OR LOWER(a.admissionNumber) LIKE LOWER(CONCAT('%',:q,'%')))")
     List<Admission> searchActive(@Param("hospitalId") UUID hospitalId, @Param("q") String query);
 
-    @Query("SELECT COUNT(a) FROM Admission a WHERE a.hospital.id = :hospitalId AND a.status = 'ADMITTED'")
+    @Query("SELECT COUNT(a) FROM Admission a WHERE a.hospital.id = :hospitalId " +
+           "AND a.status = com.zenlocare.HMS_backend.entity.AdmissionStatus.ADMITTED")
     long countActiveByHospital(@Param("hospitalId") UUID hospitalId);
 
-    @Query("SELECT COUNT(a) FROM Admission a WHERE a.hospital.id = :hospitalId AND a.status = 'ADMITTED' AND a.room IS NOT NULL AND a.room.roomType = 'OT'")
+    @Query("SELECT COUNT(a) FROM Admission a WHERE a.hospital.id = :hospitalId " +
+           "AND a.status = com.zenlocare.HMS_backend.entity.AdmissionStatus.ADMITTED " +
+           "AND a.room IS NOT NULL AND a.room.roomType = 'OT'")
     long countActiveInOtByHospital(@Param("hospitalId") UUID hospitalId);
 
-    @Query("SELECT COUNT(a) FROM Admission a WHERE a.hospital.id = :hospitalId AND a.status = 'DISCHARGED' AND a.actualDischargeDate >= :startOfDay")
+    @Query("SELECT COUNT(a) FROM Admission a WHERE a.hospital.id = :hospitalId " +
+           "AND a.status = com.zenlocare.HMS_backend.entity.AdmissionStatus.DISCHARGED " +
+           "AND a.actualDischargeDate >= :startOfDay")
     long countDischargedTodayByHospital(@Param("hospitalId") UUID hospitalId, @Param("startOfDay") java.time.LocalDateTime startOfDay);
 
-    @Query("SELECT COUNT(a) FROM Admission a WHERE a.hospital.id = :hospitalId AND a.status = 'ADMITTED' AND a.approxDischargeDate < :now")
+    @Query("SELECT COUNT(a) FROM Admission a WHERE a.hospital.id = :hospitalId " +
+           "AND a.status = com.zenlocare.HMS_backend.entity.AdmissionStatus.ADMITTED " +
+           "AND a.approxDischargeDate < :now")
     long countOverdueByHospital(@Param("hospitalId") UUID hospitalId, @Param("now") java.time.LocalDateTime now);
 
     @Query("SELECT a FROM Admission a WHERE a.hospital.id = :hospitalId " +

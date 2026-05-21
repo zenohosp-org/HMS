@@ -28,8 +28,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     double sumOutstandingByHospital(@Param("hid") UUID hospitalId);
 
     @Query(value = "SELECT TO_CHAR(created_at, 'YYYY-MM') as month_str, " +
-            "       SUM(CASE WHEN status IN ('PAID', 'SETTLED') THEN total ELSE 0 END) as paid, " +
-            "       SUM(CASE WHEN status NOT IN ('PAID', 'SETTLED', 'CANCELLED') THEN total ELSE 0 END) as unpaid " +
+            "       SUM(CASE WHEN status_id IN (3, 5) THEN total ELSE 0 END) as paid, " +
+            "       SUM(CASE WHEN status_id NOT IN (3, 5, 4) THEN total ELSE 0 END) as unpaid " +
             "FROM invoices " +
             "WHERE hospital_id = :hid " +
             "  AND created_at >= :startDate " +

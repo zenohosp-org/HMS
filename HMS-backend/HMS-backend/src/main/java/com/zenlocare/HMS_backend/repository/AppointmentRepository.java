@@ -31,13 +31,24 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
     Optional<Appointment> findByIdAndHospitalId(UUID id, UUID hospitalId);
 
-    @Query("SELECT DISTINCT a.doctor FROM Appointment a WHERE a.patient.id = :patientId AND a.hospital.id = :hospitalId AND a.doctor IS NOT NULL AND a.status NOT IN ('CANCELLED', 'NO_SHOW')")
+    @Query("SELECT DISTINCT a.doctor FROM Appointment a WHERE a.patient.id = :patientId AND a.hospital.id = :hospitalId AND a.doctor IS NOT NULL " +
+           "AND a.status NOT IN (" +
+           "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CANCELLED," +
+           "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.NO_SHOW)")
     List<Doctor> findDistinctDoctorsByPatient(@Param("patientId") Integer patientId, @Param("hospitalId") UUID hospitalId);
 
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.apptDate = :apptDate")
     Integer countByDoctorIdAndApptDate(@Param("doctorId") UUID doctorId, @Param("apptDate") LocalDate apptDate);
 
-    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.apptDate = :apptDate AND a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS') AND ((a.apptTime <= :startTime AND a.apptEndTime > :startTime) OR (a.apptTime < :endTime AND a.apptEndTime >= :endTime) OR (a.apptTime >= :startTime AND a.apptEndTime <= :endTime))")
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.apptDate = :apptDate " +
+           "AND a.status IN (" +
+           "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.SCHEDULED," +
+           "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CONFIRMED," +
+           "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CHECKED_IN," +
+           "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.IN_PROGRESS) " +
+           "AND ((a.apptTime <= :startTime AND a.apptEndTime > :startTime) " +
+           "  OR (a.apptTime < :endTime AND a.apptEndTime >= :endTime) " +
+           "  OR (a.apptTime >= :startTime AND a.apptEndTime <= :endTime))")
     long countOverlappingAppointments(
             @Param("doctorId") UUID doctorId,
             @Param("apptDate") LocalDate apptDate,
@@ -54,9 +65,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         AND (:doctorId IS NULL OR a.doctor.id = :doctorId)
         AND (:dateFilter = 'ALL'
              OR (:dateFilter = 'TODAY' AND a.apptDate = :today)
-             OR (:dateFilter = 'UPCOMING' AND (a.apptDate > :today OR (a.apptDate = :today AND a.status = 'SCHEDULED')))
-             OR (:dateFilter = 'COMPLETED' AND a.status = 'COMPLETED')
-             OR (:dateFilter = 'CANCELLED' AND a.status IN ('CANCELLED', 'NO_SHOW')))
+             OR (:dateFilter = 'UPCOMING' AND (a.apptDate > :today OR (a.apptDate = :today AND a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.SCHEDULED)))
+             OR (:dateFilter = 'COMPLETED' AND a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.COMPLETED)
+             OR (:dateFilter = 'CANCELLED' AND a.status IN (
+                   com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CANCELLED,
+                   com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.NO_SHOW)))
         AND (
             LOWER(a.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
             LOWER(a.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
@@ -73,9 +86,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         AND (:doctorId IS NULL OR a.doctor.id = :doctorId)
         AND (:dateFilter = 'ALL'
              OR (:dateFilter = 'TODAY' AND a.apptDate = :today)
-             OR (:dateFilter = 'UPCOMING' AND (a.apptDate > :today OR (a.apptDate = :today AND a.status = 'SCHEDULED')))
-             OR (:dateFilter = 'COMPLETED' AND a.status = 'COMPLETED')
-             OR (:dateFilter = 'CANCELLED' AND a.status IN ('CANCELLED', 'NO_SHOW')))
+             OR (:dateFilter = 'UPCOMING' AND (a.apptDate > :today OR (a.apptDate = :today AND a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.SCHEDULED)))
+             OR (:dateFilter = 'COMPLETED' AND a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.COMPLETED)
+             OR (:dateFilter = 'CANCELLED' AND a.status IN (
+                   com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CANCELLED,
+                   com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.NO_SHOW)))
         AND (
             LOWER(a.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
             LOWER(a.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
