@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Calendar, Clock, FileText, Search, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle } from "lucide-react";
+import { X, Calendar, Clock, FileText, Search, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { patientApi, doctorsApi, appointmentsApi, checkupApi } from "@/utils/api";
@@ -59,6 +59,20 @@ const TYPE_OPTIONS = [
   { value: "HEALTH_CHECKUP",label: "Health Checkup",  desc: "Link a checkup package" },
 ];
 
+function SectionLabel({ step, label, icon }) {
+  return (
+    <div className="flex items-center gap-2.5 mb-3">
+      <div className="w-5 h-5 rounded-full bg-slate-900 dark:bg-white flex items-center justify-center shrink-0">
+        <span className="text-[10px] font-bold text-white dark:text-slate-900">{step}</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        {icon && <span className="text-slate-400">{icon}</span>}
+        <span className="text-sm font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wider">{label}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
   const { user } = useAuth();
   const { notify } = useNotification();
@@ -70,25 +84,23 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   const [showAllDoctors, setShowAllDoctors]        = useState(false);
   const [doctorAppointments, setDoctorAppointments] = useState([]);
 
-  // common fields
-  const [patientId, setPatientId]       = useState("");
-  const [doctorId, setDoctorId]         = useState("");
-  const [apptDate, setApptDate]         = useState(selectedDate ? selectedDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
-  const [apptTime, setApptTime]         = useState("");
-  const [type, setType]                 = useState("OPD");
+  const [patientId, setPatientId]           = useState("");
+  const [doctorId, setDoctorId]             = useState("");
+  const [apptDate, setApptDate]             = useState(selectedDate ? selectedDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
+  const [apptTime, setApptTime]             = useState("");
+  const [type, setType]                     = useState("OPD");
   const [chiefComplaint, setChiefComplaint] = useState("");
-  const [packages, setPackages]         = useState([]);
-  const [packageId, setPackageId]       = useState("");
-  const [patientSearch, setPatientSearch] = useState("");
-  const [doctorSearch, setDoctorSearch]   = useState("");
-  const [patientOpen, setPatientOpen]     = useState(false);
-  const [doctorOpen, setDoctorOpen]       = useState(false);
+  const [packages, setPackages]             = useState([]);
+  const [packageId, setPackageId]           = useState("");
+  const [patientSearch, setPatientSearch]   = useState("");
+  const [doctorSearch, setDoctorSearch]     = useState("");
+  const [patientOpen, setPatientOpen]       = useState(false);
+  const [doctorOpen, setDoctorOpen]         = useState(false);
   const patientRef = useRef(null);
   const doctorRef  = useRef(null);
-  const [isLoading, setIsLoading]       = useState(false);
-  const [errors, setErrors]             = useState({});
+  const [isLoading, setIsLoading]           = useState(false);
+  const [errors, setErrors]                 = useState({});
 
-  // emergency-only fields
   const [emergencyName, setEmergencyName]   = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
 
@@ -105,7 +117,6 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
     return p.firstName.toLowerCase().includes(q) || p.lastName?.toLowerCase().includes(q) || p.uhid?.toLowerCase().includes(q);
   });
 
-  // Doctor list shown depends on type
   const doctorPool = isFollowUp && pastDoctors.length > 0 && !showAllDoctors ? pastDoctors : doctors;
   const filteredDoctors = doctorPool.filter(d => {
     if (!doctorSearch) return true;
@@ -113,7 +124,6 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
     return d.firstName?.toLowerCase().includes(q) || d.lastName?.toLowerCase().includes(q) || d.specialization?.toLowerCase().includes(q);
   });
 
-  // Load patients, doctors, packages on open
   useEffect(() => {
     if (!isOpen || !user?.hospitalId) return;
     Promise.all([
@@ -129,7 +139,6 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
     }).catch(() => notify("Failed to load data", "error"));
   }, [isOpen, user]);
 
-  // Load past doctors when FOLLOWUP + patient selected
   useEffect(() => {
     if (!isFollowUp || !patientId || !user?.hospitalId || doctors.length === 0) { setPastDoctors([]); setShowAllDoctors(false); return; }
     appointmentsApi.getPastDoctors(Number(patientId), user.hospitalId)
@@ -140,10 +149,8 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
       .catch(() => setPastDoctors([]));
   }, [isFollowUp, patientId, user?.hospitalId, doctors]);
 
-  // Reset past-doctor filter when type changes
   useEffect(() => { setPastDoctors([]); setShowAllDoctors(false); setDoctorSearch(""); setDoctorOpen(false); }, [type]);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
       if (patientRef.current && !patientRef.current.contains(e.target)) setPatientOpen(false);
@@ -153,7 +160,6 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Load booked slots for selected doctor
   useEffect(() => {
     if (!isOpen || !doctorId || !apptDate) { setDoctorAppointments([]); return; }
     appointmentsApi.getByDoctor(doctorId, apptDate)
@@ -165,7 +171,6 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
     e.preventDefault();
     if (!user?.hospitalId) return;
     const errs = {};
-
     if (isEmergency) {
       if (!emergencyName.trim()) errs.patient = "Patient name is required";
     } else {
@@ -173,7 +178,6 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
       if (!doctorId)  errs.doctor  = "Please select a doctor";
       if (!apptTime)  errs.time    = "Please select a time slot";
     }
-
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setIsLoading(true);
     try {
@@ -239,165 +243,16 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   if (!isOpen) return null;
   const timeSlots = generateTimeSlots();
 
-  // ─── RIGHT PANEL: Patient section ─────────────────────────────────────────
-  const patientSection = isEmergency ? (
-    <div>
-      <div className="flex items-center gap-2 mb-1">
-        <AlertTriangle className="w-4 h-4 text-rose-500" />
-        <h3 className="text-base font-bold text-slate-800 dark:text-white">Emergency Patient</h3>
-      </div>
-      <p className="text-xs text-slate-500 dark:text-[#666666] mb-4">Enter what's available — full details can be completed later.</p>
-      <div className="space-y-3">
-        <div>
-          <input
-            type="text" value={emergencyName} onChange={e => { setEmergencyName(e.target.value); setErrors(er => ({...er, patient:""})); }}
-            placeholder="Patient full name *"
-            className={`w-full px-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none`}
-          />
-          {errors.patient && <p className="text-xs text-red-500 mt-1">{errors.patient}</p>}
-        </div>
-        <input
-          type="tel" value={emergencyPhone} onChange={e => setEmergencyPhone(e.target.value)}
-          placeholder="Mobile number (optional)"
-          className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none"
-        />
-      </div>
-      <button type="button" onClick={() => { onClose(); navigate("/patients", { state: { openRegistration: true } }); }} className="btn-secondary w-full mt-3">
-        Register New Patient
-      </button>
-    </div>
-  ) : (
-    <div>
-      <h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">Select Patient</h3>
-      <p className="text-xs text-slate-500 dark:text-[#666666] mb-4">Search and select a patient for this appointment.</p>
-      <div className="relative mb-2" ref={patientRef}>
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" value={patientSearch}
-          onChange={e => { setPatientSearch(e.target.value); setPatientOpen(true); }}
-          onFocus={() => setPatientOpen(true)}
-          placeholder="Search by name or UHID..."
-          className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none transition-all`}
-        />
-        {patientOpen && filteredPatients.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#111111] shadow-lg max-h-44 overflow-y-auto">
-            {(patientSearch ? filteredPatients : filteredPatients.slice(0, 5)).map(p => (
-              <button key={p.id} type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => { setPatientId(String(p.id)); setPatientSearch(""); setPatientOpen(false); setErrors(e => ({...e, patient:""})); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left border-b last:border-b-0 border-slate-100 dark:border-[#1a1a1a]">
-                <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{p.firstName[0]}</div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">{p.firstName} {p.lastName}</p>
-                  <p className="text-[11px] text-slate-400 dark:text-[#666666]">{p.uhid}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      {selectedPatient && (
-        <div className="flex items-center gap-3 px-3 py-2.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg mb-2">
-          <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400 shrink-0">{selectedPatient.firstName[0]}</div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 truncate">{selectedPatient.firstName} {selectedPatient.lastName}</p>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-500">{selectedPatient.uhid}</p>
-          </div>
-          <button type="button" onClick={() => { setPatientId(""); setPastDoctors([]); }} className="text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300"><X className="w-3.5 h-3.5" /></button>
-        </div>
-      )}
-      {errors.patient && <p className="text-xs text-red-500 mb-2">{errors.patient}</p>}
-      <button type="button" onClick={() => { onClose(); navigate("/patients", { state: { openRegistration: true } }); }} className="btn-secondary w-full">
-        Register New Patient
-      </button>
-    </div>
-  );
-
-  // ─── RIGHT PANEL: Doctor section ──────────────────────────────────────────
-  const doctorSection = (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="text-base font-bold text-slate-800 dark:text-white">
-          {isEmergency ? "Assign Doctor" : "Select Doctor"}
-          {isEmergency && <span className="ml-2 text-xs font-medium text-slate-600 dark:text-[#999999]">(optional)</span>}
-        </h3>
-        {isFollowUp && pastDoctors.length > 0 && (
-          <button type="button" onClick={() => setShowAllDoctors(s => !s)} className="text-[11px] font-semibold text-slate-900 dark:text-white hover:underline">
-            {showAllDoctors ? "Past doctors" : "All doctors"}
-          </button>
-        )}
-      </div>
-      {isFollowUp && patientId && (
-        <p className="text-xs text-slate-500 dark:text-[#666666] mb-3">
-          {pastDoctors.length > 0 && !showAllDoctors
-            ? `${pastDoctors.length} doctor${pastDoctors.length>1?"s":""} have previously seen this patient.`
-            : "Showing all available doctors."}
-        </p>
-      )}
-      <div className="relative mb-2" ref={doctorRef}>
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" value={doctorSearch}
-          onChange={e => { setDoctorSearch(e.target.value); setDoctorOpen(true); }}
-          onFocus={() => { if (!selectedDoctor && user?.role !== "doctor") setDoctorOpen(true); }}
-          disabled={user?.role === "doctor"}
-          placeholder="Search by name or specialization..."
-          className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.doctor ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none disabled:opacity-60 disabled:cursor-not-allowed`}
-        />
-        {doctorOpen && filteredDoctors.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#111111] shadow-lg max-h-44 overflow-y-auto">
-            {(doctorSearch ? filteredDoctors : filteredDoctors.slice(0, 5)).map(d => (
-              <button key={d.id} type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => { setDoctorId(d.id); setDoctorSearch(""); setDoctorOpen(false); setApptTime(""); setErrors(p => ({...p, doctor:""})); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left border-b last:border-b-0 border-slate-100 dark:border-[#1a1a1a]">
-                <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{d.firstName[0]}</div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">Dr. {d.firstName} {d.lastName}</p>
-                  <p className="text-[11px] text-slate-400 dark:text-[#666666]">{d.specialization}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      {errors.doctor && <p className="text-xs text-red-500 mt-1">{errors.doctor}</p>}
-      {selectedDoctor && (
-        <div className="mt-3 p-3 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 shrink-0">{selectedDoctor.firstName[0]}</div>
-            <div>
-              <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}</p>
-              <p className="text-xs text-slate-500 dark:text-[#888888]">{selectedDoctor.specialization}</p>
-            </div>
-          </div>
-          {(() => {
-            const displayFee = isFollowUp && selectedDoctor.followUpFee != null
-              ? selectedDoctor.followUpFee
-              : selectedDoctor.consultationFee;
-            return displayFee != null ? (
-              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-[10px] font-bold uppercase text-slate-600 dark:text-[#999999]">
-                    {isFollowUp ? "Follow-up Fee" : "Consultation Fee"}
-                  </p>
-                  <p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">₹{displayFee}</p>
-                </div>
-                <div><p className="text-[10px] font-bold uppercase text-slate-600 dark:text-[#999999]">Slot</p><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">{selectedDoctor.slotDurationMin} min</p></div>
-              </div>
-            ) : null;
-          })()}
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#111111] rounded-lg shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#1e1e1e]">
+      <div className="bg-white dark:bg-[#111111] rounded-xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#1e1e1e]">
+
         {/* Header */}
-        <div className="flex items-center justify-between px-7 py-5 border-b border-slate-200 dark:border-[#1e1e1e]">
+        <div className="flex items-center justify-between px-7 py-5 border-b border-slate-200 dark:border-[#1e1e1e] shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-              {isEmergency ? <span className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-rose-500" />Emergency Appointment</span> : "Add Appointment"}
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              {isEmergency && <AlertTriangle className="w-5 h-5 text-rose-500" />}
+              {isEmergency ? "Emergency Appointment" : "Add Appointment"}
             </h2>
             <p className="text-sm text-slate-500 dark:text-[#888888] mt-0.5">
               {isEmergency ? "Quick entry — complete details can be updated after." : "Schedule a new appointment for a patient."}
@@ -408,38 +263,108 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* LEFT: Appointment Details */}
-          <div className="flex-1 overflow-y-auto px-7 py-6 border-r border-slate-200 dark:border-[#1e1e1e]">
-            <form id="book-form" onSubmit={handleSubmit} className="space-y-6">
-              {/* Type */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3">Appointment Type</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {TYPE_OPTIONS.map(opt => (
-                    <button key={opt.value} type="button" onClick={() => setType(opt.value)}
-                      className={`text-left px-4 py-3 rounded-lg border transition-all ${type === opt.value ? (opt.value === "EMERGENCY" ? "border-rose-500 bg-rose-50 dark:bg-rose-500/10" : "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10") : "border-slate-200 dark:border-[#222222] hover:border-slate-300 dark:hover:border-[#333333]"}`}>
-                      <p className={`text-sm font-semibold ${type === opt.value ? (opt.value === "EMERGENCY" ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-400") : "text-slate-700 dark:text-[#cccccc]"}`}>
-                        {type === opt.value && <CheckCircle className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />}{opt.label}
-                      </p>
-                      <p className="text-xs text-slate-400 dark:text-[#666666] mt-0.5">{opt.desc}</p>
-                    </button>
-                  ))}
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-7 py-6">
+          <form id="book-form" onSubmit={handleSubmit} className="space-y-7">
+
+            {/* ── Step 1: Patient ── */}
+            <div>
+              <SectionLabel step="1" label="Patient" />
+              {isEmergency ? (
+                <div className="space-y-3">
+                  <div>
+                    <input
+                      type="text" value={emergencyName}
+                      onChange={e => { setEmergencyName(e.target.value); setErrors(er => ({...er, patient:""})); }}
+                      placeholder="Patient full name *"
+                      className={`w-full px-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none`}
+                    />
+                    {errors.patient && <p className="text-xs text-red-500 mt-1">{errors.patient}</p>}
+                  </div>
+                  <input
+                    type="tel" value={emergencyPhone} onChange={e => setEmergencyPhone(e.target.value)}
+                    placeholder="Mobile number (optional)"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none"
+                  />
                 </div>
+              ) : (
+                <div>
+                  <div className="relative" ref={patientRef}>
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input type="text" value={patientSearch}
+                      onChange={e => { setPatientSearch(e.target.value); setPatientOpen(true); }}
+                      onFocus={() => setPatientOpen(true)}
+                      placeholder="Search by name or UHID…"
+                      className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none transition-all`}
+                    />
+                    {patientOpen && filteredPatients.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#111111] shadow-lg max-h-44 overflow-y-auto">
+                        {(patientSearch ? filteredPatients : filteredPatients.slice(0, 5)).map(p => (
+                          <button key={p.id} type="button"
+                            onMouseDown={e => e.preventDefault()}
+                            onClick={() => { setPatientId(String(p.id)); setPatientSearch(""); setPatientOpen(false); setErrors(e => ({...e, patient:""})); }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left border-b last:border-b-0 border-slate-100 dark:border-[#1a1a1a]">
+                            <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{p.firstName[0]}</div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">{p.firstName} {p.lastName}</p>
+                              <p className="text-[11px] text-slate-400 dark:text-[#666666]">{p.uhid}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedPatient ? (
+                    <div className="flex items-center gap-3 px-3 py-2.5 mt-2 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg">
+                      <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400 shrink-0">{selectedPatient.firstName[0]}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 truncate">{selectedPatient.firstName} {selectedPatient.lastName}</p>
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-500">{selectedPatient.uhid}</p>
+                      </div>
+                      <button type="button" onClick={() => { setPatientId(""); setPastDoctors([]); }} className="text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300"><X className="w-3.5 h-3.5" /></button>
+                    </div>
+                  ) : (
+                    errors.patient && <p className="text-xs text-red-500 mt-1">{errors.patient}</p>
+                  )}
+
+                  <button type="button"
+                    onClick={() => { onClose(); navigate("/patients", { state: { openRegistration: true } }); }}
+                    className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-[#888888] hover:text-slate-700 dark:hover:text-[#cccccc] transition-colors">
+                    <UserPlus className="w-3.5 h-3.5" /> Register new patient
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-[#1e1e1e]" />
+
+            {/* ── Step 2: Appointment Type ── */}
+            <div>
+              <SectionLabel step="2" label="Appointment Type" />
+              <div className="grid grid-cols-2 gap-2">
+                {TYPE_OPTIONS.map(opt => (
+                  <button key={opt.value} type="button" onClick={() => setType(opt.value)}
+                    className={`text-left px-4 py-3 rounded-lg border transition-all ${type === opt.value ? (opt.value === "EMERGENCY" ? "border-rose-500 bg-rose-50 dark:bg-rose-500/10" : "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10") : "border-slate-200 dark:border-[#222222] hover:border-slate-300 dark:hover:border-[#333333]"}`}>
+                    <p className={`text-sm font-semibold ${type === opt.value ? (opt.value === "EMERGENCY" ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-400") : "text-slate-700 dark:text-[#cccccc]"}`}>
+                      {type === opt.value && <CheckCircle className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />}{opt.label}
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-[#666666] mt-0.5">{opt.desc}</p>
+                  </button>
+                ))}
               </div>
 
-              {/* Health Checkup package — only when type is HEALTH_CHECKUP */}
+              {/* Health Checkup package picker */}
               {isHealthCheckup && packages.length > 0 && (
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-2">
-                    Checkup Package <span className="text-rose-500">*</span>
+                <div className="mt-3">
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-2">
+                    Package <span className="text-rose-500">*</span>
                   </label>
                   <SearchableSelect
                     value={packageId}
                     onChange={(v) => setPackageId(v)}
                     options={packages.map(p => ({ value: p.id, label: p.name }))}
-                    placeholder="Select a package"
+                    placeholder="Select a checkup package"
                     className="w-full px-4 py-3 text-sm text-slate-900 dark:text-[#cccccc] bg-white dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#222222] rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                   {selectedPkg && (
@@ -450,88 +375,156 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                   )}
                 </div>
               )}
+            </div>
 
-              {/* Date */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-slate-400" /> Date
-                </label>
+            <div className="border-t border-slate-100 dark:border-[#1e1e1e]" />
+
+            {/* ── Step 3: Doctor ── */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <SectionLabel step="3" label={isEmergency ? "Assign Doctor (optional)" : "Doctor"} />
+                {isFollowUp && pastDoctors.length > 0 && (
+                  <button type="button" onClick={() => setShowAllDoctors(s => !s)} className="text-[11px] font-semibold text-slate-600 dark:text-[#888888] hover:text-slate-900 dark:hover:text-white transition-colors">
+                    {showAllDoctors ? "Show past doctors" : "Show all doctors"}
+                  </button>
+                )}
+              </div>
+
+              {isFollowUp && patientId && pastDoctors.length > 0 && !showAllDoctors && (
+                <p className="text-xs text-slate-500 dark:text-[#666666] mb-2">
+                  {pastDoctors.length} doctor{pastDoctors.length > 1 ? "s have" : " has"} previously seen this patient.
+                </p>
+              )}
+
+              <div className="relative" ref={doctorRef}>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input type="text" value={doctorSearch}
+                  onChange={e => { setDoctorSearch(e.target.value); setDoctorOpen(true); }}
+                  onFocus={() => { if (!selectedDoctor && user?.role !== "doctor") setDoctorOpen(true); }}
+                  disabled={user?.role === "doctor"}
+                  placeholder="Search by name or specialization…"
+                  className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.doctor ? "border-red-400" : "border-slate-200 dark:border-[#222222]"} bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none disabled:opacity-60 disabled:cursor-not-allowed transition-all`}
+                />
+                {doctorOpen && filteredDoctors.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#111111] shadow-lg max-h-44 overflow-y-auto">
+                    {(doctorSearch ? filteredDoctors : filteredDoctors.slice(0, 5)).map(d => (
+                      <button key={d.id} type="button"
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => { setDoctorId(d.id); setDoctorSearch(""); setDoctorOpen(false); setApptTime(""); setErrors(p => ({...p, doctor:""})); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors text-left border-b last:border-b-0 border-slate-100 dark:border-[#1a1a1a]">
+                        <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{d.firstName[0]}</div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">Dr. {d.firstName} {d.lastName}</p>
+                          <p className="text-[11px] text-slate-400 dark:text-[#666666]">{d.specialization}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {errors.doctor && <p className="text-xs text-red-500 mt-1">{errors.doctor}</p>}
+
+              {selectedDoctor && (
+                <div className="mt-2 flex items-center gap-3 px-3 py-2.5 bg-white dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#222222] rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 shrink-0">{selectedDoctor.firstName[0]}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc]">Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}</p>
+                    <p className="text-xs text-slate-500 dark:text-[#888888]">{selectedDoctor.specialization}</p>
+                  </div>
+                  {(() => {
+                    const fee = isFollowUp && selectedDoctor.followUpFee != null ? selectedDoctor.followUpFee : selectedDoctor.consultationFee;
+                    return fee != null ? (
+                      <div className="text-right shrink-0">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">{isFollowUp ? "Follow-up" : "Consult"}</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-[#cccccc]">₹{fee}</p>
+                      </div>
+                    ) : null;
+                  })()}
+                  <button type="button" onClick={() => { setDoctorId(""); setApptTime(""); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#cccccc] shrink-0 ml-1">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-[#1e1e1e]" />
+
+            {/* ── Step 4: Date & Time ── */}
+            <div>
+              <SectionLabel step="4" label="Date & Time" icon={<Calendar className="w-4 h-4" />} />
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Calendar */}
                 <div className="border border-slate-200 dark:border-[#222222] rounded-lg p-4 bg-white dark:bg-[#0f0f0f]">
                   {apptDate && (
-                    <div className="mb-3 px-3 py-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
-                      <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{formatDisplayDate(apptDate)}</p>
+                    <div className="mb-3 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
+                      <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{formatDisplayDate(apptDate)}</p>
                     </div>
                   )}
                   <MiniCalendar value={apptDate} onChange={v => { setApptDate(v); setApptTime(""); }} />
                 </div>
-              </div>
 
-              {/* Time */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-3 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-slate-400" /> Time
-                  {isEmergency && <span className="text-xs font-normal text-slate-400">(optional — defaults to now)</span>}
-                </label>
+                {/* Time slots */}
+                <div className="flex flex-col">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-2">
+                    Time {isEmergency && <span className="font-normal normal-case text-slate-400">(optional)</span>}
+                  </p>
 
-                {isEmergency ? (
-                  <div className="flex gap-2">
-                    <input type="time" value={apptTime ? apptTime.substring(0,5) : ""} onChange={e => setApptTime(e.target.value ? e.target.value + ":00" : "")}
-                      className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500" />
-                    <button type="button" onClick={() => { const n = new Date(); setApptTime(`${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}:00`); }}
-                      className="px-4 py-3 rounded-lg border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-sm font-semibold hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
-                      Now
-                    </button>
-                  </div>
-                ) : !doctorId ? (
-                  <div className="border border-dashed border-slate-200 dark:border-[#222222] rounded-lg p-5 text-center text-sm text-slate-400 dark:text-[#666666]">
-                    Select a doctor to view available time slots.
-                  </div>
-                ) : (
-                  <div className="border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#0f0f0f]">
-                    <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-[#1a1a1a]">
-                      {timeSlots.map(slot => (
-                        <button key={slot.timeStr} type="button" disabled={slot.isBooked}
-                          onClick={() => { setApptTime(slot.timeStr); setErrors(e => ({...e, time:""})); }}
-                          className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors text-left ${slot.isBooked ? "text-slate-300 dark:text-[#444444] cursor-not-allowed bg-slate-50/50 dark:bg-[#111111]" : apptTime === slot.timeStr ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold" : "hover:bg-slate-50 dark:hover:bg-[#151515] text-slate-700 dark:text-[#cccccc]"}`}>
-                          <Clock className={`w-4 h-4 shrink-0 ${slot.isBooked ? "text-slate-300 dark:text-[#444444]" : apptTime === slot.timeStr ? "text-emerald-500" : "text-slate-400"}`} />
-                          <span>{slot.displayTime}</span>
-                          {slot.isBooked && <span className="ml-auto text-[10px] font-semibold uppercase text-slate-400 dark:text-[#444444]">Booked</span>}
-                          {apptTime === slot.timeStr && <CheckCircle className="ml-auto w-4 h-4 text-emerald-500" />}
-                        </button>
-                      ))}
+                  {isEmergency ? (
+                    <div className="flex flex-col gap-2">
+                      <input type="time" value={apptTime ? apptTime.substring(0,5) : ""}
+                        onChange={e => setApptTime(e.target.value ? e.target.value + ":00" : "")}
+                        className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                      />
+                      <button type="button" onClick={() => { const n = new Date(); setApptTime(`${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}:00`); }}
+                        className="w-full px-4 py-2.5 rounded-lg border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-sm font-semibold hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
+                        Set to Now
+                      </button>
                     </div>
-                    {errors.time && <p className="text-xs text-red-500 px-4 py-2 border-t border-slate-100 dark:border-[#1a1a1a]">{errors.time}</p>}
-                  </div>
-                )}
+                  ) : !doctorId ? (
+                    <div className="flex-1 border border-dashed border-slate-200 dark:border-[#222222] rounded-lg flex items-center justify-center text-center p-4">
+                      <p className="text-sm text-slate-400 dark:text-[#666666]">Select a doctor first to see available time slots.</p>
+                    </div>
+                  ) : (
+                    <div className="flex-1 border border-slate-200 dark:border-[#222222] rounded-lg overflow-hidden bg-white dark:bg-[#0f0f0f]">
+                      <div className="h-full max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-[#1a1a1a]">
+                        {timeSlots.map(slot => (
+                          <button key={slot.timeStr} type="button" disabled={slot.isBooked}
+                            onClick={() => { setApptTime(slot.timeStr); setErrors(e => ({...e, time:""})); }}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left ${slot.isBooked ? "text-slate-300 dark:text-[#444444] cursor-not-allowed bg-slate-50/50 dark:bg-[#111111]" : apptTime === slot.timeStr ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold" : "hover:bg-slate-50 dark:hover:bg-[#151515] text-slate-700 dark:text-[#cccccc]"}`}>
+                            <Clock className={`w-3.5 h-3.5 shrink-0 ${slot.isBooked ? "text-slate-300 dark:text-[#444444]" : apptTime === slot.timeStr ? "text-emerald-500" : "text-slate-400"}`} />
+                            <span>{slot.displayTime}</span>
+                            {slot.isBooked && <span className="ml-auto text-[10px] font-semibold uppercase text-slate-400 dark:text-[#444444]">Booked</span>}
+                            {apptTime === slot.timeStr && <CheckCircle className="ml-auto w-3.5 h-3.5 text-emerald-500" />}
+                          </button>
+                        ))}
+                      </div>
+                      {errors.time && <p className="text-xs text-red-500 px-4 py-2 border-t border-slate-100 dark:border-[#1a1a1a]">{errors.time}</p>}
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
 
-              {/* Reason */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-2 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-slate-400" /> Reason for Visit
-                  {isEmergency && <span className="text-xs font-normal text-slate-400">(optional)</span>}
-                </label>
-                <textarea value={chiefComplaint} onChange={e => setChiefComplaint(e.target.value)} rows={3}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none transition-all resize-none"
-                  placeholder={isEmergency ? "Brief description of emergency (optional)" : "Enter the reason for the appointment"} />
-              </div>
-            </form>
-          </div>
+            <div className="border-t border-slate-100 dark:border-[#1e1e1e]" />
 
-          {/* RIGHT: Patient & Doctor */}
-          <div className="w-80 shrink-0 flex flex-col overflow-y-auto px-6 py-6 gap-6 bg-slate-50/50 dark:bg-[#0d0d0d]">
-            {patientSection}
-            <div className="border-t border-slate-200 dark:border-[#1e1e1e]" />
-            {doctorSection}
-          </div>
+            {/* ── Step 5: Reason for Visit ── */}
+            <div>
+              <SectionLabel step="5" label="Reason for Visit" icon={<FileText className="w-4 h-4" />} />
+              <textarea value={chiefComplaint} onChange={e => setChiefComplaint(e.target.value)} rows={3}
+                className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#0f0f0f] text-slate-900 dark:text-[#cccccc] text-sm placeholder-slate-400 dark:placeholder-[#555555] focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] outline-none transition-all resize-none"
+                placeholder={isEmergency ? "Brief description of emergency (optional)" : "Enter the reason for the appointment (optional)"} />
+            </div>
+
+          </form>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#111111]">
+        <div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#111111] shrink-0">
           <button type="button" onClick={() => { resetForm(); onClose(); }} className="btn-secondary">Cancel</button>
           <button type="submit" form="book-form" disabled={isLoading}
             className={isEmergency ? "px-5 py-2.5 rounded-lg font-semibold text-sm text-white bg-rose-500 hover:bg-rose-600 disabled:opacity-50 transition-colors" : "btn-primary"}>
-            {isLoading ? "Saving..." : isEmergency ? "Create Emergency Appointment" : "Schedule Appointment"}
+            {isLoading ? "Saving…" : isEmergency ? "Create Emergency Appointment" : "Schedule Appointment"}
           </button>
         </div>
       </div>
