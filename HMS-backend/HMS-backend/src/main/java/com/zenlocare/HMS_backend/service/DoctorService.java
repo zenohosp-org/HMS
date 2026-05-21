@@ -1,10 +1,12 @@
 package com.zenlocare.HMS_backend.service;
 
 import com.zenlocare.HMS_backend.entity.Doctor;
+import com.zenlocare.HMS_backend.entity.DoctorAvailability;
 import com.zenlocare.HMS_backend.entity.Hospital;
 import com.zenlocare.HMS_backend.entity.User;
 import com.zenlocare.HMS_backend.exception.ResourceNotFoundException;
 import com.zenlocare.HMS_backend.exception.ConflictException;
+import com.zenlocare.HMS_backend.repository.DoctorAvailabilityRepository;
 import com.zenlocare.HMS_backend.repository.DoctorRepository;
 import com.zenlocare.HMS_backend.repository.HospitalRepository;
 import com.zenlocare.HMS_backend.repository.UserRepository;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +26,10 @@ public class DoctorService {
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
     private final HospitalRepository hospitalRepository;
+    private final DoctorAvailabilityRepository availabilityRepository;
+
+    // MON=0 … SUN=6; bit n = 1 << n
+    private static final int[] DAY_BITS = {1, 2, 4, 8, 16, 32, 64};
 
     public List<Doctor> getDoctorsByHospital(UUID hospitalId) {
         return doctorRepository.findByHospitalId(hospitalId);
@@ -84,7 +91,34 @@ public class DoctorService {
                 .residentialAddress(doctorData.getResidentialAddress())
                 .build();
 
-        return doctorRepository.save(doctor);
+        Doctor saved = doctorRepository.save(doctor);
+        seedAvailability(saved);
+        return saved;
+    }
+
+    private void seedAvailability(Doctor doctor) {
+        int mask = doctor.getAvailableDaysMask() != null ? doctor.getAvailableDaysMask() : 0;
+        int slotMins = doctor.getSlotDurationMin() != null ? doctor.getSlotDurationMin() : 15;
+        int maxSlots = doctor.getMaxDailySlots() != null ? doctor.getMaxDailySlots() : 40;
+
+        for (int dayIdx = 0; dayIdx < DAY_BITS.length; dayIdx++) {
+            if ((mask & DAY_BITS[dayIdx]) == 0) continue;
+            final int day = dayIdx;
+            boolean exists = availabilityRepository.findByDoctorIdAndDayOfWeek(doctor.getId(), day).isPresent();
+            if (!exists) {
+                availabilityRepository.save(
+                    DoctorAvailability.builder()
+                        .doctor(doctor)
+                        .dayOfWeek(day)
+                        .startTime(LocalTime.of(9, 0))
+                        .endTime(LocalTime.of(17, 0))
+                        .slotDurationMins(slotMins)
+                        .maxDailySlots(maxSlots)
+                        .isActive(true)
+                        .build()
+                );
+            }
+        }
     }
 
     @Transactional
@@ -130,7 +164,9 @@ public class DoctorService {
         if (updatedData.getResidentialAddress() != null)
             doctor.setResidentialAddress(updatedData.getResidentialAddress());
 
-        return doctorRepository.save(doctor);
+        Doctor saved = doctorRepository.save(doctor);
+        seedAvailability(saved);
+        return saved;
     }
 
     @Transactional

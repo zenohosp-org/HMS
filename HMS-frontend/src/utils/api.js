@@ -132,7 +132,18 @@ const doctorsApi = {
   },
   delete: async (id) => {
     await api.delete(`/doctors/${id}`);
-  }
+  },
+  getAvailability: async (id) => {
+    const { data } = await api.get(`/doctors/${id}/availability`);
+    return data;
+  },
+  saveAvailability: async (id, payload) => {
+    const { data } = await api.post(`/doctors/${id}/availability`, payload);
+    return data;
+  },
+  deleteAvailability: async (doctorId, slotId) => {
+    await api.delete(`/doctors/${doctorId}/availability/${slotId}`);
+  },
 };
 const pricingApi = {
   getHospitalPriceLists: async (hospitalId) => {
