@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import {
   patientApi, invoiceApi, bankApi, doctorsApi, hospitalServiceApi
 } from '@/utils/api'
@@ -391,12 +392,18 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
               <p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2">
                 {sectionNum(2)} Referred By <span className="font-normal normal-case text-slate-400">(Optional)</span>
               </p>
-              <select className={inputCls} value={referredById} onChange={e => setReferredById(e.target.value)}>
-                <option value="">Self / Walk-in (No Referral)</option>
-                {doctors.map(d => (
-                  <option key={d.id} value={d.id}>{d.firstName} {d.lastName}{d.specialization ? ` — ${d.specialization}` : ''}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                className={inputCls}
+                value={referredById}
+                onChange={val => setReferredById(val)}
+                options={[
+                  { value: '', label: 'Self / Walk-in (No Referral)' },
+                  ...doctors.map(d => ({
+                    value: d.id,
+                    label: `Dr. ${d.firstName} ${d.lastName}${d.specialization ? ` — ${d.specialization}` : ''}`,
+                  })),
+                ]}
+              />
             </div>
 
             {/* 3 — Add Tests & Services */}
@@ -469,10 +476,12 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                     {items.map(item => (
                       <div key={item.key} className="grid grid-cols-12 gap-2 items-center py-2 group px-1">
                         <div className="col-span-1">
-                          <select className="w-full text-[10px] rounded border border-slate-100 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-1 py-1 text-slate-700 dark:text-[#cccccc] focus:outline-none"
-                            value={item.itemType ?? 'CUSTOM'} onChange={e => updateItem(item.key, { itemType: e.target.value })}>
-                            {Object.keys(TYPE_META).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
-                          </select>
+                          <SearchableSelect
+                            className="w-full text-[10px] rounded border border-slate-100 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-1 py-1 text-slate-700 dark:text-[#cccccc] focus:outline-none"
+                            value={item.itemType ?? 'CUSTOM'}
+                            onChange={val => updateItem(item.key, { itemType: val })}
+                            options={Object.keys(TYPE_META).map(k => ({ value: k, label: TYPE_META[k].label }))}
+                          />
                         </div>
                         <div className="col-span-5">
                           <input className="w-full px-2 py-1.5 rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] focus:outline-none focus:ring-1 focus:ring-blue-500/30"
@@ -532,9 +541,12 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Payment Method</label>
-                  <select className={inputCls} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-                    {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
+                  <SearchableSelect
+                    className={inputCls}
+                    value={paymentMethod}
+                    onChange={val => setPaymentMethod(val)}
+                    options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Notes (optional)</label>

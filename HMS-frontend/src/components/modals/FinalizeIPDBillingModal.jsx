@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import axios from 'axios'
 import SSOCookieManager from '@/utils/ssoManager'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { invoiceApi, bankApi, hospitalServiceApi, patientServicesApi, radiologyApi, ambulanceApi, patientAdvanceApi } from '@/utils/api'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
@@ -538,13 +539,12 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         </div>
         <div>
           <label className="label">Payment Method</label>
-          <select
+          <SearchableSelect
             className="input"
             value={payMethod}
-            onChange={e => { setPayMethod(e.target.value); setPayBankAccountId('') }}
-          >
-            {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
+            onChange={val => { setPayMethod(val); setPayBankAccountId('') }}
+            options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
+          />
         </div>
       </div>
       {bankAccounts.length === 0 && (
@@ -710,16 +710,13 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                         >
                           <td className="px-4 py-2.5 text-xs text-slate-400 dark:text-[#555]">{idx + 1}</td>
                           <td className="px-2 py-2.5">
-                            <select
+                            <SearchableSelect
                               value={item.itemType ?? 'CUSTOM'}
-                              onChange={e => updateItem(item.key, { itemType: e.target.value })}
+                              onChange={val => updateItem(item.key, { itemType: val })}
                               disabled={isPaid}
                               className="w-full text-[10px] rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-1.5 py-1 text-slate-700 dark:text-[#ccc] focus:outline-none disabled:opacity-60"
-                            >
-                              {Object.entries(TYPE_META).map(([k, v]) => (
-                                <option key={k} value={k}>{v.label}</option>
-                              ))}
-                            </select>
+                              options={Object.keys(TYPE_META).map(k => ({ value: k, label: TYPE_META[k]?.label || k }))}
+                            />
                           </td>
                           <td className="px-2 py-2.5">
                             <div className="flex items-center gap-1.5">

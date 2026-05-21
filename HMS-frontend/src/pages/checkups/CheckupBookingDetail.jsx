@@ -2,6 +2,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { checkupApi } from "@/utils/api";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
   ArrowLeft, Printer, Loader2, AlertCircle, ClipboardList,
   User, Package, Calendar, Clock, Stethoscope, Banknote,
@@ -119,16 +120,13 @@ function ResultRow({ result, onSave, disabled }) {
         />
       </td>
       <td className="px-4 py-3 align-top w-36">
-        <select
+        <SearchableSelect
           value={status}
-          onChange={e => setStatus(e.target.value)}
+          onChange={value => setStatus(value)}
+          options={RESULT_STATUS_OPTIONS.map(s => ({ value: s, label: RESULT_STATUS_CONFIG[s].label }))}
           disabled={disabled}
           className={`${inputCls} ${resCfg.color}`}
-        >
-          {RESULT_STATUS_OPTIONS.map(s => (
-            <option key={s} value={s}>{RESULT_STATUS_CONFIG[s].label}</option>
-          ))}
-        </select>
+        />
       </td>
       <td className="px-4 py-3 align-top">
         <input

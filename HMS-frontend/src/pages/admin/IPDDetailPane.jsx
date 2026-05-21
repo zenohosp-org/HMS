@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import {
   X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors,
   Activity, Package, Receipt, Phone, User, Loader2, ExternalLink,
@@ -712,15 +713,12 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="label text-[11px]">Type</label>
-                        <select
+                        <SearchableSelect
                           className="input text-sm"
                           value={recordForm.historyType}
-                          onChange={e => setRecordForm(p => ({ ...p, historyType: e.target.value }))}
-                        >
-                          {['CONSULTATION','PRESCRIPTION','LAB_RESULT','SURGERY','DIAGNOSIS','OTHER'].map(t => (
-                            <option key={t} value={t}>{t.replace('_', ' ')}</option>
-                          ))}
-                        </select>
+                          onChange={v => setRecordForm(p => ({ ...p, historyType: v }))}
+                          options={['CONSULTATION','PRESCRIPTION','LAB_RESULT','SURGERY','DIAGNOSIS','OTHER'].map(t => ({ value: t, label: t.replace('_', ' ') }))}
+                        />
                       </div>
                       <div>
                         <label className="label text-[11px]">Next Visit Date</label>

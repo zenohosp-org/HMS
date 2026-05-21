@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "@/utils/api";
 import { bedApi } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { X, Loader2, Search, BedDouble, CheckCircle2 } from "lucide-react";
 
 const inputCls = `w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
@@ -212,15 +213,13 @@ function AllocatePatientModal({ roomId, roomNumber, bedCount, onClose, onSuccess
               </div>
               <div>
                 <label className={labelCls}>Relationship</label>
-                <select className={inputCls} value={attender.relationship}
-                  onChange={(e) => setAttender({ ...attender, relationship: e.target.value })}>
-                  <option value="">Select</option>
-                  <option value="Spouse">Spouse</option>
-                  <option value="Parent">Parent</option>
-                  <option value="Child">Child</option>
-                  <option value="Sibling">Sibling</option>
-                  <option value="Friend">Friend</option>
-                </select>
+                <SearchableSelect
+                  options={["Spouse", "Parent", "Child", "Sibling", "Friend"].map(r => ({ value: r, label: r }))}
+                  value={attender.relationship}
+                  onChange={v => setAttender({ ...attender, relationship: v })}
+                  placeholder="Select"
+                  className={inputCls}
+                />
               </div>
             </div>
           </div>

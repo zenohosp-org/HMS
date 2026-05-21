@@ -5,6 +5,7 @@ import { staffApi, departmentApi, designationApi, doctorsApi, specializationApi 
 import { X, User as UserIcon, ShieldAlert, Building2, CreditCard, Stethoscope } from 'lucide-react'
 import StateSelect from '@/components/StateSelect'
 import SidePane from '@/components/SidePane'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 
 const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]$/
 
@@ -168,11 +169,17 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
           </div>
           <div>
             <label className={labelCls}>Gender *</label>
-            <select required value={form.gender} onChange={e => set('gender', e.target.value)} className={inputCls}>
-              <option value="MALE">Male</option>
-              <option value="FEMALE">Female</option>
-              <option value="OTHER">Other</option>
-            </select>
+            <SearchableSelect
+              className={inputCls}
+              options={[
+                { value: "MALE", label: "Male" },
+                { value: "FEMALE", label: "Female" },
+                { value: "OTHER", label: "Other" },
+              ]}
+              value={form.gender}
+              onChange={(v) => set('gender', v)}
+              placeholder="Select gender"
+            />
           </div>
           <div className="col-span-2">
             <StateSelect value={form.state} onChange={val => set('state', val)} inputClassName={inputCls} labelClassName={labelCls} />
@@ -211,12 +218,18 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
           )}
           <div className="col-span-2">
             <label className={labelCls}>System Role *</label>
-            <select required value={form.role} onChange={e => set('role', e.target.value)} className={inputCls}>
-              <option value="staff">General Staff</option>
-              <option value="doctor">Doctor</option>
-              <option value="technician">Technician</option>
-              <option value="hospital_admin">Hospital Administrator</option>
-            </select>
+            <SearchableSelect
+              className={inputCls}
+              options={[
+                { value: "staff", label: "General Staff" },
+                { value: "doctor", label: "Doctor" },
+                { value: "technician", label: "Technician" },
+                { value: "hospital_admin", label: "Hospital Administrator" },
+              ]}
+              value={form.role}
+              onChange={(v) => set('role', v)}
+              placeholder="Select role"
+            />
             <p className="text-[10px] text-slate-500 mt-1">Doctors will also appear in the Doctors directory. Hospital Administrators have full access across all modules.</p>
           </div>
         </div>
@@ -228,53 +241,47 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Specialization</label>
-              <select value={form.specialization} onChange={e => set('specialization', e.target.value)} className={inputCls}>
-                <option value="">Select specialization…</option>
-                {specializations.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-              </select>
+              <SearchableSelect
+                className={inputCls}
+                options={specializations.map(s => ({ value: s.name, label: s.name }))}
+                value={form.specialization}
+                onChange={(v) => set('specialization', v)}
+                placeholder="Select specialization…"
+              />
             </div>
             <div>
               <label className={labelCls}>Qualification</label>
-              <select value={form.qualification} onChange={e => set('qualification', e.target.value)} className={inputCls + " cursor-pointer"}>
-                <option value="">Select Qualification</option>
-                <optgroup label="Allopathy — Undergraduate">
-                  <option value="MBBS">MBBS</option>
-                </optgroup>
-                <optgroup label="Allopathy — Postgraduate">
-                  <option value="MBBS, MD">MBBS, MD</option>
-                  <option value="MBBS, MS">MBBS, MS</option>
-                  <option value="MBBS, DNB">MBBS, DNB</option>
-                  <option value="MBBS, Diploma">MBBS, Diploma</option>
-                </optgroup>
-                <optgroup label="Allopathy — Superspecialty">
-                  <option value="MBBS, MD, DM">MBBS, MD, DM</option>
-                  <option value="MBBS, MS, MCh">MBBS, MS, MCh</option>
-                  <option value="MBBS, DNB, DrNB">MBBS, DNB, DrNB</option>
-                </optgroup>
-                <optgroup label="Allopathy — International">
-                  <option value="MBBS, FRCS">MBBS, FRCS</option>
-                  <option value="MBBS, MRCP">MBBS, MRCP</option>
-                  <option value="MBBS, MRCS">MBBS, MRCS</option>
-                  <option value="MD (USA/UK)">MD (USA/UK)</option>
-                </optgroup>
-                <optgroup label="Dentistry">
-                  <option value="BDS">BDS</option>
-                  <option value="BDS, MDS">BDS, MDS</option>
-                  <option value="BDS, DNB">BDS, DNB</option>
-                </optgroup>
-                <optgroup label="AYUSH">
-                  <option value="BAMS">BAMS (Ayurveda)</option>
-                  <option value="BAMS, MD (Ay.)">BAMS, MD (Ay.)</option>
-                  <option value="BHMS">BHMS (Homeopathy)</option>
-                  <option value="BUMS">BUMS (Unani)</option>
-                  <option value="BNYS">BNYS (Naturopathy)</option>
-                </optgroup>
-                <optgroup label="Other">
-                  <option value="PhD">PhD (Medical)</option>
-                  <option value="MSc (Nursing)">MSc (Nursing)</option>
-                  <option value="MPH">MPH (Public Health)</option>
-                </optgroup>
-              </select>
+              <SearchableSelect
+                className={inputCls}
+                options={[
+                  { value: "MBBS", label: "MBBS" },
+                  { value: "MBBS, MD", label: "MBBS, MD" },
+                  { value: "MBBS, MS", label: "MBBS, MS" },
+                  { value: "MBBS, DNB", label: "MBBS, DNB" },
+                  { value: "MBBS, Diploma", label: "MBBS, Diploma" },
+                  { value: "MBBS, MD, DM", label: "MBBS, MD, DM" },
+                  { value: "MBBS, MS, MCh", label: "MBBS, MS, MCh" },
+                  { value: "MBBS, DNB, DrNB", label: "MBBS, DNB, DrNB" },
+                  { value: "MBBS, FRCS", label: "MBBS, FRCS" },
+                  { value: "MBBS, MRCP", label: "MBBS, MRCP" },
+                  { value: "MBBS, MRCS", label: "MBBS, MRCS" },
+                  { value: "MD (USA/UK)", label: "MD (USA/UK)" },
+                  { value: "BDS", label: "BDS" },
+                  { value: "BDS, MDS", label: "BDS, MDS" },
+                  { value: "BDS, DNB", label: "BDS, DNB" },
+                  { value: "BAMS", label: "BAMS (Ayurveda)" },
+                  { value: "BAMS, MD (Ay.)", label: "BAMS, MD (Ay.)" },
+                  { value: "BHMS", label: "BHMS (Homeopathy)" },
+                  { value: "BUMS", label: "BUMS (Unani)" },
+                  { value: "BNYS", label: "BNYS (Naturopathy)" },
+                  { value: "PhD", label: "PhD (Medical)" },
+                  { value: "MSc (Nursing)", label: "MSc (Nursing)" },
+                  { value: "MPH", label: "MPH (Public Health)" },
+                ]}
+                value={form.qualification}
+                onChange={(v) => set('qualification', v)}
+                placeholder="Select Qualification"
+              />
             </div>
             <div>
               <label className={labelCls}>Medical Registration No.</label>
@@ -305,18 +312,24 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
           </div>
           <div>
             <label className={labelCls}>Department</label>
-            <select value={form.departmentId} onChange={e => setForm(f => ({ ...f, departmentId: e.target.value, designationId: '' }))} className={inputCls}>
-              <option value="">Select department…</option>
-              {departments.map(d => <option key={d.id} value={d.id}>{d.name} ({d.type.charAt(0) + d.type.slice(1).toLowerCase()})</option>)}
-            </select>
+            <SearchableSelect
+              className={inputCls}
+              options={departments.map(d => ({ value: d.id, label: `${d.name} (${d.type.charAt(0) + d.type.slice(1).toLowerCase()})` }))}
+              value={form.departmentId}
+              onChange={(v) => setForm(f => ({ ...f, departmentId: v, designationId: '' }))}
+              placeholder="Select department…"
+            />
             {departments.length === 0 && <p className="text-[10px] text-amber-500 mt-1">No active departments — add them in HR &amp; Staff → Departments</p>}
           </div>
           <div>
             <label className={labelCls}>Designation / Title</label>
-            <select value={form.designationId} onChange={e => set('designationId', e.target.value)} className={inputCls}>
-              <option value="">Select designation…</option>
-              {designations.map(d => <option key={d.id} value={d.id}>{d.name} ({d.category.charAt(0) + d.category.slice(1).toLowerCase()})</option>)}
-            </select>
+            <SearchableSelect
+              className={inputCls}
+              options={designations.map(d => ({ value: d.id, label: `${d.name} (${d.category.charAt(0) + d.category.slice(1).toLowerCase()})` }))}
+              value={form.designationId}
+              onChange={(v) => set('designationId', v)}
+              placeholder="Select designation…"
+            />
             {designations.length === 0 && form.departmentId && <p className="text-[10px] text-slate-500 mt-1">No active designations for this department</p>}
           </div>
         </div>

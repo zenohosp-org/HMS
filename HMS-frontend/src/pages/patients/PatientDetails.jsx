@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api, { patientApi, recordApi, appointmentsApi, radiologyApi, invoiceApi } from "@/utils/api";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { useNotification } from "@/context/NotificationContext";
 import { useAuth } from "@/context/AuthContext";
 import { calcAge, formatDate, formatDateTime } from "@/utils/validators";
@@ -141,11 +142,12 @@ function AddRecordForm({ patientId, hospitalId, onSaved, onCancel }) {
       setSaving(false);
     }
   };
-  return <div className="bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#2a2a2a] rounded-lg p-5 mb-5"><div className="flex items-center justify-between mb-4"><h3 className="text-sm font-semibold text-slate-700 dark:text-[#cccccc]">Add New Record</h3><button onClick={onCancel} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#aaaaaa] transition-colors"><X className="w-4 h-4" /></button></div><form onSubmit={handleSubmit} className="space-y-4"><div className="grid grid-cols-2 gap-4"><div><label className="label text-xs">Record Type *</label><select
+  return <div className="bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#2a2a2a] rounded-lg p-5 mb-5"><div className="flex items-center justify-between mb-4"><h3 className="text-sm font-semibold text-slate-700 dark:text-[#cccccc]">Add New Record</h3><button onClick={onCancel} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#aaaaaa] transition-colors"><X className="w-4 h-4" /></button></div><form onSubmit={handleSubmit} className="space-y-4"><div className="grid grid-cols-2 gap-4"><div><label className="label text-xs">Record Type *</label><SearchableSelect
     className="input text-sm"
     value={form.historyType}
-    onChange={(e) => setForm((p) => ({ ...p, historyType: e.target.value }))}
-  >{HISTORY_TYPES.map((t) => <option key={t} value={t}>{t.replace("_", " ")}</option>)}</select></div><div><label className="label text-xs">Next Visit Date</label><input
+    onChange={(v) => setForm((p) => ({ ...p, historyType: v }))}
+    options={HISTORY_TYPES.map((t) => ({ value: t, label: t.replace("_", " ") }))}
+  /></div><div><label className="label text-xs">Next Visit Date</label><input
     type="datetime-local"
     className="input text-sm"
     value={form.nextVisitDate}

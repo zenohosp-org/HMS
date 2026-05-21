@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { patientApi, staffApi, hospitalServiceApi, radiologyApi, admissionApi } from "@/utils/api";
 import { X, Search, Loader2, UserPlus, ChevronLeft, CheckCircle2, BedDouble } from "lucide-react";
 
@@ -200,11 +201,13 @@ export default function NewOrderModal({ onClose, onCreated }) {
               </div>
               <div>
                 <label className={labelCls}>Gender</label>
-                <select className={inputCls} value={quickForm.gender} onChange={(e) => setQ("gender", e.target.value)}>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                  <option value="OTHER">Other</option>
-                </select>
+                <SearchableSelect className={inputCls} value={quickForm.gender} onChange={(v) => setQ("gender", v)}
+                  options={[
+                    { value: "MALE", label: "Male" },
+                    { value: "FEMALE", label: "Female" },
+                    { value: "OTHER", label: "Other" },
+                  ]}
+                />
               </div>
               <div>
                 <label className={labelCls}>Date of Birth</label>
@@ -213,10 +216,9 @@ export default function NewOrderModal({ onClose, onCreated }) {
               </div>
               <div>
                 <label className={labelCls}>Blood Group</label>
-                <select className={inputCls} value={quickForm.bloodGroup} onChange={(e) => setQ("bloodGroup", e.target.value)}>
-                  <option value="">Unknown</option>
-                  {BLOOD_GROUPS.map((b) => <option key={b} value={b}>{b}</option>)}
-                </select>
+                <SearchableSelect className={inputCls} value={quickForm.bloodGroup} onChange={(v) => setQ("bloodGroup", v)}
+                  options={[{ value: "", label: "Unknown" }, ...BLOOD_GROUPS.map((b) => ({ value: b, label: b }))]}
+                />
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
@@ -344,13 +346,10 @@ export default function NewOrderModal({ onClose, onCreated }) {
             <div>
               <label className={labelCls}>Investigation (Test) *</label>
               {services.length > 0 ? (
-                <select className={inputCls} value={form.serviceName} required
-                  onChange={(e) => setForm((f) => ({ ...f, serviceName: e.target.value }))}>
-                  <option value="">Select investigation…</option>
-                  {services.filter((s) => s.isActive).map((s) => (
-                    <option key={s.id} value={s.name}>{s.name}</option>
-                  ))}
-                </select>
+                <SearchableSelect className={inputCls} value={form.serviceName} required
+                  onChange={(v) => setForm((f) => ({ ...f, serviceName: v }))}
+                  options={[{ value: "", label: "Select investigation…" }, ...services.filter((s) => s.isActive).map((s) => ({ value: s.name, label: s.name }))]}
+                />
               ) : (
                 <input className={inputCls} placeholder="e.g. X-Ray Chest, CT Scan Abdomen…"
                   value={form.serviceName} required
@@ -362,25 +361,22 @@ export default function NewOrderModal({ onClose, onCreated }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Technician</label>
-                <select className={inputCls} value={form.technicianId} onChange={(e) => {
-                  const tech = technicians.find((t) => t.id === e.target.value);
+                <SearchableSelect className={inputCls} value={form.technicianId} onChange={(v) => {
+                  const tech = technicians.find((t) => t.id === v);
                   setForm((f) => ({
-                    ...f, technicianId: e.target.value,
+                    ...f, technicianId: v,
                     technicianName: tech ? `${tech.firstName} ${tech.lastName ?? ""}`.trim() : "",
                   }));
-                }}>
-                  <option value="">Unassigned</option>
-                  {technicians.map((t) => (
-                    <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>
-                  ))}
-                </select>
+                }}
+                  options={[{ value: "", label: "Unassigned" }, ...technicians.map((t) => ({ value: t.id, label: `${t.firstName} ${t.lastName}` }))]}
+                />
               </div>
               <div>
                 <label className={labelCls}>Priority</label>
-                <select className={inputCls} value={form.priority}
-                  onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}>
-                  {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
+                <SearchableSelect className={inputCls} value={form.priority}
+                  onChange={(v) => setForm((f) => ({ ...f, priority: v }))}
+                  options={PRIORITIES.map((p) => ({ value: p, label: p }))}
+                />
               </div>
             </div>
 

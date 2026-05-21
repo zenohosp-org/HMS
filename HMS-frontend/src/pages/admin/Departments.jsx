@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { departmentApi } from '@/utils/api'
 import { Building2, Plus, ToggleLeft, ToggleRight, Pencil, X, Check } from 'lucide-react'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 
 const DEPT_TYPES = ['CLINICAL', 'SUPPORT', 'ADMINISTRATIVE']
 
@@ -239,9 +240,17 @@ export default function Departments() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Type *</label>
-                  <select required value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className={inputCls}>
-                    {DEPT_TYPES.map(t => <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>)}
-                  </select>
+                  <SearchableSelect
+                    required
+                    value={form.type}
+                    onChange={value => setForm({ ...form, type: value })}
+                    options={[
+                      { value: 'CLINICAL', label: 'Clinical' },
+                      { value: 'SUPPORT', label: 'Support' },
+                      { value: 'ADMINISTRATIVE', label: 'Administrative' },
+                    ]}
+                    className={inputCls}
+                  />
                 </div>
                 <div>
                   <label className={labelCls}>Code</label>

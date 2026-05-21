@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { ambulanceApi, patientApi } from "@/utils/api";
 import Pagination from "@/components/ui/Pagination";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
   Ambulance, Plus, X, Search, Calendar, Clock, MapPin,
   User, Phone, Car, CreditCard, FileText,
@@ -299,14 +300,15 @@ function BookingModal({ hospitalId, availableVehicles, onClose, onSaved }) {
             <div className="space-y-4">
               <div>
                 <label className={labelCls}>Vehicle</label>
-                <select className={inputCls} value={form.vehicleId} onChange={e => set("vehicleId", e.target.value)}>
-                  <option value="">— Select available vehicle —</option>
-                  {availableVehicles.map(v => (
-                    <option key={v.id} value={v.id}>
-                      {v.vehicleNumber}{v.vehicleName ? ` · ${v.vehicleName}` : ""}{v.ambulanceType ? ` · ${v.ambulanceType.name}` : ""}
-                    </option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  value={form.vehicleId}
+                  onChange={(v) => set("vehicleId", v)}
+                  options={availableVehicles.map(v => ({
+                    value: String(v.id),
+                    label: `${v.vehicleNumber}${v.vehicleName ? ` · ${v.vehicleName}` : ""}${v.ambulanceType ? ` · ${v.ambulanceType.name}` : ""}`,
+                  }))}
+                  placeholder="— Select available vehicle —"
+                />
                 {selectedVehicle?.defaultCharge != null && (
                   <p className="text-xs text-slate-600 dark:text-[#999999] mt-1.5 font-medium">
                     Default charge: ₹{Number(selectedVehicle.defaultCharge).toLocaleString()}
@@ -332,9 +334,11 @@ function BookingModal({ hospitalId, availableVehicles, onClose, onSaved }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Payment Status</label>
-                <select className={inputCls} value={form.paymentStatus} onChange={e => set("paymentStatus", e.target.value)}>
-                  {PAYMENT_OPTIONS.map(p => <option key={p} value={p}>{p.charAt(0) + p.slice(1).toLowerCase()}</option>)}
-                </select>
+                <SearchableSelect
+                  value={form.paymentStatus}
+                  onChange={(v) => set("paymentStatus", v)}
+                  options={PAYMENT_OPTIONS.map(p => ({ value: p, label: p.charAt(0) + p.slice(1).toLowerCase() }))}
+                />
               </div>
               <div>
                 <label className={labelCls}>Notes</label>
@@ -416,10 +420,12 @@ function VehicleModal({ hospitalId, types, vehicle, onClose, onSaved }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Ambulance Type</label>
-              <select value={form.ambulanceTypeId} onChange={e => set("ambulanceTypeId", e.target.value)} className="input">
-                <option value="">— Select —</option>
-                {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
+              <SearchableSelect
+                value={form.ambulanceTypeId}
+                onChange={(v) => set("ambulanceTypeId", v)}
+                options={types.map(t => ({ value: String(t.id), label: t.name }))}
+                placeholder="— Select —"
+              />
             </div>
             <div>
               <label className="label">Default Charge (₹)</label>

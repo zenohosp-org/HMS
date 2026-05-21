@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { admissionApi, roomApi, doctorsApi } from '@/utils/api'
 import { X, Scissors, BedDouble, Stethoscope, Loader2 } from 'lucide-react'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 
 export default function MoveToOTModal({ admission, onClose, onMoved }) {
   const { user } = useAuth()
@@ -105,17 +106,16 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
                   <Stethoscope className="w-3.5 h-3.5 inline mr-1.5" />
                   Performing Doctor
                 </label>
-                <select
+                <SearchableSelect
                   className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#0d0d0d] text-sm text-slate-800 dark:text-[#cccccc] focus:outline-none focus:ring-2 focus:ring-slate-300/50"
                   value={selectedDoctorId}
-                  onChange={e => setSelectedDoctorId(e.target.value)}>
-                  <option value="">— Keep current doctor —</option>
-                  {doctors.map(d => (
-                    <option key={d.id} value={d.id}>
-                      Dr. {d.firstName} {d.lastName}{d.specialization ? ` · ${d.specialization}` : ''}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setSelectedDoctorId(v)}
+                  options={doctors.map(d => ({
+                    value: d.id,
+                    label: `Dr. ${d.firstName} ${d.lastName}${d.specialization ? ` · ${d.specialization}` : ''}`
+                  }))}
+                  placeholder="— Keep current doctor —"
+                />
               </div>
             </>
           )}

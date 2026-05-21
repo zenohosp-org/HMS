@@ -5,6 +5,7 @@ import { doctorsApi, staffApi, specializationApi } from "@/utils/api";
 import StateSelect from "@/components/StateSelect";
 import SidePane from "@/components/SidePane";
 import { Home, X } from "lucide-react";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const MAX_SPECS = 6;
@@ -59,24 +60,14 @@ function SpecPicker({ specializations, value, onChange, loading }) {
         </div>
       )}
       {value.length < MAX_SPECS ? (
-        <select
+        <SearchableSelect
+          options={remaining.map((s) => ({ value: s.id, label: s.name }))}
           value=""
-          onChange={(e) => {
-            add(e.target.value);
-            e.target.value = "";
-          }}
-          className={inputBase}
+          onChange={(v) => add(v)}
+          placeholder={loading ? "Loading…" : remaining.length === 0 ? "All specializations added" : "Add specialization…"}
           disabled={loading || remaining.length === 0}
-        >
-          <option value="">
-            {loading ? "Loading…" : remaining.length === 0 ? "All specializations added" : "Add specialization…"}
-          </option>
-          {remaining.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+          className={inputBase}
+        />
       ) : (
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
           Maximum {MAX_SPECS} specializations reached.

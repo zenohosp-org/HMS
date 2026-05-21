@@ -2,6 +2,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { checkupApi, patientApi, doctorsApi } from "@/utils/api";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
   ClipboardList, Plus, Search, X, Calendar, Clock, User,
   AlertCircle, CheckCircle2, Loader2, ChevronRight,
@@ -134,12 +135,13 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
 
               <div>
                 <label className={labelCls}>Package *</label>
-                <select value={form.packageId} onChange={e => set("packageId", e.target.value)} className={inputCls}>
-                  <option value="">— Select a package —</option>
-                  {packages.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} — ₹{Number(p.price).toLocaleString("en-IN")}</option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  options={packages.map(p => ({ value: p.id, label: `${p.name} — ₹${Number(p.price).toLocaleString("en-IN")}` }))}
+                  value={form.packageId}
+                  onChange={v => set("packageId", v)}
+                  placeholder="— Select a package —"
+                  className={inputCls}
+                />
               </div>
 
               {selectedPkg && (
@@ -166,20 +168,27 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
             <>
               <div>
                 <label className={labelCls}><UserCheck className="inline w-3 h-3 mr-1" />Assigned Doctor</label>
-                <select value={form.doctorId} onChange={e => set("doctorId", e.target.value)} className={inputCls}>
-                  <option value="">— Assign later —</option>
-                  {doctors.map(d => <option key={d.id} value={d.id}>{d.firstName} {d.lastName} · {d.specialization}</option>)}
-                </select>
+                <SearchableSelect
+                  value={form.doctorId}
+                  onChange={value => set("doctorId", value)}
+                  options={[{ value: "", label: "— Assign later —" }, ...doctors.map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName} · ${d.specialization}` }))]}
+                  className={inputCls}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}><Banknote className="inline w-3 h-3 mr-1" />Payment Status</label>
-                  <select value={form.paymentStatus} onChange={e => set("paymentStatus", e.target.value)} className={inputCls}>
-                    <option value="PENDING">Pending</option>
-                    <option value="PAID">Paid</option>
-                    <option value="PARTIAL">Partial</option>
-                  </select>
+                  <SearchableSelect
+                    value={form.paymentStatus}
+                    onChange={value => set("paymentStatus", value)}
+                    options={[
+                      { value: "PENDING", label: "Pending" },
+                      { value: "PAID", label: "Paid" },
+                      { value: "PARTIAL", label: "Partial" },
+                    ]}
+                    className={inputCls}
+                  />
                 </div>
                 <div>
                   <label className={labelCls}>Amount Paid (₹)</label>
@@ -359,10 +368,13 @@ export default function CheckupBookings() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, UHID, booking number…" className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-slate-300/50">
-          <option value="ALL">All Status</option>
-          {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
+        <SearchableSelect
+          options={[{ value: "ALL", label: "All Status" }, ...Object.entries(STATUS_CONFIG).map(([k, v]) => ({ value: k, label: v.label }))]}
+          value={filterStatus}
+          onChange={v => setFilterStatus(v)}
+          placeholder="All Status"
+          className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-slate-300/50"
+        />
         <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-[#ccc] focus:outline-none focus:ring-2 focus:ring-slate-300/50" />
       </div>
 

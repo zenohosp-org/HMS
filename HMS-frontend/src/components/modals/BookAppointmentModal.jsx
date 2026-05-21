@@ -4,6 +4,7 @@ import { X, Calendar, Clock, FileText, Search, ChevronLeft, ChevronRight, CheckC
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { patientApi, doctorsApi, appointmentsApi, checkupApi } from "@/utils/api";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -434,11 +435,13 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                   <label className="block text-sm font-semibold text-slate-700 dark:text-[#cccccc] mb-2">
                     Checkup Package <span className="text-rose-500">*</span>
                   </label>
-                  <select value={packageId} onChange={e => setPackageId(e.target.value)}
-                    className="w-full px-4 py-3 text-sm text-slate-900 dark:text-[#cccccc] bg-white dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#222222] rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
-                    <option value="">Select a package</option>
-                    {packages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    value={packageId}
+                    onChange={(v) => setPackageId(v)}
+                    options={packages.map(p => ({ value: p.id, label: p.name }))}
+                    placeholder="Select a package"
+                    className="w-full px-4 py-3 text-sm text-slate-900 dark:text-[#cccccc] bg-white dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#222222] rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  />
                   {selectedPkg && (
                     <div className="mt-2 px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
                       <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{selectedPkg.tests?.length || 0} tests included</p>

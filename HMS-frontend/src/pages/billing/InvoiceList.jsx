@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { invoiceApi, bankApi } from "@/utils/api";
 import { useNotification } from "@/context/NotificationContext";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
   Search, ChevronLeft, Printer, Eye, FileText,
   CheckCircle2, Clock, XCircle, CreditCard, X, Landmark, Loader2,
@@ -501,9 +502,11 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                       </div>
                       <div>
                         <label className="label">Payment Type</label>
-                        <select className="input" value={payMethod} onChange={e => setPayMethod(e.target.value)}>
-                          {PAYMENT_METHODS.map(m => <option key={m}>{m}</option>)}
-                        </select>
+                        <SearchableSelect
+                          value={payMethod}
+                          onChange={(v) => setPayMethod(v)}
+                          options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
+                        />
                       </div>
                     </div>
                     <div>
@@ -663,9 +666,11 @@ function MarkAsPaidModal({ invoice, onClose, onPaid }) {
         <div className="p-5 space-y-4">
           <div>
             <label className="label">Payment Method</label>
-            <select className="input" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-              {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
+            <SearchableSelect
+              value={paymentMethod}
+              onChange={(v) => setPaymentMethod(v)}
+              options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
+            />
           </div>
 
           {bankAccounts.length > 0 && (

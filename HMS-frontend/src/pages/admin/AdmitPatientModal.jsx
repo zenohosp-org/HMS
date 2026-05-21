@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, patientAdvanceApi } from '@/utils/api'
 import api from '@/utils/api'
 import { X, Search, BedDouble, User, CheckCircle2, Loader2 } from 'lucide-react'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 
 const ADMISSION_SOURCES = ['OPD_REFERRAL', 'EMERGENCY', 'DIRECT']
 const RELATIONSHIPS = ['Spouse', 'Parent', 'Child', 'Sibling', 'Friend', 'Guardian', 'Other']
@@ -252,9 +253,12 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               </div>
               <div>
                 <label className="label">Admission Source</label>
-                <select className="input" value={form.admissionType} onChange={e => setForm({ ...form, admissionType: e.target.value })}>
-                  {ADMISSION_SOURCES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-                </select>
+                <SearchableSelect
+                  className="input"
+                  value={form.admissionType}
+                  onChange={(v) => setForm({ ...form, admissionType: v })}
+                  options={ADMISSION_SOURCES.map(s => ({ value: s, label: s.replace(/_/g, ' ') }))}
+                />
               </div>
             </>
           )}
@@ -265,17 +269,23 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Department</label>
-                  <select className="input" value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value, admittingDoctorId: '' })}>
-                    <option value="">Select department…</option>
-                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    className="input"
+                    value={form.departmentId}
+                    onChange={(v) => setForm({ ...form, departmentId: v, admittingDoctorId: '' })}
+                    options={departments.map(d => ({ value: d.id, label: d.name }))}
+                    placeholder="Select department…"
+                  />
                 </div>
                 <div>
                   <label className="label">Admitting Doctor</label>
-                  <select className="input" value={form.admittingDoctorId} onChange={e => setForm({ ...form, admittingDoctorId: e.target.value })}>
-                    <option value="">Select doctor…</option>
-                    {filteredDoctors.map(d => <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>)}
-                  </select>
+                  <SearchableSelect
+                    className="input"
+                    value={form.admittingDoctorId}
+                    onChange={(v) => setForm({ ...form, admittingDoctorId: v })}
+                    options={filteredDoctors.map(d => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}` }))}
+                    placeholder="Select doctor…"
+                  />
                 </div>
               </div>
               <div>
@@ -291,14 +301,16 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Assign Room (optional)</label>
-                  <select className="input" value={form.roomId} onChange={e => setForm({ ...form, roomId: e.target.value, bedId: '' })}>
-                    <option value="">Assign later…</option>
-                    {rooms.map(r => (
-                      <option key={r.id} value={r.id}>
-                        {r.roomNumber} · {r.roomType}{r.bedCount > 1 ? ` · ${r.bedCount} beds` : ''}{r.ward ? ` · ${r.ward}` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    className="input"
+                    value={form.roomId}
+                    onChange={(v) => setForm({ ...form, roomId: v, bedId: '' })}
+                    options={rooms.map(r => ({
+                      value: r.id,
+                      label: `${r.roomNumber} · ${r.roomType}${r.bedCount > 1 ? ` · ${r.bedCount} beds` : ''}${r.ward ? ` · ${r.ward}` : ''}`
+                    }))}
+                    placeholder="Assign later…"
+                  />
                 </div>
                 <div>
                   <label className="label">Approx. Discharge</label>
@@ -357,11 +369,13 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                 </div>
                 <div>
                   <label className="label">Relationship</label>
-                  <select className="input" value={form.attenderRelationship}
-                    onChange={e => setForm({ ...form, attenderRelationship: e.target.value })}>
-                    <option value="">Select…</option>
-                    {RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
-                  </select>
+                  <SearchableSelect
+                    className="input"
+                    value={form.attenderRelationship}
+                    onChange={(v) => setForm({ ...form, attenderRelationship: v })}
+                    options={RELATIONSHIPS.map(r => ({ value: r, label: r }))}
+                    placeholder="Select…"
+                  />
                 </div>
               </div>
 
@@ -442,14 +456,13 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                   </div>
                   <div>
                     <label className="label">Payment Method</label>
-                    <select
+                    <SearchableSelect
                       className="input"
                       value={advancePaymentMethod}
                       disabled={advanceAmt === 0}
-                      onChange={e => setAdvancePaymentMethod(e.target.value)}
-                    >
-                      {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
+                      onChange={(v) => setAdvancePaymentMethod(v)}
+                      options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
+                    />
                   </div>
                 </div>
 

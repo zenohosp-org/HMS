@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { hospitalServiceApi } from "@/utils/api";
 import SidePane from "@/components/SidePane";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 function AddServiceModal({ isOpen, onClose, service, specializations, onSuccess }) {
   const { user } = useAuth();
@@ -63,11 +64,13 @@ function AddServiceModal({ isOpen, onClose, service, specializations, onSuccess 
       </div>
       <div className="space-y-1.5">
         <label className={labelCls}>Department <span className="text-rose-500">*</span></label>
-        <select value={formData.specializationId} onChange={(e) => setFormData((p) => ({ ...p, specializationId: e.target.value }))}
-          className={inputCls + " appearance-none cursor-pointer"} required>
-          <option value="">Select Department</option>
-          {specializations.filter((s) => s.isActive).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
+        <SearchableSelect
+          value={formData.specializationId}
+          onChange={(v) => setFormData((p) => ({ ...p, specializationId: v }))}
+          options={specializations.filter((s) => s.isActive).map((s) => ({ value: s.id, label: s.name }))}
+          placeholder="Select Department"
+          className={inputCls}
+        />
       </div>
       <div className="space-y-1.5">
         <label className={labelCls}>Price (₹) <span className="text-rose-500">*</span></label>

@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { departmentApi, designationApi } from '@/utils/api'
 import { Award, Plus, ToggleLeft, ToggleRight, X, Check } from 'lucide-react'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 
 const CATEGORIES = ['MEDICAL', 'NURSING', 'TECHNICAL', 'ADMINISTRATIVE', 'SUPPORT']
 
@@ -117,11 +118,15 @@ export default function Designations() {
             </button>
           ))}
         </div>
-        <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
-          className="ml-auto rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-slate-300/50">
-          <option value="">All Departments</option>
-          {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
+        <SearchableSelect
+          value={deptFilter}
+          onChange={value => setDeptFilter(value)}
+          options={[
+            { value: '', label: 'All Departments' },
+            ...departments.map(d => ({ value: d.id, label: d.name })),
+          ]}
+          className="ml-auto rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-slate-300/50"
+        />
       </div>
 
       <div className="rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] overflow-hidden flex-1">
@@ -206,16 +211,31 @@ export default function Designations() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Category *</label>
-                  <select required value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className={inputCls}>
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0) + c.slice(1).toLowerCase()}</option>)}
-                  </select>
+                  <SearchableSelect
+                    required
+                    value={form.category}
+                    onChange={value => setForm({ ...form, category: value })}
+                    options={[
+                      { value: 'MEDICAL', label: 'Medical' },
+                      { value: 'NURSING', label: 'Nursing' },
+                      { value: 'TECHNICAL', label: 'Technical' },
+                      { value: 'ADMINISTRATIVE', label: 'Administrative' },
+                      { value: 'SUPPORT', label: 'Support' },
+                    ]}
+                    className={inputCls}
+                  />
                 </div>
                 <div>
                   <label className={labelCls}>Department</label>
-                  <select value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value })} className={inputCls}>
-                    <option value="">Cross-department</option>
-                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    value={form.departmentId}
+                    onChange={value => setForm({ ...form, departmentId: value })}
+                    options={[
+                      { value: '', label: 'Cross-department' },
+                      ...departments.map(d => ({ value: d.id, label: d.name })),
+                    ]}
+                    className={inputCls}
+                  />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">

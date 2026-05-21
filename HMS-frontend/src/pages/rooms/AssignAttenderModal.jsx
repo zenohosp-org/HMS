@@ -2,6 +2,7 @@ import { useState } from "react";
 import api from "@/utils/api";
 import { useAuth } from "@/context/AuthContext";
 import { X, Loader2 } from "lucide-react";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 const inputCls = `w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
     bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc]
     focus:outline-none focus:ring-2 focus:ring-slate-300/50`;
@@ -40,11 +41,19 @@ function AssignAttenderModal({ roomId, roomNumber, existing, onClose, onSuccess 
     placeholder="Phone number"
     value={attender.attenderPhone}
     onChange={(e) => setAttender({ ...attender, attenderPhone: e.target.value })}
-  /></div><div><label className={labelCls}>Relationship</label><select
+  /></div><div><label className={labelCls}>Relationship</label><SearchableSelect
     className={inputCls}
     value={attender.attenderRelationship}
-    onChange={(e) => setAttender({ ...attender, attenderRelationship: e.target.value })}
-  ><option value="">Select</option><option value="Spouse">Spouse</option><option value="Parent">Parent</option><option value="Child">Child</option><option value="Sibling">Sibling</option><option value="Friend">Friend</option></select></div></div><div className="pt-2 border-t border-slate-100 dark:border-[#222222] flex justify-end gap-3"><button type="button" onClick={onClose} className="btn-secondary">Cancel</button><button type="submit" disabled={submitting} className="btn-primary">{submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Attender"}</button></div></form></div></div>;
+    onChange={(v) => setAttender({ ...attender, attenderRelationship: v })}
+    options={[
+      { value: "Spouse", label: "Spouse" },
+      { value: "Parent", label: "Parent" },
+      { value: "Child", label: "Child" },
+      { value: "Sibling", label: "Sibling" },
+      { value: "Friend", label: "Friend" },
+    ]}
+    placeholder="Select"
+  /></div></div><div className="pt-2 border-t border-slate-100 dark:border-[#222222] flex justify-end gap-3"><button type="button" onClick={onClose} className="btn-secondary">Cancel</button><button type="submit" disabled={submitting} className="btn-primary">{submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Attender"}</button></div></form></div></div>;
 }
 export {
   AssignAttenderModal as default

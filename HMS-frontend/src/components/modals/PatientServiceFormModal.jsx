@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { patientServicesApi } from "@/utils/api";
 import SidePane from "@/components/SidePane";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const MEAL_DEFAULTS = { BREAKFAST: "08:00", LUNCH: "13:00", DINNER: "20:00" }
 
@@ -93,17 +94,18 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
 
       <div className="space-y-1.5">
         <label className={labelCls}>Service Type <span className="text-rose-500">*</span></label>
-        <select
+        <SearchableSelect
           value={form.type}
-          onChange={(e) => set("type", e.target.value)}
-          className={inputCls + " cursor-pointer"}
-        >
-          <option value="FOOD">Food</option>
-          <option value="ROOM_SERVICE">Room Service</option>
-          <option value="CONVENIENCE">Convenience</option>
-          <option value="CUSTOM">Custom</option>
-          <option value="REGISTRATION">Registration</option>
-        </select>
+          onChange={(v) => set("type", v)}
+          options={[
+            { value: "FOOD", label: "Food" },
+            { value: "ROOM_SERVICE", label: "Room Service" },
+            { value: "CONVENIENCE", label: "Convenience" },
+            { value: "CUSTOM", label: "Custom" },
+            { value: "REGISTRATION", label: "Registration" },
+          ]}
+          className={inputCls}
+        />
       </div>
 
       {form.type === "FOOD" && (
@@ -111,18 +113,19 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className={labelCls}>Meal Time <span className="text-rose-500">*</span></label>
-              <select
+              <SearchableSelect
                 value={form.mealTime}
-                onChange={(e) => {
-                  set("mealTime", e.target.value)
-                  set("chargeTime", MEAL_DEFAULTS[e.target.value] || "08:00")
+                onChange={(v) => {
+                  set("mealTime", v);
+                  set("chargeTime", MEAL_DEFAULTS[v] || "08:00");
                 }}
-                className={inputCls + " cursor-pointer"}
-              >
-                <option value="BREAKFAST">Breakfast</option>
-                <option value="LUNCH">Lunch</option>
-                <option value="DINNER">Dinner</option>
-              </select>
+                options={[
+                  { value: "BREAKFAST", label: "Breakfast" },
+                  { value: "LUNCH", label: "Lunch" },
+                  { value: "DINNER", label: "Dinner" },
+                ]}
+                className={inputCls}
+              />
             </div>
             <div className="space-y-1.5">
               <label className={labelCls}>Charge Time <span className="text-rose-500">*</span></label>

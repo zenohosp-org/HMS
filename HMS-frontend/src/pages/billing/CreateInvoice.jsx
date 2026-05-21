@@ -2,6 +2,7 @@
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
   patientApi,
   invoiceApi,
@@ -304,7 +305,12 @@ function CreateInvoice() {
   })}</div>}</div>}{
     /* 2. Referred By */
   }<div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">2</span>
-                        Referred By <span className="font-normal normal-case text-slate-400">(Optional)</span></p><select className={inputCls} value={referredById} onChange={(e) => setReferredById(e.target.value)}><option value="">Self / Walk-in (No Referral)</option>{doctors.map((d) => <option key={d.id} value={d.id}>{d.firstName} {d.lastName}{d.specialization ? ` \u2014 ${d.specialization}` : ""}</option>)}</select></div>{
+                        Referred By <span className="font-normal normal-case text-slate-400">(Optional)</span></p><SearchableSelect
+  value={referredById}
+  onChange={(v) => setReferredById(v)}
+  options={doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}${d.specialization ? ` \u2014 ${d.specialization}` : ""}` }))}
+  placeholder="Self / Walk-in (No Referral)"
+/></div>{
     /* 3. Add Tests & Services */
   }<div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">3</span>
                         Add Tests &amp; Services
@@ -332,11 +338,11 @@ function CreateInvoice() {
   ><Plus className="w-3 h-3" /> Add Custom Item
                         </button></div>{items.length === 0 ? <div className="py-8 text-center text-sm text-slate-600 dark:text-[#999999] border-2 border-dashed border-slate-100 dark:border-[#1e1e1e] rounded-lg">
                             No items yet — detect from patient or add manually
-                        </div> : <><div className="grid grid-cols-12 gap-2 pb-2 border-b border-slate-100 dark:border-[#1e1e1e] text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#999999] px-1"><div className="col-span-1">Type</div><div className="col-span-5">Description</div><div className="col-span-2 text-center">Qty</div><div className="col-span-2 text-right">Unit ₹</div><div className="col-span-2 text-right">Total ₹</div></div><div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{items.map((item) => <div key={item.key} className="grid grid-cols-12 gap-2 items-center py-2 group px-1"><div className="col-span-1"><select
-    className="w-full text-[10px] rounded border border-slate-100 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-1 py-1 text-slate-700 dark:text-[#cccccc] focus:outline-none"
+                        </div> : <><div className="grid grid-cols-12 gap-2 pb-2 border-b border-slate-100 dark:border-[#1e1e1e] text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#999999] px-1"><div className="col-span-1">Type</div><div className="col-span-5">Description</div><div className="col-span-2 text-center">Qty</div><div className="col-span-2 text-right">Unit ₹</div><div className="col-span-2 text-right">Total ₹</div></div><div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{items.map((item) => <div key={item.key} className="grid grid-cols-12 gap-2 items-center py-2 group px-1"><div className="col-span-1"><SearchableSelect
     value={item.itemType ?? "CUSTOM"}
-    onChange={(e) => updateItem(item.key, { itemType: e.target.value })}
-  >{Object.keys(TYPE_META).map((t) => <option key={t} value={t}>{TYPE_META[t].label}</option>)}</select></div><div className="col-span-5"><input
+    onChange={(v) => updateItem(item.key, { itemType: v })}
+    options={Object.keys(TYPE_META).map((k) => ({ value: k, label: TYPE_META[k]?.label || k }))}
+  /></div><div className="col-span-5"><input
     className="w-full px-2 py-1.5 rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] focus:outline-none focus:ring-1 focus:ring-blue-500/30"
     placeholder="Description…"
     value={item.description}
@@ -366,7 +372,11 @@ function CreateInvoice() {
     /* 5. Payment Details */
   }<div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-4 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">5</span>
                         Payment Details
-                    </p><div className="grid grid-cols-2 gap-3 mb-4"><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Payment Method</label><select className={inputCls} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>{PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}</select></div><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Notes (optional)</label><input className={inputCls} placeholder="Additional notes…" value={notes} onChange={(e) => setNotes(e.target.value)} /></div></div>{
+                    </p><div className="grid grid-cols-2 gap-3 mb-4"><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Payment Method</label><SearchableSelect
+  value={paymentMethod}
+  onChange={(v) => setPaymentMethod(v)}
+  options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
+/></div><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Notes (optional)</label><input className={inputCls} placeholder="Additional notes…" value={notes} onChange={(e) => setNotes(e.target.value)} /></div></div>{
     /* Bank account cards */
   }{bankAccounts.length === 0 && <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" /><p className="text-xs text-amber-700 dark:text-amber-400">No payment accounts configured — add accounts in Finance to audit billing.</p></div>}{bankAccounts.length > 0 && <div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-2 flex items-center gap-1.5"><Landmark className="w-3.5 h-3.5" /> Credit payment to
                             </label><div className="grid grid-cols-2 gap-2">{bankAccounts.map((a) => {

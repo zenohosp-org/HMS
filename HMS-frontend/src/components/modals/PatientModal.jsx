@@ -2,6 +2,7 @@ import { useState } from "react";
 import { validateEmail, validateRequired, validatePhone } from "@/utils/validators";
 import StateSelect from "@/components/StateSelect";
 import SidePane from "@/components/SidePane";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -131,26 +132,36 @@ function PatientModal({ patient, onClose, onSave }) {
             </div>
             <div>
               <label className="label">Gender *</label>
-              <select className="input" value={form.gender} onChange={(e) => set("gender", e.target.value)}>
-                <option value="">Select gender</option>
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other</option>
-              </select>
+              <SearchableSelect
+                className="input"
+                options={[
+                  { value: "Male", label: "Male" },
+                  { value: "Female", label: "Female" },
+                  { value: "Other", label: "Other" },
+                ]}
+                value={form.gender}
+                onChange={(v) => set("gender", v)}
+                placeholder="Select gender"
+              />
               {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender}</p>}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Marital Status</label>
-              <select className="input" value={form.maritalStatus} onChange={(e) => set("maritalStatus", e.target.value)}>
-                <option value="">Select</option>
-                <option>Single</option>
-                <option>Married</option>
-                <option>Divorced</option>
-                <option>Widowed</option>
-                <option>Separated</option>
-              </select>
+              <SearchableSelect
+                className="input"
+                options={[
+                  { value: "Single", label: "Single" },
+                  { value: "Married", label: "Married" },
+                  { value: "Divorced", label: "Divorced" },
+                  { value: "Widowed", label: "Widowed" },
+                  { value: "Separated", label: "Separated" },
+                ]}
+                value={form.maritalStatus}
+                onChange={(v) => set("maritalStatus", v)}
+                placeholder="Select"
+              />
             </div>
             <div>
               <label className="label">Occupation</label>
@@ -200,10 +211,13 @@ function PatientModal({ patient, onClose, onSave }) {
           </div>
           <div>
             <label className="label">Relation</label>
-            <select className="input" value={form.emergencyContactRelation} onChange={(e) => set("emergencyContactRelation", e.target.value)}>
-              <option value="">Select</option>
-              {EMERGENCY_RELATIONS.map((r) => <option key={r}>{r}</option>)}
-            </select>
+            <SearchableSelect
+              className="input"
+              options={EMERGENCY_RELATIONS.map((r) => ({ value: r, label: r }))}
+              value={form.emergencyContactRelation}
+              onChange={(v) => set("emergencyContactRelation", v)}
+              placeholder="Select"
+            />
           </div>
         </div>
       </div>
@@ -214,10 +228,13 @@ function PatientModal({ patient, onClose, onSave }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Blood Group</label>
-            <select className="input" value={form.bloodGroup} onChange={(e) => set("bloodGroup", e.target.value)}>
-              <option value="">Select</option>
-              {BLOOD_GROUPS.map((g) => <option key={g}>{g}</option>)}
-            </select>
+            <SearchableSelect
+              className="input"
+              options={BLOOD_GROUPS.map((g) => ({ value: g, label: g }))}
+              value={form.bloodGroup}
+              onChange={(v) => set("bloodGroup", v)}
+              placeholder="Select"
+            />
           </div>
           <div>
             <label className="label">Aadhaar Number</label>
@@ -242,10 +259,13 @@ function PatientModal({ patient, onClose, onSave }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Scheme</label>
-            <select className="input" value={form.insuranceScheme} onChange={(e) => set("insuranceScheme", e.target.value)}>
-              <option value="">Select</option>
-              {INSURANCE_SCHEMES.map((s) => <option key={s}>{s}</option>)}
-            </select>
+            <SearchableSelect
+              className="input"
+              options={INSURANCE_SCHEMES.map((s) => ({ value: s, label: s }))}
+              value={form.insuranceScheme}
+              onChange={(v) => set("insuranceScheme", v)}
+              placeholder="Select"
+            />
           </div>
           <div>
             <label className="label">Policy / Card Number</label>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api, { roomTypeApi } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext";
 import { X, Loader2 } from "lucide-react";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const inputCls = `w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
   bg-white dark:bg-[#111111] text-slate-900 dark:text-[#cccccc] placeholder:text-slate-400 dark:placeholder:text-[#555555]
@@ -72,22 +73,22 @@ function GenerateRoomsModal({ onClose, onSuccess }) {
 
           <div>
             <label className={labelCls}>Room Type</label>
-            <select
+            <SearchableSelect
               required
-              className={inputCls}
               value={formData.roomType}
-              onChange={(e) => setFormData({ ...formData, roomType: e.target.value })}
-            >
-              {roomTypes.length > 0
-                ? roomTypes.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)
-                : <>
-                    <option value="GENERAL">General</option>
-                    <option value="ICU">ICU</option>
-                    <option value="PRIVATE">Private</option>
-                    <option value="OT">OT (Operating Theatre)</option>
-                  </>
+              onChange={(value) => setFormData({ ...formData, roomType: value })}
+              options={
+                roomTypes.length > 0
+                  ? roomTypes.map((rt) => ({ value: rt.code, label: rt.label }))
+                  : [
+                      { value: "GENERAL", label: "General" },
+                      { value: "ICU", label: "ICU" },
+                      { value: "PRIVATE", label: "Private" },
+                      { value: "OT", label: "OT (Operating Theatre)" },
+                    ]
               }
-            </select>
+              className={inputCls}
+            />
           </div>
 
           <div>

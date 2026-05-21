@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { checkupApi } from "@/utils/api";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
   Package, Plus, Edit2, Trash2, ToggleLeft, ToggleRight,
   ChevronDown, ChevronUp, GripVertical, X, Check, AlertCircle,
@@ -94,17 +95,19 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
             </div>
             <div>
               <label className={labelCls}>Category</label>
-              <select value={form.category} onChange={e => set("category", e.target.value)} className={inputCls}>
-                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
+              <SearchableSelect value={form.category} onChange={v => set("category", v)} className={inputCls}
+                options={CATEGORIES.map(c => ({ value: c.value, label: c.label }))}
+              />
             </div>
             <div>
               <label className={labelCls}>Target Gender</label>
-              <select value={form.targetGender} onChange={e => set("targetGender", e.target.value)} className={inputCls}>
-                <option value="ANY">Any / Unisex</option>
-                <option value="MALE">Male Only</option>
-                <option value="FEMALE">Female Only</option>
-              </select>
+              <SearchableSelect value={form.targetGender} onChange={v => set("targetGender", v)} className={inputCls}
+                options={[
+                  { value: "ANY", label: "Any / Unisex" },
+                  { value: "MALE", label: "Male Only" },
+                  { value: "FEMALE", label: "Female Only" },
+                ]}
+              />
             </div>
             <div>
               <label className={labelCls}>Price (₹)</label>
@@ -144,9 +147,9 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
                         <input value={t.testName} onChange={e => updateTest(i, "testName", e.target.value)} placeholder="Test name (e.g. Complete Blood Count)" className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] placeholder:text-slate-400" />
                       </div>
                       <div>
-                        <select value={t.testCategory} onChange={e => updateTest(i, "testCategory", e.target.value)} className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50">
-                          {TEST_CATEGORIES.map(c => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
-                        </select>
+                        <SearchableSelect value={t.testCategory} onChange={v => updateTest(i, "testCategory", v)} className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50"
+                          options={TEST_CATEGORIES.map(c => ({ value: c, label: c.replace("_", " ") }))}
+                        />
                       </div>
                       <div>
                         <input value={t.normalRange} onChange={e => updateTest(i, "normalRange", e.target.value)} placeholder="Normal range" className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-[#333] bg-white dark:bg-[#111] text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 placeholder:text-slate-400" />

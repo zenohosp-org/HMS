@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { infrastructureApi, roomTypeApi } from "@/utils/api";
 import { 
   Building2, 
@@ -141,13 +142,12 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
 
         {/* Type select */}
         <div className="flex items-center px-3 py-3 w-36 shrink-0">
-          <select
+          <SearchableSelect
             className="w-full text-xs text-slate-600 dark:text-[#aaaaaa] bg-transparent focus:outline-none cursor-pointer font-medium"
             value={ward.roomType || "GENERAL"}
-            onChange={(e) => updateWard(bIdx, fIdx, wIdx, "roomType", e.target.value)}
-          >
-            {roomTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+            onChange={(v) => updateWard(bIdx, fIdx, wIdx, "roomType", v)}
+            options={roomTypes.map((t) => ({ value: t.value, label: t.label }))}
+          />
         </div>
 
         {/* Rooms Stepper */}
@@ -204,13 +204,12 @@ function SpecialRoomCard({ room, onUpdate, onRemove, roomTypes }) {
           />
         </div>
         <div className="flex items-center px-3 py-3 w-36 shrink-0">
-          <select
+          <SearchableSelect
             className="w-full text-xs text-slate-600 dark:text-[#aaaaaa] bg-transparent focus:outline-none cursor-pointer font-medium"
             value={room.roomType}
-            onChange={(e) => onUpdate("roomType", e.target.value)}
-          >
-            {roomTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+            onChange={(v) => onUpdate("roomType", v)}
+            options={roomTypes.map((t) => ({ value: t.value, label: t.label }))}
+          />
         </div>
         <div className="flex items-center gap-1.5 px-3 py-3 w-36 shrink-0">
           <span className="text-xs font-semibold text-slate-400">₹</span>
