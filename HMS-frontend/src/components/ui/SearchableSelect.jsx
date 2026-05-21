@@ -50,7 +50,7 @@ export default function SearchableSelect({
   const lower = query.toLowerCase();
   const filtered = query
     ? options.filter((o) => o.label.toLowerCase().includes(lower))
-    : options.slice(0, 5);
+    : options;
 
   const selected = options.find((o) => String(o.value) === String(value));
 
@@ -120,11 +120,6 @@ export default function SearchableSelect({
                 {opt.label}
               </li>
             ))}
-            {!query && options.length > 5 && (
-              <li className="px-4 py-2 text-[11px] text-slate-400 text-center border-t border-slate-100 dark:border-[#1e1e1e]">
-                {options.length - 5} more — type to filter
-              </li>
-            )}
           </ul>
         </div>
       )}
