@@ -61,6 +61,12 @@ public class DoctorService {
         Doctor doctor = Doctor.builder()
                 .user(user)
                 .hospital(hospital)
+                .specializationId1(doctorData.getSpecializationId1())
+                .specializationId2(doctorData.getSpecializationId2())
+                .specializationId3(doctorData.getSpecializationId3())
+                .specializationId4(doctorData.getSpecializationId4())
+                .specializationId5(doctorData.getSpecializationId5())
+                .specializationId6(doctorData.getSpecializationId6())
                 .specialization(doctorData.getSpecialization())
                 .qualification(doctorData.getQualification())
                 .medicalRegistrationNumber(doctorData.getMedicalRegistrationNumber())
@@ -84,6 +90,14 @@ public class DoctorService {
     @Transactional
     public Doctor updateDoctor(UUID id, Doctor updatedData) {
         Doctor doctor = getDoctorById(id);
+
+        // Always overwrite all 6 spec slots so removed entries become null
+        doctor.setSpecializationId1(updatedData.getSpecializationId1());
+        doctor.setSpecializationId2(updatedData.getSpecializationId2());
+        doctor.setSpecializationId3(updatedData.getSpecializationId3());
+        doctor.setSpecializationId4(updatedData.getSpecializationId4());
+        doctor.setSpecializationId5(updatedData.getSpecializationId5());
+        doctor.setSpecializationId6(updatedData.getSpecializationId6());
 
         if (updatedData.getSpecialization() != null)
             doctor.setSpecialization(updatedData.getSpecialization());

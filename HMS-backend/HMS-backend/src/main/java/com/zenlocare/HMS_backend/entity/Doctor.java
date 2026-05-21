@@ -28,8 +28,12 @@ public class Doctor {
     @JoinColumn(name = "hospital_id", nullable = false)
     private Hospital hospital;
 
-    @Column(name = "specialization_id")
-    private UUID specializationId;
+    @Column(name = "specialization_id_1") private UUID specializationId1;
+    @Column(name = "specialization_id_2") private UUID specializationId2;
+    @Column(name = "specialization_id_3") private UUID specializationId3;
+    @Column(name = "specialization_id_4") private UUID specializationId4;
+    @Column(name = "specialization_id_5") private UUID specializationId5;
+    @Column(name = "specialization_id_6") private UUID specializationId6;
 
     private String specialization;
 

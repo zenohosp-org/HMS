@@ -33,11 +33,14 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception e) {
             log.warn("Could not alter users.last_name: " + e.getMessage());
         }
+        // Migrate old single specialization_id → specialization_id_1 (existing rows only)
         try {
-            jdbcTemplate.execute("ALTER TABLE doctors ADD COLUMN IF NOT EXISTS specialization_id UUID REFERENCES specializations(id)");
-            log.info("✅ Added specialization_id column to doctors table");
+            jdbcTemplate.execute(
+                "UPDATE doctors SET specialization_id_1 = specialization_id " +
+                "WHERE specialization_id_1 IS NULL AND specialization_id IS NOT NULL");
+            log.info("✅ Migrated specialization_id → specialization_id_1");
         } catch (Exception e) {
-            log.warn("Could not add specialization_id to doctors: " + e.getMessage());
+            log.warn("Could not migrate specialization_id (may not exist yet): " + e.getMessage());
         }
         try {
             jdbcTemplate.execute("ALTER TABLE patients ALTER COLUMN dob DROP NOT NULL");

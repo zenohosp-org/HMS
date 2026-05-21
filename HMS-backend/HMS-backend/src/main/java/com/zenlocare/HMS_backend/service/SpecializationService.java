@@ -23,7 +23,7 @@ public class SpecializationService {
     }
 
     public long getDoctorCount(UUID hospitalId, UUID specializationId) {
-        return doctorRepository.countByHospitalIdAndSpecializationId(hospitalId, specializationId);
+        return doctorRepository.countByHospitalIdAndAnySpecializationId(hospitalId, specializationId);
     }
 
     @Transactional

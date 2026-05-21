@@ -4,25 +4,16 @@ import { useNotification } from "@/context/NotificationContext";
 import { doctorsApi, staffApi, specializationApi } from "@/utils/api";
 import StateSelect from "@/components/StateSelect";
 import SidePane from "@/components/SidePane";
-import {
-  Briefcase, User, Home,
-} from "lucide-react";
+import { Home, X } from "lucide-react";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+const MAX_SPECS = 6;
 
 const inputBase =
   "w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-400 dark:focus:border-blue-500 transition-all";
 
 const textareaBase =
   "w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-400 dark:focus:border-blue-500 transition-all resize-none";
-
-function SectionTitle({ children }) {
-  return (
-    <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-      {children}
-    </p>
-  );
-}
 
 function FieldLabel({ children, required }) {
   return (
@@ -33,16 +24,64 @@ function FieldLabel({ children, required }) {
   );
 }
 
-function ContactGroup({ icon: Icon, label, colorClass, children }) {
+function SpecPicker({ specializations, value, onChange, loading }) {
+  const remaining = specializations.filter((s) => !value.includes(s.id));
+
+  const add = (id) => {
+    if (!id || value.length >= MAX_SPECS || value.includes(id)) return;
+    onChange([...value, id]);
+  };
+
+  const remove = (id) => onChange(value.filter((v) => v !== id));
+
   return (
-    <div className="rounded-xl border border-slate-100 dark:border-[#222222] bg-slate-50/60 dark:bg-[#0f0f0f] p-4 space-y-4">
-      <div className="flex items-center gap-2.5">
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${colorClass}`}>
-          <Icon className="w-3.5 h-3.5" />
+    <div className="space-y-2">
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {value.map((id) => {
+            const spec = specializations.find((s) => s.id === id);
+            return (
+              <span
+                key={id}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-semibold border border-blue-100 dark:border-blue-800/30"
+              >
+                {spec?.name || "Unknown"}
+                <button
+                  type="button"
+                  onClick={() => remove(id)}
+                  className="rounded-full text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 leading-none"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            );
+          })}
         </div>
-        <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">{label}</span>
-      </div>
-      {children}
+      )}
+      {value.length < MAX_SPECS ? (
+        <select
+          value=""
+          onChange={(e) => {
+            add(e.target.value);
+            e.target.value = "";
+          }}
+          className={inputBase}
+          disabled={loading || remaining.length === 0}
+        >
+          <option value="">
+            {loading ? "Loading…" : remaining.length === 0 ? "All specializations added" : "Add specialization…"}
+          </option>
+          {remaining.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+          Maximum {MAX_SPECS} specializations reached.
+        </p>
+      )}
     </div>
   );
 }
@@ -70,8 +109,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
   });
 
   const [doctorForm, setDoctorForm] = useState({
-    specializationId:          editDoctor?.specializationId || "",
-    specialization:            editDoctor?.specialization || "",
+    specializationIds:         editDoctor?.specializationIds || [],
     qualification:             editDoctor?.qualification || "",
     medicalRegistrationNumber: editDoctor?.medicalRegistrationNumber || "",
     registrationCouncil:       editDoctor?.registrationCouncil || "",
@@ -123,7 +161,10 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
     if (!pwdRegex.test(userForm.password)) {
       notify("Password must be at least 6 characters with 1 uppercase, 1 number and 1 special character", "error"); return false;
     }
-    if (!doctorForm.specializationId || !doctorForm.qualification.trim() || !doctorForm.medicalRegistrationNumber.trim() || !doctorForm.registrationCouncil.trim()) {
+    if (doctorForm.specializationIds.length === 0) {
+      notify("Please select at least one specialization", "error"); return false;
+    }
+    if (!doctorForm.qualification.trim() || !doctorForm.medicalRegistrationNumber.trim() || !doctorForm.registrationCouncil.trim()) {
       notify("Please fill in all professional details", "error"); return false;
     }
     if (!doctorForm.consultationFee || !doctorForm.slotDurationMin || !doctorForm.maxDailySlots || activeDays.length === 0) {
@@ -137,11 +178,11 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
     setSubmitting(true);
     try {
       const newUser = await staffApi.create({ ...userForm, role: "DOCTOR", hospitalId: user.hospitalId });
-      const { specializationId, specialization, qualification, medicalRegistrationNumber, registrationCouncil,
+      const { specializationIds, qualification, medicalRegistrationNumber, registrationCouncil,
               personalPhone, personalEmail, residentialAddress,
               consultationFee, followUpFee, availableDays, slotDurationMin, maxDailySlots } = doctorForm;
       await doctorsApi.create({
-        specializationId, specialization, qualification, medicalRegistrationNumber, registrationCouncil,
+        specializationIds, qualification, medicalRegistrationNumber, registrationCouncil,
         personalPhone, personalEmail, residentialAddress,
         consultationFee, followUpFee, availableDays, slotDurationMin, maxDailySlots,
         userId: newUser.id, hospitalId: user.hospitalId,
@@ -214,24 +255,16 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
           {/* Professional */}
           <div className="space-y-3">
             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Professional</p>
+            <div>
+              <FieldLabel required>Specializations</FieldLabel>
+              <SpecPicker
+                specializations={specializations}
+                value={doctorForm.specializationIds}
+                onChange={(ids) => setDoc({ specializationIds: ids })}
+                loading={specsLoading}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <FieldLabel required>Specialization</FieldLabel>
-                <select
-                  value={doctorForm.specializationId}
-                  onChange={(e) => {
-                    const selected = specializations.find((s) => s.id === e.target.value);
-                    setDoc({ specializationId: e.target.value, specialization: selected?.name || "" });
-                  }}
-                  className={inputBase}
-                  disabled={specsLoading}
-                >
-                  <option value="">{specsLoading ? "Loading…" : "Select specialization"}</option>
-                  {specializations.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
               {[
                 { label: "Qualification", key: "qualification", placeholder: "e.g. MBBS, MD", req: true },
                 { label: "Registration No.", key: "medicalRegistrationNumber", placeholder: "MRC-XXXXXX", req: true },
@@ -249,19 +282,17 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
 
           {/* Contact */}
           <div className="space-y-3">
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Contact</p>
-            <ContactGroup icon={User} label="Personal Contact" colorClass="bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <FieldLabel>Phone</FieldLabel>
-                  <input type="tel" value={doctorForm.personalPhone} onChange={(e) => setDoc({ personalPhone: e.target.value })} className={inputBase} placeholder="+91 99999 00000" />
-                </div>
-                <div>
-                  <FieldLabel>Email</FieldLabel>
-                  <input type="email" value={doctorForm.personalEmail} onChange={(e) => setDoc({ personalEmail: e.target.value })} className={inputBase} placeholder="name@personal.com" />
-                </div>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Personal Contact</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <FieldLabel>Phone</FieldLabel>
+                <input type="tel" value={doctorForm.personalPhone} onChange={(e) => setDoc({ personalPhone: e.target.value })} className={inputBase} placeholder="+91 99999 00000" />
               </div>
-            </ContactGroup>
+              <div>
+                <FieldLabel>Email</FieldLabel>
+                <input type="email" value={doctorForm.personalEmail} onChange={(e) => setDoc({ personalEmail: e.target.value })} className={inputBase} placeholder="name@personal.com" />
+              </div>
+            </div>
           </div>
 
           {/* Address */}
@@ -373,45 +404,39 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
             {/* ── Professional Identity ── */}
             <div>
               <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Professional Identity</p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <label className="label">Specialization *</label>
-                  <select
-                    className="input"
-                    value={doctorForm.specializationId}
-                    onChange={(e) => {
-                      const selected = specializations.find((s) => s.id === e.target.value);
-                      setDoc({ specializationId: e.target.value, specialization: selected?.name || "" });
-                    }}
-                    disabled={specsLoading}
-                  >
-                    <option value="">{specsLoading ? "Loading…" : "Select specialization"}</option>
-                    {specializations.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
+                  <label className="label">Specializations * <span className="normal-case font-normal text-slate-400">(up to {MAX_SPECS})</span></label>
+                  <SpecPicker
+                    specializations={specializations}
+                    value={doctorForm.specializationIds}
+                    onChange={(ids) => setDoc({ specializationIds: ids })}
+                    loading={specsLoading}
+                  />
                 </div>
-                <div>
-                  <label className="label">Qualification *</label>
-                  <input type="text" className="input" value={doctorForm.qualification}
-                    onChange={(e) => setDoc({ qualification: e.target.value })} placeholder="e.g. MBBS, MD" />
-                </div>
-                <div>
-                  <label className="label">Registration Number *</label>
-                  <input type="text" className="input" value={doctorForm.medicalRegistrationNumber}
-                    onChange={(e) => setDoc({ medicalRegistrationNumber: e.target.value })} placeholder="MRC-XXXXXX" />
-                </div>
-                <div>
-                  <label className="label">Registration Council *</label>
-                  <input type="text" className="input" value={doctorForm.registrationCouncil}
-                    onChange={(e) => setDoc({ registrationCouncil: e.target.value })} placeholder="e.g. Tamil Nadu Medical Council" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Qualification *</label>
+                    <input type="text" className="input" value={doctorForm.qualification}
+                      onChange={(e) => setDoc({ qualification: e.target.value })} placeholder="e.g. MBBS, MD" />
+                  </div>
+                  <div>
+                    <label className="label">Registration Number *</label>
+                    <input type="text" className="input" value={doctorForm.medicalRegistrationNumber}
+                      onChange={(e) => setDoc({ medicalRegistrationNumber: e.target.value })} placeholder="MRC-XXXXXX" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="label">Registration Council *</label>
+                    <input type="text" className="input" value={doctorForm.registrationCouncil}
+                      onChange={(e) => setDoc({ registrationCouncil: e.target.value })} placeholder="e.g. Tamil Nadu Medical Council" />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* ── Contact Information ── */}
             <div>
-              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Contact Information</p>
+              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Personal Contact</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Phone</label>

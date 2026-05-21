@@ -11,7 +11,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -53,13 +55,12 @@ public class DoctorController {
     @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<DoctorDto> createDoctor(@RequestBody CreateDoctorRequest req) {
         Doctor doctorData = new Doctor();
-        doctorData.setSpecializationId(req.getSpecializationId());
-        // Resolve specialization name for backward compat
-        if (req.getSpecializationId() != null) {
-            specializationRepository.findById(req.getSpecializationId())
-                .ifPresent(s -> doctorData.setSpecialization(s.getName()));
-        } else {
-            doctorData.setSpecialization(req.getSpecialization());
+        applySpecList(doctorData, req.getSpecializationIds());
+        // Store primary spec name for backward compat
+        UUID firstId = req.getSpecializationIds() != null && !req.getSpecializationIds().isEmpty()
+            ? req.getSpecializationIds().get(0) : null;
+        if (firstId != null) {
+            specializationRepository.findById(firstId).ifPresent(s -> doctorData.setSpecialization(s.getName()));
         }
         doctorData.setQualification(req.getQualification());
         doctorData.setMedicalRegistrationNumber(req.getMedicalRegistrationNumber());
@@ -81,12 +82,11 @@ public class DoctorController {
     @PreAuthorize("hasRole('hospital_admin') or hasRole('doctor')")
     public ResponseEntity<DoctorDto> updateDoctor(@PathVariable UUID id, @RequestBody DoctorDto req) {
         Doctor updatedData = new Doctor();
-        if (req.getSpecializationId() != null) {
-            updatedData.setSpecializationId(req.getSpecializationId());
-            specializationRepository.findById(req.getSpecializationId())
-                .ifPresent(s -> updatedData.setSpecialization(s.getName()));
-        } else {
-            updatedData.setSpecialization(req.getSpecialization());
+        applySpecList(updatedData, req.getSpecializationIds());
+        UUID firstId = req.getSpecializationIds() != null && !req.getSpecializationIds().isEmpty()
+            ? req.getSpecializationIds().get(0) : null;
+        if (firstId != null) {
+            specializationRepository.findById(firstId).ifPresent(s -> updatedData.setSpecialization(s.getName()));
         }
         updatedData.setQualification(req.getQualification());
         updatedData.setMedicalRegistrationNumber(req.getMedicalRegistrationNumber());
@@ -126,7 +126,7 @@ public class DoctorController {
         dto.setPhone(doctor.getUser().getPhone());
         dto.setUserIsActive(doctor.getUser().getIsActive());
 
-        dto.setSpecializationId(doctor.getSpecializationId());
+        dto.setSpecializationIds(toSpecList(doctor));
         dto.setSpecialization(doctor.getSpecialization());
         dto.setQualification(doctor.getQualification());
         dto.setMedicalRegistrationNumber(doctor.getMedicalRegistrationNumber());
@@ -146,12 +146,33 @@ public class DoctorController {
         return dto;
     }
 
+    private List<UUID> toSpecList(Doctor d) {
+        List<UUID> ids = new ArrayList<>();
+        if (d.getSpecializationId1() != null) ids.add(d.getSpecializationId1());
+        if (d.getSpecializationId2() != null) ids.add(d.getSpecializationId2());
+        if (d.getSpecializationId3() != null) ids.add(d.getSpecializationId3());
+        if (d.getSpecializationId4() != null) ids.add(d.getSpecializationId4());
+        if (d.getSpecializationId5() != null) ids.add(d.getSpecializationId5());
+        if (d.getSpecializationId6() != null) ids.add(d.getSpecializationId6());
+        return ids;
+    }
+
+    private void applySpecList(Doctor target, List<UUID> ids) {
+        List<UUID> safe = ids == null ? List.of()
+            : ids.stream().filter(Objects::nonNull).distinct().limit(6).collect(Collectors.toList());
+        target.setSpecializationId1(safe.size() > 0 ? safe.get(0) : null);
+        target.setSpecializationId2(safe.size() > 1 ? safe.get(1) : null);
+        target.setSpecializationId3(safe.size() > 2 ? safe.get(2) : null);
+        target.setSpecializationId4(safe.size() > 3 ? safe.get(3) : null);
+        target.setSpecializationId5(safe.size() > 4 ? safe.get(4) : null);
+        target.setSpecializationId6(safe.size() > 5 ? safe.get(5) : null);
+    }
+
     @Data
     public static class CreateDoctorRequest {
         private UUID userId;
         private UUID hospitalId;
-        private UUID specializationId;
-        private String specialization;
+        private List<UUID> specializationIds;
         private String qualification;
         private String medicalRegistrationNumber;
         private String registrationCouncil;
@@ -177,7 +198,7 @@ public class DoctorController {
         private String phone;
         private Boolean userIsActive;
 
-        private UUID specializationId;
+        private List<UUID> specializationIds;
         private String specialization;
         private String qualification;
         private String medicalRegistrationNumber;

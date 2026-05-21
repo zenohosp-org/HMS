@@ -2,6 +2,8 @@ package com.zenlocare.HMS_backend.repository;
 
 import com.zenlocare.HMS_backend.entity.Doctor;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,11 +18,11 @@ public interface DoctorRepository extends JpaRepository<Doctor, UUID> {
 
     Optional<Doctor> findByUserId(UUID userId);
 
-    long countByHospitalIdAndSpecialization(UUID hospitalId, String specialization);
-
     List<Doctor> findByHospitalIdAndSpecialization(UUID hospitalId, String specialization);
 
-    long countByHospitalIdAndSpecializationId(UUID hospitalId, UUID specializationId);
-
-    List<Doctor> findByHospitalIdAndSpecializationId(UUID hospitalId, UUID specializationId);
+    @Query("SELECT COUNT(d) FROM Doctor d WHERE d.hospital.id = :hospitalId AND (" +
+           ":specId = d.specializationId1 OR :specId = d.specializationId2 OR " +
+           ":specId = d.specializationId3 OR :specId = d.specializationId4 OR " +
+           ":specId = d.specializationId5 OR :specId = d.specializationId6)")
+    long countByHospitalIdAndAnySpecializationId(@Param("hospitalId") UUID hospitalId, @Param("specId") UUID specId);
 }
