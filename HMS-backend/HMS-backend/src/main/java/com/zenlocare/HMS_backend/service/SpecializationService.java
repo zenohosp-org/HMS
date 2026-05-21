@@ -22,8 +22,8 @@ public class SpecializationService {
         return specializationRepository.findByHospitalId(hospitalId);
     }
 
-    public long getDoctorCount(UUID hospitalId, String specializationName) {
-        return doctorRepository.countByHospitalIdAndSpecialization(hospitalId, specializationName);
+    public long getDoctorCount(UUID hospitalId, UUID specializationId) {
+        return doctorRepository.countByHospitalIdAndSpecializationId(hospitalId, specializationId);
     }
 
     @Transactional

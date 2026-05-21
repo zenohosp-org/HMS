@@ -24,7 +24,7 @@ public class SpecializationController {
         List<Specialization> specializations = specializationService.getSpecializationsByHospital(hospitalId);
         List<SpecializationDto> dtos = specializations.stream().map(s -> {
             SpecializationDto dto = mapToDto(s);
-            dto.setNoOfDoctor(specializationService.getDoctorCount(hospitalId, s.getName()));
+            dto.setNoOfDoctor(specializationService.getDoctorCount(hospitalId, s.getId()));
             return dto;
         }).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);

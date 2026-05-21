@@ -1,6 +1,8 @@
 package com.zenlocare.HMS_backend.controller;
 
 import com.zenlocare.HMS_backend.entity.Doctor;
+import com.zenlocare.HMS_backend.entity.Specialization;
+import com.zenlocare.HMS_backend.repository.SpecializationRepository;
 import com.zenlocare.HMS_backend.service.DoctorService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class DoctorController {
 
     private final DoctorService doctorService;
+    private final SpecializationRepository specializationRepository;
 
     @GetMapping
     public ResponseEntity<List<DoctorDto>> listDoctors(@RequestParam UUID hospitalId) {
@@ -50,7 +53,14 @@ public class DoctorController {
     @PreAuthorize("hasRole('hospital_admin')")
     public ResponseEntity<DoctorDto> createDoctor(@RequestBody CreateDoctorRequest req) {
         Doctor doctorData = new Doctor();
-        doctorData.setSpecialization(req.getSpecialization());
+        doctorData.setSpecializationId(req.getSpecializationId());
+        // Resolve specialization name for backward compat
+        if (req.getSpecializationId() != null) {
+            specializationRepository.findById(req.getSpecializationId())
+                .ifPresent(s -> doctorData.setSpecialization(s.getName()));
+        } else {
+            doctorData.setSpecialization(req.getSpecialization());
+        }
         doctorData.setQualification(req.getQualification());
         doctorData.setMedicalRegistrationNumber(req.getMedicalRegistrationNumber());
         doctorData.setRegistrationCouncil(req.getRegistrationCouncil());
@@ -59,11 +69,8 @@ public class DoctorController {
         doctorData.setAvailableDays(req.getAvailableDays());
         doctorData.setSlotDurationMin(req.getSlotDurationMin());
         doctorData.setMaxDailySlots(req.getMaxDailySlots());
-        doctorData.setWorkPhone(req.getWorkPhone());
         doctorData.setPersonalPhone(req.getPersonalPhone());
-        doctorData.setWorkEmail(req.getWorkEmail());
         doctorData.setPersonalEmail(req.getPersonalEmail());
-        doctorData.setWorkAddress(req.getWorkAddress());
         doctorData.setResidentialAddress(req.getResidentialAddress());
 
         Doctor doctor = doctorService.createDoctor(req.getUserId(), req.getHospitalId(), doctorData);
@@ -74,7 +81,13 @@ public class DoctorController {
     @PreAuthorize("hasRole('hospital_admin') or hasRole('doctor')")
     public ResponseEntity<DoctorDto> updateDoctor(@PathVariable UUID id, @RequestBody DoctorDto req) {
         Doctor updatedData = new Doctor();
-        updatedData.setSpecialization(req.getSpecialization());
+        if (req.getSpecializationId() != null) {
+            updatedData.setSpecializationId(req.getSpecializationId());
+            specializationRepository.findById(req.getSpecializationId())
+                .ifPresent(s -> updatedData.setSpecialization(s.getName()));
+        } else {
+            updatedData.setSpecialization(req.getSpecialization());
+        }
         updatedData.setQualification(req.getQualification());
         updatedData.setMedicalRegistrationNumber(req.getMedicalRegistrationNumber());
         updatedData.setRegistrationCouncil(req.getRegistrationCouncil());
@@ -113,6 +126,7 @@ public class DoctorController {
         dto.setPhone(doctor.getUser().getPhone());
         dto.setUserIsActive(doctor.getUser().getIsActive());
 
+        dto.setSpecializationId(doctor.getSpecializationId());
         dto.setSpecialization(doctor.getSpecialization());
         dto.setQualification(doctor.getQualification());
         dto.setMedicalRegistrationNumber(doctor.getMedicalRegistrationNumber());
@@ -136,6 +150,7 @@ public class DoctorController {
     public static class CreateDoctorRequest {
         private UUID userId;
         private UUID hospitalId;
+        private UUID specializationId;
         private String specialization;
         private String qualification;
         private String medicalRegistrationNumber;
@@ -145,11 +160,8 @@ public class DoctorController {
         private String availableDays;
         private Integer slotDurationMin;
         private Integer maxDailySlots;
-        private String workPhone;
         private String personalPhone;
-        private String workEmail;
         private String personalEmail;
-        private String workAddress;
         private String residentialAddress;
     }
 
@@ -165,6 +177,7 @@ public class DoctorController {
         private String phone;
         private Boolean userIsActive;
 
+        private UUID specializationId;
         private String specialization;
         private String qualification;
         private String medicalRegistrationNumber;

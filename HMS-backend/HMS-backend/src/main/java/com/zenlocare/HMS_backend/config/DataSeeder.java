@@ -28,6 +28,18 @@ public class DataSeeder implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         try {
+            jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN last_name DROP NOT NULL");
+            log.info("✅ Made last_name nullable in users table");
+        } catch (Exception e) {
+            log.warn("Could not alter users.last_name: " + e.getMessage());
+        }
+        try {
+            jdbcTemplate.execute("ALTER TABLE doctors ADD COLUMN IF NOT EXISTS specialization_id UUID REFERENCES specializations(id)");
+            log.info("✅ Added specialization_id column to doctors table");
+        } catch (Exception e) {
+            log.warn("Could not add specialization_id to doctors: " + e.getMessage());
+        }
+        try {
             jdbcTemplate.execute("ALTER TABLE patients ALTER COLUMN dob DROP NOT NULL");
             log.info("✅ Dropped NOT NULL constraint on patients.dob column");
         } catch (Exception e) {

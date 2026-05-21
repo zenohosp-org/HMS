@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { doctorsApi, staffApi } from "@/utils/api";
+import { doctorsApi, staffApi, specializationApi } from "@/utils/api";
 import StateSelect from "@/components/StateSelect";
 import SidePane from "@/components/SidePane";
 import {
-  Briefcase, User, Building2, Home,
+  Briefcase, User, Home,
 } from "lucide-react";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -62,22 +62,21 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
 
   const [submitting, setSubmitting] = useState(false);
   const [paneOpen, setPaneOpen] = useState(true);
-  const [sameAddress, setSameAddress] = useState(false);
+  const [specializations, setSpecializations] = useState([]);
+  const [specsLoading, setSpecsLoading] = useState(false);
 
   const [userForm, setUserForm] = useState({
     firstName: "", lastName: "", email: "", phone: "", password: "", state: "",
   });
 
   const [doctorForm, setDoctorForm] = useState({
+    specializationId:          editDoctor?.specializationId || "",
     specialization:            editDoctor?.specialization || "",
     qualification:             editDoctor?.qualification || "",
     medicalRegistrationNumber: editDoctor?.medicalRegistrationNumber || "",
     registrationCouncil:       editDoctor?.registrationCouncil || "",
-    workPhone:                 editDoctor?.workPhone || "",
     personalPhone:             editDoctor?.personalPhone || "",
-    workEmail:                 editDoctor?.workEmail || "",
     personalEmail:             editDoctor?.personalEmail || "",
-    workAddress:               editDoctor?.workAddress || "",
     residentialAddress:        editDoctor?.residentialAddress || "",
     consultationFee:           editDoctor?.consultationFee || 500,
     followUpFee:               editDoctor?.followUpFee || 300,
@@ -85,6 +84,15 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
     slotDurationMin:           editDoctor?.slotDurationMin || 15,
     maxDailySlots:             editDoctor?.maxDailySlots || 40,
   });
+
+  useEffect(() => {
+    if (!user?.hospitalId) return;
+    setSpecsLoading(true);
+    specializationApi.getAll(user.hospitalId)
+      .then((data) => setSpecializations(data))
+      .catch(() => setSpecializations([]))
+      .finally(() => setSpecsLoading(false));
+  }, [user?.hospitalId]);
 
   const setDoc = (patch) => setDoctorForm((p) => ({ ...p, ...patch }));
   const setUser = (patch) => setUserForm((p) => ({ ...p, ...patch }));
@@ -108,13 +116,14 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
   };
 
   const validateCreate = () => {
-    if (!userForm.firstName.trim() || !userForm.lastName.trim() || !userForm.email.trim() || !userForm.password.trim()) {
+    if (!userForm.firstName.trim() || !userForm.email.trim() || !userForm.phone.trim() || !userForm.password.trim()) {
       notify("Please fill in all required account fields", "error"); return false;
     }
-    if (userForm.password.length < 6) {
-      notify("Password must be at least 6 characters", "error"); return false;
+    const pwdRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
+    if (!pwdRegex.test(userForm.password)) {
+      notify("Password must be at least 6 characters with 1 uppercase, 1 number and 1 special character", "error"); return false;
     }
-    if (!doctorForm.specialization.trim() || !doctorForm.qualification.trim() || !doctorForm.medicalRegistrationNumber.trim() || !doctorForm.registrationCouncil.trim()) {
+    if (!doctorForm.specializationId || !doctorForm.qualification.trim() || !doctorForm.medicalRegistrationNumber.trim() || !doctorForm.registrationCouncil.trim()) {
       notify("Please fill in all professional details", "error"); return false;
     }
     if (!doctorForm.consultationFee || !doctorForm.slotDurationMin || !doctorForm.maxDailySlots || activeDays.length === 0) {
@@ -128,7 +137,15 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
     setSubmitting(true);
     try {
       const newUser = await staffApi.create({ ...userForm, role: "DOCTOR", hospitalId: user.hospitalId });
-      await doctorsApi.create({ ...doctorForm, userId: newUser.id, hospitalId: user.hospitalId });
+      const { specializationId, specialization, qualification, medicalRegistrationNumber, registrationCouncil,
+              personalPhone, personalEmail, residentialAddress,
+              consultationFee, followUpFee, availableDays, slotDurationMin, maxDailySlots } = doctorForm;
+      await doctorsApi.create({
+        specializationId, specialization, qualification, medicalRegistrationNumber, registrationCouncil,
+        personalPhone, personalEmail, residentialAddress,
+        consultationFee, followUpFee, availableDays, slotDurationMin, maxDailySlots,
+        userId: newUser.id, hospitalId: user.hospitalId,
+      });
       notify("Doctor profile created", "success");
       onSaved();
       onClose();
@@ -198,8 +215,24 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
           <div className="space-y-3">
             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Professional</p>
             <div className="grid grid-cols-2 gap-3">
+              <div>
+                <FieldLabel required>Specialization</FieldLabel>
+                <select
+                  value={doctorForm.specializationId}
+                  onChange={(e) => {
+                    const selected = specializations.find((s) => s.id === e.target.value);
+                    setDoc({ specializationId: e.target.value, specialization: selected?.name || "" });
+                  }}
+                  className={inputBase}
+                  disabled={specsLoading}
+                >
+                  <option value="">{specsLoading ? "Loading…" : "Select specialization"}</option>
+                  {specializations.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
               {[
-                { label: "Specialization", key: "specialization", placeholder: "e.g. Cardiologist", req: true },
                 { label: "Qualification", key: "qualification", placeholder: "e.g. MBBS, MD", req: true },
                 { label: "Registration No.", key: "medicalRegistrationNumber", placeholder: "MRC-XXXXXX", req: true },
                 { label: "Council", key: "registrationCouncil", placeholder: "Tamil Nadu MC", req: true },
@@ -217,26 +250,14 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
           {/* Contact */}
           <div className="space-y-3">
             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Contact</p>
-            <ContactGroup icon={Briefcase} label="Work" colorClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+            <ContactGroup icon={User} label="Personal Contact" colorClass="bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <FieldLabel>Work Phone</FieldLabel>
-                  <input type="tel" value={doctorForm.workPhone} onChange={(e) => setDoc({ workPhone: e.target.value })} className={inputBase} placeholder="+91 98765 43210" />
-                </div>
-                <div>
-                  <FieldLabel>Work Email</FieldLabel>
-                  <input type="email" value={doctorForm.workEmail} onChange={(e) => setDoc({ workEmail: e.target.value })} className={inputBase} placeholder="dr@hospital.com" />
-                </div>
-              </div>
-            </ContactGroup>
-            <ContactGroup icon={User} label="Personal" colorClass="bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <FieldLabel>Personal Phone</FieldLabel>
+                  <FieldLabel>Phone</FieldLabel>
                   <input type="tel" value={doctorForm.personalPhone} onChange={(e) => setDoc({ personalPhone: e.target.value })} className={inputBase} placeholder="+91 99999 00000" />
                 </div>
                 <div>
-                  <FieldLabel>Personal Email</FieldLabel>
+                  <FieldLabel>Email</FieldLabel>
                   <input type="email" value={doctorForm.personalEmail} onChange={(e) => setDoc({ personalEmail: e.target.value })} className={inputBase} placeholder="name@personal.com" />
                 </div>
               </div>
@@ -248,29 +269,12 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Address</p>
             <div>
               <div className="flex items-center gap-1.5 mb-1.5">
-                <Building2 className="w-3.5 h-3.5 text-blue-500" />
-                <FieldLabel>Work / Clinic</FieldLabel>
-              </div>
-              <textarea rows={3} value={doctorForm.workAddress}
-                onChange={(e) => { setDoc({ workAddress: e.target.value }); if (sameAddress) setDoc({ residentialAddress: e.target.value }); }}
-                className={textareaBase} placeholder="Hospital/clinic, street, city, pincode" />
-            </div>
-            <label className="flex items-center gap-2.5 cursor-pointer group w-fit select-none">
-              <div onClick={() => { const n = !sameAddress; setSameAddress(n); if (n) setDoc({ residentialAddress: doctorForm.workAddress }); }}
-                className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all shrink-0 ${sameAddress ? "bg-blue-500 border-blue-500" : "border-slate-300 dark:border-[#3a3a3a] group-hover:border-blue-400"}`}>
-                {sameAddress && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-              </div>
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Same as work address</span>
-            </label>
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5">
                 <Home className="w-3.5 h-3.5 text-violet-500" />
                 <FieldLabel>Residential</FieldLabel>
               </div>
               <textarea rows={3} value={doctorForm.residentialAddress}
                 onChange={(e) => setDoc({ residentialAddress: e.target.value })}
-                disabled={sameAddress}
-                className={`${textareaBase} ${sameAddress ? "opacity-40 cursor-not-allowed" : ""}`}
+                className={textareaBase}
                 placeholder="Home, street, city, pincode" />
             </div>
           </div>
@@ -341,7 +345,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                       onChange={(e) => setUser({ firstName: e.target.value })} placeholder="Arjun" />
                   </div>
                   <div>
-                    <label className="label">Last Name *</label>
+                    <label className="label">Last Name</label>
                     <input type="text" className="input" value={userForm.lastName}
                       onChange={(e) => setUser({ lastName: e.target.value })} placeholder="Sharma" />
                   </div>
@@ -353,7 +357,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                       onChange={(e) => setUser({ email: e.target.value })} placeholder="doctor@hospital.com" />
                   </div>
                   <div>
-                    <label className="label">Phone Number</label>
+                    <label className="label">Phone Number *</label>
                     <input type="tel" className="input" value={userForm.phone}
                       onChange={(e) => setUser({ phone: e.target.value })} placeholder="+91 98765 43210" />
                   </div>
@@ -361,7 +365,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                 <div>
                   <label className="label">Temporary Password *</label>
                   <input type="password" className="input" value={userForm.password}
-                    onChange={(e) => setUser({ password: e.target.value })} placeholder="Min. 6 characters" />
+                    onChange={(e) => setUser({ password: e.target.value })} placeholder="Min. 6 chars, 1 uppercase, 1 number, 1 special" />
                 </div>
               </div>
             </div>
@@ -372,8 +376,20 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Specialization *</label>
-                  <input type="text" className="input" value={doctorForm.specialization}
-                    onChange={(e) => setDoc({ specialization: e.target.value })} placeholder="e.g. Cardiologist" />
+                  <select
+                    className="input"
+                    value={doctorForm.specializationId}
+                    onChange={(e) => {
+                      const selected = specializations.find((s) => s.id === e.target.value);
+                      setDoc({ specializationId: e.target.value, specialization: selected?.name || "" });
+                    }}
+                    disabled={specsLoading}
+                  >
+                    <option value="">{specsLoading ? "Loading…" : "Select specialization"}</option>
+                    {specializations.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="label">Qualification *</label>
@@ -398,22 +414,12 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
               <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Contact Information</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Work Phone</label>
-                  <input type="tel" className="input" value={doctorForm.workPhone}
-                    onChange={(e) => setDoc({ workPhone: e.target.value })} placeholder="+91 98765 43210" />
-                </div>
-                <div>
-                  <label className="label">Work Email</label>
-                  <input type="email" className="input" value={doctorForm.workEmail}
-                    onChange={(e) => setDoc({ workEmail: e.target.value })} placeholder="dr.name@hospital.com" />
-                </div>
-                <div>
-                  <label className="label">Personal Phone</label>
+                  <label className="label">Phone</label>
                   <input type="tel" className="input" value={doctorForm.personalPhone}
                     onChange={(e) => setDoc({ personalPhone: e.target.value })} placeholder="+91 99999 00000" />
                 </div>
                 <div>
-                  <label className="label">Personal Email</label>
+                  <label className="label">Email</label>
                   <input type="email" className="input" value={doctorForm.personalEmail}
                     onChange={(e) => setDoc({ personalEmail: e.target.value })} placeholder="name@personal.com" />
                 </div>
@@ -425,28 +431,10 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
               <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Address</p>
               <div className="space-y-4">
                 <div>
-                  <label className="label">Work / Clinic Address</label>
-                  <textarea rows={2} className="input resize-none" value={doctorForm.workAddress}
-                    onChange={(e) => { setDoc({ workAddress: e.target.value }); if (sameAddress) setDoc({ residentialAddress: e.target.value }); }}
-                    placeholder="Hospital/clinic name, street, area, city, pincode" />
-                </div>
-                <label className="flex items-center gap-2.5 cursor-pointer group w-fit select-none">
-                  <div
-                    onClick={() => { const n = !sameAddress; setSameAddress(n); if (n) setDoc({ residentialAddress: doctorForm.workAddress }); }}
-                    className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all shrink-0 ${
-                      sameAddress ? "bg-slate-800 border-slate-800 dark:bg-white dark:border-white" : "border-slate-300 dark:border-[#3a3a3a] group-hover:border-slate-500"
-                    }`}
-                  >
-                    {sameAddress && <svg className="w-2.5 h-2.5 text-white dark:text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                  </div>
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Residential address same as work address</span>
-                </label>
-                <div>
                   <label className="label">Residential Address</label>
-                  <textarea rows={2} className={`input resize-none${sameAddress ? " opacity-40 cursor-not-allowed" : ""}`}
+                  <textarea rows={2} className="input resize-none"
                     value={doctorForm.residentialAddress}
                     onChange={(e) => setDoc({ residentialAddress: e.target.value })}
-                    disabled={sameAddress}
                     placeholder="Home address, street, area, city, pincode" />
                 </div>
                 <StateSelect

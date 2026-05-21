@@ -28,6 +28,9 @@ public class Doctor {
     @JoinColumn(name = "hospital_id", nullable = false)
     private Hospital hospital;
 
+    @Column(name = "specialization_id")
+    private UUID specializationId;
+
     private String specialization;
 
     // e.g., MBBS, MD, DNB
