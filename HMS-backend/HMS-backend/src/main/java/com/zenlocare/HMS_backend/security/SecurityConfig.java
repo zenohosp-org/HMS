@@ -112,6 +112,8 @@ public class SecurityConfig {
                 "https://ot.zenohosp.com",
                 "https://pharmacy.zenohosp.com",
                 "https://api-pharmacy.zenohosp.com",
+                "https://inventory.zenohosp.com",
+                "https://api-inventory.zenohosp.com",
                 frontendUrl));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
