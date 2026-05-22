@@ -135,10 +135,15 @@ public class AmbulanceController {
         return ResponseEntity.ok(bookingRepo.findByHospital_IdOrderByCreatedAtDesc(hospitalId));
     }
 
+    @Transactional
     @PostMapping("/bookings")
     public ResponseEntity<AmbulanceBooking> createBooking(@RequestParam UUID hospitalId,
                                                            @RequestBody BookingRequest req) {
-        Hospital hospital = hospitalRepo.getReferenceById(hospitalId);
+        // Use findById (not getReferenceById) — we need real address/city fields
+        // for isSameHospitalByAddress. A proxy would lazy-load them and throw
+        // LazyInitializationException once this handler's session closes.
+        Hospital hospital = hospitalRepo.findById(hospitalId)
+                .orElseThrow(() -> new IllegalArgumentException("Hospital not found: " + hospitalId));
         Patient patient = req.getPatientId() != null ? patientRepo.findById(req.getPatientId()).orElse(null) : null;
         AmbulanceType type = req.getAmbulanceTypeId() != null ? typeRepo.findById(req.getAmbulanceTypeId()).orElse(null) : null;
         AmbulanceVehicle vehicle = req.getVehicleId() != null ? vehicleRepo.findById(req.getVehicleId()).orElse(null) : null;
