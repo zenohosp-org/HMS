@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { useNotification } from '@/context/NotificationContext'
 import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, patientAdvanceApi, bankApi, invoiceApi } from '@/utils/api'
 import api from '@/utils/api'
 import { X, Search, BedDouble, User, CheckCircle2, Loader2 } from 'lucide-react'
@@ -19,6 +20,7 @@ const PAYMENT_METHOD_TO_ACCOUNT_TYPES = {
 
 export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   const { user } = useAuth()
+  const { notify } = useNotification()
   const [patients, setPatients] = useState([])
   const [departments, setDepartments] = useState([])
   const [doctors, setDoctors] = useState([])
@@ -116,15 +118,17 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   }, [selectedPatient])
 
   // Fetch the patient's open OPD invoices so the user can pick which to merge into the IPD bill.
-  // Triggered whenever the selected patient changes.
+  // Triggered whenever the selected patient changes. AbortController guards against
+  // race conditions when the user rapidly switches patients — only the latest fetch wins.
   useEffect(() => {
     if (!selectedPatient?.id || !user?.hospitalId) {
       setOpenOpds([])
       setMergeApptId(prefill?.appointmentId || '')
       return
     }
+    const controller = new AbortController()
     setOpenOpdsLoading(true)
-    invoiceApi.getOpenOpdInvoices(selectedPatient.id, user.hospitalId)
+    invoiceApi.getOpenOpdInvoices(selectedPatient.id, user.hospitalId, { signal: controller.signal })
       .then(list => {
         setOpenOpds(list || [])
         // If admit was launched from an appointment row, auto-pick the matching invoice.
@@ -137,9 +141,18 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
           setMergeApptId('')
         }
       })
-      .catch(() => { setOpenOpds([]); setMergeApptId('') })
-      .finally(() => setOpenOpdsLoading(false))
-  }, [selectedPatient?.id, user?.hospitalId, prefill?.appointmentId])
+      .catch(err => {
+        // Swallow aborts silently — they're expected on rapid patient switches.
+        if (controller.signal.aborted || err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError') return
+        setOpenOpds([])
+        setMergeApptId('')
+        notify('Could not load open OPD bills — admission will start a fresh IPD invoice', 'warning')
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setOpenOpdsLoading(false)
+      })
+    return () => controller.abort()
+  }, [selectedPatient?.id, user?.hospitalId, prefill?.appointmentId, notify])
 
   // Fetch bank accounts filtered by the current payment method's allowed types.
   // Cash → CASH accounts; UPI/Card/Bank Transfer → SAVINGS/CURRENT.
