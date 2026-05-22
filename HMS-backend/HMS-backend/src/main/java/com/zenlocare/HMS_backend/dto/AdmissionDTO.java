@@ -5,6 +5,7 @@ import com.zenlocare.HMS_backend.entity.AdmissionStatus;
 import com.zenlocare.HMS_backend.entity.AdmissionType;
 import lombok.Builder;
 import lombok.Data;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -31,8 +32,6 @@ public class AdmissionDTO {
     private AdmissionSource admissionSource;
     private String chiefComplaint;
     private String primaryDiagnosis;
-    private String dischargeDiagnosis;
-    private String dischargeNote;
     private String attenderName;
     private String attenderPhone;
     private String attenderRelationship;
@@ -44,4 +43,12 @@ public class AdmissionDTO {
     private Long previousRoomId;
     private UUID otBookingId;
     private boolean inOt;
+
+    // Discharge details — populated only after discharge
+    private String dischargeDiagnosis;
+    private String dischargeNote;
+    private LocalDate followUpDate;
+    private UUID followUpDoctorId;
+    private String dischargedBy;
+    private LocalDateTime dischargedAt;
 }

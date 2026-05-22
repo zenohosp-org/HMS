@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class AdmissionService {
 
     private final AdmissionRepository admissionRepository;
+    private final DischargeRepository dischargeRepository;
     private final HospitalRepository hospitalRepository;
     private final PatientRepository patientRepository;
     private final RoomRepository roomRepository;
@@ -225,9 +226,20 @@ public class AdmissionService {
                 ? req.getActualDischargeDate() : LocalDateTime.now();
 
         admission.setStatus(AdmissionStatus.DISCHARGED);
+        // Keep denormalized date on admission for fast count queries
         admission.setActualDischargeDate(dischargeTime);
-        admission.setDischargeDiagnosis(req.getDischargeDiagnosis());
-        admission.setDischargeNote(req.getDischargeNote());
+
+        // Write full discharge details to the discharges table
+        Discharge discharge = dischargeRepository.findByAdmission_Id(admissionId)
+                .orElseGet(() -> Discharge.builder().admission(admission).build());
+        discharge.setActualDischargeDate(dischargeTime);
+        discharge.setDischargeDiagnosis(req.getDischargeDiagnosis());
+        discharge.setDischargeNote(req.getDischargeNote());
+        discharge.setFollowUpDate(req.getFollowUpDate());
+        discharge.setFollowUpDoctorId(req.getFollowUpDoctorId());
+        discharge.setDischargedBy(performedBy);
+        discharge.setDischargedAt(LocalDateTime.now());
+        dischargeRepository.save(discharge);
 
         if (admission.getBed() != null) {
             Bed bed = admission.getBed();
@@ -521,6 +533,14 @@ public class AdmissionService {
         }
         final Room resolvedRoom = room;
         final com.zenlocare.HMS_backend.entity.Bed resolvedBed = bed;
+
+        // Load discharge record — use lazy-loaded association if already in session, else query
+        Discharge discharge = a.getDischarge();
+        if (discharge == null && a.getStatus() == AdmissionStatus.DISCHARGED) {
+            discharge = dischargeRepository.findByAdmission_Id(a.getId()).orElse(null);
+        }
+        final Discharge d = discharge;
+
         return AdmissionDTO.builder()
                 .id(a.getId())
                 .admissionNumber(a.getAdmissionNumber())
@@ -545,8 +565,6 @@ public class AdmissionService {
                 .admissionSource(a.getAdmissionSource())
                 .chiefComplaint(a.getChiefComplaint())
                 .primaryDiagnosis(a.getPrimaryDiagnosis())
-                .dischargeDiagnosis(a.getDischargeDiagnosis())
-                .dischargeNote(a.getDischargeNote())
                 .attenderName(a.getAttenderName())
                 .attenderPhone(a.getAttenderPhone())
                 .attenderRelationship(a.getAttenderRelationship())
@@ -558,6 +576,13 @@ public class AdmissionService {
                 .previousRoomId(a.getPreviousRoom() != null ? a.getPreviousRoom().getId() : null)
                 .otBookingId(a.getOtBookingId())
                 .inOt(resolvedRoom != null && "OT".equals(resolvedRoom.getRoomType()))
+                // Discharge details from discharges table
+                .dischargeDiagnosis(d != null ? d.getDischargeDiagnosis() : null)
+                .dischargeNote(d != null ? d.getDischargeNote() : null)
+                .followUpDate(d != null ? d.getFollowUpDate() : null)
+                .followUpDoctorId(d != null ? d.getFollowUpDoctorId() : null)
+                .dischargedBy(d != null ? d.getDischargedBy() : null)
+                .dischargedAt(d != null ? d.getDischargedAt() : null)
                 .build();
     }
 }

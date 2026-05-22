@@ -82,6 +82,7 @@ public class DataSeeder implements CommandLineRunner {
         dropGhostStatusNotNullConstraints();
         seedReferenceTables();
         migrateStatusColumns();
+        migrateDischargeData();
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
@@ -329,5 +330,29 @@ public class DataSeeder implements CommandLineRunner {
                         .build());
 
         log.info("✅ Hospital admin seeded → admin@gmail.com / admin123  [Hospital: SRM Hospital]");
+    }
+
+    private void migrateDischargeData() {
+        try {
+            // Migrate existing discharge data from legacy columns on admissions into the new discharges table.
+            // Runs idempotently — skips admissions that already have a discharge row.
+            int rows = jdbcTemplate.update("""
+                INSERT INTO discharges (admission_id, actual_discharge_date, discharge_diagnosis, discharge_note, discharged_by, discharged_at)
+                SELECT a.id,
+                       a.actual_discharge_date,
+                       a.discharge_diagnosis,
+                       a.discharge_note,
+                       'migrated',
+                       COALESCE(a.updated_at, NOW())
+                FROM admissions a
+                WHERE a.status_id = 2
+                  AND (a.discharge_diagnosis IS NOT NULL OR a.discharge_note IS NOT NULL OR a.actual_discharge_date IS NOT NULL)
+                  AND a.id NOT IN (SELECT admission_id FROM discharges)
+                ON CONFLICT DO NOTHING
+            """);
+            if (rows > 0) log.info("✅ Migrated {} discharge record(s) from admissions → discharges", rows);
+        } catch (Exception e) {
+            log.warn("Could not migrate discharge data: " + e.getMessage());
+        }
     }
 }

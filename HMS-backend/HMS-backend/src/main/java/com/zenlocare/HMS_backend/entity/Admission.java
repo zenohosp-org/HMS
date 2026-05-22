@@ -81,11 +81,8 @@ public class Admission {
     @Column(name = "primary_diagnosis", columnDefinition = "TEXT")
     private String primaryDiagnosis;
 
-    @Column(name = "discharge_diagnosis", columnDefinition = "TEXT")
-    private String dischargeDiagnosis;
-
-    @Column(name = "discharge_note", columnDefinition = "TEXT")
-    private String dischargeNote;
+    @OneToOne(mappedBy = "admission", fetch = FetchType.LAZY, cascade = CascadeType.ALL, optional = true)
+    private Discharge discharge;
 
     @Column(name = "attender_name", length = 100)
     private String attenderName;

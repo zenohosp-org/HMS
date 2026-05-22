@@ -1,0 +1,12 @@
+package com.zenlocare.HMS_backend.repository;
+
+import com.zenlocare.HMS_backend.entity.Discharge;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface DischargeRepository extends JpaRepository<Discharge, Long> {
+    Optional<Discharge> findByAdmission_Id(UUID admissionId);
+    boolean existsByAdmission_Id(UUID admissionId);
+}
