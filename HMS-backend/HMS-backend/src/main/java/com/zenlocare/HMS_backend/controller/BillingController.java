@@ -4,6 +4,7 @@ import com.zenlocare.HMS_backend.dto.InvoiceDTO;
 import com.zenlocare.HMS_backend.dto.InvoiceRequest;
 import com.zenlocare.HMS_backend.dto.SmartBillingSuggestion;
 import com.zenlocare.HMS_backend.entity.Invoice;
+import com.zenlocare.HMS_backend.security.HospitalAccessGuard;
 import com.zenlocare.HMS_backend.service.InvoiceService;
 import com.zenlocare.HMS_backend.service.PatientAdvanceService;
 import com.zenlocare.HMS_backend.service.PatientAdvanceService.PatientAdvanceDTO;
@@ -28,6 +29,7 @@ public class BillingController {
     private final SmartBillingService smartBillingService;
     private final InvoiceService invoiceService;
     private final PatientAdvanceService patientAdvanceService;
+    private final HospitalAccessGuard hospitalAccessGuard;
 
     @GetMapping("/smart-suggestions")
     public ResponseEntity<SmartBillingSuggestion> getSuggestions(
@@ -47,6 +49,7 @@ public class BillingController {
     public ResponseEntity<List<InvoiceDTO>> getOpenOpdInvoices(
             @PathVariable Integer patientId,
             @RequestParam UUID hospitalId) {
+        hospitalAccessGuard.requireAccess(hospitalId);
         return ResponseEntity.ok(invoiceService.getOpenOpdInvoicesForPatient(hospitalId, patientId));
     }
 
