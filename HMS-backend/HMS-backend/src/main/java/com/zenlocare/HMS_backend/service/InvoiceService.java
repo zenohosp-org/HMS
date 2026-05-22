@@ -413,24 +413,28 @@ public class InvoiceService {
         }
     }
 
+    /**
+     * Live-estimate sync from the IPD billing modal — the frontend recomputes
+     * the grand total every time items/discount/GST change and pushes the new
+     * value here so the IPD billing list page shows a fresh "~₹..." estimate
+     * without waiting for the user to click Save.
+     *
+     * The frontend's grandTotal already reflects EVERY item visible in the modal
+     * (saved items loaded from the invoice + any newly added items, minus
+     * discount, plus medicine GST). Storing it as-is is the correct behaviour —
+     * the previous version added committed-item totals on top, which
+     * double-counted whatever the modal already showed (a ₹2,500 bill would be
+     * persisted as ~₹3,500 etc.).
+     *
+     * Only `total` is touched. Subtotal/tax/discount stay frozen until the
+     * authoritative `finalizeIPD` / `collectAndSave` paths write them.
+     */
     @Transactional
     public void updateEstimatedTotal(UUID invoiceId, BigDecimal estimatedTotal) {
         invoiceRepository.findById(invoiceId).ifPresent(invoice -> {
             if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) return;
-            // Add items already committed to this invoice (e.g., consultation fee carried over
-            // from a promoted OPD invoice) so the billing-list total stays accurate before
-            // the user opens and finalizes the IPD Bill modal.
-            // ROOM_CHARGE and CUSTOM are excluded because estimatedTotal already covers them.
-            BigDecimal committedItemsTotal = invoice.getItems() != null
-                    ? invoice.getItems().stream()
-                            .filter(i -> !"ROOM_CHARGE".equals(i.getItemType()) && !"CUSTOM".equals(i.getItemType()))
-                            .map(InvoiceItem::getTotalPrice)
-                            .filter(Objects::nonNull)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    : BigDecimal.ZERO;
-            BigDecimal newTotal = committedItemsTotal.add(estimatedTotal);
-            invoice.setSubtotal(newTotal);
-            invoice.setTotal(newTotal);
+            BigDecimal safe = estimatedTotal != null ? estimatedTotal : BigDecimal.ZERO;
+            invoice.setTotal(safe);
             invoice.setUpdatedAt(LocalDateTime.now());
             invoiceRepository.save(invoice);
         });
