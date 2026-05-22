@@ -23,4 +23,23 @@ public interface AmbulanceBookingRepository extends JpaRepository<AmbulanceBooki
     long countByHospital_IdAndStatus(UUID hospitalId, AmbulanceBookingStatus status);
 
     List<AmbulanceBooking> findByPatient_IdAndHospital_Id(Integer patientId, UUID hospitalId);
+
+    /**
+     * Eligible ambulance bookings for auto-merge into a patient's IPD bill:
+     * same hospital + same patient + ambulance reached this hospital +
+     * not already merged + not cancelled. Ordered oldest-first so the audit
+     * trail in the IPD bill lists earlier bookings first.
+     */
+    @Query("""
+        SELECT b FROM AmbulanceBooking b
+        WHERE b.hospital.id = :hospitalId
+          AND b.patient.id = :patientId
+          AND b.reachedToSameHospital = TRUE
+          AND (b.mergedToIpd IS NULL OR b.mergedToIpd = FALSE)
+          AND b.status <> com.zenlocare.HMS_backend.entity.AmbulanceBookingStatus.CANCELLED
+        ORDER BY b.createdAt ASC
+    """)
+    List<AmbulanceBooking> findEligibleForIpdMerge(
+            @org.springframework.data.repository.query.Param("hospitalId") UUID hospitalId,
+            @org.springframework.data.repository.query.Param("patientId") Integer patientId);
 }

@@ -44,6 +44,7 @@ public class InvoiceService {
     private final InvoicePaymentRepository invoicePaymentRepository;
     private final BankLedgerService bankLedgerService;
     private final PatientServiceRepository patientServiceRepository;
+    private final AmbulanceBookingRepository ambulanceBookingRepository;
 
     @Transactional
     public Invoice createInvoice(InvoiceRequest request) {
@@ -767,6 +768,66 @@ public class InvoiceService {
      * when the booking is marked COMPLETED with reachedToSameHospital = true.
      * Idempotent: no-op if the booking is already present in the invoice.
      */
+    /**
+     * Auto-merges all eligible ambulance bookings for a patient into the IPD invoice
+     * for the given admission. Called from AdmissionService.admit right after the
+     * IPD invoice is created/promoted.
+     *
+     * "Eligible" means: same hospital, same patient, reached_to_same_hospital=TRUE,
+     * not yet merged (mergedToIpd != true), not CANCELLED. The booking's
+     * `mergedToIpd` flag is the idempotency lock — re-running this method on the
+     * same admission is a no-op once all bookings are merged.
+     *
+     * Each merge:
+     *   - Adds an AMBULANCE line item to the IPD invoice (via the existing
+     *     addAmbulanceItemToIpdInvoice helper which has its own idempotency check)
+     *   - Sets mergedToIpd=TRUE on the booking so it won't be picked again
+     *
+     * Failures on individual bookings are logged and swallowed — one bad booking
+     * must not prevent the admission from completing or block subsequent merges.
+     */
+    @Transactional
+    public void autoMergeSameHospitalAmbulancesIntoIpd(UUID admissionId) {
+        Admission admission = admissionRepository.findById(admissionId).orElse(null);
+        if (admission == null || admission.getHospital() == null || admission.getPatient() == null) return;
+
+        UUID hospitalId = admission.getHospital().getId();
+        Integer patientId = admission.getPatient().getId();
+
+        List<AmbulanceBooking> eligible = ambulanceBookingRepository.findEligibleForIpdMerge(hospitalId, patientId);
+        if (eligible.isEmpty()) {
+            log.info("Ambulance→IPD merge: no eligible bookings for admission {} (patient {} at hospital {})",
+                    admissionId, patientId, hospitalId);
+            return;
+        }
+
+        int merged = 0;
+        for (AmbulanceBooking booking : eligible) {
+            try {
+                java.math.BigDecimal charge = booking.getCharge();
+                if (charge == null || charge.signum() <= 0) {
+                    log.info("Ambulance→IPD merge: booking {} has no charge — marking merged without billing", booking.getId());
+                    booking.setMergedToIpd(true);
+                    ambulanceBookingRepository.save(booking);
+                    continue;
+                }
+                String vehicleDesc = booking.getVehicle() != null ? booking.getVehicle().getVehicleNumber() : booking.getVehicleNumber();
+                String typeDesc    = booking.getAmbulanceType() != null ? booking.getAmbulanceType().getName() : "Ambulance";
+                String description = typeDesc + (vehicleDesc != null ? " (" + vehicleDesc + ")" : "");
+
+                addAmbulanceItemToIpdInvoice(patientId, booking.getId(), charge, description);
+                booking.setMergedToIpd(true);
+                ambulanceBookingRepository.save(booking);
+                merged++;
+            } catch (Exception e) {
+                log.error("Ambulance→IPD merge: failed to merge booking {} into admission {}'s IPD invoice — skipping. {}",
+                        booking.getId(), admissionId, e.getMessage(), e);
+            }
+        }
+        log.info("Ambulance→IPD merge: merged {} of {} eligible booking(s) into admission {}",
+                merged, eligible.size(), admissionId);
+    }
+
     @Transactional
     public void addAmbulanceItemToIpdInvoice(Integer patientId, Long bookingId,
                                               java.math.BigDecimal charge, String description) {

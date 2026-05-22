@@ -158,6 +158,15 @@ public class AdmissionService {
                     saved.getId(), sourceApptId, e.getMessage(), e);
         }
 
+        // Auto-merge any eligible same-hospital ambulance bookings into the IPD invoice.
+        // Runs AFTER createAdmissionInvoice so the IPD invoice exists before we add line items.
+        // Failures here must NOT block the admission — they're logged for follow-up.
+        try { invoiceService.autoMergeSameHospitalAmbulancesIntoIpd(saved.getId()); }
+        catch (Exception e) {
+            log.error("Failed to merge same-hospital ambulance bookings for admission {}: {}",
+                    saved.getId(), e.getMessage(), e);
+        }
+
         return toDTO(saved);
     }
 
