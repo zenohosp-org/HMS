@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
-import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, patientAdvanceApi, bankApi, invoiceApi } from '@/utils/api'
+import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, patientAdvanceApi, bankApi } from '@/utils/api'
 import api from '@/utils/api'
 import { X, Search, BedDouble, User, CheckCircle2, Loader2 } from 'lucide-react'
 import SearchableSelect from '@/components/ui/SearchableSelect'
@@ -52,11 +52,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   const [bankAccountsLoading, setBankAccountsLoading] = useState(false)
   const [selectedBankAccountId, setSelectedBankAccountId] = useState('')
 
-  // Open OPD bills for the selected patient — user explicitly picks one to merge into IPD.
-  // Empty string = "Don't merge" (fresh IPD invoice).
-  const [openOpds, setOpenOpds] = useState([])
-  const [openOpdsLoading, setOpenOpdsLoading] = useState(false)
-  const [mergeApptId, setMergeApptId] = useState(prefill?.appointmentId || '')
 
   const [submitting, setSubmitting] = useState(false)
 
@@ -117,42 +112,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     if (selectedPatient) setPaymentCategory(selectedPatient.paymentCategory || 'CASH')
   }, [selectedPatient])
 
-  // Fetch the patient's open OPD invoices so the user can pick which to merge into the IPD bill.
-  // Triggered whenever the selected patient changes. AbortController guards against
-  // race conditions when the user rapidly switches patients — only the latest fetch wins.
-  useEffect(() => {
-    if (!selectedPatient?.id || !user?.hospitalId) {
-      setOpenOpds([])
-      setMergeApptId(prefill?.appointmentId || '')
-      return
-    }
-    const controller = new AbortController()
-    setOpenOpdsLoading(true)
-    invoiceApi.getOpenOpdInvoices(selectedPatient.id, user.hospitalId, { signal: controller.signal })
-      .then(list => {
-        setOpenOpds(list || [])
-        // If admit was launched from an appointment row, auto-pick the matching invoice.
-        // Else if there's exactly one open OPD, auto-pick it. Otherwise leave the user to choose.
-        if (prefill?.appointmentId && (list || []).some(i => i.appointmentId === prefill.appointmentId)) {
-          setMergeApptId(prefill.appointmentId)
-        } else if ((list || []).length === 1) {
-          setMergeApptId(list[0].appointmentId)
-        } else {
-          setMergeApptId('')
-        }
-      })
-      .catch(err => {
-        // Swallow aborts silently — they're expected on rapid patient switches.
-        if (controller.signal.aborted || err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError') return
-        setOpenOpds([])
-        setMergeApptId('')
-        notify('Could not load open OPD bills — admission will start a fresh IPD invoice', 'warning')
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setOpenOpdsLoading(false)
-      })
-    return () => controller.abort()
-  }, [selectedPatient?.id, user?.hospitalId, prefill?.appointmentId, notify])
 
   // Fetch bank accounts filtered by the current payment method's allowed types.
   // Cash → CASH accounts; UPI/Card/Bank Transfer → SAVINGS/CURRENT.
@@ -192,7 +151,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
         bedId: form.bedId ? Number(form.bedId) : null,
         admittingDoctorId: form.admittingDoctorId || null,
         departmentId: form.departmentId || null,
-        sourceAppointmentId: mergeApptId || null,
+        sourceAppointmentId: prefill?.appointmentId || null,
         admissionType: form.admissionType,
         chiefComplaint: form.chiefComplaint,
         approxDischargeDate: form.approxDischargeDate || null,
@@ -322,62 +281,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
               </div>
             </div>
 
-            {/* Open OPD bills picker — visible only when patient has unpaid OPD invoices */}
-            {selectedPatient && (openOpdsLoading || openOpds.length > 0) && (
-              <div className="mt-2 rounded-lg border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <p className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">
-                    Merge open OPD bill into IPD?
-                  </p>
-                  {openOpdsLoading && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
-                </div>
-                {!openOpdsLoading && openOpds.length > 0 && (
-                  <div className="space-y-2">
-                    {openOpds.map(inv => {
-                      const isSelected = mergeApptId === inv.appointmentId
-                      const apptDateStr = inv.appointmentDate
-                        ? new Date(inv.appointmentDate).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                        : ''
-                      return (
-                        <button
-                          key={inv.id}
-                          type="button"
-                          onClick={() => setMergeApptId(isSelected ? '' : inv.appointmentId)}
-                          className={`w-full text-left p-3 rounded-lg border-2 transition-all ${isSelected
-                            ? 'border-blue-500 dark:border-blue-400 bg-white dark:bg-blue-500/20'
-                            : 'border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] hover:border-blue-300'}`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{inv.invoiceNumber}</p>
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300">{inv.status}</span>
-                              </div>
-                              <p className="text-xs text-slate-500 dark:text-[#888]">
-                                {inv.appointmentDoctorName ? `Dr. ${inv.appointmentDoctorName} · ` : ''}{apptDateStr || '—'}
-                              </p>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <p className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">₹{Number(inv.total || 0).toLocaleString('en-IN')}</p>
-                              {isSelected && <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-0.5">Will merge ✓</p>}
-                            </div>
-                          </div>
-                        </button>
-                      )
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => setMergeApptId('')}
-                      className={`w-full text-left p-2.5 rounded-lg border text-xs font-semibold transition-all ${mergeApptId === ''
-                        ? 'border-slate-900 dark:border-white bg-slate-100 dark:bg-[#1e1e1e] text-slate-900 dark:text-white'
-                        : 'border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-[#888] hover:border-slate-400'}`}
-                    >
-                      Don&rsquo;t merge — start a fresh IPD bill
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
           </section>
 
           {/* ─── Section 2: Clinical & Room ─────────────────────────────── */}
