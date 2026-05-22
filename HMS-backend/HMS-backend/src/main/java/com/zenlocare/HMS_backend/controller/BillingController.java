@@ -4,7 +4,6 @@ import com.zenlocare.HMS_backend.dto.InvoiceDTO;
 import com.zenlocare.HMS_backend.dto.InvoiceRequest;
 import com.zenlocare.HMS_backend.dto.SmartBillingSuggestion;
 import com.zenlocare.HMS_backend.entity.Invoice;
-import com.zenlocare.HMS_backend.security.HospitalAccessGuard;
 import com.zenlocare.HMS_backend.service.InvoiceService;
 import com.zenlocare.HMS_backend.service.PatientAdvanceService;
 import com.zenlocare.HMS_backend.service.PatientAdvanceService.PatientAdvanceDTO;
@@ -29,7 +28,6 @@ public class BillingController {
     private final SmartBillingService smartBillingService;
     private final InvoiceService invoiceService;
     private final PatientAdvanceService patientAdvanceService;
-    private final HospitalAccessGuard hospitalAccessGuard;
 
     @GetMapping("/smart-suggestions")
     public ResponseEntity<SmartBillingSuggestion> getSuggestions(
@@ -41,16 +39,6 @@ public class BillingController {
     @GetMapping("/patient/{patientId}/invoices")
     public ResponseEntity<List<InvoiceDTO>> getPatientInvoices(@PathVariable Integer patientId) {
         return ResponseEntity.ok(invoiceService.getPatientInvoices(patientId));
-    }
-
-    // Open OPD bills for a patient — used by the admit modal to let the user
-    // explicitly pick which OPD invoice to merge into the new IPD admission.
-    @GetMapping("/patient/{patientId}/open-opd-invoices")
-    public ResponseEntity<List<InvoiceDTO>> getOpenOpdInvoices(
-            @PathVariable Integer patientId,
-            @RequestParam UUID hospitalId) {
-        hospitalAccessGuard.requireAccess(hospitalId);
-        return ResponseEntity.ok(invoiceService.getOpenOpdInvoicesForPatient(hospitalId, patientId));
     }
 
     @PatchMapping("/invoices/{id}/pay")

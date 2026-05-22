@@ -472,12 +472,6 @@ public class InvoiceService {
                 .stream().findFirst().map(this::toDTO);
     }
 
-    // ── Open OPD bills for a patient — used by the admit modal's merge picker ──
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public List<InvoiceDTO> getOpenOpdInvoicesForPatient(UUID hospitalId, Integer patientId) {
-        return invoiceRepository.findOpenOpdInvoicesForPatient(hospitalId, patientId)
-                .stream().map(this::toDTO).toList();
-    }
 
     // ── Replace all items on an IPD invoice and recalculate totals ─────────────
     @Transactional
