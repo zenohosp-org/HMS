@@ -47,8 +47,14 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     // Open OPD bills for a patient — used by the admit modal's "merge into IPD" picker.
     // Returns invoices that are linked to an appointment, not yet linked to any admission,
     // and still collectible (not PAID / SETTLED / CANCELLED). Most recent first.
-    @org.springframework.data.jpa.repository.Query("""
+    //
+    // JOIN FETCH appointment → doctor → user so the DTO mapper can populate
+    // appointmentDoctorName without triggering N+1 lazy loads per row.
+    @Query("""
         SELECT i FROM Invoice i
+        LEFT JOIN FETCH i.appointment a
+        LEFT JOIN FETCH a.doctor d
+        LEFT JOIN FETCH d.user
         WHERE i.patient.id = :patientId
           AND i.hospital.id = :hospitalId
           AND i.appointment IS NOT NULL
@@ -59,9 +65,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
               com.zenlocare.HMS_backend.entity.InvoiceStatus.CANCELLED)
         ORDER BY i.createdAt DESC
     """)
-    java.util.List<Invoice> findOpenOpdInvoicesForPatient(
-            @org.springframework.data.repository.query.Param("hospitalId") UUID hospitalId,
-            @org.springframework.data.repository.query.Param("patientId") Integer patientId);
+    List<Invoice> findOpenOpdInvoicesForPatient(
+            @Param("hospitalId") UUID hospitalId,
+            @Param("patientId") Integer patientId);
 
     @Query("""
         SELECT CASE WHEN COUNT(ii) > 0 THEN TRUE ELSE FALSE END
