@@ -6,6 +6,7 @@ import com.zenlocare.HMS_backend.dto.DischargeRequest;
 import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
@@ -143,13 +145,18 @@ public class AdmissionService {
         // Auto-link any floating registration advances (collected at registration desk before
         // this admission was created) to this admission so they appear in the final bill.
         try { patientAdvanceService.linkRegistrationAdvancesToAdmission(req.getPatientId(), saved.getId()); }
-        catch (Exception ignored) {}
+        catch (Exception e) {
+            log.warn("Failed to link registration advances to admission {}: {}", saved.getId(), e.getMessage());
+        }
 
         // Auto-create UNPAID placeholder invoice for IPD billing tracking.
         // Pass sourceAppt ID directly — avoids lazy-loading inside the invoice service.
         UUID sourceApptId = sourceAppt != null ? sourceAppt.getId() : null;
         try { invoiceService.createAdmissionInvoice(req.getHospitalId(), req.getPatientId(), saved.getId(), saved.getAdmissionNumber(), sourceApptId); }
-        catch (Exception ignored) {}
+        catch (Exception e) {
+            log.error("Failed to create/merge IPD invoice for admission {} (sourceAppt={}): {}",
+                    saved.getId(), sourceApptId, e.getMessage(), e);
+        }
 
         return toDTO(saved);
     }

@@ -22,6 +22,9 @@ public class InvoiceDTO {
     private String patientUhid;
     private UUID admissionId;
     private String admissionNumber;
+    private UUID appointmentId;
+    private LocalDateTime appointmentDate;
+    private String appointmentDoctorName;
     private BigDecimal subtotal;
     private BigDecimal tax;
     private BigDecimal discount;

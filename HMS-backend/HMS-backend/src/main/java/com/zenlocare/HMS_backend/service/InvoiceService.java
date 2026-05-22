@@ -7,6 +7,7 @@ import com.zenlocare.HMS_backend.entity.Appointment;
 import com.zenlocare.HMS_backend.entity.InvoicePayment;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InvoiceService {
@@ -235,23 +237,32 @@ public class InvoiceService {
         Admission admission = admissionRepository.findById(admissionId).orElse(null);
         if (hospital == null || patient == null || admission == null) return;
 
-        // Absorb the OPD invoice when this admission was triggered from an OPD appointment
+        // Absorb the OPD invoice when this admission was triggered from an OPD appointment.
+        // Same logic as before — restoring the original behaviour with diagnostic logging only.
         if (sourceAppointmentId != null) {
             Optional<Invoice> opdOpt = invoiceRepository.findByAppointment_Id(sourceAppointmentId);
             if (opdOpt.isPresent()) {
                 Invoice opdInvoice = opdOpt.get();
-                if (!InvoiceStatus.PAID.equals(opdInvoice.getStatus()) && !InvoiceStatus.SETTLED.equals(opdInvoice.getStatus())) {
-                    // Promote: link OPD invoice to this admission — it becomes the IPD invoice
+                if (isCollectible(opdInvoice)) {
                     opdInvoice.setAdmission(admission);
                     opdInvoice.setInvoiceNumber(HospitalIdPrefix.of(hospital) + "IPD-"
                             + HospitalIdPrefix.stripHospitalPrefix(admissionNumber));
                     opdInvoice.setNotes("IPD Admission (converted from OPD) — " + admissionNumber);
                     opdInvoice.setUpdatedAt(LocalDateTime.now());
                     invoiceRepository.save(opdInvoice);
+                    log.info("OPD→IPD merge: invoice {} promoted to IPD for admission {} (appt {})",
+                            opdInvoice.getId(), admissionId, sourceAppointmentId);
                     return;
                 }
-                // OPD invoice already paid (rare) — fall through and create a fresh IPD placeholder
+                log.info("OPD→IPD merge skipped: appt {}'s invoice {} is in non-collectible status {}",
+                        sourceAppointmentId, opdInvoice.getId(), opdInvoice.getStatus());
+                // Fall through and create a fresh IPD placeholder
+            } else {
+                log.warn("OPD→IPD merge: no invoice found for source appointment {} — creating fresh IPD invoice for admission {}",
+                        sourceAppointmentId, admissionId);
             }
+        } else {
+            log.info("OPD→IPD merge: admission {} has no sourceAppointmentId — creating fresh IPD invoice", admissionId);
         }
 
         // Direct IPD admission (no OPD source) — add one-time registration fee if never charged
@@ -474,6 +485,13 @@ public class InvoiceService {
                 .stream().findFirst().map(this::toDTO);
     }
 
+    // ── Open OPD bills for a patient — used by the admit modal's merge picker ──
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<InvoiceDTO> getOpenOpdInvoicesForPatient(UUID hospitalId, Integer patientId) {
+        return invoiceRepository.findOpenOpdInvoicesForPatient(hospitalId, patientId)
+                .stream().map(this::toDTO).toList();
+    }
+
     // ── Replace all items on an IPD invoice and recalculate totals ─────────────
     @Transactional
     public InvoiceDTO finalizeIPDInvoice(UUID invoiceId, InvoiceRequest req) {
@@ -671,6 +689,13 @@ public class InvoiceService {
                 .patientUhid(inv.getPatient() != null ? inv.getPatient().getUhid() : null)
                 .admissionId(inv.getAdmission() != null ? inv.getAdmission().getId() : null)
                 .admissionNumber(inv.getAdmission() != null ? inv.getAdmission().getAdmissionNumber() : null)
+                .appointmentId(inv.getAppointment() != null ? inv.getAppointment().getId() : null)
+                .appointmentDate(inv.getAppointment() != null && inv.getAppointment().getApptDate() != null && inv.getAppointment().getApptTime() != null
+                        ? LocalDateTime.of(inv.getAppointment().getApptDate(), inv.getAppointment().getApptTime())
+                        : null)
+                .appointmentDoctorName(inv.getAppointment() != null && inv.getAppointment().getDoctor() != null && inv.getAppointment().getDoctor().getUser() != null
+                        ? inv.getAppointment().getDoctor().getUser().getFirstName() + " " + inv.getAppointment().getDoctor().getUser().getLastName()
+                        : null)
                 .subtotal(inv.getSubtotal())
                 .tax(inv.getTax())
                 .discount(inv.getDiscount())
@@ -808,5 +833,13 @@ public class InvoiceService {
 
         invoice.setUpdatedAt(LocalDateTime.now());
         invoiceRepository.save(invoice);
+    }
+
+    private boolean isCollectible(Invoice inv) {
+        InvoiceStatus s = inv.getStatus();
+        return s != null
+                && !InvoiceStatus.PAID.equals(s)
+                && !InvoiceStatus.SETTLED.equals(s)
+                && !InvoiceStatus.CANCELLED.equals(s);
     }
 }

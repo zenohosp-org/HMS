@@ -41,6 +41,15 @@ public class BillingController {
         return ResponseEntity.ok(invoiceService.getPatientInvoices(patientId));
     }
 
+    // Open OPD bills for a patient — used by the admit modal to let the user
+    // explicitly pick which OPD invoice to merge into the new IPD admission.
+    @GetMapping("/patient/{patientId}/open-opd-invoices")
+    public ResponseEntity<List<InvoiceDTO>> getOpenOpdInvoices(
+            @PathVariable Integer patientId,
+            @RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(invoiceService.getOpenOpdInvoicesForPatient(hospitalId, patientId));
+    }
+
     @PatchMapping("/invoices/{id}/pay")
     public ResponseEntity<Invoice> markAsPaid(
             @PathVariable UUID id,
