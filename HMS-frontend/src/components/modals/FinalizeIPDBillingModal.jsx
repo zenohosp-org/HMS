@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import SSOCookieManager from '@/utils/ssoManager'
 import SearchableSelect from '@/components/ui/SearchableSelect'
@@ -10,7 +10,7 @@ import {
   X, Receipt, CheckCircle2, Loader2, AlertCircle, Plus, Trash2,
   BedDouble, ScanLine, Stethoscope, Pill, FlaskConical, Wrench,
   Scissors, Landmark, Wallet, IndianRupee, Clock, UserCheck,
-  AlertTriangle, Ambulance,
+  Ambulance,
 } from 'lucide-react'
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
@@ -103,10 +103,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const [savingBill, setSavingBill] = useState(false)
   const [collectingPayment, setCollectingPayment] = useState(false)
   const [fallbackInvoiceNo] = useState(generateInvoiceNumber)
-
-  // Ambulance merge
-  const [pendingAmb, setPendingAmb] = useState([])
-  const mergedAmbIds = useRef([])
 
   // Credit patient early payment override
   const [showEarlyCollect, setShowEarlyCollect] = useState(false)
@@ -330,18 +326,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       setItems(auto.filter(i => Number(i.quantity) > 0 || Number(i.totalPrice) > 0))
       setNextKey(key)
 
-      // Fetch outstanding ambulance bookings for this patient to offer merging
-      if (admission.patientId) {
-        ambulanceApi.getBookingsByPatient(user.hospitalId, admission.patientId)
-          .then(list => setPendingAmb(
-            (Array.isArray(list) ? list : []).filter(b =>
-              !b.mergedToIpd &&
-              !savedAmbulanceIds.has(String(b.id)) &&
-              ['COMPLETED', 'EN_ROUTE', 'DISPATCHED', 'PENDING'].includes(b.status)
-            )
-          ))
-          .catch(() => {})
-      }
     }).catch(() => {
       notify('Could not load pending charges — add items manually', 'info')
     }).finally(() => setLoadingBill(false))
@@ -360,23 +344,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         merged.totalPrice = (Number(merged.quantity) || 0) * (Number(merged.unitPrice) || 0)
       return merged
     }))
-  }
-
-  const mergeAmbulance = (booking) => {
-    const charge = Number(booking.charge ?? booking.vehicle?.defaultCharge ?? 0)
-    setItems(prev => [...prev, {
-      key: nextKey,
-      itemType: 'AMBULANCE',
-      description: `Ambulance · AMB-${booking.id}${booking.vehicle?.vehicleNumber ? ' · ' + booking.vehicle.vehicleNumber : ''}`,
-      quantity: 1,
-      unitPrice: charge,
-      totalPrice: charge,
-      ambulanceBookingId: booking.id,
-      _isNew: true,
-    }])
-    setNextKey(k => k + 1)
-    setPendingAmb(prev => prev.filter(b => b.id !== booking.id))
-    mergedAmbIds.current.push(booking.id)
   }
 
   const subtotal = useMemo(() => items.reduce((s, i) => s + (i.totalPrice || 0), 0), [items])
@@ -465,14 +432,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         )
       }
 
-      // Mark merged ambulance bookings so they disappear from the ambulance billing page
-      if (mergedAmbIds.current.length > 0) {
-        for (const ambId of mergedAmbIds.current) {
-          ambulanceApi.markMergedToIpd(ambId).catch(() => {})
-        }
-        mergedAmbIds.current = []
-      }
-
       const wasReopened = invoiceStatus === 'PAID' || invoiceStatus === 'SETTLED'
       notify(
         wasReopened
@@ -510,14 +469,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       const newPayment = { id: Date.now(), amount: amt, paymentMethod: payMethod, paidAt: new Date().toISOString() }
       setExistingPayments(prev => [...prev, newPayment])
       if (result?.status) setInvoiceStatus(result.status)
-
-      // Mark merged ambulance bookings so they disappear from the ambulance billing page
-      if (mergedAmbIds.current.length > 0) {
-        for (const ambId of mergedAmbIds.current) {
-          ambulanceApi.markMergedToIpd(ambId).catch(() => {})
-        }
-        mergedAmbIds.current = []
-      }
 
       const newTotalPaid = totalCashPaid + amt
       const newBalance = Math.max(0, grandTotal - advanceAdjusted - newTotalPaid)
@@ -686,30 +637,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   </div>
                 )}
               </div>
-
-              {/* Ambulance merge banner */}
-              {pendingAmb.length > 0 && (
-                <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 mb-3 mx-5 mt-3">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1.5">
-                      {pendingAmb.length} ambulance booking{pendingAmb.length > 1 ? 's' : ''} found for this patient
-                    </p>
-                    {pendingAmb.map(b => (
-                      <div key={b.id} className="flex items-center justify-between gap-2 text-xs text-amber-700 dark:text-amber-400 py-0.5">
-                        <span className="truncate">AMB-{b.id} · {b.bookingDate}{b.vehicle?.vehicleNumber ? ' · ' + b.vehicle.vehicleNumber : ''}</span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-semibold">₹{Number(b.charge ?? b.vehicle?.defaultCharge ?? 0).toLocaleString()}</span>
-                          <button type="button" onClick={() => mergeAmbulance(b)}
-                            className="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 font-semibold hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-colors">
-                            Add to bill
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Items table */}
               <div>
