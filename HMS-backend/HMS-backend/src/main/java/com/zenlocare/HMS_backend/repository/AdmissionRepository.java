@@ -46,15 +46,21 @@ public interface AdmissionRepository extends JpaRepository<Admission, UUID> {
            "AND a.approxDischargeDate < :now")
     long countOverdueByHospital(@Param("hospitalId") UUID hospitalId, @Param("now") java.time.LocalDateTime now);
 
-    @Query("SELECT a FROM Admission a WHERE a.hospital.id = :hospitalId " +
+    // Use explicit LEFT JOINs for optional relations (department, room) so admissions without
+    // an assigned department or room are still included. Implicit `a.department.name` paths
+    // generate INNER JOINs in Hibernate and silently exclude those rows.
+    @Query("SELECT a FROM Admission a " +
+           "LEFT JOIN a.department d " +
+           "LEFT JOIN a.room r " +
+           "WHERE a.hospital.id = :hospitalId " +
            "AND (:statusStr = 'ALL' OR a.status = :status) " +
            "AND (:q = '' " +
            "     OR LOWER(a.patient.firstName) LIKE LOWER(CONCAT('%',:q,'%')) " +
            "     OR LOWER(a.patient.lastName) LIKE LOWER(CONCAT('%',:q,'%')) " +
            "     OR LOWER(a.admissionNumber) LIKE LOWER(CONCAT('%',:q,'%')) " +
            "     OR LOWER(a.ipdId) LIKE LOWER(CONCAT('%',:q,'%')) " +
-           "     OR LOWER(a.department.name) LIKE LOWER(CONCAT('%',:q,'%')) " +
-           "     OR LOWER(a.room.roomNumber) LIKE LOWER(CONCAT('%',:q,'%'))" +
+           "     OR LOWER(d.name) LIKE LOWER(CONCAT('%',:q,'%')) " +
+           "     OR LOWER(r.roomNumber) LIKE LOWER(CONCAT('%',:q,'%'))" +
            ")")
     Page<Admission> searchAdmissions(
             @Param("hospitalId") UUID hospitalId,
