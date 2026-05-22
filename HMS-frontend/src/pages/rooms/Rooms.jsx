@@ -7,7 +7,6 @@ import {
   Building2, Layers, LayoutGrid, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
-import AllocatePatientModal from "./AllocatePatientModal";
 import AssignAttenderModal from "./AssignAttenderModal";
 import RoomDetailPanel from "./RoomDetailPanel";
 
@@ -151,7 +150,6 @@ function Rooms() {
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [showAllocateModal, setShowAllocateModal] = useState({ open: false, room: null });
   const [showAttenderModal, setShowAttenderModal] = useState({ open: false, room: null });
   const [infrastructure, setInfrastructure] = useState([]);
   const [collapsedFloors, setCollapsedFloors] = useState(new Set());
@@ -204,16 +202,6 @@ function Rooms() {
       if (updated) setSelectedRoom(updated);
     }
   }, [rooms]);
-
-  const handleDeallocate = async (roomId) => {
-    if (!confirm("Deallocate this room?")) return;
-    closeMenu();
-    try {
-      await api.post(`/rooms/${roomId}/deallocate?hospitalId=${user?.hospitalId}`);
-      if (selectedRoom?.id === roomId) setSelectedRoom(null);
-      fetchRooms();
-    } catch { alert("Failed to deallocate room"); }
-  };
 
   const handleDeleteRoom = async (roomId) => {
     if (!confirm("Permanently delete this room?")) return;
@@ -578,34 +566,14 @@ function Rooms() {
               style={{ position: "fixed", right, ...(top !== undefined ? { top } : { bottom }), zIndex: 50 }}
               className="w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-slate-100 dark:border-[#252525] py-1.5"
             >
-              {/* Multi-bed: allocate to a specific bed */}
-              {isMultiBed && (
-                <button
-                  onClick={() => { closeMenu(); setShowAllocateModal({ open: true, room }); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
-                >
-                  Allocate Patient
-                </button>
-              )}
-              {/* Multi-bed: view beds in panel */}
-              {isMultiBed && (
-                <button
-                  onClick={() => { closeMenu(); setSelectedRoom(room); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
-                >
-                  View Beds
-                </button>
-              )}
-              {/* Single-bed available: allocate */}
-              {room.status === "AVAILABLE" && !isMultiBed && (
-                <button
-                  onClick={() => { closeMenu(); setShowAllocateModal({ open: true, room }); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
-                >
-                  Allocate Patient
-                </button>
-              )}
-              {/* Single-bed occupied: attender */}
+              {/* View room details (any room) */}
+              <button
+                onClick={() => { closeMenu(); setSelectedRoom(room); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-all"
+              >
+                {isMultiBed ? "View Beds" : "View Details"}
+              </button>
+              {/* Occupied single-bed: edit attender */}
               {room.status === "OCCUPIED" && !isMultiBed && (
                 <button
                   onClick={() => { closeMenu(); setShowAttenderModal({ open: true, room }); }}
@@ -614,19 +582,7 @@ function Rooms() {
                   {room.attenderName ? "Edit Attender" : "Assign Attender"}
                 </button>
               )}
-              {/* Single-bed occupied: deallocate */}
-              {room.status === "OCCUPIED" && !isMultiBed && (
-                <>
-                  <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
-                  <button
-                    onClick={() => handleDeallocate(room.id)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
-                  >
-                    Deallocate
-                  </button>
-                </>
-              )}
-              {/* Available rooms (any): delete */}
+              {/* Available room: delete (admin housekeeping) */}
               {room.status === "AVAILABLE" && (
                 <>
                   <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
@@ -643,16 +599,6 @@ function Rooms() {
         );
       })()}
 
-      {showAllocateModal.open && showAllocateModal.room && (
-        <AllocatePatientModal
-          roomId={showAllocateModal.room.id}
-          roomNumber={showAllocateModal.room.roomNumber}
-          bedCount={showAllocateModal.room.bedCount}
-          hospitalId={user?.hospitalId}
-          onClose={() => setShowAllocateModal({ open: false, room: null })}
-          onSuccess={() => { setShowAllocateModal({ open: false, room: null }); fetchRooms(); }}
-        />
-      )}
       {showAttenderModal.open && showAttenderModal.room && (
         <AssignAttenderModal
           roomId={showAttenderModal.room.id}

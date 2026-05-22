@@ -111,10 +111,9 @@ function AssignAssetDropdown({ hospitalId, roomId, onAssigned }) {
   );
 }
 
-function BedsSection({ room, hospitalId, onRoomUpdated }) {
+function BedsSection({ room, hospitalId }) {
   const [beds, setBeds] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [freeing, setFreeing] = useState(null);
 
   const loadBeds = useCallback(async () => {
     if (!room?.id || !hospitalId) return;
@@ -127,15 +126,6 @@ function BedsSection({ room, hospitalId, onRoomUpdated }) {
   }, [room?.id, hospitalId]);
 
   useEffect(() => { loadBeds(); }, [loadBeds]);
-
-  const handleFreeBed = async (bedId) => {
-    setFreeing(bedId);
-    try {
-      await bedApi.freeBed(bedId, hospitalId);
-      await loadBeds();
-      onRoomUpdated();
-    } finally { setFreeing(null); }
-  };
 
   if (loading) {
     return (
@@ -190,15 +180,6 @@ function BedsSection({ room, hospitalId, onRoomUpdated }) {
                 )}
               </div>
             </div>
-            {bed.status === "OCCUPIED" && (
-              <button
-                onClick={() => handleFreeBed(bed.id)}
-                disabled={freeing === bed.id}
-                className="shrink-0 px-2 py-1 rounded-lg text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 border border-red-200 dark:border-red-500/20 transition-colors disabled:opacity-50"
-              >
-                {freeing === bed.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Free Bed"}
-              </button>
-            )}
           </div>
         ))}
       </div>
@@ -289,12 +270,11 @@ function RoomDetailPanel({ room, onClose, onViewLogs, onRoomUpdated }) {
           </div>
         )}
 
-        {/* Beds section for multi-bed rooms */}
+        {/* Beds section for multi-bed rooms (read-only) */}
         {isMultiBed && (
           <BedsSection
             room={room}
             hospitalId={hospitalId}
-            onRoomUpdated={onRoomUpdated ?? (() => { })}
           />
         )}
 
