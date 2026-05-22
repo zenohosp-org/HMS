@@ -70,8 +70,15 @@ public class AmbulanceBooking {
     @Column(name = "driver_phone", length = 20)
     private String driverPhone;
 
+    @Column(name = "driver_license", length = 50)
+    private String driverLicense;
+
     @Column(name = "vehicle_number", length = 30)
     private String vehicleNumber;
+
+    @Column(name = "reached_to_same_hospital")
+    @Builder.Default
+    private Boolean reachedToSameHospital = false;
 
     @Column(columnDefinition = "TEXT")
     private String notes;

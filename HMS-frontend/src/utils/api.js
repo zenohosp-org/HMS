@@ -593,6 +593,11 @@ const ambulanceApi = {
   },
   deleteVehicle: async (id) => api.delete(`/ambulance/vehicles/${id}`),
 
+  getHospitalInfo: async (hospitalId) => {
+    const { data } = await api.get("/ambulance/hospital-info", { params: { hospitalId } });
+    return data;
+  },
+
   getBookingsByPatient: async (hospitalId, patientId) => {
     const { data } = await api.get(`/ambulance/bookings/by-patient/${patientId}`, { params: { hospitalId } });
     return data;

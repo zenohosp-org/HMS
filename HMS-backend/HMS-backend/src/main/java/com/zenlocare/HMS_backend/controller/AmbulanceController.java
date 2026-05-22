@@ -2,6 +2,7 @@ package com.zenlocare.HMS_backend.controller;
 
 import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
+import com.zenlocare.HMS_backend.service.InvoiceService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,6 +27,7 @@ public class AmbulanceController {
     private final AmbulanceVehicleRepository vehicleRepo;
     private final HospitalRepository hospitalRepo;
     private final PatientRepository patientRepo;
+    private final InvoiceService invoiceService;
 
     // ── Types ──────────────────────────────────────────────────────────────
 
@@ -159,8 +162,10 @@ public class AmbulanceController {
                 .status(AmbulanceBookingStatus.PENDING)
                 .driverName(req.getDriverName())
                 .driverPhone(req.getDriverPhone())
+                .driverLicense(req.getDriverLicense())
                 .vehicleNumber(vehicleNumber)
                 .notes(req.getNotes())
+                .reachedToSameHospital(isSameHospitalByAddress(hospital, req.getDestinationAddress()))
                 .build();
 
         return ResponseEntity.ok(bookingRepo.save(booking));
@@ -182,6 +187,26 @@ public class AmbulanceController {
                 } else if (newStatus == AmbulanceBookingStatus.COMPLETED || newStatus == AmbulanceBookingStatus.CANCELLED) {
                     b.getVehicle().setStatus(AmbulanceVehicleStatus.AVAILABLE);
                     vehicleRepo.save(b.getVehicle());
+                }
+            }
+
+            // Auto-merge ambulance charge to patient's IPD invoice when completed
+            // and destination is this same hospital (FK match)
+            boolean isSameHospital = b.getDestinationHospital() != null
+                    && b.getDestinationHospital().getId().equals(b.getHospital().getId());
+            if (newStatus == AmbulanceBookingStatus.COMPLETED
+                    && isSameHospital
+                    && b.getPatient() != null
+                    && !Boolean.TRUE.equals(b.getMergedToIpd())) {
+                try {
+                    String vehicleDesc = b.getVehicle() != null ? b.getVehicle().getVehicleNumber() : b.getVehicleNumber();
+                    String typeDesc    = b.getAmbulanceType() != null ? b.getAmbulanceType().getName() : "Ambulance";
+                    String description = typeDesc + (vehicleDesc != null ? " (" + vehicleDesc + ")" : "");
+                    invoiceService.addAmbulanceItemToIpdInvoice(
+                            b.getPatient().getId(), b.getId(), b.getCharge(), description);
+                    b.setMergedToIpd(true);
+                } catch (Exception ignored) {
+                    // Non-fatal: billing staff can add manually if auto-merge fails
                 }
             }
 
@@ -209,8 +234,15 @@ public class AmbulanceController {
             if (req.getStatus() != null) b.setStatus(AmbulanceBookingStatus.valueOf(req.getStatus()));
             b.setDriverName(req.getDriverName());
             b.setDriverPhone(req.getDriverPhone());
+            if (req.getDriverLicense() != null) b.setDriverLicense(req.getDriverLicense());
             if (req.getVehicleId() == null && req.getVehicleNumber() != null) b.setVehicleNumber(req.getVehicleNumber());
             b.setNotes(req.getNotes());
+            // Recompute from address whenever destination changes; fallback to request value
+            if (req.getDestinationAddress() != null) {
+                b.setReachedToSameHospital(isSameHospitalByAddress(b.getHospital(), req.getDestinationAddress()));
+            } else if (req.getReachedToSameHospital() != null) {
+                b.setReachedToSameHospital(req.getReachedToSameHospital());
+            }
             return ResponseEntity.ok(bookingRepo.save(b));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -238,6 +270,18 @@ public class AmbulanceController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/hospital-info")
+    public ResponseEntity<Map<String, String>> getHospitalInfo(@RequestParam UUID hospitalId) {
+        return hospitalRepo.findById(hospitalId).map(h -> {
+            Map<String, String> info = new HashMap<>();
+            info.put("name",    h.getName()    != null ? h.getName()    : "");
+            info.put("address", h.getAddress() != null ? h.getAddress() : "");
+            info.put("city",    h.getCity()    != null ? h.getCity()    : "");
+            info.put("state",   h.getState()   != null ? h.getState()   : "");
+            return ResponseEntity.ok(info);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Long>> getStats(@RequestParam UUID hospitalId) {
         long total = bookingRepo.findByHospital_IdOrderByCreatedAtDesc(hospitalId).size();
@@ -245,6 +289,17 @@ public class AmbulanceController {
         long today = bookingRepo.countByHospitalIdAndDate(hospitalId, LocalDate.now());
         long completed = bookingRepo.countByHospital_IdAndStatus(hospitalId, AmbulanceBookingStatus.COMPLETED);
         return ResponseEntity.ok(Map.of("total", total, "pending", pending, "today", today, "completed", completed));
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+
+    private boolean isSameHospitalByAddress(Hospital hospital, String destinationAddress) {
+        if (hospital == null || destinationAddress == null || destinationAddress.isBlank()) return false;
+        String dest = destinationAddress.toLowerCase().trim();
+        String hospAddr = hospital.getAddress() != null ? hospital.getAddress().toLowerCase().trim() : "";
+        String hospCity = hospital.getCity() != null ? hospital.getCity().toLowerCase().trim() : "";
+        return (!hospAddr.isEmpty() && dest.contains(hospAddr)) ||
+               (!hospCity.isEmpty() && dest.contains(hospCity));
     }
 
     // ── DTOs ──────────────────────────────────────────────────────────────
@@ -278,7 +333,9 @@ public class AmbulanceController {
         private String status;
         private String driverName;
         private String driverPhone;
+        private String driverLicense;
         private String vehicleNumber;
         private String notes;
+        private Boolean reachedToSameHospital;
     }
 }

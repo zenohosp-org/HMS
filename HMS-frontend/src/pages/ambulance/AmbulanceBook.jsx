@@ -39,6 +39,8 @@ const EMPTY_FORM = {
   vehicleId: "",
   driverName: "",
   driverPhone: "",
+  driverLicense: "",
+  reachedToSameHospital: false,
   paymentStatus: "UNPAID",
   notes: "",
   emergencyFirstName: "",
@@ -133,11 +135,22 @@ function PatientSearch({ hospitalId, value, onChange }) {
 
 // ── Booking Modal ────────────────────────────────────────────────────────────
 
-function BookingModal({ hospitalId, availableVehicles, onClose, onSaved }) {
+function BookingModal({ hospitalId, availableVehicles, hospitalInfo, onClose, onSaved }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [destIsHospital, setDestIsHospital] = useState(false);
+
+  const hospitalAddress = hospitalInfo
+    ? [hospitalInfo.address, hospitalInfo.city, hospitalInfo.state].filter(Boolean).join(", ")
+    : "";
+
+  const handleDestCheckbox = (checked) => {
+    setDestIsHospital(checked);
+    if (checked) set("destinationAddress", hospitalAddress);
+    else set("destinationAddress", "");
+  };
 
   const set = (field, val) => setForm(f => ({ ...f, [field]: val }));
 
@@ -173,6 +186,7 @@ function BookingModal({ hospitalId, availableVehicles, onClose, onSaved }) {
         vehicleId: form.vehicleId ? Number(form.vehicleId) : null,
         driverName: form.driverName,
         driverPhone: form.driverPhone,
+        driverLicense: form.driverLicense || null,
         paymentStatus: form.paymentStatus,
         notes: form.notes,
       });
@@ -288,8 +302,28 @@ function BookingModal({ hospitalId, availableVehicles, onClose, onSaved }) {
                 <textarea rows={2} className="input resize-none" value={form.pickupAddress} onChange={e => set("pickupAddress", e.target.value)} placeholder="Enter pickup location…" />
               </div>
               <div>
-                <label className={labelCls}>Destination Address</label>
-                <textarea rows={2} className="input resize-none" value={form.destinationAddress} onChange={e => set("destinationAddress", e.target.value)} placeholder="Enter destination…" />
+                <div className="flex items-center justify-between mb-1">
+                  <label className={labelCls}>Destination Address</label>
+                  {hospitalAddress && (
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={destIsHospital}
+                        onChange={e => handleDestCheckbox(e.target.checked)}
+                        className="w-3.5 h-3.5 rounded accent-rose-500 cursor-pointer"
+                      />
+                      <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">This hospital</span>
+                    </label>
+                  )}
+                </div>
+                <textarea
+                  rows={2}
+                  className={`input resize-none transition-colors ${destIsHospital ? "opacity-60 cursor-not-allowed" : ""}`}
+                  value={form.destinationAddress}
+                  onChange={e => { set("destinationAddress", e.target.value); if (destIsHospital) setDestIsHospital(false); }}
+                  placeholder="Enter destination…"
+                  disabled={destIsHospital}
+                />
               </div>
             </div>
           </div>
@@ -323,6 +357,10 @@ function BookingModal({ hospitalId, availableVehicles, onClose, onSaved }) {
                 <div>
                   <label className={labelCls}>Driver Phone</label>
                   <input className={inputCls} value={form.driverPhone} onChange={e => set("driverPhone", e.target.value)} placeholder="+91 XXXXX XXXXX" />
+                </div>
+                <div>
+                  <label className={labelCls}>Driver License</label>
+                  <input className={inputCls} value={form.driverLicense} onChange={e => set("driverLicense", e.target.value)} placeholder="License number" />
                 </div>
               </div>
             </div>
@@ -672,6 +710,7 @@ function BookingsTab({ hospitalId }) {
   const { notify } = useNotification();
   const [bookings, setBookings] = useState([]);
   const [availableVehicles, setAvailableVehicles] = useState([]);
+  const [hospitalInfo, setHospitalInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -681,12 +720,14 @@ function BookingsTab({ hospitalId }) {
   const load = async () => {
     setLoading(true);
     try {
-      const [b, av] = await Promise.all([
+      const [b, av, hi] = await Promise.all([
         ambulanceApi.getBookings(hospitalId).catch(() => []),
         ambulanceApi.getAvailableVehicles(hospitalId).catch(() => []),
+        ambulanceApi.getHospitalInfo(hospitalId).catch(() => null),
       ]);
       setBookings(b);
       setAvailableVehicles(av);
+      setHospitalInfo(hi);
     } finally { setLoading(false); }
   };
 
@@ -855,13 +896,21 @@ function BookingsTab({ hospitalId }) {
                         <div>
                           <p className="text-sm font-medium text-slate-700 dark:text-[#ccc]">{b.driverName}</p>
                           {b.driverPhone && <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{b.driverPhone}</p>}
+                          {b.driverLicense && <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">Lic: {b.driverLicense}</p>}
                         </div>
                       ) : <span className="text-xs text-slate-500">—</span>}
                     </td>
 
                     {/* Status */}
                     <td className="px-6 py-4">
-                      <StatusBadge status={b.status} />
+                      <div className="flex flex-col gap-1">
+                        <StatusBadge status={b.status} />
+                        {b.mergedToIpd && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-full w-fit">
+                            <CheckCircle2 className="w-2.5 h-2.5" /> Billed to IPD
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Actions */}
@@ -909,6 +958,7 @@ function BookingsTab({ hospitalId }) {
         <BookingModal
           hospitalId={hospitalId}
           availableVehicles={availableVehicles}
+          hospitalInfo={hospitalInfo}
           onClose={() => setShowModal(false)}
           onSaved={() => { load(); notify("Ambulance booked successfully", "success"); }}
         />

@@ -745,4 +745,63 @@ public class InvoiceService {
         response.put("currentPage", result.getNumber());
         return response;
     }
+
+    /**
+     * Auto-adds an ambulance charge as a line item to the patient's active IPD invoice
+     * when the booking is marked COMPLETED with reachedToSameHospital = true.
+     * Idempotent: no-op if the booking is already present in the invoice.
+     */
+    @Transactional
+    public void addAmbulanceItemToIpdInvoice(Integer patientId, Long bookingId,
+                                              java.math.BigDecimal charge, String description) {
+        if (patientId == null || charge == null) return;
+
+        // Find the most recent IPD (admission-linked) invoice for this patient
+        Invoice invoice = invoiceRepository.findByPatientIdOrderByCreatedAtDesc(patientId)
+                .stream()
+                .filter(i -> i.getAdmission() != null)
+                .filter(i -> !InvoiceStatus.CANCELLED.equals(i.getStatus()))
+                .findFirst()
+                .orElse(null);
+
+        if (invoice == null) return; // Patient has no active IPD invoice — skip
+
+        // Idempotency: already added
+        boolean alreadyPresent = invoice.getItems() != null && invoice.getItems().stream()
+                .anyMatch(it -> bookingId.equals(it.getAmbulanceBookingId()));
+        if (alreadyPresent) return;
+
+        if (invoice.getItems() == null) invoice.setItems(new java.util.ArrayList<>());
+
+        InvoiceItem item = InvoiceItem.builder()
+                .invoice(invoice)
+                .itemType("AMBULANCE")
+                .ambulanceBookingId(bookingId)
+                .description(description != null ? description : "Ambulance Service")
+                .quantity(1)
+                .unitPrice(charge)
+                .totalPrice(charge)
+                .build();
+        invoice.getItems().add(item);
+
+        // Recalculate subtotal and balance due
+        java.math.BigDecimal subtotal = invoice.getItems().stream()
+                .map(it -> it.getTotalPrice() != null ? it.getTotalPrice() : java.math.BigDecimal.ZERO)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        invoice.setSubtotal(subtotal);
+
+        java.math.BigDecimal tax      = invoice.getTax()            != null ? invoice.getTax()            : java.math.BigDecimal.ZERO;
+        java.math.BigDecimal discount = invoice.getDiscount()       != null ? invoice.getDiscount()       : java.math.BigDecimal.ZERO;
+        java.math.BigDecimal advance  = invoice.getAdvanceAdjusted()!= null ? invoice.getAdvanceAdjusted(): java.math.BigDecimal.ZERO;
+        java.math.BigDecimal paid     = invoice.getPaidAmount()     != null ? invoice.getPaidAmount()     : java.math.BigDecimal.ZERO;
+        invoice.setTotal(subtotal.add(tax).subtract(discount).subtract(advance).subtract(paid));
+
+        // Re-open the invoice if it was fully settled so staff can see the new item
+        if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
+            invoice.setStatus(InvoiceStatus.UNSETTLED);
+        }
+
+        invoice.setUpdatedAt(LocalDateTime.now());
+        invoiceRepository.save(invoice);
+    }
 }
