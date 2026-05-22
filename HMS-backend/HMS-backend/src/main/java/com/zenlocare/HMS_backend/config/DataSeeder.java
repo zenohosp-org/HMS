@@ -83,6 +83,7 @@ public class DataSeeder implements CommandLineRunner {
         seedReferenceTables();
         migrateStatusColumns();
         migrateDischargeData();
+        backfillHospitalNumericCodes();
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
@@ -330,6 +331,39 @@ public class DataSeeder implements CommandLineRunner {
                         .build());
 
         log.info("✅ Hospital admin seeded → admin@gmail.com / admin123  [Hospital: SRM Hospital]");
+    }
+
+    private void backfillHospitalNumericCodes() {
+        try {
+            // Ensure the shared sequence exists and is synced to the current max — directory-backend
+            // creates it too, but HMS-backend may start first on a fresh deploy. Idempotent.
+            jdbcTemplate.execute(
+                "CREATE SEQUENCE IF NOT EXISTS hospital_numeric_code_seq MINVALUE 1001 MAXVALUE 9999 START WITH 1001");
+            jdbcTemplate.execute(
+                "SELECT setval('hospital_numeric_code_seq', GREATEST(1000, "
+                + "(SELECT COALESCE(MAX(CAST(numeric_code AS INTEGER)), 1000) FROM hospitals WHERE numeric_code ~ '^[0-9]{4}$')))");
+
+            // Backfill any hospital rows that arrived with NULL numeric_code (legacy data or
+            // hospitals created before directory-backend gained the auto-assign hook).
+            // Order by created_at so older hospitals get the lower codes deterministically.
+            java.util.List<java.util.Map<String, Object>> nullCoded = jdbcTemplate.queryForList(
+                "SELECT id FROM hospitals WHERE numeric_code IS NULL ORDER BY created_at ASC NULLS LAST, id ASC");
+
+            for (java.util.Map<String, Object> row : nullCoded) {
+                Object id = row.get("id");
+                Long next = jdbcTemplate.queryForObject(
+                    "SELECT nextval('hospital_numeric_code_seq')", Long.class);
+                if (next == null || next > 9999) {
+                    log.error("❌ Hospital numeric_code sequence exhausted (>9999). Hospital {} left unassigned.", id);
+                    break;
+                }
+                String code = String.format("%04d", next);
+                jdbcTemplate.update("UPDATE hospitals SET numeric_code = ? WHERE id = ?", code, id);
+                log.info("✅ Assigned numeric_code {} to hospital {}", code, id);
+            }
+        } catch (Exception e) {
+            log.warn("Could not backfill hospital numeric codes: " + e.getMessage());
+        }
     }
 
     private void migrateDischargeData() {

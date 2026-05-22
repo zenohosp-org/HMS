@@ -63,6 +63,9 @@ public interface AdmissionRepository extends JpaRepository<Admission, UUID> {
             @Param("q") String query,
             Pageable pageable);
 
-    @Query("SELECT MAX(a.ipdId) FROM Admission a WHERE a.hospital.id = :hospitalId AND a.ipdId LIKE CONCAT('IPD-', :year, '-%')")
-    Optional<String> findMaxIpdIdForYear(@Param("hospitalId") UUID hospitalId, @Param("year") String year);
+    // Matches both legacy "IPD-2026-NNNN" and prefixed "1001-IPD-2026-NNNN" formats.
+    // Service code parses the trailing sequence in Java because string MAX would otherwise
+    // pick legacy IDs over prefixed ones due to ASCII ordering ('1' < 'I').
+    @Query("SELECT a.ipdId FROM Admission a WHERE a.hospital.id = :hospitalId AND a.ipdId LIKE CONCAT('%IPD-', :year, '-%')")
+    List<String> findIpdIdsForYear(@Param("hospitalId") UUID hospitalId, @Param("year") String year);
 }

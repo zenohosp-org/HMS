@@ -45,7 +45,7 @@ public class RecordService {
         Patient patient = patientRepository.findByIdAndHospitalId(patientId, hospitalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
 
-        String mrn = generateMrn();
+        String mrn = generateMrn(hospital);
 
         PatientRecord record = PatientRecord.builder()
                 .hospital(hospital)
@@ -63,9 +63,9 @@ public class RecordService {
         return recordRepository.save(record);
     }
 
-    private String generateMrn() {
+    private String generateMrn(Hospital hospital) {
         int year = LocalDateTime.now().getYear();
         long seq = recordRepository.count() + 1 + ThreadLocalRandom.current().nextInt(100);
-        return String.format("MRN-%d-%05d", year, seq);
+        return HospitalIdPrefix.of(hospital) + String.format("MRN-%d-%05d", year, seq);
     }
 }

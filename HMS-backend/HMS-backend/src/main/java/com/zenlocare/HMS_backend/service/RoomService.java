@@ -47,14 +47,22 @@ public class RoomService {
                 .collect(Collectors.toList());
     }
 
-    private String generateRoomCode(UUID hospitalId) {
-        return roomRepository.findMaxRoomCode(hospitalId)
-                .filter(max -> max != null)
-                .map(max -> {
-                    int seq = Integer.parseInt(max.replace("RM-", "")) + 1;
-                    return "RM-" + String.format("%04d", seq);
-                })
-                .orElse("RM-0001");
+    private String generateRoomCode(Hospital hospital) {
+        String hospPrefix = HospitalIdPrefix.of(hospital);
+        List<String> existing = roomRepository.findRoomCodes(hospital.getId());
+        int maxSeq = existing.stream().mapToInt(this::extractTrailingSequence).max().orElse(0);
+        return hospPrefix + "RM-" + String.format("%04d", maxSeq + 1);
+    }
+
+    private int extractTrailingSequence(String id) {
+        if (id == null) return 0;
+        try {
+            int dash = id.lastIndexOf('-');
+            if (dash < 0 || dash == id.length() - 1) return 0;
+            return Integer.parseInt(id.substring(dash + 1));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     @Transactional
@@ -80,7 +88,7 @@ public class RoomService {
             Room room = Room.builder()
                     .hospital(hospital)
                     .roomNumber(tempRoomNumber)
-                    .roomCode(generateRoomCode(hospital.getId()))
+                    .roomCode(generateRoomCode(hospital))
                     .roomType(request.getRoomType())
                     .pricePerDay(request.getPricePerDay())
                     .status(RoomStatus.AVAILABLE)

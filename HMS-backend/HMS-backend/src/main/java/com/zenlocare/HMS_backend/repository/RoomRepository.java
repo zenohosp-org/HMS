@@ -28,8 +28,9 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     List<Room> findByHospitalIdAndHospitalWardIsNotNull(UUID hospitalId);
 
-    @Query("SELECT MAX(r.roomCode) FROM Room r WHERE r.hospital.id = :hospitalId AND r.roomCode LIKE 'RM-%'")
-    Optional<String> findMaxRoomCode(@Param("hospitalId") UUID hospitalId);
+    // Matches both legacy "RM-NNNN" and prefixed "1001-RM-NNNN" formats; max sequence computed in service.
+    @Query("SELECT r.roomCode FROM Room r WHERE r.hospital.id = :hospitalId AND r.roomCode LIKE '%RM-%'")
+    List<String> findRoomCodes(@Param("hospitalId") UUID hospitalId);
 
     long countByHospitalId(UUID hospitalId);
 }

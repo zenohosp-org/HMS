@@ -112,7 +112,7 @@ public class HealthCheckupService {
                 .orElseThrow(() -> new IllegalArgumentException("Package not found"));
         Doctor doctor = req.getDoctorId() != null ? doctorRepo.findById(req.getDoctorId()).orElse(null) : null;
 
-        String bookingNumber = generateBookingNumber(hospitalId);
+        String bookingNumber = generateBookingNumber(hospital);
 
         HealthCheckupBooking booking = HealthCheckupBooking.builder()
                 .hospital(hospital)
@@ -204,16 +204,24 @@ public class HealthCheckupService {
         return java.util.Map.of("today", total, "scheduled", scheduled, "inProgress", inProgress, "completed", completed);
     }
 
-    private String generateBookingNumber(UUID hospitalId) {
+    private String generateBookingNumber(Hospital hospital) {
         String year = String.valueOf(LocalDate.now().getYear());
-        String prefix = "HCP-" + year + "-";
-        return bookingRepo.findMaxBookingNumberForYear(hospitalId, year)
-                .filter(max -> max != null)
-                .map(max -> {
-                    int seq = Integer.parseInt(max.replace(prefix, "")) + 1;
-                    return prefix + String.format("%04d", seq);
-                })
-                .orElse(prefix + "0001");
+        String hospPrefix = HospitalIdPrefix.of(hospital);
+        String coreFormat = "HCP-" + year + "-";
+        List<String> existing = bookingRepo.findBookingNumbersForYear(hospital.getId(), year);
+        int maxSeq = existing.stream().mapToInt(this::extractTrailingSequence).max().orElse(0);
+        return hospPrefix + coreFormat + String.format("%04d", maxSeq + 1);
+    }
+
+    private int extractTrailingSequence(String id) {
+        if (id == null) return 0;
+        try {
+            int dash = id.lastIndexOf('-');
+            if (dash < 0 || dash == id.length() - 1) return 0;
+            return Integer.parseInt(id.substring(dash + 1));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     // ── Request DTOs ──────────────────────────────────────────────────────

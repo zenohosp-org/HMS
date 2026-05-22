@@ -137,7 +137,12 @@ public class PatientAdvanceService {
 
     private String generateReceiptNumber(Patient patient) {
         long seq = patientAdvanceRepository.countByPatient_Id(patient.getId()) + 1;
-        return "ADV-" + patient.getUhid() + "-" + String.format("%03d", seq);
+        // Strip embedded hospital prefix from UHID so the receipt has the hospital code
+        // at the START exactly once: "1001-ADV-{14digits}-001"
+        return HospitalIdPrefix.of(patient.getHospital())
+                + "ADV-"
+                + HospitalIdPrefix.stripHospitalPrefix(patient.getUhid())
+                + "-" + String.format("%03d", seq);
     }
 
     private void creditBankAccount(UUID bankAccountId, BigDecimal amount, String description, UUID hospitalId) {

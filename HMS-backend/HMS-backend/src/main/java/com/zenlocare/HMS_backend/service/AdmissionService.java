@@ -78,8 +78,8 @@ public class AdmissionService {
             }
         }
 
-        String admNumber = generateAdmissionNumber(hospital.getId());
-        String ipdId = generateIpdId(hospital.getId());
+        String admNumber = generateAdmissionNumber(hospital);
+        String ipdId = generateIpdId(hospital);
 
         Admission admission = Admission.builder()
                 .hospital(hospital)
@@ -505,22 +505,32 @@ public class AdmissionService {
                 .orElseThrow(() -> new RuntimeException("Admission not found")));
     }
 
-    private String generateAdmissionNumber(UUID hospitalId) {
+    private String generateAdmissionNumber(Hospital hospital) {
         String year = String.valueOf(LocalDateTime.now().getYear());
-        long total = admissionRepository.findByHospitalIdOrderByAdmissionDateDesc(hospitalId).size();
-        return "ADM-" + year + "-" + String.format("%04d", total + 1);
+        long total = admissionRepository.findByHospitalIdOrderByAdmissionDateDesc(hospital.getId()).size();
+        return HospitalIdPrefix.of(hospital) + "ADM-" + year + "-" + String.format("%04d", total + 1);
     }
 
-    private String generateIpdId(UUID hospitalId) {
+    private String generateIpdId(Hospital hospital) {
         String year = String.valueOf(LocalDateTime.now().getYear());
-        String prefix = "IPD-" + year + "-";
-        return admissionRepository.findMaxIpdIdForYear(hospitalId, year)
-                .filter(max -> max != null)
-                .map(max -> {
-                    int seq = Integer.parseInt(max.replace(prefix, "")) + 1;
-                    return prefix + String.format("%04d", seq);
-                })
-                .orElse(prefix + "0001");
+        String hospPrefix = HospitalIdPrefix.of(hospital);
+        String coreFormat = "IPD-" + year + "-";
+        List<String> existing = admissionRepository.findIpdIdsForYear(hospital.getId(), year);
+        int maxSeq = existing.stream()
+                .mapToInt(this::extractTrailingSequence)
+                .max().orElse(0);
+        return hospPrefix + coreFormat + String.format("%04d", maxSeq + 1);
+    }
+
+    private int extractTrailingSequence(String id) {
+        if (id == null) return 0;
+        try {
+            int dash = id.lastIndexOf('-');
+            if (dash < 0 || dash == id.length() - 1) return 0;
+            return Integer.parseInt(id.substring(dash + 1));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     public AdmissionDTO toDTO(Admission a) {

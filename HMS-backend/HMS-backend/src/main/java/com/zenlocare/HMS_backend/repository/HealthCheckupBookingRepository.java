@@ -21,8 +21,9 @@ public interface HealthCheckupBookingRepository extends JpaRepository<HealthChec
 
     List<HealthCheckupBooking> findByPatient_IdOrderByScheduledDateDesc(Integer patientId);
 
-    @Query("SELECT MAX(b.bookingNumber) FROM HealthCheckupBooking b WHERE b.hospital.id = :hospitalId AND b.bookingNumber LIKE CONCAT('HCP-', :year, '-%')")
-    Optional<String> findMaxBookingNumberForYear(@Param("hospitalId") UUID hospitalId, @Param("year") String year);
+    // Matches both legacy "HCP-2026-NNNN" and prefixed "1001-HCP-2026-NNNN" formats; max sequence computed in service.
+    @Query("SELECT b.bookingNumber FROM HealthCheckupBooking b WHERE b.hospital.id = :hospitalId AND b.bookingNumber LIKE CONCAT('%HCP-', :year, '-%')")
+    List<String> findBookingNumbersForYear(@Param("hospitalId") UUID hospitalId, @Param("year") String year);
 
     long countByHospital_IdAndScheduledDate(UUID hospitalId, LocalDate date);
 

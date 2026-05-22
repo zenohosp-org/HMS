@@ -27,6 +27,9 @@ public class Hospital {
     @Column(nullable = false, unique = true)
     private String code; // "SRM"
 
+    @Column(name = "numeric_code", length = 4, unique = true)
+    private String numericCode; // "1001" — prefixed to all generated record IDs for global search
+
     private String email;
     private String phone;
     private String address;

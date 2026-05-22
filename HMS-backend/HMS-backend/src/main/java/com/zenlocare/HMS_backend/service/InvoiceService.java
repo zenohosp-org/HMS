@@ -243,7 +243,8 @@ public class InvoiceService {
                 if (!InvoiceStatus.PAID.equals(opdInvoice.getStatus()) && !InvoiceStatus.SETTLED.equals(opdInvoice.getStatus())) {
                     // Promote: link OPD invoice to this admission — it becomes the IPD invoice
                     opdInvoice.setAdmission(admission);
-                    opdInvoice.setInvoiceNumber("IPD-" + admissionNumber);
+                    opdInvoice.setInvoiceNumber(HospitalIdPrefix.of(hospital) + "IPD-"
+                            + HospitalIdPrefix.stripHospitalPrefix(admissionNumber));
                     opdInvoice.setNotes("IPD Admission (converted from OPD) — " + admissionNumber);
                     opdInvoice.setUpdatedAt(LocalDateTime.now());
                     invoiceRepository.save(opdInvoice);
@@ -258,8 +259,11 @@ public class InvoiceService {
         BigDecimal regFee = regFeeOpt.orElse(null);
         boolean addReg = regFee != null
                 && !invoiceRepository.existsRegistrationFeeForPatient(patientId);
+        // Strip embedded hospital prefix from admissionNumber so the invoice number has the
+        // hospital code at the START exactly once: e.g. "1001-IPD-ADM-2026-0001"
         Invoice admissionInvoice = Invoice.builder()
-                .invoiceNumber("IPD-" + admissionNumber)
+                .invoiceNumber(HospitalIdPrefix.of(hospital) + "IPD-"
+                        + HospitalIdPrefix.stripHospitalPrefix(admissionNumber))
                 .hospital(hospital)
                 .patient(patient)
                 .admission(admission)
@@ -291,7 +295,8 @@ public class InvoiceService {
         Appointment appt = appointmentRepository.findById(appointmentId).orElse(null);
         if (appt == null || appt.getHospital() == null || appt.getPatient() == null) return;
 
-        String invoiceNum = "OPD-" + appointmentId.toString().replace("-", "").substring(0, 12).toUpperCase();
+        String invoiceNum = HospitalIdPrefix.of(appt.getHospital())
+                + "OPD-" + appointmentId.toString().replace("-", "").substring(0, 12).toUpperCase();
         Optional<Invoice> existing = invoiceRepository.findByAppointment_Id(appointmentId);
 
         if (existing.isPresent()) {

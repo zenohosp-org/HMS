@@ -54,7 +54,7 @@ public class PatientService {
         Hospital hospital = hospitalRepository.findById(req.getHospitalId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
 
-        String uhid = generateUhid(req.getHospitalId());
+        String uhid = generateUhid(hospital);
 
         Patient patient = Patient.builder()
                 .hospital(hospital)
@@ -94,13 +94,14 @@ public class PatientService {
         return saved;
     }
 
-    private String generateUhid(UUID hospitalId) {
+    private String generateUhid(Hospital hospital) {
+        String hospPrefix = HospitalIdPrefix.of(hospital);
         String uhid;
         do {
             long value = 10_000_000_000_000L +
                     ThreadLocalRandom.current().nextLong(90_000_000_000_000L);
-            uhid = String.valueOf(value);
-        } while (patientRepository.findByHospitalIdAndUhid(hospitalId, uhid).isPresent());
+            uhid = hospPrefix + value;
+        } while (patientRepository.findByHospitalIdAndUhid(hospital.getId(), uhid).isPresent());
         return uhid;
     }
 
