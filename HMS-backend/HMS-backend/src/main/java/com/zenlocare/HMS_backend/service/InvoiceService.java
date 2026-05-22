@@ -237,41 +237,19 @@ public class InvoiceService {
         Admission admission = admissionRepository.findById(admissionId).orElse(null);
         if (hospital == null || patient == null || admission == null) return;
 
-        // Absorb the OPD invoice when this admission was triggered from an OPD appointment.
-        // Same logic as before — restoring the original behaviour with diagnostic logging only.
-        if (sourceAppointmentId != null) {
-            Optional<Invoice> opdOpt = invoiceRepository.findByAppointment_Id(sourceAppointmentId);
-            if (opdOpt.isPresent()) {
-                Invoice opdInvoice = opdOpt.get();
-                if (isCollectible(opdInvoice)) {
-                    opdInvoice.setAdmission(admission);
-                    opdInvoice.setInvoiceNumber(HospitalIdPrefix.of(hospital) + "IPD-"
-                            + HospitalIdPrefix.stripHospitalPrefix(admissionNumber));
-                    opdInvoice.setNotes("IPD Admission (converted from OPD) — " + admissionNumber);
-                    opdInvoice.setUpdatedAt(LocalDateTime.now());
-                    try {
-                        invoiceRepository.saveAndFlush(opdInvoice);
-                    } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
-                        // Another transaction modified this invoice concurrently. Don't retry blindly —
-                        // surface to caller so the admit-side flow can handle (or the user can retry).
-                        log.warn("OPD→IPD merge: optimistic lock on invoice {} during admission {} — aborting merge",
-                                opdInvoice.getId(), admissionId);
-                        throw e;
-                    }
-                    log.info("OPD→IPD merge: invoice {} promoted to IPD for admission {} (appt {})",
-                            opdInvoice.getId(), admissionId, sourceAppointmentId);
-                    return;
-                }
-                log.info("OPD→IPD merge skipped: appt {}'s invoice {} is in non-collectible status {}",
-                        sourceAppointmentId, opdInvoice.getId(), opdInvoice.getStatus());
-                // Fall through and create a fresh IPD placeholder
-            } else {
-                log.warn("OPD→IPD merge: no invoice found for source appointment {} — creating fresh IPD invoice for admission {}",
-                        sourceAppointmentId, admissionId);
-            }
-        } else {
-            log.info("OPD→IPD merge: admission {} has no sourceAppointmentId — creating fresh IPD invoice", admissionId);
+        // Auto-merge an OPD invoice into this admission when one of two signals fires:
+        //   (1) sourceAppointmentId is supplied — the admit was launched from an OPD appointment row.
+        //   (2) admission.admissionType == OPD_REFERRAL — staff marked the admission as coming from OPD,
+        //       even if they didn't link a specific appointment (e.g. admitted from /admissions).
+        // The same promotion logic applies: the OPD invoice gets the admission FK, a renamed
+        // IPD invoice number, and an audit note. No duplicate IPD invoice is created.
+        Invoice opdToMerge = pickOpdInvoiceToMerge(admission, hospitalId, patientId, sourceAppointmentId);
+        if (opdToMerge != null) {
+            promoteOpdInvoiceToIpd(opdToMerge, admission, hospital, admissionNumber);
+            return;
         }
+        log.info("OPD→IPD merge: no merge for admission {} (sourceApptId={}, admissionType={}) — creating fresh IPD invoice",
+                admissionId, sourceAppointmentId, admission.getAdmissionType());
 
         // Direct IPD admission (no OPD source) — add one-time registration fee if never charged
         Optional<BigDecimal> regFeeOpt = findRegistrationFee(hospitalId);
@@ -849,5 +827,91 @@ public class InvoiceService {
                 && !InvoiceStatus.PAID.equals(s)
                 && !InvoiceStatus.SETTLED.equals(s)
                 && !InvoiceStatus.CANCELLED.equals(s);
+    }
+
+    /**
+     * An OPD invoice is mergeable into an IPD admission if it is still
+     * collectible AND has no payments yet — merging a partially paid invoice
+     * would carry the line items forward without the payment record, causing
+     * the patient to be re-billed. Such cases must be settled separately.
+     */
+    private boolean isMergeable(Invoice inv) {
+        if (!isCollectible(inv)) return false;
+        BigDecimal paid = inv.getPaidAmount() != null ? inv.getPaidAmount() : BigDecimal.ZERO;
+        return paid.compareTo(BigDecimal.ZERO) == 0;
+    }
+
+    /**
+     * Picks the OPD invoice to merge into a new IPD admission, or null if none.
+     *
+     * Trigger 1 — explicit sourceAppointmentId (admit-from-appointment-row):
+     *   look up by appointment_id; merge if mergeable, otherwise skip with log.
+     *   We do NOT fall back to patient lookup when the explicit appointment is
+     *   present but not mergeable — the caller knew exactly which OPD they meant.
+     *
+     * Trigger 2 — admissionType=OPD_REFERRAL (admit-from-admissions):
+     *   look up the patient's most recent open OPD invoice. Only the latest one
+     *   is considered — older un-merged OPDs are likely unrelated past visits
+     *   that should be settled separately, not silently rolled into this admission.
+     */
+    private Invoice pickOpdInvoiceToMerge(Admission admission, UUID hospitalId,
+                                          Integer patientId, UUID sourceAppointmentId) {
+        if (sourceAppointmentId != null) {
+            Optional<Invoice> opdOpt = invoiceRepository.findByAppointment_Id(sourceAppointmentId);
+            if (opdOpt.isEmpty()) {
+                log.warn("OPD→IPD merge: no invoice found for source appointment {}", sourceAppointmentId);
+                return null;
+            }
+            Invoice cand = opdOpt.get();
+            if (isMergeable(cand)) return cand;
+            log.info("OPD→IPD merge skipped: appt {}'s invoice {} not mergeable (status={}, paid={})",
+                    sourceAppointmentId, cand.getId(), cand.getStatus(),
+                    cand.getPaidAmount() != null ? cand.getPaidAmount() : "0");
+            return null;
+        }
+
+        if (admission.getAdmissionType() == AdmissionType.OPD_REFERRAL) {
+            List<Invoice> candidates = invoiceRepository.findOpenOpdInvoicesForPatient(hospitalId, patientId);
+            if (candidates.isEmpty()) {
+                log.info("OPD→IPD merge: OPD_REFERRAL admission {} but no open OPD invoices for patient {}",
+                        admission.getId(), patientId);
+                return null;
+            }
+            Invoice latest = candidates.get(0); // query orders by createdAt DESC
+            if (isMergeable(latest)) {
+                log.info("OPD→IPD merge: OPD_REFERRAL fallback selected latest OPD invoice {} for patient {} (of {} candidates)",
+                        latest.getId(), patientId, candidates.size());
+                return latest;
+            }
+            log.info("OPD→IPD merge: latest OPD invoice {} for patient {} not mergeable (status={}, paid={})",
+                    latest.getId(), patientId, latest.getStatus(),
+                    latest.getPaidAmount() != null ? latest.getPaidAmount() : "0");
+        }
+
+        return null;
+    }
+
+    /**
+     * Promotes an OPD invoice into the IPD invoice for this admission:
+     * sets admission FK, rewrites the invoice number to IPD format, appends an
+     * audit note, and saves with @Version optimistic locking. Throws
+     * ObjectOptimisticLockingFailureException on concurrent mutation.
+     */
+    private void promoteOpdInvoiceToIpd(Invoice opd, Admission admission, Hospital hospital,
+                                        String admissionNumber) {
+        opd.setAdmission(admission);
+        opd.setInvoiceNumber(HospitalIdPrefix.of(hospital) + "IPD-"
+                + HospitalIdPrefix.stripHospitalPrefix(admissionNumber));
+        opd.setNotes("IPD Admission (converted from OPD) — " + admissionNumber);
+        opd.setUpdatedAt(LocalDateTime.now());
+        try {
+            invoiceRepository.saveAndFlush(opd);
+        } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+            log.warn("OPD→IPD merge: optimistic lock on invoice {} during admission {}",
+                    opd.getId(), admission.getId());
+            throw e;
+        }
+        log.info("OPD→IPD merge: invoice {} promoted to IPD for admission {}",
+                opd.getId(), admission.getId());
     }
 }
