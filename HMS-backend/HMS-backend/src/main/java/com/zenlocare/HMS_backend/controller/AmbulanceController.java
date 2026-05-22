@@ -191,9 +191,8 @@ public class AmbulanceController {
             }
 
             // Auto-merge ambulance charge to patient's IPD invoice when completed
-            // and destination is this same hospital (FK match)
-            boolean isSameHospital = b.getDestinationHospital() != null
-                    && b.getDestinationHospital().getId().equals(b.getHospital().getId());
+            // and destination was flagged as this same hospital
+            boolean isSameHospital = Boolean.TRUE.equals(b.getReachedToSameHospital());
             if (newStatus == AmbulanceBookingStatus.COMPLETED
                     && isSameHospital
                     && b.getPatient() != null
