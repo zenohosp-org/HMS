@@ -103,6 +103,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   const [savingBill, setSavingBill] = useState(false)
   const [collectingPayment, setCollectingPayment] = useState(false)
   const [fallbackInvoiceNo] = useState(generateInvoiceNumber)
+  // dirty = true once any save/payment hits the server. Lets the parent skip a
+  // refetch (and the flicker that comes with it) when the user just opened the
+  // modal to view and closed it without making changes.
+  const [dirty, setDirty] = useState(false)
 
   // Credit patient early payment override
   const [showEarlyCollect, setShowEarlyCollect] = useState(false)
@@ -423,6 +427,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
       // Sync status from server (PAID bill reopened → backend resets to UNPAID)
       if (savedInvoice?.status) setInvoiceStatus(savedInvoice.status)
+      setDirty(true)
 
       // Mark ambulance bookings as paid
       const ambulanceItems = items.filter(i => i.ambulanceBookingId)
@@ -468,17 +473,33 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
       const newPayment = { id: Date.now(), amount: amt, paymentMethod: payMethod, paidAt: new Date().toISOString() }
       setExistingPayments(prev => [...prev, newPayment])
-      if (result?.status) setInvoiceStatus(result.status)
+      setDirty(true)
 
-      const newTotalPaid = totalCashPaid + amt
-      const newBalance = Math.max(0, grandTotal - advanceAdjusted - newTotalPaid)
+      // Trust the server's authoritative paid amount over our local optimistic sum —
+      // payments can be recorded from multiple places (admit-time advance, ambulance
+      // auto-merge, this modal) so the local existingPayments tally can drift.
+      const serverPaidAmount = Number(result?.paidAmount ?? 0)
+      const serverTotal = Number(result?.total ?? grandTotal)
+      const serverStatus = result?.status
+      if (serverStatus) setInvoiceStatus(serverStatus)
 
-      if (newBalance <= 0) {
+      // Authoritative balance: total - paidAmount (server tracks both atomically).
+      // We don't subtract advanceAdjusted here because it's already baked into how the
+      // server computes fullyPaid (newPaid + advance >= total).
+      const trueBalance = Math.max(0, serverTotal - serverPaidAmount - Number(result?.advanceAdjusted ?? 0))
+      const isFullySettled = (serverStatus === 'SETTLED' || serverStatus === 'PAID') && trueBalance <= 0
+
+      if (isFullySettled) {
         notify('Bill fully paid — patient can now be discharged', 'success')
         onFinalized()
+      } else if (trueBalance <= 0 && serverStatus !== 'SETTLED' && serverStatus !== 'PAID') {
+        // Local math says balance is zero but server didn't mark settled — surface the
+        // discrepancy instead of silently closing or silently lying to the user.
+        notify(`₹${amt.toLocaleString('en-IN')} recorded. Server status: ${serverStatus}. Refresh to verify.`, 'warning')
+        setPayAmount('')
       } else {
-        notify(`₹${amt.toLocaleString('en-IN')} recorded. Balance remaining: ₹${newBalance.toLocaleString('en-IN')}`, 'success')
-        setPayAmount(String(Math.round(newBalance)))
+        notify(`₹${amt.toLocaleString('en-IN')} recorded. Balance remaining: ₹${trueBalance.toLocaleString('en-IN')}`, 'success')
+        setPayAmount(String(Math.round(trueBalance)))
       }
     } catch (err) {
       notify(err?.response?.data?.message || 'Payment failed — please try again', 'error')
@@ -591,7 +612,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                 Not Settled
               </span>
             )}
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">
+            <button onClick={() => onClose(dirty)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -921,7 +942,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         {/* ── Footer ── */}
         {!loadingBill && (
           <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] rounded-b-xl shrink-0">
-            <button type="button" onClick={onClose} className="btn-secondary">Close</button>
+            <button type="button" onClick={() => onClose(dirty)} className="btn-secondary">Close</button>
             {!isPaid && (
               <div className="flex items-center gap-2">
                 <button

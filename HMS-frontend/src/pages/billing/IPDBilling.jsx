@@ -14,17 +14,17 @@ import {
 const PAGE_SIZE = 10
 
 const STATUS_CFG_IPD = {
-  SETTLED:     { label: 'Settled',     cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
-  NOT_SETTLED: { label: 'Not Settled', cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',             Icon: Clock        },
+  SETTLED: { label: 'Settled', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
+  NOT_SETTLED: { label: 'Not Settled', cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20', Icon: Clock },
 }
 
 const TYPE_META = {
-  MEDICINE:     { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill        className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> },
-  LAB_TEST:     { bg: 'bg-slate-100 dark:bg-slate-700/40',     icon: <FlaskConical className="w-3 h-3 text-slate-600 dark:text-slate-300" />    },
-  CONSULTATION: { bg: 'bg-blue-100 dark:bg-blue-500/20',       icon: <Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" />       },
-  ROOM_CHARGE:  { bg: 'bg-orange-100 dark:bg-orange-500/20',   icon: <BedDouble   className="w-3 h-3 text-orange-600 dark:text-orange-400" />   },
-  RADIOLOGY:    { bg: 'bg-violet-100 dark:bg-violet-500/20',   icon: <ScanLine    className="w-3 h-3 text-violet-600 dark:text-violet-400" />   },
-  CUSTOM:       { bg: 'bg-slate-100 dark:bg-[#222]',           icon: <Wrench      className="w-3 h-3 text-slate-500" />                          },
+  MEDICINE: { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> },
+  LAB_TEST: { bg: 'bg-slate-100 dark:bg-slate-700/40', icon: <FlaskConical className="w-3 h-3 text-slate-600 dark:text-slate-300" /> },
+  CONSULTATION: { bg: 'bg-blue-100 dark:bg-blue-500/20', icon: <Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" /> },
+  ROOM_CHARGE: { bg: 'bg-orange-100 dark:bg-orange-500/20', icon: <BedDouble className="w-3 h-3 text-orange-600 dark:text-orange-400" /> },
+  RADIOLOGY: { bg: 'bg-violet-100 dark:bg-violet-500/20', icon: <ScanLine className="w-3 h-3 text-violet-600 dark:text-violet-400" /> },
+  CUSTOM: { bg: 'bg-slate-100 dark:bg-[#222]', icon: <Wrench className="w-3 h-3 text-slate-500" /> },
 }
 
 function fmt(n) {
@@ -52,10 +52,10 @@ function ItemTypePips({ items }) {
 
 function StatCard({ label, value, sub, Icon, accent }) {
   const accents = {
-    blue:    'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400',
+    blue: 'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400',
     emerald: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-    amber:   'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-600 dark:text-amber-400',
-    rose:    'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400',
+    amber: 'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-600 dark:text-amber-400',
+    rose: 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400',
   }
   return (
     <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] p-5 flex items-center gap-4">
@@ -75,18 +75,18 @@ export default function IPDBilling() {
   const { user } = useAuth()
   const { notify } = useNotification()
 
-  const [invoices, setInvoices]           = useState([])
-  const [loading, setLoading]             = useState(true)
-  const [search, setSearch]               = useState('')
+  const [invoices, setInvoices] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [statusFilter, setStatusFilter]   = useState('ALL')
-  const [page, setPage]                   = useState(1)
-  const [totalPages, setTotalPages]       = useState(1)
+  const [statusFilter, setStatusFilter] = useState('ALL')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [totalElements, setTotalElements] = useState(0)
   const [activeAdmissions, setActiveAdmissions] = useState([])
   const [finalizeAdmission, setFinalizeAdmission] = useState(null)
   const [detailInvoiceId, setDetailInvoiceId] = useState(null)
-  const [menuState, setMenuState]         = useState(null)
+  const [menuState, setMenuState] = useState(null)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -247,10 +247,10 @@ export default function IPDBilling() {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Total IPD Cases"   value={stats.total}             sub="matching filters"       Icon={ReceiptText} accent="blue"    />
-        <StatCard label="Total Settled"     value={fmt(stats.settled)}      sub="fully cleared bills"    Icon={TrendingUp}  accent="emerald" />
-        <StatCard label="Outstanding Due"   value={fmt(stats.unsettled)}    sub="balance outstanding"    Icon={AlertCircle} accent="amber"   />
-        <StatCard label="Admissions Today"  value={stats.todayCount}        sub="loaded cases"           Icon={Clock}       accent="rose"    />
+        <StatCard label="Total IPD Cases" value={stats.total} sub="matching filters" Icon={ReceiptText} accent="blue" />
+        <StatCard label="Total Settled" value={fmt(stats.settled)} sub="fully cleared bills" Icon={TrendingUp} accent="emerald" />
+        <StatCard label="Outstanding Due" value={fmt(stats.unsettled)} sub="balance outstanding" Icon={AlertCircle} accent="amber" />
+        <StatCard label="Admissions Today" value={stats.todayCount} sub="loaded cases" Icon={Clock} accent="rose" />
       </div>
 
       {/* Table Container */}
@@ -270,11 +270,10 @@ export default function IPDBilling() {
                 <button
                   key={key}
                   onClick={() => handleFilterChange(key)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                    statusFilter === key
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
-                      : 'text-slate-500 dark:text-[#888] hover:text-slate-700 dark:hover:text-[#aaa]'
-                  }`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${statusFilter === key
+                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
+                    : 'text-slate-500 dark:text-[#888] hover:text-slate-700 dark:hover:text-[#aaa]'
+                    }`}
                 >
                   {label}
                 </button>
@@ -428,10 +427,10 @@ export default function IPDBilling() {
       {/* Row context Action Menu */}
       {menuState && (() => {
         const { inv, right, top, bottom } = menuState
-        const isActiveAdm  = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
-        const isPending    = isActiveAdm && (inv.status === 'UNPAID' || inv.status === 'PARTIAL' || inv.status === 'UNSETTLED')
-        const isPaidAdmit  = isActiveAdm && (inv.status === 'PAID' || inv.status === 'SETTLED')
-        const admission    = isActiveAdm ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId)) : null
+        const isActiveAdm = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
+        const isPending = isActiveAdm && (inv.status === 'UNPAID' || inv.status === 'PARTIAL' || inv.status === 'UNSETTLED')
+        const isPaidAdmit = isActiveAdm && (inv.status === 'PAID' || inv.status === 'SETTLED')
+        const admission = isActiveAdm ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId)) : null
         const itemClass = "w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222] transition-colors text-left disabled:opacity-40"
         return (
           <>
