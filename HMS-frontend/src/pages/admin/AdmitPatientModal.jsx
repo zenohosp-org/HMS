@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, patientAdvanceApi } from '@/utils/api'
+import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, patientAdvanceApi, bankApi } from '@/utils/api'
 import api from '@/utils/api'
 import { X, Search, BedDouble, User, CheckCircle2, Loader2 } from 'lucide-react'
 import SearchableSelect from '@/components/ui/SearchableSelect'
@@ -9,12 +9,13 @@ const ADMISSION_SOURCES = ['OPD_REFERRAL', 'EMERGENCY', 'DIRECT']
 const RELATIONSHIPS = ['Spouse', 'Parent', 'Child', 'Sibling', 'Friend', 'Guardian', 'Other']
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer']
 
-const STEPS = [
-  { n: 1, label: 'Patient' },
-  { n: 2, label: 'Clinical' },
-  { n: 3, label: 'Attender' },
-  { n: 4, label: 'Finance' },
-]
+// Cash pays into a CASH-type drawer; everything else lands in a SAVINGS or CURRENT bank account.
+const PAYMENT_METHOD_TO_ACCOUNT_TYPES = {
+  'Cash':          ['CASH'],
+  'UPI':           ['SAVINGS', 'CURRENT'],
+  'Card':          ['SAVINGS', 'CURRENT'],
+  'Bank Transfer': ['SAVINGS', 'CURRENT'],
+}
 
 export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   const { user } = useAuth()
@@ -45,8 +46,10 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
   const [advanceAmount, setAdvanceAmount] = useState('')
   const [advancePaymentMethod, setAdvancePaymentMethod] = useState('Cash')
   const [advanceNotes, setAdvanceNotes] = useState('')
+  const [bankAccounts, setBankAccounts] = useState([])
+  const [bankAccountsLoading, setBankAccountsLoading] = useState(false)
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState('')
 
-  const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -106,6 +109,29 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     if (selectedPatient) setPaymentCategory(selectedPatient.paymentCategory || 'CASH')
   }, [selectedPatient])
 
+  // Fetch bank accounts filtered by the current payment method's allowed types.
+  // Cash → CASH accounts; UPI/Card/Bank Transfer → SAVINGS/CURRENT.
+  useEffect(() => {
+    if (!user?.hospitalId) return
+    const types = PAYMENT_METHOD_TO_ACCOUNT_TYPES[advancePaymentMethod] || []
+    setBankAccountsLoading(true)
+    bankApi.list(user.hospitalId, types)
+      .then(accounts => {
+        setBankAccounts(accounts || [])
+        // Auto-select if exactly one match, otherwise prefer default account if present.
+        if (accounts && accounts.length === 1) {
+          setSelectedBankAccountId(accounts[0].id)
+        } else if (accounts && accounts.length > 1) {
+          const def = accounts.find(a => a.isDefault)
+          setSelectedBankAccountId(def ? def.id : '')
+        } else {
+          setSelectedBankAccountId('')
+        }
+      })
+      .catch(() => { setBankAccounts([]); setSelectedBankAccountId('') })
+      .finally(() => setBankAccountsLoading(false))
+  }, [advancePaymentMethod, user?.hospitalId])
+
   const handleSubmit = async () => {
     if (!selectedPatient) return
     if (isMultiBed && !form.bedId) {
@@ -136,6 +162,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
           await patientAdvanceApi.createForAdmission(admission.id, {
             amount: amt,
             paymentMethod: advancePaymentMethod,
+            bankAccountId: selectedBankAccountId || null,
             notes: advanceNotes || null,
             collectedBy: user?.name || null,
           })
@@ -166,30 +193,17 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#111] rounded-lg shadow-2xl w-full max-w-2xl border border-slate-200 dark:border-[#2a2a2a] flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-[#111] rounded-xl shadow-2xl w-full max-w-8xl max-h-[92vh] flex flex-col border border-slate-200 dark:border-[#2a2a2a]">
 
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1e1e1e]">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <BedDouble className="w-5 h-5 text-slate-700 dark:text-[#cccccc]" /> Admit Patient to IPD
-            </h2>
-            <div className="flex items-center gap-2 mt-2">
-              {STEPS.map((s, i) => (
-                <div key={s.n} className="flex items-center gap-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                    step >= s.n
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
-                      : 'bg-slate-200 dark:bg-[#222] text-slate-500'
-                  }`}>{s.n}</div>
-                  <span className={`text-xs ${step === s.n ? 'text-slate-900 dark:text-white font-semibold' : 'text-slate-400'}`}>
-                    {s.label}
-                  </span>
-                  {i < STEPS.length - 1 && (
-                    <div className={`w-6 h-px ${step > s.n ? 'bg-slate-400' : 'bg-slate-200 dark:bg-[#333]'}`} />
-                  )}
-                </div>
-              ))}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center">
+              <BedDouble className="w-5 h-5 text-slate-700 dark:text-[#cccccc]" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admit Patient to IPD</h2>
+              <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">All sections in one place — scroll to fill, submit when ready.</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 hover:text-slate-600 transition-colors">
@@ -197,12 +211,13 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        {/* Body — single page, 4 sections stacked */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
 
-          {/* Step 1 — Patient */}
-          {step === 1 && (
-            <>
+          {/* ─── Section 1: Patient & Source ────────────────────────────── */}
+          <section className="space-y-4">
+            <SectionHeader number={1} title="Patient & Source" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <label className="label">Search Patient *</label>
                 {selectedPatient ? (
@@ -260,13 +275,13 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                   options={ADMISSION_SOURCES.map(s => ({ value: s, label: s.replace(/_/g, ' ') }))}
                 />
               </div>
-            </>
-          )}
+            </div>
+          </section>
 
-          {/* Step 2 — Clinical */}
-          {step === 2 && (
-            <>
-              <div className="grid grid-cols-2 gap-4">
+          {/* ─── Section 2: Clinical & Room ─────────────────────────────── */}
+          <section className="space-y-4">
+            <SectionHeader number={2} title="Clinical & Room" />
+            <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Department</label>
                   <SearchableSelect
@@ -330,7 +345,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                   ) : availableBeds.length === 0 ? (
                     <p className="text-sm text-red-500 py-2">No available beds in this room.</p>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-6 gap-2">
                       {availableBeds.map(bed => (
                         <button
                           key={bed.id}
@@ -349,58 +364,38 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                   )}
                 </div>
               )}
-            </>
-          )}
+          </section>
 
-          {/* Step 3 — Attender */}
-          {step === 3 && (
-            <>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Attender / Guardian details (optional)</p>
+          {/* ─── Section 3: Attender ────────────────────────────────────── */}
+          <section className="space-y-4">
+            <SectionHeader number={3} title="Attender / Guardian" subtitle="Optional but recommended — required for discharge handover." />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div>
                 <label className="label">Attender Name</label>
                 <input className="input" value={form.attenderName}
                   onChange={e => setForm({ ...form, attenderName: e.target.value })} placeholder="Full name" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Phone</label>
-                  <input className="input" value={form.attenderPhone}
-                    onChange={e => setForm({ ...form, attenderPhone: e.target.value })} placeholder="+91 98765 43210" />
-                </div>
-                <div>
-                  <label className="label">Relationship</label>
-                  <SearchableSelect
-                    className="input"
-                    value={form.attenderRelationship}
-                    onChange={(v) => setForm({ ...form, attenderRelationship: v })}
-                    options={RELATIONSHIPS.map(r => ({ value: r, label: r }))}
-                    placeholder="Select…"
-                  />
-                </div>
+              <div>
+                <label className="label">Phone</label>
+                <input className="input" value={form.attenderPhone}
+                  onChange={e => setForm({ ...form, attenderPhone: e.target.value })} placeholder="+91 98765 43210" />
               </div>
-
-              {/* Summary card */}
-              <div className="rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] p-4 space-y-2 text-sm">
-                <p className="font-semibold text-slate-700 dark:text-slate-200">Admission Summary</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400">
-                  <span className="font-medium">Patient:</span>
-                  <span>{selectedPatient?.firstName} {selectedPatient?.lastName}</span>
-                  <span className="font-medium">Source:</span>
-                  <span>{form.admissionType.replace(/_/g, ' ')}</span>
-                  <span className="font-medium">Room:</span>
-                  <span>
-                    {selectedRoom?.roomNumber || 'To be assigned'}
-                    {form.bedId && availableBeds.find(b => String(b.id) === String(form.bedId))
-                      ? ` · ${availableBeds.find(b => String(b.id) === String(form.bedId)).bedNumber}`
-                      : ''}
-                  </span>
-                </div>
+              <div>
+                <label className="label">Relationship</label>
+                <SearchableSelect
+                  className="input"
+                  value={form.attenderRelationship}
+                  onChange={(v) => setForm({ ...form, attenderRelationship: v })}
+                  options={RELATIONSHIPS.map(r => ({ value: r, label: r }))}
+                  placeholder="Select…"
+                />
               </div>
-            </>
-          )}
+            </div>
+          </section>
 
-          {/* Step 4 — Finance */}
-          {step === 4 && (
+          {/* ─── Section 4: Finance ─────────────────────────────────────── */}
+          <section className="space-y-4">
+            <SectionHeader number={4} title="Finance" />
             <div className="space-y-6">
 
               {/* Payment Category */}
@@ -468,6 +463,37 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
 
                 {advanceAmt > 0 && (
                   <div className="mt-3">
+                    <label className="label">
+                      Deposit Account
+                      <span className="ml-1.5 text-[10px] font-medium text-slate-400 dark:text-[#666]">
+                        ({advancePaymentMethod === 'Cash' ? 'CASH only' : 'SAVINGS / CURRENT only'})
+                      </span>
+                    </label>
+                    {bankAccountsLoading ? (
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-[#888] py-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading accounts…
+                      </div>
+                    ) : bankAccounts.length === 0 ? (
+                      <div className="px-3 py-2.5 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300">
+                        No {advancePaymentMethod === 'Cash' ? 'CASH' : 'SAVINGS / CURRENT'} account found. Configure banks in the Finance app to enable deposit tracking.
+                      </div>
+                    ) : (
+                      <SearchableSelect
+                        className="input"
+                        value={selectedBankAccountId}
+                        onChange={(v) => setSelectedBankAccountId(v)}
+                        options={bankAccounts.map(a => ({
+                          value: a.id,
+                          label: `${a.accountName} · ${a.accountType}${a.bankName ? ` · ${a.bankName}` : ''}`,
+                        }))}
+                        placeholder="Select account…"
+                      />
+                    )}
+                  </div>
+                )}
+
+                {advanceAmt > 0 && (
+                  <div className="mt-3">
                     <label className="label">Note (optional)</label>
                     <input
                       className="input"
@@ -488,34 +514,52 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                 )}
               </div>
             </div>
+          </section>
+
+          {/* Summary preview before submit */}
+          {selectedPatient && (
+            <div className="rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] p-4 text-sm">
+              <p className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Admission Summary</p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400">
+                <div><span className="font-medium">Patient: </span>{selectedPatient.firstName} {selectedPatient.lastName}</div>
+                <div><span className="font-medium">Source: </span>{form.admissionType.replace(/_/g, ' ')}</div>
+                <div>
+                  <span className="font-medium">Room: </span>
+                  {selectedRoom?.roomNumber || 'To be assigned'}
+                  {form.bedId && availableBeds.find(b => String(b.id) === String(form.bedId))
+                    ? ` · ${availableBeds.find(b => String(b.id) === String(form.bedId)).bedNumber}`
+                    : ''}
+                </div>
+                <div><span className="font-medium">Payment: </span>{paymentCategory}{advanceAmt > 0 ? ` (₹${advanceAmt.toLocaleString('en-IN')} advance)` : ''}</div>
+              </div>
+            </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] rounded-b-lg">
-          <button
-            onClick={() => step > 1 ? setStep(s => s - 1) : onClose()}
-            className="btn-secondary"
-          >
-            {step > 1 ? '← Back' : 'Cancel'}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] rounded-b-xl">
+          <button onClick={onClose} className="btn-secondary">Cancel</button>
+          <button onClick={handleSubmit} disabled={submitting || !selectedPatient} className="btn-primary">
+            {submitting
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Admitting…</>
+              : <><CheckCircle2 className="w-4 h-4" /> Confirm Admission</>
+            }
           </button>
-          {step < 4 ? (
-            <button
-              onClick={() => { if (step === 1 && !selectedPatient) return; setStep(s => s + 1) }}
-              disabled={step === 1 && !selectedPatient}
-              className="btn-primary"
-            >
-              Next →
-            </button>
-          ) : (
-            <button onClick={handleSubmit} disabled={submitting} className="btn-primary">
-              {submitting
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Admitting…</>
-                : <><CheckCircle2 className="w-4 h-4" /> Confirm Admission</>
-              }
-            </button>
-          )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function SectionHeader({ number, title, subtitle }) {
+  return (
+    <div className="flex items-start gap-3 pb-2 border-b border-slate-100 dark:border-[#1e1e1e]">
+      <div className="w-7 h-7 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center text-xs font-bold shrink-0">
+        {number}
+      </div>
+      <div>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{title}</h3>
+        {subtitle && <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">{subtitle}</p>}
       </div>
     </div>
   )

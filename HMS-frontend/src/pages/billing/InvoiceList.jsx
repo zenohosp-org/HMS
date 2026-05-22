@@ -12,6 +12,21 @@ import {
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
 
+// Cash → CASH-type drawer; UPI/Card/Bank Transfer → SAVINGS or CURRENT.
+const PAYMENT_METHOD_TO_ACCOUNT_TYPES = {
+  'Cash':          ['CASH'],
+  'UPI':           ['SAVINGS', 'CURRENT'],
+  'Card':          ['SAVINGS', 'CURRENT'],
+  'Bank Transfer': ['SAVINGS', 'CURRENT'],
+  'Insurance':     [],
+}
+
+function accountsForMethod(accounts, method) {
+  const allowed = PAYMENT_METHOD_TO_ACCOUNT_TYPES[method] || []
+  if (allowed.length === 0) return []
+  return (accounts || []).filter(a => allowed.includes((a.accountType || '').toUpperCase()))
+}
+
 const TYPE_COLORS = {
   CONSULTATION: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400',
   ROOM_CHARGE:  'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400',
@@ -504,7 +519,12 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                         <label className="label">Payment Type</label>
                         <SearchableSelect
                           value={payMethod}
-                          onChange={(v) => setPayMethod(v)}
+                          onChange={(v) => {
+                            setPayMethod(v)
+                            const eligible = accountsForMethod(bankAccounts, v)
+                            const def = eligible.find(a => a.isDefault) ?? eligible[0]
+                            setBankAccountId(def ? def.id : '')
+                          }}
                           options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
                         />
                       </div>
@@ -519,28 +539,45 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                         placeholder="UTR / Cheque no. / Transaction ID"
                       />
                     </div>
-                    {bankAccounts.length > 0 && (
-                      <div>
-                        <label className="label flex items-center gap-1.5"><Landmark className="w-3 h-3" />Credit to</label>
-                        <div className="flex flex-wrap gap-1.5 mt-1">
-                          {bankAccounts.map(a => (
-                            <button
-                              key={a.id}
-                              type="button"
-                              onClick={() => setBankAccountId(a.id)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all ${
-                                bankAccountId === a.id
-                                  ? 'border-slate-900 dark:border-white bg-slate-900 dark:bg-white text-white dark:text-slate-900'
-                                  : 'border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-slate-500 dark:text-[#888] hover:border-slate-400'
-                              }`}
-                            >
-                              {bankAccountId === a.id && <CheckCircle2 className="w-3 h-3 shrink-0" />}
-                              {a.accountName}
-                            </button>
-                          ))}
+                    {(() => {
+                      const eligibleAccounts = accountsForMethod(bankAccounts, payMethod)
+                      const allowedTypes = PAYMENT_METHOD_TO_ACCOUNT_TYPES[payMethod] || []
+                      if (allowedTypes.length === 0) return null
+                      if (eligibleAccounts.length === 0) {
+                        return (
+                          <div className="px-3 py-2.5 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300">
+                            No {payMethod === 'Cash' ? 'CASH' : 'SAVINGS / CURRENT'} account found. Configure banks in the Finance app to track this payment.
+                          </div>
+                        )
+                      }
+                      return (
+                        <div>
+                          <label className="label flex items-center gap-1.5">
+                            <Landmark className="w-3 h-3" />Credit to
+                            <span className="ml-1 text-[10px] text-slate-300 dark:text-[#555]">
+                              ({payMethod === 'Cash' ? 'CASH only' : 'SAVINGS / CURRENT only'})
+                            </span>
+                          </label>
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {eligibleAccounts.map(a => (
+                              <button
+                                key={a.id}
+                                type="button"
+                                onClick={() => setBankAccountId(a.id)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all ${
+                                  bankAccountId === a.id
+                                    ? 'border-slate-900 dark:border-white bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                                    : 'border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-slate-500 dark:text-[#888] hover:border-slate-400'
+                                }`}
+                              >
+                                {bankAccountId === a.id && <CheckCircle2 className="w-3 h-3 shrink-0" />}
+                                {a.accountName}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )
+                    })()}
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={handleCollect}
@@ -630,7 +667,9 @@ function MarkAsPaidModal({ invoice, onClose, onPaid }) {
     if (!user?.hospitalId) return
     bankApi.list(user.hospitalId).then(accounts => {
       setBankAccounts(accounts)
-      const def = accounts.find(a => a.isDefault) ?? accounts[0]
+      // Pre-select for the initial Cash payment method
+      const eligible = accountsForMethod(accounts, 'Cash')
+      const def = eligible.find(a => a.isDefault) ?? eligible[0]
       if (def) setBankAccountId(def.id)
     }).catch(() => {})
   }, [user?.hospitalId])
@@ -668,37 +707,57 @@ function MarkAsPaidModal({ invoice, onClose, onPaid }) {
             <label className="label">Payment Method</label>
             <SearchableSelect
               value={paymentMethod}
-              onChange={(v) => setPaymentMethod(v)}
+              onChange={(v) => {
+                setPaymentMethod(v)
+                const eligible = accountsForMethod(bankAccounts, v)
+                const def = eligible.find(a => a.isDefault) ?? eligible[0]
+                setBankAccountId(def ? def.id : '')
+              }}
               options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
             />
           </div>
 
-          {bankAccounts.length > 0 && (
-            <div>
-              <label className="label flex items-center gap-1.5">
-                <Landmark className="w-3.5 h-3.5" /> Credit Payment To
-              </label>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                {bankAccounts.map(a => (
-                  <button
-                    key={a.id}
-                    type="button"
-                    onClick={() => setBankAccountId(a.id)}
-                    className={`text-left p-3 rounded-lg border-2 transition-all ${bankAccountId === a.id ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#111]'}`}
-                  >
-                    <div className="flex items-start justify-between gap-1 mb-0.5">
-                      <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{a.accountName}</p>
-                      {bankAccountId === a.id && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}
-                    </div>
-                    <p className="text-[11px] text-slate-400 dark:text-[#666]">
-                      {a.accountNumber ? `···${a.accountNumber.slice(-4)}` : a.bankName || 'Cash'}
-                    </p>
-                    <p className="text-xs font-semibold text-slate-600 dark:text-[#aaa] mt-1 tabular-nums">{fmt(a.currentBalance)}</p>
-                  </button>
-                ))}
+          {(() => {
+            const eligibleAccounts = accountsForMethod(bankAccounts, paymentMethod)
+            const allowedTypes = PAYMENT_METHOD_TO_ACCOUNT_TYPES[paymentMethod] || []
+            if (allowedTypes.length === 0) return null
+            if (eligibleAccounts.length === 0) {
+              return (
+                <div className="px-3 py-2.5 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300">
+                  No {paymentMethod === 'Cash' ? 'CASH' : 'SAVINGS / CURRENT'} account found. Configure banks in the Finance app to track this payment.
+                </div>
+              )
+            }
+            return (
+              <div>
+                <label className="label flex items-center gap-1.5">
+                  <Landmark className="w-3.5 h-3.5" /> Credit Payment To
+                  <span className="ml-1 text-[10px] text-slate-300 dark:text-[#555]">
+                    ({paymentMethod === 'Cash' ? 'CASH only' : 'SAVINGS / CURRENT only'})
+                  </span>
+                </label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {eligibleAccounts.map(a => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setBankAccountId(a.id)}
+                      className={`text-left p-3 rounded-lg border-2 transition-all ${bankAccountId === a.id ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#111]'}`}
+                    >
+                      <div className="flex items-start justify-between gap-1 mb-0.5">
+                        <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{a.accountName}</p>
+                        {bankAccountId === a.id && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}
+                      </div>
+                      <p className="text-[11px] text-slate-400 dark:text-[#666]">
+                        {a.accountNumber ? `···${a.accountNumber.slice(-4)}` : a.bankName || 'Cash'}
+                      </p>
+                      <p className="text-xs font-semibold text-slate-600 dark:text-[#aaa] mt-1 tabular-nums">{fmt(a.currentBalance)}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
         </div>
 
         <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] rounded-b-xl">

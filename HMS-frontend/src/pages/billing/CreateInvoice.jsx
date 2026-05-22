@@ -40,6 +40,22 @@ import {
   AlertTriangle
 } from "lucide-react";
 const PAYMENT_METHODS = ["Cash", "UPI", "Card", "Bank Transfer", "Insurance"];
+
+// Cash → CASH-type drawer; UPI/Card/Bank Transfer → SAVINGS or CURRENT.
+const PAYMENT_METHOD_TO_ACCOUNT_TYPES = {
+  "Cash":          ["CASH"],
+  "UPI":           ["SAVINGS", "CURRENT"],
+  "Card":          ["SAVINGS", "CURRENT"],
+  "Bank Transfer": ["SAVINGS", "CURRENT"],
+  "Insurance":     [],
+};
+
+function accountsForMethod(accounts, method) {
+  const allowed = PAYMENT_METHOD_TO_ACCOUNT_TYPES[method] || [];
+  if (allowed.length === 0) return [];
+  return (accounts || []).filter(a => allowed.includes((a.accountType || "").toUpperCase()));
+}
+
 const GST_RATE = 0.18;
 function fmt(n) {
   return "\u20B9" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -119,7 +135,9 @@ function CreateInvoice() {
     });
     bankApi.list(user.hospitalId).then((accounts) => {
       setBankAccounts(accounts);
-      const def = accounts.find((a) => a.isDefault) ?? accounts[0];
+      // Pre-select default for the initial Cash payment method
+      const eligible = accountsForMethod(accounts, "Cash");
+      const def = eligible.find((a) => a.isDefault) ?? eligible[0];
       if (def) setBankAccountId(def.id);
     }).catch(() => {
     });
@@ -374,12 +392,25 @@ function CreateInvoice() {
                         Payment Details
                     </p><div className="grid grid-cols-2 gap-3 mb-4"><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Payment Method</label><SearchableSelect
   value={paymentMethod}
-  onChange={(v) => setPaymentMethod(v)}
+  onChange={(v) => {
+    setPaymentMethod(v);
+    const eligible = accountsForMethod(bankAccounts, v);
+    const def = eligible.find(a => a.isDefault) ?? eligible[0];
+    setBankAccountId(def ? def.id : "");
+  }}
   options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
 /></div><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Notes (optional)</label><input className={inputCls} placeholder="Additional notes…" value={notes} onChange={(e) => setNotes(e.target.value)} /></div></div>{
-    /* Bank account cards */
-  }{bankAccounts.length === 0 && <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" /><p className="text-xs text-amber-700 dark:text-amber-400">No payment accounts configured — add accounts in Finance to audit billing.</p></div>}{bankAccounts.length > 0 && <div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-2 flex items-center gap-1.5"><Landmark className="w-3.5 h-3.5" /> Credit payment to
-                            </label><div className="grid grid-cols-2 gap-2">{bankAccounts.map((a) => {
+    /* Bank account cards — filtered by payment method type */
+  }{(() => {
+    const eligibleAccounts = accountsForMethod(bankAccounts, paymentMethod);
+    const allowedTypes = PAYMENT_METHOD_TO_ACCOUNT_TYPES[paymentMethod] || [];
+    if (allowedTypes.length === 0) return null;
+    if (eligibleAccounts.length === 0) {
+      return <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" /><p className="text-xs text-amber-700 dark:text-amber-400">No {paymentMethod === "Cash" ? "CASH" : "SAVINGS / CURRENT"} account found. Configure banks in the Finance app to track this payment.</p></div>;
+    }
+    return <div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-2 flex items-center gap-1.5"><Landmark className="w-3.5 h-3.5" /> Credit payment to
+                            <span className="ml-1 text-[10px] text-slate-300 dark:text-[#555]">({paymentMethod === "Cash" ? "CASH only" : "SAVINGS / CURRENT only"})</span>
+                            </label><div className="grid grid-cols-2 gap-2">{eligibleAccounts.map((a) => {
     const isSelected = bankAccountId === a.id;
     return <button
       key={a.id}
@@ -392,7 +423,8 @@ function CreateInvoice() {
     onClick={() => setBankAccountId("")}
     className={`text-left p-3 rounded-lg border-2 transition-all ${bankAccountId === "" ? "border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]" : "border-dashed border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 bg-white dark:bg-[#111111]"}`}
   ><p className="text-xs font-bold text-slate-400 dark:text-[#666666]">No account</p><p className="text-[11px] text-slate-300 dark:text-[#444444] mt-0.5">Skip bank credit</p></button></div>{selectedAccount && <p className="text-xs text-slate-400 dark:text-[#666666] mt-2">
-                                    After payment: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{fmt(selectedAccount.currentBalance + grandTotal)}</span></p>}</div>}</div>{
+                                    After payment: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{fmt(selectedAccount.currentBalance + grandTotal)}</span></p>}</div>;
+  })()}</div>{
     /* Generate button */
   }<button
     onClick={handleSubmit}

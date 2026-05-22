@@ -393,8 +393,14 @@ const invoiceApi = {
   },
 };
 const bankApi = {
-  list: async (hospitalId) => {
-    const { data } = await api.get("/bank-accounts", { params: { hospitalId } });
+  // types: optional array or comma-string of accountType filters (e.g. ["SAVINGS","CURRENT"] or "CASH").
+  // Omitted → returns all accounts for the hospital.
+  list: async (hospitalId, types) => {
+    const params = { hospitalId };
+    if (types) {
+      params.type = Array.isArray(types) ? types.join(",") : types;
+    }
+    const { data } = await api.get("/bank-accounts", { params });
     return data;
   }
 };

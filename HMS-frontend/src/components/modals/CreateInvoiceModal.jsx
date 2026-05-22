@@ -13,6 +13,21 @@ import {
 } from 'lucide-react'
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
+
+// Cash → CASH-type drawer; UPI/Card/Bank Transfer → SAVINGS or CURRENT.
+const PAYMENT_METHOD_TO_ACCOUNT_TYPES = {
+  'Cash':          ['CASH'],
+  'UPI':           ['SAVINGS', 'CURRENT'],
+  'Card':          ['SAVINGS', 'CURRENT'],
+  'Bank Transfer': ['SAVINGS', 'CURRENT'],
+  'Insurance':     [],
+}
+
+function accountsForMethod(accounts, method) {
+  const allowed = PAYMENT_METHOD_TO_ACCOUNT_TYPES[method] || []
+  if (allowed.length === 0) return []
+  return (accounts || []).filter(a => allowed.includes((a.accountType || '').toUpperCase()))
+}
 const GST_RATE = 0.18
 
 function fmt(n) {
@@ -65,7 +80,9 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
     hospitalServiceApi.list(user.hospitalId).then(setServices).catch(() => {})
     bankApi.list(user.hospitalId).then(accounts => {
       setBankAccounts(accounts)
-      const def = accounts.find(a => a.isDefault) ?? accounts[0]
+      // Pre-select default for initial Cash payment method
+      const eligible = accountsForMethod(accounts, 'Cash')
+      const def = eligible.find(a => a.isDefault) ?? eligible[0]
       if (def) setBankAccountId(def.id)
     }).catch(() => {})
   }, [user?.hospitalId])
@@ -544,7 +561,12 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                   <SearchableSelect
                     className={inputCls}
                     value={paymentMethod}
-                    onChange={val => setPaymentMethod(val)}
+                    onChange={val => {
+                      setPaymentMethod(val)
+                      const eligible = accountsForMethod(bankAccounts, val)
+                      const def = eligible.find(a => a.isDefault) ?? eligible[0]
+                      setBankAccountId(def ? def.id : '')
+                    }}
                     options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
                   />
                 </div>
@@ -553,34 +575,49 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                   <input className={inputCls} placeholder="Additional notes…" value={notes} onChange={e => setNotes(e.target.value)} />
                 </div>
               </div>
-              {bankAccounts.length > 0 && (
-                <div>
-                  <label className="block text-xs text-slate-400 dark:text-[#666666] mb-2 flex items-center gap-1.5">
-                    <Landmark className="w-3.5 h-3.5" /> Credit payment to
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {bankAccounts.map(a => {
-                      const isSelected = bankAccountId === a.id
-                      return (
-                        <button key={a.id} type="button" onClick={() => setBankAccountId(a.id)}
-                          className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]'}`}>
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <p className="text-xs font-bold truncate text-slate-700 dark:text-[#cccccc]">{a.accountName}</p>
-                            {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}
-                          </div>
-                          <p className="text-[11px] text-slate-400 dark:text-[#666666] truncate">{a.bankName ?? 'Bank'} · ···{a.accountNumber.slice(-4)}</p>
-                          <p className="text-xs font-bold mt-1.5 text-slate-600 dark:text-[#aaaaaa]">{fmt(a.currentBalance)}</p>
-                        </button>
-                      )
-                    })}
+              {(() => {
+                const eligibleAccounts = accountsForMethod(bankAccounts, paymentMethod)
+                const allowedTypes = PAYMENT_METHOD_TO_ACCOUNT_TYPES[paymentMethod] || []
+                if (allowedTypes.length === 0) return null
+                if (eligibleAccounts.length === 0) {
+                  return (
+                    <div className="px-3 py-2.5 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300">
+                      No {paymentMethod === 'Cash' ? 'CASH' : 'SAVINGS / CURRENT'} account found. Configure banks in the Finance app to track this payment.
+                    </div>
+                  )
+                }
+                return (
+                  <div>
+                    <label className="block text-xs text-slate-400 dark:text-[#666666] mb-2 flex items-center gap-1.5">
+                      <Landmark className="w-3.5 h-3.5" /> Credit payment to
+                      <span className="ml-1 text-[10px] text-slate-300 dark:text-[#555]">
+                        ({paymentMethod === 'Cash' ? 'CASH only' : 'SAVINGS / CURRENT only'})
+                      </span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {eligibleAccounts.map(a => {
+                        const isSelected = bankAccountId === a.id
+                        return (
+                          <button key={a.id} type="button" onClick={() => setBankAccountId(a.id)}
+                            className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]' : 'border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]'}`}>
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <p className="text-xs font-bold truncate text-slate-700 dark:text-[#cccccc]">{a.accountName}</p>
+                              {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />}
+                            </div>
+                            <p className="text-[11px] text-slate-400 dark:text-[#666666] truncate">{a.bankName ?? 'Bank'} · ···{a.accountNumber.slice(-4)}</p>
+                            <p className="text-xs font-bold mt-1.5 text-slate-600 dark:text-[#aaaaaa]">{fmt(a.currentBalance)}</p>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {selectedAccount && (
+                      <p className="text-xs text-slate-400 dark:text-[#666666] mt-2">
+                        After payment: <span className="font-semibold text-slate-900 dark:text-white">{fmt(selectedAccount.currentBalance + grandTotal)}</span>
+                      </p>
+                    )}
                   </div>
-                  {selectedAccount && (
-                    <p className="text-xs text-slate-400 dark:text-[#666666] mt-2">
-                      After payment: <span className="font-semibold text-slate-900 dark:text-white">{fmt(selectedAccount.currentBalance + grandTotal)}</span>
-                    </p>
-                  )}
-                </div>
-              )}
+                )
+              })()}
             </div>
 
           </div>

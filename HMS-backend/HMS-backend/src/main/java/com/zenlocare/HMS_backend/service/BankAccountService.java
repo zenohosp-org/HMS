@@ -28,6 +28,25 @@ public class BankAccountService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns accounts whose accountType matches one of the supplied values
+     * (case-insensitive). Used by payment flows to constrain selection — e.g.
+     * "Cash" payments may only credit CASH accounts; UPI/Card/Bank Transfer
+     * may only credit SAVINGS / CURRENT.
+     */
+    public List<BankAccountDTO> listByHospitalAndTypes(UUID hospitalId, List<String> types) {
+        if (types == null || types.isEmpty()) return listByHospital(hospitalId);
+        java.util.Set<String> wanted = types.stream()
+                .map(s -> s.toUpperCase().trim())
+                .collect(Collectors.toSet());
+        return accountRepository.findByHospitalId(hospitalId)
+                .stream()
+                .filter(a -> a.getAccountType() != null
+                        && wanted.contains(a.getAccountType().toUpperCase().trim()))
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
     private BankAccountDTO toDTO(BankAccount a) {
         BigDecimal netMovement = transactionRepository.computeNetMovement(a.getId());
         BigDecimal currentBalance = a.getOpeningBalance().add(netMovement);

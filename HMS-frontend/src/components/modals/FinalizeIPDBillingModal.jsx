@@ -16,6 +16,22 @@ import {
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
 const GST_RATE = 0.18
 
+// Cash → CASH-type drawer; UPI/Card/Bank Transfer → SAVINGS or CURRENT.
+// Insurance is settled separately; no on-the-spot account credit.
+const PAYMENT_METHOD_TO_ACCOUNT_TYPES = {
+  'Cash':          ['CASH'],
+  'UPI':           ['SAVINGS', 'CURRENT'],
+  'Card':          ['SAVINGS', 'CURRENT'],
+  'Bank Transfer': ['SAVINGS', 'CURRENT'],
+  'Insurance':     [],
+}
+
+function accountsForMethod(accounts, method) {
+  const allowed = PAYMENT_METHOD_TO_ACCOUNT_TYPES[method] || []
+  if (allowed.length === 0) return []
+  return (accounts || []).filter(a => allowed.includes((a.accountType || '').toUpperCase()))
+}
+
 const TYPE_META = {
   ROOM_CHARGE:  { label: 'Room',         icon: BedDouble   },
   CONSULTATION: { label: 'Consultation', icon: Stethoscope },
@@ -121,8 +137,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       const isFirstAdmission = (allPatientInvoices || []).filter(inv =>
         inv.admissionId && String(inv.admissionId) !== String(admission.id)
       ).length === 0
-      const def = accounts.find(a => a.isDefault) ?? accounts[0]
       setBankAccounts(accounts)
+      // Pre-select an account matching the initial payment method (Cash by default)
+      const eligible = accountsForMethod(accounts, 'Cash')
+      const def = eligible.find(a => a.isDefault) ?? eligible[0]
       if (def) setPayBankAccountId(def.id)
 
       if (existingInvoice?.id) {
@@ -478,14 +496,14 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
     if (items.some(i => !i.description?.trim())) { notify('All items need a description', 'error'); return }
     setCollectingPayment(true)
     try {
-      const needsBank = payMethod === 'Bank Transfer' || payMethod === 'Card'
       // Atomic: send current bill items + payment in one request.
       // Backend updates items, resets PAID→UNPAID if needed, records payment, sets status.
       const result = await invoiceApi.collectAndSave(invoiceId, {
         ...buildPayload(),
         amount: amt,
         paymentMethod: payMethod,
-        bankAccountId: (needsBank && payBankAccountId) ? payBankAccountId : null,
+        // Send whatever was selected — backend already handles null gracefully.
+        bankAccountId: payBankAccountId || null,
         collectedBy: user?.name || null,
       })
 
@@ -518,7 +536,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
     }
   }
 
-  const needsBankAccount = payMethod === 'Bank Transfer' || payMethod === 'Card'
+  const eligibleAccounts = accountsForMethod(bankAccounts, payMethod)
+  const needsBankAccount = (PAYMENT_METHOD_TO_ACCOUNT_TYPES[payMethod] || []).length > 0
   const isCash = (admission.paymentCategory || 'CASH') === 'CASH'
 
   // ── Collect Payment form (shared between Cash and Credit early-collect) ──────
@@ -542,24 +561,34 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           <SearchableSelect
             className="input"
             value={payMethod}
-            onChange={val => { setPayMethod(val); setPayBankAccountId('') }}
+            onChange={val => {
+              setPayMethod(val)
+              const eligible = accountsForMethod(bankAccounts, val)
+              const def = eligible.find(a => a.isDefault) ?? eligible[0]
+              setPayBankAccountId(def ? def.id : '')
+            }}
             options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
           />
         </div>
       </div>
-      {bankAccounts.length === 0 && (
+      {needsBankAccount && eligibleAccounts.length === 0 && (
         <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
           <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-700 dark:text-amber-400">No payment accounts configured — add accounts in Finance to audit billing.</p>
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            No {payMethod === 'Cash' ? 'CASH' : 'SAVINGS / CURRENT'} account found. Configure banks in the Finance app to track this payment.
+          </p>
         </div>
       )}
-      {needsBankAccount && bankAccounts.length > 0 && (
+      {needsBankAccount && eligibleAccounts.length > 0 && (
         <div>
           <label className="label flex items-center gap-1.5">
             <Landmark className="w-3 h-3" /> Credit to
+            <span className="ml-1.5 text-[10px] font-medium text-slate-400 dark:text-[#666]">
+              ({payMethod === 'Cash' ? 'CASH only' : 'SAVINGS / CURRENT only'})
+            </span>
           </label>
           <div className="flex flex-wrap gap-1.5 mt-1">
-            {bankAccounts.map(a => (
+            {eligibleAccounts.map(a => (
               <button
                 key={a.id}
                 type="button"
