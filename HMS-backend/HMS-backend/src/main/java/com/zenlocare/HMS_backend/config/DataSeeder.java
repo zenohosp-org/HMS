@@ -84,6 +84,7 @@ public class DataSeeder implements CommandLineRunner {
         migrateStatusColumns();
         migrateDischargeData();
         backfillHospitalNumericCodes();
+        backfillInvoiceVersions();
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
@@ -363,6 +364,15 @@ public class DataSeeder implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.warn("Could not backfill hospital numeric codes: " + e.getMessage());
+        }
+    }
+
+    private void backfillInvoiceVersions() {
+        try {
+            int rows = jdbcTemplate.update("UPDATE invoices SET version = 0 WHERE version IS NULL");
+            if (rows > 0) log.info("✅ Backfilled version=0 on {} legacy invoice rows", rows);
+        } catch (Exception e) {
+            log.warn("Could not backfill invoice versions: " + e.getMessage());
         }
     }
 

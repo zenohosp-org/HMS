@@ -100,6 +100,16 @@ public class Invoice {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    // Optimistic-locking guard: every UPDATE increments this column; concurrent
+    // writers see a stale version and Hibernate throws OptimisticLockException.
+    // Protects the OPD→IPD promotion and other invoice mutations from races.
+    // Nullable for safety while existing rows are backfilled by DataSeeder on startup —
+    // Hibernate treats NULL as 0 for the first update.
+    @Version
+    @Column(name = "version")
+    @Builder.Default
+    private Long version = 0L;
+
     @PreUpdate
     public void onUpdate() {
         this.updatedAt = LocalDateTime.now();

@@ -249,7 +249,15 @@ public class InvoiceService {
                             + HospitalIdPrefix.stripHospitalPrefix(admissionNumber));
                     opdInvoice.setNotes("IPD Admission (converted from OPD) — " + admissionNumber);
                     opdInvoice.setUpdatedAt(LocalDateTime.now());
-                    invoiceRepository.save(opdInvoice);
+                    try {
+                        invoiceRepository.saveAndFlush(opdInvoice);
+                    } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+                        // Another transaction modified this invoice concurrently. Don't retry blindly —
+                        // surface to caller so the admit-side flow can handle (or the user can retry).
+                        log.warn("OPD→IPD merge: optimistic lock on invoice {} during admission {} — aborting merge",
+                                opdInvoice.getId(), admissionId);
+                        throw e;
+                    }
                     log.info("OPD→IPD merge: invoice {} promoted to IPD for admission {} (appt {})",
                             opdInvoice.getId(), admissionId, sourceAppointmentId);
                     return;
