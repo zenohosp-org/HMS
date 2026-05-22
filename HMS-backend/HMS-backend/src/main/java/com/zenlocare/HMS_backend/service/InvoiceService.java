@@ -809,10 +809,17 @@ public class InvoiceService {
                 String typeDesc    = booking.getAmbulanceType() != null ? booking.getAmbulanceType().getName() : "Ambulance";
                 String description = typeDesc + (vehicleDesc != null ? " (" + vehicleDesc + ")" : "");
 
-                addAmbulanceItemToIpdInvoice(patientId, booking.getId(), charge, description);
-                booking.setMergedToIpd(true);
-                ambulanceBookingRepository.save(booking);
-                merged++;
+                boolean added = addAmbulanceItemToIpdInvoice(patientId, booking.getId(), charge, description);
+                if (added) {
+                    booking.setMergedToIpd(true);
+                    ambulanceBookingRepository.save(booking);
+                    merged++;
+                } else {
+                    // Should not happen since we just created the IPD invoice in createAdmissionInvoice,
+                    // but log it loudly if it ever does — silent skip caused the original bug.
+                    log.warn("Ambulance→IPD merge: addAmbulanceItemToIpdInvoice returned false for booking {} (admission {}) — patient has no active IPD invoice. Booking NOT marked merged.",
+                            booking.getId(), admissionId);
+                }
             } catch (Exception e) {
                 log.error("Ambulance→IPD merge: failed to merge booking {} into admission {}'s IPD invoice — skipping. {}",
                         booking.getId(), admissionId, e.getMessage(), e);
@@ -822,10 +829,19 @@ public class InvoiceService {
                 merged, eligible.size(), admissionId);
     }
 
+    /**
+     * Adds an AMBULANCE line item to the patient's active IPD invoice, idempotently.
+     *
+     * @return true  — the item was added (or was already present from a prior call);
+     *                callers can safely set booking.mergedToIpd = TRUE
+     *         false — patient has no active IPD invoice yet, so no merge happened;
+     *                callers must NOT mark the booking as merged or the admit-time
+     *                auto-merge will skip it later.
+     */
     @Transactional
-    public void addAmbulanceItemToIpdInvoice(Integer patientId, Long bookingId,
-                                              java.math.BigDecimal charge, String description) {
-        if (patientId == null || charge == null) return;
+    public boolean addAmbulanceItemToIpdInvoice(Integer patientId, Long bookingId,
+                                                 java.math.BigDecimal charge, String description) {
+        if (patientId == null || charge == null) return false;
 
         // Find the most recent IPD (admission-linked) invoice for this patient
         Invoice invoice = invoiceRepository.findByPatientIdOrderByCreatedAtDesc(patientId)
@@ -835,12 +851,12 @@ public class InvoiceService {
                 .findFirst()
                 .orElse(null);
 
-        if (invoice == null) return; // Patient has no active IPD invoice — skip
+        if (invoice == null) return false; // Patient has no active IPD invoice — caller should NOT mark merged
 
-        // Idempotency: already added
+        // Idempotency: already added → still considered merged successfully
         boolean alreadyPresent = invoice.getItems() != null && invoice.getItems().stream()
                 .anyMatch(it -> bookingId.equals(it.getAmbulanceBookingId()));
-        if (alreadyPresent) return;
+        if (alreadyPresent) return true;
 
         if (invoice.getItems() == null) invoice.setItems(new java.util.ArrayList<>());
 
@@ -874,6 +890,7 @@ public class InvoiceService {
 
         invoice.setUpdatedAt(LocalDateTime.now());
         invoiceRepository.save(invoice);
+        return true;
     }
 
     private boolean isCollectible(Invoice inv) {

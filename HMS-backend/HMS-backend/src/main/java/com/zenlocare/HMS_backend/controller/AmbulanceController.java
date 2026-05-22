@@ -196,7 +196,13 @@ public class AmbulanceController {
             }
 
             // Auto-merge ambulance charge to patient's IPD invoice when completed
-            // and destination was flagged as this same hospital
+            // and destination was flagged as this same hospital.
+            //
+            // CRITICAL: only mark mergedToIpd=TRUE when the merge actually happened.
+            // If the patient has no active IPD invoice yet (e.g., trip completes BEFORE
+            // admission), addAmbulanceItemToIpdInvoice returns false. Marking the booking
+            // as merged anyway would cause the admit-time auto-merge to skip it later —
+            // the ambulance charge would never reach the IPD bill.
             boolean isSameHospital = Boolean.TRUE.equals(b.getReachedToSameHospital());
             if (newStatus == AmbulanceBookingStatus.COMPLETED
                     && isSameHospital
@@ -206,9 +212,11 @@ public class AmbulanceController {
                     String vehicleDesc = b.getVehicle() != null ? b.getVehicle().getVehicleNumber() : b.getVehicleNumber();
                     String typeDesc    = b.getAmbulanceType() != null ? b.getAmbulanceType().getName() : "Ambulance";
                     String description = typeDesc + (vehicleDesc != null ? " (" + vehicleDesc + ")" : "");
-                    invoiceService.addAmbulanceItemToIpdInvoice(
+                    boolean added = invoiceService.addAmbulanceItemToIpdInvoice(
                             b.getPatient().getId(), b.getId(), b.getCharge(), description);
-                    b.setMergedToIpd(true);
+                    if (added) b.setMergedToIpd(true);
+                    // else: leave mergedToIpd as-is — admit-time merge will pick it up
+                    // when the patient is actually admitted.
                 } catch (Exception ignored) {
                     // Non-fatal: billing staff can add manually if auto-merge fails
                 }
