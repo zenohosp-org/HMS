@@ -22,6 +22,7 @@ function calcAge(dob) {
 }
 
 import { timeAgo } from "@/utils/date";
+import { fmtId } from "@/utils/idFormat";
 
 function buildLast14Days(items, dateField) {
   const counts = {};
@@ -153,7 +154,7 @@ function PatientRowCard({ p }) {
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-800 dark:text-[#e5e5e5]">{p.firstName} {p.lastName}</p>
-            <p className="text-xs text-slate-600 dark:text-[#999999]">{p.uhid}</p>
+            <p className="text-xs text-slate-600 dark:text-[#999999]">{fmtId(p.uhid)}</p>
           </div>
         </div>
       </td>

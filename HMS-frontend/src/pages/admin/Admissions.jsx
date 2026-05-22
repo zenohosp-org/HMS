@@ -14,6 +14,7 @@ import {
   Calendar, AlertCircle, Receipt, Scissors, RotateCcw, Loader2
 } from 'lucide-react'
 import { timeAgo, fmtDateTime } from '@/utils/date'
+import { fmtId } from '@/utils/idFormat'
 
 const STATUS_COLORS = {
   ADMITTED: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
@@ -214,7 +215,7 @@ export default function Admissions() {
                     </div>
                     <div>
                       <p className="font-semibold text-sm text-slate-900 dark:text-white">{a.patientName}</p>
-                      <p className="text-xs text-slate-500">UHID: {a.patientUhid}</p>
+                      <p className="text-xs text-slate-500">UHID: {fmtId(a.patientUhid)}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
@@ -255,8 +256,8 @@ export default function Admissions() {
                 <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
                   <div className="text-right">
-                    {a.ipdId && <p className="text-xs font-mono font-bold text-slate-900 dark:text-slate-300">{a.ipdId}</p>}
-                    <p className="text-[10px] font-mono text-slate-400">{a.admissionNumber}</p>
+                    {a.ipdId && <p className="text-xs font-mono font-bold text-slate-900 dark:text-slate-300">{fmtId(a.ipdId)}</p>}
+                    <p className="text-[10px] font-mono text-slate-400">{fmtId(a.admissionNumber)}</p>
                   </div>
                 </div>
               </div>
@@ -277,12 +278,12 @@ export default function Admissions() {
               {filtered.map(a => (
                 <tr key={a.id} onClick={() => setSelectedAdmission(a)} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''} ${a.inOt ? 'border-l-4 border-l-violet-500' : ''}`}>
                   <td className="px-4 py-3">
-                    {a.ipdId && <p className="font-mono text-xs font-bold text-slate-900 dark:text-slate-300">{a.ipdId}</p>}
-                    <p className="font-mono text-[10px] text-slate-400">{a.admissionNumber}</p>
+                    {a.ipdId && <p className="font-mono text-xs font-bold text-slate-900 dark:text-slate-300">{fmtId(a.ipdId)}</p>}
+                    <p className="font-mono text-[10px] text-slate-400">{fmtId(a.admissionNumber)}</p>
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-sm text-slate-900 dark:text-white">{a.patientName}</p>
-                    <p className="text-xs text-slate-500">{a.patientUhid}</p>
+                    <p className="text-xs text-slate-500">{fmtId(a.patientUhid)}</p>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{a.departmentName || '—'}</td>
                   <td className="px-4 py-3">

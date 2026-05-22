@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { invoiceApi, hospitalServiceApi, admissionApi, radiologyApi, patientServicesApi } from '@/utils/api'
+import { fmtId } from '@/utils/idFormat'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import {
@@ -192,7 +193,7 @@ export default function ViewBillingModal({ admission, onClose }) {
               <Receipt className="w-4 h-4 text-blue-500" /> Billing Details
             </h2>
             <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">
-              {admission.patientName} · {admission.admissionNumber}
+              {admission.patientName} · {fmtId(admission.admissionNumber)}
             </p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">

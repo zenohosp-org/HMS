@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { radiologyApi } from "@/utils/api";
+import { fmtId } from "@/utils/idFormat";
 import { ArrowLeft, Printer, Loader2, ScanLine, AlertCircle } from "lucide-react";
 const PRIORITY_CLS = {
   ROUTINE: "bg-slate-100 text-slate-600 border-slate-200",
@@ -39,9 +40,9 @@ function RadiologyReportView() {
   }<div className="px-8 py-6 border-b-2 border-slate-200 dark:border-slate-400"><div className="flex items-start justify-between"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-lg bg-slate-100 dark:bg-slate-200 flex items-center justify-center shrink-0"><ScanLine className="w-7 h-7 text-slate-900 dark:text-white dark:text-slate-300" /></div><div><h1 className="text-xl font-bold text-slate-900 dark:text-white">{user?.hospitalName ?? "Hospital"}</h1><p className="text-sm text-slate-500 dark:text-[#888888] mt-0.5">Radiology Department</p></div></div><div className="text-right"><span className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-200 text-slate-900 dark:text-white dark:text-slate-300">
                                 Department of Radiology
                             </span>{order.reportId && <p className="text-xs text-slate-600 dark:text-[#999999] mt-2 font-mono">
-                                    Report ID: <span className="font-bold text-slate-700 dark:text-[#cccccc]">{order.reportId}</span></p>}</div></div></div>{
+                                    Report ID: <span className="font-bold text-slate-700 dark:text-[#cccccc]">{fmtId(order.reportId)}</span></p>}</div></div></div>{
     /* Patient info grid */
-  }<div className="px-8 py-6 border-b border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0d0d0d]"><div className="grid grid-cols-2 gap-x-8 gap-y-4"><InfoRow label="Patient Name" value={order.patientName} /><InfoRow label="Patient ID" value={order.patientUhid} bold /><InfoRow label="Referred By" value={order.referredByName} /><InfoRow label="Technician" value={order.technicianName ?? "N/A"} /><InfoRow label="Scan Date" value={fmt(order.scannedAt)} /><InfoRow label="Report Date" value={fmt(order.reportedAt)} /></div></div>{
+  }<div className="px-8 py-6 border-b border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0d0d0d]"><div className="grid grid-cols-2 gap-x-8 gap-y-4"><InfoRow label="Patient Name" value={order.patientName} /><InfoRow label="Patient ID" value={fmtId(order.patientUhid)} bold /><InfoRow label="Referred By" value={order.referredByName} /><InfoRow label="Technician" value={order.technicianName ?? "N/A"} /><InfoRow label="Scan Date" value={fmt(order.scannedAt)} /><InfoRow label="Report Date" value={fmt(order.reportedAt)} /></div></div>{
     /* Investigation block */
   }<div className="px-8 py-6 space-y-5">{
     /* Investigation tab */

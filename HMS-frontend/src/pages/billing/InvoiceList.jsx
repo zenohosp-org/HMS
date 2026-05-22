@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { invoiceApi, bankApi } from "@/utils/api";
+import { fmtId } from "@/utils/idFormat";
 import { useNotification } from "@/context/NotificationContext";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
@@ -243,13 +244,13 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:right">₹${Number(item.unitPrice).toLocaleString('en-IN')}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;font-weight:600;color:#111;text-align:right">₹${Number(item.totalPrice).toLocaleString('en-IN')}</td>
       </tr>`).join('')
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Invoice ${detail.invoiceNumber}</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Invoice ${fmtId(detail.invoiceNumber)}</title>
       <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:36px}table{width:100%;border-collapse:collapse}@media print{body{padding:24px}}</style>
       </head><body>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #10b981">
         <div><div style="font-size:22px;font-weight:800;color:#10b981">ZenoHosp HMS</div><div style="font-size:11px;color:#6b7280;margin-top:2px">${user?.hospitalName ?? ''}</div></div>
         <div style="text-align:right">
-          <div style="font-size:16px;font-weight:700">${detail.invoiceNumber}</div>
+          <div style="font-size:16px;font-weight:700">${fmtId(detail.invoiceNumber)}</div>
           <div style="font-size:11px;color:#6b7280;margin-top:4px">${detail.createdAt ? new Date(detail.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'long', year: 'numeric' }) : ''}</div>
           <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusStyle[detail.status] ?? statusStyle.UNPAID}">${detail.status}</span></div>
         </div>
@@ -257,7 +258,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
       <div style="margin-bottom:20px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Billed To</div>
         <div style="font-size:15px;font-weight:700">${detail.patientName ?? '—'}</div>
-        ${detail.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${detail.patientUhid}</div>` : ''}
+        ${detail.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${fmtId(detail.patientUhid)}</div>` : ''}
       </div>
       <table><thead><tr style="background:#f3f4f6">
         <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Type</th>
@@ -315,11 +316,11 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0">
           <div>
             <h2 className="font-bold text-slate-900 dark:text-white text-base">
-              {loading ? 'Loading…' : detail?.invoiceNumber}
+              {loading ? 'Loading…' : fmtId(detail?.invoiceNumber)}
             </h2>
             {!loading && detail && (
               <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">
-                {detail.patientName}{detail.patientUhid ? ` · ${detail.patientUhid}` : ''} · {invoiceDate}
+                {detail.patientName}{detail.patientUhid ? ` · ${fmtId(detail.patientUhid)}` : ''} · {invoiceDate}
               </p>
             )}
           </div>
@@ -695,7 +696,7 @@ function MarkAsPaidModal({ invoice, onClose, onPaid }) {
             <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-emerald-500" /> Mark as Paid
             </h2>
-            <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">{invoice.invoiceNumber} · {fmt(invoice.total)}</p>
+            <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">{fmtId(invoice.invoiceNumber)} · {fmt(invoice.total)}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">
             <X className="w-4 h-4" />
@@ -881,14 +882,14 @@ function InvoiceList() {
                   : filteredInvoices.map((inv) => (
                     <tr key={inv.id} className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                       <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900 dark:text-white">{inv.invoiceNumber}</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{fmtId(inv.invoiceNumber)}</div>
                         <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-0.5">
-                          {inv.admissionNumber || `ID: ${inv.id?.slice(0, 8)}…`}
+                          {fmtId(inv.admissionNumber) || `ID: ${inv.id?.slice(0, 8)}…`}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700 dark:text-[#ccc]">
                         {inv.patientName || '—'}
-                        {inv.patientUhid && <div className="text-[11px] text-slate-400 dark:text-[#666]">{inv.patientUhid}</div>}
+                        {inv.patientUhid && <div className="text-[11px] text-slate-400 dark:text-[#666]">{fmtId(inv.patientUhid)}</div>}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600 dark:text-[#aaaaaa]">
                         {new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}

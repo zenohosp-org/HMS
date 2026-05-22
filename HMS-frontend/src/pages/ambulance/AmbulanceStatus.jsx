@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { ambulanceApi } from "@/utils/api";
+import { fmtId } from "@/utils/idFormat";
 import {
   Ambulance, Search, CheckCircle2, Clock3, XCircle,
   Truck, Activity, Filter, MapPin, Car, Phone, User
@@ -218,7 +219,7 @@ export default function AmbulanceStatus() {
                     {b.patient ? (
                       <div>
                         <p className="text-sm font-semibold text-slate-800 dark:text-white">{b.patient.firstName} {b.patient.lastName}</p>
-                        <p className="text-xs text-slate-400">{b.patient.uhid}</p>
+                        <p className="text-xs text-slate-400">{fmtId(b.patient.uhid)}</p>
                       </div>
                     ) : <p className="text-sm text-slate-400 italic">Walk-in / No patient</p>}
                   </div>

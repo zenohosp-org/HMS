@@ -2,6 +2,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { checkupApi, patientApi, doctorsApi } from "@/utils/api";
+import { fmtId } from "@/utils/idFormat";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
   ClipboardList, Plus, Search, X, Calendar, Clock, User,
@@ -66,7 +67,7 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
     setPatientResults(data); setPatientOpen(true);
   };
 
-  const selectPatient = p => { setForm(f => ({ ...f, patient: p })); setPatientQuery(`${p.firstName} ${p.lastName} (${p.uhid})`); setPatientOpen(false); };
+  const selectPatient = p => { setForm(f => ({ ...f, patient: p })); setPatientQuery(`${p.firstName} ${p.lastName} (${fmtId(p.uhid)})`); setPatientOpen(false); };
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -126,7 +127,7 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
                     {patientResults.slice(0, 5).map(p => (
                       <button key={p.id} onClick={() => selectPatient(p)} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222] border-b border-slate-100 dark:border-[#2a2a2a] last:border-0">
                         <p className="text-sm font-semibold text-slate-800 dark:text-white">{p.firstName} {p.lastName}</p>
-                        <p className="text-xs text-slate-400">{p.uhid} · {p.phone}</p>
+                        <p className="text-xs text-slate-400">{fmtId(p.uhid)} · {p.phone}</p>
                       </button>
                     ))}
                   </div>
@@ -403,11 +404,11 @@ export default function CheckupBookings() {
                 {filtered.map(b => (
                   <tr key={b.id} className="border-b border-slate-50 dark:border-[#1a1a1a] hover:bg-slate-50/50 dark:hover:bg-[#1a1a1a]/50 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="text-xs font-bold text-slate-700 dark:text-[#ccc]">{b.bookingNumber}</p>
+                      <p className="text-xs font-bold text-slate-700 dark:text-[#ccc]">{fmtId(b.bookingNumber)}</p>
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-sm font-semibold text-slate-800 dark:text-white">{b.patient?.firstName} {b.patient?.lastName}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{b.patient?.uhid}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{fmtId(b.patient?.uhid)}</p>
                     </td>
                     <td className="px-4 py-3 max-w-[160px]">
                       <p className="text-sm text-slate-700 dark:text-[#ccc] truncate">{b.healthPackage?.name}</p>

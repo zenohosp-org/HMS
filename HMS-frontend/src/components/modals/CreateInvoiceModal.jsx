@@ -6,6 +6,7 @@ import {
   patientApi, invoiceApi, bankApi, doctorsApi, hospitalServiceApi
 } from '@/utils/api'
 import { generateInvoiceNumber } from '@/utils/validators'
+import { fmtId } from '@/utils/idFormat'
 import {
   X, Info, Search, Plus, Trash2, Printer, BedDouble, ScanLine,
   Stethoscope, FlaskConical, Pill, Wrench, Loader2, Sparkles,
@@ -280,7 +281,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{patient.firstName} {patient.lastName}</p>
-                      <p className="text-xs text-emerald-600 dark:text-emerald-500">{patient.uhid}{patient.phone ? ` · ${patient.phone}` : ''}</p>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-500">{fmtId(patient.uhid)}{patient.phone ? ` · ${patient.phone}` : ''}</p>
                     </div>
                   </div>
                   <button onClick={() => { setPatient(null); setSuggestions(null) }} className="p-1 text-emerald-500 hover:text-emerald-700 transition-colors">
@@ -299,7 +300,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                         <button key={p.id} type="button" onClick={() => selectPatient(p)}
                           className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0">
                           <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{p.firstName} {p.lastName}</p>
-                          <p className="text-xs text-slate-400">{p.uhid}</p>
+                          <p className="text-xs text-slate-400">{fmtId(p.uhid)}</p>
                         </button>
                       ))}
                     </div>
@@ -647,7 +648,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
         <div className="border-t border-gray-200 pt-4 mb-6">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Bill To</p>
           <p className="font-bold">{patient?.firstName} {patient?.lastName}</p>
-          <p className="text-sm text-gray-500">{patient?.uhid}</p>
+          <p className="text-sm text-gray-500">{fmtId(patient?.uhid)}</p>
         </div>
         <table className="w-full text-sm border-collapse">
           <thead>

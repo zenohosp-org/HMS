@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { ambulanceApi } from '@/utils/api'
+import { fmtId } from '@/utils/idFormat'
 import Pagination from '@/components/ui/Pagination'
 import {
   Ambulance, Search, CheckCircle2, Clock, XCircle,
@@ -179,7 +180,7 @@ export default function AmbulanceBilling() {
       <div style="margin-bottom:20px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Patient</div>
         ${patientName
-          ? `<div style="font-size:15px;font-weight:700">${patientName}</div>${uhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${uhid}</div>` : ''}`
+          ? `<div style="font-size:15px;font-weight:700">${patientName}</div>${uhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${fmtId(uhid)}</div>` : ''}`
           : `<div style="font-size:14px;font-weight:600;color:#d97706">Walk-in / Emergency</div>`}
       </div>
       <div style="background:#f9fafb;border-radius:8px;padding:16px;margin-bottom:20px">
@@ -340,7 +341,7 @@ export default function AmbulanceBilling() {
                           <>
                             <p className="font-semibold text-sm text-slate-900 dark:text-white">{patName}</p>
                             {b.patient?.uhid && (
-                              <p className="text-xs text-slate-400 mt-0.5">{b.patient.uhid}</p>
+                              <p className="text-xs text-slate-400 mt-0.5">{fmtId(b.patient.uhid)}</p>
                             )}
                           </>
                         ) : (

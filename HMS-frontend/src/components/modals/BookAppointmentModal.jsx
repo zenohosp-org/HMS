@@ -4,6 +4,7 @@ import { X, Calendar, Clock, FileText, Search, ChevronLeft, ChevronRight, CheckC
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { patientApi, doctorsApi, appointmentsApi, checkupApi } from "@/utils/api";
+import { fmtId } from "@/utils/idFormat";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -307,7 +308,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                             <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{p.firstName[0]}</div>
                             <div className="min-w-0">
                               <p className="text-sm font-semibold text-slate-800 dark:text-[#cccccc] truncate">{p.firstName} {p.lastName}</p>
-                              <p className="text-[11px] text-slate-400 dark:text-[#666666]">{p.uhid}</p>
+                              <p className="text-[11px] text-slate-400 dark:text-[#666666]">{fmtId(p.uhid)}</p>
                             </div>
                           </button>
                         ))}
@@ -320,7 +321,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                       <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400 shrink-0">{selectedPatient.firstName[0]}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 truncate">{selectedPatient.firstName} {selectedPatient.lastName}</p>
-                        <p className="text-[11px] text-emerald-600 dark:text-emerald-500">{selectedPatient.uhid}</p>
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-500">{fmtId(selectedPatient.uhid)}</p>
                       </div>
                       <button type="button" onClick={() => { setPatientId(""); setPastDoctors([]); }} className="text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300"><X className="w-3.5 h-3.5" /></button>
                     </div>

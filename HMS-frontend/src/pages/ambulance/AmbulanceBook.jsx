@@ -2,6 +2,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { ambulanceApi, patientApi } from "@/utils/api";
+import { fmtId } from "@/utils/idFormat";
 import Pagination from "@/components/ui/Pagination";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
@@ -99,7 +100,7 @@ function PatientSearch({ hospitalId, value, onChange }) {
     finally { setLoading(false); }
   };
 
-  const select = (p) => { onChange(p); setQuery(`${p.firstName} ${p.lastName} (${p.uhid})`); setOpen(false); };
+  const select = (p) => { onChange(p); setQuery(`${p.firstName} ${p.lastName} (${fmtId(p.uhid)})`); setOpen(false); };
   const clear = () => { onChange(null); setQuery(""); setResults([]); };
 
   return (
@@ -124,7 +125,7 @@ function PatientSearch({ hospitalId, value, onChange }) {
           ) : results.slice(0, 6).map(p => (
             <button key={p.id} onClick={() => select(p)} className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] border-b border-slate-100 dark:border-[#222] last:border-0 transition-colors">
               <p className="text-sm font-semibold text-slate-800 dark:text-white">{p.firstName} {p.lastName}</p>
-              <p className="text-xs text-slate-600 mt-0.5">{p.uhid} · {p.phone}</p>
+              <p className="text-xs text-slate-600 mt-0.5">{fmtId(p.uhid)} · {p.phone}</p>
             </button>
           ))}
         </div>

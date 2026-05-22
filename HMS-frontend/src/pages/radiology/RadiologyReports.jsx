@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { radiologyApi } from "@/utils/api";
+import { fmtId } from "@/utils/idFormat";
 import Pagination from "@/components/ui/Pagination";
 import { FileText, Search, Loader2, CheckCircle2, User, Clock, ExternalLink } from "lucide-react";
 const PAGE_SIZE = 8;
@@ -66,7 +67,7 @@ function RadiologyReports() {
       /* Column headers */
     }<div className="hidden md:grid grid-cols-[2.5fr_2fr_2fr_1.5fr_1fr_auto] gap-4 px-6 py-2.5 bg-slate-50 dark:bg-[#0d0d0d] border-b border-slate-100 dark:border-[#1e1e1e]">{["Patient", "Investigation", "Referred By", "Completed", "Priority", "Action"].map((h) => <p key={h} className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999]">{h}</p>)}</div><div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((order) => <div key={order.id} className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors md:grid md:grid-cols-[2.5fr_2fr_2fr_1.5fr_1fr_auto] md:gap-4 md:items-center space-y-2 md:space-y-0">{
       /* Patient */
-    }<div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0"><User className="w-4 h-4 text-slate-400 dark:text-[#888]" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{order.patientName}</p><p className="text-xs text-slate-600 dark:text-[#999999]">{order.patientUhid}</p></div></div>{
+    }<div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0"><User className="w-4 h-4 text-slate-400 dark:text-[#888]" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{order.patientName}</p><p className="text-xs text-slate-600 dark:text-[#999999]">{fmtId(order.patientUhid)}</p></div></div>{
         /* Investigation */
       }<div><p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">{order.serviceName}</p>{order.billNo && <p className="text-xs font-mono text-slate-600 dark:text-[#999999] mt-0.5">{order.billNo}</p>}</div>{
         /* Referred by */

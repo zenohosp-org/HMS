@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { admissionApi, departmentApi, doctorsApi, patientApi, bedApi, patientAdvanceApi, bankApi } from '@/utils/api'
 import api from '@/utils/api'
+import { fmtId } from '@/utils/idFormat'
 import { X, Search, BedDouble, User, CheckCircle2, Loader2 } from 'lucide-react'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 
@@ -234,7 +235,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                         <p className="font-semibold text-slate-900 dark:text-white text-sm">
                           {selectedPatient.firstName} {selectedPatient.lastName}
                         </p>
-                        <p className="text-xs text-slate-500">UHID: {selectedPatient.uhid} · {selectedPatient.gender}</p>
+                        <p className="text-xs text-slate-500">UHID: {fmtId(selectedPatient.uhid)} · {selectedPatient.gender}</p>
                       </div>
                     </div>
                     <button onClick={() => setSelectedPatient(null)} className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
@@ -261,7 +262,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                             <User className="w-4 h-4 text-slate-400 shrink-0" />
                             <div>
                               <p className="text-sm font-medium text-slate-900 dark:text-white">{p.firstName} {p.lastName}</p>
-                              <p className="text-xs text-slate-500">UHID: {p.uhid}</p>
+                              <p className="text-xs text-slate-500">UHID: {fmtId(p.uhid)}</p>
                             </div>
                           </button>
                         ))}

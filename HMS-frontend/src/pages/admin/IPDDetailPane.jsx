@@ -13,6 +13,7 @@ import {
   roomLogsApi, radiologyApi, ambulanceApi, assetApi, invoiceApi,
   hospitalServiceApi, patientServicesApi, admissionApi, recordApi
 } from '@/utils/api'
+import { fmtId } from '@/utils/idFormat'
 import axios from 'axios'
 import SSOCookieManager from '@/utils/ssoManager'
 
@@ -573,7 +574,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                 )}
               </div>
               <h2 className="text-base font-bold text-slate-900 dark:text-white leading-tight">{admission.patientName}</h2>
-              <p className="text-xs text-slate-400 mt-0.5">UHID: {admission.patientUhid}</p>
+              <p className="text-xs text-slate-400 mt-0.5">UHID: {fmtId(admission.patientUhid)}</p>
             </div>
             <button onClick={onClose} className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-[#1e1e1e] text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
               <X className="w-4 h-4" />
@@ -613,9 +614,9 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
           <div className="flex items-center justify-between mt-3.5">
             <div className="flex items-center gap-2">
               {admission.ipdId && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900">{admission.ipdId}</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900">{fmtId(admission.ipdId)}</span>
               )}
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 border border-slate-200 dark:border-[#2a2a2a]">{admission.admissionNumber}</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 border border-slate-200 dark:border-[#2a2a2a]">{fmtId(admission.admissionNumber)}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <button onClick={() => navigate(`/patients/${admission.patientId}`)}
@@ -925,7 +926,7 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">Final Invoice</p>
-                      <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5 font-mono">{finalInvoice.invoiceNumber} · {fmtDate(finalInvoice.createdAt)}</p>
+                      <p className="text-[11px] text-slate-400 dark:text-[#555] mt-0.5 font-mono">{fmtId(finalInvoice.invoiceNumber)} · {fmtDate(finalInvoice.createdAt)}</p>
                     </div>
                     <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                       (finalInvoice.status === 'PAID' || finalInvoice.status === 'SETTLED')

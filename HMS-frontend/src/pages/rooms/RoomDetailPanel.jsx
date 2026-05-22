@@ -6,6 +6,7 @@ import {
   Search, Plus, Loader2, ArrowUpRight, Tag, AlertCircle, BedDouble,
 } from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
+import { fmtId } from "@/utils/idFormat";
 
 function AssetStatusBadge({ status }) {
   const map = {
@@ -288,7 +289,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs, onRoomUpdated }) {
             {room.currentPatient ? (
               <div className="space-y-1 pl-1">
                 <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{room.currentPatient.firstName} {room.currentPatient.lastName}</p>
-                <p className="text-xs text-slate-600 dark:text-[#999999]">{room.currentPatient.uhid}</p>
+                <p className="text-xs text-slate-600 dark:text-[#999999]">{fmtId(room.currentPatient.uhid)}</p>
               </div>
             ) : <p className="text-sm text-slate-600 dark:text-[#999999] pl-1">No patient assigned</p>}
           </div>

@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { patientApi, staffApi, hospitalServiceApi, radiologyApi, admissionApi } from "@/utils/api";
+import { fmtId } from "@/utils/idFormat";
 import { X, Search, Loader2, UserPlus, ChevronLeft, CheckCircle2, BedDouble } from "lucide-react";
 
 const PRIORITIES = ["ROUTINE", "URGENT", "STAT"];
@@ -250,7 +251,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                           {selectedPatient.firstName} {selectedPatient.lastName}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-[#888]">
-                          {selectedPatient.uhid ?? "New patient"}
+                          {fmtId(selectedPatient.uhid) ?? "New patient"}
                           {selectedPatient.phone ? ` · ${selectedPatient.phone}` : ""}
                         </p>
                       </div>
@@ -273,7 +274,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                       <BedDouble className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
                       <div>
                         <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                          Currently admitted · {activeAdmission.admissionNumber}
+                          Currently admitted · {fmtId(activeAdmission.admissionNumber)}
                         </p>
                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
                           This order will be linked to their active IPD admission and included in the discharge bill automatically.
@@ -309,7 +310,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                               {p.firstName} {p.lastName}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-[#999]">
-                              {p.uhid}{p.phone ? ` · ${p.phone}` : ""}
+                              {fmtId(p.uhid)}{p.phone ? ` · ${p.phone}` : ""}
                             </p>
                           </div>
                         </button>

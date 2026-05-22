@@ -6,6 +6,7 @@ import { invoiceApi, bankApi, hospitalServiceApi, patientServicesApi, radiologyA
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { generateInvoiceNumber } from '@/utils/validators'
+import { fmtId } from '@/utils/idFormat'
 import {
   X, Receipt, CheckCircle2, Loader2, AlertCircle, Plus, Trash2,
   BedDouble, ScanLine, Stethoscope, Pill, FlaskConical, Wrench,
@@ -598,7 +599,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
               <Receipt className="w-4 h-4 text-indigo-500" /> IPD Bill
             </h2>
             <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">
-              {admission.patientName} · {admission.admissionNumber}
+              {admission.patientName} · {fmtId(admission.admissionNumber)}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -846,7 +847,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                         return (
                           <div key={a.id} className="flex items-center justify-between px-4 py-2 text-xs">
                             <div>
-                              <span className="font-semibold text-emerald-700 dark:text-emerald-300">{a.receiptNumber}</span>
+                              <span className="font-semibold text-emerald-700 dark:text-emerald-300">{fmtId(a.receiptNumber)}</span>
                               <span className="text-emerald-600/70 dark:text-emerald-400/60 ml-2">
                                 {a.source} · {a.paymentMethod}
                               </span>
@@ -925,7 +926,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   <label className="label">Bill Notes (optional)</label>
                   <input
                     className="input"
-                    placeholder={`IPD Bill — Admission ${admission.admissionNumber}`}
+                    placeholder={`IPD Bill — Admission ${fmtId(admission.admissionNumber)}`}
                     value={billNotes}
                     onChange={e => setBillNotes(e.target.value)}
                     disabled={isPaid}

@@ -7,6 +7,7 @@ import {
   Building2, Layers, LayoutGrid, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
+import { fmtId } from "@/utils/idFormat";
 import AssignAttenderModal from "./AssignAttenderModal";
 import RoomDetailPanel from "./RoomDetailPanel";
 
@@ -67,7 +68,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onMe
           <div className="flex items-center gap-1 leading-none">
             <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{roomInfo.name}</p>
             {roomData?.roomCode && (
-              <span className="text-[9px] font-mono text-slate-400 dark:text-[#888888]">{roomData.roomCode}</span>
+              <span className="text-[9px] font-mono text-slate-400 dark:text-[#888888]">{fmtId(roomData.roomCode)}</span>
             )}
           </div>
           <div className="flex items-center gap-1 mt-1.5 flex-wrap">
@@ -104,7 +105,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onMe
             <span className="text-[11px] font-semibold text-slate-800 dark:text-[#dddddd] truncate">
               {roomData.currentPatient.firstName} {roomData.currentPatient.lastName}
             </span>
-            <span className="text-[9px] text-slate-400 dark:text-[#888888] shrink-0 font-mono">{roomData.currentPatient.uhid}</span>
+            <span className="text-[9px] text-slate-400 dark:text-[#888888] shrink-0 font-mono">{fmtId(roomData.currentPatient.uhid)}</span>
           </div>
           {roomData.attenderName ? (
             <div className="flex items-baseline gap-1.5 min-w-0">
@@ -467,7 +468,7 @@ function Rooms() {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-bold text-slate-900 dark:text-white">{room.roomNumber}</p>
-                        {room.roomCode && <span className="text-[10px] font-mono text-slate-400">{room.roomCode}</span>}
+                        {room.roomCode && <span className="text-[10px] font-mono text-slate-400">{fmtId(room.roomCode)}</span>}
                         <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border ${
                           TYPE_BADGE[room.roomType] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-[#1e1e1e] dark:text-[#888888] dark:border-[#2a2a2a]"
                         }`}>{room.roomType}</span>
@@ -495,7 +496,7 @@ function Rooms() {
                           <div>
                             <p className="text-[10px] text-slate-400 dark:text-[#666666] uppercase tracking-wide">Patient</p>
                             <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{room.currentPatient.firstName} {room.currentPatient.lastName}</p>
-                            <p className="text-[11px] text-slate-500 dark:text-[#999999] font-mono">{room.currentPatient.uhid}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-[#999999] font-mono">{fmtId(room.currentPatient.uhid)}</p>
                           </div>
                           {room.attenderName ? (
                             <div>

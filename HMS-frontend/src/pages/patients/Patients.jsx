@@ -6,6 +6,7 @@ import { patientApi } from "@/utils/api";
 import PatientModal from "@/components/modals/PatientModal";
 import Pagination from "@/components/ui/Pagination";
 import { calcAge, formatDate } from "@/utils/validators";
+import { fmtId } from "@/utils/idFormat";
 import { Search, Loader2, Users, MoreHorizontal, Pencil, ExternalLink } from "lucide-react";
 
 const PAGE_SIZE = 30;
@@ -162,7 +163,7 @@ function Patients() {
                             <p className="font-bold text-[15px] text-slate-900 dark:text-white leading-tight">
                               {p.firstName} {p.lastName}
                             </p>
-                            <p className="text-xs text-slate-600 dark:text-slate-500 mt-0.5">{p.uhid}</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-500 mt-0.5">{fmtId(p.uhid)}</p>
                           </div>
                         </div>
                       </td>

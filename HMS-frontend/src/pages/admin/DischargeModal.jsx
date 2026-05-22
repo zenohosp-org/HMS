@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { admissionApi, invoiceApi } from '@/utils/api'
+import { fmtId } from '@/utils/idFormat'
 import { useNotification } from '@/context/NotificationContext'
 import { X, LogOut, CheckCircle2, Calendar, Loader2, AlertCircle, IndianRupee } from 'lucide-react'
 
@@ -81,7 +82,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
               <LogOut className="w-4 h-4 text-rose-500" /> Discharge Patient
             </h2>
             <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">
-              {admission.patientName} · {admission.admissionNumber}
+              {admission.patientName} · {fmtId(admission.admissionNumber)}
             </p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 transition-colors">
@@ -201,13 +202,13 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#666] mb-2">Patient</p>
           <p className="text-xl font-bold text-slate-900 dark:text-white leading-tight">{admission.patientName}</p>
           {(admission.patientUhid || admission.uhid) && (
-            <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">UHID: {admission.patientUhid || admission.uhid}</p>
+            <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">UHID: {fmtId(admission.patientUhid || admission.uhid)}</p>
           )}
         </div>
 
         <div className="rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] divide-y divide-slate-100 dark:divide-[#1a1a1a] text-sm overflow-hidden">
           {[
-            ['Admission No.', admission.admissionNumber],
+            ['Admission No.', fmtId(admission.admissionNumber)],
             ['IPD No.', admission.ipdNumber || admission.ipd_number || null],
             ['Room / Ward', [admission.roomNumber, admission.wardName].filter(Boolean).join(' · ') || '—'],
             ['Admitting Doctor', admission.admittingDoctorName || admission.doctorName || '—'],

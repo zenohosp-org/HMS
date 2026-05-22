@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { roomLogsApi } from "@/utils/api";
+import { fmtId } from "@/utils/idFormat";
 import Pagination from "@/components/ui/Pagination";
 import {
   ArrowLeft,
@@ -175,7 +176,7 @@ function RoomLogsPage() {
                         <User className="w-3.5 h-3.5 text-slate-600 dark:text-[#999999] shrink-0 mt-0.5" />
                         <div>
                           <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{log.patientName}</p>
-                          {log.patientUhid && <p className="text-xs text-slate-600 dark:text-[#999999]">{log.patientUhid}</p>}
+                          {log.patientUhid && <p className="text-xs text-slate-600 dark:text-[#999999]">{fmtId(log.patientUhid)}</p>}
                         </div>
                       </div>
                     ) : (

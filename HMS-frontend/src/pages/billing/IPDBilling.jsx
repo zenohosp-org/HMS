@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi, admissionApi } from '@/utils/api'
+import { fmtId } from '@/utils/idFormat'
 import Pagination from '@/components/ui/Pagination'
 import FinalizeIPDBillingModal from '@/components/modals/FinalizeIPDBillingModal'
 import { InvoiceDetailModal } from '@/pages/billing/InvoiceList'
@@ -160,7 +161,7 @@ export default function IPDBilling() {
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;font-weight:600;color:#111;text-align:right">₹${Number(item.totalPrice).toLocaleString('en-IN')}</td>
       </tr>`).join('')
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
-      <title>Invoice ${inv.invoiceNumber}</title>
+      <title>Invoice ${fmtId(inv.invoiceNumber)}</title>
       <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:36px}table{width:100%;border-collapse:collapse}@media print{body{padding:24px}}</style>
     </head><body>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #10b981">
@@ -169,7 +170,7 @@ export default function IPDBilling() {
           <div style="font-size:11px;color:#6b7280;margin-top:2px">${user?.hospitalName ?? 'Hospital Management System'}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:16px;font-weight:700">${inv.invoiceNumber}</div>
+          <div style="font-size:16px;font-weight:700">${fmtId(inv.invoiceNumber)}</div>
           <div style="font-size:11px;color:#6b7280;margin-top:4px">${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'long', year: 'numeric' }) : '—'}</div>
           <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusCls[inv.status] ?? statusCls.UNPAID}">${inv.status}</span></div>
         </div>
@@ -177,7 +178,7 @@ export default function IPDBilling() {
       <div style="margin-bottom:20px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Billed To</div>
         <div style="font-size:15px;font-weight:700">${inv.patientName ?? '—'}</div>
-        ${inv.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${inv.patientUhid}</div>` : ''}
+        ${inv.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${fmtId(inv.patientUhid)}</div>` : ''}
         ${inv.paymentMethod ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">Payment: ${inv.paymentMethod}</div>` : ''}
       </div>
       <table>
@@ -343,14 +344,14 @@ export default function IPDBilling() {
                       className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all"
                     >
                       <td className="px-5 py-4">
-                        <p className="font-bold text-sm text-slate-900 dark:text-white">{inv.invoiceNumber}</p>
+                        <p className="font-bold text-sm text-slate-900 dark:text-white">{fmtId(inv.invoiceNumber)}</p>
                         <p className="text-xs text-slate-400 mt-0.5">
                           {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                         </p>
                       </td>
                       <td className="px-5 py-4">
                         <p className="font-semibold text-sm text-slate-900 dark:text-white">{inv.patientName ?? '—'}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{inv.patientUhid ?? ''}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{fmtId(inv.patientUhid) ?? ''}</p>
                       </td>
                       <td className="px-5 py-4">
                         {isIPDPending && !inv.items?.length ? (

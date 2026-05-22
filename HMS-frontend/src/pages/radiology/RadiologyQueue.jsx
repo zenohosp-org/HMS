@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { radiologyApi } from "@/utils/api";
+import { fmtId } from "@/utils/idFormat";
 import {
   ScanLine,
   Clock,
@@ -162,7 +163,7 @@ function QueueSection({ title, subtitle, color, orders, emptyText, emptySubtext,
     const PIcon = pmeta.icon;
     return <div key={order.id} className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors md:grid md:grid-cols-[2.5fr_2fr_1.5fr_1fr_1fr_auto] md:gap-4 md:items-center space-y-2 md:space-y-0" onClick={(e) => e.stopPropagation()}>{
       /* Patient */
-    }<div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#222222] flex items-center justify-center text-xs font-bold text-slate-600 dark:text-[#888888] shrink-0">{order.patientName[0]}</div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{order.patientName}</p><p className="text-xs text-slate-600 dark:text-[#999999]">{order.patientUhid}</p></div></div>{
+    }<div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#222222] flex items-center justify-center text-xs font-bold text-slate-600 dark:text-[#888888] shrink-0">{order.patientName[0]}</div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight">{order.patientName}</p><p className="text-xs text-slate-600 dark:text-[#999999]">{fmtId(order.patientUhid)}</p></div></div>{
         /* Investigation */
       }<div><p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">{order.serviceName}</p>{order.referredByName && <div className="flex items-center gap-1 mt-0.5"><Stethoscope className="w-3 h-3 text-slate-600 dark:text-[#999999]" /><p className="text-xs text-slate-600 dark:text-[#999999]">{order.referredByName}</p></div>}</div>{
         /* Technician */
