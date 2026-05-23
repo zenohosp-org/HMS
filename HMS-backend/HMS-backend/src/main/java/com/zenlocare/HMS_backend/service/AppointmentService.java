@@ -199,6 +199,40 @@ public class AppointmentService {
                 return uhid;
         }
 
+        // Permitted status transitions — mirrors the frontend STATUS_TRANSITIONS
+        // map in AppointmentsDashboard.jsx so a direct API call cannot put a row
+        // into an absurd state (e.g. COMPLETED → SCHEDULED, or BILLED back to anything).
+        // BILLED is set by InvoiceService and treated as terminal; CANCELLED/NO_SHOW
+        // can reset to SCHEDULED for reschedule.
+        private static final java.util.Map<Appointment.AppointmentStatus, java.util.Set<Appointment.AppointmentStatus>>
+                ALLOWED_TRANSITIONS = java.util.Map.of(
+                        Appointment.AppointmentStatus.SCHEDULED, java.util.EnumSet.of(
+                                Appointment.AppointmentStatus.CONFIRMED,
+                                Appointment.AppointmentStatus.CHECKED_IN,
+                                Appointment.AppointmentStatus.COMPLETED,
+                                Appointment.AppointmentStatus.CANCELLED,
+                                Appointment.AppointmentStatus.NO_SHOW),
+                        Appointment.AppointmentStatus.CONFIRMED, java.util.EnumSet.of(
+                                Appointment.AppointmentStatus.CHECKED_IN,
+                                Appointment.AppointmentStatus.COMPLETED,
+                                Appointment.AppointmentStatus.CANCELLED,
+                                Appointment.AppointmentStatus.NO_SHOW),
+                        Appointment.AppointmentStatus.CHECKED_IN, java.util.EnumSet.of(
+                                Appointment.AppointmentStatus.IN_PROGRESS,
+                                Appointment.AppointmentStatus.COMPLETED,
+                                Appointment.AppointmentStatus.CANCELLED),
+                        Appointment.AppointmentStatus.IN_PROGRESS, java.util.EnumSet.of(
+                                Appointment.AppointmentStatus.COMPLETED,
+                                Appointment.AppointmentStatus.CANCELLED),
+                        Appointment.AppointmentStatus.COMPLETED, java.util.EnumSet.of(
+                                Appointment.AppointmentStatus.BILLED),
+                        Appointment.AppointmentStatus.CANCELLED, java.util.EnumSet.of(
+                                Appointment.AppointmentStatus.SCHEDULED),
+                        Appointment.AppointmentStatus.NO_SHOW, java.util.EnumSet.of(
+                                Appointment.AppointmentStatus.SCHEDULED),
+                        Appointment.AppointmentStatus.BILLED, java.util.EnumSet.noneOf(
+                                Appointment.AppointmentStatus.class));
+
         // Statuses that occupy a slot in the day's token queue. Anything outside
         // this set (SCHEDULED / CANCELLED / NO_SHOW) holds no token.
         private static final java.util.Set<Appointment.AppointmentStatus> TOKEN_ELIGIBLE_STATUSES =
@@ -220,6 +254,15 @@ public class AppointmentService {
                 // and the save.
                 Appointment appointment = appointmentRepository.findByIdWithRelations(id)
                                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+                Appointment.AppointmentStatus current = appointment.getStatus();
+                if (current != status) {
+                        java.util.Set<Appointment.AppointmentStatus> allowed = ALLOWED_TRANSITIONS.get(current);
+                        if (allowed == null || !allowed.contains(status)) {
+                                throw new RuntimeException("Invalid status transition: "
+                                                + current + " → " + status);
+                        }
+                }
 
                 appointment.setStatus(status);
                 if (status == Appointment.AppointmentStatus.CANCELLED) {
