@@ -198,6 +198,22 @@ function SectionLabel({ icon: Icon, label, count, tone = "default" }) {
   );
 }
 
+// Tailwind-UI style stat cell — single column inside a divided strip.
+// No telemetry pills, no ping dots, no percentages. Just a label, a number,
+// and an optional sub-line for breakdowns.
+function StatCell({ label, value, dotClass, sub }) {
+  return (
+    <div className="px-5 py-4">
+      <div className="flex items-center gap-2">
+        {dotClass && <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />}
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#888]">{label}</p>
+      </div>
+      <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white tabular-nums leading-none">{value}</p>
+      {sub && <p className="mt-2 text-[11px] text-slate-500 dark:text-[#888] tabular-nums">{sub}</p>}
+    </div>
+  );
+}
+
 function Rooms() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -330,11 +346,6 @@ function Rooms() {
   const showInfrastructureView = infrastructure.length > 0;
   const availableCount = rooms.filter((r) => r.status === "AVAILABLE").length;
   const occupiedCount  = rooms.filter((r) => r.status === "OCCUPIED").length;
-  const occupancyPct = rooms.length > 0 ? Math.round((occupiedCount / rooms.length) * 100) : 0;
-  const occupancyTone =
-    occupancyPct >= 85 ? { fill: "bg-rose-500",    pill: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20",       label: "At capacity" } :
-    occupancyPct >= 60 ? { fill: "bg-amber-500",   pill: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20", label: "High" } :
-                         { fill: "bg-emerald-500", pill: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20", label: "Healthy" };
 
   // ICU + OT breakdowns for the metric card footers
   const icuAvailable = rooms.filter((r) => r.roomType === "ICU" && r.status === "AVAILABLE").length;
@@ -407,91 +418,14 @@ function Rooms() {
         </div>
       </div>
 
-      {/* ─── Hero metrics ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-
-        {/* Live Occupancy — spans 2 cols on xl */}
-        <div className="xl:col-span-2 bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-5">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#888]">Live Occupancy</p>
-              <div className="flex items-baseline gap-2 mt-1.5">
-                <p className="text-4xl font-bold text-slate-900 dark:text-white tabular-nums leading-none">
-                  {occupancyPct}<span className="text-2xl text-slate-400 dark:text-[#666] ml-0.5">%</span>
-                </p>
-                <p className="text-xs tabular-nums text-slate-500 dark:text-[#888]">
-                  <span className="font-semibold text-slate-700 dark:text-[#bbb]">{occupiedCount}</span>
-                  <span className="text-slate-400 dark:text-[#666]"> / </span>
-                  <span className="font-semibold text-slate-700 dark:text-[#bbb]">{rooms.length}</span>
-                  <span className="ml-1">occupied</span>
-                </p>
-              </div>
-            </div>
-            <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md border ${occupancyTone.pill}`}>
-              {occupancyTone.label}
-            </span>
-          </div>
-          <div className="relative">
-            <div className="h-2 bg-slate-100 dark:bg-[#1a1a1a] rounded-full overflow-hidden">
-              <div className={`h-full ${occupancyTone.fill} transition-all`} style={{ width: `${occupancyPct}%` }} />
-            </div>
-            {/* 85% threshold marker */}
-            <div className="absolute -top-0.5 -bottom-0.5 w-0.5 bg-slate-400/60 dark:bg-slate-600/60 rounded-full" style={{ left: "85%" }} />
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            <p className="text-[10px] text-slate-400 dark:text-[#666] uppercase tracking-wider font-medium">Capacity threshold</p>
-            <p className="text-[10px] tabular-nums font-semibold text-slate-500 dark:text-[#888]">85%</p>
-          </div>
-        </div>
-
-        {/* Available */}
-        <div className="bg-emerald-50/60 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/20 rounded-xl p-5 flex flex-col">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-500">Available</p>
-              <p className="text-3xl font-bold mt-1.5 text-emerald-800 dark:text-emerald-300 tabular-nums leading-none">{availableCount}</p>
-            </div>
-            <span className="relative flex w-2.5 h-2.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
-              <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            </span>
-          </div>
-          <div className="mt-4 pt-3 border-t border-emerald-200/60 dark:border-emerald-500/20 flex items-center gap-4 text-[10px] tabular-nums">
-            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
-              <span className="font-bold uppercase tracking-wider">ICU</span>
-              <span className="font-semibold">{icuAvailable}</span>
-            </span>
-            <span className="w-px h-3 bg-emerald-300/60 dark:bg-emerald-500/30" />
-            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
-              <span className="font-bold uppercase tracking-wider">OT</span>
-              <span className="font-semibold">{otAvailable}</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Occupied */}
-        <div className="bg-blue-50/60 dark:bg-blue-500/10 border border-blue-200/80 dark:border-blue-500/20 rounded-xl p-5 flex flex-col">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-blue-700 dark:text-blue-500">Occupied</p>
-              <p className="text-3xl font-bold mt-1.5 text-blue-800 dark:text-blue-300 tabular-nums leading-none">{occupiedCount}</p>
-            </div>
-            <span className="relative flex w-2.5 h-2.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75 animate-ping" />
-              <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-blue-500" />
-            </span>
-          </div>
-          <div className="mt-4 pt-3 border-t border-blue-200/60 dark:border-blue-500/20 flex items-center gap-4 text-[10px] tabular-nums">
-            <span className="flex items-center gap-1 text-blue-700 dark:text-blue-400">
-              <span className="font-bold uppercase tracking-wider">ICU</span>
-              <span className="font-semibold">{icuOccupied}</span>
-            </span>
-            <span className="w-px h-3 bg-blue-300/60 dark:bg-blue-500/30" />
-            <span className="flex items-center gap-1 text-blue-700 dark:text-blue-400">
-              <span className="font-bold uppercase tracking-wider">OT</span>
-              <span className="font-semibold">{otOccupied}</span>
-            </span>
-          </div>
+      {/* ─── Stats strip ──────────────────────────────────────────────── */}
+      <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl overflow-hidden">
+        <div className="grid grid-cols-2 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-[#1e1e1e]">
+          <StatCell label="Total rooms"  value={rooms.length} />
+          <StatCell label="Available"    value={availableCount} dotClass="bg-emerald-500" />
+          <StatCell label="Occupied"     value={occupiedCount}  dotClass="bg-blue-500" />
+          <StatCell label="ICU"          value={icuOccupied + icuAvailable} sub={`${icuOccupied} in use · ${icuAvailable} free`} />
+          <StatCell label="OT"           value={otOccupied + otAvailable}   sub={`${otOccupied} in use · ${otAvailable} free`} />
         </div>
       </div>
 
