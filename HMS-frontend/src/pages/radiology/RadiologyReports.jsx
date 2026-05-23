@@ -27,8 +27,11 @@ function RadiologyReports() {
     if (!user?.hospitalId) return;
     setLoading(true);
     try {
+      // "COMPLETED" is a backend alias matching REPORT_GENERATED + BILLED so
+      // auto-billed reports don't disappear from this view. The stats endpoint
+      // returns the same union under the existing `reportGenerated` key.
       const [reports, statsData] = await Promise.all([
-        radiologyApi.list(user.hospitalId, "REPORT_GENERATED"),
+        radiologyApi.list(user.hospitalId, "COMPLETED"),
         radiologyApi.getStats(user.hospitalId)
       ]);
       setOrders(reports);

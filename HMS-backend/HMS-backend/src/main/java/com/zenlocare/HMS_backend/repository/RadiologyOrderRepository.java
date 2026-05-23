@@ -13,9 +13,19 @@ public interface RadiologyOrderRepository extends JpaRepository<RadiologyOrder, 
 
     List<RadiologyOrder> findByHospitalIdAndStatusOrderByCreatedAtDesc(UUID hospitalId, RadiologyStatus status);
 
+    // "Completed report" set — REPORT_GENERATED + BILLED. The reports-page UI was
+    // filtering strictly by REPORT_GENERATED, but radiology auto-billing flips
+    // priced orders straight to BILLED inside the same transaction that generates
+    // the report. Without the IN-clause variant, every auto-billed report
+    // disappeared from the "completed reports" list.
+    List<RadiologyOrder> findByHospitalIdAndStatusInOrderByCreatedAtDesc(
+            UUID hospitalId, java.util.Collection<RadiologyStatus> statuses);
+
     List<RadiologyOrder> findByPatientIdOrderByCreatedAtDesc(Integer patientId);
 
     long countByHospitalIdAndStatus(UUID hospitalId, RadiologyStatus status);
+
+    long countByHospitalIdAndStatusIn(UUID hospitalId, java.util.Collection<RadiologyStatus> statuses);
 
     List<RadiologyOrder> findByAdmissionIdOrderByCreatedAtDesc(UUID admissionId);
 }

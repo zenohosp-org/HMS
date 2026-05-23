@@ -45,10 +45,15 @@ public class RadiologyController {
 
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Long>> getStats(@RequestParam UUID hospitalId) {
+        // `reportGenerated` here is the user-facing "completed reports" count —
+        // it's the union of REPORT_GENERATED + BILLED, because auto-billing on
+        // report generation can move an order straight to BILLED in the same
+        // transaction. The key name stays the same so frontend bindings on
+        // both the queue header and reports page keep working.
         return ResponseEntity.ok(Map.of(
                 "pendingScan",       radiologyService.countByStatus(hospitalId, "PENDING_SCAN"),
                 "awaitingReport",    radiologyService.countByStatus(hospitalId, "AWAITING_REPORT"),
-                "reportGenerated",   radiologyService.countByStatus(hospitalId, "REPORT_GENERATED")
+                "reportGenerated",   radiologyService.countCompletedReports(hospitalId)
         ));
     }
 

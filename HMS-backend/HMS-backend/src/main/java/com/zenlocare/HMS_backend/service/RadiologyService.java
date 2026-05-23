@@ -35,14 +35,32 @@ public class RadiologyService {
     @org.springframework.context.annotation.Lazy
     private final InvoiceService invoiceService;
 
+    // Logical alias for the reports page — covers both REPORT_GENERATED (report
+    // exists, billing pending) and BILLED (report exists, already invoiced).
+    // Auto-billing on report generation moves orders to BILLED within the same
+    // transaction, so without this union the "completed reports" view was empty
+    // for every priced order.
+    private static final java.util.List<RadiologyStatus> COMPLETED_STATUSES =
+            java.util.List.of(RadiologyStatus.REPORT_GENERATED, RadiologyStatus.BILLED);
+
     public List<RadiologyOrderDTO> getOrders(UUID hospitalId, String status) {
         if (status != null && !status.isBlank()) {
+            if ("COMPLETED".equalsIgnoreCase(status)) {
+                return orderRepository
+                        .findByHospitalIdAndStatusInOrderByCreatedAtDesc(hospitalId, COMPLETED_STATUSES)
+                        .stream().map(this::toDTO).collect(Collectors.toList());
+            }
             RadiologyStatus rs = RadiologyStatus.valueOf(status);
             return orderRepository.findByHospitalIdAndStatusOrderByCreatedAtDesc(hospitalId, rs)
                     .stream().map(this::toDTO).collect(Collectors.toList());
         }
         return orderRepository.findByHospitalIdOrderByCreatedAtDesc(hospitalId)
                 .stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    /** Number of orders whose radiologist has written findings, billed or not. */
+    public long countCompletedReports(UUID hospitalId) {
+        return orderRepository.countByHospitalIdAndStatusIn(hospitalId, COMPLETED_STATUSES);
     }
 
     public List<RadiologyOrderDTO> getByPatient(Integer patientId) {
