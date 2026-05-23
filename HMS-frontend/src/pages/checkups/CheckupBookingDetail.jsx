@@ -8,8 +8,17 @@ import {
   ArrowLeft, Printer, Loader2, AlertCircle, ClipboardList,
   User, Package, Calendar, Clock, Stethoscope, Banknote,
   CheckCircle2, Circle, ChevronRight, Save, FileText,
-  Activity, XCircle, AlertTriangle,
+  Activity, XCircle, AlertTriangle, Receipt, ExternalLink,
 } from "lucide-react";
+
+// Payment status badge — keeps the UI in sync with the lifecycle the backend
+// drives (PENDING → BILLED after auto-bill on COMPLETED → PAID after the
+// invoice is fully collected). Unknown strings fall through to a neutral chip.
+const PAYMENT_CONFIG = {
+  PENDING: { label: "Pending",  cls: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/30" },
+  BILLED:  { label: "Billed",   cls: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/30" },
+  PAID:    { label: "Paid",     cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30" },
+};
 
 const STATUS_CONFIG = {
   SCHEDULED:   { label: "Scheduled",   color: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",        dot: "bg-blue-500",    border: "border-blue-200 dark:border-blue-500/30" },
@@ -243,6 +252,16 @@ export default function CheckupBookingDetail() {
   const handleAdvance = async () => {
     const flow = FLOW[booking.status];
     if (!flow) return;
+    // Completing the booking will trigger the backend auto-bill — be explicit
+    // about it so staff can sanity-check the amount before money is committed.
+    if (flow.next === "COMPLETED" && !booking.invoiceId) {
+      const price = Number(booking.healthPackage?.price || 0);
+      const inrPrice = price.toLocaleString("en-IN");
+      const ok = window.confirm(
+        `Mark this booking complete?\n\nAn invoice for ₹${inrPrice} (${booking.healthPackage?.name}) will be created automatically — added to the patient's IPD bill if they're admitted, otherwise as a standalone bill.`
+      );
+      if (!ok) return;
+    }
     setAdvancing(true);
     try {
       await checkupApi.updateStatus(booking.id, flow.next);
@@ -383,11 +402,34 @@ export default function CheckupBookingDetail() {
           <InfoRow icon={Calendar} label="Scheduled" value={booking.scheduledDate} />
           <InfoRow icon={Clock} label="Time" value={booking.scheduledTime || "—"} />
           <InfoRow icon={Stethoscope} label="Doctor" value={booking.assignedDoctor ? `Dr. ${booking.assignedDoctor.user?.firstName ?? booking.assignedDoctor.firstName ?? ""} ${booking.assignedDoctor.user?.lastName ?? booking.assignedDoctor.lastName ?? ""}`.trim() : "—"} />
-          <InfoRow
-            icon={Banknote}
-            label="Payment"
-            value={`${booking.paymentStatus} · ₹${Number(booking.amountPaid || 0).toLocaleString("en-IN")} paid`}
-          />
+          <div className="flex items-start gap-2 min-w-0">
+            <Banknote className="w-4 h-4 mt-0.5 text-slate-400 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#666]">Payment</p>
+              <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                {(() => {
+                  const cfg = PAYMENT_CONFIG[booking.paymentStatus] || { label: booking.paymentStatus || "—", cls: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222] dark:text-[#aaa] dark:border-[#333]" };
+                  return (
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${cfg.cls}`}>
+                      {cfg.label}
+                    </span>
+                  );
+                })()}
+                <span className="text-xs text-slate-600 dark:text-[#aaa] tabular-nums">
+                  ₹{Number(booking.amountPaid || 0).toLocaleString("en-IN")} paid
+                </span>
+              </div>
+              {booking.invoiceId && (
+                <button
+                  onClick={() => navigate(`/billing?invoiceId=${booking.invoiceId}`)}
+                  className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline print:hidden"
+                >
+                  <Receipt className="w-3 h-3" /> View invoice
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {booking.notes && (
@@ -408,6 +450,14 @@ export default function CheckupBookingDetail() {
               {completedCount} of {totalCount} entered
             </span>
           </div>
+          {!canEdit && (
+            <div className="px-6 py-2.5 bg-slate-50 dark:bg-[#0e0e0e] border-b border-slate-100 dark:border-[#1e1e1e] flex items-center gap-2 print:hidden">
+              <AlertCircle className="w-3.5 h-3.5 text-slate-400" />
+              <p className="text-xs text-slate-500 dark:text-[#888]">
+                Results are read-only — booking is {STATUS_CONFIG[booking.status]?.label || booking.status}.
+              </p>
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full">

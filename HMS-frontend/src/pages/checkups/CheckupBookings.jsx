@@ -29,6 +29,25 @@ function StatusBadge({ status }) {
   );
 }
 
+// PENDING (created, no bill yet) → BILLED (auto-bill on COMPLETED → invoice exists)
+// → PAID (invoice fully collected). PARTIAL covers staff-entered split payments
+// at booking time. Unknown strings fall back to a neutral chip.
+const PAYMENT_BADGE_CLS = {
+  PAID:    "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  BILLED:  "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
+  PARTIAL: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+  PENDING: "bg-slate-100 text-slate-500 dark:bg-[#222] dark:text-[#666]",
+};
+
+function PaymentBadge({ status }) {
+  const cls = PAYMENT_BADGE_CLS[status] || PAYMENT_BADGE_CLS.PENDING;
+  return (
+    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${cls}`}>
+      {status || "—"}
+    </span>
+  );
+}
+
 function BookingModal({ hospitalId, onClose, onBooked }) {
   const [step, setStep] = useState(1);
   const [packages, setPackages] = useState([]);
@@ -422,9 +441,7 @@ export default function CheckupBookings() {
                       <AssignDoctorCell booking={b} doctors={doctors} onAssigned={load} />
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${b.paymentStatus === "PAID" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : b.paymentStatus === "PARTIAL" ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" : "bg-slate-100 text-slate-500 dark:bg-[#222] dark:text-[#666]"}`}>
-                        {b.paymentStatus}
-                      </span>
+                      <PaymentBadge status={b.paymentStatus} />
                     </td>
                     <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
                     <td className="px-4 py-3">
