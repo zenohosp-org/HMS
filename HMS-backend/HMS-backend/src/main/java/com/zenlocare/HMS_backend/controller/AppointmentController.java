@@ -76,4 +76,14 @@ public class AppointmentController {
         return ResponseEntity
                 .ok(appointmentService.updateAppointmentStatus(id, request.getStatus(), request.getCancelledReason()));
     }
+
+    /**
+     * Re-number today's queue from 1, in booking-time order. Returns how many
+     * tokens were assigned so the UI can show "Renumbered N appointments".
+     */
+    @PostMapping("/refresh-tokens")
+    public ResponseEntity<java.util.Map<String, Object>> refreshTokens(@RequestParam UUID hospitalId) {
+        int count = appointmentService.refreshTokensForToday(hospitalId);
+        return ResponseEntity.ok(java.util.Map.of("assigned", count));
+    }
 }

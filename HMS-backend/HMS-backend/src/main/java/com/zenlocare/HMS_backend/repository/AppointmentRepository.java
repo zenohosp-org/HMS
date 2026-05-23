@@ -40,6 +40,27 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.apptDate = :apptDate")
     Integer countByDoctorIdAndApptDate(@Param("doctorId") UUID doctorId, @Param("apptDate") LocalDate apptDate);
 
+    /**
+     * Highest token currently assigned in the hospital's today-queue. Used to
+     * pick the next number when an appointment transitions into a token-
+     * eligible status. Returns null when the queue is empty (caller treats
+     * null as zero → first token is 1).
+     */
+    @Query("SELECT MAX(a.tokenNumber) FROM Appointment a " +
+           "WHERE a.hospital.id = :hospitalId AND a.apptDate = :apptDate AND a.tokenNumber IS NOT NULL")
+    Integer findMaxTokenNumberByHospitalIdAndApptDate(
+            @Param("hospitalId") UUID hospitalId, @Param("apptDate") LocalDate apptDate);
+
+    /**
+     * Today's appointments for a hospital, ordered by booking time (createdAt
+     * ASC). Backs the "Refresh Tokens" operation — re-numbering walks this
+     * list and assigns 1..N in arrival order.
+     */
+    @Query("SELECT a FROM Appointment a WHERE a.hospital.id = :hospitalId AND a.apptDate = :apptDate " +
+           "ORDER BY a.createdAt ASC")
+    List<Appointment> findByHospitalIdAndApptDateOrderByCreatedAtAsc(
+            @Param("hospitalId") UUID hospitalId, @Param("apptDate") LocalDate apptDate);
+
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.apptDate = :apptDate " +
            "AND a.status IN (" +
            "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.SCHEDULED," +
@@ -78,7 +99,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
             LOWER(d.user.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
             LOWER(d.user.lastName) LIKE LOWER(CONCAT('%', :search, '%'))
         )
-        ORDER BY a.apptDate DESC, a.apptTime DESC
+        ORDER BY
+            CASE WHEN :dateFilter = 'TODAY' THEN a.createdAt END ASC,
+            a.apptDate DESC, a.apptTime DESC
         """,
         countQuery = """
         SELECT COUNT(a) FROM Appointment a

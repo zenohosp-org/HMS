@@ -138,11 +138,12 @@ public class AppointmentService {
                         }
                 }
 
-                // Generate Token Number
-                Integer currentTokens = doctor != null
-                                ? appointmentRepository.countByDoctorIdAndApptDate(doctor.getId(), request.getApptDate())
-                                : 0;
-                int assignedToken = currentTokens + 1;
+                // Token number is NOT assigned at creation — the appointment starts in
+                // SCHEDULED with a null token. A token is allocated only when the front
+                // desk advances the status to CONFIRMED (or beyond) and the appointment
+                // is for today; see {@link #updateAppointmentStatus}. This keeps the
+                // hospital's today-queue dense and sequential (1..100) instead of
+                // gapped by no-shows or future bookings.
 
                 // Auto-create checkup booking if a package is selected
                 HealthCheckupBooking checkupBooking = null;
@@ -168,7 +169,6 @@ public class AppointmentService {
                                 .apptEndTime(apptEndTime)
                                 .type(request.getType() != null ? request.getType() : Appointment.AppointmentType.OPD)
                                 .status(Appointment.AppointmentStatus.SCHEDULED)
-                                .tokenNumber(assignedToken)
                                 .chiefComplaint(request.getChiefComplaint())
                                 .priceList(priceList)
                                 .checkupBooking(checkupBooking)
@@ -188,6 +188,18 @@ public class AppointmentService {
                 return uhid;
         }
 
+        // Statuses that occupy a slot in the day's token queue. Anything outside
+        // this set (SCHEDULED / CANCELLED / NO_SHOW) holds no token.
+        private static final java.util.Set<Appointment.AppointmentStatus> TOKEN_ELIGIBLE_STATUSES =
+                        java.util.EnumSet.of(
+                                        Appointment.AppointmentStatus.CONFIRMED,
+                                        Appointment.AppointmentStatus.CHECKED_IN,
+                                        Appointment.AppointmentStatus.IN_PROGRESS,
+                                        Appointment.AppointmentStatus.COMPLETED,
+                                        Appointment.AppointmentStatus.BILLED);
+
+        private static final int TOKEN_CAP_PER_DAY = 100;
+
         @Transactional
         public AppointmentDto updateAppointmentStatus(UUID id, Appointment.AppointmentStatus status,
                         String cancelledReason) {
@@ -197,6 +209,31 @@ public class AppointmentService {
                 appointment.setStatus(status);
                 if (status == Appointment.AppointmentStatus.CANCELLED) {
                         appointment.setCancelledReason(cancelledReason);
+                }
+
+                // Token lifecycle:
+                //   - Becoming queue-eligible (CONFIRMED/CHECKED_IN/IN_PROGRESS/COMPLETED/BILLED)
+                //     AND for today AND no token yet → assign next free number (1..100).
+                //   - Leaving the queue (SCHEDULED via reschedule, CANCELLED, NO_SHOW) → release
+                //     the number so it doesn't dangle on a no-longer-active row.
+                //   The cap is enforced at allocation time; over-cap requests get a null token
+                //   (caller can run "Refresh Tokens" to renumber if real demand exceeds 100).
+                LocalDate today = LocalDate.now();
+                boolean isForToday = today.equals(appointment.getApptDate());
+
+                if (TOKEN_ELIGIBLE_STATUSES.contains(status)) {
+                        if (isForToday && appointment.getTokenNumber() == null) {
+                                Integer maxToken = appointmentRepository
+                                                .findMaxTokenNumberByHospitalIdAndApptDate(
+                                                                appointment.getHospital().getId(), today);
+                                int next = (maxToken == null ? 0 : maxToken) + 1;
+                                if (next <= TOKEN_CAP_PER_DAY) {
+                                        appointment.setTokenNumber(next);
+                                }
+                        }
+                } else {
+                        // SCHEDULED / CANCELLED / NO_SHOW → release token if held
+                        appointment.setTokenNumber(null);
                 }
 
                 AppointmentDto result = AppointmentDto.fromEntity(appointmentRepository.save(appointment));
@@ -210,5 +247,33 @@ public class AppointmentService {
                 }
 
                 return result;
+        }
+
+        /**
+         * Reset and re-number the entire today-queue for a hospital. Walks all of
+         * today's appointments in createdAt order, assigning 1..N to the token-
+         * eligible ones (CONFIRMED+) and clearing any token off the ineligible
+         * ones (SCHEDULED / CANCELLED / NO_SHOW). Useful after a busy morning
+         * where the natural confirmation order doesn't match arrival order any
+         * more — one click puts the queue back in chronological sequence.
+         */
+        @Transactional
+        public int refreshTokensForToday(UUID hospitalId) {
+                LocalDate today = LocalDate.now();
+                List<Appointment> todays = appointmentRepository
+                                .findByHospitalIdAndApptDateOrderByCreatedAtAsc(hospitalId, today);
+
+                int counter = 1;
+                int assigned = 0;
+                for (Appointment a : todays) {
+                        if (TOKEN_ELIGIBLE_STATUSES.contains(a.getStatus()) && counter <= TOKEN_CAP_PER_DAY) {
+                                a.setTokenNumber(counter++);
+                                assigned++;
+                        } else {
+                                a.setTokenNumber(null);
+                        }
+                }
+                appointmentRepository.saveAll(todays);
+                return assigned;
         }
 }

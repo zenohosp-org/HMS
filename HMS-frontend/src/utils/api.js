@@ -194,6 +194,10 @@ const appointmentsApi = {
   updateStatus: async (id, status, cancelledReason) => {
     const { data } = await api.put(`/appointments/${id}/status`, { status, cancelledReason });
     return data;
+  },
+  refreshTokens: async (hospitalId) => {
+    const { data } = await api.post(`/appointments/refresh-tokens`, null, { params: { hospitalId } });
+    return data;
   }
 };
 const specializationApi = {
