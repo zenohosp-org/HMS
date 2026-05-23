@@ -35,7 +35,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
   const [technicians, setTechnicians] = useState([]);
   const [form, setForm] = useState({
     serviceName: "", specializationName: "", technicianId: "", technicianName: "",
-    priority: "ROUTINE", scheduledDate: "",
+    priority: "ROUTINE", scheduledDate: "", price: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -133,6 +133,9 @@ export default function NewOrderModal({ onClose, onCreated }) {
         technicianName: form.technicianName || undefined,
         priority: form.priority,
         scheduledDate: form.scheduledDate || undefined,
+        // Captured here so report generation can auto-bill. Empty string → null
+        // means staff will price manually via CreateInvoice instead.
+        price: form.price ? Number(form.price) : undefined,
       });
       notify("Radiology order created", "success");
       onCreated();
@@ -381,11 +384,25 @@ export default function NewOrderModal({ onClose, onCreated }) {
               </div>
             </div>
 
-            {/* Scheduled date */}
-            <div>
-              <label className={labelCls}>Scheduled Date</label>
-              <input type="date" className={inputCls} value={form.scheduledDate}
-                onChange={(e) => setForm((f) => ({ ...f, scheduledDate: e.target.value }))} />
+            {/* Scheduled date + Price */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Scheduled Date</label>
+                <input type="date" className={inputCls} value={form.scheduledDate}
+                  onChange={(e) => setForm((f) => ({ ...f, scheduledDate: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelCls}>Price (₹)</label>
+                <input type="number" min="0" step="0.01" className={inputCls}
+                  placeholder="e.g. 500"
+                  value={form.price}
+                  onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
+                <p className="text-[10px] text-slate-400 dark:text-[#666] mt-1">
+                  {activeAdmission
+                    ? "Will be added to the IPD bill when the report is generated."
+                    : "A standalone OPD radiology invoice will be created when the report is generated."}
+                </p>
+              </div>
             </div>
 
           </form>

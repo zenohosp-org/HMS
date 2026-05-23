@@ -18,4 +18,5 @@ public class CreateRadiologyOrderRequest {
     private String priority;
     private LocalDate scheduledDate;
     private String billNo;
+    private java.math.BigDecimal price;
 }

@@ -29,6 +29,11 @@ public class RadiologyService {
     private final HospitalRepository hospitalRepository;
     private final PatientRepository patientRepository;
     private final AdmissionRepository admissionRepository;
+    // @Lazy avoids a constructor-time cycle: InvoiceService already injects
+    // RadiologyOrderRepository, and now RadiologyService also depends on
+    // InvoiceService for auto-billing on report generation.
+    @org.springframework.context.annotation.Lazy
+    private final InvoiceService invoiceService;
 
     public List<RadiologyOrderDTO> getOrders(UUID hospitalId, String status) {
         if (status != null && !status.isBlank()) {
@@ -65,6 +70,10 @@ public class RadiologyService {
                 .orElseThrow(() -> new RuntimeException("Hospital not found"));
         Patient patient = patientRepository.findById(req.getPatientId())
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
+        if (patient.getHospital() == null
+                || !req.getHospitalId().equals(patient.getHospital().getId())) {
+            throw new RuntimeException("Patient does not belong to this hospital");
+        }
 
         Admission admission = null;
         if (req.getAdmissionId() != null) {
@@ -72,6 +81,10 @@ public class RadiologyService {
                     .orElseThrow(() -> new RuntimeException("Admission not found"));
             if (!admission.getPatient().getId().equals(patient.getId())) {
                 throw new RuntimeException("Admission does not belong to this patient");
+            }
+            if (admission.getHospital() == null
+                    || !req.getHospitalId().equals(admission.getHospital().getId())) {
+                throw new RuntimeException("Admission does not belong to this hospital");
             }
         }
 
@@ -87,6 +100,7 @@ public class RadiologyService {
                 .priority(req.getPriority() != null ? RadiologyPriority.valueOf(req.getPriority()) : RadiologyPriority.ROUTINE)
                 .status(RadiologyStatus.PENDING_SCAN)
                 .scheduledDate(req.getScheduledDate())
+                .price(req.getPrice())
                 .createdByName(createdByName)
                 .build();
 
@@ -117,7 +131,21 @@ public class RadiologyService {
         order.setObservation(req.getObservation());
         order.setReportedAt(LocalDateTime.now());
         order.setReportId(generateReportId());
-        return toDTO(orderRepository.save(order));
+        RadiologyOrder saved = orderRepository.save(order);
+
+        // Auto-bill if a price was captured at order time. Routes to the
+        // patient's active IPD invoice if admitted; otherwise creates a
+        // standalone OPD radiology invoice. No-op if price is null —
+        // staff can still bill manually via the legacy CreateInvoice flow.
+        try {
+            invoiceService.billRadiologyOrder(saved);
+        } catch (Exception e) {
+            // Billing failure must not block the report from being saved —
+            // staff can retry billing manually. Log and continue.
+            org.slf4j.LoggerFactory.getLogger(RadiologyService.class)
+                    .warn("Auto-bill failed for radiology order {}: {}", saved.getId(), e.getMessage());
+        }
+        return toDTO(saved);
     }
 
     private String generateReportId() {
@@ -147,6 +175,7 @@ public class RadiologyService {
                 .status(o.getStatus().name())
                 .scheduledDate(o.getScheduledDate())
                 .billNo(o.getBillNo())
+                .price(o.getPrice())
                 .scannedAt(o.getScannedAt())
                 .reportedAt(o.getReportedAt())
                 .findings(o.getFindings())

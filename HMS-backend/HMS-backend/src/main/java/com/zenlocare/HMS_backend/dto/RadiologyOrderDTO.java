@@ -26,6 +26,7 @@ public class RadiologyOrderDTO {
     private String status;
     private LocalDate scheduledDate;
     private String billNo;
+    private java.math.BigDecimal price;
     private LocalDateTime scannedAt;
     private LocalDateTime reportedAt;
     private String findings;

@@ -61,6 +61,11 @@ public class RadiologyOrder {
     @Column(name = "bill_no", length = 50)
     private String billNo;
 
+    // Captured at order creation so generateReport() can auto-bill without
+    // staff re-entering it. Null = staff will price manually later (legacy path).
+    @Column(name = "price", precision = 10, scale = 2)
+    private java.math.BigDecimal price;
+
     @Column(name = "scanned_at")
     private LocalDateTime scannedAt;
 
