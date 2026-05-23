@@ -10,14 +10,21 @@ import com.zenlocare.HMS_backend.repository.HospitalRepository;
 import com.zenlocare.HMS_backend.repository.PatientRecordRepository;
 import com.zenlocare.HMS_backend.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 @Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
@@ -26,6 +33,20 @@ public class RecordService {
     private final PatientRecordRepository recordRepository;
     private final PatientRepository patientRepository;
     private final HospitalRepository hospitalRepository;
+    private final PlatformTransactionManager txManager;
+
+    // Each create-record attempt runs in its own transaction so a UNIQUE-constraint
+    // collision can be rolled back and retried cleanly. Built from the autowired
+    // transaction manager so we don't need to add a separate bean definition.
+    private TransactionTemplate txTemplate;
+
+    @PostConstruct
+    void initTxTemplate() {
+        this.txTemplate = new TransactionTemplate(txManager);
+        this.txTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    }
+
+    private static final int MAX_MRN_ATTEMPTS = 5;
 
     public List<PatientRecord> getRecordsByPatient(Integer patientId, UUID hospitalId) {
         return recordRepository.findByPatientIdAndHospitalId(patientId, hospitalId);
@@ -52,8 +73,39 @@ public class RecordService {
                 patientId, hospitalId, admissionId, type);
     }
 
-    @Transactional
+    /**
+     * Create a new patient record with a guaranteed-unique MRN.
+     *
+     * NOT_SUPPORTED suspends the class-level readOnly transaction for this
+     * method so each attempt's REQUIRES_NEW inner transaction is unambiguous
+     * — there is no outer write TX to be marked rollback-only on a
+     * DataIntegrityViolationException. Each attempt at doCreate runs in a
+     * fresh, isolated transaction via txTemplate; on a unique-constraint
+     * collision on the mrn column the inner TX rolls back cleanly and the
+     * next retry recomputes MAX+1 from a fresh read.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public PatientRecord createRecord(UUID hospitalId, Integer patientId, User createdBy,
+            String historyType, String description, LocalDateTime nextVisitDate,
+            java.util.UUID admissionId, String admissionNumber) {
+
+        DataIntegrityViolationException lastError = null;
+        for (int attempt = 1; attempt <= MAX_MRN_ATTEMPTS; attempt++) {
+            try {
+                return txTemplate.execute(status -> doCreate(
+                        hospitalId, patientId, createdBy, historyType, description,
+                        nextVisitDate, admissionId, admissionNumber));
+            } catch (DataIntegrityViolationException e) {
+                lastError = e;
+                log.warn("MRN collision on attempt {} for patient {} at hospital {} — retrying",
+                        attempt, patientId, hospitalId);
+            }
+        }
+        throw new RuntimeException(
+                "Could not generate a unique MRN after " + MAX_MRN_ATTEMPTS + " attempts", lastError);
+    }
+
+    private PatientRecord doCreate(UUID hospitalId, Integer patientId, User createdBy,
             String historyType, String description, LocalDateTime nextVisitDate,
             java.util.UUID admissionId, String admissionNumber) {
 
@@ -84,9 +136,43 @@ public class RecordService {
         return recordRepository.save(record);
     }
 
+    /**
+     * Generate MRN as {HOSP_PREFIX}MRN-{year}-{seq:5} where seq = MAX(existing
+     * mrn sequence for this hospital + year) + 1.
+     *
+     * Replaces the old `count() + 1 + random(0..99)` generator, which combined
+     * a global count() with random jitter and caused UNIQUE-constraint
+     * collisions every time the row count caught up with a previously-jittered
+     * sequence number:
+     *   record #100 saved with random=5 → seq=105 → MRN-00105
+     *   record #101 attempts random=4   → seq=105 → COLLISION
+     *
+     * The concurrent-insert race is handled at the caller — createRecord wraps
+     * each attempt in its own REQUIRES_NEW transaction and retries on
+     * DataIntegrityViolationException with a fresh MAX query.
+     */
     private String generateMrn(Hospital hospital) {
-        int year = LocalDateTime.now().getYear();
-        long seq = recordRepository.count() + 1 + ThreadLocalRandom.current().nextInt(100);
-        return HospitalIdPrefix.of(hospital) + String.format("MRN-%d-%05d", year, seq);
+        String year = String.valueOf(LocalDateTime.now().getYear());
+        String prefix = HospitalIdPrefix.of(hospital);
+        List<String> existing = recordRepository.findMrnsForHospitalAndYear(hospital.getId(), year);
+        int maxSeq = existing.stream().mapToInt(this::extractTrailingSequence).max().orElse(0);
+        return prefix + String.format("MRN-%s-%05d", year, maxSeq + 1);
+    }
+
+    /**
+     * Pull the trailing numeric suffix from an MRN. Tolerates both legacy
+     * "MRN-2026-00105" and prefixed "1001-MRN-2026-00105" formats — both end
+     * in the same dash-delimited integer. Non-numeric or malformed entries
+     * return 0 so they're ignored by the MAX calculation.
+     */
+    private int extractTrailingSequence(String mrn) {
+        if (mrn == null) return 0;
+        int dash = mrn.lastIndexOf('-');
+        if (dash < 0 || dash == mrn.length() - 1) return 0;
+        try {
+            return Integer.parseInt(mrn.substring(dash + 1));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 }

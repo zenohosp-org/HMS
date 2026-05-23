@@ -42,4 +42,13 @@ public interface PatientRecordRepository extends JpaRepository<PatientRecord, In
 
     @Query("SELECT COUNT(DISTINCT pr.patient.id) FROM PatientRecord pr WHERE pr.createdBy.id = :userId")
     long countUniquePatientsByDoctor(@Param("userId") UUID userId);
+
+    /**
+     * MRNs for a given hospital + year — RecordService.generateMrn extracts the
+     * trailing sequence from each to compute next-seq = MAX + 1. Matching both
+     * legacy "MRN-YYYY-NNNNN" and prefixed "{HOSP}-MRN-YYYY-NNNNN" formats; the
+     * trailing-numeric extractor in the service handles either shape.
+     */
+    @Query("SELECT pr.mrn FROM PatientRecord pr WHERE pr.hospital.id = :hospitalId AND pr.mrn LIKE CONCAT('%MRN-', :year, '-%')")
+    List<String> findMrnsForHospitalAndYear(@Param("hospitalId") UUID hospitalId, @Param("year") String year);
 }
