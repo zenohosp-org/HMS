@@ -25,8 +25,14 @@ public class DashboardService {
     private final AppointmentRepository appointmentRepo;
     private final Executor taskExecutor;
 
+    // All hospitals on this deployment run in IST. Pin the dashboard's date math
+    // here so the same query returns the same "today" / "this month" boundary
+    // regardless of whether the JVM is started with TZ=UTC or TZ=Asia/Kolkata
+    // — prevents day-boundary drift on servers behind UTC-defaulted containers.
+    private static final java.time.ZoneId HOSPITAL_TZ = java.time.ZoneId.of("Asia/Kolkata");
+
     public DashboardSummaryResponse getSummary(UUID hospitalId) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(HOSPITAL_TZ);
         LocalDateTime startOfThisMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime startOfLastMonth = startOfThisMonth.minusMonths(1);
         LocalDateTime thirtyDaysAgo = now.minusDays(29).withHour(0).withMinute(0).withSecond(0).withNano(0);
@@ -118,7 +124,7 @@ public class DashboardService {
 
         List<DailyCountDto> patientTrend = new ArrayList<>();
         DateTimeFormatter displayDateFormatter = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH);
-        LocalDate todayDate = LocalDate.now();
+        LocalDate todayDate = LocalDate.now(HOSPITAL_TZ);
         for (int i = 29; i >= 0; i--) {
             LocalDate d = todayDate.minusDays(i);
             String dbKey = d.toString(); // "YYYY-MM-DD"
