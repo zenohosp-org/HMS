@@ -4,6 +4,7 @@ import com.zenlocare.HMS_backend.entity.Appointment;
 import com.zenlocare.HMS_backend.entity.Doctor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -55,11 +56,27 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
      * Today's appointments for a hospital, ordered by booking time (createdAt
      * ASC). Backs the "Refresh Tokens" operation — re-numbering walks this
      * list and assigns 1..N in arrival order.
+     *
+     * Fetches createdBy + doctor.user eagerly so any downstream DTO mapping
+     * (or audit hook reading creator/doctor) won't blow up on a closed
+     * session — same defense as RecordController's @EntityGraph usage.
      */
+    @EntityGraph(attributePaths = {"createdBy", "doctor", "doctor.user", "patient"})
     @Query("SELECT a FROM Appointment a WHERE a.hospital.id = :hospitalId AND a.apptDate = :apptDate " +
            "ORDER BY a.createdAt ASC")
     List<Appointment> findByHospitalIdAndApptDateOrderByCreatedAtAsc(
             @Param("hospitalId") UUID hospitalId, @Param("apptDate") LocalDate apptDate);
+
+    /**
+     * findById variant that eagerly hydrates the relations AppointmentDto.fromEntity
+     * touches (patient, doctor.user, createdBy, hospital). Used by status-change
+     * paths where the response is mapped through the DTO — without this, the
+     * lazy doctor.user / createdBy proxies can trip a LazyInit on Role even
+     * inside @Transactional when an auto-flush re-orders things.
+     */
+    @EntityGraph(attributePaths = {"patient", "doctor", "doctor.user", "createdBy", "hospital"})
+    @Query("SELECT a FROM Appointment a WHERE a.id = :id")
+    Optional<Appointment> findByIdWithRelations(@Param("id") UUID id);
 
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.apptDate = :apptDate " +
            "AND a.status IN (" +

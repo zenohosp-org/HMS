@@ -203,7 +203,11 @@ public class AppointmentService {
         @Transactional
         public AppointmentDto updateAppointmentStatus(UUID id, Appointment.AppointmentStatus status,
                         String cancelledReason) {
-                Appointment appointment = appointmentRepository.findById(id)
+                // findByIdWithRelations hydrates patient + doctor.user + createdBy + hospital
+                // up-front so the DTO mapper below (and any downstream listeners) never
+                // hit a LazyInit/Role proxy if Hibernate auto-flushes between the read
+                // and the save.
+                Appointment appointment = appointmentRepository.findByIdWithRelations(id)
                                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
                 appointment.setStatus(status);
