@@ -143,6 +143,21 @@ public class InvoiceService {
         if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
             throw new RuntimeException("Invoice is already paid");
         }
+        // Refuse to flip status unless the money to cover it is actually present.
+        // Old behaviour: this endpoint blindly set SETTLED — a stray click on the
+        // "Mark as Paid" button could close a partially-paid IPD bill. Now we
+        // require paidAmount + advance >= total, matching the same fullyPaid
+        // check that collectPayment / collectAndSave use.
+        BigDecimal paid    = invoice.getPaidAmount()      != null ? invoice.getPaidAmount()      : BigDecimal.ZERO;
+        BigDecimal advance = invoice.getAdvanceAdjusted() != null ? invoice.getAdvanceAdjusted() : BigDecimal.ZERO;
+        BigDecimal total   = invoice.getTotal()           != null ? invoice.getTotal()           : BigDecimal.ZERO;
+        if (paid.add(advance).compareTo(total) < 0) {
+            BigDecimal balance = total.subtract(paid).subtract(advance);
+            throw new RuntimeException(
+                    "Cannot mark paid — outstanding balance ₹" + balance
+                            + " (paid ₹" + paid + " + advance ₹" + advance + " < total ₹" + total
+                            + "). Collect the remaining amount via the payment flow first.");
+        }
         invoice.setStatus(invoice.getAdmission() != null ? InvoiceStatus.SETTLED : InvoiceStatus.PAID);
         invoice.setUpdatedAt(LocalDateTime.now());
         Invoice saved = invoiceRepository.save(invoice);

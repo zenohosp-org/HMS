@@ -537,22 +537,33 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       const serverStatus = result?.status
       if (serverStatus) setInvoiceStatus(serverStatus)
 
-      // Authoritative balance: total - paidAmount (server tracks both atomically).
-      // We don't subtract advanceAdjusted here because it's already baked into how the
-      // server computes fullyPaid (newPaid + advance >= total).
-      const trueBalance = Math.max(0, serverTotal - serverPaidAmount - Number(result?.advanceAdjusted ?? 0))
+      // Authoritative balance: total - paidAmount - advance (server tracks all
+      // three atomically). Advance counts toward "fully paid" because the
+      // patient's money already sits with the hospital — but the notification
+      // message below is explicit about that so staff don't think a ₹350 cash
+      // payment alone settled a ₹1500 bill.
+      const serverAdvance = Number(result?.advanceAdjusted ?? 0)
+      const trueBalance = Math.max(0, serverTotal - serverPaidAmount - serverAdvance)
       const isFullySettled = (serverStatus === 'SETTLED' || serverStatus === 'PAID') && trueBalance <= 0
+      const inr = n => `₹${Number(n).toLocaleString('en-IN')}`
 
       if (isFullySettled) {
-        notify('Bill fully paid — patient can now be discharged', 'success')
+        // Breakdown so staff can see what made the bill settle — cash alone, or
+        // cash plus an existing advance. Without this, partial cash on top of a
+        // big advance looks like a bug.
+        const parts = []
+        if (serverPaidAmount > 0) parts.push(`${inr(serverPaidAmount)} cash`)
+        if (serverAdvance > 0)    parts.push(`${inr(serverAdvance)} advance`)
+        const breakdown = parts.length > 0 ? ` (${parts.join(' + ')})` : ''
+        notify(`Bill of ${inr(serverTotal)} fully covered${breakdown} — patient can be discharged`, 'success')
         onFinalized()
       } else if (trueBalance <= 0 && serverStatus !== 'SETTLED' && serverStatus !== 'PAID') {
         // Local math says balance is zero but server didn't mark settled — surface the
         // discrepancy instead of silently closing or silently lying to the user.
-        notify(`₹${amt.toLocaleString('en-IN')} recorded. Server status: ${serverStatus}. Refresh to verify.`, 'warning')
+        notify(`${inr(amt)} recorded. Server status: ${serverStatus}. Refresh to verify.`, 'warning')
         setPayAmount('')
       } else {
-        notify(`₹${amt.toLocaleString('en-IN')} recorded. Balance remaining: ₹${trueBalance.toLocaleString('en-IN')}`, 'success')
+        notify(`${inr(amt)} recorded. Balance remaining: ${inr(trueBalance)}`, 'success')
         setPayAmount(String(Math.round(trueBalance)))
       }
     } catch (err) {
