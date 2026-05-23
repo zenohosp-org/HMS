@@ -75,6 +75,14 @@ public class Room {
     @Column(name = "bed_count")
     private Integer bedCount;
 
+    // Optimistic-lock cursor — concurrent allocations / status flips against
+    // the same room (e.g. two admits racing for the last AVAILABLE room) will
+    // see one commit and the other throw OptimisticLockException → HTTP 409.
+    @jakarta.persistence.Version
+    @Column(name = "version")
+    @Builder.Default
+    private Long version = 0L;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -98,6 +98,15 @@ public class Admission {
     @Builder.Default
     private AdmissionStatus status = AdmissionStatus.ADMITTED;
 
+    // Optimistic-lock cursor — two staff members trying to discharge or move
+    // the same patient simultaneously will see one transaction commit and the
+    // other throw OptimisticLockException (mapped to HTTP 409 by the global
+    // handler). Prevents silent state corruption on concurrent edits.
+    @jakarta.persistence.Version
+    @Column(name = "version")
+    @Builder.Default
+    private Long version = 0L;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;

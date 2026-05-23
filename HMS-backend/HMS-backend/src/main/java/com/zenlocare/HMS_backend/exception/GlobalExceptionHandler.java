@@ -39,6 +39,19 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
+    // Concurrent edit: another transaction updated the same row first and the
+    // @Version column on the entity rejected this write. 409 + a clear hint so
+    // the UI can prompt the user to reload and retry rather than silently
+    // losing their change.
+    @ExceptionHandler({
+            org.springframework.orm.ObjectOptimisticLockingFailureException.class,
+            jakarta.persistence.OptimisticLockException.class
+    })
+    public ResponseEntity<Map<String, Object>> handleOptimisticLock(Exception ex) {
+        return buildResponse(HttpStatus.CONFLICT,
+                "This record was just modified by someone else. Please reload and try again.");
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + ex.getMessage());

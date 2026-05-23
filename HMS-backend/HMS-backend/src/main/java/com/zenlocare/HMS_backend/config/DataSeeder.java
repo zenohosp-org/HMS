@@ -490,6 +490,18 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception e) {
             log.warn("Could not backfill invoice versions: " + e.getMessage());
         }
+        // Same optimistic-lock cursor added to admissions and rooms — Hibernate's
+        // ddl-auto=update adds the column nullable; we default existing rows to 0
+        // so Hibernate doesn't trip on null version on first read.
+        for (String table : new String[] {"admissions", "rooms"}) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE " + table + " ADD COLUMN IF NOT EXISTS version bigint");
+                int rows = jdbcTemplate.update("UPDATE " + table + " SET version = 0 WHERE version IS NULL");
+                if (rows > 0) log.info("✅ Backfilled version=0 on {} legacy {} rows", rows, table);
+            } catch (Exception e) {
+                log.warn("Could not backfill {} versions: {}", table, e.getMessage());
+            }
+        }
     }
 
     private void migrateDischargeData() {
