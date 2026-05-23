@@ -103,18 +103,57 @@ public class PatientAdvanceService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // Mark advances as applied when bill is finalized — called from InvoiceService.
-    // REQUIRES_NEW ensures any failure here never poisons the caller's transaction.
+    /**
+     * Mark patient advances as applied to a finalized invoice. Called from
+     * InvoiceService.collectPayment / collectAndSave whenever a payment fully
+     * settles an IPD invoice that had an advance adjustment.
+     *
+     * Old version had two correctness bugs:
+     *   1. Used `adv.getAmount()` (the original advance amount) instead of the
+     *      remaining balance, so two invoices drawing on the same advance would
+     *      each see the full advance available — silently losing the first
+     *      invoice's claim when the second wrote over `appliedAmount`.
+     *   2. No idempotency on the same-invoice-twice case (e.g. a network retry
+     *      from the UI). A second call would re-walk the unapplied advances and
+     *      overwrite the bookkeeping with the same numbers — usually harmless
+     *      on identical args but masking a logic bug if amounts ever differed.
+     *
+     * New version:
+     *   - Computes available = amount - already-applied. Skips fully-consumed
+     *     advances (defensive — query already filters applied=true).
+     *   - Skips advances whose appliedInvoiceId already points at THIS invoice
+     *     — they're "this invoice's share already booked." Same-invoice retry
+     *     is now a no-op.
+     *   - Accumulates appliedAmount across multiple invoices instead of
+     *     overwriting, so partial applications are tracked correctly.
+     *   - Sets applied=true only when an advance is fully consumed.
+     *
+     * REQUIRES_NEW so any failure here can't poison the caller's transaction.
+     */
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void markAdvancesApplied(UUID admissionId, UUID invoiceId, BigDecimal appliedTotal) {
+        if (appliedTotal == null || appliedTotal.compareTo(BigDecimal.ZERO) <= 0) return;
+
         List<PatientAdvance> advances = patientAdvanceRepository.findByAdmission_IdAndAppliedFalse(admissionId);
         BigDecimal remaining = appliedTotal;
+
         for (PatientAdvance adv : advances) {
             if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
-            BigDecimal use = remaining.min(adv.getAmount());
-            adv.setApplied(use.compareTo(adv.getAmount()) >= 0);
-            adv.setAppliedAmount(use);
+
+            // Idempotency — if this advance was last booked against the same
+            // invoice, don't touch it. Re-invocations of markAdvancesApplied
+            // (e.g. a retry after a network blip) become safe no-ops.
+            if (invoiceId.equals(adv.getAppliedInvoiceId())) continue;
+
+            BigDecimal advAmount     = adv.getAmount()        != null ? adv.getAmount()        : BigDecimal.ZERO;
+            BigDecimal alreadyUsed   = adv.getAppliedAmount() != null ? adv.getAppliedAmount() : BigDecimal.ZERO;
+            BigDecimal available     = advAmount.subtract(alreadyUsed);
+            if (available.compareTo(BigDecimal.ZERO) <= 0) continue;
+
+            BigDecimal use = remaining.min(available);
+            adv.setAppliedAmount(alreadyUsed.add(use));
             adv.setAppliedInvoiceId(invoiceId);
+            adv.setApplied(adv.getAppliedAmount().compareTo(advAmount) >= 0);
             patientAdvanceRepository.save(adv);
             remaining = remaining.subtract(use);
         }

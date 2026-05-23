@@ -200,13 +200,26 @@ public class InvoiceService {
             try {
                 patientAdvanceService.markAdvancesApplied(
                         invoice.getAdmission().getId(), invoice.getId(), advance);
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                // REQUIRES_NEW on markAdvancesApplied — its failure can't roll back the
+                // invoice update, but reconciliation will be off until we re-apply
+                // manually. Log loudly so it shows up in monitoring.
+                log.error("markAdvancesApplied failed for invoice {} admission {} (advance ₹{}): {}",
+                        invoice.getId(), invoice.getAdmission().getId(), advance, e.getMessage(), e);
+            }
         }
 
         if (bankAccountId != null) {
             try { bankLedgerService.creditPayment(bankAccountId, amount,
                     "Payment — " + invoice.getInvoiceNumber(), invoice.getInvoiceNumber(), invoice.getId());
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                // Bank ledger is REQUIRES_NEW; failing here leaves the invoice marked
+                // paid but no corresponding bank credit row. Surface clearly so ops
+                // can backfill the ledger entry rather than silently shipping a
+                // reconciliation gap.
+                log.error("Bank ledger credit failed for invoice {} amount ₹{} on account {}: {}",
+                        invoice.getId(), amount, bankAccountId, e.getMessage(), e);
+            }
         }
 
         return toDTO(invoiceRepository.save(invoice));
@@ -617,14 +630,21 @@ public class InvoiceService {
         invoice.setStatus(fullyPaid ? InvoiceStatus.SETTLED : InvoiceStatus.UNSETTLED);
 
         if (fullyPaid && invoice.getAdmission() != null && advance.compareTo(BigDecimal.ZERO) > 0) {
-            try { patientAdvanceService.markAdvancesApplied(invoice.getAdmission().getId(), invoice.getId(), advance); }
-            catch (Exception ignored) {}
+            try {
+                patientAdvanceService.markAdvancesApplied(invoice.getAdmission().getId(), invoice.getId(), advance);
+            } catch (Exception e) {
+                log.error("markAdvancesApplied failed in collectAndSave for invoice {} admission {} (advance ₹{}): {}",
+                        invoice.getId(), invoice.getAdmission().getId(), advance, e.getMessage(), e);
+            }
         }
 
         if (bankAccountId != null) {
             try { bankLedgerService.creditPayment(bankAccountId, amount,
                     "Payment — " + invoice.getInvoiceNumber(), invoice.getInvoiceNumber(), invoice.getId());
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                log.error("Bank ledger credit failed in collectAndSave for invoice {} amount ₹{} on account {}: {}",
+                        invoice.getId(), amount, bankAccountId, e.getMessage(), e);
+            }
         }
 
         Invoice saved = invoiceRepository.save(invoice);
