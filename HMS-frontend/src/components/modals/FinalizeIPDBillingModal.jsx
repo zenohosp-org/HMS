@@ -299,13 +299,18 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         })
       })
 
-      // Patient services (food + others) — recalculate fresh quantities
+      // Patient services (food + others) — recalculate fresh quantities.
+      // A zero-quantity line (e.g. admitted at 23:26 with dinner at 20:00, so no
+      // meal slot has occurred yet) is skipped entirely rather than pushed as a
+      // ₹0 row — otherwise the bill shows "Dinner (0 meals) ₹0" which reads to
+      // staff as "dinner is being charged."
       ;(Array.isArray(patientServices) ? patientServices.filter(s => s.isActive) : []).forEach(s => {
         if (s.type === 'FOOD') {
           const price = s.pricePerMeal || 0
           const quantity = s.chargeTime
             ? countMealSlots(admission.admissionDate, effectiveDischargeDate, s.chargeTime)
             : roomDays * 3
+          if (quantity <= 0) return
           auto.push({
             key: key++, itemType: 'CUSTOM',
             description: `${s.name} (${quantity} meal${quantity !== 1 ? 's' : ''})`,
@@ -326,6 +331,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           const qty = s.chargeTime
             ? countMealSlots(admission.admissionDate, effectiveDischargeDate, s.chargeTime)
             : roomDays
+          if (qty <= 0) return
           auto.push({
             key: key++, itemType: 'CUSTOM',
             description: `${s.name} (${qty} day${qty !== 1 ? 's' : ''})`,
