@@ -6,6 +6,7 @@ import {
   Bed, Search, CalendarClock, MoreHorizontal, ScrollText,
   Building2, Layers, LayoutGrid, ChevronDown, ChevronRight,
   Stethoscope, AlertCircle, User, X, Maximize2, Minimize2, ChevronsUpDown,
+  Link2Off,
 } from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
@@ -13,6 +14,11 @@ import AssignAttenderModal from "./AssignAttenderModal";
 import RoomDetailPanel from "./RoomDetailPanel";
 
 // ─── design tokens ─────────────────────────────────────────────────────────
+// Font policy: the app is Inter throughout. `font-mono` is reserved for
+// IDENTIFIERS (room codes, UHIDs, allocation tokens, asset labels like
+// BLDG-01). Prose, labels, counts, and section headers stay in Inter with
+// `tabular-nums` where numeric alignment matters.
+
 const STATUS_DOT = {
   AVAILABLE: "bg-emerald-500",
   OCCUPIED:  "bg-blue-500",
@@ -30,21 +36,19 @@ const ACCENT_STRIP = {
   OCCUPIED:  "bg-blue-500",
 };
 const TYPE_BADGE = {
-  ICU: "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
+  ICU: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
   OT:  "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
 };
 
-// Subtle grid background — 24px squares, gentle contrast in both themes.
-// Inline style because Tailwind doesn't have a clean class for compound
-// linear-gradient backgrounds without custom config.
+// Subtle 24px grid — barely-there backdrop, more presence than texture.
 const GRID_BG_STYLE = {
   backgroundImage:
-    "linear-gradient(rgba(148,163,184,0.07) 1px, transparent 1px), " +
-    "linear-gradient(90deg, rgba(148,163,184,0.07) 1px, transparent 1px)",
+    "linear-gradient(rgba(148,163,184,0.06) 1px, transparent 1px), " +
+    "linear-gradient(90deg, rgba(148,163,184,0.06) 1px, transparent 1px)",
   backgroundSize: "24px 24px",
 };
 
-// ─── reusable components ───────────────────────────────────────────────────
+// ─── reusable bits ─────────────────────────────────────────────────────────
 
 function StatusChip({ status }) {
   const dot = STATUS_DOT[status] ?? "bg-slate-300 dark:bg-slate-600";
@@ -67,10 +71,10 @@ function OccupancyBar({ occupied, total, size = "md" }) {
   const h = size === "sm" ? "h-1" : size === "lg" ? "h-2.5" : "h-1.5";
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <div className={`flex-1 bg-slate-100 dark:bg-[#1e1e1e] rounded-full ${h} overflow-hidden`}>
+      <div className={`flex-1 bg-slate-100 dark:bg-[#1a1a1a] rounded-full ${h} overflow-hidden`}>
         <div className={`h-full ${fill} transition-all`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-[10px] font-mono tabular-nums text-slate-500 dark:text-[#888] shrink-0">{occupied}/{total}</span>
+      <span className="text-[10px] tabular-nums text-slate-500 dark:text-[#888] shrink-0 font-semibold">{occupied}/{total}</span>
     </div>
   );
 }
@@ -101,15 +105,14 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onMe
   return (
     <div
       onClick={() => roomData && onSelect(roomData)}
-      className={`group relative overflow-hidden bg-white dark:bg-[#111111] border rounded-lg p-3 pl-3.5 transition-all ${
-        !roomData ? "opacity-60 cursor-default" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"
+      className={`group relative overflow-hidden bg-white dark:bg-[#111] border rounded-lg p-3 pl-3.5 transition-all duration-150 ${
+        !roomData ? "opacity-60 cursor-default" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm"
       } ${
         isSelected
           ? "border-blue-400 dark:border-blue-600 ring-2 ring-blue-500/10"
           : "border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 dark:hover:border-[#2a2a2a]"
       }`}
     >
-      {/* Left accent strip */}
       <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${accent}`} />
 
       <div className="flex items-start gap-2">
@@ -123,12 +126,12 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onMe
           <div className="flex items-center gap-1.5 leading-none">
             <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{roomInfo.name}</p>
             {roomData?.roomCode && (
-              <span className="text-[9px] font-mono text-slate-400 dark:text-[#888888] tabular-nums">{fmtId(roomData.roomCode)}</span>
+              <span className="text-[10px] font-mono text-slate-400 dark:text-[#777]">{fmtId(roomData.roomCode)}</span>
             )}
           </div>
           <div className="flex items-center gap-1 mt-1.5 flex-wrap">
             <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${
-              TYPE_BADGE[roomType] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-[#1e1e1e] dark:text-[#888888] dark:border-[#2a2a2a]"
+              TYPE_BADGE[roomType] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-[#1e1e1e] dark:text-[#888] dark:border-[#2a2a2a]"
             }`}>
               {roomType}
             </span>
@@ -137,8 +140,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onMe
                 {roomData.bedCount} beds
               </span>
             )}
-            {status && <StatusChip status={status} />}
-            {!status && <StatusChip status={null} />}
+            <StatusChip status={status} />
           </div>
         </div>
 
@@ -156,28 +158,28 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onMe
             <span className="text-[11px] font-semibold text-slate-800 dark:text-[#dddddd] truncate">
               {roomData.currentPatient.firstName} {roomData.currentPatient.lastName}
             </span>
-            <span className="text-[9px] text-slate-400 dark:text-[#888888] shrink-0 font-mono tabular-nums">{fmtId(roomData.currentPatient.uhid)}</span>
+            <span className="text-[10px] text-slate-400 dark:text-[#777] shrink-0 font-mono">{fmtId(roomData.currentPatient.uhid)}</span>
           </div>
           {roomData.attenderName ? (
             <div className="flex items-baseline gap-1.5 min-w-0 pl-4">
               <span className="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-600 shrink-0">Attender</span>
-              <span className="text-[11px] font-medium text-slate-600 dark:text-[#aaaaaa] truncate">
+              <span className="text-[11px] font-medium text-slate-600 dark:text-[#aaa] truncate">
                 {roomData.attenderName}
                 {roomData.attenderRelationship && <span className="text-[9px] text-slate-400 ml-1">({roomData.attenderRelationship})</span>}
               </span>
             </div>
           ) : (
             <div className="flex items-center gap-1.5 pl-4">
-              <span className="text-[9px] text-amber-500 dark:text-amber-400 font-medium uppercase tracking-wider">No attender</span>
+              <span className="text-[9px] text-amber-500 dark:text-amber-400 font-semibold uppercase tracking-wider">No attender</span>
             </div>
           )}
         </div>
       )}
       {roomData && isMultiBed && (
-        <p className="mt-2 text-[10px] text-slate-400 dark:text-[#666666] uppercase tracking-wider">Open panel to view beds →</p>
+        <p className="mt-2 text-[10px] text-slate-400 dark:text-[#666] uppercase tracking-wider">Open panel to view beds →</p>
       )}
       {!roomData && (
-        <p className="mt-2 text-[10px] text-slate-400 dark:text-[#666666] uppercase tracking-wider">Not provisioned</p>
+        <p className="mt-2 text-[10px] text-slate-400 dark:text-[#666] uppercase tracking-wider">Not provisioned</p>
       )}
     </div>
   );
@@ -185,13 +187,13 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onMe
 
 function SectionLabel({ icon: Icon, label, count, tone = "default" }) {
   const colors = tone === "onDark"
-    ? "text-white/50"
+    ? "text-white/55"
     : "text-slate-400 dark:text-slate-600";
   return (
     <div className={`flex items-center gap-1.5 ${colors}`}>
       <Icon className="w-3 h-3" />
       <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>
-      {count != null && <span className="text-[10px] font-bold font-mono tabular-nums">· {count}</span>}
+      {count != null && <span className="text-[10px] font-bold tabular-nums">· {count}</span>}
     </div>
   );
 }
@@ -210,8 +212,8 @@ function Rooms() {
   const [collapsedWards, setCollapsedWards] = useState(new Set());
   const [menuState, setMenuState] = useState(null); // { room, top?, bottom?, right }
 
-  // New: density toggle for room grid — comfortable (4 col) vs compact (6 col).
-  const [density, setDensity] = useState("comfortable"); // "comfortable" | "compact"
+  // Density toggle for room grid — comfortable (4 col) vs compact (6 col).
+  const [density, setDensity] = useState("comfortable");
 
   const normalizeKey = (v) => v?.toString()?.trim()?.toLowerCase() || "";
 
@@ -259,6 +261,15 @@ function Rooms() {
       if (updated) setSelectedRoom(updated);
     }
   }, [rooms]);
+
+  // ESC clears search when typed; Cmd/Ctrl+K focuses search.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && search) setSearch("");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [search]);
 
   const handleDeleteRoom = async (roomId) => {
     if (!confirm("Permanently delete this room?")) return;
@@ -321,9 +332,9 @@ function Rooms() {
   const occupiedCount  = rooms.filter((r) => r.status === "OCCUPIED").length;
   const occupancyPct = rooms.length > 0 ? Math.round((occupiedCount / rooms.length) * 100) : 0;
   const occupancyTone =
-    occupancyPct >= 85 ? { fill: "bg-rose-500",    pill: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20",       label: "AT CAPACITY" } :
-    occupancyPct >= 60 ? { fill: "bg-amber-500",   pill: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20", label: "HIGH" } :
-                         { fill: "bg-emerald-500", pill: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20", label: "HEALTHY" };
+    occupancyPct >= 85 ? { fill: "bg-rose-500",    pill: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20",       label: "At capacity" } :
+    occupancyPct >= 60 ? { fill: "bg-amber-500",   pill: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20", label: "High" } :
+                         { fill: "bg-emerald-500", pill: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20", label: "Healthy" };
 
   // ICU + OT breakdowns for the metric card footers
   const icuAvailable = rooms.filter((r) => r.roomType === "ICU" && r.status === "AVAILABLE").length;
@@ -340,7 +351,6 @@ function Rooms() {
     onMenuOpen: openMenu,
   });
 
-  // Expand / collapse all toggles operate on the in-view tree.
   const expandAll = () => { setCollapsedFloors(new Set()); setCollapsedWards(new Set()); };
   const collapseAll = () => {
     const floorKeys = new Set();
@@ -353,37 +363,39 @@ function Rooms() {
     setCollapsedWards(wardKeys);
   };
 
-  // Room grid columns driven by density
   const roomGridCls = density === "compact"
     ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2"
-    : "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2";
+    : "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5";
 
   return (
     <div className="space-y-4">
 
-      {/* ─── Header with branded mark + grid pattern bg ─────────────────── */}
+      {/* ─── Header ───────────────────────────────────────────────────── */}
       <div
         className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-[#1e1e1e] bg-white dark:bg-[#0a0a0a]"
         style={GRID_BG_STYLE}
       >
         <div className="relative flex items-center justify-between flex-wrap gap-4 p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center shrink-0">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center shrink-0 shadow-sm">
               <Stethoscope className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-baseline gap-2.5">
                 <h1 className="text-xl font-bold text-slate-900 dark:text-[#f0f0f0] tracking-tight">Room Allocation</h1>
-                <span className="text-[10px] font-mono text-slate-400 dark:text-[#666] uppercase tracking-widest hidden sm:inline">/ infrastructure</span>
+                <span className="text-[10px] font-semibold text-slate-400 dark:text-[#666] uppercase tracking-widest hidden sm:inline">Infrastructure</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5 font-mono">
-                <span className="tabular-nums">{rooms.length}</span> rooms
+              <p className="text-xs text-slate-500 dark:text-[#888] mt-1 flex items-center gap-1.5 flex-wrap">
+                <span className="tabular-nums font-semibold text-slate-700 dark:text-[#bbb]">{rooms.length}</span>
+                <span>rooms</span>
                 {showInfrastructureView && (
                   <>
-                    <span className="mx-1.5">·</span>
-                    <span className="tabular-nums">{totalBuildings}</span> buildings
-                    <span className="mx-1.5">·</span>
-                    <span className="tabular-nums">{totalFloors}</span> floors
+                    <span className="text-slate-300 dark:text-[#444]">·</span>
+                    <span className="tabular-nums font-semibold text-slate-700 dark:text-[#bbb]">{totalBuildings}</span>
+                    <span>{totalBuildings === 1 ? "building" : "buildings"}</span>
+                    <span className="text-slate-300 dark:text-[#444]">·</span>
+                    <span className="tabular-nums font-semibold text-slate-700 dark:text-[#bbb]">{totalFloors}</span>
+                    <span>{totalFloors === 1 ? "floor" : "floors"}</span>
                   </>
                 )}
               </p>
@@ -395,81 +407,99 @@ function Rooms() {
         </div>
       </div>
 
-      {/* ─── Hero metrics: 4-col grid (occupancy spans 2) ───────────────── */}
+      {/* ─── Hero metrics ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
 
-        {/* Live Occupancy — spans 2 columns */}
+        {/* Live Occupancy — spans 2 cols on xl */}
         <div className="xl:col-span-2 bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-5">
-          <div className="flex items-start justify-between mb-3">
+          <div className="flex items-start justify-between mb-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#888]">Live Occupancy</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <p className="text-4xl font-bold text-slate-900 dark:text-white tabular-nums">{occupancyPct}<span className="text-2xl text-slate-400 dark:text-[#666]">%</span></p>
-                <p className="text-xs font-mono tabular-nums text-slate-500 dark:text-[#888]">
-                  {occupiedCount} / {rooms.length} occupied
+              <div className="flex items-baseline gap-2 mt-1.5">
+                <p className="text-4xl font-bold text-slate-900 dark:text-white tabular-nums leading-none">
+                  {occupancyPct}<span className="text-2xl text-slate-400 dark:text-[#666] ml-0.5">%</span>
+                </p>
+                <p className="text-xs tabular-nums text-slate-500 dark:text-[#888]">
+                  <span className="font-semibold text-slate-700 dark:text-[#bbb]">{occupiedCount}</span>
+                  <span className="text-slate-400 dark:text-[#666]"> / </span>
+                  <span className="font-semibold text-slate-700 dark:text-[#bbb]">{rooms.length}</span>
+                  <span className="ml-1">occupied</span>
                 </p>
               </div>
             </div>
-            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded border ${occupancyTone.pill}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md border ${occupancyTone.pill}`}>
               {occupancyTone.label}
             </span>
           </div>
           <div className="relative">
-            <div className="h-2.5 bg-slate-100 dark:bg-[#1a1a1a] rounded-full overflow-hidden">
+            <div className="h-2 bg-slate-100 dark:bg-[#1a1a1a] rounded-full overflow-hidden">
               <div className={`h-full ${occupancyTone.fill} transition-all`} style={{ width: `${occupancyPct}%` }} />
             </div>
-            {/* 85% capacity threshold marker */}
-            <div className="absolute top-0 bottom-0 w-px bg-slate-400 dark:bg-slate-600" style={{ left: "85%" }} />
+            {/* 85% threshold marker */}
+            <div className="absolute -top-0.5 -bottom-0.5 w-0.5 bg-slate-400/60 dark:bg-slate-600/60 rounded-full" style={{ left: "85%" }} />
           </div>
-          <p className="text-[10px] font-mono tabular-nums text-slate-400 dark:text-[#666] mt-1.5 uppercase tracking-wider">
-            ╴ 85% capacity threshold
-          </p>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-[10px] text-slate-400 dark:text-[#666] uppercase tracking-wider font-medium">Capacity threshold</p>
+            <p className="text-[10px] tabular-nums font-semibold text-slate-500 dark:text-[#888]">85%</p>
+          </div>
         </div>
 
         {/* Available */}
-        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-5 flex flex-col">
+        <div className="bg-emerald-50/60 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/20 rounded-xl p-5 flex flex-col">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-500">Available</p>
-              <p className="text-3xl font-bold mt-1 text-emerald-800 dark:text-emerald-300 tabular-nums">{availableCount}</p>
+              <p className="text-3xl font-bold mt-1.5 text-emerald-800 dark:text-emerald-300 tabular-nums leading-none">{availableCount}</p>
             </div>
-            <div className="relative">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
+            <span className="relative flex w-2.5 h-2.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
+              <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            </span>
           </div>
-          <div className="mt-3 pt-3 border-t border-emerald-200 dark:border-emerald-500/20 flex items-center gap-3 text-[10px] font-mono tabular-nums">
-            <span className="text-emerald-700 dark:text-emerald-400"><span className="font-bold">ICU</span> {icuAvailable}</span>
-            <span className="text-emerald-500/40">|</span>
-            <span className="text-emerald-700 dark:text-emerald-400"><span className="font-bold">OT</span> {otAvailable}</span>
+          <div className="mt-4 pt-3 border-t border-emerald-200/60 dark:border-emerald-500/20 flex items-center gap-4 text-[10px] tabular-nums">
+            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+              <span className="font-bold uppercase tracking-wider">ICU</span>
+              <span className="font-semibold">{icuAvailable}</span>
+            </span>
+            <span className="w-px h-3 bg-emerald-300/60 dark:bg-emerald-500/30" />
+            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+              <span className="font-bold uppercase tracking-wider">OT</span>
+              <span className="font-semibold">{otAvailable}</span>
+            </span>
           </div>
         </div>
 
         {/* Occupied */}
-        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-5 flex flex-col">
+        <div className="bg-blue-50/60 dark:bg-blue-500/10 border border-blue-200/80 dark:border-blue-500/20 rounded-xl p-5 flex flex-col">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-blue-700 dark:text-blue-500">Occupied</p>
-              <p className="text-3xl font-bold mt-1 text-blue-800 dark:text-blue-300 tabular-nums">{occupiedCount}</p>
+              <p className="text-3xl font-bold mt-1.5 text-blue-800 dark:text-blue-300 tabular-nums leading-none">{occupiedCount}</p>
             </div>
-            <div className="relative">
-              <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-              <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
-            </div>
+            <span className="relative flex w-2.5 h-2.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75 animate-ping" />
+              <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-blue-500" />
+            </span>
           </div>
-          <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-500/20 flex items-center gap-3 text-[10px] font-mono tabular-nums">
-            <span className="text-blue-700 dark:text-blue-400"><span className="font-bold">ICU</span> {icuOccupied}</span>
-            <span className="text-blue-500/40">|</span>
-            <span className="text-blue-700 dark:text-blue-400"><span className="font-bold">OT</span> {otOccupied}</span>
+          <div className="mt-4 pt-3 border-t border-blue-200/60 dark:border-blue-500/20 flex items-center gap-4 text-[10px] tabular-nums">
+            <span className="flex items-center gap-1 text-blue-700 dark:text-blue-400">
+              <span className="font-bold uppercase tracking-wider">ICU</span>
+              <span className="font-semibold">{icuOccupied}</span>
+            </span>
+            <span className="w-px h-3 bg-blue-300/60 dark:bg-blue-500/30" />
+            <span className="flex items-center gap-1 text-blue-700 dark:text-blue-400">
+              <span className="font-bold uppercase tracking-wider">OT</span>
+              <span className="font-semibold">{otOccupied}</span>
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ─── Controls strip ─────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-3 flex flex-col lg:flex-row lg:items-center gap-3">
+      {/* ─── Controls ─────────────────────────────────────────────────── */}
+      <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-2.5 flex flex-col lg:flex-row lg:items-center gap-2.5">
 
         {/* Segmented filter */}
-        <div className="bg-slate-100 dark:bg-[#1a1a1a] rounded-lg p-1 flex gap-1 shrink-0">
+        <div className="bg-slate-100 dark:bg-[#0d0d0d] rounded-lg p-1 flex gap-1 shrink-0">
           {["ALL", "AVAILABLE", "OCCUPIED"].map((f) => (
             <button
               key={f}
@@ -487,7 +517,7 @@ function Rooms() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
-            className="w-full pl-9 pr-16 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-[#cccccc] text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444]/50"
+            className="w-full pl-9 pr-16 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-[#cccccc] text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#333]/50 placeholder:text-slate-400"
             placeholder="Search rooms, patients, UHID…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -496,7 +526,7 @@ function Rooms() {
             <button
               onClick={() => setSearch("")}
               className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 bg-slate-100 dark:bg-[#1a1a1a] hover:bg-slate-200 dark:hover:bg-[#222]"
-              title="Clear search"
+              title="Clear search (Esc)"
             >
               <X className="w-2.5 h-2.5" /> ESC
             </button>
@@ -505,8 +535,8 @@ function Rooms() {
 
         {/* Density + expand/collapse */}
         {showInfrastructureView && (
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="bg-slate-100 dark:bg-[#1a1a1a] rounded-lg p-1 flex gap-1">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="bg-slate-100 dark:bg-[#0d0d0d] rounded-lg p-1 flex gap-1">
               <button
                 onClick={() => setDensity("comfortable")}
                 className={`p-1.5 rounded-md transition-all ${density === "comfortable"
@@ -526,37 +556,38 @@ function Rooms() {
                 <Minimize2 className="w-3.5 h-3.5" />
               </button>
             </div>
-            <div className="h-5 w-px bg-slate-200 dark:bg-[#222]" />
-            <button
-              onClick={expandAll}
-              className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#888] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
-              title="Expand all"
-            >Expand</button>
-            <button
-              onClick={collapseAll}
-              className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#888] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
-              title="Collapse all"
-            >Collapse</button>
+            <div className="flex items-center bg-slate-100 dark:bg-[#0d0d0d] rounded-lg p-1 gap-1">
+              <button
+                onClick={expandAll}
+                className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#aaa] hover:bg-white dark:hover:bg-[#222] hover:text-slate-900 dark:hover:text-white transition-colors"
+                title="Expand all"
+              >Expand</button>
+              <button
+                onClick={collapseAll}
+                className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#aaa] hover:bg-white dark:hover:bg-[#222] hover:text-slate-900 dark:hover:text-white transition-colors"
+                title="Collapse all"
+              >Collapse</button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* ─── Content ────────────────────────────────────────────────────── */}
+      {/* ─── Content ─────────────────────────────────────────────────── */}
       <div className="flex gap-4 items-start">
         <div className="flex-1 min-w-0 space-y-3">
           {loading ? (
             <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] rounded-xl p-16 flex flex-col items-center justify-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                <span className="text-[11px] font-mono uppercase tracking-widest text-slate-500 dark:text-[#888]">
-                  Loading infrastructure
-                </span>
-              </div>
+              <span className="relative flex w-2 h-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75 animate-ping" />
+                <span className="relative inline-flex w-2 h-2 rounded-full bg-blue-500" />
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-[#888]">
+                Loading infrastructure
+              </span>
             </div>
           ) : showInfrastructureView ? (
             <div className="space-y-3">
               {filteredInfrastructure.map((building, bIdx) => {
-                // Building-level occupancy roll-up
                 const bRooms = building.floors.flatMap((f) => f.wards.flatMap((w) => w.rooms.map((r) => r.roomData).filter(Boolean)));
                 const bOcc = bRooms.filter((r) => r.status === "OCCUPIED").length;
                 const bldgCode = `BLDG-${String(bIdx + 1).padStart(2, "0")}`;
@@ -564,15 +595,15 @@ function Rooms() {
                   <div key={building.id ?? bIdx} className="rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] overflow-hidden">
 
                     {/* Building header — dark gradient */}
-                    <div className="px-4 py-3 bg-gradient-to-r from-slate-900 to-slate-800 dark:from-[#181818] dark:to-[#0f0f0f] border-b border-slate-700 dark:border-[#1e1e1e]">
+                    <div className="px-4 py-3 bg-gradient-to-r from-slate-900 to-slate-800 dark:from-[#1a1a1a] dark:to-[#0f0f0f] border-b border-slate-700 dark:border-[#1e1e1e]">
                       <div className="flex items-center justify-between gap-4 flex-wrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-md bg-white/10 backdrop-blur flex items-center justify-center text-white shrink-0">
-                            <Building2 className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-md bg-white/10 backdrop-blur flex items-center justify-center text-white shrink-0">
+                            <Building2 className="w-4 h-4" />
                           </div>
                           <div>
                             <p className="text-sm font-bold text-white tracking-tight">{building.name || `Building ${bIdx + 1}`}</p>
-                            <p className="text-[9px] font-mono uppercase tracking-widest text-white/40">{bldgCode}</p>
+                            <p className="text-[10px] font-mono uppercase tracking-widest text-white/40 mt-0.5">{bldgCode}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -592,8 +623,6 @@ function Rooms() {
                         const fOcc = fRooms.filter((r) => r.status === "OCCUPIED").length;
                         return (
                           <div key={floorKey} className="rounded-lg border border-slate-100 dark:border-[#1e1e1e] overflow-hidden">
-
-                            {/* Floor header */}
                             <div
                               onClick={() => toggleFloor(floorKey)}
                               className="flex items-center justify-between px-3 py-2 bg-slate-50/80 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1e1e1e] hover:bg-slate-100 dark:hover:bg-[#141414] transition-colors cursor-pointer select-none"
@@ -618,7 +647,6 @@ function Rooms() {
                                   const wOcc = wRooms.filter((r) => r.status === "OCCUPIED").length;
                                   return (
                                     <div key={wardKey}>
-                                      {/* Ward header */}
                                       <div
                                         onClick={() => toggleWard(wardKey)}
                                         className="flex items-center justify-between mb-2 px-1.5 py-1 rounded-md hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors cursor-pointer select-none"
@@ -627,7 +655,7 @@ function Rooms() {
                                           {wardCollapsed ? <ChevronRight className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
                                           <LayoutGrid className="w-3 h-3 text-slate-400" />
                                           <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{ward.name || `Ward ${wIdx + 1}`}</span>
-                                          <span className="text-[10px] font-mono tabular-nums text-slate-400 dark:text-slate-600">· {ward.rooms.length}</span>
+                                          <span className="text-[10px] tabular-nums text-slate-400 dark:text-slate-600">· {ward.rooms.length}</span>
                                         </div>
                                         <div className="hidden md:flex items-center gap-2 w-28">
                                           <OccupancyBar occupied={wOcc} total={wRooms.length} size="sm" />
@@ -659,25 +687,34 @@ function Rooms() {
                 );
               })}
 
+              {/* ─── Unmapped Rooms — clean data-quality callout ─────── */}
               {unmappedRooms.length > 0 && (
-                <div className="rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 bg-amber-100/60 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/20">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-md bg-amber-200 dark:bg-amber-500/20 flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0">
-                        <AlertCircle className="w-4 h-4" />
+                <div className="relative rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] overflow-hidden">
+                  {/* Thin amber accent strip on the left */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-400 dark:bg-amber-500" />
+                  <div className="flex items-center justify-between gap-4 px-5 py-3.5 pl-6 border-b border-slate-100 dark:border-[#1e1e1e]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-md bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                        <Link2Off className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-amber-900 dark:text-amber-300">Unmapped Rooms</p>
-                        <p className="text-[10px] font-mono uppercase tracking-wider text-amber-700/70 dark:text-amber-400/70">
-                          Exist in allocation but not in infrastructure tree
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">Unmapped Rooms</p>
+                          <span className="text-[10px] font-bold tabular-nums text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20">
+                            {unmappedRooms.length}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-[#888] mt-0.5">
+                          Exist in room allocation but not linked to the infrastructure tree
                         </p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono tabular-nums font-bold text-amber-700 dark:text-amber-400 px-2 py-1 rounded bg-amber-200/50 dark:bg-amber-500/10">
-                      {unmappedRooms.length} {unmappedRooms.length === 1 ? "room" : "rooms"}
-                    </span>
+                    <div className="hidden md:flex items-center gap-2 text-[10px] uppercase tracking-widest text-slate-400 dark:text-[#666] font-semibold">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>Data quality</span>
+                    </div>
                   </div>
-                  <div className={`p-3 ${roomGridCls}`}>
+                  <div className={`p-3 pl-4 ${roomGridCls}`}>
                     {unmappedRooms.map((room) => (
                       <InfrastructureRoomCard
                         key={room.id}
@@ -716,7 +753,7 @@ function Rooms() {
                 <div
                   key={room.id}
                   onClick={() => setSelectedRoom((prev) => prev?.id === room.id ? null : room)}
-                  className={`group relative overflow-hidden bg-white dark:bg-[#111] border rounded-xl p-4 pl-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-all hover:shadow-md ${
+                  className={`group relative overflow-hidden bg-white dark:bg-[#111] border rounded-xl p-4 pl-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-all duration-150 hover:shadow-sm ${
                     selectedRoom?.id === room.id
                       ? "border-blue-400 dark:border-blue-600 ring-2 ring-blue-500/10"
                       : "border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 dark:hover:border-[#2a2a2a]"
@@ -732,9 +769,9 @@ function Rooms() {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-bold text-slate-900 dark:text-white">{room.roomNumber}</p>
-                        {room.roomCode && <span className="text-[10px] font-mono tabular-nums text-slate-400">{fmtId(room.roomCode)}</span>}
+                        {room.roomCode && <span className="text-[10px] font-mono text-slate-400">{fmtId(room.roomCode)}</span>}
                         <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${
-                          TYPE_BADGE[room.roomType] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-[#1e1e1e] dark:text-[#888888] dark:border-[#2a2a2a]"
+                          TYPE_BADGE[room.roomType] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-[#1e1e1e] dark:text-[#888] dark:border-[#2a2a2a]"
                         }`}>{room.roomType}</span>
                         {isMultiBed && (
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-400 dark:border-[#2a2a2a]">
@@ -742,7 +779,7 @@ function Rooms() {
                           </span>
                         )}
                       </div>
-                      <div className="mt-0.5">
+                      <div className="mt-1">
                         <StatusChip status={room.status} />
                       </div>
                     </div>
@@ -750,24 +787,24 @@ function Rooms() {
 
                   {isMultiBed ? (
                     <div className="flex-1 sm:pl-6 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-[#222] pt-3 sm:pt-0 flex items-center">
-                      <p className="text-xs text-slate-500 dark:text-[#999] uppercase tracking-wider">Open panel to view beds →</p>
+                      <p className="text-xs text-slate-500 dark:text-[#999] uppercase tracking-wider font-medium">Open panel to view beds →</p>
                     </div>
                   ) : room.status === "OCCUPIED" && room.currentPatient ? (
                     <div className="flex-1 sm:pl-6 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-[#222] pt-3 sm:pt-0">
                       <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           <div>
-                            <p className="text-[10px] text-slate-400 dark:text-[#666] uppercase tracking-widest">Patient</p>
+                            <p className="text-[10px] text-slate-400 dark:text-[#666] uppercase tracking-widest font-semibold">Patient</p>
                             <div className="flex items-center gap-1.5 mt-0.5">
                               <User className="w-3.5 h-3.5 text-slate-400" />
-                              <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{room.currentPatient.firstName} {room.currentPatient.lastName}</p>
+                              <p className="text-sm font-bold text-slate-800 dark:text-[#ddd]">{room.currentPatient.firstName} {room.currentPatient.lastName}</p>
                             </div>
-                            <p className="text-[11px] text-slate-500 dark:text-[#999] font-mono tabular-nums mt-0.5">{fmtId(room.currentPatient.uhid)}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-[#999] font-mono mt-0.5">{fmtId(room.currentPatient.uhid)}</p>
                           </div>
                           {room.attenderName ? (
                             <div>
-                              <p className="text-[10px] text-slate-400 dark:text-[#666] uppercase tracking-widest">Attender</p>
-                              <p className="text-sm font-medium text-slate-700 dark:text-[#cccccc]">
+                              <p className="text-[10px] text-slate-400 dark:text-[#666] uppercase tracking-widest font-semibold">Attender</p>
+                              <p className="text-sm font-medium text-slate-700 dark:text-[#ccc] mt-0.5">
                                 {room.attenderName}
                                 {room.attenderRelationship && <span className="text-xs text-slate-400 ml-1">({room.attenderRelationship})</span>}
                               </p>
@@ -779,18 +816,18 @@ function Rooms() {
                         <div className="text-right shrink-0 space-y-2">
                           {room.allocationToken && (
                             <div>
-                              <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">Token</p>
-                              <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333] text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-white">
+                              <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5 font-semibold">Token</p>
+                              <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333] text-sm font-bold font-mono text-slate-900 dark:text-white">
                                 {room.allocationToken}
                               </span>
                             </div>
                           )}
                           {room.approxDischargeTime && (
                             <div className="hidden md:block">
-                              <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-0.5 justify-end uppercase tracking-widest">
+                              <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-0.5 justify-end uppercase tracking-widest font-semibold">
                                 <CalendarClock className="w-3 h-3" /> Est. Discharge
                               </div>
-                              <p className="text-xs font-medium text-slate-600 dark:text-[#aaaaaa]">{formatDateTime(room.approxDischargeTime)}</p>
+                              <p className="text-xs font-medium text-slate-600 dark:text-[#aaa]">{formatDateTime(room.approxDischargeTime)}</p>
                             </div>
                           )}
                         </div>
@@ -821,7 +858,7 @@ function Rooms() {
         )}
       </div>
 
-      {/* ─── Global room action menu — portal rendered outside cards ────── */}
+      {/* ─── Action menu — portal ─────────────────────────────────────── */}
       {menuState && (() => {
         const room = menuState.room;
         const isMultiBed = room.bedCount != null && room.bedCount > 1;
@@ -833,13 +870,11 @@ function Rooms() {
               style={{ position: "fixed", right, ...(top !== undefined ? { top } : { bottom }), zIndex: 50 }}
               className="w-56 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-slate-100 dark:border-[#252525] overflow-hidden"
             >
-              {/* Mono uppercase header — anchors the menu to the room context */}
               <div className="px-3 py-2 border-b border-slate-100 dark:border-[#252525] bg-slate-50/50 dark:bg-[#141414]">
-                <p className="text-[9px] font-mono uppercase tracking-widest text-slate-400 dark:text-[#666]">Room</p>
-                <p className="text-xs font-mono font-bold tabular-nums text-slate-700 dark:text-slate-300">{room.roomNumber}</p>
+                <p className="text-[9px] uppercase tracking-widest text-slate-400 dark:text-[#666] font-semibold">Room</p>
+                <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">{room.roomNumber}</p>
               </div>
               <div className="py-1.5">
-                {/* View details */}
                 <button
                   onClick={() => { closeMenu(); setSelectedRoom(room); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222] transition-all"
@@ -847,7 +882,6 @@ function Rooms() {
                   <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400" />
                   {isMultiBed ? "View Beds" : "View Details"}
                 </button>
-                {/* Occupied single-bed: edit attender */}
                 {room.status === "OCCUPIED" && !isMultiBed && (
                   <button
                     onClick={() => { closeMenu(); setShowAttenderModal({ open: true, room }); }}
@@ -857,7 +891,6 @@ function Rooms() {
                     {room.attenderName ? "Edit Attender" : "Assign Attender"}
                   </button>
                 )}
-                {/* Available room: delete */}
                 {room.status === "AVAILABLE" && (
                   <>
                     <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
