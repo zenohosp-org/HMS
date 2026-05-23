@@ -59,9 +59,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
      *
      * Fetches createdBy + doctor.user eagerly so any downstream DTO mapping
      * (or audit hook reading creator/doctor) won't blow up on a closed
-     * session — same defense as RecordController's @EntityGraph usage.
+     * session. createdBy.role and doctor.user.role are listed explicitly
+     * because Spring Data's default @EntityGraph type is FETCH, which treats
+     * anything NOT listed as LAZY — even when the entity itself maps the
+     * field @ManyToOne(EAGER). Same trap that surfaced on PatientRecord.
      */
-    @EntityGraph(attributePaths = {"createdBy", "doctor", "doctor.user", "patient"})
+    @EntityGraph(attributePaths = {
+            "createdBy", "createdBy.role",
+            "doctor", "doctor.user", "doctor.user.role",
+            "patient"})
     @Query("SELECT a FROM Appointment a WHERE a.hospital.id = :hospitalId AND a.apptDate = :apptDate " +
            "ORDER BY a.createdAt ASC")
     List<Appointment> findByHospitalIdAndApptDateOrderByCreatedAtAsc(
@@ -72,9 +78,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
      * touches (patient, doctor.user, createdBy, hospital). Used by status-change
      * paths where the response is mapped through the DTO — without this, the
      * lazy doctor.user / createdBy proxies can trip a LazyInit on Role even
-     * inside @Transactional when an auto-flush re-orders things.
+     * inside @Transactional when an auto-flush re-orders things. role is
+     * listed explicitly for the same FETCH-vs-LOAD reason.
      */
-    @EntityGraph(attributePaths = {"patient", "doctor", "doctor.user", "createdBy", "hospital"})
+    @EntityGraph(attributePaths = {
+            "patient",
+            "doctor", "doctor.user", "doctor.user.role",
+            "createdBy", "createdBy.role",
+            "hospital"})
     @Query("SELECT a FROM Appointment a WHERE a.id = :id")
     Optional<Appointment> findByIdWithRelations(@Param("id") UUID id);
 
