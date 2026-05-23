@@ -359,6 +359,18 @@ public class AdmissionService {
             admission.setPreviousRoom(admission.getRoom());
         }
 
+        // The ward room's currentPatient pointed at this patient. We move the
+        // patient-of-record to the OT room while keeping the bed allocated
+        // (status stays OCCUPIED — the bed is held for return). Without this,
+        // Rooms.jsx would show the same patient on both the ward and OT rows.
+        if (admission.getPreviousRoom() != null
+                && admission.getPreviousRoom().getCurrentPatient() != null
+                && admission.getPatient().getId().equals(admission.getPreviousRoom().getCurrentPatient().getId())) {
+            Room wardRoom = admission.getPreviousRoom();
+            wardRoom.setCurrentPatient(null);
+            roomRepository.save(wardRoom);
+        }
+
         // Occupy OT room
         otRoom.setStatus(RoomStatus.OCCUPIED);
         otRoom.setCurrentPatient(admission.getPatient());
@@ -435,8 +447,12 @@ public class AdmissionService {
                     .performedBy(performedBy)
                     .build());
         } else if (admission.getPreviousRoom() != null) {
-            // No recovery room — return directly to original ward room
-            admission.setRoom(admission.getPreviousRoom());
+            // No recovery room — return directly to original ward room.
+            // Restore the patient pointer we cleared during moveToOT.
+            Room wardRoom = admission.getPreviousRoom();
+            wardRoom.setCurrentPatient(admission.getPatient());
+            roomRepository.save(wardRoom);
+            admission.setRoom(wardRoom);
             admission.setPreviousRoom(null);
         } else {
             // Patient was admitted directly to OT (no prior ward room); clear room so
@@ -473,8 +489,12 @@ public class AdmissionService {
                     .build());
         }
 
-        // Restore original ward room (it was held OCCUPIED throughout)
-        admission.setRoom(admission.getPreviousRoom());
+        // Restore original ward room (it was held OCCUPIED throughout) and
+        // re-attach the patient pointer that was cleared on moveToOT.
+        Room wardRoom = admission.getPreviousRoom();
+        wardRoom.setCurrentPatient(admission.getPatient());
+        roomRepository.save(wardRoom);
+        admission.setRoom(wardRoom);
         admission.setPreviousRoom(null);
         return toDTO(admissionRepository.save(admission));
     }
