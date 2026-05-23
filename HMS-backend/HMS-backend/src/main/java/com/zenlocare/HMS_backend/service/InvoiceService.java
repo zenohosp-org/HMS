@@ -93,6 +93,14 @@ public class InvoiceService {
                         .build()
             ).collect(Collectors.toList());
             invoice.setItems(items);
+
+            // Staff-built invoice with a REGISTRATION line manually added → mark the
+            // patient registered so the auto-flow won't add another one later.
+            boolean hasReg = items.stream().anyMatch(i -> "REGISTRATION".equals(i.getItemType()));
+            if (hasReg && !Boolean.TRUE.equals(patient.getRegistrationFeePaid())) {
+                patient.setRegistrationFeePaid(true);
+                patientRepository.save(patient);
+            }
         }
 
         Invoice saved = invoiceRepository.save(invoice);
@@ -252,11 +260,11 @@ public class InvoiceService {
         log.info("OPD→IPD merge: no merge for admission {} (sourceApptId={}, admissionType={}) — creating fresh IPD invoice",
                 admissionId, sourceAppointmentId, admission.getAdmissionType());
 
-        // Direct IPD admission (no OPD source) — add one-time registration fee if never charged
+        // Direct IPD admission (no OPD source) — add one-time registration fee if never charged.
+        // Patient.registrationFeePaid is the canonical signal; once true it never resets.
         Optional<BigDecimal> regFeeOpt = findRegistrationFee(hospitalId);
         BigDecimal regFee = regFeeOpt.orElse(null);
-        boolean addReg = regFee != null
-                && !invoiceRepository.existsRegistrationFeeForPatient(patientId);
+        boolean addReg = regFee != null && !Boolean.TRUE.equals(patient.getRegistrationFeePaid());
         // Strip embedded hospital prefix from admissionNumber so the invoice number has the
         // hospital code at the START exactly once: e.g. "1001-IPD-ADM-2026-0001"
         Invoice admissionInvoice = Invoice.builder()
@@ -281,6 +289,8 @@ public class InvoiceService {
                     .unitPrice(regFee)
                     .totalPrice(regFee)
                     .build())));
+            patient.setRegistrationFeePaid(true);
+            patientRepository.save(patient);
         }
         invoiceRepository.save(admissionInvoice);
     }
@@ -328,7 +338,7 @@ public class InvoiceService {
             // Add one-time registration fee if this patient has never been charged it
             Optional<BigDecimal> regFeeOptE = findRegistrationFee(appt.getHospital().getId());
             if (regFeeOptE.isPresent()
-                    && !invoiceRepository.existsRegistrationFeeForPatient(appt.getPatient().getId())) {
+                    && !Boolean.TRUE.equals(appt.getPatient().getRegistrationFeePaid())) {
                 BigDecimal regFee = regFeeOptE.get();
                 invoice.getItems().add(InvoiceItem.builder()
                         .invoice(invoice)
@@ -339,6 +349,8 @@ public class InvoiceService {
                         .totalPrice(regFee)
                         .build());
                 newSubtotal = newSubtotal.add(regFee);
+                appt.getPatient().setRegistrationFeePaid(true);
+                patientRepository.save(appt.getPatient());
             }
             invoice.setSubtotal(newSubtotal);
             invoice.setTotal(newSubtotal.add(invoice.getTax() != null ? invoice.getTax() : BigDecimal.ZERO)
@@ -381,7 +393,7 @@ public class InvoiceService {
                 // Add one-time registration fee if this patient has never been charged it
                 Optional<BigDecimal> regFeeOptN = findRegistrationFee(appt.getHospital().getId());
                 if (regFeeOptN.isPresent()
-                        && !invoiceRepository.existsRegistrationFeeForPatient(appt.getPatient().getId())) {
+                        && !Boolean.TRUE.equals(appt.getPatient().getRegistrationFeePaid())) {
                     BigDecimal regFee = regFeeOptN.get();
                     newItems.add(InvoiceItem.builder()
                             .invoice(invoice)
@@ -393,6 +405,8 @@ public class InvoiceService {
                             .build());
                     invoice.setSubtotal(fee.add(regFee));
                     invoice.setTotal(fee.add(regFee));
+                    appt.getPatient().setRegistrationFeePaid(true);
+                    patientRepository.save(appt.getPatient());
                 }
                 invoice.setItems(newItems);
                 invoiceRepository.save(invoice);

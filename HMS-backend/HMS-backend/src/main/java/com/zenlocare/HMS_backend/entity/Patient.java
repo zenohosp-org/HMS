@@ -100,6 +100,20 @@ public class Patient {
     @Builder.Default
     private PaymentCategory paymentCategory = PaymentCategory.CASH;
 
+    // Registration is a one-time-per-patient charge. The flag is set the first
+    // time a REGISTRATION line lands on any of the patient's invoices (auto
+    // flow at appointment-complete/admission, or a staff-built invoice on the
+    // billing page). Once true it never resets — surviving invoice deletion or
+    // appointment cancellation — so a returning patient never gets re-billed
+    // for registration even if their original invoice was wiped.
+    // Nullable so Hibernate can ADD the column to existing rows without
+    // violating NOT NULL; DataSeeder backfills NULLs to FALSE on startup and
+    // marks patients with prior REGISTRATION items TRUE. Callers must treat
+    // null as "not paid yet" via Boolean.TRUE.equals(...).
+    @Column(name = "registration_fee_paid")
+    @Builder.Default
+    private Boolean registrationFeePaid = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

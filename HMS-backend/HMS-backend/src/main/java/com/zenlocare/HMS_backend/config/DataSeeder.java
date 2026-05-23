@@ -85,9 +85,43 @@ public class DataSeeder implements CommandLineRunner {
         migrateDischargeData();
         backfillHospitalNumericCodes();
         backfillInvoiceVersions();
+        backfillPatientRegistrationFlag();
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
+    }
+
+    /**
+     * registration_fee_paid was added to support a once-per-patient registration
+     * charge. For existing patients we need to:
+     *   1. Make sure the column exists (Hibernate ddl-auto adds it, but be defensive).
+     *   2. Backfill NULLs to FALSE so the column has a definite value everywhere.
+     *   3. Flip to TRUE for any patient who already has a REGISTRATION line
+     *      anywhere in their invoice history — they've already paid, must not
+     *      be re-charged when they next visit.
+     */
+    private void backfillPatientRegistrationFlag() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE patients ADD COLUMN IF NOT EXISTS registration_fee_paid boolean");
+            int nullFixed = jdbcTemplate.update(
+                    "UPDATE patients SET registration_fee_paid = FALSE WHERE registration_fee_paid IS NULL");
+            if (nullFixed > 0) log.info("✅ Defaulted registration_fee_paid=FALSE on {} legacy patient rows", nullFixed);
+
+            int marked = jdbcTemplate.update("""
+                UPDATE patients
+                   SET registration_fee_paid = TRUE
+                 WHERE registration_fee_paid = FALSE
+                   AND patient_id IN (
+                       SELECT DISTINCT inv.patient_id
+                         FROM invoices inv
+                         JOIN invoice_items ii ON ii.invoice_id = inv.id
+                        WHERE ii.item_type = 'REGISTRATION'
+                   )
+                """);
+            if (marked > 0) log.info("✅ Marked {} patients as already-registered based on past REGISTRATION items", marked);
+        } catch (Exception e) {
+            log.warn("Could not backfill patients.registration_fee_paid: " + e.getMessage());
+        }
     }
 
     private void seedReferenceTables() {
