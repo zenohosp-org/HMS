@@ -296,7 +296,10 @@ public class AmbulanceController {
 
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Long>> getStats(@RequestParam UUID hospitalId) {
-        long total = bookingRepo.findByHospital_IdOrderByCreatedAtDesc(hospitalId).size();
+        // `total` excludes CANCELLED so the dashboard count reflects active workload
+        // rather than every booking that ever existed. Also a COUNT query instead
+        // of loading the whole booking list into memory.
+        long total = bookingRepo.countActiveByHospitalId(hospitalId);
         long pending = bookingRepo.countByHospital_IdAndStatus(hospitalId, AmbulanceBookingStatus.PENDING);
         long today = bookingRepo.countByHospitalIdAndDate(hospitalId, LocalDate.now());
         long completed = bookingRepo.countByHospital_IdAndStatus(hospitalId, AmbulanceBookingStatus.COMPLETED);

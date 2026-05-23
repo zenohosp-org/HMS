@@ -316,10 +316,10 @@ public class HealthCheckupService {
 
     @Transactional(readOnly = true)
     public java.util.Map<String, Long> getStats(UUID hospitalId) {
-        // "today" counts how many bookings are scheduled for today regardless of
-        // status — used as a quick "what's on the floor today" stat. CANCELLED
-        // is included intentionally so cancellations are visible in the day's load.
-        long today = bookingRepo.countByHospital_IdAndScheduledDate(hospitalId, LocalDate.now());
+        // "today" excludes cancellations so the dashboard reflects real workload
+        // (a day full of cancelled bookings shouldn't show as busy). Cancelled
+        // count is returned separately for visibility.
+        long today = bookingRepo.countByHospital_IdAndScheduledDateExcludingCancelled(hospitalId, LocalDate.now());
         long scheduled  = bookingRepo.countByHospital_IdAndStatus(hospitalId, CheckupBookingStatus.SCHEDULED);
         long inProgress = bookingRepo.countByHospital_IdAndStatus(hospitalId, CheckupBookingStatus.IN_PROGRESS);
         long completed  = bookingRepo.countByHospital_IdAndStatus(hospitalId, CheckupBookingStatus.COMPLETED);

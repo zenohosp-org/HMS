@@ -22,6 +22,14 @@ public interface AmbulanceBookingRepository extends JpaRepository<AmbulanceBooki
 
     long countByHospital_IdAndStatus(UUID hospitalId, AmbulanceBookingStatus status);
 
+    // Count of all non-cancelled bookings — used by the dashboard "total" widget.
+    // Replaces `findByHospital_IdOrderByCreatedAtDesc().size()` which loaded
+    // every row into memory just to call .size().
+    @Query("SELECT COUNT(b) FROM AmbulanceBooking b " +
+           "WHERE b.hospital.id = :hospitalId " +
+           "AND b.status <> com.zenlocare.HMS_backend.entity.AmbulanceBookingStatus.CANCELLED")
+    long countActiveByHospitalId(UUID hospitalId);
+
     List<AmbulanceBooking> findByPatient_IdAndHospital_Id(Integer patientId, UUID hospitalId);
 
     /**

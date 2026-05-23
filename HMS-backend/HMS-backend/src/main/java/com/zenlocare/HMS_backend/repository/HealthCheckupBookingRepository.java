@@ -28,4 +28,14 @@ public interface HealthCheckupBookingRepository extends JpaRepository<HealthChec
     long countByHospital_IdAndScheduledDate(UUID hospitalId, LocalDate date);
 
     long countByHospital_IdAndStatus(UUID hospitalId, CheckupBookingStatus status);
+
+    // "Today's load" excluding cancellations — used by the dashboard widget so
+    // a day with mostly-cancelled bookings doesn't show as busy.
+    @Query("SELECT COUNT(b) FROM HealthCheckupBooking b " +
+           "WHERE b.hospital.id = :hospitalId " +
+           "AND b.scheduledDate = :date " +
+           "AND b.status <> com.zenlocare.HMS_backend.entity.CheckupBookingStatus.CANCELLED")
+    long countByHospital_IdAndScheduledDateExcludingCancelled(
+            @Param("hospitalId") UUID hospitalId,
+            @Param("date") LocalDate date);
 }
