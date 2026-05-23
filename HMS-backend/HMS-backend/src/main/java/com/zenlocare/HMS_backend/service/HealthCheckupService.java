@@ -3,27 +3,84 @@ package com.zenlocare.HMS_backend.service;
 import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class HealthCheckupService {
 
+    private static final Logger log = LoggerFactory.getLogger(HealthCheckupService.class);
+
     private final HealthPackageRepository packageRepo;
     private final HealthCheckupBookingRepository bookingRepo;
     private final HospitalRepository hospitalRepo;
     private final PatientRepository patientRepo;
     private final DoctorRepository doctorRepo;
+
+    // @Lazy because InvoiceService already injects ambulance/radiology/patient
+    // repositories that this class depends on transitively — direct injection
+    // would form a constructor-time cycle.
+    @org.springframework.context.annotation.Lazy
+    private final InvoiceService invoiceService;
+
+    // ── State machine ─────────────────────────────────────────────────────
+    // Mirrors the appointment status graph in spirit. A terminal state
+    // (COMPLETED, CANCELLED, NO_SHOW) cannot be left except via the explicit
+    // "reschedule" path (terminal → SCHEDULED).
+    private static final Map<CheckupBookingStatus, Set<CheckupBookingStatus>> ALLOWED_TRANSITIONS = Map.of(
+            CheckupBookingStatus.SCHEDULED, EnumSet.of(
+                    CheckupBookingStatus.CHECKED_IN,
+                    CheckupBookingStatus.IN_PROGRESS,
+                    CheckupBookingStatus.COMPLETED,
+                    CheckupBookingStatus.CANCELLED,
+                    CheckupBookingStatus.NO_SHOW),
+            CheckupBookingStatus.CHECKED_IN, EnumSet.of(
+                    CheckupBookingStatus.IN_PROGRESS,
+                    CheckupBookingStatus.COMPLETED,
+                    CheckupBookingStatus.CANCELLED,
+                    CheckupBookingStatus.NO_SHOW),
+            CheckupBookingStatus.IN_PROGRESS, EnumSet.of(
+                    CheckupBookingStatus.COMPLETED,
+                    CheckupBookingStatus.CANCELLED),
+            CheckupBookingStatus.COMPLETED, EnumSet.noneOf(CheckupBookingStatus.class),
+            CheckupBookingStatus.CANCELLED, EnumSet.of(CheckupBookingStatus.SCHEDULED),
+            CheckupBookingStatus.NO_SHOW, EnumSet.of(CheckupBookingStatus.SCHEDULED));
+
+    // Statuses where results/notes/doctor edits are still meaningful. Terminal
+    // states are read-only for the result-entry flow.
+    private static final Set<CheckupBookingStatus> EDITABLE_RESULT_STATES = EnumSet.of(
+            CheckupBookingStatus.SCHEDULED,
+            CheckupBookingStatus.CHECKED_IN,
+            CheckupBookingStatus.IN_PROGRESS);
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+
+    private static void assertSameHospital(UUID expected, UUID actual, String label) {
+        if (expected == null || actual == null || !expected.equals(actual)) {
+            throw new RuntimeException(label + " does not belong to this hospital");
+        }
+    }
+
+    /** Returns the booking, asserting it belongs to the caller's hospital. */
+    private HealthCheckupBooking loadBookingForTenant(UUID bookingId, UUID hospitalId) {
+        HealthCheckupBooking booking = bookingRepo.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+        assertSameHospital(hospitalId, booking.getHospital().getId(), "Booking");
+        return booking;
+    }
 
     // ── Package management ────────────────────────────────────────────────
 
@@ -40,6 +97,11 @@ public class HealthCheckupService {
         HealthPackage pkg = req.getId() != null
                 ? packageRepo.findById(req.getId()).orElse(new HealthPackage())
                 : new HealthPackage();
+        // Edit-an-existing-package path must respect tenant — staff can't
+        // overwrite another hospital's package by guessing the UUID.
+        if (req.getId() != null && pkg.getHospital() != null) {
+            assertSameHospital(hospitalId, pkg.getHospital().getId(), "Package");
+        }
 
         pkg.setHospital(hospital);
         pkg.setName(req.getName());
@@ -70,16 +132,20 @@ public class HealthCheckupService {
     }
 
     @Transactional
-    public void togglePackage(UUID packageId) {
+    public void togglePackage(UUID hospitalId, UUID packageId) {
         packageRepo.findById(packageId).ifPresent(p -> {
+            assertSameHospital(hospitalId, p.getHospital().getId(), "Package");
             p.setActive(!p.isActive());
             packageRepo.save(p);
         });
     }
 
     @Transactional
-    public void deletePackage(UUID packageId) {
-        packageRepo.deleteById(packageId);
+    public void deletePackage(UUID hospitalId, UUID packageId) {
+        packageRepo.findById(packageId).ifPresent(p -> {
+            assertSameHospital(hospitalId, p.getHospital().getId(), "Package");
+            packageRepo.delete(p);
+        });
     }
 
     // ── Bookings ──────────────────────────────────────────────────────────
@@ -98,19 +164,32 @@ public class HealthCheckupService {
     }
 
     @Transactional(readOnly = true)
-    public HealthCheckupBooking getBooking(UUID bookingId) {
-        return bookingRepo.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+    public HealthCheckupBooking getBooking(UUID bookingId, UUID hospitalId) {
+        return loadBookingForTenant(bookingId, hospitalId);
     }
 
     @Transactional
     public HealthCheckupBooking createBooking(UUID hospitalId, BookingRequest req, String performedBy) {
-        Hospital hospital = hospitalRepo.getReferenceById(hospitalId);
+        Hospital hospital = hospitalRepo.findById(hospitalId)
+                .orElseThrow(() -> new IllegalArgumentException("Hospital not found"));
         Patient patient = patientRepo.findById(req.getPatientId())
                 .orElseThrow(() -> new IllegalArgumentException("Patient not found"));
+        assertSameHospital(hospitalId, patient.getHospital().getId(), "Patient");
+
         HealthPackage pkg = packageRepo.findById(req.getPackageId())
                 .orElseThrow(() -> new IllegalArgumentException("Package not found"));
-        Doctor doctor = req.getDoctorId() != null ? doctorRepo.findById(req.getDoctorId()).orElse(null) : null;
+        assertSameHospital(hospitalId, pkg.getHospital().getId(), "Package");
+        if (!pkg.isActive()) {
+            throw new RuntimeException("Selected package is inactive — pick another or re-enable it");
+        }
+
+        Doctor doctor = null;
+        if (req.getDoctorId() != null) {
+            doctor = doctorRepo.findById(req.getDoctorId()).orElse(null);
+            if (doctor != null) {
+                assertSameHospital(hospitalId, doctor.getHospital().getId(), "Doctor");
+            }
+        }
 
         String bookingNumber = generateBookingNumber(hospital);
 
@@ -129,7 +208,8 @@ public class HealthCheckupService {
                 .createdBy(performedBy)
                 .build();
 
-        // Auto-create one result row per test in the package
+        // Auto-create one result row per test in the package — staff edits each
+        // as the checkup progresses.
         for (HealthPackageTest t : pkg.getTests()) {
             booking.getResults().add(HealthCheckupResult.builder()
                     .booking(booking)
@@ -146,31 +226,67 @@ public class HealthCheckupService {
     }
 
     @Transactional
-    public HealthCheckupBooking updateStatus(UUID bookingId, String status) {
-        HealthCheckupBooking booking = bookingRepo.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
-        booking.setStatus(CheckupBookingStatus.valueOf(status));
-        return bookingRepo.save(booking);
+    public HealthCheckupBooking updateStatus(UUID bookingId, UUID hospitalId, String statusStr) {
+        HealthCheckupBooking booking = loadBookingForTenant(bookingId, hospitalId);
+
+        CheckupBookingStatus next;
+        try {
+            next = CheckupBookingStatus.valueOf(statusStr);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Unknown status: " + statusStr);
+        }
+        CheckupBookingStatus current = booking.getStatus();
+        if (current != next) {
+            Set<CheckupBookingStatus> allowed = ALLOWED_TRANSITIONS.get(current);
+            if (allowed == null || !allowed.contains(next)) {
+                throw new RuntimeException("Invalid status transition: " + current + " → " + next);
+            }
+        }
+        booking.setStatus(next);
+
+        HealthCheckupBooking saved = bookingRepo.save(booking);
+
+        // Side effect: when the booking lands in COMPLETED for the first time,
+        // produce an invoice. Failures are logged but don't break the status
+        // change — staff can bill manually via CreateInvoice if anything goes
+        // wrong with the auto-flow.
+        if (next == CheckupBookingStatus.COMPLETED && saved.getInvoiceId() == null) {
+            try {
+                invoiceService.billCheckupBooking(saved);
+                // billCheckupBooking sets invoiceId + paymentStatus on the in-memory
+                // booking; persist that here so a single save is enough.
+                bookingRepo.save(saved);
+            } catch (Exception e) {
+                log.warn("Auto-bill failed for checkup booking {}: {}", saved.getId(), e.getMessage());
+            }
+        }
+        return saved;
     }
 
     @Transactional
-    public HealthCheckupBooking updateResult(UUID bookingId, Long resultId, ResultUpdateRequest req) {
-        HealthCheckupBooking booking = bookingRepo.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+    public HealthCheckupBooking updateResult(UUID bookingId, UUID hospitalId, Long resultId, ResultUpdateRequest req) {
+        HealthCheckupBooking booking = loadBookingForTenant(bookingId, hospitalId);
+        if (!EDITABLE_RESULT_STATES.contains(booking.getStatus())) {
+            throw new RuntimeException("Cannot edit results — booking is " + booking.getStatus());
+        }
 
         booking.getResults().stream()
                 .filter(r -> r.getId().equals(resultId))
                 .findFirst()
-                .ifPresent(r -> {
+                .ifPresentOrElse(r -> {
                     r.setResultValue(req.getResultValue());
                     r.setResultStatus(req.getResultStatus() != null ? req.getResultStatus() : "COMPLETED");
                     r.setResultNotes(req.getResultNotes());
                     if ("COMPLETED".equals(r.getResultStatus())) r.setCompletedAt(LocalDateTime.now());
+                }, () -> {
+                    throw new RuntimeException("Result not found on this booking");
                 });
 
-        // Auto-advance status to IN_PROGRESS when first result is entered
-        if (booking.getStatus() == CheckupBookingStatus.CHECKED_IN ||
-                booking.getStatus() == CheckupBookingStatus.SCHEDULED) {
+        // Auto-advance status to IN_PROGRESS when first result is entered.
+        // Guarded by EDITABLE_RESULT_STATES check above so we never advance
+        // out of a terminal state.
+        if (booking.getStatus() == CheckupBookingStatus.CHECKED_IN
+                || booking.getStatus() == CheckupBookingStatus.SCHEDULED) {
             booking.setStatus(CheckupBookingStatus.IN_PROGRESS);
         }
 
@@ -178,18 +294,21 @@ public class HealthCheckupService {
     }
 
     @Transactional
-    public HealthCheckupBooking assignDoctor(UUID bookingId, UUID doctorId) {
-        HealthCheckupBooking booking = bookingRepo.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
-        Doctor doctor = doctorId != null ? doctorRepo.findById(doctorId).orElse(null) : null;
+    public HealthCheckupBooking assignDoctor(UUID bookingId, UUID hospitalId, UUID doctorId) {
+        HealthCheckupBooking booking = loadBookingForTenant(bookingId, hospitalId);
+        Doctor doctor = null;
+        if (doctorId != null) {
+            doctor = doctorRepo.findById(doctorId)
+                    .orElseThrow(() -> new IllegalArgumentException("Doctor not found"));
+            assertSameHospital(hospitalId, doctor.getHospital().getId(), "Doctor");
+        }
         booking.setAssignedDoctor(doctor);
         return bookingRepo.save(booking);
     }
 
     @Transactional
-    public HealthCheckupBooking saveDoctorNotes(UUID bookingId, DoctorNotesRequest req) {
-        HealthCheckupBooking booking = bookingRepo.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+    public HealthCheckupBooking saveDoctorNotes(UUID bookingId, UUID hospitalId, DoctorNotesRequest req) {
+        HealthCheckupBooking booking = loadBookingForTenant(bookingId, hospitalId);
         booking.setDoctorNotes(req.getDoctorNotes());
         booking.setRecommendation(req.getRecommendation());
         return bookingRepo.save(booking);
@@ -197,13 +316,29 @@ public class HealthCheckupService {
 
     @Transactional(readOnly = true)
     public java.util.Map<String, Long> getStats(UUID hospitalId) {
-        long total = bookingRepo.countByHospital_IdAndScheduledDate(hospitalId, LocalDate.now());
-        long scheduled = bookingRepo.countByHospital_IdAndStatus(hospitalId, CheckupBookingStatus.SCHEDULED);
+        // "today" counts how many bookings are scheduled for today regardless of
+        // status — used as a quick "what's on the floor today" stat. CANCELLED
+        // is included intentionally so cancellations are visible in the day's load.
+        long today = bookingRepo.countByHospital_IdAndScheduledDate(hospitalId, LocalDate.now());
+        long scheduled  = bookingRepo.countByHospital_IdAndStatus(hospitalId, CheckupBookingStatus.SCHEDULED);
         long inProgress = bookingRepo.countByHospital_IdAndStatus(hospitalId, CheckupBookingStatus.IN_PROGRESS);
-        long completed = bookingRepo.countByHospital_IdAndStatus(hospitalId, CheckupBookingStatus.COMPLETED);
-        return java.util.Map.of("today", total, "scheduled", scheduled, "inProgress", inProgress, "completed", completed);
+        long completed  = bookingRepo.countByHospital_IdAndStatus(hospitalId, CheckupBookingStatus.COMPLETED);
+        long cancelled  = bookingRepo.countByHospital_IdAndStatus(hospitalId, CheckupBookingStatus.CANCELLED);
+        return java.util.Map.of(
+                "today", today,
+                "scheduled", scheduled,
+                "inProgress", inProgress,
+                "completed", completed,
+                "cancelled", cancelled);
     }
 
+    /**
+     * Booking number generator — best-effort uniqueness via "MAX(sequence)+1".
+     * The bookingNumber column has a unique constraint so a concurrent race
+     * would surface as a DB exception; the retry loop catches that and tries
+     * the next sequence. Bounded retries prevent infinite loops on a real
+     * problem.
+     */
     private String generateBookingNumber(Hospital hospital) {
         String year = String.valueOf(LocalDate.now().getYear());
         String hospPrefix = HospitalIdPrefix.of(hospital);

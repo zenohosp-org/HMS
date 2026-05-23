@@ -41,15 +41,15 @@ public class HealthCheckupController {
 
     @PatchMapping("/packages/{id}/toggle")
     @PreAuthorize("hasAnyRole('hospital_admin', 'super_admin')")
-    public ResponseEntity<Void> togglePackage(@PathVariable UUID id) {
-        service.togglePackage(id);
+    public ResponseEntity<Void> togglePackage(@PathVariable UUID id, Authentication auth) {
+        service.togglePackage(resolveHospitalId(auth), id);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/packages/{id}")
     @PreAuthorize("hasAnyRole('hospital_admin', 'super_admin')")
-    public ResponseEntity<Void> deletePackage(@PathVariable UUID id) {
-        service.deletePackage(id);
+    public ResponseEntity<Void> deletePackage(@PathVariable UUID id, Authentication auth) {
+        service.deletePackage(resolveHospitalId(auth), id);
         return ResponseEntity.ok().build();
     }
 
@@ -64,8 +64,8 @@ public class HealthCheckupController {
     }
 
     @GetMapping("/bookings/{id}")
-    public ResponseEntity<HealthCheckupBooking> getBooking(@PathVariable UUID id) {
-        return ResponseEntity.ok(service.getBooking(id));
+    public ResponseEntity<HealthCheckupBooking> getBooking(@PathVariable UUID id, Authentication auth) {
+        return ResponseEntity.ok(service.getBooking(id, resolveHospitalId(auth)));
     }
 
     @PostMapping("/bookings")
@@ -79,31 +79,36 @@ public class HealthCheckupController {
     @PatchMapping("/bookings/{id}/status")
     public ResponseEntity<HealthCheckupBooking> updateStatus(
             @PathVariable UUID id,
-            @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(service.updateStatus(id, body.get("status")));
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        return ResponseEntity.ok(service.updateStatus(id, resolveHospitalId(auth), body.get("status")));
     }
 
     @PatchMapping("/bookings/{id}/results/{resultId}")
     public ResponseEntity<HealthCheckupBooking> updateResult(
             @PathVariable UUID id,
             @PathVariable Long resultId,
-            @RequestBody ResultUpdateRequest req) {
-        return ResponseEntity.ok(service.updateResult(id, resultId, req));
+            @RequestBody ResultUpdateRequest req,
+            Authentication auth) {
+        return ResponseEntity.ok(service.updateResult(id, resolveHospitalId(auth), resultId, req));
     }
 
     @PatchMapping("/bookings/{id}/doctor")
     public ResponseEntity<HealthCheckupBooking> assignDoctor(
             @PathVariable UUID id,
-            @RequestBody Map<String, String> body) {
-        UUID doctorId = body.get("doctorId") != null ? UUID.fromString(body.get("doctorId")) : null;
-        return ResponseEntity.ok(service.assignDoctor(id, doctorId));
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        UUID doctorId = body.get("doctorId") != null && !body.get("doctorId").isBlank()
+                ? UUID.fromString(body.get("doctorId")) : null;
+        return ResponseEntity.ok(service.assignDoctor(id, resolveHospitalId(auth), doctorId));
     }
 
     @PatchMapping("/bookings/{id}/doctor-notes")
     public ResponseEntity<HealthCheckupBooking> saveDoctorNotes(
             @PathVariable UUID id,
-            @RequestBody DoctorNotesRequest req) {
-        return ResponseEntity.ok(service.saveDoctorNotes(id, req));
+            @RequestBody DoctorNotesRequest req,
+            Authentication auth) {
+        return ResponseEntity.ok(service.saveDoctorNotes(id, resolveHospitalId(auth), req));
     }
 
     @GetMapping("/stats")
@@ -115,5 +120,17 @@ public class HealthCheckupController {
         if (auth != null && auth.getPrincipal() instanceof User u)
             return u.getFirstName() + " " + u.getLastName();
         return "System";
+    }
+
+    /**
+     * Pull the caller's hospital id from the JWT principal. All booking-scoped
+     * endpoints use this rather than trusting a query parameter, so a forged
+     * bookingId from a different tenant can't be acted on.
+     */
+    private UUID resolveHospitalId(Authentication auth) {
+        if (auth != null && auth.getPrincipal() instanceof User u && u.getHospital() != null) {
+            return u.getHospital().getId();
+        }
+        throw new RuntimeException("Hospital context missing on the current session");
     }
 }

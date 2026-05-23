@@ -59,9 +59,27 @@ public class HealthCheckupBooking {
     @Builder.Default
     private CheckupBookingStatus status = CheckupBookingStatus.SCHEDULED;
 
+    // Optimistic-lock cursor — concurrent edits (e.g. two staff entering results
+    // at once, or a status-flip racing a doctor-notes save) hit OptimisticLockException
+    // → HTTP 409 via GlobalExceptionHandler. Same pattern as Invoice/Admission/Room.
+    @jakarta.persistence.Version
+    @Column(name = "version")
+    @Builder.Default
+    private Long version = 0L;
+
+    // PENDING (created, no invoice yet) → BILLED (invoice created on COMPLETED)
+    // → PAID (invoice fully paid). Driven by the auto-bill side-effect in
+    // updateStatus(COMPLETED); kept as a denormalised summary for the
+    // booking list / detail UI.
     @Column(name = "payment_status", length = 20)
     @Builder.Default
     private String paymentStatus = "PENDING";
+
+    // Invoice produced by auto-billing when the booking transitions to COMPLETED.
+    // Null until billed; populated regardless of whether the line landed on an
+    // existing IPD invoice or a brand-new standalone OPD invoice.
+    @Column(name = "invoice_id")
+    private UUID invoiceId;
 
     @Column(name = "amount_paid", precision = 10, scale = 2)
     @Builder.Default

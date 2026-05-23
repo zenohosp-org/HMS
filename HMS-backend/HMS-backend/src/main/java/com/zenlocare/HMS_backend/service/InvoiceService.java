@@ -1034,6 +1034,117 @@ public class InvoiceService {
         radiologyOrderRepository.save(order);
     }
 
+    /**
+     * Auto-bill a health-checkup booking when it transitions to COMPLETED. Mirrors
+     * the radiology routing:
+     *
+     * - **IPD** — the booking's patient has an active ADMITTED admission → append
+     *   a CHECKUP line item to that admission's IPD invoice (creates one if
+     *   missing), re-open SETTLED so staff sees the new charge.
+     *
+     * - **OPD walk-in** — no active admission → create a standalone invoice
+     *   numbered {HOSPITAL_PREFIX}HCP-{12-digit-padded uuid suffix}.
+     *
+     * Idempotent: skip if booking.invoiceId already set, paymentStatus is BILLED
+     * or PAID, or any existing invoice item already references this booking.
+     * Returns the produced Invoice (or the existing one if already linked).
+     *
+     * Price comes from HealthPackage.price. If null/zero, the method no-ops
+     * — staff can bill manually via CreateInvoice afterwards.
+     */
+    @Transactional
+    public Invoice billCheckupBooking(com.zenlocare.HMS_backend.entity.HealthCheckupBooking booking) {
+        if (booking == null) return null;
+        if (booking.getInvoiceId() != null) {
+            return invoiceRepository.findById(booking.getInvoiceId()).orElse(null);
+        }
+        if ("BILLED".equals(booking.getPaymentStatus()) || "PAID".equals(booking.getPaymentStatus())) {
+            return null;
+        }
+        java.math.BigDecimal price = booking.getHealthPackage() != null
+                ? booking.getHealthPackage().getPrice() : null;
+        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) return null;
+
+        // Look up the patient's current admission (LAZY-load through the patient,
+        // then a fresh query — booking.patient is EAGER so this is cheap).
+        java.util.Optional<com.zenlocare.HMS_backend.entity.Admission> activeAdm =
+                admissionRepository.findByPatientIdAndStatus(
+                        booking.getPatient().getId(),
+                        com.zenlocare.HMS_backend.entity.AdmissionStatus.ADMITTED);
+
+        String description = "Health Checkup — " + booking.getHealthPackage().getName()
+                + " (" + booking.getBookingNumber() + ")";
+
+        Invoice resultInvoice;
+        if (activeAdm.isPresent()) {
+            UUID admissionId = activeAdm.get().getId();
+            if (invoiceRepository.findAllByAdmission_IdOrderByCreatedAtDesc(admissionId).isEmpty()) {
+                createAdmissionInvoice(
+                        booking.getHospital().getId(),
+                        booking.getPatient().getId(),
+                        admissionId,
+                        activeAdm.get().getAdmissionNumber(),
+                        null);
+            }
+            Invoice invoice = invoiceRepository.findAllByAdmission_IdOrderByCreatedAtDesc(admissionId)
+                    .stream().findFirst().orElse(null);
+            if (invoice == null) return null;
+
+            if (invoice.getItems() == null) invoice.setItems(new ArrayList<>());
+            invoice.getItems().add(InvoiceItem.builder()
+                    .invoice(invoice)
+                    .itemType("CHECKUP")
+                    .description(description)
+                    .quantity(1)
+                    .unitPrice(price)
+                    .totalPrice(price)
+                    .build());
+
+            BigDecimal subtotal = invoice.getItems().stream()
+                    .map(it -> it.getTotalPrice() != null ? it.getTotalPrice() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal tax      = invoice.getTax()      != null ? invoice.getTax()      : BigDecimal.ZERO;
+            BigDecimal discount = invoice.getDiscount() != null ? invoice.getDiscount() : BigDecimal.ZERO;
+            invoice.setSubtotal(subtotal);
+            invoice.setTotal(subtotal.add(tax).subtract(discount));
+
+            if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
+                invoice.setStatus(InvoiceStatus.UNSETTLED);
+            }
+            invoice.setUpdatedAt(LocalDateTime.now());
+            resultInvoice = invoiceRepository.save(invoice);
+        } else {
+            String invoiceNum = HospitalIdPrefix.of(booking.getHospital())
+                    + "HCP-" + booking.getId().toString().replace("-", "").substring(0, 12).toUpperCase();
+            Invoice invoice = Invoice.builder()
+                    .invoiceNumber(invoiceNum)
+                    .hospital(booking.getHospital())
+                    .patient(booking.getPatient())
+                    .subtotal(price)
+                    .tax(BigDecimal.ZERO)
+                    .discount(BigDecimal.ZERO)
+                    .total(price)
+                    .status(InvoiceStatus.UNPAID)
+                    .notes("Health Checkup — " + booking.getHealthPackage().getName())
+                    .build();
+            invoice.setItems(new ArrayList<>(List.of(InvoiceItem.builder()
+                    .invoice(invoice)
+                    .itemType("CHECKUP")
+                    .description(description)
+                    .quantity(1)
+                    .unitPrice(price)
+                    .totalPrice(price)
+                    .build())));
+            resultInvoice = invoiceRepository.save(invoice);
+        }
+
+        booking.setInvoiceId(resultInvoice.getId());
+        booking.setPaymentStatus("BILLED");
+        // Caller (HealthCheckupService) saves the booking — we don't have a
+        // direct booking repo dependency here to avoid an extra cycle.
+        return resultInvoice;
+    }
+
     private boolean isCollectible(Invoice inv) {
         InvoiceStatus s = inv.getStatus();
         return s != null
