@@ -80,8 +80,12 @@ const recordApi = {
     const { data } = await api.get(`/records/by-user?userId=${userId}&hospitalId=${hospitalId}`);
     return data;
   },
-  listPrescriptions: async (patientId, hospitalId) => {
-    const { data } = await api.get(`/records/patient/${patientId}/prescriptions`, { params: { hospitalId } });
+  // Pass an admissionId to scope to a single admission's prescriptions (IPD use case);
+  // omit it to get the patient's entire prescription history across all visits.
+  listPrescriptions: async (patientId, hospitalId, admissionId) => {
+    const params = { hospitalId };
+    if (admissionId) params.admissionId = admissionId;
+    const { data } = await api.get(`/records/patient/${patientId}/prescriptions`, { params });
     return data;
   },
   create: async (payload) => {

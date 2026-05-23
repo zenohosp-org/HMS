@@ -43,17 +43,25 @@ public class RecordController {
     }
 
     /**
-     * Prescription records only — newest first. Filters server-side on the
-     * canonical history_type_id column, so legacy String-format rows are
-     * included as long as DataSeeder.migrateColumn has populated their FK.
+     * Prescription records, newest first.
+     *
+     * Without admissionId — every prescription this patient ever received at
+     * this hospital, across all admissions and OPD visits.
+     *
+     * With admissionId — only the prescriptions tied to that specific
+     * admission (i.e. only records whose admission_id FK matches). Useful for
+     * the IPD pharmacy workflow where you want to see what was prescribed
+     * during the current stay, not the patient's lifetime history.
      */
     @GetMapping("/patient/{patientId}/prescriptions")
     public ResponseEntity<List<RecordDto>> getPatientPrescriptions(
             @PathVariable Integer patientId,
-            @RequestParam UUID hospitalId) {
+            @RequestParam UUID hospitalId,
+            @RequestParam(required = false) UUID admissionId) {
 
-        List<PatientRecord> records = recordService.getRecordsByPatientAndType(
-                patientId, hospitalId, HistoryType.PRESCRIPTION);
+        List<PatientRecord> records = (admissionId != null)
+                ? recordService.getRecordsByPatientAndAdmissionAndType(patientId, hospitalId, admissionId, HistoryType.PRESCRIPTION)
+                : recordService.getRecordsByPatientAndType(patientId, hospitalId, HistoryType.PRESCRIPTION);
         List<RecordDto> dtos = records.stream().map(this::mapToDto).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }

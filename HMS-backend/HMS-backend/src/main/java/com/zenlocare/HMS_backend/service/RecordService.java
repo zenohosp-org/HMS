@@ -41,6 +41,17 @@ public class RecordService {
                 patientId, hospitalId, type);
     }
 
+    /**
+     * Records of a specific type for a patient, scoped to a single admission.
+     * Use this when the pharmacy / IPD UI wants only the prescriptions written
+     * during the current admission rather than the patient's full history.
+     */
+    public List<PatientRecord> getRecordsByPatientAndAdmissionAndType(
+            Integer patientId, UUID hospitalId, UUID admissionId, HistoryType type) {
+        return recordRepository.findByPatientIdAndHospitalIdAndAdmissionIdAndHistoryTypeOrderByCreatedAtDesc(
+                patientId, hospitalId, admissionId, type);
+    }
+
     @Transactional
     public PatientRecord createRecord(UUID hospitalId, Integer patientId, User createdBy,
             String historyType, String description, LocalDateTime nextVisitDate,
