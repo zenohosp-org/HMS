@@ -89,6 +89,14 @@ public class AdmissionController {
         return ResponseEntity.ok(admissionService.returnToWard(id, resolveFullName(auth)));
     }
 
+    @PutMapping("/{id}/attender")
+    public ResponseEntity<AdmissionDTO> updateAttender(
+            @PathVariable UUID id,
+            @RequestBody com.zenlocare.HMS_backend.dto.AttenderUpdateRequest req,
+            Authentication auth) {
+        return ResponseEntity.ok(admissionService.updateAttender(id, req, resolveFullName(auth)));
+    }
+
     private String resolveFullName(Authentication auth) {
         if (auth != null && auth.getPrincipal() instanceof User user) {
             return user.getFirstName() + " " + user.getLastName();

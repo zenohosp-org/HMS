@@ -497,6 +497,10 @@ const admissionApi = {
   getPostOtRooms: async (hospitalId) => {
     const { data } = await api.get('/rooms', { params: { hospitalId } });
     return data.filter(r => r.roomType === 'POST_OT' && r.status === 'AVAILABLE');
+  },
+  updateAttender: async (admissionId, payload) => {
+    const { data } = await api.put(`/admissions/${admissionId}/attender`, payload);
+    return data;
   }
 };
 

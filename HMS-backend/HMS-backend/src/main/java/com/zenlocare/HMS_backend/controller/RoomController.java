@@ -1,9 +1,9 @@
 package com.zenlocare.HMS_backend.controller;
 
-import com.zenlocare.HMS_backend.dto.AttenderUpdateRequest;
 import com.zenlocare.HMS_backend.dto.BedDto;
 import com.zenlocare.HMS_backend.dto.RoomAllocationRequest;
 import com.zenlocare.HMS_backend.dto.RoomCreateRequest;
+import com.zenlocare.HMS_backend.dto.RoomDto;
 import com.zenlocare.HMS_backend.dto.RoomLogDTO;
 import com.zenlocare.HMS_backend.entity.Room;
 import com.zenlocare.HMS_backend.entity.User;
@@ -26,7 +26,7 @@ public class RoomController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
-    public ResponseEntity<List<Room>> getRoomsForHospital(@RequestParam UUID hospitalId) {
+    public ResponseEntity<List<RoomDto>> getRoomsForHospital(@RequestParam UUID hospitalId) {
         return ResponseEntity.ok(roomService.getRoomsForHospital(hospitalId));
     }
 
@@ -46,22 +46,17 @@ public class RoomController {
 
     @PostMapping("/allocate")
     @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
-    public ResponseEntity<Room> allocatePatient(@RequestBody RoomAllocationRequest request,
+    public ResponseEntity<RoomDto> allocatePatient(@RequestBody RoomAllocationRequest request,
             @RequestParam UUID hospitalId, Authentication auth) {
         return ResponseEntity.ok(roomService.allocatePatient(request, hospitalId, resolveFullName(auth)));
     }
 
-    @PatchMapping("/{roomId}/attender")
-    @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
-    public ResponseEntity<Room> updateAttender(@PathVariable Long roomId,
-            @RequestBody AttenderUpdateRequest request,
-            @RequestParam UUID hospitalId, Authentication auth) {
-        return ResponseEntity.ok(roomService.updateAttender(roomId, request, hospitalId, resolveFullName(auth)));
-    }
+    // PATCH /{roomId}/attender was removed — attender is now updated via
+    // PUT /api/admissions/{id}/attender against the active admission.
 
     @PostMapping("/{roomId}/deallocate")
     @PreAuthorize("hasAnyRole('hospital_admin', 'doctor', 'staff')")
-    public ResponseEntity<Room> deallocatePatient(@PathVariable Long roomId,
+    public ResponseEntity<RoomDto> deallocatePatient(@PathVariable Long roomId,
             @RequestParam UUID hospitalId, Authentication auth) {
         return ResponseEntity.ok(roomService.deallocatePatient(roomId, hospitalId, resolveFullName(auth)));
     }

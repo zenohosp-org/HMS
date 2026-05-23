@@ -3,10 +3,11 @@ import { useAuth } from "@/context/AuthContext";
 import { assetApi, bedApi } from "@/utils/api";
 import {
   X, User, Phone, Users, Package, CalendarClock, ScrollText,
-  Search, Plus, Loader2, ArrowUpRight, Tag, AlertCircle, BedDouble,
+  Search, Plus, Loader2, ArrowUpRight, Tag, AlertCircle, BedDouble, Pencil,
 } from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
+import AssignAttenderModal from "./AssignAttenderModal";
 
 function AssetStatusBadge({ status }) {
   const map = {
@@ -115,6 +116,7 @@ function AssignAssetDropdown({ hospitalId, roomId, onAssigned }) {
 function BedsSection({ room, hospitalId }) {
   const [beds, setBeds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingAttender, setEditingAttender] = useState(null); // bed object
 
   const loadBeds = useCallback(async () => {
     if (!room?.id || !hospitalId) return;
@@ -161,29 +163,73 @@ function BedsSection({ room, hospitalId }) {
       </div>
 
       <div className="space-y-2">
-        {beds.map(bed => (
-          <div
-            key={bed.id}
-            className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${bed.status === "OCCUPIED"
-              ? "bg-blue-50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/20"
-              : "bg-emerald-50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/20"
-              }`}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className={`w-2 h-2 rounded-full shrink-0 ${bed.status === "OCCUPIED" ? "bg-blue-500" : "bg-emerald-500"
-                }`} />
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-800 dark:text-[#dddddd]">{bed.bedNumber}</p>
-                {bed.patientName ? (
-                  <p className="text-[11px] text-slate-500 dark:text-[#888888] truncate">{bed.patientName}</p>
-                ) : (
-                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Available</p>
+        {beds.map(bed => {
+          const occupied = bed.status === "OCCUPIED";
+          return (
+            <div
+              key={bed.id}
+              className={`rounded-lg border transition-colors ${occupied
+                ? "bg-blue-50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/20"
+                : "bg-emerald-50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/20"
+                }`}
+            >
+              <div className="flex items-center justify-between gap-3 p-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${occupied ? "bg-blue-500" : "bg-emerald-500"}`} />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-800 dark:text-[#dddddd]">{bed.bedNumber}</p>
+                    {bed.patientName ? (
+                      <p className="text-[11px] text-slate-500 dark:text-[#888888] truncate">{bed.patientName}</p>
+                    ) : (
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Available</p>
+                    )}
+                  </div>
+                </div>
+                {occupied && bed.admissionId && (
+                  <button
+                    onClick={() => setEditingAttender(bed)}
+                    className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold text-slate-600 dark:text-[#bbb] bg-white/60 dark:bg-[#1a1a1a] hover:bg-white dark:hover:bg-[#222] border border-slate-200 dark:border-[#333] transition-colors"
+                    title={bed.attenderName ? "Edit attender" : "Assign attender"}
+                  >
+                    <Pencil className="w-3 h-3" />
+                    {bed.attenderName ? "Edit attender" : "Add attender"}
+                  </button>
                 )}
               </div>
+              {occupied && bed.attenderName && (
+                <div className="px-3 pb-3 pt-0 -mt-1 flex items-center gap-2 flex-wrap text-[11px]">
+                  <Users className="w-3 h-3 text-slate-400" />
+                  <span className="font-semibold text-slate-700 dark:text-[#ccc]">{bed.attenderName}</span>
+                  {bed.attenderRelationship && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/70 dark:bg-[#1a1a1a] text-slate-500 dark:text-[#888] border border-slate-200 dark:border-[#333]">
+                      {bed.attenderRelationship}
+                    </span>
+                  )}
+                  {bed.attenderPhone && (
+                    <span className="inline-flex items-center gap-1 text-slate-500 dark:text-[#888]">
+                      <Phone className="w-3 h-3" />{bed.attenderPhone}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {editingAttender && (
+        <AssignAttenderModal
+          admissionId={editingAttender.admissionId}
+          label={`Bed ${editingAttender.bedNumber} · Room ${room.roomNumber}`}
+          existing={{
+            name: editingAttender.attenderName,
+            phone: editingAttender.attenderPhone,
+            relationship: editingAttender.attenderRelationship,
+          }}
+          onClose={() => setEditingAttender(null)}
+          onSuccess={() => { setEditingAttender(null); loadBeds(); }}
+        />
+      )}
     </div>
   );
 }

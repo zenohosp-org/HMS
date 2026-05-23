@@ -5,7 +5,7 @@ import api, { infrastructureApi } from "@/utils/api";
 import {
   Bed, Search, CalendarClock, MoreHorizontal, ScrollText,
   Building2, Layers, LayoutGrid, ChevronDown, ChevronRight,
-  Stethoscope, AlertCircle, User, X, Maximize2, Minimize2, ChevronsUpDown,
+  Stethoscope, AlertCircle, User, X, ChevronsUpDown,
   Link2Off,
 } from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
@@ -228,9 +228,6 @@ function Rooms() {
   const [collapsedWards, setCollapsedWards] = useState(new Set());
   const [menuState, setMenuState] = useState(null); // { room, top?, bottom?, right }
 
-  // Density toggle for room grid — comfortable (4 col) vs compact (6 col).
-  const [density, setDensity] = useState("comfortable");
-
   const normalizeKey = (v) => v?.toString()?.trim()?.toLowerCase() || "";
 
   const openMenu = (room, btnEl) => {
@@ -286,16 +283,6 @@ function Rooms() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [search]);
-
-  const handleDeleteRoom = async (roomId) => {
-    if (!confirm("Permanently delete this room?")) return;
-    closeMenu();
-    try {
-      await api.delete(`/rooms/${roomId}?hospitalId=${user?.hospitalId}`);
-      if (selectedRoom?.id === roomId) setSelectedRoom(null);
-      fetchRooms();
-    } catch (error) { alert(error?.response?.data?.message || "Failed to delete room"); }
-  };
 
   const roomMap = useMemo(() => new Map(rooms.map((r) => [normalizeKey(r.roomNumber), r])), [rooms]);
 
@@ -362,21 +349,7 @@ function Rooms() {
     onMenuOpen: openMenu,
   });
 
-  const expandAll = () => { setCollapsedFloors(new Set()); setCollapsedWards(new Set()); };
-  const collapseAll = () => {
-    const floorKeys = new Set();
-    const wardKeys = new Set();
-    infrastructure.forEach((b, bIdx) => (b.floors || []).forEach((f, fIdx) => {
-      floorKeys.add(f.id ?? `${bIdx}-${fIdx}`);
-      (f.wards || []).forEach((w, wIdx) => wardKeys.add(w.id ?? `${bIdx}-${fIdx}-${wIdx}`));
-    }));
-    setCollapsedFloors(floorKeys);
-    setCollapsedWards(wardKeys);
-  };
-
-  const roomGridCls = density === "compact"
-    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2"
-    : "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5";
+  const roomGridCls = "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5";
 
   return (
     <div className="space-y-4">
@@ -467,43 +440,6 @@ function Rooms() {
           )}
         </div>
 
-        {/* Density + expand/collapse */}
-        {showInfrastructureView && (
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="bg-slate-100 dark:bg-[#0d0d0d] rounded-lg p-1 flex gap-1">
-              <button
-                onClick={() => setDensity("comfortable")}
-                className={`p-1.5 rounded-md transition-all ${density === "comfortable"
-                  ? "bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm"
-                  : "text-slate-500 dark:text-[#888] hover:text-slate-700"}`}
-                title="Comfortable (4 cols)"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setDensity("compact")}
-                className={`p-1.5 rounded-md transition-all ${density === "compact"
-                  ? "bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm"
-                  : "text-slate-500 dark:text-[#888] hover:text-slate-700"}`}
-                title="Compact (6 cols)"
-              >
-                <Minimize2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <div className="flex items-center bg-slate-100 dark:bg-[#0d0d0d] rounded-lg p-1 gap-1">
-              <button
-                onClick={expandAll}
-                className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#aaa] hover:bg-white dark:hover:bg-[#222] hover:text-slate-900 dark:hover:text-white transition-colors"
-                title="Expand all"
-              >Expand</button>
-              <button
-                onClick={collapseAll}
-                className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#aaa] hover:bg-white dark:hover:bg-[#222] hover:text-slate-900 dark:hover:text-white transition-colors"
-                title="Collapse all"
-              >Collapse</button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ─── Content ─────────────────────────────────────────────────── */}
@@ -825,18 +761,6 @@ function Rooms() {
                     {room.attenderName ? "Edit Attender" : "Assign Attender"}
                   </button>
                 )}
-                {room.status === "AVAILABLE" && (
-                  <>
-                    <div className="h-px bg-slate-100 dark:bg-[#252525] my-1" />
-                    <button
-                      onClick={() => handleDeleteRoom(room.id)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      Delete Room
-                    </button>
-                  </>
-                )}
               </div>
             </div>
           </>
@@ -845,8 +769,8 @@ function Rooms() {
 
       {showAttenderModal.open && showAttenderModal.room && (
         <AssignAttenderModal
-          roomId={showAttenderModal.room.id}
-          roomNumber={showAttenderModal.room.roomNumber}
+          admissionId={showAttenderModal.room.admissionId}
+          label={`Room ${showAttenderModal.room.roomNumber}`}
           existing={{
             name: showAttenderModal.room.attenderName,
             phone: showAttenderModal.room.attenderPhone,

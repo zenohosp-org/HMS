@@ -87,9 +87,45 @@ public class DataSeeder implements CommandLineRunner {
         backfillInvoiceVersions();
         backfillPatientRegistrationFlag();
         backfillAppointmentTokens();
+        migrateRoomAttenderToAdmission();
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
+    }
+
+    /**
+     * One-time migration: attender data lived on Room (attender_name / attender_phone /
+     * attender_relationship). Refactor moved it to Admission so multi-bed wards each
+     * get their own per-bed attender. Before dropping the Room columns:
+     *   1. For every active (ADMITTED) admission still missing attender data on the
+     *      admission but whose Room has it, copy the values across.
+     *   2. Drop the now-unused Room attender_* columns.
+     * Runs idempotently — DROP COLUMN IF EXISTS means subsequent boots are a no-op.
+     */
+    private void migrateRoomAttenderToAdmission() {
+        try {
+            int copied = jdbcTemplate.update("""
+                UPDATE admissions adm
+                   SET attender_name         = r.attender_name,
+                       attender_phone        = r.attender_phone,
+                       attender_relationship = r.attender_relationship
+                  FROM rooms r
+                 WHERE adm.room_id = r.room_id
+                   AND adm.status_id = 1                       -- ADMITTED
+                   AND (adm.attender_name IS NULL OR adm.attender_name = '')
+                   AND r.attender_name IS NOT NULL
+                """);
+            if (copied > 0) log.info("✅ Copied attender_* from Room → Admission on {} active rows", copied);
+        } catch (Exception e) {
+            log.warn("Could not copy room.attender_* into admission: " + e.getMessage());
+        }
+        try {
+            jdbcTemplate.execute("ALTER TABLE rooms DROP COLUMN IF EXISTS attender_name");
+            jdbcTemplate.execute("ALTER TABLE rooms DROP COLUMN IF EXISTS attender_phone");
+            jdbcTemplate.execute("ALTER TABLE rooms DROP COLUMN IF EXISTS attender_relationship");
+        } catch (Exception e) {
+            log.warn("Could not drop rooms.attender_* columns: " + e.getMessage());
+        }
     }
 
     /**

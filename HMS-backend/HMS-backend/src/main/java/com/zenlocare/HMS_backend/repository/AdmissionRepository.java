@@ -18,6 +18,16 @@ public interface AdmissionRepository extends JpaRepository<Admission, UUID> {
     Optional<Admission> findByPatientIdAndStatus(Integer patientId, AdmissionStatus status);
     Optional<Admission> findByRoomIdAndStatus(Long roomId, AdmissionStatus status);
 
+    // Per-bed attender lookup: in a multi-bed ward each bed has its own admission,
+    // and the BedDto needs to surface that admission's attender_* and id.
+    Optional<Admission> findByBedIdAndStatus(Long bedId, AdmissionStatus status);
+
+    // Batch active-admission lookup, used by RoomService to attach
+    // attender + admissionId to a list of RoomDtos in one query.
+    @Query("SELECT a FROM Admission a WHERE a.status = com.zenlocare.HMS_backend.entity.AdmissionStatus.ADMITTED " +
+           "AND a.room IS NOT NULL AND a.hospital.id = :hospitalId")
+    List<Admission> findActiveAdmissionsByHospitalId(@Param("hospitalId") UUID hospitalId);
+
     List<Admission> findByRoomId(Long roomId);
 
     @Query("SELECT a FROM Admission a WHERE a.hospital.id = :hospitalId " +

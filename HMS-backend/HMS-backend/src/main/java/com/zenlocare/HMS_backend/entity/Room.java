@@ -46,14 +46,9 @@ public class Room {
     @Column(name = "price_per_day", precision = 10, scale = 2)
     private java.math.BigDecimal pricePerDay;
 
-    @Column(name = "attender_name", length = 100)
-    private String attenderName;
-
-    @Column(name = "attender_phone", length = 20)
-    private String attenderPhone;
-
-    @Column(name = "attender_relationship", length = 50)
-    private String attenderRelationship;
+    // attender_* columns were removed — attender now lives on Admission.
+    // The DB columns are dropped by DataSeeder on startup; the field-less
+    // entity here means Hibernate stops reading/writing them.
 
     @Column(name = "allocation_token", length = 30)
     private String allocationToken;

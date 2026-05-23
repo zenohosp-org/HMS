@@ -122,9 +122,8 @@ public class AdmissionService {
             } else {
                 room.setStatus(RoomStatus.OCCUPIED);
                 room.setCurrentPatient(patient);
-                room.setAttenderName(req.getAttenderName());
-                room.setAttenderPhone(req.getAttenderPhone());
-                room.setAttenderRelationship(req.getAttenderRelationship());
+                // Attender already set on the Admission above (req → admission.attender_*);
+                // Room no longer carries attender_* columns.
                 room.setAdmissionDate(saved.getAdmissionDate());
                 room.setApproxDischargeTime(req.getApproxDischargeDate());
             }
@@ -196,9 +195,7 @@ public class AdmissionService {
             room.setStatus(RoomStatus.OCCUPIED);
             room.setCurrentPatient(admission.getPatient());
             room.setAdmissionDate(LocalDateTime.now());
-            room.setAttenderName(admission.getAttenderName());
-            room.setAttenderPhone(admission.getAttenderPhone());
-            room.setAttenderRelationship(admission.getAttenderRelationship());
+            // Attender stays on the admission — no Room.setAttender* here.
         }
         roomRepository.save(room);
 
@@ -270,9 +267,6 @@ public class AdmissionService {
                     room.setStatus(RoomStatus.AVAILABLE);
                     room.setCurrentPatient(null);
                     room.setApproxDischargeTime(null);
-                    room.setAttenderName(null);
-                    room.setAttenderPhone(null);
-                    room.setAttenderRelationship(null);
                     room.setAdmissionDate(null);
                     roomRepository.save(room);
 
@@ -293,9 +287,6 @@ public class AdmissionService {
             room.setStatus(RoomStatus.AVAILABLE);
             room.setCurrentPatient(null);
             room.setApproxDischargeTime(null);
-            room.setAttenderName(null);
-            room.setAttenderPhone(null);
-            room.setAttenderRelationship(null);
             room.setAdmissionDate(null);
             roomRepository.save(room);
 
@@ -610,5 +601,46 @@ public class AdmissionService {
                 .dischargedBy(d != null ? d.getDischargedBy() : null)
                 .dischargedAt(d != null ? d.getDischargedAt() : null)
                 .build();
+    }
+
+    /**
+     * Set/replace the attender on an admission. Attender data lives only here
+     * — Room.attender_* columns were removed in this refactor. The audit log
+     * (RoomLog) still records ATTENDER_ASSIGNED / ATTENDER_UPDATED so the
+     * Room Logs UI keeps showing attender changes for whichever room the
+     * admission currently occupies.
+     */
+    @Transactional
+    public AdmissionDTO updateAttender(UUID admissionId,
+                                       com.zenlocare.HMS_backend.dto.AttenderUpdateRequest req,
+                                       String performedBy) {
+        Admission admission = admissionRepository.findById(admissionId)
+                .orElseThrow(() -> new RuntimeException("Admission not found"));
+
+        boolean isNew = admission.getAttenderName() == null || admission.getAttenderName().isBlank();
+        admission.setAttenderName(req.getAttenderName());
+        admission.setAttenderPhone(req.getAttenderPhone());
+        admission.setAttenderRelationship(req.getAttenderRelationship());
+        Admission saved = admissionRepository.save(admission);
+
+        if (saved.getRoom() != null) {
+            Room r = saved.getRoom();
+            roomLogRepository.save(com.zenlocare.HMS_backend.entity.RoomLog.builder()
+                    .room(r)
+                    .hospital(saved.getHospital())
+                    .event(isNew
+                            ? com.zenlocare.HMS_backend.entity.RoomLogEvent.ATTENDER_ASSIGNED
+                            : com.zenlocare.HMS_backend.entity.RoomLogEvent.ATTENDER_UPDATED)
+                    .roomNumber(r.getRoomNumber())
+                    .patientName(saved.getPatient() != null
+                            ? saved.getPatient().getFirstName() + " " + saved.getPatient().getLastName()
+                            : null)
+                    .patientUhid(saved.getPatient() != null ? saved.getPatient().getUhid() : null)
+                    .attenderName(req.getAttenderName())
+                    .performedBy(performedBy)
+                    .build());
+        }
+
+        return toDTO(saved);
     }
 }

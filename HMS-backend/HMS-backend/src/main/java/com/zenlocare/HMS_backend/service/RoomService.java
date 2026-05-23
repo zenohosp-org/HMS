@@ -1,9 +1,9 @@
 package com.zenlocare.HMS_backend.service;
 
-import com.zenlocare.HMS_backend.dto.AttenderUpdateRequest;
 import com.zenlocare.HMS_backend.dto.BedDto;
 import com.zenlocare.HMS_backend.dto.RoomAllocationRequest;
 import com.zenlocare.HMS_backend.dto.RoomCreateRequest;
+import com.zenlocare.HMS_backend.dto.RoomDto;
 import com.zenlocare.HMS_backend.dto.RoomLogDTO;
 import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -32,8 +34,20 @@ public class RoomService {
     private final AdmissionRepository admissionRepository;
     private final BedRepository bedRepository;
 
-    public List<Room> getRoomsForHospital(UUID hospitalId) {
-        return roomRepository.findByHospitalId(hospitalId);
+    public List<RoomDto> getRoomsForHospital(UUID hospitalId) {
+        List<Room> rooms = roomRepository.findByHospitalId(hospitalId);
+        // Batch-fetch active admissions for this hospital (one query) and key
+        // them by room_id, so each RoomDto can pick up attender + admissionId
+        // without per-room round-trips.
+        Map<Long, Admission> byRoomId = new HashMap<>();
+        for (Admission a : admissionRepository.findActiveAdmissionsByHospitalId(hospitalId)) {
+            if (a.getRoom() != null) {
+                byRoomId.put(a.getRoom().getId(), a);
+            }
+        }
+        return rooms.stream()
+                .map(r -> RoomDto.fromEntity(r, byRoomId.get(r.getId())))
+                .collect(Collectors.toList());
     }
 
     public List<BedDto> getBedsByRoom(Long roomId, UUID hospitalId) {
@@ -42,8 +56,18 @@ public class RoomService {
         if (!room.getHospital().getId().equals(hospitalId)) {
             throw new RuntimeException("Room does not belong to this hospital");
         }
-        return bedRepository.findByRoomIdOrderByBedNumberAsc(roomId).stream()
-                .map(BedDto::fromEntity)
+        List<Bed> beds = bedRepository.findByRoomIdOrderByBedNumberAsc(roomId);
+        // Each occupied bed has its own admission; pull them in one query and
+        // key by bed_id so BedDto can surface per-bed attender + admissionId.
+        Map<Long, Admission> byBedId = new HashMap<>();
+        for (Bed b : beds) {
+            if (b.getStatus() == BedStatus.OCCUPIED) {
+                admissionRepository.findByBedIdAndStatus(b.getId(), AdmissionStatus.ADMITTED)
+                        .ifPresent(a -> byBedId.put(b.getId(), a));
+            }
+        }
+        return beds.stream()
+                .map(b -> BedDto.fromEntity(b, byBedId.get(b.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -121,7 +145,7 @@ public class RoomService {
     }
 
     @Transactional
-    public Room allocatePatient(RoomAllocationRequest request, UUID hospitalId, String performedBy) {
+    public RoomDto allocatePatient(RoomAllocationRequest request, UUID hospitalId, String performedBy) {
         Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
@@ -172,9 +196,7 @@ public class RoomService {
         } else {
             room.setStatus(RoomStatus.OCCUPIED);
             room.setCurrentPatient(patient);
-            room.setAttenderName(request.getAttenderName());
-            room.setAttenderPhone(request.getAttenderPhone());
-            room.setAttenderRelationship(request.getAttenderRelationship());
+            // Attender moved off Room — see admission sync block below.
             room.setAllocationToken(generateToken());
             room.setAdmissionDate(LocalDateTime.now());
             if (request.getApproxDischargeTime() != null) {
@@ -191,14 +213,22 @@ public class RoomService {
 
         Room saved = roomRepository.save(room);
 
-        // Sync room + bed back to the active admission so discharge billing can read them
+        // Sync room + bed + attender to the active admission. Attender lives
+        // here now (Room.attender_* columns were dropped), so an allocation
+        // that included attender fields writes them straight to the admission.
         final Bed finalBed = allocatedBed;
-        admissionRepository.findByPatientIdAndStatus(patient.getId(), AdmissionStatus.ADMITTED)
-                .ifPresent(admission -> {
-                    admission.setRoom(saved);
-                    admission.setBed(finalBed);
-                    admissionRepository.save(admission);
-                });
+        Optional<Admission> activeAdmission = admissionRepository.findByPatientIdAndStatus(
+                patient.getId(), AdmissionStatus.ADMITTED);
+        activeAdmission.ifPresent(admission -> {
+            admission.setRoom(saved);
+            admission.setBed(finalBed);
+            if (request.getAttenderName() != null && !request.getAttenderName().isBlank()) {
+                admission.setAttenderName(request.getAttenderName());
+                admission.setAttenderPhone(request.getAttenderPhone());
+                admission.setAttenderRelationship(request.getAttenderRelationship());
+            }
+            admissionRepository.save(admission);
+        });
 
         roomLogRepository.save(RoomLog.builder()
                 .room(saved)
@@ -212,11 +242,11 @@ public class RoomService {
                 .performedBy(performedBy)
                 .build());
 
-        return saved;
+        return RoomDto.fromEntity(saved, activeAdmission.orElse(null));
     }
 
     @Transactional
-    public Room deallocatePatient(Long roomId, UUID hospitalId, String performedBy) {
+    public RoomDto deallocatePatient(Long roomId, UUID hospitalId, String performedBy) {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
@@ -233,9 +263,8 @@ public class RoomService {
         room.setCurrentPatient(null);
         room.setApproxDischargeTime(null);
         room.setAdmissionDate(null);
-        room.setAttenderName(null);
-        room.setAttenderPhone(null);
-        room.setAttenderRelationship(null);
+        // Attender no longer on Room — when the admission is discharged below, the
+        // attender data stays on the admission as a historical record (intended).
         room.setAllocationToken(null);
 
         bedRepository.findByRoomIdOrderByBedNumberAsc(roomId).forEach(b -> {
@@ -263,7 +292,8 @@ public class RoomService {
                 .performedBy(performedBy)
                 .build());
 
-        return saved;
+        // Active admission is now DISCHARGED; pass null so the DTO clears attender.
+        return RoomDto.fromEntity(saved, null);
     }
 
     @Transactional
@@ -280,6 +310,15 @@ public class RoomService {
                 ? bed.getCurrentPatient().getFirstName() + " " + bed.getCurrentPatient().getLastName()
                 : null;
         String patientUhid = bed.getCurrentPatient() != null ? bed.getCurrentPatient().getUhid() : null;
+
+        // Close the bed's admission before clearing the bed — keeps the
+        // admission record + attender history intact.
+        admissionRepository.findByBedIdAndStatus(bedId, AdmissionStatus.ADMITTED)
+                .ifPresent(a -> {
+                    a.setStatus(AdmissionStatus.DISCHARGED);
+                    a.setActualDischargeDate(LocalDateTime.now());
+                    admissionRepository.save(a);
+                });
 
         bed.setStatus(BedStatus.AVAILABLE);
         bed.setCurrentPatient(null);
@@ -302,47 +341,11 @@ public class RoomService {
                 .performedBy(performedBy)
                 .build());
 
-        return BedDto.fromEntity(bed);
+        return BedDto.fromEntity(bed, null);
     }
 
-    @Transactional
-    public Room updateAttender(Long roomId, AttenderUpdateRequest request, UUID hospitalId, String performedBy) {
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room not found"));
-
-        if (!room.getHospital().getId().equals(hospitalId)) {
-            throw new RuntimeException("Room does not belong to this hospital");
-        }
-        if (room.getStatus() != RoomStatus.OCCUPIED) {
-            throw new RuntimeException("Room is not occupied");
-        }
-
-        boolean isNew = room.getAttenderName() == null;
-        room.setAttenderName(request.getAttenderName());
-        room.setAttenderPhone(request.getAttenderPhone());
-        room.setAttenderRelationship(request.getAttenderRelationship());
-
-        Room saved = roomRepository.save(room);
-
-        String patientName = saved.getCurrentPatient() != null
-                ? saved.getCurrentPatient().getFirstName() + " " + saved.getCurrentPatient().getLastName()
-                : null;
-        String patientUhid = saved.getCurrentPatient() != null ? saved.getCurrentPatient().getUhid() : null;
-
-        roomLogRepository.save(RoomLog.builder()
-                .room(saved)
-                .hospital(saved.getHospital())
-                .event(isNew ? RoomLogEvent.ATTENDER_ASSIGNED : RoomLogEvent.ATTENDER_UPDATED)
-                .roomNumber(saved.getRoomNumber())
-                .patientName(patientName)
-                .patientUhid(patientUhid)
-                .attenderName(request.getAttenderName())
-                .allocationToken(saved.getAllocationToken())
-                .performedBy(performedBy)
-                .build());
-
-        return saved;
-    }
+    // updateAttender on Room was deleted — attender now lives on Admission;
+    // see AdmissionService.updateAttender + PUT /api/admissions/{id}/attender.
 
     public List<RoomLogDTO> getHospitalLogs(UUID hospitalId, String search) {
         List<RoomLog> logs = (search != null && !search.isBlank())
