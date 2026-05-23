@@ -40,27 +40,48 @@ public class AdmissionService {
     private final InvoiceRepository invoiceRepository;
     private final PatientAdvanceService patientAdvanceService;
 
+    // Tenant boundary guard — every entity touched by an admission flow must
+    // belong to the same hospital as the admission/request. Without this,
+    // a forged or stale ID can pull a record from another hospital into the
+    // current tenant's transaction.
+    private static void assertSameHospital(UUID expected, UUID actual, String label) {
+        if (expected == null || actual == null || !expected.equals(actual)) {
+            throw new RuntimeException(label + " does not belong to this hospital");
+        }
+    }
+
     @Transactional
     public AdmissionDTO admit(AdmissionRequest req, String performedBy) {
         Hospital hospital = hospitalRepository.findById(req.getHospitalId())
                 .orElseThrow(() -> new RuntimeException("Hospital not found"));
         Patient patient = patientRepository.findById(req.getPatientId())
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
+        assertSameHospital(req.getHospitalId(), patient.getHospital().getId(), "Patient");
 
         admissionRepository.findByPatientIdAndStatus(req.getPatientId(), AdmissionStatus.ADMITTED)
                 .ifPresent(a -> { throw new RuntimeException("Patient is already admitted (ADM: " + a.getAdmissionNumber() + ")"); });
 
         Doctor doctor = req.getAdmittingDoctorId() != null
                 ? doctorRepository.findById(req.getAdmittingDoctorId()).orElse(null) : null;
+        if (doctor != null && doctor.getHospital() != null) {
+            assertSameHospital(req.getHospitalId(), doctor.getHospital().getId(), "Doctor");
+        }
         Department dept = req.getDepartmentId() != null
                 ? departmentRepository.findById(req.getDepartmentId()).orElse(null) : null;
+        if (dept != null && dept.getHospital() != null) {
+            assertSameHospital(req.getHospitalId(), dept.getHospital().getId(), "Department");
+        }
         Appointment sourceAppt = req.getSourceAppointmentId() != null
                 ? appointmentRepository.findById(req.getSourceAppointmentId()).orElse(null) : null;
+        if (sourceAppt != null) {
+            assertSameHospital(req.getHospitalId(), sourceAppt.getHospital().getId(), "Source appointment");
+        }
 
         Room room = null;
         if (req.getRoomId() != null) {
             room = roomRepository.findById(req.getRoomId())
                     .orElseThrow(() -> new RuntimeException("Room not found"));
+            assertSameHospital(req.getHospitalId(), room.getHospital().getId(), "Room");
             if (room.getStatus() != RoomStatus.AVAILABLE) {
                 throw new RuntimeException("Room is not available");
             }
@@ -70,6 +91,7 @@ public class AdmissionService {
         if (req.getBedId() != null) {
             bed = bedRepository.findById(req.getBedId())
                     .orElseThrow(() -> new RuntimeException("Bed not found"));
+            assertSameHospital(req.getHospitalId(), bed.getRoom().getHospital().getId(), "Bed");
             if (bed.getStatus() != BedStatus.AVAILABLE) {
                 throw new RuntimeException("Selected bed is not available");
             }
@@ -178,6 +200,7 @@ public class AdmissionService {
         }
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
+        assertSameHospital(admission.getHospital().getId(), room.getHospital().getId(), "Room");
         if (room.getStatus() != RoomStatus.AVAILABLE) {
             throw new RuntimeException("Room is not available");
         }
@@ -321,10 +344,15 @@ public class AdmissionService {
 
         Room otRoom = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("OT room not found"));
+        assertSameHospital(admission.getHospital().getId(), otRoom.getHospital().getId(), "OT room");
         if (!"OT".equals(otRoom.getRoomType()))
             throw new RuntimeException("Selected room is not an OT room");
         if (otRoom.getStatus() != RoomStatus.AVAILABLE)
             throw new RuntimeException("OT room is not available");
+        if (doctorId != null) {
+            Doctor d = doctorRepository.findById(doctorId).orElseThrow(() -> new RuntimeException("Doctor not found"));
+            assertSameHospital(admission.getHospital().getId(), d.getHospital().getId(), "Doctor");
+        }
 
         // Save current ward room so we can return patient after surgery (do NOT vacate it — bed is held)
         if (admission.getRoom() != null && admission.getPreviousRoom() == null) {
@@ -385,6 +413,7 @@ public class AdmissionService {
             // Move to post-OT recovery room (previousRoom stays saved for later return to ward)
             Room postOtRoom = roomRepository.findById(postOtRoomId)
                     .orElseThrow(() -> new RuntimeException("Post-OT room not found"));
+            assertSameHospital(admission.getHospital().getId(), postOtRoom.getHospital().getId(), "Post-OT room");
             if (!"POST_OT".equals(postOtRoom.getRoomType()))
                 throw new RuntimeException("Selected room is not a POST_OT room");
             if (postOtRoom.getStatus() != RoomStatus.AVAILABLE)

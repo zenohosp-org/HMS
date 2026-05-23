@@ -92,6 +92,13 @@ public class AppointmentService {
                 if (request.getPatientId() != null) {
                         patient = patientRepository.findById(request.getPatientId())
                                         .orElseThrow(() -> new RuntimeException("Patient not found"));
+                        // Tenant guard — patient must belong to the same hospital the
+                        // appointment is being booked at; otherwise this is a cross-tenant
+                        // read masquerading as a normal booking.
+                        if (patient.getHospital() == null
+                                        || !request.getHospitalId().equals(patient.getHospital().getId())) {
+                                throw new RuntimeException("Patient does not belong to this hospital");
+                        }
                 } else if (request.getEmergencyPatientName() != null && !request.getEmergencyPatientName().isBlank()) {
                         String[] parts = request.getEmergencyPatientName().trim().split("\\s+", 2);
                         String uhid = generateUhid(hospital.getId());
@@ -113,6 +120,10 @@ public class AppointmentService {
                 if (request.getDoctorId() != null) {
                         doctor = doctorRepository.findById(request.getDoctorId())
                                         .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                        if (doctor.getHospital() == null
+                                        || !request.getHospitalId().equals(doctor.getHospital().getId())) {
+                                throw new RuntimeException("Doctor does not belong to this hospital");
+                        }
                 }
 
                 User createdBy = userRepository.findById(createdById)
