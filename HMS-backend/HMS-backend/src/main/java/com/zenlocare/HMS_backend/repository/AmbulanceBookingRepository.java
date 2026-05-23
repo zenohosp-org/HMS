@@ -33,16 +33,34 @@ public interface AmbulanceBookingRepository extends JpaRepository<AmbulanceBooki
     List<AmbulanceBooking> findByPatient_IdAndHospital_Id(Integer patientId, UUID hospitalId);
 
     /**
-     * Eligible ambulance bookings for auto-merge into a patient's IPD bill:
-     * same hospital + same patient + ambulance reached this hospital +
-     * not already merged + not cancelled. Ordered oldest-first so the audit
-     * trail in the IPD bill lists earlier bookings first.
+     * Eligible ambulance bookings for auto-merge into a patient's IPD bill.
+     *
+     * Match rule (admit-time):
+     *   - same hospital that owns the booking
+     *   - same patient
+     *   - not already merged (idempotency)
+     *   - not CANCELLED
+     *
+     * NOTE: previously also required `reachedToSameHospital = TRUE`. That flag
+     * is set by an address-substring match at booking creation, which silently
+     * fails on emergency bookings where destinationAddress is null/blank or
+     * doesn't contain the hospital's saved address/city verbatim — emergency
+     * patient came in, ambulance fee never reached the IPD bill. The flag was
+     * also blank on legacy rows.
+     *
+     * The patient being admitted at THIS hospital is sufficient proof the
+     * ambulance ended its trip here, regardless of how its destinationAddress
+     * was typed. Cross-hospital false-positive risk is low because patient_id
+     * is hospital-scoped — a patient_id can't legitimately appear at another
+     * hospital. Staff can still manually unmerge via the existing tooling if
+     * a wrong booking attaches.
+     *
+     * Ordered oldest-first so the audit trail lists earlier bookings first.
      */
     @Query("""
         SELECT b FROM AmbulanceBooking b
         WHERE b.hospital.id = :hospitalId
           AND b.patient.id = :patientId
-          AND b.reachedToSameHospital = TRUE
           AND (b.mergedToIpd IS NULL OR b.mergedToIpd = FALSE)
           AND b.status <> com.zenlocare.HMS_backend.entity.AmbulanceBookingStatus.CANCELLED
         ORDER BY b.createdAt ASC

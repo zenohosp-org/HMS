@@ -255,7 +255,40 @@ public class AmbulanceController {
             } else if (req.getReachedToSameHospital() != null) {
                 b.setReachedToSameHospital(req.getReachedToSameHospital());
             }
-            return ResponseEntity.ok(bookingRepo.save(b));
+
+            AmbulanceBooking saved = bookingRepo.save(b);
+
+            // Emergency flow: ambulance often gets COMPLETED before a Patient
+            // record exists — driver brings in an unidentified patient, status
+            // flips to COMPLETED, then staff register the patient and edit the
+            // booking to assign patient_id. updateStatus' merge skipped because
+            // patient was null at that moment; without retrying here, the
+            // ambulance line never reaches the IPD bill.
+            //
+            // Try the merge at the end of the update too. addAmbulanceItemToIpdInvoice
+            // is idempotent (no-op if booking already linked to an invoice item)
+            // and returns false when there's no active IPD invoice yet — in which
+            // case we DON'T flip mergedToIpd, so admit() will pick it up.
+            if (saved.getPatient() != null
+                    && saved.getStatus() == AmbulanceBookingStatus.COMPLETED
+                    && saved.getCharge() != null
+                    && saved.getCharge().signum() > 0
+                    && !Boolean.TRUE.equals(saved.getMergedToIpd())) {
+                try {
+                    String vehicleDesc = saved.getVehicle() != null ? saved.getVehicle().getVehicleNumber() : saved.getVehicleNumber();
+                    String typeDesc    = saved.getAmbulanceType() != null ? saved.getAmbulanceType().getName() : "Ambulance";
+                    String description = typeDesc + (vehicleDesc != null ? " (" + vehicleDesc + ")" : "");
+                    boolean added = invoiceService.addAmbulanceItemToIpdInvoice(
+                            saved.getPatient().getId(), saved.getId(), saved.getCharge(), description);
+                    if (added) {
+                        saved.setMergedToIpd(true);
+                        bookingRepo.save(saved);
+                    }
+                } catch (Exception ignored) {
+                    // Non-fatal — admit-time auto-merge will retry, or staff can add manually.
+                }
+            }
+            return ResponseEntity.ok(saved);
         }).orElse(ResponseEntity.notFound().build());
     }
 
