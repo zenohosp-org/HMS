@@ -15,28 +15,34 @@ import java.util.UUID;
 public interface PatientRecordRepository extends JpaRepository<PatientRecord, Integer> {
 
     // Every read path that returns PatientRecord(s) to the controller must
-    // eagerly fetch `createdBy` — the controller's DTO mapper reads
-    // createdBy.firstName / lastName / role.displayName, and PatientRecord.createdBy
-    // is LAZY. Without the entity graph, those getters fire after the service's
-    // @Transactional boundary closes → LazyInitializationException ("no session").
-    // `createdBy.role` is EAGER on the User entity, so it rides along on the
-    // createdBy fetch — no need to list it explicitly here.
+    // eagerly fetch `createdBy` AND `createdBy.role` — the controller's DTO
+    // mapper reads createdBy.firstName / lastName / role.displayName, and both
+    // PatientRecord.createdBy and User→Role get treated as LAZY by the
+    // EntityGraph(FETCH) default regardless of @ManyToOne(EAGER) on the entity.
+    //
+    // The earlier shortcut of listing only "createdBy" relied on User.role's
+    // EAGER annotation, but Spring Data's default @EntityGraph type is FETCH,
+    // which overrides field-level fetch settings: anything NOT explicitly in
+    // attributePaths becomes LAZY. The role then surfaces as an uninitialised
+    // Role proxy after the read-only TX closes, and the mapper's
+    // role.getDisplayName() blows up with "Could not initialize proxy [Role#…]
+    // - no session". List the nested path explicitly.
 
     List<PatientRecord> findByPatientId(Integer patientId);
 
-    @EntityGraph(attributePaths = {"createdBy"})
+    @EntityGraph(attributePaths = {"createdBy", "createdBy.role"})
     List<PatientRecord> findByPatientIdAndHospitalId(Integer patientId, UUID hospitalId);
 
     List<PatientRecord> findByHospitalId(UUID hospitalId);
 
-    @EntityGraph(attributePaths = {"createdBy"})
+    @EntityGraph(attributePaths = {"createdBy", "createdBy.role"})
     List<PatientRecord> findByCreatedByIdAndHospitalIdOrderByCreatedAtDesc(UUID createdById, UUID hospitalId);
 
-    @EntityGraph(attributePaths = {"createdBy"})
+    @EntityGraph(attributePaths = {"createdBy", "createdBy.role"})
     List<PatientRecord> findByPatientIdAndHospitalIdAndHistoryTypeOrderByCreatedAtDesc(
             Integer patientId, UUID hospitalId, HistoryType historyType);
 
-    @EntityGraph(attributePaths = {"createdBy"})
+    @EntityGraph(attributePaths = {"createdBy", "createdBy.role"})
     List<PatientRecord> findByPatientIdAndHospitalIdAndAdmissionIdAndHistoryTypeOrderByCreatedAtDesc(
             Integer patientId, UUID hospitalId, UUID admissionId, HistoryType historyType);
 
