@@ -160,6 +160,19 @@ public class InvoiceService {
         if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
             throw new RuntimeException("Invoice is already fully paid");
         }
+        // Guard against negative / zero / overpayment. Overpayment was previously
+        // accepted silently and would push paidAmount > total without an error,
+        // confusing the discharge gate and ledger reconciliation.
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Payment amount must be positive");
+        }
+        BigDecimal alreadyPaid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal alreadyAdvance = invoice.getAdvanceAdjusted() != null ? invoice.getAdvanceAdjusted() : BigDecimal.ZERO;
+        BigDecimal invTotal = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
+        BigDecimal remaining = invTotal.subtract(alreadyPaid).subtract(alreadyAdvance);
+        if (amount.compareTo(remaining) > 0) {
+            throw new RuntimeException("Payment ₹" + amount + " exceeds outstanding balance ₹" + remaining);
+        }
 
         invoicePaymentRepository.save(InvoicePayment.builder()
                 .invoice(invoice)
