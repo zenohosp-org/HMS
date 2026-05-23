@@ -217,19 +217,20 @@ public class AppointmentService {
 
                 // Token lifecycle:
                 //   - Becoming queue-eligible (CONFIRMED/CHECKED_IN/IN_PROGRESS/COMPLETED/BILLED)
-                //     AND for today AND no token yet → assign next free number (1..100).
+                //     and no token yet → assign next free number in THAT appointment's
+                //     apptDate queue (1..100). Each apptDate is its own 1..100 sequence,
+                //     so a CONFIRMED appointment booked today for tomorrow gets a token
+                //     in tomorrow's queue, not today's.
                 //   - Leaving the queue (SCHEDULED via reschedule, CANCELLED, NO_SHOW) → release
                 //     the number so it doesn't dangle on a no-longer-active row.
                 //   The cap is enforced at allocation time; over-cap requests get a null token
                 //   (caller can run "Refresh Tokens" to renumber if real demand exceeds 100).
-                LocalDate today = LocalDate.now();
-                boolean isForToday = today.equals(appointment.getApptDate());
-
                 if (TOKEN_ELIGIBLE_STATUSES.contains(status)) {
-                        if (isForToday && appointment.getTokenNumber() == null) {
+                        if (appointment.getTokenNumber() == null) {
+                                LocalDate apptDate = appointment.getApptDate();
                                 Integer maxToken = appointmentRepository
                                                 .findMaxTokenNumberByHospitalIdAndApptDate(
-                                                                appointment.getHospital().getId(), today);
+                                                                appointment.getHospital().getId(), apptDate);
                                 int next = (maxToken == null ? 0 : maxToken) + 1;
                                 if (next <= TOKEN_CAP_PER_DAY) {
                                         appointment.setTokenNumber(next);

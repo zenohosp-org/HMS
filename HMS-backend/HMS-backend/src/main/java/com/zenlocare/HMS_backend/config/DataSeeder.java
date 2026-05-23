@@ -86,9 +86,47 @@ public class DataSeeder implements CommandLineRunner {
         backfillHospitalNumericCodes();
         backfillInvoiceVersions();
         backfillPatientRegistrationFlag();
+        backfillAppointmentTokens();
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
+    }
+
+    /**
+     * Tokens used to be assigned only when (apptDate == today). Future-dated
+     * appointments that staff moved straight to CONFIRMED/COMPLETED ended up
+     * with token_number = NULL. Walk those rows and assign sequential tokens
+     * per (hospital_id, appt_date) in createdAt order, continuing from the
+     * day's existing MAX. Status IDs: 2=CONFIRMED 3=CHECKED_IN 4=IN_PROGRESS
+     * 5=COMPLETED 8=BILLED.
+     */
+    private void backfillAppointmentTokens() {
+        try {
+            int rows = jdbcTemplate.update("""
+                WITH eligible AS (
+                  SELECT a.id,
+                         (SELECT COALESCE(MAX(a2.token_number), 0)
+                            FROM appointments a2
+                           WHERE a2.hospital_id = a.hospital_id
+                             AND a2.appt_date   = a.appt_date) AS day_max,
+                         ROW_NUMBER() OVER (
+                           PARTITION BY a.hospital_id, a.appt_date
+                           ORDER BY a.created_at
+                         ) AS rn
+                    FROM appointments a
+                   WHERE a.token_number IS NULL
+                     AND a.status_id IN (2, 3, 4, 5, 8)
+                )
+                UPDATE appointments
+                   SET token_number = e.day_max + e.rn
+                  FROM eligible e
+                 WHERE appointments.id = e.id
+                   AND (e.day_max + e.rn) <= 100
+                """);
+            if (rows > 0) log.info("✅ Backfilled token_number on {} legacy appointment rows", rows);
+        } catch (Exception e) {
+            log.warn("Could not backfill appointment tokens: " + e.getMessage());
+        }
     }
 
     /**
