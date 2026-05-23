@@ -9,6 +9,7 @@ import com.zenlocare.HMS_backend.exception.ResourceNotFoundException;
 import com.zenlocare.HMS_backend.repository.HospitalRepository;
 import com.zenlocare.HMS_backend.repository.PatientRecordRepository;
 import com.zenlocare.HMS_backend.repository.PatientRepository;
+import com.zenlocare.HMS_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -33,6 +34,7 @@ public class RecordService {
     private final PatientRecordRepository recordRepository;
     private final PatientRepository patientRepository;
     private final HospitalRepository hospitalRepository;
+    private final UserRepository userRepository;
     private final PlatformTransactionManager txManager;
 
     // Each create-record attempt runs in its own transaction so a UNIQUE-constraint
@@ -115,6 +117,20 @@ public class RecordService {
         Patient patient = patientRepository.findByIdAndHospitalId(patientId, hospitalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
 
+        // Re-fetch the creator inside this transaction. The @AuthenticationPrincipal
+        // User comes in as a detached entity from the JWT filter, and even though
+        // User.role is EAGER, Hibernate can produce a Role proxy when re-attaching
+        // the detached User during save — which then fails to initialize when the
+        // controller maps the saved record to a DTO after this TX closes
+        // ("Could not initialize proxy [Role#...] - no session"). Fetching fresh
+        // here guarantees a fully-hydrated, currently-managed User with its
+        // EAGER role materialised as a real Role instance, not a proxy.
+        User creator = userRepository.findById(createdBy.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        // Force-touch role inside the TX so any residual proxy is initialised
+        // before the entity is read in the controller's DTO mapper.
+        if (creator.getRole() != null) creator.getRole().getDisplayName();
+
         String mrn = generateMrn(hospital);
 
         // Lenient parse — typos / missing values fall back to OTHERS rather than 500ing.
@@ -123,7 +139,7 @@ public class RecordService {
         PatientRecord record = PatientRecord.builder()
                 .hospital(hospital)
                 .patient(patient)
-                .createdBy(createdBy)
+                .createdBy(creator)
                 .historyType(type)
                 .description(description)
                 .nextVisitDate(nextVisitDate)
