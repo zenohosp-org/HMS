@@ -80,6 +80,10 @@ const recordApi = {
     const { data } = await api.get(`/records/by-user?userId=${userId}&hospitalId=${hospitalId}`);
     return data;
   },
+  listPrescriptions: async (patientId, hospitalId) => {
+    const { data } = await api.get(`/records/patient/${patientId}/prescriptions`, { params: { hospitalId } });
+    return data;
+  },
   create: async (payload) => {
     const { data } = await api.post("/records", payload);
     return data;

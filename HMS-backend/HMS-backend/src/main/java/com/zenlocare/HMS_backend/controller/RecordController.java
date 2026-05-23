@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.controller;
 
+import com.zenlocare.HMS_backend.entity.HistoryType;
 import com.zenlocare.HMS_backend.entity.PatientRecord;
 import com.zenlocare.HMS_backend.entity.User;
 import com.zenlocare.HMS_backend.service.RecordService;
@@ -41,6 +42,22 @@ public class RecordController {
         return ResponseEntity.ok(dtos);
     }
 
+    /**
+     * Prescription records only — newest first. Filters server-side on the
+     * canonical history_type_id column, so legacy String-format rows are
+     * included as long as DataSeeder.migrateColumn has populated their FK.
+     */
+    @GetMapping("/patient/{patientId}/prescriptions")
+    public ResponseEntity<List<RecordDto>> getPatientPrescriptions(
+            @PathVariable Integer patientId,
+            @RequestParam UUID hospitalId) {
+
+        List<PatientRecord> records = recordService.getRecordsByPatientAndType(
+                patientId, hospitalId, HistoryType.PRESCRIPTION);
+        List<RecordDto> dtos = records.stream().map(this::mapToDto).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
     @PostMapping
     public ResponseEntity<RecordDto> createRecord(
             @RequestBody CreateRecordRequest req,
@@ -56,7 +73,7 @@ public class RecordController {
     private RecordDto mapToDto(PatientRecord record) {
         RecordDto dto = new RecordDto();
         dto.setId(record.getId().toString());
-        dto.setHistoryType(record.getHistoryType());
+        dto.setHistoryType(record.getHistoryType() != null ? record.getHistoryType().name() : null);
         dto.setDescription(record.getDescription());
         dto.setNextVisitDate(record.getNextVisitDate() != null ? record.getNextVisitDate().toString() : null);
         dto.setCreatedAt(record.getCreatedAt().toString());

@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.service;
 
+import com.zenlocare.HMS_backend.entity.HistoryType;
 import com.zenlocare.HMS_backend.entity.Hospital;
 import com.zenlocare.HMS_backend.entity.Patient;
 import com.zenlocare.HMS_backend.entity.PatientRecord;
@@ -34,6 +35,12 @@ public class RecordService {
         return recordRepository.findByCreatedByIdAndHospitalIdOrderByCreatedAtDesc(userId, hospitalId);
     }
 
+    /** Records of a specific type for a patient, newest first. */
+    public List<PatientRecord> getRecordsByPatientAndType(Integer patientId, UUID hospitalId, HistoryType type) {
+        return recordRepository.findByPatientIdAndHospitalIdAndHistoryTypeOrderByCreatedAtDesc(
+                patientId, hospitalId, type);
+    }
+
     @Transactional
     public PatientRecord createRecord(UUID hospitalId, Integer patientId, User createdBy,
             String historyType, String description, LocalDateTime nextVisitDate,
@@ -47,11 +54,14 @@ public class RecordService {
 
         String mrn = generateMrn(hospital);
 
+        // Lenient parse — typos / missing values fall back to OTHERS rather than 500ing.
+        HistoryType type = HistoryType.fromName(historyType);
+
         PatientRecord record = PatientRecord.builder()
                 .hospital(hospital)
                 .patient(patient)
                 .createdBy(createdBy)
-                .historyType(historyType)
+                .historyType(type)
                 .description(description)
                 .nextVisitDate(nextVisitDate)
                 .admissionId(admissionId)

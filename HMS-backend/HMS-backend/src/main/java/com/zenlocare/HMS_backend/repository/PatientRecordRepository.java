@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.repository;
 
+import com.zenlocare.HMS_backend.entity.HistoryType;
 import com.zenlocare.HMS_backend.entity.PatientRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -16,6 +17,9 @@ public interface PatientRecordRepository extends JpaRepository<PatientRecord, In
     List<PatientRecord> findByHospitalId(UUID hospitalId);
 
     List<PatientRecord> findByCreatedByIdAndHospitalIdOrderByCreatedAtDesc(UUID createdById, UUID hospitalId);
+
+    List<PatientRecord> findByPatientIdAndHospitalIdAndHistoryTypeOrderByCreatedAtDesc(
+            Integer patientId, UUID hospitalId, HistoryType historyType);
 
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT pr.patient.id) FROM PatientRecord pr WHERE pr.createdBy.id = :userId")
     long countUniquePatientsByDoctor(@org.springframework.data.repository.query.Param("userId") UUID userId);

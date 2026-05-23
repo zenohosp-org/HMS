@@ -31,8 +31,12 @@ public class PatientRecord {
     private User createdBy; // User (doctor or staff) who created this record
 
     // CONSULTATION | PRESCRIPTION | LAB_RESULT | SURGERY | DIAGNOSIS | OTHERS
-    @Column(name = "history_type", nullable = false, length = 50)
-    private String historyType;
+    // Persisted as integer FK into record_history_types (see HistoryTypeConverter).
+    // The legacy `history_type` (String) column remains in the DB as a ghost
+    // for any old code paths until cleanup; new writes only touch history_type_id.
+    @Convert(converter = com.zenlocare.HMS_backend.converter.HistoryTypeConverter.class)
+    @Column(name = "history_type_id")
+    private HistoryType historyType;
 
     @Column(columnDefinition = "TEXT")
     private String description;

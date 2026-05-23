@@ -132,7 +132,11 @@ public class DataSeeder implements CommandLineRunner {
         seedRefTable("admission_sources", new Object[][]{
             {1, "OPD_REFERRAL"}, {2, "EMERGENCY_WALK_IN"}, {3, "DIRECT"}, {4, "TRANSFER_IN"}
         });
-        log.info("✅ Reference tables seeded (13 tables).");
+        seedRefTable("record_history_types", new Object[][]{
+            {1, "CONSULTATION"}, {2, "PRESCRIPTION"}, {3, "LAB_RESULT"},
+            {4, "SURGERY"}, {5, "DIAGNOSIS"}, {6, "OTHERS"}
+        });
+        log.info("✅ Reference tables seeded (14 tables).");
     }
 
     private void seedRefTable(String tableName, Object[][] rows) {
@@ -166,6 +170,7 @@ public class DataSeeder implements CommandLineRunner {
             {"admissions",             "status"},
             {"admissions",             "admission_type"},
             {"admissions",             "admission_source"},
+            {"patient_records",        "history_type"},
         };
         for (String[] col : cols) {
             try {
@@ -206,6 +211,9 @@ public class DataSeeder implements CommandLineRunner {
             new Object[][]{{1,"OPD_REFERRAL"},{2,"EMERGENCY"},{3,"DIRECT"}});
         migrateColumn("admissions", "admission_source_id", "admission_source",
             new Object[][]{{1,"OPD_REFERRAL"},{2,"EMERGENCY_WALK_IN"},{3,"DIRECT"},{4,"TRANSFER_IN"}});
+        migrateColumn("patient_records", "history_type_id", "history_type",
+            new Object[][]{{1,"CONSULTATION"},{2,"PRESCRIPTION"},{3,"LAB_RESULT"},
+                           {4,"SURGERY"},{5,"DIAGNOSIS"},{6,"OTHERS"}});
         log.info("✅ Status columns migrated to integer IDs.");
     }
 
