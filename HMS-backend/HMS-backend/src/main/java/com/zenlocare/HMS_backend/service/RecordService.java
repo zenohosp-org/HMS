@@ -89,14 +89,17 @@ public class RecordService {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public PatientRecord createRecord(UUID hospitalId, Integer patientId, User createdBy,
             String historyType, String description, LocalDateTime nextVisitDate,
-            java.util.UUID admissionId, String admissionNumber) {
+            java.util.UUID admissionId, String admissionNumber,
+            java.util.UUID appointmentId,
+            java.util.List<com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest> prescriptionItems) {
 
         DataIntegrityViolationException lastError = null;
         for (int attempt = 1; attempt <= MAX_MRN_ATTEMPTS; attempt++) {
             try {
                 return txTemplate.execute(status -> doCreate(
                         hospitalId, patientId, createdBy, historyType, description,
-                        nextVisitDate, admissionId, admissionNumber));
+                        nextVisitDate, admissionId, admissionNumber,
+                        appointmentId, prescriptionItems));
             } catch (DataIntegrityViolationException e) {
                 lastError = e;
                 log.warn("MRN collision on attempt {} for patient {} at hospital {} — retrying",
@@ -109,7 +112,9 @@ public class RecordService {
 
     private PatientRecord doCreate(UUID hospitalId, Integer patientId, User createdBy,
             String historyType, String description, LocalDateTime nextVisitDate,
-            java.util.UUID admissionId, String admissionNumber) {
+            java.util.UUID admissionId, String admissionNumber,
+            java.util.UUID appointmentId,
+            java.util.List<com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest> prescriptionItems) {
 
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
@@ -145,9 +150,42 @@ public class RecordService {
                 .nextVisitDate(nextVisitDate)
                 .admissionId(admissionId)
                 .admissionNumber(admissionNumber)
+                .appointmentId(appointmentId)
                 .mrn(mrn)
                 .createdAt(LocalDateTime.now())
                 .build();
+
+        // Attach structured prescription items when the record is a PRESCRIPTION.
+        // Other history types (CONSULTATION etc.) silently ignore the input —
+        // the description textarea is still the right place for narrative notes.
+        if (type == HistoryType.PRESCRIPTION && prescriptionItems != null && !prescriptionItems.isEmpty()) {
+            int order = 0;
+            for (var ir : prescriptionItems) {
+                if (ir.getDrugName() == null || ir.getDrugName().isBlank()) continue;
+                int qty = ir.getQuantity() != null ? ir.getQuantity() : 0;
+                if (qty <= 0) {
+                    throw new RuntimeException("Quantity must be positive for drug: " + ir.getDrugName());
+                }
+                com.zenlocare.HMS_backend.entity.PrescriptionItem item =
+                        com.zenlocare.HMS_backend.entity.PrescriptionItem.builder()
+                                .record(record)
+                                .drugId(ir.getDrugId())
+                                .drugName(ir.getDrugName().trim())
+                                .drugGeneric(ir.getDrugGeneric())
+                                .drugStrength(ir.getDrugStrength())
+                                .drugForm(ir.getDrugForm())
+                                .dose(ir.getDose())
+                                .frequency(ir.getFrequency())
+                                .durationDays(ir.getDurationDays())
+                                .quantity(qty)
+                                .route(ir.getRoute())
+                                .instructions(ir.getInstructions())
+                                .displayOrder(ir.getDisplayOrder() != null ? ir.getDisplayOrder() : order)
+                                .build();
+                record.getPrescriptionItems().add(item);
+                order++;
+            }
+        }
 
         return recordRepository.save(record);
     }

@@ -66,7 +66,15 @@ public class RecordController {
         return ResponseEntity.ok(dtos);
     }
 
+    /**
+     * Create a clinical record. Gated to clinicians + hospital_admin — staff
+     * shouldn't be writing prescriptions or diagnoses. The frontend's
+     * "Write Prescription" action sits on appointment rows whose status is
+     * CHECKED_IN or beyond; service-side state checks belong on the picker
+     * UI rather than here.
+     */
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('doctor', 'hospital_admin', 'super_admin')")
     public ResponseEntity<RecordDto> createRecord(
             @RequestBody CreateRecordRequest req,
             @AuthenticationPrincipal User user) {
@@ -74,7 +82,8 @@ public class RecordController {
         PatientRecord record = recordService.createRecord(
                 req.getHospitalId(), req.getPatientId(), user,
                 req.getHistoryType(), req.getDescription(), req.getNextVisitDate(),
-                req.getAdmissionId(), req.getAdmissionNumber());
+                req.getAdmissionId(), req.getAdmissionNumber(),
+                req.getAppointmentId(), req.getPrescriptionItems());
         return ResponseEntity.ok(mapToDto(record));
     }
 
@@ -87,6 +96,7 @@ public class RecordController {
         dto.setCreatedAt(record.getCreatedAt().toString());
         dto.setAdmissionId(record.getAdmissionId() != null ? record.getAdmissionId().toString() : null);
         dto.setAdmissionNumber(record.getAdmissionNumber());
+        dto.setAppointmentId(record.getAppointmentId() != null ? record.getAppointmentId().toString() : null);
         dto.setMrn(record.getMrn());
 
         RecordDto.CreatorDto creator = new RecordDto.CreatorDto();
@@ -94,6 +104,30 @@ public class RecordController {
         creator.setLastName(record.getCreatedBy().getLastName());
         creator.setRole(record.getCreatedBy().getRole().getDisplayName());
         dto.setCreatedBy(creator);
+
+        // Always emit an array (empty for non-prescription records) so the
+        // frontend has a stable shape to iterate without null guards.
+        java.util.List<PrescriptionItemDto> items = new java.util.ArrayList<>();
+        if (record.getPrescriptionItems() != null) {
+            for (com.zenlocare.HMS_backend.entity.PrescriptionItem pi : record.getPrescriptionItems()) {
+                PrescriptionItemDto d = new PrescriptionItemDto();
+                d.setId(pi.getId() != null ? pi.getId().toString() : null);
+                d.setDrugId(pi.getDrugId() != null ? pi.getDrugId().toString() : null);
+                d.setDrugName(pi.getDrugName());
+                d.setDrugGeneric(pi.getDrugGeneric());
+                d.setDrugStrength(pi.getDrugStrength());
+                d.setDrugForm(pi.getDrugForm());
+                d.setDose(pi.getDose());
+                d.setFrequency(pi.getFrequency());
+                d.setDurationDays(pi.getDurationDays());
+                d.setQuantity(pi.getQuantity());
+                d.setRoute(pi.getRoute());
+                d.setInstructions(pi.getInstructions());
+                d.setDisplayOrder(pi.getDisplayOrder());
+                items.add(d);
+            }
+        }
+        dto.setPrescriptionItems(items);
 
         return dto;
     }
@@ -107,6 +141,28 @@ public class RecordController {
         private LocalDateTime nextVisitDate;
         private UUID admissionId;
         private String admissionNumber;
+        // OPD trace — set when this record is written for an appointment.
+        // Mutually exclusive with admissionId in practice (a visit is either OPD or IPD).
+        private UUID appointmentId;
+        // Structured prescription lines. Required when historyType=PRESCRIPTION,
+        // ignored otherwise. Pharmacy reads these to dispense.
+        private java.util.List<PrescriptionItemRequest> prescriptionItems;
+    }
+
+    @Data
+    public static class PrescriptionItemRequest {
+        private UUID drugId;          // nullable: free-text drugs allowed
+        private String drugName;      // required
+        private String drugGeneric;
+        private String drugStrength;
+        private String drugForm;
+        private String dose;
+        private String frequency;
+        private Integer durationDays;
+        private Integer quantity;
+        private String route;
+        private String instructions;
+        private Integer displayOrder;
     }
 
     @Data
@@ -118,8 +174,10 @@ public class RecordController {
         private String createdAt;
         private String admissionId;
         private String admissionNumber;
+        private String appointmentId;
         private String mrn;
         private CreatorDto createdBy;
+        private java.util.List<PrescriptionItemDto> prescriptionItems;
 
         @Data
         public static class CreatorDto {
@@ -127,5 +185,22 @@ public class RecordController {
             private String lastName;
             private String role;
         }
+    }
+
+    @Data
+    public static class PrescriptionItemDto {
+        private String id;
+        private String drugId;
+        private String drugName;
+        private String drugGeneric;
+        private String drugStrength;
+        private String drugForm;
+        private String dose;
+        private String frequency;
+        private Integer durationDays;
+        private Integer quantity;
+        private String route;
+        private String instructions;
+        private Integer displayOrder;
     }
 }

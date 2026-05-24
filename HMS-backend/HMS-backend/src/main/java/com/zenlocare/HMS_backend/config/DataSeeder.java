@@ -88,6 +88,7 @@ public class DataSeeder implements CommandLineRunner {
         backfillPatientRegistrationFlag();
         backfillAppointmentTokens();
         migrateRoomAttenderToAdmission();
+        ensurePrescriptionSchema();
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
@@ -125,6 +126,50 @@ public class DataSeeder implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE rooms DROP COLUMN IF EXISTS attender_relationship");
         } catch (Exception e) {
             log.warn("Could not drop rooms.attender_* columns: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Prescription support — adds the appointment_id audit column to
+     * patient_records (OPD prescriptions link back to the appointment they
+     * were written for) and creates the structured prescription_items child
+     * table. Hibernate's ddl-auto=update would handle most of this for new
+     * deployments, but explicit SQL means a fresh boot doesn't depend on
+     * entity scan order, and the FK + indexes get the names we want.
+     *
+     * Idempotent via IF NOT EXISTS — safe to re-run on every boot.
+     */
+    private void ensurePrescriptionSchema() {
+        try {
+            jdbcTemplate.execute(
+                "ALTER TABLE patient_records ADD COLUMN IF NOT EXISTS appointment_id uuid");
+
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS prescription_items (
+                    id              uuid PRIMARY KEY,
+                    history_id      uuid NOT NULL REFERENCES patient_records(history_id) ON DELETE CASCADE,
+                    drug_id         uuid NULL,
+                    drug_name       varchar(255) NOT NULL,
+                    drug_generic    varchar(255) NULL,
+                    drug_strength   varchar(100) NULL,
+                    drug_form       varchar(50)  NULL,
+                    dose            varchar(100) NULL,
+                    frequency       varchar(50)  NULL,
+                    duration_days   integer      NULL,
+                    quantity        integer      NOT NULL,
+                    route           varchar(20)  NULL,
+                    instructions    text         NULL,
+                    display_order   integer      NULL DEFAULT 0,
+                    created_at      timestamp without time zone NOT NULL DEFAULT NOW()
+                )
+                """);
+
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_prescription_items_history_id ON prescription_items(history_id)");
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_prescription_items_drug_id ON prescription_items(drug_id)");
+        } catch (Exception e) {
+            log.warn("Could not ensure prescription schema: " + e.getMessage());
         }
     }
 

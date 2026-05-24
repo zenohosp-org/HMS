@@ -30,19 +30,19 @@ public interface PatientRecordRepository extends JpaRepository<PatientRecord, In
 
     List<PatientRecord> findByPatientId(Integer patientId);
 
-    @EntityGraph(attributePaths = {"createdBy", "createdBy.role"})
+    @EntityGraph(attributePaths = {"createdBy", "createdBy.role", "prescriptionItems"})
     List<PatientRecord> findByPatientIdAndHospitalId(Integer patientId, UUID hospitalId);
 
     List<PatientRecord> findByHospitalId(UUID hospitalId);
 
-    @EntityGraph(attributePaths = {"createdBy", "createdBy.role"})
+    @EntityGraph(attributePaths = {"createdBy", "createdBy.role", "prescriptionItems"})
     List<PatientRecord> findByCreatedByIdAndHospitalIdOrderByCreatedAtDesc(UUID createdById, UUID hospitalId);
 
-    @EntityGraph(attributePaths = {"createdBy", "createdBy.role"})
+    @EntityGraph(attributePaths = {"createdBy", "createdBy.role", "prescriptionItems"})
     List<PatientRecord> findByPatientIdAndHospitalIdAndHistoryTypeOrderByCreatedAtDesc(
             Integer patientId, UUID hospitalId, HistoryType historyType);
 
-    @EntityGraph(attributePaths = {"createdBy", "createdBy.role"})
+    @EntityGraph(attributePaths = {"createdBy", "createdBy.role", "prescriptionItems"})
     List<PatientRecord> findByPatientIdAndHospitalIdAndAdmissionIdAndHistoryTypeOrderByCreatedAtDesc(
             Integer patientId, UUID hospitalId, UUID admissionId, HistoryType historyType);
 

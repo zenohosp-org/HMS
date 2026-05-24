@@ -3,6 +3,8 @@ package com.zenlocare.HMS_backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -50,8 +52,25 @@ public class PatientRecord {
     @Column(name = "admission_number", length = 50)
     private String admissionNumber;
 
+    // OPD audit trail — links a PRESCRIPTION (or CONSULTATION) record back to
+    // the appointment it was written for. Nullable: legacy records and IPD-only
+    // records don't have one. Admission flows continue to use admissionId.
+    @Column(name = "appointment_id")
+    private UUID appointmentId;
+
     @Column(name = "mrn", length = 30, unique = true)
     private String mrn;
+
+    /**
+     * Structured prescription lines. Empty for non-PRESCRIPTION records.
+     * Cascade ALL + orphanRemoval ensures items live and die with the parent
+     * record — there's no standalone prescription_item; it's always part of
+     * a clinical record. Pharmacy reads these to dispense.
+     */
+    @OneToMany(mappedBy = "record", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("displayOrder ASC")
+    @Builder.Default
+    private List<PrescriptionItem> prescriptionItems = new ArrayList<>();
 
     @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)
