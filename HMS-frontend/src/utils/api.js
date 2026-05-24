@@ -695,6 +695,15 @@ const dashboardApi = {
   }
 };
 
+// Drug master read for the prescription picker. Backed by pharmacy_drug_master
+// in the shared Supabase DB; HMS doesn't proxy through pharmacy backend.
+const drugsApi = {
+  search: async (hospitalId, q) => {
+    const { data } = await api.get("/drugs/search", { params: { hospitalId, q: q || "" } });
+    return data;
+  }
+};
+
 var stdin_default = api;
 export {
   admissionApi,
@@ -725,5 +734,6 @@ export {
   staffApi,
   patientAdvanceApi,
   dashboardApi,
+  drugsApi,
   roomTypeApi
 };

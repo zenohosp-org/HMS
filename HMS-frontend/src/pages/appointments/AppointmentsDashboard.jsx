@@ -1,6 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw } from "lucide-react";
+import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Pill } from "lucide-react";
+import WritePrescriptionModal from "@/components/modals/WritePrescriptionModal";
+
+// Statuses for which writing a prescription is meaningful — the patient has at
+// least checked in. SCHEDULED / CONFIRMED rows hide the action (no consult yet);
+// CANCELLED / NO_SHOW too. BILLED is allowed for late additions / corrections.
+const PRESCRIPTION_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS", "COMPLETED", "BILLED"]);
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import BookAppointmentModal from "@/components/modals/BookAppointmentModal";
 import AdmitPatientModal from "@/pages/admin/AdmitPatientModal";
@@ -64,7 +70,7 @@ const STATUS_TRANSITIONS = {
     { status: "SCHEDULED", label: "Reschedule", icon: "reschedule", color: "text-slate-600 dark:text-slate-400" }
   ]
 };
-function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails }) {
+function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onWritePrescription }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCancelReason, setShowCancelReason] = useState(false);
@@ -123,7 +129,10 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails }) {
   >{iconFor(action.icon)}{action.label}</button>)}{actions.length > 0 && <div className="border-t border-slate-100 dark:border-[#2a2a2a]" />}<button
     onClick={() => { setOpen(false); onViewPatientDetails(); }}
     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-[#cccccc] hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors text-left"
-  ><HeartPulse className="w-4 h-4 opacity-70" />Patient Details</button>{(appt.status === "COMPLETED" || appt.status === "IN_PROGRESS") && <button
+  ><HeartPulse className="w-4 h-4 opacity-70" />Patient Details</button>{PRESCRIPTION_ELIGIBLE.has(appt.status) && <button
+    onClick={() => { setOpen(false); onWritePrescription(); }}
+    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors text-left"
+  ><Pill className="w-4 h-4 opacity-70" />Write Prescription</button>}{(appt.status === "COMPLETED" || appt.status === "IN_PROGRESS") && <button
     onClick={() => { setOpen(false); onAdmit(); }}
     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors text-left"
   ><BedDouble className="w-4 h-4 opacity-70" />Admit Patient</button>}</div> : <div className="p-3 space-y-2"><p className="text-xs font-semibold text-slate-700 dark:text-[#cccccc]">Cancellation Reason <span className="text-slate-400">(optional)</span></p><textarea
@@ -154,6 +163,8 @@ function AppointmentsDashboard() {
   const [listFilter, setListFilter] = useState("all");
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [admitPrefill, setAdmitPrefill] = useState(null);
+  // { patient, appointmentId } — drives the WritePrescriptionModal.
+  const [prescriptionTarget, setPrescriptionTarget] = useState(null);
   const [apptPage, setApptPage] = useState(1);
   const [currentDate, setCurrentDate] = useState(/* @__PURE__ */ new Date());
   const [appointments, setAppointments] = useState([]);
@@ -313,7 +324,21 @@ function AppointmentsDashboard() {
   /></div></div><div className="flex flex-col flex-1 overflow-hidden"><div className="overflow-x-auto flex-1"><table className="w-full text-left border-collapse"><thead><tr className="border-b border-slate-200 dark:border-[#222222] bg-slate-50/50 dark:bg-[#0f0f0f]"><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider w-20">Token</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Patient</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Doctor</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Date &amp; Time</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Status</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Type</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredAppointments.length === 0 ? <tr><td colSpan={7} className="py-12 text-center text-slate-500 dark:text-[#888888]"><CalendarIcon className="w-8 h-8 mx-auto mb-3 opacity-50" />
     No appointments found for the selected filters.
   </td></tr> : filteredAppointments.map((appt) => <tr key={appt.id} className="hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-colors group"><td className="py-3 px-5">{appt.tokenNumber != null ? <span className="inline-flex items-center justify-center min-w-[2.25rem] h-7 px-2 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-bold tabular-nums">#{appt.tokenNumber}</span> : <span className="text-xs text-slate-300 dark:text-[#444]">—</span>}</td><td className="py-3 px-5"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#222222] text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-sm shrink-0">{appt.patientName.charAt(0)}</div><div><p className="font-semibold text-sm text-slate-900 dark:text-white">{appt.patientName}</p>{appt.checkupBookingId && <button onClick={() => navigate(`/checkups/bookings/${appt.checkupBookingId}`)} className="flex items-center gap-1 mt-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"><HeartPulse className="w-3 h-3" />{appt.checkupBookingNumber}</button>}</div></div></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">
-    Dr. {appt.doctorName}</td><td className="py-3 px-5"><p className="text-sm font-medium text-slate-900 dark:text-white">{format(parseISO(appt.apptDate), "yyyy-MM-dd")}</p><p className="text-xs text-slate-500 dark:text-[#888888] mt-0.5">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p></td><td className="py-3 px-5"><span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide ${STATUS_STYLES[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">{TYPE_LABEL[appt.type] ?? appt.type}</td><td className="py-3 px-5"><div className="flex items-center gap-2"><ActionMenu appt={appt} onUpdate={handleStatusUpdate} onAdmit={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), uhid: appt.patientUhid }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })} onViewPatientDetails={() => navigate(`/patients/${appt.patientId}`)} /></div></td></tr>)}</tbody></table></div><div className="px-5 pb-4"><Pagination
+    Dr. {appt.doctorName}</td><td className="py-3 px-5"><p className="text-sm font-medium text-slate-900 dark:text-white">{format(parseISO(appt.apptDate), "yyyy-MM-dd")}</p><p className="text-xs text-slate-500 dark:text-[#888888] mt-0.5">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p></td><td className="py-3 px-5"><span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide ${STATUS_STYLES[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span></td><td className="py-3 px-5 text-sm text-slate-600 dark:text-[#cccccc]">{TYPE_LABEL[appt.type] ?? appt.type}</td><td className="py-3 px-5"><div className="flex items-center gap-2"><ActionMenu
+    appt={appt}
+    onUpdate={handleStatusUpdate}
+    onAdmit={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), uhid: appt.patientUhid }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })}
+    onViewPatientDetails={() => navigate(`/patients/${appt.patientId}`)}
+    onWritePrescription={() => setPrescriptionTarget({
+      patient: {
+        id: appt.patientId,
+        firstName: appt.patientFirstName || appt.patientName?.split(" ")[0],
+        lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "),
+        uhid: appt.patientUhid,
+      },
+      appointmentId: appt.id,
+    })}
+  /></div></td></tr>)}</tbody></table></div><div className="px-5 pb-4"><Pagination
       currentPage={apptPage}
       totalPages={totalPages}
       totalItems={totalItems}
@@ -401,7 +426,12 @@ function AppointmentsDashboard() {
         setIsBookingModalOpen(false);
         loadData();
       }}
-    />{admitPrefill && <AdmitPatientModal prefill={admitPrefill} onClose={() => setAdmitPrefill(null)} onAdmitted={() => { setAdmitPrefill(null); }} />}</div>;
+    />{admitPrefill && <AdmitPatientModal prefill={admitPrefill} onClose={() => setAdmitPrefill(null)} onAdmitted={() => { setAdmitPrefill(null); }} />}{prescriptionTarget && <WritePrescriptionModal
+      patient={prescriptionTarget.patient}
+      appointmentId={prescriptionTarget.appointmentId}
+      onClose={() => setPrescriptionTarget(null)}
+      onSaved={() => setPrescriptionTarget(null)}
+    />}</div>;
 }
 export {
   AppointmentsDashboard as default
