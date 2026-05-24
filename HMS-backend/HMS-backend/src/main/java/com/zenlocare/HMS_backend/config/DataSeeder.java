@@ -154,15 +154,25 @@ public class DataSeeder implements CommandLineRunner {
                     drug_strength   varchar(100) NULL,
                     drug_form       varchar(50)  NULL,
                     dose            varchar(100) NULL,
-                    frequency       varchar(50)  NULL,
+                    frequency_id    integer      NULL,
                     duration_days   integer      NULL,
                     quantity        integer      NOT NULL,
-                    route           varchar(20)  NULL,
+                    route_id        integer      NULL,
                     instructions    text         NULL,
                     display_order   integer      NULL DEFAULT 0,
                     created_at      timestamp without time zone NOT NULL DEFAULT NOW()
                 )
                 """);
+
+            // If an earlier build of this table used varchar columns for frequency/route,
+            // migrate to the integer-FK shape that matches the rest of the codebase.
+            // Both ADD and DROP are guarded so this runs idempotently on every boot.
+            jdbcTemplate.execute(
+                "ALTER TABLE prescription_items ADD COLUMN IF NOT EXISTS frequency_id integer");
+            jdbcTemplate.execute(
+                "ALTER TABLE prescription_items ADD COLUMN IF NOT EXISTS route_id integer");
+            jdbcTemplate.execute("ALTER TABLE prescription_items DROP COLUMN IF EXISTS frequency");
+            jdbcTemplate.execute("ALTER TABLE prescription_items DROP COLUMN IF EXISTS route");
 
             jdbcTemplate.execute(
                 "CREATE INDEX IF NOT EXISTS idx_prescription_items_history_id ON prescription_items(history_id)");
@@ -289,7 +299,20 @@ public class DataSeeder implements CommandLineRunner {
             {1, "CONSULTATION"}, {2, "PRESCRIPTION"}, {3, "LAB_RESULT"},
             {4, "SURGERY"}, {5, "DIAGNOSIS"}, {6, "OTHERS"}
         });
-        log.info("✅ Reference tables seeded (14 tables).");
+        // Clinical taxonomies for the prescription picker. Ids are stable
+        // contract — adding new rows is OK, renumbering is not.
+        seedRefTable("prescription_frequencies", new Object[][]{
+            {1, "OD"}, {2, "BD"}, {3, "TDS"}, {4, "QID"},
+            {5, "Q4H"}, {6, "Q6H"}, {7, "Q8H"},
+            {8, "HS"}, {9, "AC"}, {10, "PC"},
+            {11, "SOS"}, {12, "STAT"}
+        });
+        seedRefTable("prescription_routes", new Object[][]{
+            {1, "ORAL"}, {2, "IV"}, {3, "IM"}, {4, "SC"},
+            {5, "TOPICAL"}, {6, "INHALED"},
+            {7, "OPHTHALMIC"}, {8, "OTIC"}, {9, "NASAL"}, {10, "RECTAL"}
+        });
+        log.info("✅ Reference tables seeded (16 tables).");
     }
 
     private void seedRefTable(String tableName, Object[][] rows) {

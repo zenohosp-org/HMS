@@ -74,9 +74,14 @@ public class PrescriptionItem {
     @Column(length = 100)
     private String dose;
 
-    /** Schedule shorthand — OD, BD, TDS, QID, SOS, Q4H, HS, AC, PC. */
-    @Column(length = 50)
-    private String frequency;
+    /**
+     * Schedule shorthand — OD, BD, TDS, QID, SOS, Q4H, HS, AC, PC, STAT.
+     * Stored as an integer FK into {@code prescription_frequencies}; same
+     * pattern AppointmentStatus / RoomStatus use.
+     */
+    @Convert(converter = com.zenlocare.HMS_backend.converter.PrescriptionFrequencyConverter.class)
+    @Column(name = "frequency_id")
+    private PrescriptionFrequency frequency;
 
     /** Treatment length in days. Null for SOS / chronic / variable. */
     @Column(name = "duration_days")
@@ -86,9 +91,13 @@ public class PrescriptionItem {
     @Column(nullable = false)
     private Integer quantity;
 
-    /** ORAL, IV, IM, SC, TOPICAL, INHALED, OPHTHALMIC, etc. */
-    @Column(length = 20)
-    private String route;
+    /**
+     * Route of administration — ORAL, IV, IM, SC, TOPICAL, INHALED, etc.
+     * Integer FK into {@code prescription_routes}.
+     */
+    @Convert(converter = com.zenlocare.HMS_backend.converter.PrescriptionRouteConverter.class)
+    @Column(name = "route_id")
+    private PrescriptionRoute route;
 
     /** Free-text per-drug notes ("after meals", "with milk", "taper over 5 days"). */
     @Column(columnDefinition = "TEXT")

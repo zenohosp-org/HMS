@@ -30,7 +30,12 @@ public class ReferenceDataController {
         "checkup_booking_statuses",
         "admission_statuses",
         "admission_types",
-        "admission_sources"
+        "admission_sources",
+        // Prescription clinical taxonomies — driven by HMS, read by both HMS UI
+        // (dropdowns in the prescription picker) and pharmacy backend (to
+        // resolve human-readable labels when displaying a dispense queue).
+        "prescription_frequencies",
+        "prescription_routes"
     };
 
     @GetMapping

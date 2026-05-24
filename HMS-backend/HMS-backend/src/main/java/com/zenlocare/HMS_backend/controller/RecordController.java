@@ -118,10 +118,10 @@ public class RecordController {
                 d.setDrugStrength(pi.getDrugStrength());
                 d.setDrugForm(pi.getDrugForm());
                 d.setDose(pi.getDose());
-                d.setFrequency(pi.getFrequency());
+                d.setFrequency(pi.getFrequency() != null ? pi.getFrequency().name() : null);
                 d.setDurationDays(pi.getDurationDays());
                 d.setQuantity(pi.getQuantity());
-                d.setRoute(pi.getRoute());
+                d.setRoute(pi.getRoute() != null ? pi.getRoute().name() : null);
                 d.setInstructions(pi.getInstructions());
                 d.setDisplayOrder(pi.getDisplayOrder());
                 items.add(d);

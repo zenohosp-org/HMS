@@ -175,10 +175,13 @@ public class RecordService {
                                 .drugStrength(ir.getDrugStrength())
                                 .drugForm(ir.getDrugForm())
                                 .dose(ir.getDose())
-                                .frequency(ir.getFrequency())
+                                // Convert incoming string codes ("BD", "ORAL") to enum FKs.
+                                // fromCode is strict — unknown codes throw with the allowed list
+                                // so a bad external caller gets a clear 400, not a silent null.
+                                .frequency(com.zenlocare.HMS_backend.entity.PrescriptionFrequency.fromCode(ir.getFrequency()))
                                 .durationDays(ir.getDurationDays())
                                 .quantity(qty)
-                                .route(ir.getRoute())
+                                .route(com.zenlocare.HMS_backend.entity.PrescriptionRoute.fromCode(ir.getRoute()))
                                 .instructions(ir.getInstructions())
                                 .displayOrder(ir.getDisplayOrder() != null ? ir.getDisplayOrder() : order)
                                 .build();
