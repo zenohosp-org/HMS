@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { calcAge, formatDate, formatDateTime } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
 import PatientModal from "@/components/modals/PatientModal";
+import WritePrescriptionModal from "@/components/modals/WritePrescriptionModal";
 import {
   Loader2,
   ArrowLeft,
@@ -26,6 +27,7 @@ import {
   AlertCircle,
   Stethoscope,
   Plus,
+  Pill,
   X,
   MoreHorizontal,
   Bed,
@@ -70,6 +72,10 @@ const TYPE_META = {
     dot: "bg-slate-400"
   }
 };
+// PRESCRIPTION lives in the dropdown so doctors can find it by intuition, but
+// selecting it funnels into WritePrescriptionModal (handled by the parent
+// component) rather than into the free-text textarea — pharmacy needs the
+// structured per-drug rows to dispense, and a textarea blocks that path.
 const HISTORY_TYPES = ["CONSULTATION", "PRESCRIPTION", "LAB_RESULT", "SURGERY", "DIAGNOSIS", "OTHER"];
 const BLOOD_DARK = {
   "A+": "dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
@@ -175,7 +181,7 @@ function RecordCard({ record }) {
     </div>
   );
 }
-function AddRecordForm({ patientId, hospitalId, onSaved, onCancel }) {
+function AddRecordForm({ patientId, hospitalId, onSaved, onCancel, onPrescriptionPicked }) {
   const { notify } = useNotification();
   const [form, setForm] = useState({ historyType: "CONSULTATION", description: "", nextVisitDate: "" });
   const [saving, setSaving] = useState(false);
@@ -201,7 +207,11 @@ function AddRecordForm({ patientId, hospitalId, onSaved, onCancel }) {
   return <div className="bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#2a2a2a] rounded-lg p-5 mb-5"><div className="flex items-center justify-between mb-4"><h3 className="text-sm font-semibold text-slate-700 dark:text-[#cccccc]">Add New Record</h3><button onClick={onCancel} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#aaaaaa] transition-colors"><X className="w-4 h-4" /></button></div><form onSubmit={handleSubmit} className="space-y-4"><div className="grid grid-cols-2 gap-4"><div><label className="label text-xs">Record Type *</label><SearchableSelect
     className="input text-sm"
     value={form.historyType}
-    onChange={(v) => setForm((p) => ({ ...p, historyType: v }))}
+    onChange={(v) => {
+      // PRESCRIPTION redirects to the structured drug picker — see HISTORY_TYPES comment.
+      if (v === "PRESCRIPTION") { onPrescriptionPicked?.(); return; }
+      setForm((p) => ({ ...p, historyType: v }));
+    }}
     options={HISTORY_TYPES.map((t) => ({ value: t, label: t.replace("_", " ") }))}
   /></div><div><label className="label text-xs">Next Visit Date</label><input
     type="datetime-local"
@@ -231,6 +241,7 @@ function PatientDetails() {
   const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState("overview");
   const [showAddRecord, setShowAddRecord] = useState(false);
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [radiologyOrders, setRadiologyOrders] = useState([]);
   const [radiologyLoading, setRadiologyLoading] = useState(false);
@@ -425,10 +436,13 @@ function PatientDetails() {
     /* ── RECORDS TAB ── */
   }{tab === "records" && <div className="w-full max-w-5xl">{
     /* Header + Add button */
-  }<div className="flex items-center justify-between mb-5"><div><h3 className="font-semibold text-slate-800 dark:text-[#e5e5e5]">Medical Records</h3><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{records.length} record{records.length !== 1 ? "s" : ""} for {patient.firstName}</p></div><button
+  }<div className="flex items-center justify-between mb-5"><div><h3 className="font-semibold text-slate-800 dark:text-[#e5e5e5]">Medical Records</h3><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{records.length} record{records.length !== 1 ? "s" : ""} for {patient.firstName}</p></div><div className="flex items-center gap-2"><button
+    className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors"
+    onClick={() => setShowPrescriptionModal(true)}
+  ><Pill className="w-3.5 h-3.5" />Write Prescription</button><button
     className="btn-primary text-xs flex items-center gap-1.5"
     onClick={() => setShowAddRecord((v) => !v)}
-  ><Plus className="w-3.5 h-3.5" />{showAddRecord ? "Cancel" : "Add Record"}</button></div>{
+  ><Plus className="w-3.5 h-3.5" />{showAddRecord ? "Cancel" : "Add Record"}</button></div></div>{
     /* Inline add form */
   }{showAddRecord && user?.hospitalId && <AddRecordForm
     patientId={patient.id}
@@ -438,6 +452,10 @@ function PatientDetails() {
       loadRecords();
     }}
     onCancel={() => setShowAddRecord(false)}
+    onPrescriptionPicked={() => {
+      setShowAddRecord(false);
+      setShowPrescriptionModal(true);
+    }}
   />}{
     /* Timeline */
   }{recordsLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : records.length === 0 ? <div className="py-16 text-center"><ClipboardList className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No records yet</p><p className="text-xs text-slate-400 dark:text-[#444444] mt-1">Add the first medical record above.</p></div> : <div className="space-y-6">{groupedRecords.ipdGroups.map(([admNum, recs]) => <div key={admNum}><div className="flex items-center gap-2 mb-3"><span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900">{admNum}</span><div className="flex-1 h-px bg-slate-100 dark:bg-[#1e1e1e]" /><span className="text-[10px] text-slate-400 dark:text-[#555]">{recs.length} record{recs.length !== 1 ? "s" : ""}</span></div><div>{recs.map(r => <RecordCard key={r.id} record={r} />)}</div></div>)}{groupedRecords.general.length > 0 && <div>{groupedRecords.ipdGroups.length > 0 && <div className="flex items-center gap-2 mb-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-slate-500 dark:text-[#666] border border-slate-200 dark:border-[#2a2a2a]">General</span><div className="flex-1 h-px bg-slate-100 dark:bg-[#1e1e1e]" /></div>}<div>{groupedRecords.general.map(r => <RecordCard key={r.id} record={r} />)}</div></div>}</div>}</div>}{
@@ -479,6 +497,14 @@ function PatientDetails() {
     patient={patient}
     onClose={() => setEditing(false)}
     onSave={handleUpdate}
+  />}{showPrescriptionModal && <WritePrescriptionModal
+    patient={patient}
+    onClose={() => setShowPrescriptionModal(false)}
+    onSaved={() => {
+      setShowPrescriptionModal(false);
+      setTab("records");
+      loadRecords();
+    }}
   />}</div>;
 }
 export {

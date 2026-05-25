@@ -16,6 +16,7 @@ import {
 import { fmtId } from '@/utils/idFormat'
 import axios from 'axios'
 import SSOCookieManager from '@/utils/ssoManager'
+import WritePrescriptionModal from '@/components/modals/WritePrescriptionModal'
 
 const otApi = axios.create({ baseURL: 'https://api-ot.zenohosp.com', withCredentials: true })
 otApi.interceptors.request.use(config => {
@@ -83,6 +84,9 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
   const [showAddRecord, setShowAddRecord] = useState(false)
   const [recordForm, setRecordForm] = useState({ historyType: 'CONSULTATION', description: '', nextVisitDate: '' })
   const [savingRecord, setSavingRecord] = useState(false)
+  // Structured prescription modal — IPD-linked when opened from here so the
+  // saved record gets admissionId/admissionNumber stamped on it.
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
 
   // Discharge guard
   const [checkingDischarge, setCheckingDischarge] = useState(false)
@@ -697,13 +701,22 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#555]">Timeline</p>
-                  <button
-                    onClick={() => setShowAddRecord(v => !v)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] hover:bg-slate-100 dark:hover:bg-[#222] transition-colors"
-                  >
-                    {showAddRecord ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                    {showAddRecord ? 'Cancel' : 'Add Record'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowPrescriptionModal(true)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-white bg-emerald-500 hover:bg-emerald-600 transition-colors"
+                    >
+                      <Pill className="w-3 h-3" />
+                      Write Prescription
+                    </button>
+                    <button
+                      onClick={() => setShowAddRecord(v => !v)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] hover:bg-slate-100 dark:hover:bg-[#222] transition-colors"
+                    >
+                      {showAddRecord ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                      {showAddRecord ? 'Cancel' : 'Add Record'}
+                    </button>
+                  </div>
                 </div>
                 {showAddRecord && (
                   <form onSubmit={handleSaveRecord} className="rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] p-4 space-y-3 mb-4">
@@ -717,7 +730,18 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                         <SearchableSelect
                           className="input text-sm"
                           value={recordForm.historyType}
-                          onChange={v => setRecordForm(p => ({ ...p, historyType: v }))}
+                          onChange={v => {
+                            // Prescription needs the structured drug picker (frequency/dose/qty
+                            // per line so pharmacy can dispense). Funnel into the modal here
+                            // rather than letting the doctor write free-text into the textarea
+                            // below — keeps a single source of structured prescription data.
+                            if (v === 'PRESCRIPTION') {
+                              setShowAddRecord(false)
+                              setShowPrescriptionModal(true)
+                              return
+                            }
+                            setRecordForm(p => ({ ...p, historyType: v }))
+                          }}
                           options={['CONSULTATION','PRESCRIPTION','LAB_RESULT','SURGERY','DIAGNOSIS','OTHER'].map(t => ({ value: t, label: t.replace('_', ' ') }))}
                         />
                       </div>
@@ -1108,6 +1132,26 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
           )}
         </div>
       </div>
+
+      {showPrescriptionModal && (() => {
+        // patientName comes from the admission DTO as "First Last" — split it
+        // so WritePrescriptionModal can render "First Last · UHID" in its header.
+        const parts = (admission.patientName || '').trim().split(/\s+/)
+        const firstName = parts[0] || ''
+        const lastName = parts.slice(1).join(' ')
+        return (
+          <WritePrescriptionModal
+            patient={{ id: admission.patientId, firstName, lastName, uhid: admission.patientUhid }}
+            admissionId={admission.id}
+            admissionNumber={admission.admissionNumber || admission.ipdId}
+            onClose={() => setShowPrescriptionModal(false)}
+            onSaved={() => {
+              setShowPrescriptionModal(false)
+              fetchLogs(true)
+            }}
+          />
+        )
+      })()}
     </div>
   )
 }
