@@ -3,7 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { drugsApi, recordApi } from "@/utils/api";
 import {
-  X, Search, Plus, Loader2, Pill, Trash2, AlertCircle, CheckCircle2,
+  Search, Plus, Loader2, Pill, Trash2, AlertCircle, CheckCircle2,
 } from "lucide-react";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 
@@ -132,7 +132,7 @@ export default function WritePrescriptionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm pointer-events-auto">
       <div className="bg-white dark:bg-[#111] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] border border-slate-200 dark:border-[#2a2a2a] flex flex-col">
 
         {/* Header */}
@@ -150,9 +150,6 @@ export default function WritePrescriptionModal({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors">
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Body — scrollable */}
