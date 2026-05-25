@@ -14,10 +14,16 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Thin read-only window into {@code pharmacy_drug_master}, owned by the
- * pharmacy backend, exposed here so the HMS prescription picker doesn't have
- * to make cross-origin calls to pharmacy. Pharmacy + HMS share the same DB
- * (see schema co-location), so a direct read is safe; nothing here writes.
+ * Thin read-only window into the hospital's pharmacy catalog. Reads from
+ * {@code inventory_items} filtered by {@code billing_group = 'PHARMACY'} —
+ * the inventory app owns this table and is the canonical source for what a
+ * hospital actually carries / sells. Pharmacy backend reads the same rows
+ * and stores {@code inventory_item_id} on its own records; HMS reading
+ * inventory_items directly keeps both apps consistent with one master.
+ *
+ * Earlier this endpoint queried {@code pharmacy_drug_master} which is a
+ * narrower / older table; many hospitals had only test data there, so the
+ * picker would return one drug. Inventory's drug catalog is the live source.
  *
  * Gated to clinicians + hospital admins so general staff can't enumerate the
  * drug catalogue through this endpoint.
@@ -57,17 +63,25 @@ public class DrugController {
         }
 
         String like = "%" + (q == null ? "" : q.trim().toLowerCase()) + "%";
+        // inventory_items doesn't carry brand_name / strength / form as separate
+        // columns the way pharmacy_drug_master did — the display string is in
+        // `name`, and clinical metadata is split across name/generic_name. The
+        // DTO keeps the brandName/genericName/strength/form shape so the picker
+        // UI doesn't need to change; strength/form just come back null and the
+        // existing `[generic, strength, form].filter(Boolean).join(" · ")` line
+        // in the modal handles that cleanly.
         String sql = """
-            SELECT id, brand_name, generic_name, salt_name, strength, form, schedule, inventory_item_id
-              FROM pharmacy_drug_master
+            SELECT id, name, generic_name, drug_schedule, code, hsn_code
+              FROM inventory_items
              WHERE hospital_id = ?
+               AND billing_group = 'PHARMACY'
                AND COALESCE(is_active, TRUE) = TRUE
                AND (
-                   LOWER(brand_name)   LIKE ?
-                OR LOWER(COALESCE(generic_name, '')) LIKE ?
-                OR LOWER(COALESCE(salt_name, ''))    LIKE ?
+                   LOWER(name)                          LIKE ?
+                OR LOWER(COALESCE(generic_name, ''))    LIKE ?
+                OR LOWER(COALESCE(code, ''))            LIKE ?
                )
-             ORDER BY brand_name ASC
+             ORDER BY name ASC
              LIMIT 50
             """;
 
@@ -82,13 +96,17 @@ public class DrugController {
                     DrugDto d = new DrugDto();
                     Object idObj = rs.getObject("id");
                     d.setId(idObj != null ? idObj.toString() : null);
-                    d.setBrandName(rs.getString("brand_name"));
+                    d.setBrandName(rs.getString("name"));
                     d.setGenericName(rs.getString("generic_name"));
-                    d.setSaltName(rs.getString("salt_name"));
-                    d.setStrength(rs.getString("strength"));
-                    d.setForm(rs.getString("form"));
-                    d.setSchedule(rs.getString("schedule"));
-                    d.setInStock(rs.getObject("inventory_item_id") != null);
+                    d.setSaltName(rs.getString("generic_name")); // inventory_items has no separate salt column
+                    d.setStrength(null);
+                    d.setForm(null);
+                    d.setSchedule(rs.getString("drug_schedule"));
+                    // Reaching this query at all means the item is billable under
+                    // PHARMACY for this hospital → it's in the catalog. Live
+                    // batch-level stock is a separate concern (pharmacy_stock_batches);
+                    // the picker just confirms presence in the master.
+                    d.setInStock(true);
                     return d;
                 });
         return ResponseEntity.ok(rows);
