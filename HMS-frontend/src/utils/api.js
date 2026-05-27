@@ -704,6 +704,31 @@ const drugsApi = {
   }
 };
 
+// Autosave for the in-flight consultation modal. One row per appointment.
+// get() resolves to null when the appointment has no draft yet — the modal
+// uses that to decide between hydrating from autosave or seeding from the
+// appointment record.
+const consultationDraftsApi = {
+  get: async (appointmentId) => {
+    const res = await api.get(`/consultation-drafts/by-appointment/${appointmentId}`, {
+      validateStatus: (s) => s === 200 || s === 204 || s === 404,
+    });
+    if (res.status === 200) return res.data;
+    return null;
+  },
+  listForHospital: async (hospitalId) => {
+    const { data } = await api.get("/consultation-drafts", { params: { hospitalId } });
+    return data;
+  },
+  upsert: async (appointmentId, payload) => {
+    const { data } = await api.put(`/consultation-drafts/by-appointment/${appointmentId}`, payload);
+    return data;
+  },
+  remove: async (appointmentId) => {
+    await api.delete(`/consultation-drafts/by-appointment/${appointmentId}`);
+  },
+};
+
 var stdin_default = api;
 export {
   admissionApi,
@@ -735,5 +760,6 @@ export {
   patientAdvanceApi,
   dashboardApi,
   drugsApi,
-  roomTypeApi
+  roomTypeApi,
+  consultationDraftsApi
 };

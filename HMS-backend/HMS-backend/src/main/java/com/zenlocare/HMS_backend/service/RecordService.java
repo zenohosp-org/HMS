@@ -88,7 +88,8 @@ public class RecordService {
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public PatientRecord createRecord(UUID hospitalId, Integer patientId, User createdBy,
-            String historyType, String description, LocalDateTime nextVisitDate,
+            String historyType, String description, String instructions,
+            LocalDateTime nextVisitDate,
             java.util.UUID admissionId, String admissionNumber,
             java.util.UUID appointmentId,
             java.util.List<com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest> prescriptionItems) {
@@ -97,7 +98,7 @@ public class RecordService {
         for (int attempt = 1; attempt <= MAX_MRN_ATTEMPTS; attempt++) {
             try {
                 return txTemplate.execute(status -> doCreate(
-                        hospitalId, patientId, createdBy, historyType, description,
+                        hospitalId, patientId, createdBy, historyType, description, instructions,
                         nextVisitDate, admissionId, admissionNumber,
                         appointmentId, prescriptionItems));
             } catch (DataIntegrityViolationException e) {
@@ -111,7 +112,8 @@ public class RecordService {
     }
 
     private PatientRecord doCreate(UUID hospitalId, Integer patientId, User createdBy,
-            String historyType, String description, LocalDateTime nextVisitDate,
+            String historyType, String description, String instructions,
+            LocalDateTime nextVisitDate,
             java.util.UUID admissionId, String admissionNumber,
             java.util.UUID appointmentId,
             java.util.List<com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest> prescriptionItems) {
@@ -147,6 +149,7 @@ public class RecordService {
                 .createdBy(creator)
                 .historyType(type)
                 .description(description)
+                .instructions(instructions)
                 .nextVisitDate(nextVisitDate)
                 .admissionId(admissionId)
                 .admissionNumber(admissionNumber)
@@ -156,8 +159,10 @@ public class RecordService {
                 .build();
 
         // Attach structured prescription items when the record is a PRESCRIPTION.
-        // Other history types (CONSULTATION etc.) silently ignore the input —
-        // the description textarea is still the right place for narrative notes.
+        // The OPD check-in consultation flow picks PRESCRIPTION as the history
+        // type whenever the doctor adds drugs, so the pharmacy's by-type query
+        // continues to surface every dispensable record without scanning
+        // CONSULTATION rows.
         if (type == HistoryType.PRESCRIPTION && prescriptionItems != null && !prescriptionItems.isEmpty()) {
             int order = 0;
             for (var ir : prescriptionItems) {

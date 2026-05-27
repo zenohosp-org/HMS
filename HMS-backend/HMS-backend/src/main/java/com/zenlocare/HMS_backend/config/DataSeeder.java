@@ -78,6 +78,50 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception e) {
             log.warn("Could not add admission_id to appointments: " + e.getMessage());
         }
+        try {
+            // One in-flight consultation per appointment. Cleared on save.
+            // FK to users(created_by) is enforced by JPA on read/write; we
+            // skip the explicit REFERENCES so the DDL doesn't need to know
+            // the users PK column name across profiles.
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS consultation_drafts (
+                    id              uuid PRIMARY KEY,
+                    appointment_id  uuid NOT NULL UNIQUE,
+                    hospital_id     uuid NOT NULL,
+                    patient_id      integer NOT NULL,
+                    created_by      uuid NOT NULL,
+                    payload         text NOT NULL,
+                    created_at      timestamp without time zone NOT NULL DEFAULT NOW(),
+                    updated_at      timestamp without time zone NOT NULL DEFAULT NOW()
+                )
+                """);
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_consultation_drafts_hospital_id ON consultation_drafts(hospital_id)");
+            log.info("✅ Ensured consultation_drafts table");
+        } catch (Exception e) {
+            log.warn("Could not ensure consultation_drafts: " + e.getMessage());
+        }
+        try {
+            // Ward's roomType used to live only on its rooms — empty wards or
+            // edits before adding rooms lost the type. Persist it on the ward
+            // itself and backfill from the first room for legacy rows.
+            jdbcTemplate.execute("ALTER TABLE hospital_wards ADD COLUMN IF NOT EXISTS room_type VARCHAR(30)");
+            jdbcTemplate.update("""
+                UPDATE hospital_wards w
+                   SET room_type = sub.room_type
+                  FROM (
+                      SELECT DISTINCT ON (ward_id) ward_id, room_type
+                        FROM rooms
+                       WHERE ward_id IS NOT NULL AND room_type IS NOT NULL
+                       ORDER BY ward_id, room_id
+                  ) sub
+                 WHERE w.id = sub.ward_id
+                   AND (w.room_type IS NULL OR w.room_type = '')
+                """);
+            log.info("✅ Ensured hospital_wards.room_type column and backfilled from rooms");
+        } catch (Exception e) {
+            log.warn("Could not ensure hospital_wards.room_type: " + e.getMessage());
+        }
 
         dropGhostStatusNotNullConstraints();
         seedReferenceTables();
@@ -143,6 +187,11 @@ public class DataSeeder implements CommandLineRunner {
         try {
             jdbcTemplate.execute(
                 "ALTER TABLE patient_records ADD COLUMN IF NOT EXISTS appointment_id uuid");
+            // OPD consultation form stores discharge / follow-up instructions
+            // separately from the doctor's narrative description so prints can
+            // split them without parsing prose.
+            jdbcTemplate.execute(
+                "ALTER TABLE patient_records ADD COLUMN IF NOT EXISTS instructions text");
 
             jdbcTemplate.execute("""
                 CREATE TABLE IF NOT EXISTS prescription_items (

@@ -29,6 +29,9 @@ public class HospitalWard {
     @Column(name = "daily_charge", precision = 10, scale = 2)
     private BigDecimal dailyCharge;
 
+    @Column(name = "room_type", length = 30)
+    private String roomType;
+
     @Column(name = "room_count")
     private Integer roomCount;
 

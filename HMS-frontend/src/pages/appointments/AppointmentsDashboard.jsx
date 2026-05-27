@@ -1,18 +1,23 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Pill } from "lucide-react";
+import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Pill, Stethoscope } from "lucide-react";
 import WritePrescriptionModal from "@/components/modals/WritePrescriptionModal";
+import ConsultationModal from "@/components/modals/ConsultationModal";
 
 // Statuses for which writing a prescription is meaningful — the patient has at
 // least checked in. SCHEDULED / CONFIRMED rows hide the action (no consult yet);
 // CANCELLED / NO_SHOW too. BILLED is allowed for late additions / corrections.
 const PRESCRIPTION_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS", "COMPLETED", "BILLED"]);
+// Re-open the consultation modal from these states. Excludes BILLED — once
+// the visit is billed the record should already be saved; new edits live in
+// patient_records, not a draft.
+const CONSULT_OPEN_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS", "COMPLETED"]);
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import BookAppointmentModal from "@/components/modals/BookAppointmentModal";
 import AdmitPatientModal from "@/pages/admin/AdmitPatientModal";
 import Pagination from "@/components/ui/Pagination";
 import { useAuth } from "@/context/AuthContext";
-import { appointmentsApi, doctorsApi } from "@/utils/api";
+import { appointmentsApi, doctorsApi, consultationDraftsApi } from "@/utils/api";
 import { format, addDays, startOfWeek, endOfWeek, addWeeks, startOfMonth, endOfMonth, addMonths, isSameDay, isSameMonth, parseISO, isToday } from "date-fns";
 import { useNotification } from "@/context/NotificationContext";
 const APPT_PAGE_SIZE = 10;
@@ -70,7 +75,7 @@ const STATUS_TRANSITIONS = {
     { status: "SCHEDULED", label: "Reschedule", icon: "reschedule", color: "text-slate-600 dark:text-slate-400" }
   ]
 };
-function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onWritePrescription }) {
+function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onWritePrescription, onOpenConsultation, hasDraft }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCancelReason, setShowCancelReason] = useState(false);
@@ -129,7 +134,10 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onWritePres
   >{iconFor(action.icon)}{action.label}</button>)}{actions.length > 0 && <div className="border-t border-slate-100 dark:border-[#2a2a2a]" />}<button
     onClick={() => { setOpen(false); onViewPatientDetails(); }}
     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-[#cccccc] hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors text-left"
-  ><HeartPulse className="w-4 h-4 opacity-70" />Patient Details</button>{PRESCRIPTION_ELIGIBLE.has(appt.status) && <button
+  ><HeartPulse className="w-4 h-4 opacity-70" />Patient Details</button>{CONSULT_OPEN_ELIGIBLE.has(appt.status) && <button
+    onClick={() => { setOpen(false); onOpenConsultation(); }}
+    className="w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-sm font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors text-left"
+  ><span className="flex items-center gap-2.5"><Stethoscope className="w-4 h-4 opacity-70" />{hasDraft ? "Resume Consultation" : "Open Consultation"}</span>{hasDraft && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">DRAFT</span>}</button>}{PRESCRIPTION_ELIGIBLE.has(appt.status) && <button
     onClick={() => { setOpen(false); onWritePrescription(); }}
     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors text-left"
   ><Pill className="w-4 h-4 opacity-70" />Write Prescription</button>}{(appt.status === "COMPLETED" || appt.status === "IN_PROGRESS") && <button
@@ -165,6 +173,12 @@ function AppointmentsDashboard() {
   const [admitPrefill, setAdmitPrefill] = useState(null);
   // { patient, appointmentId } — drives the WritePrescriptionModal.
   const [prescriptionTarget, setPrescriptionTarget] = useState(null);
+  // Holds the full appointment row whose check-in just triggered the
+  // consultation modal. Cleared on save / cancel.
+  const [consultationAppointment, setConsultationAppointment] = useState(null);
+  // Set<appointmentId> with an in-flight consultation draft on the server.
+  // Drives the "DRAFT" badge + "Resume Consultation" label in the row menu.
+  const [draftAppointmentIds, setDraftAppointmentIds] = useState(() => new Set());
   const [apptPage, setApptPage] = useState(1);
   const [currentDate, setCurrentDate] = useState(/* @__PURE__ */ new Date());
   const [appointments, setAppointments] = useState([]);
@@ -184,8 +198,19 @@ function AppointmentsDashboard() {
     return () => clearTimeout(timer);
   }, [search]);
 
+  const refreshDraftSet = async () => {
+    if (!user?.hospitalId) return;
+    try {
+      const drafts = await consultationDraftsApi.listForHospital(user.hospitalId);
+      setDraftAppointmentIds(new Set((drafts || []).map(d => d.appointmentId)));
+    } catch {
+      // Non-fatal — the modal still works without the badge.
+    }
+  };
+
   const loadData = async () => {
     if (!user?.hospitalId) return;
+    refreshDraftSet();
     setIsLoading(true);
     try {
       if (viewMode === "list") {
@@ -242,14 +267,27 @@ function AppointmentsDashboard() {
   const handleStatusUpdate = async (id, status, cancelledReason) => {
     const snapshot = appointments.find((a) => String(a.id) === id);
     setAppointments((prev) => prev.map((a) => String(a.id) === id ? { ...a, status } : a));
+
+    // Open the consultation modal optimistically — the moment the doctor
+    // clicks Check In / Start Consultation. We don't wait on the network so
+    // a slow update can't silently swallow the auto-open. If the backend
+    // rejects the transition we close it again in the catch below.
+    const shouldOpenConsult = (status === "CHECKED_IN" || status === "IN_PROGRESS") && !!snapshot;
+    if (shouldOpenConsult) {
+      setConsultationAppointment({ ...snapshot, status });
+    }
+
     try {
-      await appointmentsApi.updateStatus(id, status, cancelledReason);
-      // Token state may have shifted server-side (assigned on CONFIRMED, cleared
-      // on CANCELLED/NO_SHOW); pull the fresh list so the Token column reflects it.
+      const updated = await appointmentsApi.updateStatus(id, status, cancelledReason);
       notify(`Appointment marked as ${status.replace(/_/g, " ").toLowerCase()}`, "success");
+      // Swap in the server's authoritative DTO so any derived fields are fresh.
+      if (shouldOpenConsult && updated) {
+        setConsultationAppointment((cur) => cur ? { ...updated } : cur);
+      }
       loadData();
     } catch (err) {
       if (snapshot) setAppointments((prev) => prev.map((a) => String(a.id) === id ? snapshot : a));
+      if (shouldOpenConsult) setConsultationAppointment(null);
       notify(err?.response?.data?.message || "Failed to update status", "error");
     }
   };
@@ -338,6 +376,8 @@ function AppointmentsDashboard() {
       },
       appointmentId: appt.id,
     })}
+    onOpenConsultation={() => setConsultationAppointment(appt)}
+    hasDraft={draftAppointmentIds.has(String(appt.id))}
   /></div></td></tr>)}</tbody></table></div><div className="px-5 pb-4"><Pagination
       currentPage={apptPage}
       totalPages={totalPages}
@@ -431,6 +471,18 @@ function AppointmentsDashboard() {
       appointmentId={prescriptionTarget.appointmentId}
       onClose={() => setPrescriptionTarget(null)}
       onSaved={() => setPrescriptionTarget(null)}
+    />}{consultationAppointment && <ConsultationModal
+      appointment={consultationAppointment}
+      onClose={() => {
+        setConsultationAppointment(null);
+        // Re-fetch so a freshly-autosaved draft surfaces as a badge
+        // immediately when the doctor closes mid-edit.
+        refreshDraftSet();
+      }}
+      onSaved={() => {
+        setConsultationAppointment(null);
+        loadData();
+      }}
     />}</div>;
 }
 export {

@@ -81,7 +81,8 @@ public class RecordController {
 
         PatientRecord record = recordService.createRecord(
                 req.getHospitalId(), req.getPatientId(), user,
-                req.getHistoryType(), req.getDescription(), req.getNextVisitDate(),
+                req.getHistoryType(), req.getDescription(), req.getInstructions(),
+                req.getNextVisitDate(),
                 req.getAdmissionId(), req.getAdmissionNumber(),
                 req.getAppointmentId(), req.getPrescriptionItems());
         return ResponseEntity.ok(mapToDto(record));
@@ -92,6 +93,7 @@ public class RecordController {
         dto.setId(record.getId().toString());
         dto.setHistoryType(record.getHistoryType() != null ? record.getHistoryType().name() : null);
         dto.setDescription(record.getDescription());
+        dto.setInstructions(record.getInstructions());
         dto.setNextVisitDate(record.getNextVisitDate() != null ? record.getNextVisitDate().toString() : null);
         dto.setCreatedAt(record.getCreatedAt().toString());
         dto.setAdmissionId(record.getAdmissionId() != null ? record.getAdmissionId().toString() : null);
@@ -138,6 +140,7 @@ public class RecordController {
         private Integer patientId;
         private String historyType;
         private String description;
+        private String instructions;
         private LocalDateTime nextVisitDate;
         private UUID admissionId;
         private String admissionNumber;
@@ -170,6 +173,7 @@ public class RecordController {
         private String id;
         private String historyType;
         private String description;
+        private String instructions;
         private String nextVisitDate;
         private String createdAt;
         private String admissionId;

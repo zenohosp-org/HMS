@@ -43,6 +43,12 @@ public class PatientRecord {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // Patient-facing care instructions (rest, diet, follow-up triggers) kept
+    // separate from the doctor's narrative description so the discharge / OPD
+    // print can split them cleanly without parsing prose.
+    @Column(columnDefinition = "TEXT")
+    private String instructions;
+
     @Column(name = "next_visit_date")
     private LocalDateTime nextVisitDate;
 

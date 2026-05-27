@@ -66,6 +66,7 @@ public class InfrastructureService {
                     ward.setFloor(floor);
                     ward.setName(wDto.getName());
                     ward.setDailyCharge(wDto.getDailyCharge());
+                    ward.setRoomType(wDto.getRoomType() != null ? wDto.getRoomType() : "GENERAL");
                     ward.setDisplayOrder(k);
                     floor.getWards().add(ward);
                 }
@@ -191,8 +192,15 @@ public class InfrastructureService {
         dto.setName(w.getName());
         dto.setDailyCharge(w.getDailyCharge());
         List<Room> wardRooms = roomRepo.findByHospitalWard_Id(w.getId());
-        dto.setRoomType(wardRooms.isEmpty() ? "GENERAL"
-                : Optional.ofNullable(wardRooms.get(0).getRoomType()).orElse("GENERAL"));
+        // Ward stores the authoritative roomType. Fall back to the first room's
+        // type for legacy rows where the ward column wasn't populated yet, then
+        // default to GENERAL.
+        String wardType = w.getRoomType();
+        if (wardType == null || wardType.isBlank()) {
+            wardType = wardRooms.isEmpty() ? "GENERAL"
+                    : Optional.ofNullable(wardRooms.get(0).getRoomType()).orElse("GENERAL");
+        }
+        dto.setRoomType(wardType);
         List<RoomDto> rooms = wardRooms.stream()
                 .map(r -> {
                     RoomDto rd = new RoomDto();
