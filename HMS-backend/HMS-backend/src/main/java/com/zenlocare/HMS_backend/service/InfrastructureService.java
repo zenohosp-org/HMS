@@ -104,6 +104,17 @@ public class InfrastructureService {
                         room.setWard(wDto.getName());
                         room.setHospitalWard(ward);
                         room.setBedCount(rDto.getBedNames().size());
+                        // Cascade the ward's daily rate onto each room as the
+                        // billing snapshot. AdmissionDTO.roomPricePerDay is
+                        // computed live from Room.getPricePerDay() at every
+                        // fetch, so updating the room here means
+                        // SmartBillingService and the IPD finalize modal pick
+                        // up the new rate without any further plumbing.
+                        // Per-room overrides can still be applied directly on
+                        // the rooms table after the fact.
+                        if (ward.getDailyCharge() != null) {
+                            room.setPricePerDay(ward.getDailyCharge());
+                        }
                         Room saved = roomRepo.save(room);
 
                         syncBeds(saved, rDto.getBedNames());

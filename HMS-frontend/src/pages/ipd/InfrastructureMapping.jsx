@@ -150,6 +150,23 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
           />
         </div>
 
+        {/* Daily charge — applies per occupied bed-day. Cascaded server-side
+            onto every room in the ward so the IPD billing flow picks it up
+            via Room.pricePerDay → AdmissionDTO.roomPricePerDay. */}
+        <div className="flex items-center gap-2 px-4 py-3 shrink-0 border-l border-slate-100 dark:border-[#1e1e1e]">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">₹ / day</span>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={ward.dailyCharge ?? ""}
+            onChange={(e) => updateWard(bIdx, fIdx, wIdx, "dailyCharge", e.target.value)}
+            placeholder="0"
+            className="w-24 px-2 py-1 text-sm font-semibold text-right text-slate-800 dark:text-[#eeeeee] bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-md focus:outline-none focus:ring-2 focus:ring-slate-300/50 tabular-nums"
+          />
+        </div>
+
         {/* Rooms Stepper */}
         <div className="flex items-center gap-2 px-4 py-3 shrink-0 border-l border-slate-100 dark:border-[#1e1e1e]">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rooms</span>
@@ -344,6 +361,7 @@ export default function InfrastructureMapping() {
                 wards: allWards.map(w => ({
                   name: w.name,
                   roomType: w.roomType ?? "GENERAL",
+                  dailyCharge: w.dailyCharge ?? "",
                   rooms: (w.rooms ?? []).map((r) => ({
                     id: r.id,
                     name: r.name,
@@ -569,6 +587,9 @@ export default function InfrastructureMapping() {
             ...(f.wards || []).map((w) => ({
               name: w.name || "Ward",
               roomType: w.roomType || "GENERAL",
+              dailyCharge: w.dailyCharge === "" || w.dailyCharge == null
+                ? null
+                : Number(w.dailyCharge),
               rooms: (w.rooms || []).map((r) => ({
                 id: r.id || null,
                 name: r.name || "",
