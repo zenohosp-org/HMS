@@ -1,210 +1,39 @@
-import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { recordApi, consultationDraftsApi, vitalsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import {
   Stethoscope, Pill, Plus, Loader2, CheckCircle2, ClipboardList,
   CalendarClock, FileText, ListChecks, Save, AlertCircle,
   User as UserIcon, IdCard, Activity, HeartPulse, Wind, Scale, Droplet,
 } from "lucide-react";
-import {
-  PrescriptionDrugRow,
-  newBlankDrugItem,
-  drugItemToRequest,
-} from "@/components/prescription/PrescriptionDrugRow";
-
-const AUTOSAVE_DELAY_MS = 1500;
+import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
+import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 
 /**
- * Single-flow consultation page launched after an OPD appointment is checked
- * in (or via "Open Consultation" on a CHECKED_IN+ row). Everything the doctor
- * needs to record a visit lives on one scrollable page: chief complaint,
- * notes, instructions, prescription, next visit. Persists as one
- * patient_records row:
- *   - historyType = PRESCRIPTION when the doctor added drugs (pharmacy picks
- *     it up via the by-type query)
- *   - historyType = CONSULTATION  when no drugs were added (notes-only visit)
- *
- * Linked to the appointment via appointmentId so the OPD audit trail stays
- * intact. Drafts persist via consultationDraftsApi so a closed tab doesn't
- * lose work.
+ * Single-flow consultation page launched after an OPD appointment hits
+ * IN_PROGRESS (or via "Open Consultation" on a CHECKED_IN+ row). Form
+ * state, vitals fetch, draft hydration, autosave, and the save handler
+ * all live in useConsultationDraft so this modal and the queue-walked
+ * ConsultationViewPage share one implementation.
  */
 export default function ConsultationModal({ appointment, onClose, onSaved }) {
   const { user } = useAuth();
   const { notify } = useNotification();
 
-  const [chiefComplaint, setChiefComplaint] = useState(appointment?.chiefComplaint || "");
-  const [notes, setNotes] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [nextVisitDate, setNextVisitDate] = useState("");
-  const [items, setItems] = useState([newBlankDrugItem()]);
-  const [saving, setSaving] = useState(false);
-
-  // Autosave bookkeeping. `hydrating` blocks the autosave effect until the
-  // initial GET resolves so we never overwrite a fresh draft with the empty
-  // first-render state. `autosaveStatus` drives the small footer indicator.
-  const [hydrating, setHydrating] = useState(true);
-  const [autosaveStatus, setAutosaveStatus] = useState("idle"); // idle | saving | saved | error
-  const autosaveTimer = useRef(null);
-
-  // Vitals recorded by the nurse before the doctor opened this page.
-  // Read-only here — surface them in the header strip so the doctor doesn't
-  // have to leave the modal to check BP / SpO2 / HR / weight.
-  const [vitals, setVitals] = useState(null);
-
-  const drugCount = useMemo(
-    () => items.filter(i => i.drugName.trim().length > 0).length,
-    [items],
-  );
-
-  // ── Draft hydration ──────────────────────────────────────────────────
-  useEffect(() => {
-    let cancelled = false;
-    if (!appointment?.id) { setHydrating(false); return; }
-
-    consultationDraftsApi.get(appointment.id)
-      .then((draft) => {
-        if (cancelled || !draft?.payload) return;
-        try {
-          const p = JSON.parse(draft.payload);
-          if (typeof p.chiefComplaint === "string") setChiefComplaint(p.chiefComplaint);
-          if (typeof p.notes === "string")           setNotes(p.notes);
-          if (typeof p.instructions === "string")    setInstructions(p.instructions);
-          if (typeof p.nextVisitDate === "string")   setNextVisitDate(p.nextVisitDate);
-          if (Array.isArray(p.items) && p.items.length > 0) {
-            setItems(p.items.map((it, idx) => ({
-              ...newBlankDrugItem(),
-              ...it,
-              key: Date.now() + idx + Math.random(),
-            })));
-          }
-        } catch { /* corrupted draft — fall back to appointment defaults */ }
-      })
-      .catch(() => { /* no draft / network — silent */ })
-      .finally(() => { if (!cancelled) setHydrating(false); });
-
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appointment?.id]);
-
-  // ── Vitals read ──────────────────────────────────────────────────────
-  // Fire-and-forget. 204 → no vitals yet (the strip renders a "not
-  // recorded" hint). Independent from draft hydration so a slow vitals
-  // fetch doesn't delay the form becoming editable.
-  useEffect(() => {
-    let cancelled = false;
-    if (!appointment?.id) return;
-    vitalsApi.get(appointment.id)
-      .then((v) => { if (!cancelled) setVitals(v); })
-      .catch(() => { /* silent — header just shows "not recorded" */ });
-    return () => { cancelled = true; };
-  }, [appointment?.id]);
-
-  // ── Debounced autosave ───────────────────────────────────────────────
-  useEffect(() => {
-    if (hydrating || !appointment?.id || !user?.hospitalId) return;
-    clearTimeout(autosaveTimer.current);
-    autosaveTimer.current = setTimeout(async () => {
-      setAutosaveStatus("saving");
-      try {
-        const payload = JSON.stringify({
-          chiefComplaint, notes, instructions, nextVisitDate,
-          items: items.map(({ key, ...rest }) => rest),
-        });
-        await consultationDraftsApi.upsert(appointment.id, {
-          hospitalId: user.hospitalId,
-          patientId: appointment.patientId,
-          payload,
-        });
-        setAutosaveStatus("saved");
-      } catch {
-        setAutosaveStatus("error");
-      }
-    }, AUTOSAVE_DELAY_MS);
-
-    return () => clearTimeout(autosaveTimer.current);
-  }, [
-    chiefComplaint, notes, instructions, nextVisitDate, items,
-    hydrating, appointment?.id, appointment?.patientId, user?.hospitalId,
-  ]);
-
-  const setItemField = (key, field, value) => {
-    setItems(prev => prev.map(i => i.key === key ? { ...i, [field]: value } : i));
-  };
-  const removeItem = (key) => {
-    setItems(prev => prev.length === 1
-      ? [newBlankDrugItem()]
-      : prev.filter(i => i.key !== key));
-  };
-  const addItem = () => setItems(prev => [...prev, newBlankDrugItem()]);
-
-  // Build a description that the print view can split on the leading
-  // "Chief complaint:" line — keeps the record self-describing without
-  // adding a separate column.
-  const buildDescription = () => {
-    const parts = [];
-    if (chiefComplaint.trim()) parts.push(`Chief complaint: ${chiefComplaint.trim()}`);
-    if (notes.trim()) parts.push(notes.trim());
-    return parts.length ? parts.join("\n\n") : undefined;
-  };
-
-  const handleSave = async () => {
-    if (!appointment?.patientId) {
-      notify("Missing patient on appointment — cannot save", "error");
-      return;
-    }
-
-    const filledDrugs = items.filter(i => i.drugName.trim().length > 0);
-    for (const it of filledDrugs) {
-      const qty = Number(it.quantity);
-      if (!qty || qty <= 0) {
-        notify(`Set a positive quantity for ${it.drugName}`, "warning");
-        return;
-      }
-    }
-
-    const hasAnyContent =
-      chiefComplaint.trim() || notes.trim() || instructions.trim() ||
-      filledDrugs.length > 0 || nextVisitDate;
-    if (!hasAnyContent) {
-      notify("Add notes, instructions, or a prescription before saving", "warning");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const payload = {
-        hospitalId: user.hospitalId,
-        patientId: appointment.patientId,
-        // Pharmacy queries by PRESCRIPTION type — flip to that whenever the
-        // doctor added drugs so dispense lists keep working.
-        historyType: filledDrugs.length > 0 ? "PRESCRIPTION" : "CONSULTATION",
-        description: buildDescription(),
-        instructions: instructions.trim() || undefined,
-        nextVisitDate: nextVisitDate || undefined,
-        appointmentId: appointment.id,
-        prescriptionItems: filledDrugs.length > 0
-          ? filledDrugs.map((it, idx) => drugItemToRequest(it, idx))
-          : undefined,
-      };
-      const created = await recordApi.create(payload);
-      // Clean up the draft now that the consultation lives as a real record.
-      clearTimeout(autosaveTimer.current);
-      try { await consultationDraftsApi.remove(appointment.id); } catch { /* not fatal */ }
-      notify(
-        filledDrugs.length > 0
-          ? `Consultation saved with ${filledDrugs.length} drug${filledDrugs.length === 1 ? "" : "s"}`
-          : "Consultation saved",
-        "success",
-      );
-      onSaved?.(created);
-    } catch (err) {
-      notify(err?.response?.data?.message || "Failed to save consultation", "error");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    chiefComplaint, setChiefComplaint,
+    notes, setNotes,
+    instructions, setInstructions,
+    nextVisitDate, setNextVisitDate,
+    items, setItemField, addItem, removeItem,
+    drugCount, vitals, hydrating, autosaveStatus, saving,
+    saveConsultation,
+  } = useConsultationDraft({
+    appointment,
+    hospitalId: user?.hospitalId,
+    notify,
+    onSaved,
+  });
 
   const apptDate = appointment?.apptDate || "";
   const apptTime = appointment?.apptTime ? appointment.apptTime.substring(0, 5) : "";
@@ -218,7 +47,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm pointer-events-auto">
       <div className="bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-2xl w-full max-w-8xl max-h-[96vh] border border-slate-200 dark:border-[#262626] flex flex-col overflow-hidden">
 
-        {/* ── Header: title row + 4-column meta strip ──────────────────── */}
+        {/* ── Header: title row + 4-column meta strip + vitals strip ─── */}
         <div className="shrink-0 border-b border-slate-100 dark:border-[#1c1c1c]">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-3 min-w-0">
@@ -239,7 +68,6 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
             )}
           </div>
 
-          {/* Pre-filled summary strip */}
           <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-slate-100 dark:border-[#1c1c1c] bg-slate-50/60 dark:bg-[#0d0d0d]">
             <PreField icon={<UserIcon className="w-3.5 h-3.5" />} label="Patient" value={patientFullName || "—"} />
             <PreField icon={<IdCard className="w-3.5 h-3.5" />} label="UHID" value={uhidDisplay} mono />
@@ -247,8 +75,6 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
             <PreField icon={<CalendarClock className="w-3.5 h-3.5" />} label="Date & time" value={dateTimeText || "—"} />
           </div>
 
-          {/* Vitals strip — surfaces the nurse's triage readings + blood
-              group so the doctor doesn't have to leave the page. */}
           <VitalsStrip vitals={vitals} bloodGroup={appointment?.patientBloodGroup} />
         </div>
 
@@ -256,7 +82,6 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
         <div className="flex-1 overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 dark:divide-[#1c1c1c]">
 
-            {/* Clinical column — 3/5 of the body */}
             <div className="lg:col-span-3 px-7 py-6 space-y-6">
               <Section icon={<ClipboardList className="w-3.5 h-3.5" />} title="Chief complaint" hint="What brought the patient in today">
                 <textarea
@@ -298,7 +123,6 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
               </Section>
             </div>
 
-            {/* Prescription column — 2/5 of the body */}
             <div className="lg:col-span-2 px-6 py-6 bg-slate-50/40 dark:bg-[#0c0c0c]">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -340,24 +164,14 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
           </div>
         </div>
 
-        {/* ── Footer: autosave + actions ──────────────────────────────── */}
+        {/* ── Footer ──────────────────────────────────────────────────── */}
         <div className="shrink-0 px-7 py-4 border-t border-slate-100 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f] flex items-center justify-between gap-4">
           <AutosaveIndicator status={autosaveStatus} hydrating={hydrating} />
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={saving}
-              className="btn-secondary"
-            >
+            <button type="button" onClick={onClose} disabled={saving} className="btn-secondary">
               Cancel
             </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="btn-primary"
-            >
+            <button type="button" onClick={saveConsultation} disabled={saving} className="btn-primary">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               Save Consultation
             </button>
@@ -382,18 +196,11 @@ function VitalsStrip({ vitals, bloodGroup }) {
       <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
         <Activity className="w-3 h-3" /> Vitals
       </div>
-
-      <VitalChip icon={<Droplet className="w-3 h-3 text-rose-500" />}
-                 label="Blood" value={bloodGroup || "—"} />
-      <VitalChip icon={<HeartPulse className="w-3 h-3 text-rose-500" />}
-                 label="BP" value={bp || "—"} unit={bp ? "mmHg" : null} />
-      <VitalChip icon={<Wind className="w-3 h-3 text-blue-500" />}
-                 label="SpO₂" value={spo2 || "—"} />
-      <VitalChip icon={<HeartPulse className="w-3 h-3 text-emerald-500" />}
-                 label="Pulse" value={hr || "—"} />
-      <VitalChip icon={<Scale className="w-3 h-3 text-amber-500" />}
-                 label="Weight" value={wt || "—"} />
-
+      <VitalChip icon={<Droplet className="w-3 h-3 text-rose-500" />} label="Blood" value={bloodGroup || "—"} />
+      <VitalChip icon={<HeartPulse className="w-3 h-3 text-rose-500" />} label="BP" value={bp || "—"} unit={bp ? "mmHg" : null} />
+      <VitalChip icon={<Wind className="w-3 h-3 text-blue-500" />} label="SpO₂" value={spo2 || "—"} />
+      <VitalChip icon={<HeartPulse className="w-3 h-3 text-emerald-500" />} label="Pulse" value={hr || "—"} />
+      <VitalChip icon={<Scale className="w-3 h-3 text-amber-500" />} label="Weight" value={wt || "—"} />
       <span className="ml-auto text-[10px] text-slate-400 dark:text-[#666]">
         {vitals
           ? `Recorded by ${vitals.recordedByName || "—"}${recordedAt ? " · " + new Date(recordedAt).toLocaleString() : ""}`

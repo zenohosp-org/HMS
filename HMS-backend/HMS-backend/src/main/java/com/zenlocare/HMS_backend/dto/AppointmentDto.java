@@ -25,6 +25,11 @@ public class AppointmentDto {
         // the consultation modal can show it without a separate fetch.
         // Read-through from patients.blood_group; never written here.
         private String patientBloodGroup;
+        // DOB and gender pulled in for the queue-walked Consultation View
+        // page's left panel. Read-through from patients.dob / gender;
+        // never written here.
+        private java.time.LocalDate patientDob;
+        private String patientGender;
 
         private UUID doctorId;
         private String doctorName;
@@ -71,6 +76,8 @@ public class AppointmentDto {
                                 .patientUhid(a.getPatient().getUhid())
                                 .patientPhone(a.getPatient().getPhone())
                                 .patientBloodGroup(a.getPatient().getBloodGroup())
+                                .patientDob(a.getPatient().getDob())
+                                .patientGender(a.getPatient().getGender())
                                 .doctorId(a.getDoctor() != null ? a.getDoctor().getId() : null)
                                 .doctorName(dName)
                                 .doctorSpecialization(a.getDoctor() != null ? a.getDoctor().getSpecialization() : null)

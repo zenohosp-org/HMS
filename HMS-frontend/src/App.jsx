@@ -6,6 +6,7 @@ import { NotificationProvider } from "@/context/NotificationContext";
 import { ReferenceDataProvider } from "@/context/ReferenceDataContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/layout/Layout";
+import FocusLayout from "@/components/layout/FocusLayout";
 import Login from "@/pages/Login";
 import Unauthorized from "@/pages/Unauthorized";
 import SsoCallback from "@/pages/SsoCallback";
@@ -23,6 +24,7 @@ import OPDBilling from "./pages/billing/OPDBilling";
 import IPDBilling from "./pages/billing/IPDBilling";
 import AmbulanceBilling from "./pages/billing/AmbulanceBilling";
 import AppointmentsDashboard from "@/pages/appointments/AppointmentsDashboard";
+import ConsultationViewPage from "@/pages/appointments/ConsultationViewPage";
 import ShiftRoster from "@/pages/admin/ShiftRoster";
 import Departments from "@/pages/admin/Departments";
 import Designations from "@/pages/admin/Designations";
@@ -105,7 +107,16 @@ function App() {
           {/* Admin Metadata */}
           <Route path="specializations" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Specializations /></ProtectedRoute>} />
           <Route path="services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Services /></ProtectedRoute>} />
-        </Route>{
+        </Route>
+
+        {/* Focus-mode routes — topbar persists, sidebar hidden so the
+            workspace can take the full viewport width. Currently the
+            doctor's queue-walked Consultation View; future workflows
+            (OT case viewer, ward round) can hang off the same shell. */}
+        <Route element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><FocusLayout /></ProtectedRoute>}>
+          <Route path="consultation-view" element={<ConsultationViewPage />} />
+        </Route>
+        {
     /* Fallback */
   }<Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></BrowserRouter></ReferenceDataProvider></NotificationProvider></AuthProvider></ThemeProvider></ErrorBoundary>;
 }

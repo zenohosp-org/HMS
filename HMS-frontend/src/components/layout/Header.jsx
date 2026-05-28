@@ -7,13 +7,18 @@ function Header({ onMenuClick }) {
   const initials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`;
   return (
     <header className="h-14 bg-white dark:bg-[#111111] border-b border-slate-200 dark:border-[#222222] flex items-center px-4 gap-3 shrink-0">
-      <button
-        onClick={onMenuClick}
-        className="text-slate-500 hover:text-slate-800 dark:text-[#888888] dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
-        aria-label="Toggle sidebar"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+      {/* Sidebar toggle only when the layout actually has a sidebar to
+          toggle. FocusLayout passes no onMenuClick so the burger
+          disappears entirely on the consultation-view page. */}
+      {onMenuClick && (
+        <button
+          onClick={onMenuClick}
+          className="text-slate-500 hover:text-slate-800 dark:text-[#888888] dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
+          aria-label="Toggle sidebar"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
       <span className="text-sm font-semibold text-slate-700 dark:text-[#cccccc] flex-1">
         Hospital Management System
       </span>

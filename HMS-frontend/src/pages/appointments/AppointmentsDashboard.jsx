@@ -464,6 +464,10 @@ function AppointmentsDashboard() {
     onClick={() => setViewMode(viewMode === "list" ? "calendar" : "list")}
     className="btn-secondary"
   ><CalendarIcon className="w-4 h-4" />{viewMode === "list" ? "Calendar View" : "List View"}</button><button
+    onClick={() => navigate("/consultation-view")}
+    className="btn-secondary"
+    title="Walk through today's queue patient-by-patient"
+  ><Stethoscope className="w-4 h-4" />Consultation View</button><button
     onClick={() => setIsBookingModalOpen(true)}
     className="btn-primary"
   ><Plus className="w-4 h-4" />
