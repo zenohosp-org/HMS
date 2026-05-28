@@ -19,6 +19,7 @@ public class AppointmentDto {
         private UUID branchId;
         private Integer patientId;
         private String patientName;
+        private String patientUhid;
         private String patientPhone;
 
         private UUID doctorId;
@@ -63,6 +64,7 @@ public class AppointmentDto {
                                 .branchId(a.getBranchId())
                                 .patientId(a.getPatient().getId())
                                 .patientName(pName)
+                                .patientUhid(a.getPatient().getUhid())
                                 .patientPhone(a.getPatient().getPhone())
                                 .doctorId(a.getDoctor() != null ? a.getDoctor().getId() : null)
                                 .doctorName(dName)

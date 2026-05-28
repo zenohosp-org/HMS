@@ -6,6 +6,7 @@ import { fmtId } from "@/utils/idFormat";
 import {
   Stethoscope, Pill, Plus, Loader2, CheckCircle2, ClipboardList,
   CalendarClock, FileText, ListChecks, Save, AlertCircle,
+  User as UserIcon, IdCard,
 } from "lucide-react";
 import {
   PrescriptionDrugRow,
@@ -193,56 +194,48 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
   const patientFullName =
     appointment?.patientName ||
     [appointment?.patientFirstName, appointment?.patientLastName].filter(Boolean).join(" ");
-  const patientInitial = (patientFullName || "?").trim().charAt(0).toUpperCase();
   const uhidDisplay = fmtId(appointment?.patientUhid) || appointment?.patientUhid || "—";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm pointer-events-auto">
       <div className="bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-2xl w-full max-w-8xl max-h-[96vh] border border-slate-200 dark:border-[#262626] flex flex-col overflow-hidden">
 
-        {/* ── Header: patient + meta ─────────────────────────────────── */}
-        <div className="shrink-0 px-7 py-5 border-b border-slate-100 dark:border-[#1c1c1c] bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-[#131313] dark:via-[#0f0f0f] dark:to-[#131313]">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex items-center gap-4 min-w-0">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-sm shrink-0">
-                {patientInitial}
+        {/* ── Header: title row + 4-column meta strip ──────────────────── */}
+        <div className="shrink-0 border-b border-slate-100 dark:border-[#1c1c1c]">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+                <Stethoscope className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">
-                    {patientFullName || "Patient"}
-                  </h2>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-500/20">
-                    OPD
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-[#888]">
-                  <MetaChip label="UHID" value={uhidDisplay} mono />
-                  <MetaChip label="Dr." value={appointment?.doctorName || "—"} />
-                  <MetaChip icon={<CalendarClock className="w-3 h-3" />} value={dateTimeText || "—"} />
-                  {appointment?.tokenNumber != null && (
-                    <MetaChip label="Token" value={`#${appointment.tokenNumber}`} />
-                  )}
-                </div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Consultation</h2>
+                <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5 truncate">
+                  Auto-opened on check-in · saves to the patient record
+                </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={saving}
-              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-[#888] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Close
-            </button>
+            {appointment?.tokenNumber != null && (
+              <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-[#1a1a1a] text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-[#2a2a2a]">
+                Token #{appointment.tokenNumber}
+              </span>
+            )}
+          </div>
+
+          {/* Pre-filled summary strip */}
+          <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-slate-100 dark:border-[#1c1c1c] bg-slate-50/60 dark:bg-[#0d0d0d]">
+            <PreField icon={<UserIcon className="w-3.5 h-3.5" />} label="Patient" value={patientFullName || "—"} />
+            <PreField icon={<IdCard className="w-3.5 h-3.5" />} label="UHID" value={uhidDisplay} mono />
+            <PreField icon={<Stethoscope className="w-3.5 h-3.5" />} label="Doctor" value={appointment?.doctorName || "—"} />
+            <PreField icon={<CalendarClock className="w-3.5 h-3.5" />} label="Date & time" value={dateTimeText || "—"} />
           </div>
         </div>
 
-        {/* ── Body: clinical (left) + prescription (right) ────────────── */}
+        {/* ── Body: clinical (left, wider) + prescription (right) ─────── */}
         <div className="flex-1 overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 dark:divide-[#1c1c1c]">
 
-            {/* Clinical column */}
-            <div className="lg:col-span-2 px-7 py-6 space-y-6">
+            {/* Clinical column — 3/5 of the body */}
+            <div className="lg:col-span-3 px-7 py-6 space-y-6">
               <Section icon={<ClipboardList className="w-3.5 h-3.5" />} title="Chief complaint" hint="What brought the patient in today">
                 <textarea
                   rows={2}
@@ -283,8 +276,8 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
               </Section>
             </div>
 
-            {/* Prescription column */}
-            <div className="lg:col-span-3 px-7 py-6 bg-slate-50/40 dark:bg-[#0c0c0c]">
+            {/* Prescription column — 2/5 of the body */}
+            <div className="lg:col-span-2 px-6 py-6 bg-slate-50/40 dark:bg-[#0c0c0c]">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#ccc]">
@@ -353,15 +346,17 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
   );
 }
 
-function MetaChip({ icon, label, value, mono }) {
+function PreField({ icon, label, value, mono }) {
   return (
-    <span className="inline-flex items-center gap-1.5">
-      {icon}
-      {label && <span className="font-semibold text-slate-400 dark:text-[#666]">{label}</span>}
-      <span className={`text-slate-700 dark:text-[#ddd] ${mono ? "font-mono tabular-nums" : "font-medium"}`}>
+    <div className="min-w-0">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#888]">
+        {icon}
+        {label}
+      </div>
+      <p className={`mt-0.5 text-sm font-semibold text-slate-900 dark:text-white truncate ${mono ? "font-mono tabular-nums" : ""}`}>
         {value}
-      </span>
-    </span>
+      </p>
+    </div>
   );
 }
 
