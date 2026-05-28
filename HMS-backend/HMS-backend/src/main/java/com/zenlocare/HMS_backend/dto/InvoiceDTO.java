@@ -66,5 +66,9 @@ public class InvoiceDTO {
         private Long radiologyOrderId;
         private UUID appointmentId;
         private Long ambulanceBookingId;
+        // FK to api-pharmacy pharmacy_bills.id. Set on MEDICINE rows pulled
+        // from the pharmacy service; null for everything else. Lets the
+        // finalize modal dedupe across reloads without comparing drug names.
+        private UUID pharmacyBillId;
     }
 }

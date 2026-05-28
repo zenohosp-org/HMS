@@ -52,6 +52,17 @@ otApi.interceptors.request.use(config => {
   return config
 })
 
+// Mirror of the OT integration — pulls finalised pharmacy bills (HMS_CREDIT
+// only; CASH is excluded server-side because it's already collected) for an
+// admission. Dedupe is on bill id, persisted by the backend on
+// invoice_items.pharmacy_bill_id so reloads don't double-charge.
+const pharmacyApi = axios.create({ baseURL: 'https://api-pharmacy.zenohosp.com', withCredentials: true })
+pharmacyApi.interceptors.request.use(config => {
+  const token = SSOCookieManager.getToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
+
 function fmt(n) {
   return '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -168,7 +179,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       ambulanceApi.getBookings(user.hospitalId).catch(() => []),
       patientAdvanceApi.listForAdmission(admission.id).catch(() => []),
       invoiceApi.getPatientInvoices(admission.patientId).catch(() => []),
-    ]).then(([suggestions, services, accounts, radiologyOrders, patientServices, otRes, existingInvoice, ambulanceBookings, advanceList, allPatientInvoices]) => {
+      pharmacyApi.get('/api/pharmacy/bills', { params: { admissionId: admission.id, unbilled: true } }).catch(() => ({ data: [] })),
+    ]).then(([suggestions, services, accounts, radiologyOrders, patientServices, otRes, existingInvoice, ambulanceBookings, advanceList, allPatientInvoices, pharmacyRes]) => {
       const isFirstAdmission = (allPatientInvoices || []).filter(inv =>
         inv.admissionId && String(inv.admissionId) !== String(admission.id)
       ).length === 0
@@ -199,6 +211,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       const savedRadiologyIds = new Set()
       const savedOTDescriptions = new Set()
       const savedAmbulanceIds = new Set()
+      // Pharmacy bills carry a real UUID — dedupe by id, not description, so
+      // repeated drug names across visits don't collide. Server persists
+      // invoice_items.pharmacy_bill_id on each save; we read it back here.
+      const savedPharmacyBillIds = new Set()
       const hasRoomCharge = { value: false }
       const hasCustomDesc = new Set()
 
@@ -213,6 +229,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
             totalPrice: Number(item.totalPrice || 0),
             appointmentId: item.appointmentId ?? undefined,
             radiologyOrderId: item.radiologyOrderId ?? undefined,
+            ambulanceBookingId: item.ambulanceBookingId ?? undefined,
+            pharmacyBillId: item.pharmacyBillId ?? undefined,
             fromOpd: false,
           }
 
@@ -253,6 +271,9 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           }
           if (item.ambulanceBookingId) {
             savedAmbulanceIds.add(String(item.ambulanceBookingId))
+          }
+          if (item.pharmacyBillId) {
+            savedPharmacyBillIds.add(String(item.pharmacyBillId))
           }
           savedItems.push(entry)
         })
@@ -381,6 +402,26 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         })
       })
 
+      // Pharmacy bills — each bill explodes into one MEDICINE row per
+      // dispensed drug. Dedupe on bill id so reloads after a partial save
+      // don't double-bill. unbilled=true on the pull already hides CASH and
+      // any legacy-pushed rows.
+      ;(Array.isArray(pharmacyRes?.data) ? pharmacyRes.data : []).forEach(bill => {
+        if (!bill?.id || savedPharmacyBillIds.has(String(bill.id))) return
+        const billNo = bill.billNumber ? ` · ${bill.billNumber}` : ''
+        ;(Array.isArray(bill.items) ? bill.items : []).forEach(line => {
+          const qty = Number(line.quantity ?? 1) || 1
+          const unit = Number(line.unitPrice ?? 0) || 0
+          const total = Number(line.totalPrice ?? unit * qty) || 0
+          auto.push({
+            key: key++, itemType: 'MEDICINE',
+            description: `${line.drugName || 'Medicine'}${billNo}`,
+            quantity: qty, unitPrice: unit, totalPrice: total,
+            pharmacyBillId: bill.id,
+          })
+        })
+      })
+
       setItems(auto.filter(i => Number(i.quantity) > 0 || Number(i.totalPrice) > 0))
       setNextKey(key)
 
@@ -460,6 +501,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         totalPrice: Number(i.totalPrice),
         radiologyOrderId: i.radiologyOrderId ?? undefined,
         appointmentId: i.appointmentId ?? undefined,
+        ambulanceBookingId: i.ambulanceBookingId ?? undefined,
+        pharmacyBillId: i.pharmacyBillId ?? undefined,
       })),
   })
 

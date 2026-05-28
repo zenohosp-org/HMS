@@ -37,6 +37,13 @@ public class InvoiceItem {
     @Column(name = "ambulance_booking_id")
     private Long ambulanceBookingId;
 
+    // FK back to api-pharmacy.zenohosp.com pharmacy_bills.id. Lets the IPD
+    // finalize flow dedupe pharmacy bills across reloads without depending on
+    // description (drug names repeat across visits). Nullable: non-pharmacy
+    // line items leave it empty.
+    @Column(name = "pharmacy_bill_id")
+    private UUID pharmacyBillId;
+
     @Column(name = "item_type", length = 30)
     private String itemType; // MEDICINE, LAB_TEST, CONSULTATION, ROOM_CHARGE, RADIOLOGY, CUSTOM
 

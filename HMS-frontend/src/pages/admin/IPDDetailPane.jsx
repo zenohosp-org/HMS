@@ -25,6 +25,13 @@ otApi.interceptors.request.use(config => {
   return config
 })
 
+const pharmacyApi = axios.create({ baseURL: 'https://api-pharmacy.zenohosp.com', withCredentials: true })
+pharmacyApi.interceptors.request.use(config => {
+  const token = SSOCookieManager.getToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
+
 const TABS = ['IPD Log', 'Attendor Details', 'Room Mapped Assets', 'IPD Billing']
 
 const GST_RATE = 0.18
@@ -77,6 +84,8 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
   const [finalInvoice, setFinalInvoice] = useState(null)
   const [otInvoices, setOtInvoices] = useState([])
   const [otInvoicesError, setOtInvoicesError] = useState(false)
+  const [pharmacyBills, setPharmacyBills] = useState([])
+  const [pharmacyBillsError, setPharmacyBillsError] = useState(false)
   const [loadingBilling, setLoadingBilling] = useState(false)
   const [billingFetched, setBillingFetched] = useState(false)
 
@@ -136,6 +145,20 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
       setOtInvoices(Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
     } catch {
       setOtInvoicesError(true)
+    }
+  }, [admission?.id])
+
+  /* ── Pharmacy bills retry — mirrors the OT pattern. unbilled=true hides
+       CASH (already collected) and any bills the legacy push had settled. */
+  const retryPharmacyBills = useCallback(async () => {
+    setPharmacyBillsError(false)
+    try {
+      const res = await pharmacyApi.get('/api/pharmacy/bills', {
+        params: { admissionId: admission.id, unbilled: true },
+      })
+      setPharmacyBills(Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
+    } catch {
+      setPharmacyBillsError(true)
     }
   }, [admission?.id])
 
@@ -345,6 +368,15 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
           } catch {
             setOtInvoicesError(true)
           }
+          try {
+            const res = await pharmacyApi.get('/api/pharmacy/bills', {
+              params: { admissionId: admission.id, unbilled: true },
+            })
+            setPharmacyBills(Array.isArray(res.data) ? res.data : (res.data?.content ?? []))
+            setPharmacyBillsError(false)
+          } catch {
+            setPharmacyBillsError(true)
+          }
           setBillingFetched(true)
           setLoadingBilling(false)
           return
@@ -441,6 +473,35 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
       })
     } catch {
       setOtInvoicesError(true)
+    }
+
+    // Same shape, different upstream. unbilled=true keeps CASH counter-bills
+    // and legacy-pushed rows out of the estimate.
+    try {
+      const res = await pharmacyApi.get('/api/pharmacy/bills', {
+        params: { admissionId: admission.id, unbilled: true },
+      })
+      const pharma = Array.isArray(res.data) ? res.data : (res.data?.content ?? [])
+      setPharmacyBills(pharma)
+      setPharmacyBillsError(false)
+      pharma.forEach(bill => {
+        const billNo = bill.billNumber ? ` · ${bill.billNumber}` : ''
+        ;(Array.isArray(bill.items) ? bill.items : []).forEach(line => {
+          const qty = Number(line.quantity ?? 1) || 1
+          const unit = Number(line.unitPrice ?? 0) || 0
+          const total = Number(line.totalPrice ?? unit * qty) || 0
+          items.push({
+            key: key++,
+            itemType: 'MEDICINE',
+            description: `${line.drugName || 'Medicine'}${billNo}`,
+            quantity: qty,
+            unitPrice: unit,
+            totalPrice: total,
+          })
+        })
+      })
+    } catch {
+      setPharmacyBillsError(true)
     }
 
     setBillingItems(items.filter(i => Number(i.quantity) > 0 || Number(i.totalPrice) > 0))
@@ -1004,6 +1065,26 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                       ))
                     )}
 
+                    {/* Pharmacy bills appended inline — one row per dispensed
+                        drug, scoped to bills not yet pulled into the invoice. */}
+                    {pharmacyBills.length > 0 && pharmacyBills.flatMap(bill =>
+                      (Array.isArray(bill.items) ? bill.items : []).map((line, i) => (
+                        <div key={`rx-${bill.id}-${i}`} className="grid grid-cols-12 gap-2 items-center px-4 py-2.5 bg-white dark:bg-[#111] border-t border-slate-50 dark:border-[#141414]">
+                          <div className="col-span-3">
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold ${BILL_TYPE_META.MEDICINE.cls}`}>
+                              <Pill className="w-2.5 h-2.5 shrink-0" /> {BILL_TYPE_META.MEDICINE.label}
+                            </span>
+                          </div>
+                          <div className="col-span-5 text-xs text-slate-600 dark:text-[#bbb] truncate" title={`${line.drugName || 'Medicine'} · ${bill.billNumber || ''}`}>
+                            {line.drugName || 'Medicine'}
+                            {bill.billNumber && <span className="ml-1 text-slate-400 dark:text-[#666]">· {bill.billNumber}</span>}
+                          </div>
+                          <div className="col-span-1 text-xs text-slate-400 text-center tabular-nums">{line.quantity ?? 1}</div>
+                          <div className="col-span-3 text-xs font-bold text-slate-800 dark:text-white text-right tabular-nums">{fmtMoney(line.totalPrice ?? (Number(line.unitPrice || 0) * Number(line.quantity || 1)))}</div>
+                        </div>
+                      ))
+                    )}
+
                     <div className="px-4 py-3 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] space-y-1.5">
                       <div className="flex justify-between text-xs text-slate-500 dark:text-[#888]">
                         <span>Admission Subtotal</span>
@@ -1027,11 +1108,18 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                           <span className="tabular-nums">{fmtMoney(otInvoices.reduce((s, inv) => s + Number(inv.totalAmount ?? inv.total ?? 0), 0))}</span>
                         </div>
                       )}
+                      {pharmacyBills.length > 0 && (
+                        <div className="flex justify-between text-xs text-slate-500 dark:text-[#888]">
+                          <span>Pharmacy Charges</span>
+                          <span className="tabular-nums">{fmtMoney(pharmacyBills.reduce((s, b) => s + Number(b.totalAmount ?? 0), 0))}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-sm font-bold text-slate-900 dark:text-white border-t border-slate-100 dark:border-[#1e1e1e] pt-2 mt-1">
                         <span>Grand Total</span>
                         <span className="tabular-nums">{fmtMoney(
                           Number(finalInvoice.total || 0) +
-                          otInvoices.reduce((s, inv) => s + Number(inv.totalAmount ?? inv.total ?? 0), 0)
+                          otInvoices.reduce((s, inv) => s + Number(inv.totalAmount ?? inv.total ?? 0), 0) +
+                          pharmacyBills.reduce((s, b) => s + Number(b.totalAmount ?? 0), 0)
                         )}</span>
                       </div>
                     </div>
@@ -1124,6 +1212,21 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                   <button
                     onClick={retryOtInvoices}
                     className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors">
+                    <RotateCcw className="w-3 h-3" /> Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Pharmacy fetch error — mirrors OT error UI */}
+              {pharmacyBillsError && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-slate-100 dark:border-[#1e1e1e] bg-white dark:bg-[#111]">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <p className="text-[11px] text-slate-500 dark:text-[#888]">Could not load pharmacy bills</p>
+                  </div>
+                  <button
+                    onClick={retryPharmacyBills}
+                    className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors">
                     <RotateCcw className="w-3 h-3" /> Retry
                   </button>
                 </div>

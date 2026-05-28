@@ -79,6 +79,17 @@ public class DataSeeder implements CommandLineRunner {
             log.warn("Could not add admission_id to appointments: " + e.getMessage());
         }
         try {
+            // Stamp pulled pharmacy bills onto invoice_items so the IPD finalize
+            // modal can dedupe across reloads without comparing drug names.
+            jdbcTemplate.execute(
+                "ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS pharmacy_bill_id UUID");
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_invoice_items_pharmacy_bill_id ON invoice_items(pharmacy_bill_id)");
+            log.info("✅ Ensured invoice_items.pharmacy_bill_id");
+        } catch (Exception e) {
+            log.warn("Could not add pharmacy_bill_id to invoice_items: " + e.getMessage());
+        }
+        try {
             // One in-flight consultation per appointment. Cleared on save.
             // FK to users(created_by) is enforced by JPA on read/write; we
             // skip the explicit REFERENCES so the DDL doesn't need to know

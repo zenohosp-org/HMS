@@ -30,6 +30,11 @@ public class InvoiceRequest {
         private UUID serviceId;
         private Long radiologyOrderId;
         private UUID appointmentId;
+        private Long ambulanceBookingId;
+        // pharmacy_bills.id from api-pharmacy. Sent only on MEDICINE rows
+        // pulled from the pharmacy service; HMS persists it so subsequent
+        // reloads of the finalize modal can skip already-invoiced bills.
+        private UUID pharmacyBillId;
         private String itemType;
         private String description;
         private Integer quantity;

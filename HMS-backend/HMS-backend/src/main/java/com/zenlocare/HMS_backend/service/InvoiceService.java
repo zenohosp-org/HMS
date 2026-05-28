@@ -553,6 +553,8 @@ public class InvoiceService {
                     .serviceId(ir.getServiceId())
                     .radiologyOrderId(ir.getRadiologyOrderId())
                     .appointmentId(ir.getAppointmentId())
+                    .ambulanceBookingId(ir.getAmbulanceBookingId())
+                    .pharmacyBillId(ir.getPharmacyBillId())
                     .itemType(ir.getItemType())
                     .description(ir.getDescription())
                     .quantity(ir.getQuantity())
@@ -611,6 +613,8 @@ public class InvoiceService {
                     .serviceId(ir.getServiceId())
                     .radiologyOrderId(ir.getRadiologyOrderId())
                     .appointmentId(ir.getAppointmentId())
+                    .ambulanceBookingId(ir.getAmbulanceBookingId())
+                    .pharmacyBillId(ir.getPharmacyBillId())
                     .itemType(ir.getItemType())
                     .description(ir.getDescription())
                     .quantity(ir.getQuantity())
@@ -767,7 +771,8 @@ public class InvoiceService {
                                 item.getServiceId(),
                                 item.getRadiologyOrderId(),
                                 item.getAppointmentId(),
-                                item.getAmbulanceBookingId()
+                                item.getAmbulanceBookingId(),
+                                item.getPharmacyBillId()
                         )
                 ).collect(Collectors.toList()) : java.util.Collections.emptyList())
                 .payments(invoicePaymentRepository.findByInvoice_IdOrderByPaidAtAsc(inv.getId())
