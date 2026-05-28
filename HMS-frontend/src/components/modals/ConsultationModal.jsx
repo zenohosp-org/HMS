@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { recordApi, consultationDraftsApi } from "@/utils/api";
+import { recordApi, consultationDraftsApi, vitalsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import {
   Stethoscope, Pill, Plus, Loader2, CheckCircle2, ClipboardList,
   CalendarClock, FileText, ListChecks, Save, AlertCircle,
-  User as UserIcon, IdCard,
+  User as UserIcon, IdCard, Activity, HeartPulse, Wind, Scale, Droplet,
 } from "lucide-react";
 import {
   PrescriptionDrugRow,
@@ -48,6 +48,11 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
   const [autosaveStatus, setAutosaveStatus] = useState("idle"); // idle | saving | saved | error
   const autosaveTimer = useRef(null);
 
+  // Vitals recorded by the nurse before the doctor opened this page.
+  // Read-only here — surface them in the header strip so the doctor doesn't
+  // have to leave the modal to check BP / SpO2 / HR / weight.
+  const [vitals, setVitals] = useState(null);
+
   const drugCount = useMemo(
     () => items.filter(i => i.drugName.trim().length > 0).length,
     [items],
@@ -81,6 +86,19 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointment?.id]);
+
+  // ── Vitals read ──────────────────────────────────────────────────────
+  // Fire-and-forget. 204 → no vitals yet (the strip renders a "not
+  // recorded" hint). Independent from draft hydration so a slow vitals
+  // fetch doesn't delay the form becoming editable.
+  useEffect(() => {
+    let cancelled = false;
+    if (!appointment?.id) return;
+    vitalsApi.get(appointment.id)
+      .then((v) => { if (!cancelled) setVitals(v); })
+      .catch(() => { /* silent — header just shows "not recorded" */ });
+    return () => { cancelled = true; };
   }, [appointment?.id]);
 
   // ── Debounced autosave ───────────────────────────────────────────────
@@ -228,6 +246,10 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
             <PreField icon={<Stethoscope className="w-3.5 h-3.5" />} label="Doctor" value={appointment?.doctorName || "—"} />
             <PreField icon={<CalendarClock className="w-3.5 h-3.5" />} label="Date & time" value={dateTimeText || "—"} />
           </div>
+
+          {/* Vitals strip — surfaces the nurse's triage readings + blood
+              group so the doctor doesn't have to leave the page. */}
+          <VitalsStrip vitals={vitals} bloodGroup={appointment?.patientBloodGroup} />
         </div>
 
         {/* ── Body: clinical (left, wider) + prescription (right) ─────── */}
@@ -342,6 +364,56 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function VitalsStrip({ vitals, bloodGroup }) {
+  const bp = vitals && (vitals.bpSystolic != null || vitals.bpDiastolic != null)
+    ? `${vitals.bpSystolic ?? "—"}/${vitals.bpDiastolic ?? "—"}`
+    : null;
+  const spo2 = vitals?.spo2 != null ? `${vitals.spo2}%` : null;
+  const hr = vitals?.heartRate != null ? `${vitals.heartRate} bpm` : null;
+  const wt = vitals?.weightKg != null ? `${Number(vitals.weightKg).toFixed(1)} kg` : null;
+  const recordedAt = vitals?.updatedAt || vitals?.recordedAt;
+
+  return (
+    <div className="px-6 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f]">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+        <Activity className="w-3 h-3" /> Vitals
+      </div>
+
+      <VitalChip icon={<Droplet className="w-3 h-3 text-rose-500" />}
+                 label="Blood" value={bloodGroup || "—"} />
+      <VitalChip icon={<HeartPulse className="w-3 h-3 text-rose-500" />}
+                 label="BP" value={bp || "—"} unit={bp ? "mmHg" : null} />
+      <VitalChip icon={<Wind className="w-3 h-3 text-blue-500" />}
+                 label="SpO₂" value={spo2 || "—"} />
+      <VitalChip icon={<HeartPulse className="w-3 h-3 text-emerald-500" />}
+                 label="Pulse" value={hr || "—"} />
+      <VitalChip icon={<Scale className="w-3 h-3 text-amber-500" />}
+                 label="Weight" value={wt || "—"} />
+
+      <span className="ml-auto text-[10px] text-slate-400 dark:text-[#666]">
+        {vitals
+          ? `Recorded by ${vitals.recordedByName || "—"}${recordedAt ? " · " + new Date(recordedAt).toLocaleString() : ""}`
+          : "Vitals not recorded yet"}
+      </span>
+    </div>
+  );
+}
+
+function VitalChip({ icon, label, value, unit }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {icon}
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#888]">
+        {label}
+      </span>
+      <span className="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">
+        {value}
+        {unit && <span className="ml-1 text-[10px] font-normal text-slate-400 dark:text-[#666]">{unit}</span>}
+      </span>
     </div>
   );
 }

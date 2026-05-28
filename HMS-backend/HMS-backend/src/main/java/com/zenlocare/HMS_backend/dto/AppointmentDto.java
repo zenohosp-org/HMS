@@ -21,6 +21,10 @@ public class AppointmentDto {
         private String patientName;
         private String patientUhid;
         private String patientPhone;
+        // Static patient attribute carried on the appointment payload so
+        // the consultation modal can show it without a separate fetch.
+        // Read-through from patients.blood_group; never written here.
+        private String patientBloodGroup;
 
         private UUID doctorId;
         private String doctorName;
@@ -66,6 +70,7 @@ public class AppointmentDto {
                                 .patientName(pName)
                                 .patientUhid(a.getPatient().getUhid())
                                 .patientPhone(a.getPatient().getPhone())
+                                .patientBloodGroup(a.getPatient().getBloodGroup())
                                 .doctorId(a.getDoctor() != null ? a.getDoctor().getId() : null)
                                 .doctorName(dName)
                                 .doctorSpecialization(a.getDoctor() != null ? a.getDoctor().getSpecialization() : null)

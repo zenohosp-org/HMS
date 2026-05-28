@@ -113,6 +113,36 @@ public class DataSeeder implements CommandLineRunner {
             log.warn("Could not ensure consultation_drafts: " + e.getMessage());
         }
         try {
+            // Per-visit vitals captured by the nurse before the doctor
+            // starts the consultation. One row per appointment (UNIQUE);
+            // re-takes UPDATE the same row. Individually-typed columns
+            // (no JSON blob) so each measure is trendable and alertable
+            // downstream.
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS appointment_vitals (
+                    id              uuid PRIMARY KEY,
+                    appointment_id  uuid NOT NULL UNIQUE,
+                    hospital_id     uuid NOT NULL,
+                    patient_id      integer NOT NULL,
+                    bp_systolic     integer NULL,
+                    bp_diastolic    integer NULL,
+                    spo2            integer NULL,
+                    heart_rate      integer NULL,
+                    weight_kg       numeric(5,2) NULL,
+                    recorded_by     uuid NOT NULL,
+                    recorded_at     timestamp without time zone NOT NULL DEFAULT NOW(),
+                    updated_at      timestamp without time zone NOT NULL DEFAULT NOW()
+                )
+                """);
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_appointment_vitals_hospital_id ON appointment_vitals(hospital_id)");
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_appointment_vitals_patient_id ON appointment_vitals(patient_id, recorded_at DESC)");
+            log.info("✅ Ensured appointment_vitals table");
+        } catch (Exception e) {
+            log.warn("Could not ensure appointment_vitals: " + e.getMessage());
+        }
+        try {
             // Ward's roomType used to live only on its rooms — empty wards or
             // edits before adding rooms lost the type. Persist it on the ward
             // itself and backfill from the first room for legacy rows.

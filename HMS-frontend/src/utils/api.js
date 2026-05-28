@@ -704,6 +704,32 @@ const drugsApi = {
   }
 };
 
+// Per-visit vitals captured by the nurse before the doctor starts the
+// consultation. One row per appointment (UNIQUE) — PUT is upsert. The
+// consultation modal hydrates from this on open so the doctor sees BP /
+// SpO2 / HR / weight without a separate fetch.
+const vitalsApi = {
+  get: async (appointmentId) => {
+    const res = await api.get(`/vitals/appointment/${appointmentId}`, {
+      validateStatus: (s) => s === 200 || s === 204 || s === 404,
+    });
+    if (res.status === 200) return res.data;
+    return null;
+  },
+  listForHospital: async (hospitalId) => {
+    const { data } = await api.get("/vitals", { params: { hospitalId } });
+    return data;
+  },
+  history: async (patientId, hospitalId) => {
+    const { data } = await api.get(`/vitals/patient/${patientId}/history`, { params: { hospitalId } });
+    return data;
+  },
+  upsert: async (appointmentId, payload) => {
+    const { data } = await api.put(`/vitals/appointment/${appointmentId}`, payload);
+    return data;
+  },
+};
+
 // Autosave for the in-flight consultation modal. One row per appointment.
 // get() resolves to null when the appointment has no draft yet — the modal
 // uses that to decide between hydrating from autosave or seeding from the
@@ -761,5 +787,6 @@ export {
   dashboardApi,
   drugsApi,
   roomTypeApi,
-  consultationDraftsApi
+  consultationDraftsApi,
+  vitalsApi
 };

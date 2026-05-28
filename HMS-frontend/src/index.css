@@ -223,6 +223,56 @@ body {
   color: #555555;
 }
 
+/* Vitals modal numeric input — wider, bigger digits, monospace for
+   nurse-station scannability. Shared across BP / SpO2 / HR / weight. */
+.vital-input {
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 1.125rem;
+  line-height: 1.25;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.vital-input:hover {
+  border-color: #cbd5e1;
+}
+
+.vital-input:focus {
+  border-color: #0f172a;
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+}
+
+.vital-input::placeholder {
+  color: #cbd5e1;
+  font-weight: 400;
+}
+
+.dark .vital-input {
+  background: #161616;
+  border-color: #262626;
+  color: #e5e5e5;
+}
+
+.dark .vital-input:hover {
+  border-color: #333333;
+}
+
+.dark .vital-input:focus {
+  border-color: #4b5563;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+}
+
+.dark .vital-input::placeholder {
+  color: #444444;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
