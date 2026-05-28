@@ -26,7 +26,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
     instructions, setInstructions,
     nextVisitDate, setNextVisitDate,
     items, setItemField, addItem, removeItem,
-    drugCount, vitals, hydrating, autosaveStatus, saving,
+    drugCount, vitals, vitalsStatus, hydrating, autosaveStatus, saving,
     saveConsultation,
   } = useConsultationDraft({
     appointment,
@@ -75,7 +75,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
             <PreField icon={<CalendarClock className="w-3.5 h-3.5" />} label="Date & time" value={dateTimeText || "—"} />
           </div>
 
-          <VitalsStrip vitals={vitals} bloodGroup={appointment?.patientBloodGroup} />
+          <VitalsStrip vitals={vitals} vitalsStatus={vitalsStatus} bloodGroup={appointment?.patientBloodGroup} />
         </div>
 
         {/* ── Body: clinical (left, wider) + prescription (right) ─────── */}
@@ -182,7 +182,11 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
   );
 }
 
-function VitalsStrip({ vitals, bloodGroup }) {
+function VitalsStrip({ vitals, vitalsStatus, bloodGroup }) {
+  // While the API is in flight render an unobtrusive "…" so the strip
+  // doesn't flash "—" before populating. Once vitalsStatus settles to
+  // "loaded", a missing field is a deliberate "—".
+  const placeholder = vitalsStatus === "loading" ? "…" : "—";
   const bp = vitals && (vitals.bpSystolic != null || vitals.bpDiastolic != null)
     ? `${vitals.bpSystolic ?? "—"}/${vitals.bpDiastolic ?? "—"}`
     : null;
@@ -191,20 +195,24 @@ function VitalsStrip({ vitals, bloodGroup }) {
   const wt = vitals?.weightKg != null ? `${Number(vitals.weightKg).toFixed(1)} kg` : null;
   const recordedAt = vitals?.updatedAt || vitals?.recordedAt;
 
+  let trailing;
+  if (vitalsStatus === "loading") trailing = "Loading vitals…";
+  else if (vitalsStatus === "error") trailing = "Failed to load vitals";
+  else if (vitals) trailing = `Recorded by ${vitals.recordedByName || "—"}${recordedAt ? " · " + new Date(recordedAt).toLocaleString() : ""}`;
+  else trailing = "Vitals not recorded yet";
+
   return (
     <div className="px-6 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f]">
       <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
         <Activity className="w-3 h-3" /> Vitals
       </div>
       <VitalChip icon={<Droplet className="w-3 h-3 text-rose-500" />} label="Blood" value={bloodGroup || "—"} />
-      <VitalChip icon={<HeartPulse className="w-3 h-3 text-rose-500" />} label="BP" value={bp || "—"} unit={bp ? "mmHg" : null} />
-      <VitalChip icon={<Wind className="w-3 h-3 text-blue-500" />} label="SpO₂" value={spo2 || "—"} />
-      <VitalChip icon={<HeartPulse className="w-3 h-3 text-emerald-500" />} label="Pulse" value={hr || "—"} />
-      <VitalChip icon={<Scale className="w-3 h-3 text-amber-500" />} label="Weight" value={wt || "—"} />
+      <VitalChip icon={<HeartPulse className="w-3 h-3 text-rose-500" />} label="BP" value={bp || placeholder} unit={bp ? "mmHg" : null} />
+      <VitalChip icon={<Wind className="w-3 h-3 text-blue-500" />} label="SpO₂" value={spo2 || placeholder} />
+      <VitalChip icon={<HeartPulse className="w-3 h-3 text-emerald-500" />} label="Pulse" value={hr || placeholder} />
+      <VitalChip icon={<Scale className="w-3 h-3 text-amber-500" />} label="Weight" value={wt || placeholder} />
       <span className="ml-auto text-[10px] text-slate-400 dark:text-[#666]">
-        {vitals
-          ? `Recorded by ${vitals.recordedByName || "—"}${recordedAt ? " · " + new Date(recordedAt).toLocaleString() : ""}`
-          : "Vitals not recorded yet"}
+        {trailing}
       </span>
     </div>
   );

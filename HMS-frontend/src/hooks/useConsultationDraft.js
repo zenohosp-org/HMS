@@ -45,6 +45,10 @@ export function useConsultationDraft({ appointment, hospitalId, notify, onSaved 
   const autosaveTimer = useRef(null);
 
   const [vitals, setVitals] = useState(null);
+  // Tri-state so the consumer can distinguish "still fetching" from "no
+  // row exists" (vitals===null and status==='loaded') from "request
+  // failed". The strip / left panel render different copy for each.
+  const [vitalsStatus, setVitalsStatus] = useState("idle"); // idle | loading | loaded | error
 
   const drugCount = useMemo(
     () => items.filter(i => i.drugName.trim().length > 0).length,
@@ -64,6 +68,7 @@ export function useConsultationDraft({ appointment, hospitalId, notify, onSaved 
     setItems([newBlankDrugItem()]);
     setAutosaveStatus("idle");
     setVitals(null);
+    setVitalsStatus("idle");
 
     if (!appointment?.id) {
       setHydrating(false);
@@ -104,9 +109,16 @@ export function useConsultationDraft({ appointment, hospitalId, notify, onSaved 
   useEffect(() => {
     let cancelled = false;
     if (!appointment?.id) return;
+    setVitalsStatus("loading");
     vitalsApi.get(appointment.id)
-      .then((v) => { if (!cancelled) setVitals(v); })
-      .catch(() => { /* silent — UI shows "not recorded" */ });
+      .then((v) => {
+        if (cancelled) return;
+        setVitals(v);
+        setVitalsStatus("loaded");
+      })
+      .catch(() => {
+        if (!cancelled) setVitalsStatus("error");
+      });
     return () => { cancelled = true; };
   }, [appointment?.id]);
 
@@ -234,7 +246,7 @@ export function useConsultationDraft({ appointment, hospitalId, notify, onSaved 
     items, setItemField, addItem, removeItem,
     drugCount,
     // sidecar
-    vitals,
+    vitals, vitalsStatus,
     // bookkeeping
     hydrating, autosaveStatus, saving,
     // action

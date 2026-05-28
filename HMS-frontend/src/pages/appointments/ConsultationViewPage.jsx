@@ -230,6 +230,7 @@ export default function ConsultationViewPage() {
       <LeftPanel
         appointment={current}
         vitals={draft.vitals}
+        vitalsStatus={draft.vitalsStatus}
         pastRecords={pastRecords}
         loadingPast={loadingPast}
       />
@@ -268,17 +269,23 @@ export default function ConsultationViewPage() {
 // ────────────────────────────────────────────────────────────────────────
 // LEFT PANEL — patient identity, vitals, past records
 // ────────────────────────────────────────────────────────────────────────
-function LeftPanel({ appointment, vitals, pastRecords, loadingPast }) {
+function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast }) {
   const fullName = appointment?.patientName || "—";
   const uhid = fmtId(appointment?.patientUhid) || appointment?.patientUhid || "—";
   const age = computeAge(appointment?.patientDob);
   const sex = appointment?.patientGender || "—";
+
+  // Resolve each cell's display once. While the API is in flight render a
+  // soft "…" so a brief blank doesn't look like missing data. After
+  // resolution the cell either shows the value or a deliberate "—" so the
+  // doctor can tell at a glance that the nurse hasn't recorded that one.
+  const placeholder = vitalsStatus === "loading" ? "…" : "—";
   const bp = vitals && (vitals.bpSystolic != null || vitals.bpDiastolic != null)
     ? `${vitals.bpSystolic ?? "—"}/${vitals.bpDiastolic ?? "—"} mmHg`
-    : "—";
-  const spo2 = vitals?.spo2 != null ? `${vitals.spo2}%` : "—";
-  const hr = vitals?.heartRate != null ? `${vitals.heartRate} bpm` : "—";
-  const wt = vitals?.weightKg != null ? `${Number(vitals.weightKg).toFixed(1)} kg` : "—";
+    : placeholder;
+  const spo2 = vitals?.spo2 != null ? `${vitals.spo2}%` : placeholder;
+  const hr = vitals?.heartRate != null ? `${vitals.heartRate} bpm` : placeholder;
+  const wt = vitals?.weightKg != null ? `${Number(vitals.weightKg).toFixed(1)} kg` : placeholder;
 
   return (
     <aside className="w-80 shrink-0 border-r border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f] overflow-y-auto">
@@ -307,6 +314,7 @@ function LeftPanel({ appointment, vitals, pastRecords, loadingPast }) {
         </SidebarSection>
 
         <SidebarSection title="Medical Information">
+          <VitalsStateHint status={vitalsStatus} vitals={vitals} recordedByName={vitals?.recordedByName} recordedAt={vitals?.updatedAt || vitals?.recordedAt} />
           <SidebarRow icon={<Droplet className="w-3.5 h-3.5 text-rose-500" />} label="Blood Group" value={appointment?.patientBloodGroup || "—"} />
           <SidebarRow icon={<Scale className="w-3.5 h-3.5 text-amber-500" />} label="Weight" value={wt} />
           <SidebarRow icon={<HeartPulse className="w-3.5 h-3.5 text-rose-500" />} label="Blood Pressure" value={bp} />
@@ -359,6 +367,42 @@ function SidebarRow({ icon, label, value, mono }) {
       <span className={`text-[12px] font-semibold text-slate-800 dark:text-[#ddd] text-right truncate ${mono ? "font-mono tabular-nums" : ""}`}>
         {value}
       </span>
+    </div>
+  );
+}
+
+function VitalsStateHint({ status, vitals, recordedByName, recordedAt }) {
+  // Loaded + non-null + has at least one field → success annotation.
+  if (status === "loaded" && vitals && (
+        vitals.bpSystolic != null || vitals.spo2 != null ||
+        vitals.heartRate != null  || vitals.weightKg != null)) {
+    return (
+      <div className="flex items-center gap-1.5 -mt-1 mb-2 text-[10px] text-emerald-600 dark:text-emerald-400">
+        <Activity className="w-3 h-3" />
+        Recorded
+        {recordedByName && <span className="text-slate-500 dark:text-[#888]">by {recordedByName}</span>}
+        {recordedAt && <span className="text-slate-400 dark:text-[#666] tabular-nums">· {new Date(recordedAt).toLocaleString()}</span>}
+      </div>
+    );
+  }
+  if (status === "loading") {
+    return (
+      <div className="flex items-center gap-1.5 -mt-1 mb-2 text-[10px] text-slate-500 dark:text-[#888]">
+        <Loader2 className="w-3 h-3 animate-spin" /> Loading vitals…
+      </div>
+    );
+  }
+  if (status === "error") {
+    return (
+      <div className="flex items-center gap-1.5 -mt-1 mb-2 text-[10px] text-amber-600 dark:text-amber-400">
+        <AlertCircle className="w-3 h-3" /> Failed to load vitals
+      </div>
+    );
+  }
+  // status === "loaded" but no row → nurse hasn't triaged this appointment yet.
+  return (
+    <div className="flex items-center gap-1.5 -mt-1 mb-2 text-[10px] text-slate-400 dark:text-[#666]">
+      <Activity className="w-3 h-3" /> Vitals not recorded yet
     </div>
   );
 }
