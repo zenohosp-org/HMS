@@ -476,7 +476,10 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
     }
 
     // Same shape, different upstream. unbilled=true keeps CASH counter-bills
-    // and legacy-pushed rows out of the estimate.
+    // and legacy-pushed rows out of the estimate. We distribute the bill's
+    // GST-inclusive totalAmount across its lines so the estimate matches
+    // pharmacy's authoritative bill total (per-drug GST rates vary, so
+    // re-applying a flat HMS rate would silently drift).
     try {
       const res = await pharmacyApi.get('/api/pharmacy/bills', {
         params: { admissionId: admission.id, unbilled: true },
@@ -485,18 +488,27 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
       setPharmacyBills(pharma)
       setPharmacyBillsError(false)
       pharma.forEach(bill => {
+        const lines = Array.isArray(bill.items) ? bill.items : []
+        const preGstSum = lines.reduce((s, l) => {
+          const q = Number(l.quantity ?? 1) || 1
+          const u = Number(l.unitPrice ?? 0) || 0
+          return s + (Number(l.totalPrice ?? u * q) || 0)
+        }, 0)
+        const billTotal = Number(bill.totalAmount ?? 0) || 0
+        const factor = preGstSum > 0 ? billTotal / preGstSum : 1
         const billNo = bill.billNumber ? ` · ${bill.billNumber}` : ''
-        ;(Array.isArray(bill.items) ? bill.items : []).forEach(line => {
+        lines.forEach(line => {
           const qty = Number(line.quantity ?? 1) || 1
           const unit = Number(line.unitPrice ?? 0) || 0
-          const total = Number(line.totalPrice ?? unit * qty) || 0
+          const preGst = Number(line.totalPrice ?? unit * qty) || 0
+          const inclusive = preGst * factor
           items.push({
             key: key++,
             itemType: 'MEDICINE',
             description: `${line.drugName || 'Medicine'}${billNo}`,
             quantity: qty,
-            unitPrice: unit,
-            totalPrice: total,
+            unitPrice: qty > 0 ? inclusive / qty : 0,
+            totalPrice: inclusive,
           })
         })
       })
@@ -1066,24 +1078,41 @@ export default function IPDDetailPane({ admission, onClose, onDischarge, onMoveT
                     )}
 
                     {/* Pharmacy bills appended inline — one row per dispensed
-                        drug, scoped to bills not yet pulled into the invoice. */}
-                    {pharmacyBills.length > 0 && pharmacyBills.flatMap(bill =>
-                      (Array.isArray(bill.items) ? bill.items : []).map((line, i) => (
-                        <div key={`rx-${bill.id}-${i}`} className="grid grid-cols-12 gap-2 items-center px-4 py-2.5 bg-white dark:bg-[#111] border-t border-slate-50 dark:border-[#141414]">
-                          <div className="col-span-3">
-                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold ${BILL_TYPE_META.MEDICINE.cls}`}>
-                              <Pill className="w-2.5 h-2.5 shrink-0" /> {BILL_TYPE_META.MEDICINE.label}
-                            </span>
+                        drug, scoped to bills not yet pulled into the invoice.
+                        Each row shows its GST-inclusive share of the bill's
+                        totalAmount so the per-line numbers reconcile with the
+                        "Pharmacy Charges" subtotal below. */}
+                    {pharmacyBills.length > 0 && pharmacyBills.flatMap(bill => {
+                      const lines = Array.isArray(bill.items) ? bill.items : []
+                      const preGstSum = lines.reduce((s, l) => {
+                        const q = Number(l.quantity ?? 1) || 1
+                        const u = Number(l.unitPrice ?? 0) || 0
+                        return s + (Number(l.totalPrice ?? u * q) || 0)
+                      }, 0)
+                      const billTotal = Number(bill.totalAmount ?? 0) || 0
+                      const factor = preGstSum > 0 ? billTotal / preGstSum : 1
+                      return lines.map((line, i) => {
+                        const q = Number(line.quantity ?? 1) || 1
+                        const u = Number(line.unitPrice ?? 0) || 0
+                        const preGst = Number(line.totalPrice ?? u * q) || 0
+                        const inclusive = preGst * factor
+                        return (
+                          <div key={`rx-${bill.id}-${i}`} className="grid grid-cols-12 gap-2 items-center px-4 py-2.5 bg-white dark:bg-[#111] border-t border-slate-50 dark:border-[#141414]">
+                            <div className="col-span-3">
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold ${BILL_TYPE_META.MEDICINE.cls}`}>
+                                <Pill className="w-2.5 h-2.5 shrink-0" /> {BILL_TYPE_META.MEDICINE.label}
+                              </span>
+                            </div>
+                            <div className="col-span-5 text-xs text-slate-600 dark:text-[#bbb] truncate" title={`${line.drugName || 'Medicine'} · ${bill.billNumber || ''}`}>
+                              {line.drugName || 'Medicine'}
+                              {bill.billNumber && <span className="ml-1 text-slate-400 dark:text-[#666]">· {bill.billNumber}</span>}
+                            </div>
+                            <div className="col-span-1 text-xs text-slate-400 text-center tabular-nums">{q}</div>
+                            <div className="col-span-3 text-xs font-bold text-slate-800 dark:text-white text-right tabular-nums">{fmtMoney(inclusive)}</div>
                           </div>
-                          <div className="col-span-5 text-xs text-slate-600 dark:text-[#bbb] truncate" title={`${line.drugName || 'Medicine'} · ${bill.billNumber || ''}`}>
-                            {line.drugName || 'Medicine'}
-                            {bill.billNumber && <span className="ml-1 text-slate-400 dark:text-[#666]">· {bill.billNumber}</span>}
-                          </div>
-                          <div className="col-span-1 text-xs text-slate-400 text-center tabular-nums">{line.quantity ?? 1}</div>
-                          <div className="col-span-3 text-xs font-bold text-slate-800 dark:text-white text-right tabular-nums">{fmtMoney(line.totalPrice ?? (Number(line.unitPrice || 0) * Number(line.quantity || 1)))}</div>
-                        </div>
-                      ))
-                    )}
+                        )
+                      })
+                    })}
 
                     <div className="px-4 py-3 border-t border-slate-100 dark:border-[#1e1e1e] bg-slate-50 dark:bg-[#0a0a0a] space-y-1.5">
                       <div className="flex justify-between text-xs text-slate-500 dark:text-[#888]">

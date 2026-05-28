@@ -231,6 +231,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
             radiologyOrderId: item.radiologyOrderId ?? undefined,
             ambulanceBookingId: item.ambulanceBookingId ?? undefined,
             pharmacyBillId: item.pharmacyBillId ?? undefined,
+            // Pharmacy-sourced MEDICINE rows are stored with GST already
+            // baked in (see the pharmacy-pull section below). Re-flag them
+            // on reload so the HMS GST calc continues to skip them.
+            gstInclusive: !!item.pharmacyBillId,
             fromOpd: false,
           }
 
@@ -406,18 +410,41 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       // dispensed drug. Dedupe on bill id so reloads after a partial save
       // don't double-bill. unbilled=true on the pull already hides CASH and
       // any legacy-pushed rows.
+      //
+      // GST handling: pharmacy already applied tax on its side (mixed rates
+      // per drug — 5%, 12%, 18%, all GST-inclusive in bill.totalAmount).
+      // HMS would otherwise sum pre-tax line totalPrice and uniformly apply
+      // 18% on top, which silently under- or over-bills depending on the
+      // drug mix. Instead we proportionally distribute bill.totalAmount
+      // across each line so the sum of MEDICINE rows from one bill exactly
+      // matches the pharmacy's authoritative total. Lines are tagged
+      // gstInclusive so the HMS-side GST calc below skips them.
       ;(Array.isArray(pharmacyRes?.data) ? pharmacyRes.data : []).forEach(bill => {
         if (!bill?.id || savedPharmacyBillIds.has(String(bill.id))) return
+        const lines = Array.isArray(bill.items) ? bill.items : []
+        const preGstSum = lines.reduce((s, l) => {
+          const q = Number(l.quantity ?? 1) || 1
+          const u = Number(l.unitPrice ?? 0) || 0
+          return s + (Number(l.totalPrice ?? u * q) || 0)
+        }, 0)
+        const billTotal = Number(bill.totalAmount ?? 0) || 0
+        const factor = preGstSum > 0 ? billTotal / preGstSum : 1
         const billNo = bill.billNumber ? ` · ${bill.billNumber}` : ''
-        ;(Array.isArray(bill.items) ? bill.items : []).forEach(line => {
+        lines.forEach(line => {
           const qty = Number(line.quantity ?? 1) || 1
           const unit = Number(line.unitPrice ?? 0) || 0
-          const total = Number(line.totalPrice ?? unit * qty) || 0
+          const preGst = Number(line.totalPrice ?? unit * qty) || 0
+          const inclusive = preGst * factor
           auto.push({
             key: key++, itemType: 'MEDICINE',
             description: `${line.drugName || 'Medicine'}${billNo}`,
-            quantity: qty, unitPrice: unit, totalPrice: total,
+            quantity: qty,
+            // Show inclusive unit price so the row's own qty × unit reconciles
+            // visually with the displayed totalPrice.
+            unitPrice: qty > 0 ? inclusive / qty : 0,
+            totalPrice: inclusive,
             pharmacyBillId: bill.id,
+            gstInclusive: true,
           })
         })
       })
@@ -447,8 +474,14 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
   const subtotal = useMemo(() => items.reduce((s, i) => s + (i.totalPrice || 0), 0), [items])
   const discountAmt = subtotal * (discountPct / 100)
+  // GST applies only to MEDICINE rows that HMS itself is taxing. Pharmacy-
+  // sourced rows arrive GST-inclusive (the pharmacy applies per-drug rates
+  // server-side and we distribute the bill's totalAmount across lines), so
+  // they're flagged gstInclusive and excluded from the HMS tax base.
   const medicineSubtotal = useMemo(
-    () => items.filter(i => i.itemType === 'MEDICINE').reduce((s, i) => s + (i.totalPrice || 0), 0),
+    () => items
+      .filter(i => i.itemType === 'MEDICINE' && !i.gstInclusive)
+      .reduce((s, i) => s + (i.totalPrice || 0), 0),
     [items]
   )
   const gst = (medicineSubtotal - medicineSubtotal * (discountPct / 100)) * GST_RATE
