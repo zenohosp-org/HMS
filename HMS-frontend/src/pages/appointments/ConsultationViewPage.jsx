@@ -8,6 +8,7 @@ import {
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import { fmtId } from "@/utils/idFormat";
 import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
+import PastRecordDetailModal from "@/components/modals/PastRecordDetailModal";
 import {
   Stethoscope, Pill, FlaskConical, ChevronLeft, ChevronRight, LogOut,
   CalendarClock, Loader2, CheckCircle2, Save, AlertCircle, ClipboardList,
@@ -48,6 +49,10 @@ export default function ConsultationViewPage() {
   const [loadingExternal, setLoadingExternal] = useState(false);
   const [loadingPast, setLoadingPast] = useState(false);
   const [loadingLabs, setLoadingLabs] = useState(false);
+  // Currently-opened past record card → drives the read-only detail
+  // modal. Cleared when the modal closes or the doctor navigates
+  // patients (so a stale row from the previous chart can't linger).
+  const [openedPastRecord, setOpenedPastRecord] = useState(null);
 
   // ── Queue load ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -125,6 +130,9 @@ export default function ConsultationViewPage() {
     const sp = new URLSearchParams(searchParams);
     sp.set("appointmentId", String(current.id));
     setSearchParams(sp, { replace: true });
+    // Close any past-record modal left over from the previous patient
+    // so the doctor never sees an unrelated chart's row hanging around.
+    setOpenedPastRecord(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);
 
@@ -264,6 +272,7 @@ export default function ConsultationViewPage() {
         pastRecords={pastRecords}
         loadingPast={loadingPast}
         onStartConsultation={handleStartConsultation}
+        onOpenPastRecord={setOpenedPastRecord}
       />
 
       <section className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#0f0f0f]">
@@ -288,6 +297,13 @@ export default function ConsultationViewPage() {
           onExit={handleExit}
         />
       </section>
+
+      {openedPastRecord && (
+        <PastRecordDetailModal
+          record={openedPastRecord}
+          onClose={() => setOpenedPastRecord(null)}
+        />
+      )}
     </div>
   );
 }
@@ -295,7 +311,7 @@ export default function ConsultationViewPage() {
 // ────────────────────────────────────────────────────────────────────────
 // LEFT RAIL — patient identity, vitals, past records
 // ────────────────────────────────────────────────────────────────────────
-function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast, onStartConsultation }) {
+function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast, onStartConsultation, onOpenPastRecord }) {
   const fullName = appointment?.patientName || "—";
   const uhid = fmtId(appointment?.patientUhid) || appointment?.patientUhid || "—";
   const age = computeAge(appointment?.patientDob);
@@ -394,7 +410,9 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
             <p className="text-sm text-slate-400 dark:text-[#666]">No prior records for this patient.</p>
           ) : (
             <div className="space-y-2">
-              {pastRecords.slice(0, 5).map(rec => <PastRecordCard key={rec.id} record={rec} />)}
+              {pastRecords.slice(0, 5).map(rec => (
+                <PastRecordCard key={rec.id} record={rec} onOpen={() => onOpenPastRecord?.(rec)} />
+              ))}
               {pastRecords.length > 5 && (
                 <p className="text-[11px] text-slate-400 dark:text-[#666] pl-1">
                   {pastRecords.length - 5} older · view full chart on Patients page
@@ -548,22 +566,39 @@ function VitalsStateHint({ status, vitals, recordedByName, recordedAt }) {
   );
 }
 
-function PastRecordCard({ record }) {
+function PastRecordCard({ record, onOpen }) {
   const typeLabel = record.historyType || "RECORD";
   const date = record.createdAt ? new Date(record.createdAt).toLocaleDateString() : "";
-  const summary = (record.description || "").split("\n")[0] || "—";
+  // The consultation modal stores "Chief complaint: …" as the first
+  // line of description; surfacing it in the card preview means the
+  // doctor sees the most relevant scrap before clicking through.
+  const firstLine = (record.description || "").split("\n")[0] || "";
+  const ccMatch = /^Chief complaint:\s*(.+)$/i.exec(firstLine);
+  const summary = ccMatch ? ccMatch[1] : (firstLine || "—");
+  const drugCount = Array.isArray(record.prescriptionItems) ? record.prescriptionItems.length : 0;
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#111] px-3 py-2.5 hover:border-slate-300 dark:hover:border-[#2a2a2a] transition-colors">
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full text-left rounded-lg border border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#111] px-3 py-2.5 hover:border-blue-300 dark:hover:border-blue-500/40 hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-colors group focus:outline-none focus:ring-2 focus:ring-blue-300/60 dark:focus:ring-blue-500/40"
+    >
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
-          {typeLabel}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
+            {typeLabel}
+          </span>
+          {drugCount > 0 && (
+            <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-500/20">
+              {drugCount} Rx
+            </span>
+          )}
+        </div>
         <span className="text-[11px] text-slate-400 dark:text-[#666] tabular-nums">{date}</span>
       </div>
       <p className="text-xs text-slate-600 dark:text-[#bbb] line-clamp-2 leading-snug" title={summary}>
         {summary}
       </p>
-    </div>
+    </button>
   );
 }
 
