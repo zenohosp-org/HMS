@@ -261,9 +261,7 @@ export default function OPDBilling() {
               {[
                 { key: 'ALL', label: 'All' },
                 { key: 'UNPAID', label: 'Unpaid' },
-                { key: 'PARTIAL', label: 'Partial' },
-                { key: 'PAID', label: 'Paid' },
-                { key: 'CANCELLED', label: 'Cancelled' }
+                { key: 'PAID', label: 'Paid' }
               ].map(({ key, label }) => (
                 <button
                   key={key}

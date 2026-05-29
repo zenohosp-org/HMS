@@ -821,13 +821,26 @@ public class InvoiceService {
     /**
      * Resolves an OPD filter token to the concrete InvoiceStatus enums to match,
      * or null when no status filter should be applied (ALL / unknown token).
+     *
+     * The OPD billing tab exposes two grouped buckets — PAID (= PAID or SETTLED)
+     * and UNPAID (= UNPAID, PARTIAL or UNSETTLED) — so partially-collected and
+     * legacy SETTLED/UNSETTLED rows still surface under the right tab.
+     * CANCELLED rows are intentionally excluded from both buckets; they only
+     * appear under ALL.
      */
     private List<InvoiceStatus> resolveOpdStatuses(String token) {
         if ("ALL".equals(token)) return null;
-        try {
-            return List.of(InvoiceStatus.valueOf(token));
-        } catch (IllegalArgumentException ignored) {
-            return null;
+        switch (token) {
+            case "PAID":
+                return List.of(InvoiceStatus.PAID, InvoiceStatus.SETTLED);
+            case "UNPAID":
+                return List.of(InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL, InvoiceStatus.UNSETTLED);
+            default:
+                try {
+                    return List.of(InvoiceStatus.valueOf(token));
+                } catch (IllegalArgumentException ignored) {
+                    return null;
+                }
         }
     }
 
