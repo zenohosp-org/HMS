@@ -22,6 +22,44 @@ export const FREQUENCIES = [
   { value: "STAT", label: "STAT — Immediately, once" },
 ];
 
+// Doses per 24h for each frequency code. Drives auto-fill of the
+// dispense quantity from frequency × duration. SOS is intentionally
+// absent — as-needed dosing has no fixed daily count and shouldn't
+// auto-derive a number that pharmacy treats as authoritative.
+export const DOSES_PER_DAY = {
+  OD: 1, BD: 2, TDS: 3, QID: 4,
+  Q4H: 6, Q6H: 4, Q8H: 3,
+  HS: 1, AC: 3, PC: 3,
+  STAT: 1,
+};
+
+/**
+ * Pull the leading numeric portion off the free-text dose field
+ * ("1 tab" → 1, "2 caps" → 2, "5 ml" → 5). Defaults to 1 so an empty
+ * dose still gives a sensible quantity for the common single-unit case.
+ */
+function parseDoseUnits(dose) {
+  if (!dose) return 1;
+  const m = String(dose).trim().match(/^(\d+(?:\.\d+)?)/);
+  const n = m ? Number(m[1]) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+/**
+ * Suggested dispense quantity from dose × doses-per-day × days.
+ * Returns null when any input is missing or the frequency has no
+ * fixed daily count (SOS) — the field stays empty in that case.
+ */
+export function computeQuantity({ dose, frequency, durationDays }) {
+  const perDay = DOSES_PER_DAY[frequency];
+  if (!perDay) return null;
+  const days = Number(durationDays);
+  if (!Number.isFinite(days) || days <= 0) return null;
+  const units = parseDoseUnits(dose);
+  const q = Math.ceil(units * perDay * days);
+  return q > 0 ? q : null;
+}
+
 export const ROUTES = [
   { value: "ORAL",        label: "Oral" },
   { value: "IV",          label: "IV" },
@@ -41,6 +79,10 @@ export function newBlankDrugItem() {
     drugId: null, drugName: "", drugGeneric: "", drugStrength: "", drugForm: "",
     dose: "", frequency: "BD", durationDays: "", quantity: "", route: "ORAL",
     instructions: "",
+    // Tracks whether the doctor has manually typed in the quantity
+    // field. While false, the row recomputes quantity from dose ×
+    // frequency × duration on every input change.
+    quantityTouched: false,
   };
 }
 
@@ -83,6 +125,25 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
   const blurTimer = useRef(null);
 
   useEffect(() => { setQuery(item.drugName); }, [item.drugName]);
+
+  // Auto-fill quantity from dose × frequency × duration. Stops the
+  // moment the doctor types a number into the quantity box (signalled
+  // by quantityTouched). Clearing the box brings auto-fill back so a
+  // mis-typed override can be undone without retyping the formula.
+  useEffect(() => {
+    if (item.quantityTouched) return;
+    const computed = computeQuantity({
+      dose: item.dose,
+      frequency: item.frequency,
+      durationDays: item.durationDays,
+    });
+    const next = computed != null ? String(computed) : "";
+    if (next !== (item.quantity ?? "")) {
+      onChange("quantity", next);
+    }
+    // onChange is a fresh closure each render; including it would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.dose, item.frequency, item.durationDays, item.quantityTouched]);
 
   const doSearch = useCallback(async (q) => {
     if (!q || q.trim().length < 2) { setResults([]); return; }
@@ -220,11 +281,20 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#888]">Quantity *</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#888]">
+                Quantity *
+                {!item.quantityTouched && item.quantity && (
+                  <span className="ml-1 font-normal normal-case text-emerald-600 dark:text-emerald-400">· auto</span>
+                )}
+              </label>
               <input
                 type="number" min="1"
                 value={item.quantity}
-                onChange={e => onChange("quantity", e.target.value)}
+                onChange={e => {
+                  const v = e.target.value;
+                  onChange("quantity", v);
+                  onChange("quantityTouched", v !== "");
+                }}
                 placeholder="15"
                 required
                 className={inputCls}

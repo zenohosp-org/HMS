@@ -89,6 +89,11 @@ export function useConsultationDraft({ appointment, hospitalId, notify, onSaved 
             setItems(p.items.map((it, idx) => ({
               ...newBlankDrugItem(),
               ...it,
+              // Drafts saved before the quantity auto-fill landed don't
+              // carry quantityTouched. If they already have a quantity,
+              // treat it as a manual override so the recompute effect
+              // doesn't trample the value the doctor saw on close.
+              quantityTouched: it.quantityTouched ?? (it.quantity != null && String(it.quantity) !== ""),
               key: Date.now() + idx + Math.random(),
             })));
           }
