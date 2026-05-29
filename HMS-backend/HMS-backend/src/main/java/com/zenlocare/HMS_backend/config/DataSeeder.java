@@ -268,6 +268,14 @@ public class DataSeeder implements CommandLineRunner {
                 "CREATE INDEX IF NOT EXISTS idx_prescription_items_history_id ON prescription_items(history_id)");
             jdbcTemplate.execute(
                 "CREATE INDEX IF NOT EXISTS idx_prescription_items_drug_id ON prescription_items(drug_id)");
+
+            // Pharmacy dispense tracking: dispensedQty walks up per dispense
+            // callback, dispenseStatus follows. Defaults make legacy rows
+            // backfill to PENDING / 0 without a one-off UPDATE.
+            jdbcTemplate.execute(
+                "ALTER TABLE prescription_items ADD COLUMN IF NOT EXISTS dispensed_qty integer NOT NULL DEFAULT 0");
+            jdbcTemplate.execute(
+                "ALTER TABLE prescription_items ADD COLUMN IF NOT EXISTS dispense_status varchar(16) NOT NULL DEFAULT 'PENDING'");
         } catch (Exception e) {
             log.warn("Could not ensure prescription schema: " + e.getMessage());
         }

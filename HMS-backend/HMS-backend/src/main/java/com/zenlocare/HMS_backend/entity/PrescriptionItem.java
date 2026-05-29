@@ -111,4 +111,27 @@ public class PrescriptionItem {
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    /**
+     * Running tally of units pharmacy has actually issued against the
+     * prescribed quantity. Walks up monotonically per dispense callback
+     * until it equals quantity (then dispenseStatus flips to DISPENSED).
+     * Defaults to zero at insert via @Builder.Default + column default so
+     * older rows backfill cleanly when the migration adds the column.
+     */
+    @Column(name = "dispensed_qty", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    @Builder.Default
+    private Integer dispensedQty = 0;
+
+    /**
+     * Coarse status the pharmacy queue uses for filtering: PENDING (no
+     * units dispensed yet), PARTIAL (some but < quantity), DISPENSED
+     * (everything issued). Updated atomically with dispensedQty in the
+     * dispense callback so the two never drift.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "dispense_status", nullable = false, length = 16,
+            columnDefinition = "VARCHAR(16) DEFAULT 'PENDING'")
+    @Builder.Default
+    private PrescriptionDispenseStatus dispenseStatus = PrescriptionDispenseStatus.PENDING;
 }

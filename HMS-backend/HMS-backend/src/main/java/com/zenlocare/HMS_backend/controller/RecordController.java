@@ -1,17 +1,25 @@
 package com.zenlocare.HMS_backend.controller;
 
+import com.zenlocare.HMS_backend.entity.Admission;
 import com.zenlocare.HMS_backend.entity.HistoryType;
 import com.zenlocare.HMS_backend.entity.PatientRecord;
+import com.zenlocare.HMS_backend.entity.PrescriptionDispenseStatus;
+import com.zenlocare.HMS_backend.entity.PrescriptionItem;
 import com.zenlocare.HMS_backend.entity.User;
+import com.zenlocare.HMS_backend.repository.AdmissionRepository;
+import com.zenlocare.HMS_backend.repository.PrescriptionItemRepository;
 import com.zenlocare.HMS_backend.service.RecordService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -21,6 +29,8 @@ import java.util.stream.Collectors;
 public class RecordController {
 
     private final RecordService recordService;
+    private final PrescriptionItemRepository prescriptionItemRepository;
+    private final AdmissionRepository admissionRepository;
 
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<RecordDto>> getPatientRecords(
@@ -64,6 +74,122 @@ public class RecordController {
                 : recordService.getRecordsByPatientAndType(patientId, hospitalId, HistoryType.PRESCRIPTION);
         List<RecordDto> dtos = records.stream().map(this::mapToDto).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
+    }
+
+    /**
+     * Hospital-wide pending IPD prescription queue for the pharmacy.
+     * Returns one row per undispensed prescription line across every active
+     * admission in the hospital. Ordered oldest-first so urgent IPD requests
+     * surface at the top of the pharmacist's queue.
+     *
+     * Authenticated cross-service call (pharmacy backend hits this with the
+     * shared SSO JWT). No additional role gate so the pharmacy service user
+     * isn't tied to a specific HMS role — same boundary other proxy
+     * endpoints use.
+     */
+    @GetMapping("/prescriptions/pending")
+    public ResponseEntity<List<PendingPrescriptionDto>> getPendingPrescriptions(
+            @RequestParam UUID hospitalId) {
+
+        List<PrescriptionItem> items = prescriptionItemRepository.findPendingIpd(hospitalId);
+
+        // Batch-load admissions once so each row can carry room + ward labels
+        // without forcing a per-row lookup. PatientRecord stores admission as
+        // a raw UUID FK, not an entity ref, so we resolve it here.
+        java.util.Set<UUID> admissionIds = items.stream()
+                .map(pi -> pi.getRecord().getAdmissionId())
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<UUID, Admission> admissions = new HashMap<>();
+        if (!admissionIds.isEmpty()) {
+            admissionRepository.findAllById(admissionIds).forEach(a -> admissions.put(a.getId(), a));
+        }
+
+        List<PendingPrescriptionDto> dtos = items.stream()
+                .map(pi -> toPendingDto(pi, admissions.get(pi.getRecord().getAdmissionId())))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    /**
+     * Pharmacy callback: mark prescription items dispensed after a successful
+     * ward issue. Caller (pharmacy) only invokes when its own transaction has
+     * already committed — server-side this is best-effort and idempotent per
+     * the caller's discretion (we add to dispensedQty without dedup tokens).
+     *
+     * Each item update is atomic with its row save inside the controller's
+     * @Transactional so a partial-batch failure won't leave dispensedQty
+     * inconsistent with dispenseStatus.
+     */
+    @PostMapping("/prescriptions/dispense")
+    @Transactional
+    public ResponseEntity<List<PrescriptionDispenseResultDto>> markDispensed(
+            @RequestBody MarkDispensedRequest req) {
+
+        List<PrescriptionDispenseResultDto> results = new java.util.ArrayList<>();
+        if (req.getItems() == null) return ResponseEntity.ok(results);
+
+        for (DispenseItemRequest row : req.getItems()) {
+            if (row.getPrescriptionItemId() == null || row.getQty() == null || row.getQty() <= 0) continue;
+            PrescriptionItem pi = prescriptionItemRepository.findById(row.getPrescriptionItemId()).orElse(null);
+            if (pi == null) continue;
+
+            int prescribed = pi.getQuantity() != null ? pi.getQuantity() : 0;
+            int already = pi.getDispensedQty() != null ? pi.getDispensedQty() : 0;
+            int next = Math.min(prescribed, already + row.getQty());
+            pi.setDispensedQty(next);
+            pi.setDispenseStatus(next >= prescribed
+                    ? PrescriptionDispenseStatus.DISPENSED
+                    : PrescriptionDispenseStatus.PARTIAL);
+            prescriptionItemRepository.save(pi);
+
+            PrescriptionDispenseResultDto r = new PrescriptionDispenseResultDto();
+            r.setPrescriptionItemId(pi.getId().toString());
+            r.setDispensedQty(pi.getDispensedQty());
+            r.setStatus(pi.getDispenseStatus().name());
+            results.add(r);
+        }
+        return ResponseEntity.ok(results);
+    }
+
+    private PendingPrescriptionDto toPendingDto(PrescriptionItem pi, Admission admission) {
+        PendingPrescriptionDto d = new PendingPrescriptionDto();
+        d.setPrescriptionItemId(pi.getId().toString());
+        d.setRecordId(pi.getRecord().getId().toString());
+        d.setAdmissionId(pi.getRecord().getAdmissionId() != null ? pi.getRecord().getAdmissionId().toString() : null);
+
+        var patient = pi.getRecord().getPatient();
+        d.setPatientId(patient != null ? patient.getId() : null);
+        d.setPatientName(patient != null
+                ? ((patient.getFirstName() != null ? patient.getFirstName() : "") + " "
+                   + (patient.getLastName() != null ? patient.getLastName() : "")).trim()
+                : null);
+
+        if (admission != null && admission.getRoom() != null) {
+            d.setRoomLabel(admission.getRoom().getRoomNumber());
+            d.setWardLabel(admission.getRoom().getWard());
+        }
+
+        d.setDrugId(pi.getDrugId() != null ? pi.getDrugId().toString() : null);
+        d.setDrugName(pi.getDrugName());
+        d.setDrugStrength(pi.getDrugStrength());
+        d.setDrugForm(pi.getDrugForm());
+        d.setDose(pi.getDose());
+        d.setFrequency(pi.getFrequency() != null ? pi.getFrequency().name() : null);
+        d.setDurationDays(pi.getDurationDays());
+        d.setRoute(pi.getRoute() != null ? pi.getRoute().name() : null);
+        d.setInstructions(pi.getInstructions());
+        d.setQuantity(pi.getQuantity());
+        d.setDispensedQty(pi.getDispensedQty());
+        d.setStatus(pi.getDispenseStatus() != null ? pi.getDispenseStatus().name() : "PENDING");
+        d.setPrescribedAt(pi.getRecord().getCreatedAt() != null ? pi.getRecord().getCreatedAt().toString() : null);
+
+        var doctor = pi.getRecord().getCreatedBy();
+        if (doctor != null) {
+            d.setDoctorName(((doctor.getFirstName() != null ? doctor.getFirstName() : "") + " "
+                            + (doctor.getLastName() != null ? doctor.getLastName() : "")).trim());
+        }
+        return d;
     }
 
     /**
@@ -206,5 +332,48 @@ public class RecordController {
         private String route;
         private String instructions;
         private Integer displayOrder;
+    }
+
+    @Data
+    public static class PendingPrescriptionDto {
+        private String prescriptionItemId;
+        private String recordId;
+        private String admissionId;
+        private Integer patientId;
+        private String patientName;
+        private String roomLabel;
+        private String wardLabel;
+        private String drugId;
+        private String drugName;
+        private String drugStrength;
+        private String drugForm;
+        private String dose;
+        private String frequency;
+        private Integer durationDays;
+        private String route;
+        private String instructions;
+        private Integer quantity;
+        private Integer dispensedQty;
+        private String status;
+        private String prescribedAt;
+        private String doctorName;
+    }
+
+    @Data
+    public static class MarkDispensedRequest {
+        private List<DispenseItemRequest> items;
+    }
+
+    @Data
+    public static class DispenseItemRequest {
+        private UUID prescriptionItemId;
+        private Integer qty;
+    }
+
+    @Data
+    public static class PrescriptionDispenseResultDto {
+        private String prescriptionItemId;
+        private Integer dispensedQty;
+        private String status;
     }
 }
