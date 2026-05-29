@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Pill, Stethoscope, Activity } from "lucide-react";
+import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Pill, Stethoscope, Activity, FlaskConical } from "lucide-react";
 import WritePrescriptionModal from "@/components/modals/WritePrescriptionModal";
 import ConsultationModal from "@/components/modals/ConsultationModal";
 import VitalsModal from "@/components/modals/VitalsModal";
+import ExternalResultsModal from "@/components/modals/ExternalResultsModal";
 
 // Statuses for which writing a prescription is meaningful — the patient has at
 // least checked in. SCHEDULED / CONFIRMED rows hide the action (no consult yet);
@@ -18,6 +19,10 @@ const CONSULT_OPEN_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS", "COMPLETED"]
 // (re-takes happen) but drop it for COMPLETED — once the consult is done
 // vitals are part of the historical record, not editable from the queue.
 const VITALS_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS"]);
+// Outside-clinic lab reports the patient walked in with. Front-desk /
+// nursing flow, captured at the same window as vitals so the doctor's
+// consultation page lands with everything pre-filled.
+const EXTERNAL_RESULTS_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS"]);
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import BookAppointmentModal from "@/components/modals/BookAppointmentModal";
 import AdmitPatientModal from "@/pages/admin/AdmitPatientModal";
@@ -81,7 +86,7 @@ const STATUS_TRANSITIONS = {
     { status: "SCHEDULED", label: "Reschedule", icon: "reschedule", color: "text-slate-600 dark:text-slate-400" }
   ]
 };
-function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onWritePrescription, onOpenConsultation, onRecordVitals, hasDraft, hasVitals }) {
+function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onWritePrescription, onOpenConsultation, onRecordVitals, onAddExternalResults, hasDraft, hasVitals }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCancelReason, setShowCancelReason] = useState(false);
@@ -143,7 +148,10 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onWritePres
   ><HeartPulse className="w-4 h-4 opacity-70" />Patient Details</button>{VITALS_ELIGIBLE.has(appt.status) && <button
     onClick={() => { setOpen(false); onRecordVitals(); }}
     className="w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-sm font-medium text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors text-left"
-  ><span className="flex items-center gap-2.5"><Activity className="w-4 h-4 opacity-70" />{hasVitals ? "Edit Vitals" : "Record Vitals"}</span>{hasVitals && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">DONE</span>}</button>}{CONSULT_OPEN_ELIGIBLE.has(appt.status) && <button
+  ><span className="flex items-center gap-2.5"><Activity className="w-4 h-4 opacity-70" />{hasVitals ? "Edit Vitals" : "Record Vitals"}</span>{hasVitals && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">DONE</span>}</button>}{EXTERNAL_RESULTS_ELIGIBLE.has(appt.status) && <button
+    onClick={() => { setOpen(false); onAddExternalResults(); }}
+    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors text-left"
+  ><FlaskConical className="w-4 h-4 opacity-70" />Add Lab Reports</button>}{CONSULT_OPEN_ELIGIBLE.has(appt.status) && <button
     onClick={() => { setOpen(false); onOpenConsultation(); }}
     className="w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-sm font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors text-left"
   ><span className="flex items-center gap-2.5"><Stethoscope className="w-4 h-4 opacity-70" />{hasDraft ? "Resume Consultation" : "Open Consultation"}</span>{hasDraft && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">DRAFT</span>}</button>}{PRESCRIPTION_ELIGIBLE.has(appt.status) && <button
@@ -188,6 +196,9 @@ function AppointmentsDashboard() {
   // Same shape — drives the VitalsModal. Separate state so a nurse can
   // open vitals on one row while another row's consult is open.
   const [vitalsAppointment, setVitalsAppointment] = useState(null);
+  // Front-desk capture of outside-clinic lab reports — same trigger
+  // window as vitals so reception/nursing can do both at check-in.
+  const [externalResultsAppointment, setExternalResultsAppointment] = useState(null);
   // Set<appointmentId> with an in-flight consultation draft on the server.
   // Drives the "DRAFT" badge + "Resume Consultation" label in the row menu.
   const [draftAppointmentIds, setDraftAppointmentIds] = useState(() => new Set());
@@ -408,6 +419,7 @@ function AppointmentsDashboard() {
     })}
     onOpenConsultation={() => setConsultationAppointment(appt)}
     onRecordVitals={() => setVitalsAppointment(appt)}
+    onAddExternalResults={() => setExternalResultsAppointment(appt)}
     hasDraft={draftAppointmentIds.has(String(appt.id))}
     hasVitals={vitalsAppointmentIds.has(String(appt.id))}
   /></div></td></tr>)}</tbody></table></div><div className="px-5 pb-4"><Pagination
@@ -526,6 +538,10 @@ function AppointmentsDashboard() {
         setVitalsAppointment(null);
         refreshVitalsSet();
       }}
+    />}{externalResultsAppointment && <ExternalResultsModal
+      appointment={externalResultsAppointment}
+      onClose={() => setExternalResultsAppointment(null)}
+      onSaved={() => setExternalResultsAppointment(null)}
     />}</div>;
 }
 export {

@@ -338,6 +338,68 @@ body {
   color: #444444;
 }
 
+/* External-results modal — front-desk capture form for outside-clinic
+   lab / radiology / pathology reports. Violet focus tone matches the
+   modal's accent (distinct from blue=consult, emerald=rx, amber=vitals). */
+.external-input,
+.external-textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+.external-textarea {
+  resize: vertical;
+  min-height: 3.25rem;
+}
+
+.external-input:hover,
+.external-textarea:hover {
+  border-color: #cbd5e1;
+}
+
+.external-input:focus,
+.external-textarea:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.external-input::placeholder,
+.external-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.dark .external-input,
+.dark .external-textarea {
+  background: #161616;
+  border-color: #262626;
+  color: #e5e5e5;
+}
+
+.dark .external-input:hover,
+.dark .external-textarea:hover {
+  border-color: #333333;
+}
+
+.dark .external-input:focus,
+.dark .external-textarea:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+
+.dark .external-input::placeholder,
+.dark .external-textarea::placeholder {
+  color: #555555;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

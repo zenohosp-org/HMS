@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import {
-  appointmentsApi, doctorsApi, recordApi, radiologyApi,
+  appointmentsApi, doctorsApi, recordApi, radiologyApi, externalResultsApi,
 } from "@/utils/api";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import { fmtId } from "@/utils/idFormat";
@@ -44,6 +44,8 @@ export default function ConsultationViewPage() {
 
   const [pastRecords, setPastRecords] = useState([]);
   const [labOrders, setLabOrders] = useState([]);
+  const [externalResults, setExternalResults] = useState([]);
+  const [loadingExternal, setLoadingExternal] = useState(false);
   const [loadingPast, setLoadingPast] = useState(false);
   const [loadingLabs, setLoadingLabs] = useState(false);
 
@@ -151,6 +153,28 @@ export default function ConsultationViewPage() {
     return () => { cancelled = true; };
   }, [current?.patientId]);
 
+  // Outside-clinic results captured at triage by front-desk / nursing
+  // staff, plus anything the doctor has typed in during the consultation.
+  // Independent from internal radiology so a slow page server doesn't
+  // delay the other.
+  useEffect(() => {
+    let cancelled = false;
+    if (!current?.patientId || !user?.hospitalId) {
+      setExternalResults([]);
+      return () => { cancelled = true; };
+    }
+    setLoadingExternal(true);
+    externalResultsApi.listForPatient(current.patientId, user.hospitalId, { size: 100 })
+      .then(page => {
+        if (cancelled) return;
+        const rows = Array.isArray(page?.content) ? page.content : (Array.isArray(page) ? page : []);
+        setExternalResults(rows);
+      })
+      .catch(() => { if (!cancelled) setExternalResults([]); })
+      .finally(() => { if (!cancelled) setLoadingExternal(false); });
+    return () => { cancelled = true; };
+  }, [current?.patientId, user?.hospitalId]);
+
   const onSaved = useCallback(() => {
     setQueue(prev => {
       const next = prev.filter((_, i) => i !== index);
@@ -243,12 +267,12 @@ export default function ConsultationViewPage() {
       />
 
       <section className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#0f0f0f]">
-        <TabBar tab={tab} setTab={setTab} drugCount={draft.drugCount} labCount={labOrders.length} />
+        <TabBar tab={tab} setTab={setTab} drugCount={draft.drugCount} labCount={labOrders.length + externalResults.length} />
 
         <div className="flex-1 overflow-y-auto">
           {tab === "consult" && <ConsultTab draft={draft} />}
           {tab === "rx" && <RxTab draft={draft} />}
-          {tab === "lab" && <LabTab orders={labOrders} loading={loadingLabs} />}
+          {tab === "lab" && <LabTab orders={labOrders} loading={loadingLabs} externalResults={externalResults} loadingExternal={loadingExternal} />}
         </div>
 
         <BottomBar
@@ -674,30 +698,171 @@ function RxTab({ draft }) {
   );
 }
 
-function LabTab({ orders, loading }) {
-  if (loading) {
+function LabTab({ orders, loading, externalResults, loadingExternal }) {
+  const hasInternal = !loading && orders && orders.length > 0;
+  const hasExternal = !loadingExternal && externalResults && externalResults.length > 0;
+
+  if (loading && loadingExternal) {
     return (
       <div className="px-8 py-8 text-base text-slate-500 dark:text-[#888] flex items-center gap-2">
-        <Loader2 className="w-5 h-5 animate-spin" /> Loading lab orders…
+        <Loader2 className="w-5 h-5 animate-spin" /> Loading lab results…
       </div>
     );
   }
-  if (!orders || orders.length === 0) {
+
+  if (!hasInternal && !hasExternal && !loading && !loadingExternal) {
     return (
       <div className="px-8 py-20 text-center">
         <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-[#161616] flex items-center justify-center mx-auto mb-4">
           <FlaskConical className="w-8 h-8 text-slate-400 dark:text-[#666]" />
         </div>
-        <p className="text-base font-semibold text-slate-700 dark:text-[#ccc]">No lab orders for this patient</p>
+        <p className="text-base font-semibold text-slate-700 dark:text-[#ccc]">No lab results yet</p>
         <p className="text-sm text-slate-400 dark:text-[#666] mt-1.5 max-w-md mx-auto">
-          Imaging and lab orders placed for this patient will appear here once raised.
+          Outside-clinic reports go in at check-in from the appointments dashboard.
+          Internal radiology orders show up here once raised.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-8 py-8 space-y-7">
+      {/* External Results — top because outside-clinic reports usually
+          drive immediate clinical decisions and the doctor is reading
+          left-to-right from this column first. */}
+      <ExternalResultsSection rows={externalResults} loading={loadingExternal} />
+
+      {hasExternal && hasInternal && (
+        <div className="border-t border-slate-100 dark:border-[#1c1c1c]" />
+      )}
+
+      {/* Internal radiology — the existing radiologyApi.getByPatient data. */}
+      {(hasInternal || loading) && (
+        <InternalRadiologySection orders={orders} loading={loading} />
+      )}
+    </div>
+  );
+}
+
+function ExternalResultsSection({ rows, loading }) {
+  if (loading) {
+    return (
+      <div>
+        <SectionHeading
+          icon={<FlaskConical className="w-4 h-4" />}
+          title="External Results"
+          hint="Captured from outside labs / clinics"
+        />
+        <div className="mt-3 flex items-center gap-2 text-sm text-slate-500 dark:text-[#888]">
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading external results…
+        </div>
+      </div>
+    );
+  }
+  if (!rows || rows.length === 0) {
+    return (
+      <div>
+        <SectionHeading
+          icon={<FlaskConical className="w-4 h-4" />}
+          title="External Results"
+          hint="Captured from outside labs / clinics"
+        />
+        <p className="mt-3 text-sm text-slate-400 dark:text-[#666] italic">
+          Nothing recorded yet for this patient.
         </p>
       </div>
     );
   }
   return (
-    <div className="px-8 py-8">
-      <div className="rounded-xl border border-slate-200 dark:border-[#1c1c1c] overflow-hidden">
+    <div>
+      <SectionHeading
+        icon={<FlaskConical className="w-4 h-4" />}
+        title="External Results"
+        count={rows.length}
+        hint="Captured from outside labs / clinics"
+        tone="violet"
+      />
+      <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {rows.map(r => <ExternalResultCard key={r.id} result={r} />)}
+      </div>
+    </div>
+  );
+}
+
+function ExternalResultCard({ result }) {
+  const categoryTone =
+    result.category === "LAB"        ? "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/20" :
+    result.category === "RADIOLOGY"  ? "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-500/10 dark:border-blue-500/20" :
+    result.category === "PATHOLOGY"  ? "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-500/10 dark:border-rose-500/20" :
+    "text-slate-700 bg-slate-100 border-slate-200 dark:text-[#ccc] dark:bg-[#1a1a1a] dark:border-[#2a2a2a]";
+  const testDate = result.testDate
+    ? new Date(result.testDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+    : "—";
+  return (
+    <div className="rounded-xl border border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#111] p-4 hover:border-slate-300 dark:hover:border-[#2a2a2a] transition-colors">
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${categoryTone}`}>
+            {result.category}
+          </span>
+          {result.isAbnormal && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-500/10 dark:border-amber-500/20">
+              ⚠ Abnormal
+            </span>
+          )}
+        </div>
+        <span className="text-xs text-slate-400 dark:text-[#666] tabular-nums">{testDate}</span>
+      </div>
+      <h4 className="text-base font-bold text-slate-900 dark:text-white truncate">{result.testName}</h4>
+      <p className="mt-1 text-xs text-slate-500 dark:text-[#888] truncate">
+        {result.sourceName}
+        {result.sourceDoctorName && <span className="text-slate-400 dark:text-[#666]"> · {result.sourceDoctorName}</span>}
+      </p>
+      {(result.resultValue || result.resultUnit) && (
+        <div className="mt-3 flex items-baseline gap-2">
+          <span className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{result.resultValue || "—"}</span>
+          {result.resultUnit && <span className="text-xs font-medium text-slate-400 dark:text-[#666]">{result.resultUnit}</span>}
+          {result.referenceRange && (
+            <span className="ml-auto text-[11px] text-slate-400 dark:text-[#666] tabular-nums">
+              ref: {result.referenceRange}
+            </span>
+          )}
+        </div>
+      )}
+      {result.notes && (
+        <p className="mt-3 text-sm text-slate-700 dark:text-[#ccc] leading-snug">
+          {result.notes}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function InternalRadiologySection({ orders, loading }) {
+  if (loading) {
+    return (
+      <div>
+        <SectionHeading
+          icon={<ScanIcon />}
+          title="Internal Radiology"
+          hint="Orders raised inside HMS"
+        />
+        <div className="mt-3 flex items-center gap-2 text-sm text-slate-500 dark:text-[#888]">
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <SectionHeading
+        icon={<ScanIcon />}
+        title="Internal Radiology"
+        count={orders.length}
+        hint="Orders raised inside HMS"
+        tone="blue"
+      />
+      <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1c1c1c] overflow-hidden">
         <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-slate-50 dark:bg-[#141414] border-b border-slate-100 dark:border-[#1c1c1c] text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#888]">
           <div className="col-span-5">Investigation</div>
           <div className="col-span-3">Status</div>
@@ -738,6 +903,50 @@ function LabTab({ orders, loading }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function SectionHeading({ icon, title, count, hint, tone }) {
+  const toneCls =
+    tone === "violet" ? "text-violet-600 dark:text-violet-400" :
+    tone === "blue"   ? "text-blue-600 dark:text-blue-400" :
+    "text-slate-500 dark:text-[#888]";
+  return (
+    <div className="flex items-baseline justify-between flex-wrap gap-2">
+      <div className="flex items-center gap-2">
+        <span className={toneCls}>{icon}</span>
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-[#ccc]">
+          {title}
+        </h3>
+        {count > 0 && (
+          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+            tone === "violet"
+              ? "bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300"
+              : "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
+          }`}>
+            {count}
+          </span>
+        )}
+      </div>
+      {hint && (
+        <span className="text-[11px] text-slate-400 dark:text-[#666] font-normal normal-case">
+          {hint}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// Tiny inline SVG icon so we don't drag another import in for one place.
+function ScanIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+      <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+      <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+      <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+      <line x1="7" y1="12" x2="17" y2="12" />
+    </svg>
   );
 }
 

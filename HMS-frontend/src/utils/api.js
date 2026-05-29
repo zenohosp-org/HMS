@@ -704,6 +704,24 @@ const drugsApi = {
   }
 };
 
+// External lab / radiology / pathology results captured by front-desk or
+// nursing staff at check-in (same flow as vitals). The structured-data
+// shape the consultation Lab Tests tab reads from.
+const externalResultsApi = {
+  listForPatient: async (patientId, hospitalId, { category, from, to, page = 0, size = 50 } = {}) => {
+    const params = { hospitalId, page, size };
+    if (category) params.category = category;
+    if (from) params.from = from;
+    if (to) params.to = to;
+    const { data } = await api.get(`/external-results/patient/${patientId}`, { params });
+    return data;
+  },
+  create: async (payload) => {
+    const { data } = await api.post("/external-results", payload);
+    return data;
+  },
+};
+
 // Per-visit vitals captured by the nurse before the doctor starts the
 // consultation. One row per appointment (UNIQUE) — PUT is upsert. The
 // consultation modal hydrates from this on open so the doctor sees BP /
@@ -788,5 +806,6 @@ export {
   drugsApi,
   roomTypeApi,
   consultationDraftsApi,
-  vitalsApi
+  vitalsApi,
+  externalResultsApi
 };
