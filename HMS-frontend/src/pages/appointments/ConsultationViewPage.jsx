@@ -13,6 +13,7 @@ import {
   CalendarClock, Loader2, CheckCircle2, Save, AlertCircle, ClipboardList,
   FileText, ListChecks, Plus, IdCard, Droplet, HeartPulse, Scale, Wind,
   Activity, FileBarChart, Clock, User as UserIcon, ChevronRight as Arrow,
+  PlayCircle,
 } from "lucide-react";
 
 /**
@@ -176,6 +177,23 @@ export default function ConsultationViewPage() {
     setIndex(i => Math.min(queue.length - 1, i + 1));
   }, [queue.length]);
 
+  // Transition the current patient to IN_PROGRESS in-place. Optimistic
+  // update lets the hero card flip status immediately; on backend
+  // rejection we restore the previous status and surface the message.
+  const handleStartConsultation = useCallback(async () => {
+    if (!current?.id) return;
+    const prevStatus = current.status;
+    const id = current.id;
+    setQueue(prev => prev.map((a, i) => i === index ? { ...a, status: "IN_PROGRESS" } : a));
+    try {
+      await appointmentsApi.updateStatus(id, "IN_PROGRESS");
+      notify("Consultation started", "success");
+    } catch (err) {
+      setQueue(prev => prev.map((a) => a.id === id ? { ...a, status: prevStatus } : a));
+      notify(err?.response?.data?.message || "Failed to start consultation", "error");
+    }
+  }, [current?.id, current?.status, index, notify]);
+
   const handleSaveAndNext = useCallback(async () => {
     const created = await draft.saveConsultation();
     if (!created) return;
@@ -221,6 +239,7 @@ export default function ConsultationViewPage() {
         vitalsStatus={draft.vitalsStatus}
         pastRecords={pastRecords}
         loadingPast={loadingPast}
+        onStartConsultation={handleStartConsultation}
       />
 
       <section className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#0f0f0f]">
@@ -252,7 +271,7 @@ export default function ConsultationViewPage() {
 // ────────────────────────────────────────────────────────────────────────
 // LEFT RAIL — patient identity, vitals, past records
 // ────────────────────────────────────────────────────────────────────────
-function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast }) {
+function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast, onStartConsultation }) {
   const fullName = appointment?.patientName || "—";
   const uhid = fmtId(appointment?.patientUhid) || appointment?.patientUhid || "—";
   const age = computeAge(appointment?.patientDob);
@@ -275,6 +294,7 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
           token={appointment?.tokenNumber}
           status={appointment?.status}
           time={appointment?.apptTime}
+          onStartConsultation={onStartConsultation}
         />
 
         {/* Patient details */}
@@ -364,36 +384,51 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
   );
 }
 
-function PatientHeroCard({ name, token, status, time }) {
-  const initial = (name?.trim().charAt(0) || "?").toUpperCase();
+function PatientHeroCard({ name, token, status, time, onStartConsultation }) {
   const statusTone = STATUS_TONE[status] || STATUS_TONE.DEFAULT;
+  const canStart = status === "CHECKED_IN";
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-[#1f1f1f] bg-gradient-to-br from-blue-50/60 via-white to-white dark:from-blue-500/5 dark:via-[#101010] dark:to-[#101010] p-5 shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-xl shrink-0 shadow-sm">
-          {initial}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-lg font-bold text-slate-900 dark:text-white truncate leading-tight">{name}</p>
-          <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-            {token != null && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[11px] font-bold tabular-nums">
-                #{token}
-              </span>
-            )}
-            {time && (
-              <span className="text-xs text-slate-500 dark:text-[#888] tabular-nums">
-                {time.substring(0, 5)}
-              </span>
-            )}
-            {status && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${statusTone}`}>
-                {status.replace(/_/g, " ")}
-              </span>
-            )}
-          </div>
+    <div className="rounded-2xl border border-slate-200 dark:border-[#1f1f1f] bg-gradient-to-br from-blue-50/60 via-white to-white dark:from-blue-500/5 dark:via-[#101010] dark:to-[#101010] p-5 shadow-sm space-y-4">
+      <div className="min-w-0">
+        <p className="text-xl font-bold text-slate-900 dark:text-white truncate leading-tight">{name}</p>
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
+          {token != null && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[11px] font-bold tabular-nums">
+              #{token}
+            </span>
+          )}
+          {time && (
+            <span className="text-xs text-slate-500 dark:text-[#888] tabular-nums">
+              {time.substring(0, 5)}
+            </span>
+          )}
+          {status && (
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${statusTone}`}>
+              {status.replace(/_/g, " ")}
+            </span>
+          )}
         </div>
       </div>
+
+      {/* Status action — surfaced only when the next clinical step is
+          obvious (CHECKED_IN → IN_PROGRESS). Once consultation has
+          started, the Save & Next bar at the bottom takes over. */}
+      {canStart && (
+        <button
+          type="button"
+          onClick={onStartConsultation}
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-sm shadow-blue-600/20 dark:shadow-blue-500/20 transition-colors"
+        >
+          <PlayCircle className="w-4 h-4" />
+          Start Consultation
+        </button>
+      )}
+      {status === "IN_PROGRESS" && (
+        <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+          <Activity className="w-4 h-4" />
+          Consultation in progress
+        </div>
+      )}
     </div>
   );
 }
