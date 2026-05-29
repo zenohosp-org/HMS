@@ -374,6 +374,16 @@ public class DataSeeder implements CommandLineRunner {
             jdbcTemplate.execute(
                 "CREATE INDEX IF NOT EXISTS idx_external_results_hospital ON external_test_results(hospital_id, test_date DESC)");
 
+            // Migration: link results to the visit (appointment) they
+            // were captured during. Triage staff enter reports at
+            // CHECKED_IN — well before a consultation record exists —
+            // so binding to appointment_id (not record_id) is the only
+            // way to keep this-visit results out of stale-result noise.
+            jdbcTemplate.execute(
+                "ALTER TABLE external_test_results ADD COLUMN IF NOT EXISTS appointment_id uuid");
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_external_results_appointment ON external_test_results(appointment_id)");
+
             log.info("✅ Ensured attachment + external-result schema");
         } catch (Exception e) {
             log.warn("Could not ensure attachment schema: " + e.getMessage());

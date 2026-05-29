@@ -46,6 +46,17 @@ public class ExternalTestResult {
     @Column(name = "record_id")
     private UUID recordId;
 
+    /**
+     * Visit the result was captured against. Triage staff add reports
+     * during CHECKED_IN / IN_PROGRESS, well before a consultation
+     * record exists, so we link to the appointment directly rather
+     * than waiting for record_id to be available. Patient Details and
+     * other cross-visit views still query by patient_id and ignore
+     * this column.
+     */
+    @Column(name = "appointment_id")
+    private UUID appointmentId;
+
     /** LAB | RADIOLOGY | PATHOLOGY | OTHER */
     @Column(nullable = false, length = 24)
     private String category;

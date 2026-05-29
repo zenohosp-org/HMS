@@ -163,25 +163,24 @@ export default function ConsultationViewPage() {
 
   // Outside-clinic results captured at triage by front-desk / nursing
   // staff, plus anything the doctor has typed in during the consultation.
-  // Independent from internal radiology so a slow page server doesn't
-  // delay the other.
+  // Scoped to this appointment so prior-visit reports don't clutter the
+  // tab — the Patient Details rollup is the place for full history.
   useEffect(() => {
     let cancelled = false;
-    if (!current?.patientId || !user?.hospitalId) {
+    if (!current?.id || !user?.hospitalId) {
       setExternalResults([]);
       return () => { cancelled = true; };
     }
     setLoadingExternal(true);
-    externalResultsApi.listForPatient(current.patientId, user.hospitalId, { size: 100 })
-      .then(page => {
+    externalResultsApi.listForAppointment(current.id, user.hospitalId)
+      .then(rows => {
         if (cancelled) return;
-        const rows = Array.isArray(page?.content) ? page.content : (Array.isArray(page) ? page : []);
-        setExternalResults(rows);
+        setExternalResults(Array.isArray(rows) ? rows : []);
       })
       .catch(() => { if (!cancelled) setExternalResults([]); })
       .finally(() => { if (!cancelled) setLoadingExternal(false); });
     return () => { cancelled = true; };
-  }, [current?.patientId, user?.hospitalId]);
+  }, [current?.id, user?.hospitalId]);
 
   const onSaved = useCallback(() => {
     setQueue(prev => {

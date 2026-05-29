@@ -44,7 +44,7 @@ public class ExternalTestResultController {
             @AuthenticationPrincipal User principal) {
 
         ExternalTestResult row = service.create(
-                req.getHospitalId(), req.getPatientId(), req.getRecordId(),
+                req.getHospitalId(), req.getPatientId(), req.getRecordId(), req.getAppointmentId(),
                 req.getCategory(), req.getTestName(), req.getTestCode(),
                 req.getResultValue(), req.getResultUnit(), req.getReferenceRange(),
                 req.getIsAbnormal(), req.getTestDate(),
@@ -52,6 +52,24 @@ public class ExternalTestResultController {
                 req.getAttachmentId(), req.getNotes(),
                 principal);
         return ResponseEntity.ok(toDto(row));
+    }
+
+    /**
+     * Visit-scoped listing. The consultation Lab Tests tab and the
+     * three-page print sheet both use this — they want only the
+     * reports captured during this specific visit, not the patient's
+     * full lab history. Cross-visit views (Patient Details rollup)
+     * use listForPatient instead.
+     */
+    @GetMapping("/appointment/{appointmentId}")
+    public ResponseEntity<java.util.List<ExternalTestResultDto>> listForAppointment(
+            @PathVariable UUID appointmentId,
+            @RequestParam UUID hospitalId,
+            @AuthenticationPrincipal User principal) {
+        java.util.List<ExternalTestResultDto> rows = service
+                .listForAppointment(appointmentId, hospitalId, principal)
+                .stream().map(this::toDto).toList();
+        return ResponseEntity.ok(rows);
     }
 
     @GetMapping("/patient/{patientId}")
@@ -75,6 +93,7 @@ public class ExternalTestResultController {
         d.setHospitalId(r.getHospitalId().toString());
         d.setPatientId(r.getPatientId());
         d.setRecordId(r.getRecordId() != null ? r.getRecordId().toString() : null);
+        d.setAppointmentId(r.getAppointmentId() != null ? r.getAppointmentId().toString() : null);
         d.setCategory(r.getCategory());
         d.setTestName(r.getTestName());
         d.setTestCode(r.getTestCode());
@@ -97,6 +116,9 @@ public class ExternalTestResultController {
         @NotNull private UUID hospitalId;
         @NotNull private Integer patientId;
         private UUID recordId;
+        /** Visit context. Set whenever the entry is made from an
+         *  appointment-scoped flow (triage modal, consultation view). */
+        private UUID appointmentId;
 
         @NotBlank @Size(max = 24)  private String category;
         @NotBlank @Size(max = 255) private String testName;
@@ -118,6 +140,7 @@ public class ExternalTestResultController {
         private String hospitalId;
         private Integer patientId;
         private String recordId;
+        private String appointmentId;
         private String category;
         private String testName;
         private String testCode;

@@ -141,6 +141,7 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
           hospitalId: user.hospitalId,
           patientId: appointment.patientId,
           recordId: undefined,                       // not tied to a specific record at triage time
+          appointmentId: appointment.id,             // visit scope — the consult view & print read by this
           category: entry.category,
           testName: entry.testName.trim(),
           testCode: undefined,

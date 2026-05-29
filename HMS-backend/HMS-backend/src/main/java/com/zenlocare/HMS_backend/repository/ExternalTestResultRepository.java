@@ -40,4 +40,12 @@ public interface ExternalTestResultRepository extends JpaRepository<ExternalTest
             Pageable pageable);
 
     List<ExternalTestResult> findByRecordIdOrderByTestDateDesc(UUID recordId);
+
+    /**
+     * Visit-scoped listing — backs the consultation Lab Tests tab and
+     * the print sheet. Newest first (createdAt) so a re-entered
+     * correction shows up before the original it supersedes.
+     */
+    List<ExternalTestResult> findByAppointmentIdAndHospitalIdOrderByCreatedAtDesc(
+            UUID appointmentId, UUID hospitalId);
 }

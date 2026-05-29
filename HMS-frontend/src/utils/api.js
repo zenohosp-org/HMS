@@ -729,6 +729,15 @@ const externalResultsApi = {
     const { data } = await api.get(`/external-results/patient/${patientId}`, { params });
     return data;
   },
+  // Visit-scoped fetch used by the consultation Lab Tests tab and the
+  // print sheet — returns only the reports captured during this
+  // specific appointment, not the patient's full history.
+  listForAppointment: async (appointmentId, hospitalId) => {
+    const { data } = await api.get(`/external-results/appointment/${appointmentId}`, {
+      params: { hospitalId },
+    });
+    return data;
+  },
   create: async (payload) => {
     const { data } = await api.post("/external-results", payload);
     return data;

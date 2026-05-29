@@ -58,18 +58,18 @@ export default function PrintConsultation() {
       // Complete; older entries are amendments).
       setRecord(Array.isArray(recs) && recs.length > 0 ? recs[0] : null);
 
-      // Now fan out the patient-scoped fetches (radiology + external),
-      // both of which need appt.patientId.
+      // Radiology stays patient-scoped (internal feature, ordered per
+      // patient). External results are appointment-scoped so the print
+      // sheet reflects only what was captured during this visit.
       const patientId = appt?.patientId;
       if (patientId) {
         const [r, e] = await Promise.all([
           radiologyApi.getByPatient(patientId).catch(() => []),
-          externalResultsApi.listForPatient(patientId, user.hospitalId, { size: 100 }).catch(() => null),
+          externalResultsApi.listForAppointment(appointmentId, user.hospitalId).catch(() => []),
         ]);
         if (cancelled) return;
         setRadiology(Array.isArray(r) ? r : []);
-        const erRows = Array.isArray(e?.content) ? e.content : (Array.isArray(e) ? e : []);
-        setExternalResults(erRows);
+        setExternalResults(Array.isArray(e) ? e : []);
       }
       setLoading(false);
     })();

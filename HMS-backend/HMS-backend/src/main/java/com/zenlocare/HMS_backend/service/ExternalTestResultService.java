@@ -35,7 +35,7 @@ public class ExternalTestResultService {
 
     @Transactional
     public ExternalTestResult create(
-            UUID hospitalId, Integer patientId, UUID recordId,
+            UUID hospitalId, Integer patientId, UUID recordId, UUID appointmentId,
             String category, String testName, String testCode,
             String resultValue, String resultUnit, String referenceRange,
             Boolean isAbnormal, LocalDate testDate,
@@ -52,6 +52,7 @@ public class ExternalTestResultService {
                 .hospitalId(hospitalId)
                 .patientId(patientId)
                 .recordId(recordId)
+                .appointmentId(appointmentId)
                 .category(category)
                 .testName(testName)
                 .testCode(testCode)
@@ -75,6 +76,13 @@ public class ExternalTestResultService {
             LocalDate from, LocalDate to, Pageable pageable, User principal) {
         assertSameHospital(hospitalId, principal);
         return repo.listForPatient(hospitalId, patientId, category, from, to, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<ExternalTestResult> listForAppointment(
+            UUID appointmentId, UUID hospitalId, User principal) {
+        assertSameHospital(hospitalId, principal);
+        return repo.findByAppointmentIdAndHospitalIdOrderByCreatedAtDesc(appointmentId, hospitalId);
     }
 
     private void assertSameHospital(UUID requestedHospitalId, User principal) {
