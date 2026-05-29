@@ -223,6 +223,71 @@ body {
   color: #555555;
 }
 
+/* Consultation View page form fields — bigger sibling of .consult-input
+   for the doctor's full-page queue-walked workspace. Larger type, more
+   breathing room, slightly stronger focus ring so the active field
+   stands out on a wide canvas. */
+.focus-input,
+.focus-textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 1rem;
+  line-height: 1.55;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+.focus-textarea {
+  resize: vertical;
+  min-height: 7rem;
+}
+
+.focus-input:hover,
+.focus-textarea:hover {
+  border-color: #cbd5e1;
+}
+
+.focus-input:focus,
+.focus-textarea:focus {
+  border-color: #0f172a;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
+}
+
+.focus-input::placeholder,
+.focus-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.dark .focus-input,
+.dark .focus-textarea {
+  background: #161616;
+  border-color: #262626;
+  color: #e5e5e5;
+}
+
+.dark .focus-input:hover,
+.dark .focus-textarea:hover {
+  border-color: #333333;
+}
+
+.dark .focus-input:focus,
+.dark .focus-textarea:focus {
+  border-color: #4b5563;
+  background: #1a1a1a;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
+}
+
+.dark .focus-input::placeholder,
+.dark .focus-textarea::placeholder {
+  color: #555555;
+}
+
 /* Vitals modal numeric input — wider, bigger digits, monospace for
    nurse-station scannability. Shared across BP / SpO2 / HR / weight. */
 .vital-input {
