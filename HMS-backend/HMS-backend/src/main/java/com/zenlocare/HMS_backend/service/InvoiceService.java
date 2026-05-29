@@ -792,11 +792,12 @@ public class InvoiceService {
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         String safeSearch = (search == null) ? "" : search.trim();
-        String safeStatus = (status == null || status.isBlank()) ? "ALL" : status.trim();
+        String safeStatus = (status == null || status.isBlank()) ? "ALL" : status.trim().toUpperCase();
 
-        Page<Invoice> result = invoiceRepository.searchOpdInvoices(
-            hospitalId, safeStatus, safeSearch, pageable
-        );
+        List<InvoiceStatus> statuses = resolveOpdStatuses(safeStatus);
+        Page<Invoice> result = (statuses == null)
+            ? invoiceRepository.searchOpdInvoices(hospitalId, safeSearch, pageable)
+            : invoiceRepository.searchOpdInvoicesByStatuses(hospitalId, statuses, safeSearch, pageable);
 
         return buildPageResponse(result);
     }
@@ -807,13 +808,48 @@ public class InvoiceService {
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         String safeSearch = (search == null) ? "" : search.trim();
-        String safeStatus = (status == null || status.isBlank()) ? "ALL" : status.trim();
+        String safeStatus = (status == null || status.isBlank()) ? "ALL" : status.trim().toUpperCase();
 
-        Page<Invoice> result = invoiceRepository.searchIpdInvoices(
-            hospitalId, safeStatus, safeSearch, pageable
-        );
+        List<InvoiceStatus> statuses = resolveIpdStatuses(safeStatus);
+        Page<Invoice> result = (statuses == null)
+            ? invoiceRepository.searchIpdInvoices(hospitalId, safeSearch, pageable)
+            : invoiceRepository.searchIpdInvoicesByStatuses(hospitalId, statuses, safeSearch, pageable);
 
         return buildPageResponse(result);
+    }
+
+    /**
+     * Resolves an OPD filter token to the concrete InvoiceStatus enums to match,
+     * or null when no status filter should be applied (ALL / unknown token).
+     */
+    private List<InvoiceStatus> resolveOpdStatuses(String token) {
+        if ("ALL".equals(token)) return null;
+        try {
+            return List.of(InvoiceStatus.valueOf(token));
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Resolves an IPD filter token to enums. The IPD billing tab exposes two
+     * grouped buckets — SETTLED (= PAID or SETTLED) and UNSETTLED (= UNPAID,
+     * PARTIAL or UNSETTLED) — so the token may not map 1:1 to an enum.
+     */
+    private List<InvoiceStatus> resolveIpdStatuses(String token) {
+        if ("ALL".equals(token)) return null;
+        switch (token) {
+            case "SETTLED":
+                return List.of(InvoiceStatus.PAID, InvoiceStatus.SETTLED);
+            case "UNSETTLED":
+                return List.of(InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL, InvoiceStatus.UNSETTLED);
+            default:
+                try {
+                    return List.of(InvoiceStatus.valueOf(token));
+                } catch (IllegalArgumentException ignored) {
+                    return null;
+                }
+        }
     }
 
     private Map<String, Object> buildPageResponse(Page<Invoice> result) {

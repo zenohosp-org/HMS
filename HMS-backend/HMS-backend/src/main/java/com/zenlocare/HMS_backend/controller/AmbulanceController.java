@@ -181,11 +181,16 @@ public class AmbulanceController {
     public ResponseEntity<AmbulanceBooking> updateStatus(@PathVariable Long id,
                                                           @RequestBody Map<String, String> body) {
         return bookingRepo.findById(id).map(b -> {
-            AmbulanceBookingStatus newStatus = AmbulanceBookingStatus.valueOf(body.get("status"));
+            // Body may contain only `paymentStatus` (e.g. ambulance billing's
+            // "Mark as Paid" action) — don't NPE when `status` is absent.
+            String statusStr = body.get("status");
+            AmbulanceBookingStatus newStatus = (statusStr != null && !statusStr.isBlank())
+                    ? AmbulanceBookingStatus.valueOf(statusStr)
+                    : b.getStatus();
             b.setStatus(newStatus);
             if (body.containsKey("paymentStatus")) b.setPaymentStatus(body.get("paymentStatus"));
 
-            if (b.getVehicle() != null) {
+            if (statusStr != null && b.getVehicle() != null) {
                 if (newStatus == AmbulanceBookingStatus.DISPATCHED || newStatus == AmbulanceBookingStatus.EN_ROUTE) {
                     b.getVehicle().setStatus(AmbulanceVehicleStatus.IN_USE);
                     vehicleRepo.save(b.getVehicle());

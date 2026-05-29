@@ -1,12 +1,14 @@
 package com.zenlocare.HMS_backend.repository;
 
 import com.zenlocare.HMS_backend.entity.Invoice;
+import com.zenlocare.HMS_backend.entity.InvoiceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -98,12 +100,14 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         """)
     List<Invoice> findZeroPendingIpdInvoices();
 
+    // OPD invoice search — no status filter (used for the "ALL" tab). The previous
+    // single-query approach with `CAST(i.status AS string) = :status` was broken
+    // because `status` is stored as an Integer via InvoiceStatusConverter, so the
+    // cast yielded "1"/"2"/... and never matched names like "UNPAID".
     @Query("""
         SELECT i FROM Invoice i
         WHERE i.hospital.id = :hospitalId
         AND i.admission IS NULL
-        AND (:status = 'ALL'
-             OR CAST(i.status AS string) = :status)
         AND (
             LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
             LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
@@ -116,7 +120,28 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         """)
     Page<Invoice> searchOpdInvoices(
         @Param("hospitalId") UUID hospitalId,
-        @Param("status") String status,
+        @Param("search") String search,
+        Pageable pageable
+    );
+
+    @Query("""
+        SELECT i FROM Invoice i
+        WHERE i.hospital.id = :hospitalId
+        AND i.admission IS NULL
+        AND i.status IN :statuses
+        AND (
+            LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
+                LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+        )
+        ORDER BY i.createdAt DESC
+        """)
+    Page<Invoice> searchOpdInvoicesByStatuses(
+        @Param("hospitalId") UUID hospitalId,
+        @Param("statuses") Collection<InvoiceStatus> statuses,
         @Param("search") String search,
         Pageable pageable
     );
@@ -125,8 +150,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         SELECT i FROM Invoice i
         WHERE i.hospital.id = :hospitalId
         AND i.admission IS NOT NULL
-        AND (:status = 'ALL'
-             OR CAST(i.status AS string) = :status)
         AND (
             LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
             LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
@@ -139,7 +162,28 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         """)
     Page<Invoice> searchIpdInvoices(
         @Param("hospitalId") UUID hospitalId,
-        @Param("status") String status,
+        @Param("search") String search,
+        Pageable pageable
+    );
+
+    @Query("""
+        SELECT i FROM Invoice i
+        WHERE i.hospital.id = :hospitalId
+        AND i.admission IS NOT NULL
+        AND i.status IN :statuses
+        AND (
+            LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
+                LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+        )
+        ORDER BY i.createdAt DESC
+        """)
+    Page<Invoice> searchIpdInvoicesByStatuses(
+        @Param("hospitalId") UUID hospitalId,
+        @Param("statuses") Collection<InvoiceStatus> statuses,
         @Param("search") String search,
         Pageable pageable
     );
