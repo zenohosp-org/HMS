@@ -1,15 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Pill, Stethoscope, Activity, FlaskConical } from "lucide-react";
-import WritePrescriptionModal from "@/components/modals/WritePrescriptionModal";
+import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Stethoscope, Activity, FlaskConical } from "lucide-react";
 import ConsultationModal from "@/components/modals/ConsultationModal";
 import VitalsModal from "@/components/modals/VitalsModal";
 import ExternalResultsModal from "@/components/modals/ExternalResultsModal";
 
-// Statuses for which writing a prescription is meaningful — the patient has at
-// least checked in. SCHEDULED / CONFIRMED rows hide the action (no consult yet);
-// CANCELLED / NO_SHOW too. BILLED is allowed for late additions / corrections.
-const PRESCRIPTION_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS", "COMPLETED", "BILLED"]);
 // Re-open the consultation modal from these states. Excludes BILLED — once
 // the visit is billed the record should already be saved; new edits live in
 // patient_records, not a draft.
@@ -86,7 +81,7 @@ const STATUS_TRANSITIONS = {
     { status: "SCHEDULED", label: "Reschedule", icon: "reschedule", color: "text-slate-600 dark:text-slate-400" }
   ]
 };
-function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onWritePrescription, onOpenConsultation, onRecordVitals, onAddExternalResults, hasDraft, hasVitals }) {
+function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsultation, onRecordVitals, onAddExternalResults, hasDraft, hasVitals }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCancelReason, setShowCancelReason] = useState(false);
@@ -154,10 +149,7 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onWritePres
   ><FlaskConical className="w-4 h-4 opacity-70" />Add Lab Reports</button>}{CONSULT_OPEN_ELIGIBLE.has(appt.status) && <button
     onClick={() => { setOpen(false); onOpenConsultation(); }}
     className="w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-sm font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors text-left"
-  ><span className="flex items-center gap-2.5"><Stethoscope className="w-4 h-4 opacity-70" />{hasDraft ? "Resume Consultation" : "Open Consultation"}</span>{hasDraft && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">DRAFT</span>}</button>}{PRESCRIPTION_ELIGIBLE.has(appt.status) && <button
-    onClick={() => { setOpen(false); onWritePrescription(); }}
-    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors text-left"
-  ><Pill className="w-4 h-4 opacity-70" />Write Prescription</button>}{(appt.status === "COMPLETED" || appt.status === "IN_PROGRESS") && <button
+  ><span className="flex items-center gap-2.5"><Stethoscope className="w-4 h-4 opacity-70" />{hasDraft ? "Resume Consultation" : "Open Consultation"}</span>{hasDraft && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">DRAFT</span>}</button>}{(appt.status === "COMPLETED" || appt.status === "IN_PROGRESS") && <button
     onClick={() => { setOpen(false); onAdmit(); }}
     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors text-left"
   ><BedDouble className="w-4 h-4 opacity-70" />Admit Patient</button>}</div> : <div className="p-3 space-y-2"><p className="text-xs font-semibold text-slate-700 dark:text-[#cccccc]">Cancellation Reason <span className="text-slate-400">(optional)</span></p><textarea
@@ -188,8 +180,6 @@ function AppointmentsDashboard() {
   const [listFilter, setListFilter] = useState("all");
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [admitPrefill, setAdmitPrefill] = useState(null);
-  // { patient, appointmentId } — drives the WritePrescriptionModal.
-  const [prescriptionTarget, setPrescriptionTarget] = useState(null);
   // Holds the full appointment row whose check-in just triggered the
   // consultation modal. Cleared on save / cancel.
   const [consultationAppointment, setConsultationAppointment] = useState(null);
@@ -408,15 +398,6 @@ function AppointmentsDashboard() {
     onUpdate={handleStatusUpdate}
     onAdmit={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), uhid: appt.patientUhid }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })}
     onViewPatientDetails={() => navigate(`/patients/${appt.patientId}`)}
-    onWritePrescription={() => setPrescriptionTarget({
-      patient: {
-        id: appt.patientId,
-        firstName: appt.patientFirstName || appt.patientName?.split(" ")[0],
-        lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "),
-        uhid: appt.patientUhid,
-      },
-      appointmentId: appt.id,
-    })}
     onOpenConsultation={() => setConsultationAppointment(appt)}
     onRecordVitals={() => setVitalsAppointment(appt)}
     onAddExternalResults={() => setExternalResultsAppointment(appt)}
@@ -514,12 +495,7 @@ function AppointmentsDashboard() {
         setIsBookingModalOpen(false);
         loadData();
       }}
-    />{admitPrefill && <AdmitPatientModal prefill={admitPrefill} onClose={() => setAdmitPrefill(null)} onAdmitted={() => { setAdmitPrefill(null); }} />}{prescriptionTarget && <WritePrescriptionModal
-      patient={prescriptionTarget.patient}
-      appointmentId={prescriptionTarget.appointmentId}
-      onClose={() => setPrescriptionTarget(null)}
-      onSaved={() => setPrescriptionTarget(null)}
-    />}{consultationAppointment && <ConsultationModal
+    />{admitPrefill && <AdmitPatientModal prefill={admitPrefill} onClose={() => setAdmitPrefill(null)} onAdmitted={() => { setAdmitPrefill(null); }} />}{consultationAppointment && <ConsultationModal
       appointment={consultationAppointment}
       onClose={() => {
         setConsultationAppointment(null);
