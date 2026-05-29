@@ -75,6 +75,12 @@ public class RecordService {
                 patientId, hospitalId, admissionId, type);
     }
 
+    /** Records tied to a single appointment, newest first. Backs the print view. */
+    public List<PatientRecord> getRecordsByAppointment(UUID appointmentId, UUID hospitalId) {
+        return recordRepository.findByAppointmentIdAndHospitalIdOrderByCreatedAtDesc(
+                appointmentId, hospitalId);
+    }
+
     /**
      * Create a new patient record with a guaranteed-unique MRN.
      *

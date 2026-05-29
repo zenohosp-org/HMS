@@ -1,14 +1,18 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Stethoscope, Activity, FlaskConical } from "lucide-react";
+import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Stethoscope, Activity, FlaskConical, Printer } from "lucide-react";
 import ConsultationModal from "@/components/modals/ConsultationModal";
 import VitalsModal from "@/components/modals/VitalsModal";
 import ExternalResultsModal from "@/components/modals/ExternalResultsModal";
 
-// Re-open the consultation modal from these states. Excludes BILLED — once
-// the visit is billed the record should already be saved; new edits live in
-// patient_records, not a draft.
-const CONSULT_OPEN_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS", "COMPLETED"]);
+// Re-open the consultation modal from these states. COMPLETED is gone —
+// once the doctor clicks Mark Complete in the consultation view the
+// record is finalised and the row should be a print-only artifact, not
+// a place to re-edit. BILLED is gone for the same reason.
+const CONSULT_OPEN_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS"]);
+// After Mark Complete, the row exposes a print action so reception can
+// hand the patient their consultation + Rx + lab summary.
+const PRINT_ELIGIBLE = new Set(["COMPLETED", "BILLED"]);
 // Vitals are recorded by the nurse before the doctor takes over, so the
 // action surfaces from CHECKED_IN onward. Allow editing through IN_PROGRESS
 // (re-takes happen) but drop it for COMPLETED — once the consult is done
@@ -81,7 +85,7 @@ const STATUS_TRANSITIONS = {
     { status: "SCHEDULED", label: "Reschedule", icon: "reschedule", color: "text-slate-600 dark:text-slate-400" }
   ]
 };
-function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsultation, onRecordVitals, onAddExternalResults, hasDraft, hasVitals }) {
+function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsultation, onRecordVitals, onAddExternalResults, onPrintConsultation, hasDraft, hasVitals }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCancelReason, setShowCancelReason] = useState(false);
@@ -149,7 +153,10 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
   ><FlaskConical className="w-4 h-4 opacity-70" />Add Lab Reports</button>}{CONSULT_OPEN_ELIGIBLE.has(appt.status) && <button
     onClick={() => { setOpen(false); onOpenConsultation(); }}
     className="w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-sm font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors text-left"
-  ><span className="flex items-center gap-2.5"><Stethoscope className="w-4 h-4 opacity-70" />{hasDraft ? "Resume Consultation" : "Open Consultation"}</span>{hasDraft && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">DRAFT</span>}</button>}{(appt.status === "COMPLETED" || appt.status === "IN_PROGRESS") && <button
+  ><span className="flex items-center gap-2.5"><Stethoscope className="w-4 h-4 opacity-70" />{hasDraft ? "Resume Consultation" : "Open Consultation"}</span>{hasDraft && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">DRAFT</span>}</button>}{PRINT_ELIGIBLE.has(appt.status) && <button
+    onClick={() => { setOpen(false); onPrintConsultation(); }}
+    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-[#cccccc] hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors text-left"
+  ><Printer className="w-4 h-4 opacity-70" />Print Consultation</button>}{(appt.status === "COMPLETED" || appt.status === "IN_PROGRESS") && <button
     onClick={() => { setOpen(false); onAdmit(); }}
     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors text-left"
   ><BedDouble className="w-4 h-4 opacity-70" />Admit Patient</button>}</div> : <div className="p-3 space-y-2"><p className="text-xs font-semibold text-slate-700 dark:text-[#cccccc]">Cancellation Reason <span className="text-slate-400">(optional)</span></p><textarea
@@ -401,6 +408,7 @@ function AppointmentsDashboard() {
     onOpenConsultation={() => setConsultationAppointment(appt)}
     onRecordVitals={() => setVitalsAppointment(appt)}
     onAddExternalResults={() => setExternalResultsAppointment(appt)}
+    onPrintConsultation={() => window.open(`/print/appointment/${appt.id}`, "_blank", "noopener,noreferrer")}
     hasDraft={draftAppointmentIds.has(String(appt.id))}
     hasVitals={vitalsAppointmentIds.has(String(appt.id))}
   /></div></td></tr>)}</tbody></table></div><div className="px-5 pb-4"><Pagination

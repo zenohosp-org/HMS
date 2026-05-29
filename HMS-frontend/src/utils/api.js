@@ -91,7 +91,14 @@ const recordApi = {
   create: async (payload) => {
     const { data } = await api.post("/records", payload);
     return data;
-  }
+  },
+  // Backs the print view — returns every record tied to one
+  // appointment (typically a single CONSULTATION/PRESCRIPTION row,
+  // sometimes a follow-up amendment), newest first.
+  getByAppointment: async (appointmentId, hospitalId) => {
+    const { data } = await api.get(`/records/by-appointment/${appointmentId}`, { params: { hospitalId } });
+    return data;
+  },
 };
 const staffApi = {
   list: async (hospitalId) => {
@@ -193,6 +200,12 @@ const appointmentsApi = {
   },
   updateStatus: async (id, status, cancelledReason) => {
     const { data } = await api.put(`/appointments/${id}/status`, { status, cancelledReason });
+    return data;
+  },
+  // Single-appointment hydration used by the print-consultation page,
+  // which opens in a new tab and only knows the id from the URL.
+  getById: async (id) => {
+    const { data } = await api.get(`/appointments/${id}`);
     return data;
   },
   refreshTokens: async (hospitalId) => {

@@ -50,6 +50,17 @@ public interface PatientRecordRepository extends JpaRepository<PatientRecord, In
     long countUniquePatientsByDoctor(@Param("userId") UUID userId);
 
     /**
+     * Single-appointment lookup used by the print view. Returns every record
+     * tied to a given appointment (typically one CONSULTATION or PRESCRIPTION
+     * row, occasionally a follow-up amendment), newest first. EntityGraph
+     * pulls createdBy + role + prescriptionItems in one query so the print
+     * page doesn't N+1 the bind sites.
+     */
+    @EntityGraph(attributePaths = {"createdBy", "createdBy.role", "prescriptionItems"})
+    List<PatientRecord> findByAppointmentIdAndHospitalIdOrderByCreatedAtDesc(
+            UUID appointmentId, UUID hospitalId);
+
+    /**
      * MRNs for a given hospital + year — RecordService.generateMrn extracts the
      * trailing sequence from each to compute next-seq = MAX + 1. Matching both
      * legacy "MRN-YYYY-NNNNN" and prefixed "{HOSP}-MRN-YYYY-NNNNN" formats; the

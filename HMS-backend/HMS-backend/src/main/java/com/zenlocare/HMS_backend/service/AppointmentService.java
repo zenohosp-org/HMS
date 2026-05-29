@@ -72,6 +72,19 @@ public class AppointmentService {
                                 .collect(Collectors.toList());
         }
 
+        /**
+         * Single-appointment hydration for the print-consultation view.
+         * Uses findByIdWithRelations so patient + doctor.user + createdBy
+         * + hospital are all materialised in one query — the DTO mapper
+         * walks several of those proxies and we don't want a no-session
+         * lazy init at response time.
+         */
+        public AppointmentDto getAppointmentById(UUID id) {
+                Appointment appointment = appointmentRepository.findByIdWithRelations(id)
+                                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                return AppointmentDto.fromEntity(appointment);
+        }
+
         public List<AppointmentDto> getPastDoctorsForPatient(Integer patientId, UUID hospitalId) {
                 return appointmentRepository.findDistinctDoctorsByPatient(patientId, hospitalId).stream()
                                 .map(d -> AppointmentDto.builder()

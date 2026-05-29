@@ -25,6 +25,7 @@ import IPDBilling from "./pages/billing/IPDBilling";
 import AmbulanceBilling from "./pages/billing/AmbulanceBilling";
 import AppointmentsDashboard from "@/pages/appointments/AppointmentsDashboard";
 import ConsultationViewPage from "@/pages/appointments/ConsultationViewPage";
+import PrintConsultation from "@/pages/print/PrintConsultation";
 import ShiftRoster from "@/pages/admin/ShiftRoster";
 import Departments from "@/pages/admin/Departments";
 import Designations from "@/pages/admin/Designations";
@@ -116,6 +117,19 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><FocusLayout /></ProtectedRoute>}>
           <Route path="consultation-view" element={<ConsultationViewPage />} />
         </Route>
+
+        {/* Print routes — no chrome at all so the rendered page IS the
+            printable artefact. ProtectedRoute still wraps so an
+            unauthenticated user can't fetch someone else's record by
+            URL-stuffing. */}
+        <Route
+          path="/print/appointment/:appointmentId"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}>
+              <PrintConsultation />
+            </ProtectedRoute>
+          }
+        />
         {
     /* Fallback */
   }<Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></BrowserRouter></ReferenceDataProvider></NotificationProvider></AuthProvider></ThemeProvider></ErrorBoundary>;

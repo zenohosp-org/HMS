@@ -62,6 +62,17 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getPastDoctorsForPatient(patientId, hospitalId));
     }
 
+    /**
+     * Single-appointment lookup. The print-consultation page opens in
+     * a new tab and only knows the appointment id from the URL, so it
+     * uses this to hydrate the patient + doctor + hospital header on
+     * the print sheet.
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<AppointmentDto> getAppointmentById(@PathVariable UUID id) {
+        return ResponseEntity.ok(appointmentService.getAppointmentById(id));
+    }
+
     @PostMapping
     public ResponseEntity<AppointmentDto> createAppointment(
             @RequestBody AppointmentRequest request,

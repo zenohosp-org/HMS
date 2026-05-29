@@ -77,6 +77,24 @@ public class RecordController {
     }
 
     /**
+     * Records tied to a single appointment — the print view's primary
+     * input. Returns every record linked to the appointment, newest
+     * first. Usually one row (the CONSULTATION / PRESCRIPTION saved
+     * at Mark Complete) but the doctor can amend after the fact via
+     * a follow-up note, so the list shape supports that case.
+     */
+    @GetMapping("/by-appointment/{appointmentId}")
+    public ResponseEntity<List<RecordDto>> getRecordsByAppointment(
+            @PathVariable UUID appointmentId,
+            @RequestParam UUID hospitalId) {
+
+        List<RecordDto> dtos = recordService
+                .getRecordsByAppointment(appointmentId, hospitalId)
+                .stream().map(this::mapToDto).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    /**
      * Hospital-wide pending IPD prescription queue for the pharmacy.
      * Returns one row per undispensed prescription line across every active
      * admission in the hospital. Ordered oldest-first so urgent IPD requests

@@ -467,6 +467,23 @@ body {
   @page {
     margin: 1.5cm;
   }
+
+  /* Page-break utilities used by the print-consultation route.
+     .print-page wraps each of the three sheets (consultation, Rx,
+     lab) so they always start on a fresh page. break-* keeps lab
+     order rows / Rx rows together. */
+  .print-page {
+    break-before: page;
+    page-break-before: always;
+  }
+  .print-page:first-child {
+    break-before: auto;
+    page-break-before: auto;
+  }
+  .print-page-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
 
 /* Off-screen iframe used for per-invoice printing — must not be display:none

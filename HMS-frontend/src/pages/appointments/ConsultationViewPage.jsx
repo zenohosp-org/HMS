@@ -13,7 +13,7 @@ import {
   Stethoscope, Pill, FlaskConical, ChevronLeft, ChevronRight, LogOut,
   CalendarClock, Loader2, CheckCircle2, Save, AlertCircle, ClipboardList,
   FileText, ListChecks, Plus, IdCard, Droplet, HeartPulse, Scale, Wind,
-  Activity, FileBarChart, Clock, User as UserIcon, ChevronRight as Arrow,
+  Activity, FileBarChart, Clock, User as UserIcon,
   PlayCircle,
 } from "lucide-react";
 
@@ -226,11 +226,30 @@ export default function ConsultationViewPage() {
     }
   }, [current?.id, current?.status, index, notify]);
 
-  const handleSaveAndNext = useCallback(async () => {
+  // Mark Complete = save the consultation record + finalise the
+  // appointment in one click. onSaved (from the hook) removes the
+  // patient from the queue; here we additionally fire the status
+  // transition so the dashboard reflects COMPLETED and the print
+  // action becomes visible. The status update is best-effort —
+  // the consultation record is the source of truth, so a network
+  // hiccup on the status PUT only delays the dashboard refresh,
+  // never the saved record itself.
+  const handleMarkComplete = useCallback(async () => {
+    if (!current?.id) return;
+    const apptId = current.id;
     const created = await draft.saveConsultation();
     if (!created) return;
     setTab("consult");
-  }, [draft]);
+    try {
+      await appointmentsApi.updateStatus(apptId, "COMPLETED");
+    } catch (err) {
+      notify(
+        err?.response?.data?.message
+        || "Consultation saved, but the appointment status didn't update — dashboard will refresh on next load",
+        "warning",
+      );
+    }
+  }, [draft, current?.id, notify]);
 
   const handleExit = useCallback(() => navigate("/appointments"), [navigate]);
 
@@ -276,6 +295,12 @@ export default function ConsultationViewPage() {
       />
 
       <section className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#0f0f0f]">
+        <TopActionBar
+          autosaveStatus={draft.autosaveStatus}
+          hydrating={draft.hydrating}
+          saving={draft.saving}
+          onMarkComplete={handleMarkComplete}
+        />
         <TabBar tab={tab} setTab={setTab} drugCount={draft.drugCount} labCount={labOrders.length + externalResults.length} />
 
         <div className="flex-1 overflow-y-auto">
@@ -287,13 +312,9 @@ export default function ConsultationViewPage() {
         <BottomBar
           index={index}
           total={queue.length}
-          current={current}
-          autosaveStatus={draft.autosaveStatus}
-          hydrating={draft.hydrating}
           saving={draft.saving}
           onPrev={goPrev}
           onNext={goNext}
-          onSaveAndNext={handleSaveAndNext}
           onExit={handleExit}
         />
       </section>
@@ -1002,68 +1023,66 @@ function StatusPill({ status }) {
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// BOTTOM BAR
+// TOP ACTION BAR — Mark Complete (left) + autosave status (right)
 // ────────────────────────────────────────────────────────────────────────
-function BottomBar({
-  index, total, current, autosaveStatus, hydrating, saving,
-  onPrev, onNext, onSaveAndNext, onExit,
-}) {
+// Sits directly under FocusLayout's header so the primary action is
+// always at the top-left thumb-zone, and the autosave reassurance is
+// always at the top-right where the eye expects status to live.
+function TopActionBar({ autosaveStatus, hydrating, saving, onMarkComplete }) {
+  return (
+    <div className="shrink-0 border-b border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f] px-8 py-3 flex items-center justify-between gap-6">
+      <button
+        type="button"
+        onClick={onMarkComplete}
+        disabled={saving}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-blue-600/20 dark:shadow-blue-500/20"
+      >
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+        Mark Complete
+      </button>
+      <AutosaveIndicator status={autosaveStatus} hydrating={hydrating} />
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// BOTTOM BAR — queue navigation only. Finalisation moved to TopActionBar.
+// ────────────────────────────────────────────────────────────────────────
+function BottomBar({ index, total, saving, onPrev, onNext, onExit }) {
   const isFirst = index <= 0;
   const isLast = index >= total - 1;
   return (
-    <div className="shrink-0 border-t border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f] px-8 py-4 flex items-center justify-between gap-6">
-      <div className="flex items-center gap-3 min-w-0">
-        <AutosaveIndicator status={autosaveStatus} hydrating={hydrating} />
-        {current?.patientName && (
-          <span className="text-xs text-slate-400 dark:text-[#666] truncate hidden md:inline">
-            · {current.patientName}
-          </span>
-        )}
-      </div>
+    <div className="shrink-0 border-t border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f] px-8 py-4 flex items-center justify-end gap-2.5">
+      <button
+        type="button"
+        onClick={onPrev}
+        disabled={isFirst || saving}
+        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-[#ccc] bg-slate-100 hover:bg-slate-200 dark:bg-[#1a1a1a] dark:hover:bg-[#222] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <ChevronLeft className="w-4 h-4" /> Previous
+      </button>
 
-      <div className="flex items-center gap-2.5">
-        <button
-          type="button"
-          onClick={onPrev}
-          disabled={isFirst || saving}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-[#ccc] bg-slate-100 hover:bg-slate-200 dark:bg-[#1a1a1a] dark:hover:bg-[#222] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft className="w-4 h-4" /> Previous
-        </button>
+      <span className="px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-[#ccc] bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#1c1c1c] tabular-nums min-w-[80px] text-center">
+        {index + 1} <span className="text-slate-400 dark:text-[#666] font-normal">/ {total}</span>
+      </span>
 
-        <span className="px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-[#ccc] bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#1c1c1c] tabular-nums min-w-[80px] text-center">
-          {index + 1} <span className="text-slate-400 dark:text-[#666] font-normal">/ {total}</span>
-        </span>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={isLast || saving}
+        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-[#ccc] bg-slate-100 hover:bg-slate-200 dark:bg-[#1a1a1a] dark:hover:bg-[#222] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Next <ChevronRight className="w-4 h-4" />
+      </button>
 
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={isLast || saving}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-[#ccc] bg-slate-100 hover:bg-slate-200 dark:bg-[#1a1a1a] dark:hover:bg-[#222] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Next <ChevronRight className="w-4 h-4" />
-        </button>
-
-        <button
-          type="button"
-          onClick={onSaveAndNext}
-          disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-blue-600/20 dark:shadow-blue-500/20"
-        >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-          {isLast ? "Save Consultation" : "Save & Next"}
-          {!isLast && !saving && <Arrow className="w-3.5 h-3.5 opacity-80" />}
-        </button>
-
-        <button
-          type="button"
-          onClick={onExit}
-          disabled={saving}
-          className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-500 dark:text-[#888] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
-        >
-          <LogOut className="w-4 h-4" /> Exit
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onExit}
+        disabled={saving}
+        className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-500 dark:text-[#888] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
+      >
+        <LogOut className="w-4 h-4" /> Exit
+      </button>
     </div>
   );
 }
