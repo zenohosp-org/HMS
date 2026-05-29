@@ -64,6 +64,7 @@ export default function ConsultationViewPage() {
       setLoadingQueue(true);
       try {
         let doctorId = null;
+        let doctorLookupFailed = false;
         if (user.role === "doctor") {
           // Resolve the doctor row that owns this user account so we can
           // filter the queue. Fallback path: scan the doctors list — works
@@ -76,8 +77,22 @@ export default function ConsultationViewPage() {
               const docs = await doctorsApi.list(user.hospitalId);
               const me = (docs || []).find(x => x.userId === user.userId);
               doctorId = me?.id || null;
-            } catch { /* admin / staff path */ }
+            } catch { /* fall through */ }
           }
+          if (!doctorId) doctorLookupFailed = true;
+        }
+
+        // Strict scoping: a doctor must never see another doctor's queue.
+        // If we can't resolve their doctor row, surface an explicit empty
+        // queue + error rather than silently falling through to the
+        // hospital-wide listing the way admin / staff do.
+        if (doctorLookupFailed) {
+          if (!cancelled) {
+            notify("Could not resolve your doctor profile — contact admin", "error");
+            setQueue([]);
+            setLoadingQueue(false);
+          }
+          return;
         }
 
         const params = {
@@ -90,8 +105,14 @@ export default function ConsultationViewPage() {
         const res = await appointmentsApi.listPaginated(user.hospitalId, params);
         const items = res?.content || [];
 
+        // Active queue only: anything past the doctor's window (COMPLETED,
+        // BILLED) or that the doctor will never see (CANCELLED, NO_SHOW)
+        // gets dropped. SCHEDULED / CONFIRMED / CHECKED_IN / IN_PROGRESS
+        // are all surfaceable — covers walk-ins still in the waiting room
+        // through the patient currently sitting in front of the doctor.
+        const SKIP = new Set(["COMPLETED", "BILLED", "CANCELLED", "NO_SHOW"]);
         const actionable = items
-          .filter(a => a.status !== "CANCELLED" && a.status !== "NO_SHOW")
+          .filter(a => !SKIP.has(a.status))
           .sort((a, b) => {
             const ta = a.tokenNumber ?? Number.MAX_SAFE_INTEGER;
             const tb = b.tokenNumber ?? Number.MAX_SAFE_INTEGER;
@@ -164,11 +185,21 @@ export default function ConsultationViewPage() {
   }, [current?.patientId]);
 
   const onSaved = useCallback(() => {
-    // Hot-patch the current row's status optimistically so the queue
-    // shows COMPLETED if the dashboard refreshes after exit.
-    setQueue(prev => prev.map((a, i) =>
-      i === index ? { ...a, status: "COMPLETED" } : a
-    ));
+    // Pull the just-saved patient out of the queue so the doctor can't
+    // accidentally land back on them and re-edit a finalised record. We
+    // also clamp the index inside the same setState so React batches
+    // both updates into one render — otherwise the page would flash an
+    // out-of-bounds frame for last-patient saves.
+    setQueue(prev => {
+      const next = prev.filter((_, i) => i !== index);
+      // If the doctor just saved the last row, slide the pointer back
+      // to the new last. Empty queue is handled by the empty-state
+      // render branch below.
+      if (index >= next.length && next.length > 0) {
+        setIndex(next.length - 1);
+      }
+      return next;
+    });
   }, [index]);
 
   const draft = useConsultationDraft({
@@ -189,11 +220,13 @@ export default function ConsultationViewPage() {
 
   const handleSaveAndNext = useCallback(async () => {
     const created = await draft.saveConsultation();
-    if (created && index < queue.length - 1) {
-      setTab("consult");
-      setIndex(i => i + 1);
-    }
-  }, [draft, index, queue.length]);
+    if (!created) return;
+    // onSaved already removed the just-saved row from the queue, so the
+    // same index value now points at the next patient automatically.
+    // No need to increment — and the last-patient clamp lives in
+    // onSaved so we don't have to know the new length here.
+    setTab("consult");
+  }, [draft]);
 
   const handleExit = useCallback(() => {
     navigate("/appointments");
