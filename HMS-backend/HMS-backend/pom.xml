@@ -26,6 +26,14 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
+		<!-- JSR-303 / 380 bean validation. Enables @Valid + @NotNull/@Size
+		     etc. on request DTOs for the new attachment + external-result
+		     endpoints. The rest of the codebase can adopt incrementally. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
 		<!-- JPA + Hibernate -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

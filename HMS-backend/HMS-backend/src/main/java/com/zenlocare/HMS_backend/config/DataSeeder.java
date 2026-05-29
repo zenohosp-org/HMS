@@ -174,6 +174,7 @@ public class DataSeeder implements CommandLineRunner {
         backfillAppointmentTokens();
         migrateRoomAttenderToAdmission();
         ensurePrescriptionSchema();
+        ensureAttachmentSchema();
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
@@ -278,6 +279,104 @@ public class DataSeeder implements CommandLineRunner {
                 "ALTER TABLE prescription_items ADD COLUMN IF NOT EXISTS dispense_status varchar(16) NOT NULL DEFAULT 'PENDING'");
         } catch (Exception e) {
             log.warn("Could not ensure prescription schema: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Attachment + external test result schema. Three append-only tables:
+     *   record_attachments      — metadata for files stored in Supabase Storage.
+     *                              The actual bytes live at storage_key in the
+     *                              hms-attachments bucket; we keep file_name,
+     *                              mime_type, size_bytes, sha256, and the link
+     *                              back to the patient + (optionally) the
+     *                              consultation record here.
+     *   attachment_access_log   — append-only "who viewed/downloaded what when"
+     *                              audit trail. Same shape as RoomLog.
+     *   external_test_results   — structured lab/radiology data the doctor
+     *                              captured from an outside lab/clinic. Can
+     *                              carry a scanned report via attachment_id.
+     *
+     * No archived_at / soft-delete columns anywhere — hospitals don't delete
+     * medical evidence. Corrections happen via a new row with a caption,
+     * matching the existing append-only RoomLog pattern.
+     */
+    private void ensureAttachmentSchema() {
+        try {
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS record_attachments (
+                    id                   uuid PRIMARY KEY,
+                    hospital_id          uuid NOT NULL,
+                    patient_id           integer NOT NULL,
+                    record_id            uuid NULL REFERENCES patient_records(history_id),
+                    category             varchar(32) NOT NULL,
+                    source               varchar(32) NOT NULL,
+                    source_name          varchar(255),
+                    file_name_original   varchar(255) NOT NULL,
+                    mime_type            varchar(80)  NOT NULL,
+                    size_bytes           bigint NOT NULL,
+                    sha256               varchar(64) NOT NULL,
+                    storage_key          varchar(512) NOT NULL,
+                    caption              varchar(500),
+                    created_by           uuid NOT NULL,
+                    created_at           timestamp without time zone NOT NULL DEFAULT NOW()
+                )
+                """);
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_record_attachments_record   ON record_attachments(record_id)");
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_record_attachments_patient  ON record_attachments(patient_id, created_at DESC)");
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_record_attachments_hospital ON record_attachments(hospital_id, created_at DESC)");
+
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS attachment_access_log (
+                    id              bigserial PRIMARY KEY,
+                    attachment_id   uuid NOT NULL,
+                    hospital_id     uuid NOT NULL,
+                    accessed_by     uuid NOT NULL,
+                    access_type     varchar(16) NOT NULL,
+                    user_agent      varchar(255),
+                    ip_address      varchar(45),
+                    accessed_at     timestamp without time zone NOT NULL DEFAULT NOW()
+                )
+                """);
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_attachment_access_log_attachment ON attachment_access_log(attachment_id, accessed_at DESC)");
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_attachment_access_log_user       ON attachment_access_log(accessed_by, accessed_at DESC)");
+
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS external_test_results (
+                    id                   uuid PRIMARY KEY,
+                    hospital_id          uuid NOT NULL,
+                    patient_id           integer NOT NULL,
+                    record_id            uuid NULL REFERENCES patient_records(history_id),
+                    category             varchar(24) NOT NULL,
+                    test_name            varchar(255) NOT NULL,
+                    test_code            varchar(40),
+                    result_value         varchar(255),
+                    result_unit          varchar(40),
+                    reference_range      varchar(80),
+                    is_abnormal          boolean,
+                    test_date            date NOT NULL,
+                    source_name          varchar(255) NOT NULL,
+                    source_doctor_name   varchar(255),
+                    attachment_id        uuid NULL REFERENCES record_attachments(id),
+                    notes                text,
+                    created_by           uuid NOT NULL,
+                    created_at           timestamp without time zone NOT NULL DEFAULT NOW()
+                )
+                """);
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_external_results_patient  ON external_test_results(patient_id, test_date DESC)");
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_external_results_record   ON external_test_results(record_id)");
+            jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS idx_external_results_hospital ON external_test_results(hospital_id, test_date DESC)");
+
+            log.info("✅ Ensured attachment + external-result schema");
+        } catch (Exception e) {
+            log.warn("Could not ensure attachment schema: " + e.getMessage());
         }
     }
 
