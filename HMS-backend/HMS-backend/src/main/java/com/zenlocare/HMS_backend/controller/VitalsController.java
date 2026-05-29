@@ -40,8 +40,15 @@ public class VitalsController {
     private final AppointmentRepository appointmentRepo;
     private final UserRepository userRepo;
 
-    /** Single-row lookup keyed on appointment. 204 when nothing recorded yet. */
+    /**
+     * Single-row lookup keyed on appointment. 204 when nothing recorded yet.
+     *
+     * readOnly transaction wraps the response so the toDto mapping can
+     * walk the LAZY recordedBy → User proxy — without it the proxy hits a
+     * "no session" LazyInitializationException at first name access.
+     */
     @GetMapping("/appointment/{appointmentId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<VitalsDto> getForAppointment(@PathVariable UUID appointmentId) {
         return vitalsRepo.findByAppointmentId(appointmentId)
                 .map(v -> ResponseEntity.ok(toDto(v)))
@@ -54,6 +61,7 @@ public class VitalsController {
      * sees at a glance who's been triaged.
      */
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<List<VitalsDto>> listForHospital(@RequestParam UUID hospitalId) {
         List<VitalsDto> dtos = vitalsRepo.findByHospitalId(hospitalId).stream().map(this::toDto).toList();
         return ResponseEntity.ok(dtos);
@@ -65,6 +73,7 @@ public class VitalsController {
      * trending up, weight loss across visits). Newest first.
      */
     @GetMapping("/patient/{patientId}/history")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<VitalsDto>> historyForPatient(
             @PathVariable Integer patientId,
             @RequestParam UUID hospitalId) {
