@@ -43,10 +43,15 @@ import AmbulanceStatus from "@/pages/ambulance/AmbulanceStatus";
 import PackageManager from "@/pages/checkups/PackageManager";
 import CheckupBookings from "@/pages/checkups/CheckupBookings";
 import CheckupBookingDetail from "@/pages/checkups/CheckupBookingDetail";
+import UiGallery from "@/pages/dev/UiGallery";
 function App() {
   return <ErrorBoundary><ThemeProvider><AuthProvider><FeatureFlagsProvider><NotificationProvider><ReferenceDataProvider><BrowserRouter><Routes>{
     /* Public */
   }<Route path="/login" element={<Login />} /><Route path="/unauthorized" element={<Unauthorized />} /><Route path="/sso/callback" element={<SsoCallback />} />{
+    /* Dev-only — design-system gallery. Not gated by auth so it
+       loads even when the backend is unreachable. Stripped from
+       production builds via import.meta.env.DEV. */
+  }{import.meta.env.DEV && <Route path="/dev/ui-gallery" element={<UiGallery />} />}{
     /* Protected — authenticated + hospital assigned */
   }<Route element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><Layout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
