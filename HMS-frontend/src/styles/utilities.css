@@ -251,6 +251,10 @@
 .text-success { color: var(--hms-success); }
 .text-warning { color: var(--hms-warning); }
 .text-danger { color: var(--hms-danger); }
+.text-rose { color: #be123c; }
+.text-violet { color: #6d28d9; }
+.text-amber { color: #b45309; }
+.text-emerald { color: #059669; }
 
 .bg-white { background: var(--hms-white); }
 .bg-gray-50 { background: var(--hms-gray-50); }

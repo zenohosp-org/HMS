@@ -166,6 +166,368 @@
 }
 
 
+/* ─────────────────────────── Shift roster top nav card + legend ─────────────────────────── */
+.hms-shift-nav {
+    flex-direction: row !important;     /* override Card flex-col */
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px !important;
+}
+
+.hms-shift-nav__controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.hms-shift-nav__week-label {
+    flex: 1;
+    margin: 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-800);
+}
+
+.hms-shift-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.hms-shift-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-shift-legend__dot,
+.hms-shift-menu__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    flex-shrink: 0;
+}
+
+/* Domain-specific shift palette — page-local, not in tone set */
+.hms-shift-dot--oncall    { background: var(--hms-gray-400); }
+.hms-shift-dot--morning   { background: #f59e0b; }
+.hms-shift-dot--general   { background: var(--hms-info); }
+.hms-shift-dot--afternoon { background: #fb923c; }
+.hms-shift-dot--night     { background: #475569; }
+
+
+/* ─────────────────────────── Shift roster group card ─────────────────────────── */
+.hms-shift-group {
+    padding: 0 !important;
+    overflow: visible !important;       /* allow popover positioning */
+}
+
+.hms-shift-group__head {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--hms-gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hms-shift-group__title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hms-gray-700);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-shift-group__count {
+    margin-left: 8px;
+    font-weight: 400;
+    color: var(--hms-gray-400);
+    text-transform: none;
+}
+
+.hms-shift-group__paging {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hms-shift-group__paging-label {
+    font-size: 11px;
+    color: var(--hms-gray-400);
+    padding: 0 4px;
+}
+
+
+/* ─────────────────────────── Shift roster table ─────────────────────────── */
+.hms-shift-table-wrap {
+    overflow-x: auto;
+}
+
+.hms-shift-table {
+    width: 100%;
+    min-width: 700px;
+    border-collapse: collapse;
+}
+
+.hms-shift-table thead tr {
+    border-bottom: 1px solid var(--hms-gray-100);
+}
+
+.hms-shift-table__col-employee {
+    text-align: left;
+    padding: 8px 16px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--hms-gray-500);
+    width: 192px;
+}
+
+.hms-shift-table__col-day {
+    text-align: center;
+    padding: 8px;
+    width: 96px;
+    background: transparent;
+}
+
+.hms-shift-table__col-day.is-today {
+    background: var(--hms-info-bg);
+}
+
+.hms-shift-table__day-name {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--hms-gray-400);
+}
+
+.hms-shift-table__col-day.is-today .hms-shift-table__day-name {
+    color: var(--hms-info);
+}
+
+.hms-shift-table__day-num {
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 2px;
+    color: var(--hms-gray-700);
+}
+
+.hms-shift-table__col-day.is-today .hms-shift-table__day-num {
+    color: #0369a1;
+}
+
+.hms-shift-table tbody tr {
+    border-bottom: 1px solid var(--hms-gray-50);
+}
+
+.hms-shift-table__employee {
+    padding: 10px 16px;
+}
+
+.hms-shift-table__employee-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hms-shift-table__employee-body {
+    min-width: 0;
+}
+
+.hms-shift-table__employee-name {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-shift-table__employee-role {
+    margin: 0;
+    font-size: 10px;
+    color: var(--hms-gray-500);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-shift-table__cell {
+    padding: 8px 6px;
+    vertical-align: top;
+    position: relative;
+    background: transparent;
+}
+
+.hms-shift-table__cell.is-today {
+    background: rgba(239, 246, 255, 0.4);
+}
+
+.hms-shift-table__cell-body {
+    min-height: 52px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.hms-shift-table__loading {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-100);
+    background: var(--hms-gray-50);
+}
+
+
+/* ─────────────────────────── Shift chip (per shift type) ─────────────────────────── */
+.hms-shift-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.hms-shift-chip--oncall {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-600);
+    border-color: var(--hms-gray-200);
+}
+.hms-shift-chip--morning {
+    background: var(--hms-warning-bg);
+    color: #b45309;
+    border-color: var(--hms-warning-border);
+}
+.hms-shift-chip--general {
+    background: var(--hms-info-bg);
+    color: #0369a1;
+    border-color: var(--hms-info-border);
+}
+.hms-shift-chip--afternoon {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fed7aa;
+}
+.hms-shift-chip--night {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-800);
+    border-color: var(--hms-gray-300);
+}
+
+.hms-shift-chip__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+    opacity: 0.7;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.hms-shift-chip__remove:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+
+/* ─────────────────────────── Shift roster popover (assign menu) ─────────────────────────── */
+.hms-shift-menu {
+    min-width: 220px;
+}
+
+.hms-shift-menu__header {
+    padding: 6px 10px 4px;
+    border-bottom: 1px solid var(--hms-gray-100);
+    margin-bottom: 4px;
+}
+
+.hms-shift-menu__header-label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-shift-menu__time {
+    font-size: 10px;
+    color: var(--hms-gray-500);
+}
+
+
+/* ─────────────────────────── Shift roster: states (loading + empty) ─────────────────────────── */
+.hms-shift-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 96px 0;
+    color: var(--hms-gray-500);
+}
+
+.hms-shift-state.is-empty {
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hms-shift-state__icon-dim {
+    opacity: 0.3;
+}
+
+.hms-shift-state__icon-mid {
+    color: var(--hms-gray-300);
+}
+
+
+/* ─────────────────────────── Shift roster avatar tones (page-local) ─────────────────────────── */
+.hms-shift-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-700);
+}
+
+.hms-shift-avatar.is-doctor {
+    background: var(--hms-info-bg);
+    color: #0369a1;
+}
+
+.hms-shift-avatar.is-admin {
+    background: #fff1f2;
+    color: #be123c;
+}
+
+.hms-shift-avatar.is-technician {
+    background: var(--hms-warning-bg);
+    color: #b45309;
+}
+
+
 /* ─────────────────────────── Doctor schedule day pill (DoctorFormModal) ─────────────────────────── */
 .hms-day-pill {
     padding: 6px 14px;
@@ -246,5 +608,506 @@
 .hms-confirm-summary__sub {
     margin: 0;
     font-size: 12px;
+    color: var(--hms-gray-500);
+}
+
+
+/* ─────────────────────────── Stat tile (small KPI for StaffsList top row) ─────────────────────────── */
+.hms-stat-tile__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.hms-stat-tile__label {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-stat-tile__value {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+
+/* ─────────────────────────── StaffsList auto-fit grids ─────────────────────────── */
+.hms-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.hms-member-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+
+/* ─────────────────────────── Member card (StaffsList grid item) ─────────────────────────── */
+.hms-member-card {
+    gap: 14px !important;       /* override Card's default gap-sm */
+}
+
+.hms-member-card .hms-avatar {
+    border-width: 2px;
+}
+
+.hms-member-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.hms-member-card__identity {
+    display: flex;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.hms-member-card__name {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-member-card__code {
+    margin: 2px 0 0;
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--hms-gray-500);
+}
+
+.hms-member-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.hms-member-card__details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--hms-gray-500);
+}
+
+.hms-member-card__designation {
+    margin: 0;
+    font-weight: 600;
+    color: var(--hms-gray-700);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-member-card__department {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--hms-gray-700);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-member-card__line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hms-member-card__line.is-truncate {
+    overflow: hidden;
+}
+
+.hms-member-card__line.is-truncate > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-member-card__fee {
+    margin: 0;
+    font-weight: 700;
+    color: var(--hms-success);
+}
+
+
+/* ─────────────────────────── Skeleton placeholder strip (loading member card) ─────────────────────────── */
+.hms-skel {
+    background: var(--hms-gray-100);
+    border-radius: 4px;
+}
+
+.hms-skel.is-circle {
+    border-radius: 999px;
+}
+
+
+/* ─────────────────────────── Admissions stat tile (large icon left, value right) ─────────────────────────── */
+.hms-admit-stat {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hms-admit-stat__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Per-stat colors — page-local; not part of the design-system tone set. */
+.hms-admit-stat__icon.is-admitted {
+    background: var(--hms-success-bg);
+    color: var(--hms-success);
+}
+.hms-admit-stat__icon.is-ot {
+    background: #f5f3ff;
+    color: #7c3aed;
+}
+.hms-admit-stat__icon.is-today {
+    background: var(--hms-info-bg);
+    color: var(--hms-info);
+}
+.hms-admit-stat__icon.is-overdue {
+    background: #fff1f2;
+    color: #be123c;
+}
+
+.hms-admit-stat__value {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--hms-gray-900);
+}
+
+.hms-admit-stat__label {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+
+/* ─────────────────────────── Admissions grid view toggle ─────────────────────────── */
+.hms-view-toggle {
+    display: flex;
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.hms-view-toggle__btn {
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    background: var(--hms-white);
+    color: var(--hms-gray-500);
+    transition: background 0.15s;
+    font-family: var(--hms-font-family);
+}
+
+.hms-view-toggle__btn.is-active {
+    background: var(--hms-brand-primary);
+    color: var(--hms-white);
+}
+
+
+/* ─────────────────────────── Admissions card / row (status accent strip + content) ─────────────────────────── */
+.hms-admit-card {
+    position: relative;
+    padding: 16px;
+    gap: 12px !important;
+}
+
+.hms-admit-card.is-overdue {
+    border-left: 4px solid #fb7185;
+}
+
+.hms-admit-card.is-ot {
+    border-left: 4px solid #7c3aed;
+}
+
+.hms-admit-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.hms-admit-card__patient {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hms-admit-card__name {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--hms-gray-900);
+}
+
+.hms-admit-card__uhid {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-admit-card__pills {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.hms-admit-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--hms-gray-500);
+}
+
+.hms-admit-card__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hms-admit-card__footer {
+    padding-top: 12px;
+    border-top: 1px solid var(--hms-gray-100);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hms-admit-card__ids {
+    text-align: right;
+}
+
+.hms-admit-card__ipd {
+    margin: 0;
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.hms-admit-card__no {
+    margin: 0;
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--hms-gray-400);
+}
+
+
+/* ─────────────────────────── EMERGENCY admission type pill (Admissions card) ─────────────────────────── */
+.hms-emergency-pill {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--hms-danger);
+    color: var(--hms-white);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+
+/* ─────────────────────────── Admissions auto-fit grids ─────────────────────────── */
+.hms-admit-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.hms-admit-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+
+/* ─────────────────────────── Admissions stat card needs row layout ─────────────────────────── */
+.hms-admit-stat-card {
+    flex-direction: row !important;
+    align-items: center;
+    gap: 16px;
+}
+
+
+/* ─────────────────────────── Generic 40x40 patient/icon tile (Admissions card) ─────────────────────────── */
+.hms-admit-card__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-700);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+
+/* ─────────────────────────── Admissions filter row ─────────────────────────── */
+.hms-admit-filter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.hms-admit-filter__search {
+    flex: 1;
+    min-width: 260px;
+}
+
+
+/* ─────────────────────────── Admissions overdue / OT inline text accents ─────────────────────────── */
+.hms-admit-overdue-text {
+    color: #e11d48;
+    font-weight: 600;
+}
+
+.hms-admit-ot-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: #7c3aed;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hms-admit-no-room {
+    color: var(--hms-warning);
+    font-size: 11px;
+}
+
+
+/* ─────────────────────────── Admissions state (empty / loading) ─────────────────────────── */
+.hms-admit-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--hms-gray-400);
+    padding: 64px 0;
+}
+
+.hms-admit-state.is-empty {
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hms-admit-state__cta {
+    background: transparent;
+    border: none;
+    color: var(--hms-gray-900);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: var(--hms-font-family);
+}
+
+
+/* ─────────────────────────── Admissions list-view table ─────────────────────────── */
+.hms-admit-table-card {
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.hms-admit-table-wrap {
+    overflow-x: auto;
+}
+
+.hms-admit-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.hms-admit-table thead tr {
+    border-bottom: 1px solid var(--hms-gray-100);
+    background: var(--hms-gray-50);
+}
+
+.hms-admit-table th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-admit-table tbody tr {
+    border-bottom: 1px solid var(--hms-gray-100);
+    cursor: pointer;
+}
+
+.hms-admit-table tbody tr.is-overdue {
+    border-left: 4px solid #fb7185;
+}
+
+.hms-admit-table tbody tr.is-ot {
+    border-left: 4px solid #7c3aed;
+}
+
+.hms-admit-table td {
+    padding: 10px 16px;
+}
+
+.hms-admit-table__id-primary {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.hms-admit-table__id-secondary {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    color: var(--hms-gray-400);
+}
+
+.hms-admit-table__name {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--hms-gray-900);
+}
+
+.hms-admit-table__sub {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-admit-table__text {
+    font-size: 13px;
+    color: var(--hms-gray-600);
+}
+
+.hms-admit-table__text-sm {
+    font-size: 11px;
     color: var(--hms-gray-500);
 }

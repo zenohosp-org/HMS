@@ -29,11 +29,8 @@ import {
 const PAGE_SIZE = 30;
 
 /**
- * Doctors — hospital staff roster scoped to role=DOCTOR. Phase 6a
- * migration: same data layer, same auth gates, same kebab-menu
- * options (Edit / View / Activate-Deactivate / Remove). Inline custom
- * confirm dialog replaced with <Modal> + <Alert>. Avatar / contact
- * cells use inline styles reading --hms-* tokens.
+ * Doctors — hospital staff roster scoped to role=DOCTOR. Same data
+ * layer, auth gates and kebab-menu options as the pre-migration page.
  */
 function DoctorsList() {
     const { user } = useAuth();
@@ -99,28 +96,9 @@ function DoctorsList() {
     const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
     const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
 
-    const renderInitials = (firstName, lastName, size = 40) => {
+    const renderInitials = (firstName, lastName) => {
         const initials = `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
-        return (
-            <div
-                style={{
-                    width: size,
-                    height: size,
-                    borderRadius: 999,
-                    background: "var(--hms-info-bg)",
-                    color: "#0369a1",
-                    border: "1px solid var(--hms-info-border)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: size <= 40 ? 13 : 16,
-                    flexShrink: 0,
-                }}
-            >
-                {initials}
-            </div>
-        );
+        return <span className="hms-avatar is-md is-info">{initials}</span>;
     };
 
     const columns = [
@@ -128,13 +106,13 @@ function DoctorsList() {
             header: "Doctor",
             width: "28%",
             render: (d) => (
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div className="hms-entity-row">
                     {renderInitials(d.firstName, d.lastName)}
-                    <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, color: "var(--hms-gray-900)", fontSize: 14 }}>
+                    <div className="hms-entity-row__body">
+                        <div className="hms-entity-row__title">
                             Dr. {d.firstName} {d.lastName}
                         </div>
-                        <div style={{ fontSize: 12, color: "var(--hms-gray-500)", marginTop: 2 }}>
+                        <div className="hms-entity-row__sub">
                             {d.qualification || "N/A"}
                         </div>
                     </div>
@@ -145,7 +123,7 @@ function DoctorsList() {
             header: "Specialization",
             width: "16%",
             render: (d) => (
-                <span style={{ fontSize: 13, color: "var(--hms-gray-600)" }}>
+                <span className="text-13 text-gray-600">
                     {d.specialization || "General"}
                 </span>
             ),
@@ -155,10 +133,8 @@ function DoctorsList() {
             width: "24%",
             render: (d) => (
                 <div>
-                    <div style={{ fontSize: 13, color: "var(--hms-gray-600)" }}>{d.email}</div>
-                    <div style={{ fontSize: 12, color: "var(--hms-gray-500)", marginTop: 2 }}>
-                        {d.phone}
-                    </div>
+                    <div className="text-13 text-gray-600">{d.email}</div>
+                    <div className="text-12 text-gray-500 mt-1">{d.phone}</div>
                 </div>
             ),
         },
@@ -217,10 +193,10 @@ function DoctorsList() {
     ];
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
             <PageHeader
                 title={
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                    <span className="inline-flex items-center gap-3">
                         Doctors
                         <Badge tone="info">{doctors.length} total</Badge>
                     </span>
@@ -232,8 +208,8 @@ function DoctorsList() {
                 }
             />
 
-            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ maxWidth: 480 }}>
+            <div className="hms-page-content">
+                <div className="max-w-lg">
                     <SearchBar
                         value={search}
                         onChange={(v) => {
@@ -249,33 +225,14 @@ function DoctorsList() {
                     data={paginated}
                     loading={loading}
                     loadingMessage={
-                        <span style={{ color: "var(--hms-gray-500)" }}>Loading doctors…</span>
+                        <span className="text-gray-500">Loading doctors…</span>
                     }
                     emptyMessage={
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                gap: 10,
-                                padding: "16px 0",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: 999,
-                                    background: "var(--hms-gray-100)",
-                                    color: "var(--hms-gray-400)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
+                        <div className="hms-cell-empty">
+                            <span className="hms-cell-empty__icon">
                                 <Stethoscope size={22} />
-                            </div>
-                            <div style={{ color: "var(--hms-gray-500)", fontSize: 13 }}>
+                            </span>
+                            <div className="hms-cell-empty__text">
                                 {search
                                     ? "No doctors match your search."
                                     : "No doctors linked to this hospital."}
@@ -285,7 +242,7 @@ function DoctorsList() {
                 />
 
                 {!loading && filtered.length > 0 && totalPages > 1 && (
-                    <div style={{ paddingTop: 4 }}>
+                    <div className="pt-1">
                         <Pagination
                             currentPage={page}
                             totalPages={totalPages}
@@ -339,24 +296,13 @@ function DoctorsList() {
                     clinical records remain intact.
                 </Alert>
                 {confirmRemove && (
-                    <div
-                        style={{
-                            marginTop: 16,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            padding: 12,
-                            background: "var(--hms-gray-50)",
-                            border: "1px solid var(--hms-gray-200)",
-                            borderRadius: "var(--hms-radius)",
-                        }}
-                    >
+                    <div className="hms-confirm-summary">
                         {renderInitials(confirmRemove.firstName, confirmRemove.lastName)}
-                        <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, color: "var(--hms-gray-900)", fontSize: 14 }}>
+                        <div className="min-w-0">
+                            <div className="hms-confirm-summary__title">
                                 Dr. {confirmRemove.firstName} {confirmRemove.lastName}
                             </div>
-                            <div style={{ fontSize: 12, color: "var(--hms-gray-500)" }}>
+                            <div className="hms-confirm-summary__sub">
                                 {confirmRemove.specialization || "General"}
                             </div>
                         </div>

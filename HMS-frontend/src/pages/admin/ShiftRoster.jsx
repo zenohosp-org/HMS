@@ -10,45 +10,16 @@ import { Button, Card } from "@/components/ui";
  *  would let one group's roster monopolise the screen — keep at 5. */
 const GROUP_PAGE_SIZE = 5;
 
-/** Shift type palette — kept inline (page-specific, not a candidate
- *  for the design-system tone set). Each entry drives the legend dot,
- *  the day-cell badge, and the popover row. */
+/** Shift type palette — visual mapping lives in admin.css under
+ *  .hms-shift-dot--* and .hms-shift-chip--*. Domain-specific (ON_CALL
+ *  gray / MORNING amber / GENERAL blue / AFTERNOON orange / NIGHT
+ *  dark); not part of the global Badge tone set. */
 const SHIFTS = [
-    {
-        type: "ON_CALL",
-        label: "On call",
-        time: "00:00–23:59",
-        dot: "var(--hms-gray-400)",
-        badge: { bg: "var(--hms-gray-100)", color: "var(--hms-gray-600)", border: "var(--hms-gray-200)" },
-    },
-    {
-        type: "MORNING",
-        label: "Morning",
-        time: "06:00–14:00",
-        dot: "#f59e0b",
-        badge: { bg: "var(--hms-warning-bg)", color: "#b45309", border: "var(--hms-warning-border)" },
-    },
-    {
-        type: "GENERAL",
-        label: "General",
-        time: "09:00–17:00",
-        dot: "var(--hms-info)",
-        badge: { bg: "var(--hms-info-bg)", color: "#0369a1", border: "var(--hms-info-border)" },
-    },
-    {
-        type: "AFTERNOON",
-        label: "Afternoon",
-        time: "14:00–22:00",
-        dot: "#fb923c",
-        badge: { bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" },
-    },
-    {
-        type: "NIGHT",
-        label: "Night",
-        time: "22:00–06:00",
-        dot: "#475569",
-        badge: { bg: "var(--hms-gray-100)", color: "var(--hms-gray-800)", border: "var(--hms-gray-300)" },
-    },
+    { type: "ON_CALL",   label: "On call",   time: "00:00–23:59", mod: "oncall" },
+    { type: "MORNING",   label: "Morning",   time: "06:00–14:00", mod: "morning" },
+    { type: "GENERAL",   label: "General",   time: "09:00–17:00", mod: "general" },
+    { type: "AFTERNOON", label: "Afternoon", time: "14:00–22:00", mod: "afternoon" },
+    { type: "NIGHT",     label: "Night",     time: "22:00–06:00", mod: "night" },
 ];
 
 const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -68,11 +39,11 @@ function addDays(date, n) {
 function toISODate(d) {
     return d.toISOString().split("T")[0];
 }
-function getAvatarTone(role) {
-    if (role === "doctor") return { bg: "var(--hms-info-bg)", color: "#0369a1" };
-    if (role === "hospital_admin") return { bg: "#fff1f2", color: "#be123c" };
-    if (role === "technician") return { bg: "var(--hms-warning-bg)", color: "#b45309" };
-    return { bg: "var(--hms-gray-100)", color: "var(--hms-gray-700)" };
+function getAvatarMod(role) {
+    if (role === "doctor") return "is-doctor";
+    if (role === "hospital_admin") return "is-admin";
+    if (role === "technician") return "is-technician";
+    return "";
 }
 function getInitials(name) {
     const parts = name.trim().split(" ");
@@ -81,17 +52,10 @@ function getInitials(name) {
 
 /**
  * ShiftRoster — weekly grid editor for staff shift assignments.
- *
- * Phase 8b migration: same data layer (shiftsApi.getWeek/assign/remove,
- * staffApi.list, doctorsApi.list), same week-pagination math, same
- * per-group secondary pagination (5 members visible at a time). Each
- * day-cell still triggers a portalled popover; the popover now uses
- * the .hms-menu / .hms-menu-item classes added in Phase 6 so it shares
- * the design-system look used by every other kebab menu in the app.
- *
- * Shift colours stay inline — they're domain-specific (ON_CALL gray /
- * MORNING amber / GENERAL blue / AFTERNOON orange / NIGHT dark) and
- * don't belong in the global Badge tone set.
+ * Layout pieces live in admin.css under .hms-shift-*. The day-cell
+ * popover uses the .hms-menu primitive from hms-system.css plus
+ * .hms-shift-menu* tweaks; it stays a hand-rolled portal because the
+ * trigger is one of 7 day-cells per row rather than a single button.
  */
 function ShiftRoster() {
     const { user } = useAuth();
@@ -108,7 +72,6 @@ function ShiftRoster() {
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
     const todayStr = toISODate(new Date());
 
-    // Close popover on outside click
     useEffect(() => {
         const handler = (e) => {
             if (popoverRef.current && !popoverRef.current.contains(e.target)) {
@@ -119,7 +82,6 @@ function ShiftRoster() {
         return () => document.removeEventListener("mousedown", handler);
     }, [popover]);
 
-    // Close popover on any-ancestor scroll (matches Menu primitive UX)
     useEffect(() => {
         if (!popover) return;
         const close = () => setPopover(null);
@@ -155,7 +117,7 @@ function ShiftRoster() {
                 roleDisplay: doc ? "Doctor" : u.roleDisplay ?? u.role,
                 designation: doc ? doc.qualification ?? undefined : u.designation ?? undefined,
                 group,
-                avatarTone: getAvatarTone(role),
+                avatarMod: getAvatarMod(role),
             });
         });
         setStaffOptions(options);
@@ -233,15 +195,23 @@ function ShiftRoster() {
 
     const weekLabel = `${weekDays[0].getDate()} ${weekDays[0].toLocaleString("en-IN", { month: "short" })} – ${weekDays[6].getDate()} ${weekDays[6].toLocaleString("en-IN", { month: "short" })}, ${weekDays[0].getFullYear()}`;
 
+    /* The popover position is per-instance (x/y from a getBoundingClientRect)
+       so it stays as an inline style. Everything else moved to CSS. */
+    const popoverPositionStyle = popover && {
+        left: popover.x,
+        top: popover.flipUp ? undefined : popover.y + 4,
+        bottom: popover.flipUp ? window.innerHeight - popover.y + 4 : undefined,
+    };
+
     return (
         <>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="flex flex-col gap-3">
                 {/* Top nav card */}
-                <Card style={{ padding: "12px 16px", flexDirection: "row", alignItems: "center", gap: 12 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                <Card className="hms-shift-nav">
+                    <div className="hms-shift-nav__controls">
                         <button
                             type="button"
-                            className="hms-btn-icon"
+                            className="hms-shift-nav-btn"
                             onClick={() => setWeekStart((w) => addDays(w, -7))}
                             aria-label="Previous week"
                         >
@@ -256,53 +226,18 @@ function ShiftRoster() {
                         </Button>
                         <button
                             type="button"
-                            className="hms-btn-icon"
+                            className="hms-shift-nav-btn"
                             onClick={() => setWeekStart((w) => addDays(w, 7))}
                             aria-label="Next week"
                         >
                             <ChevronRight size={14} />
                         </button>
                     </div>
-                    <p
-                        style={{
-                            flex: 1,
-                            margin: 0,
-                            textAlign: "center",
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: "var(--hms-gray-800)",
-                        }}
-                    >
-                        {weekLabel}
-                    </p>
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            flexShrink: 0,
-                        }}
-                    >
+                    <p className="hms-shift-nav__week-label">{weekLabel}</p>
+                    <div className="hms-shift-legend">
                         {SHIFTS.map((s) => (
-                            <span
-                                key={s.type}
-                                style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    fontSize: 11,
-                                    color: "var(--hms-gray-500)",
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: 999,
-                                        background: s.dot,
-                                        flexShrink: 0,
-                                    }}
-                                />
+                            <span key={s.type} className="hms-shift-legend__item">
+                                <span className={`hms-shift-legend__dot hms-shift-dot--${s.mod}`} />
                                 {s.label}
                             </span>
                         ))}
@@ -311,34 +246,13 @@ function ShiftRoster() {
 
                 {/* Groups */}
                 {loading ? (
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: "96px 0",
-                        }}
-                    >
-                        <Loader2
-                            size={20}
-                            style={{ color: "var(--hms-gray-400)" }}
-                            className="animate-spin"
-                        />
+                    <div className="hms-shift-state">
+                        <Loader2 size={20} className="text-gray-400 animate-spin" />
                     </div>
                 ) : staffOptions.length === 0 ? (
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: "96px 0",
-                            gap: 12,
-                            color: "var(--hms-gray-500)",
-                        }}
-                    >
-                        <Users size={40} style={{ opacity: 0.3 }} />
-                        <p style={{ margin: 0, fontSize: 13 }}>No staff members found</p>
+                    <div className="hms-shift-state is-empty">
+                        <Users size={40} className="hms-shift-state__icon-dim" />
+                        <p className="m-0 text-13">No staff members found</p>
                     </div>
                 ) : (
                     groups.map(([groupName, members]) => {
@@ -351,57 +265,27 @@ function ShiftRoster() {
                         const setGPage = (p) =>
                             setGroupPages((prev) => ({ ...prev, [groupName]: p }));
                         return (
-                            <Card key={groupName} style={{ padding: 0, overflow: "visible" }}>
-                                <div
-                                    style={{
-                                        padding: "10px 16px",
-                                        borderBottom: "1px solid var(--hms-gray-100)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                    }}
-                                >
-                                    <p
-                                        style={{
-                                            margin: 0,
-                                            fontSize: 11,
-                                            fontWeight: 700,
-                                            color: "var(--hms-gray-700)",
-                                            textTransform: "uppercase",
-                                            letterSpacing: "0.06em",
-                                        }}
-                                    >
+                            <Card key={groupName} className="hms-shift-group">
+                                <div className="hms-shift-group__head">
+                                    <p className="hms-shift-group__title">
                                         {groupName}
-                                        <span
-                                            style={{
-                                                marginLeft: 8,
-                                                fontWeight: 400,
-                                                color: "var(--hms-gray-400)",
-                                                textTransform: "none",
-                                            }}
-                                        >
+                                        <span className="hms-shift-group__count">
                                             {members.length}{" "}
                                             {members.length === 1 ? "member" : "members"}
                                         </span>
                                     </p>
                                     {totalGroupPages > 1 && (
-                                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                        <div className="hms-shift-group__paging">
                                             <button
                                                 type="button"
                                                 onClick={() => setGPage(Math.max(1, gPage - 1))}
                                                 disabled={gPage === 1}
-                                                style={miniNavBtn(gPage === 1)}
+                                                className="hms-shift-nav-btn"
                                                 aria-label="Previous page"
                                             >
                                                 <ChevronLeft size={12} />
                                             </button>
-                                            <span
-                                                style={{
-                                                    fontSize: 11,
-                                                    color: "var(--hms-gray-400)",
-                                                    padding: "0 4px",
-                                                }}
-                                            >
+                                            <span className="hms-shift-group__paging-label">
                                                 {gPage}/{totalGroupPages}
                                             </span>
                                             <button
@@ -410,7 +294,7 @@ function ShiftRoster() {
                                                     setGPage(Math.min(totalGroupPages, gPage + 1))
                                                 }
                                                 disabled={gPage === totalGroupPages}
-                                                style={miniNavBtn(gPage === totalGroupPages)}
+                                                className="hms-shift-nav-btn"
                                                 aria-label="Next page"
                                             >
                                                 <ChevronRight size={12} />
@@ -419,22 +303,11 @@ function ShiftRoster() {
                                     )}
                                 </div>
 
-                                <div style={{ overflowX: "auto" }}>
-                                    <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse" }}>
+                                <div className="hms-shift-table-wrap">
+                                    <table className="hms-shift-table">
                                         <thead>
-                                            <tr style={{ borderBottom: "1px solid var(--hms-gray-100)" }}>
-                                                <th
-                                                    style={{
-                                                        textAlign: "left",
-                                                        padding: "8px 16px",
-                                                        fontSize: 10,
-                                                        fontWeight: 700,
-                                                        textTransform: "uppercase",
-                                                        letterSpacing: "0.06em",
-                                                        color: "var(--hms-gray-500)",
-                                                        width: 192,
-                                                    }}
-                                                >
+                                            <tr>
+                                                <th className="hms-shift-table__col-employee">
                                                     Employee
                                                 </th>
                                                 {weekDays.map((d) => {
@@ -443,31 +316,12 @@ function ShiftRoster() {
                                                     return (
                                                         <th
                                                             key={ds}
-                                                            style={{
-                                                                textAlign: "center",
-                                                                padding: "8px",
-                                                                width: 96,
-                                                                background: isToday ? "var(--hms-info-bg)" : "transparent",
-                                                            }}
+                                                            className={`hms-shift-table__col-day ${isToday ? "is-today" : ""}`}
                                                         >
-                                                            <div
-                                                                style={{
-                                                                    fontSize: 10,
-                                                                    textTransform: "uppercase",
-                                                                    letterSpacing: "0.05em",
-                                                                    color: isToday ? "var(--hms-info)" : "var(--hms-gray-400)",
-                                                                }}
-                                                            >
+                                                            <div className="hms-shift-table__day-name">
                                                                 {DAY_SHORT[d.getDay()]}
                                                             </div>
-                                                            <div
-                                                                style={{
-                                                                    fontSize: 13,
-                                                                    fontWeight: 700,
-                                                                    marginTop: 2,
-                                                                    color: isToday ? "#0369a1" : "var(--hms-gray-700)",
-                                                                }}
-                                                            >
+                                                            <div className="hms-shift-table__day-num">
                                                                 {d.getDate()}
                                                             </div>
                                                         </th>
@@ -477,55 +331,17 @@ function ShiftRoster() {
                                         </thead>
                                         <tbody>
                                             {visibleMembers.map((staff) => (
-                                                <tr
-                                                    key={staff.id}
-                                                    style={{
-                                                        borderBottom: "1px solid var(--hms-gray-50)",
-                                                    }}
-                                                >
-                                                    <td style={{ padding: "10px 16px" }}>
-                                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                                            <div
-                                                                style={{
-                                                                    width: 28,
-                                                                    height: 28,
-                                                                    borderRadius: 999,
-                                                                    background: staff.avatarTone.bg,
-                                                                    color: staff.avatarTone.color,
-                                                                    display: "inline-flex",
-                                                                    alignItems: "center",
-                                                                    justifyContent: "center",
-                                                                    fontSize: 11,
-                                                                    fontWeight: 700,
-                                                                    flexShrink: 0,
-                                                                }}
-                                                            >
+                                                <tr key={staff.id}>
+                                                    <td className="hms-shift-table__employee">
+                                                        <div className="hms-shift-table__employee-row">
+                                                            <span className={`hms-shift-avatar ${staff.avatarMod}`}>
                                                                 {getInitials(staff.name)}
-                                                            </div>
-                                                            <div style={{ minWidth: 0 }}>
-                                                                <p
-                                                                    style={{
-                                                                        margin: 0,
-                                                                        fontSize: 13,
-                                                                        fontWeight: 600,
-                                                                        color: "var(--hms-gray-800)",
-                                                                        overflow: "hidden",
-                                                                        textOverflow: "ellipsis",
-                                                                        whiteSpace: "nowrap",
-                                                                    }}
-                                                                >
+                                                            </span>
+                                                            <div className="hms-shift-table__employee-body">
+                                                                <p className="hms-shift-table__employee-name">
                                                                     {staff.name}
                                                                 </p>
-                                                                <p
-                                                                    style={{
-                                                                        margin: 0,
-                                                                        fontSize: 10,
-                                                                        color: "var(--hms-gray-500)",
-                                                                        overflow: "hidden",
-                                                                        textOverflow: "ellipsis",
-                                                                        whiteSpace: "nowrap",
-                                                                    }}
-                                                                >
+                                                                <p className="hms-shift-table__employee-role">
                                                                     {staff.designation ?? staff.roleDisplay}
                                                                 </p>
                                                             </div>
@@ -540,37 +356,14 @@ function ShiftRoster() {
                                                         return (
                                                             <td
                                                                 key={dateStr}
-                                                                style={{
-                                                                    padding: "8px 6px",
-                                                                    verticalAlign: "top",
-                                                                    background: isToday ? "rgba(239, 246, 255, 0.4)" : "transparent",
-                                                                    position: "relative",
-                                                                }}
+                                                                className={`hms-shift-table__cell ${isToday ? "is-today" : ""}`}
                                                             >
-                                                                <div
-                                                                    style={{
-                                                                        minHeight: 52,
-                                                                        display: "flex",
-                                                                        flexDirection: "column",
-                                                                        gap: 2,
-                                                                    }}
-                                                                >
+                                                                <div className="hms-shift-table__cell-body">
                                                                     {isAssigning ? (
-                                                                        <div
-                                                                            style={{
-                                                                                flex: 1,
-                                                                                display: "flex",
-                                                                                alignItems: "center",
-                                                                                justifyContent: "center",
-                                                                                borderRadius: 8,
-                                                                                border: "1px solid var(--hms-gray-100)",
-                                                                                background: "var(--hms-gray-50)",
-                                                                            }}
-                                                                        >
+                                                                        <div className="hms-shift-table__loading">
                                                                             <Loader2
                                                                                 size={12}
-                                                                                style={{ color: "var(--hms-gray-300)" }}
-                                                                                className="animate-spin"
+                                                                                className="hms-shift-state__icon-mid animate-spin"
                                                                             />
                                                                         </div>
                                                                     ) : dayShifts.length > 0 ? (
@@ -581,26 +374,13 @@ function ShiftRoster() {
                                                                                 return (
                                                                                     <div
                                                                                         key={s.id}
-                                                                                        style={{
-                                                                                            display: "flex",
-                                                                                            alignItems: "center",
-                                                                                            justifyContent: "space-between",
-                                                                                            gap: 4,
-                                                                                            padding: "6px 8px",
-                                                                                            borderRadius: 8,
-                                                                                            border: `1px solid ${meta.badge.border}`,
-                                                                                            background: meta.badge.bg,
-                                                                                            color: meta.badge.color,
-                                                                                            fontSize: 11,
-                                                                                            fontWeight: 600,
-                                                                                        }}
-                                                                                        className="hms-roster-chip"
+                                                                                        className={`hms-shift-chip hms-shift-chip--${meta.mod}`}
                                                                                     >
                                                                                         <span>{meta.label}</span>
                                                                                         <button
                                                                                             type="button"
                                                                                             onClick={() => handleRemove(s.id)}
-                                                                                            className="hms-roster-chip__x"
+                                                                                            className="hms-shift-chip__remove"
                                                                                             aria-label="Remove shift"
                                                                                         >
                                                                                             <X size={10} />
@@ -613,7 +393,7 @@ function ShiftRoster() {
                                                                                 onClick={(e) =>
                                                                                     openPopover(staff.id, dateStr, e.currentTarget)
                                                                                 }
-                                                                                style={addBtnStyle(false)}
+                                                                                className="hms-shift-add-btn"
                                                                             >
                                                                                 <Plus size={12} />
                                                                             </button>
@@ -624,7 +404,7 @@ function ShiftRoster() {
                                                                             onClick={(e) =>
                                                                                 openPopover(staff.id, dateStr, e.currentTarget)
                                                                             }
-                                                                            style={addBtnStyle(true)}
+                                                                            className="hms-shift-add-btn is-large"
                                                                         >
                                                                             <Plus size={14} />
                                                                         </button>
@@ -652,35 +432,13 @@ function ShiftRoster() {
                 createPortal(
                     <div
                         ref={popoverRef}
-                        className="hms-menu"
-                        style={{
-                            left: popover.x,
-                            top: popover.flipUp ? undefined : popover.y + 4,
-                            bottom: popover.flipUp ? window.innerHeight - popover.y + 4 : undefined,
-                            minWidth: 220,
-                        }}
+                        className="hms-menu hms-shift-menu"
+                        style={popoverPositionStyle}
                         onMouseDown={(e) => e.stopPropagation()}
                         role="menu"
                     >
-                        <div
-                            style={{
-                                padding: "6px 10px 4px",
-                                borderBottom: "1px solid var(--hms-gray-100)",
-                                marginBottom: 4,
-                            }}
-                        >
-                            <p
-                                style={{
-                                    margin: 0,
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    color: "var(--hms-gray-500)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.06em",
-                                }}
-                            >
-                                Assign shift
-                            </p>
+                        <div className="hms-shift-menu__header">
+                            <p className="hms-shift-menu__header-label">Assign shift</p>
                         </div>
                         {SHIFTS.map((s) => (
                             <button
@@ -693,19 +451,9 @@ function ShiftRoster() {
                                     handleAssign(s.type);
                                 }}
                             >
-                                <span
-                                    style={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: 999,
-                                        background: s.dot,
-                                        flexShrink: 0,
-                                    }}
-                                />
-                                <span style={{ flex: 1 }}>{s.label}</span>
-                                <span style={{ fontSize: 10, color: "var(--hms-gray-500)" }}>
-                                    {s.time}
-                                </span>
+                                <span className={`hms-shift-menu__dot hms-shift-dot--${s.mod}`} />
+                                <span className="flex-1">{s.label}</span>
+                                <span className="hms-shift-menu__time">{s.time}</span>
                             </button>
                         ))}
                     </div>,
@@ -714,36 +462,5 @@ function ShiftRoster() {
         </>
     );
 }
-
-const miniNavBtn = (disabled) => ({
-    width: 24,
-    height: 24,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 4,
-    border: "1px solid var(--hms-gray-200)",
-    background: "transparent",
-    color: "var(--hms-gray-400)",
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.3 : 1,
-    transition: "background 0.15s",
-});
-
-const addBtnStyle = (large) => ({
-    width: "100%",
-    flex: large ? 1 : undefined,
-    padding: large ? 0 : "4px 0",
-    minHeight: large ? 52 : undefined,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-    border: `1px ${large ? "solid" : "dashed"} var(--hms-gray-200)`,
-    background: large ? "var(--hms-gray-50)" : "transparent",
-    color: "var(--hms-gray-300)",
-    cursor: "pointer",
-    transition: "all 0.15s",
-});
 
 export { ShiftRoster as default };

@@ -41,23 +41,20 @@ const STATUS_TONE = {
     ABSCONDED: "danger",
 };
 
+/** Stat card icon palette — page-local; not part of the design-system
+ *  tone set. Each entry sets a background, an icon color, and the value
+ *  color through a single .is-* modifier on .hms-admit-stat__icon. */
+const STAT_ICON_MOD = {
+    admitted: "is-admitted",
+    ot:       "is-ot",
+    today:    "is-today",
+    overdue:  "is-overdue",
+};
+
 /** Admission type pill — rendered above the status badge. */
 function TypePill({ type }) {
     if (type === "EMERGENCY") {
-        return (
-            <span
-                style={{
-                    padding: "2px 8px",
-                    borderRadius: 999,
-                    background: "var(--hms-danger)",
-                    color: "var(--hms-white)",
-                    fontSize: 10,
-                    fontWeight: 700,
-                }}
-            >
-                EMERGENCY
-            </span>
-        );
+        return <span className="hms-emergency-pill">EMERGENCY</span>;
     }
     if (type === "OPD_REFERRAL") {
         return <Badge tone="info" soft>OPD referral</Badge>;
@@ -69,11 +66,8 @@ function TypePill({ type }) {
  * IPD Admissions — paginated, filterable list of in-patient admissions
  * with grid/list view toggle, four stat cards, and a modal cascade
  * (admit → discharge / move-to-OT / view-billing / detail pane).
- *
- * Phase 8c migration: data layer untouched (admissionApi.listPaginated/
- * returnToWard), same status filter trio (ADMITTED / DISCHARGED / ALL),
- * debounced search, server-driven counts. Modal opening/closing logic
- * preserved byte-for-byte.
+ * Layout pieces live in admin.css under .hms-admit-*. Status accents
+ * (overdue / inOt) flip a .is-overdue / .is-ot modifier on the card.
  */
 export default function Admissions() {
     const { user } = useAuth();
@@ -170,41 +164,17 @@ export default function Admissions() {
     };
 
     const statCards = [
-        {
-            label: "Active admissions",
-            value: counts.ADMITTED,
-            icon: BedDouble,
-            color: "var(--hms-success)",
-            bg: "var(--hms-success-bg)",
-        },
-        {
-            label: "In OT now",
-            value: counts.inOt,
-            icon: Scissors,
-            color: "#7c3aed",
-            bg: "#f5f3ff",
-        },
-        {
-            label: "Discharged today",
-            value: counts.dischargedToday,
-            icon: CheckCircle2,
-            color: "var(--hms-info)",
-            bg: "var(--hms-info-bg)",
-        },
-        {
-            label: "Overdue discharge",
-            value: counts.overdueDischarge,
-            icon: AlertCircle,
-            color: "#be123c",
-            bg: "#fff1f2",
-        },
+        { label: "Active admissions", value: counts.ADMITTED,         icon: BedDouble,   mod: STAT_ICON_MOD.admitted },
+        { label: "In OT now",         value: counts.inOt,              icon: Scissors,    mod: STAT_ICON_MOD.ot },
+        { label: "Discharged today",  value: counts.dischargedToday,   icon: CheckCircle2, mod: STAT_ICON_MOD.today },
+        { label: "Overdue discharge", value: counts.overdueDischarge,  icon: AlertCircle, mod: STAT_ICON_MOD.overdue },
     ];
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
             <PageHeader
                 title={
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                    <span className="inline-flex items-center gap-2.5">
                         <BedDouble size={20} /> IPD Admissions
                     </span>
                 }
@@ -216,70 +186,25 @@ export default function Admissions() {
                 }
             />
 
-            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="hms-page-content">
                 {/* Stat cards */}
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: 12,
-                    }}
-                >
-                    {statCards.map(({ label, value, icon: Icon, color, bg }) => (
-                        <Card
-                            key={label}
-                            style={{ flexDirection: "row", alignItems: "center", gap: 16 }}
-                        >
-                            <div
-                                style={{
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: 8,
-                                    background: bg,
-                                    color,
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    flexShrink: 0,
-                                }}
-                            >
+                <div className="hms-admit-stat-grid">
+                    {statCards.map(({ label, value, icon: Icon, mod }) => (
+                        <Card key={label} className="hms-admit-stat-card">
+                            <div className={`hms-admit-stat__icon ${mod}`}>
                                 <Icon size={20} />
                             </div>
                             <div>
-                                <p
-                                    style={{
-                                        margin: 0,
-                                        fontSize: 22,
-                                        fontWeight: 800,
-                                        color: "var(--hms-gray-900)",
-                                    }}
-                                >
-                                    {value}
-                                </p>
-                                <p
-                                    style={{
-                                        margin: 0,
-                                        fontSize: 11,
-                                        color: "var(--hms-gray-500)",
-                                    }}
-                                >
-                                    {label}
-                                </p>
+                                <p className="hms-admit-stat__value">{value}</p>
+                                <p className="hms-admit-stat__label">{label}</p>
                             </div>
                         </Card>
                     ))}
                 </div>
 
                 {/* Filter row */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        flexWrap: "wrap",
-                    }}
-                >
-                    <div style={{ flex: 1, minWidth: 260 }}>
+                <div className="hms-admit-filter">
+                    <div className="hms-admit-filter__search">
                         <SearchBar
                             value={search}
                             onChange={setSearch}
@@ -303,14 +228,7 @@ export default function Admissions() {
                             { id: "ALL", label: "All" },
                         ]}
                     />
-                    <div
-                        style={{
-                            display: "flex",
-                            border: "1px solid var(--hms-gray-200)",
-                            borderRadius: 8,
-                            overflow: "hidden",
-                        }}
-                    >
+                    <div className="hms-view-toggle">
                         {[
                             ["grid", LayoutGrid],
                             ["list", List],
@@ -319,20 +237,7 @@ export default function Admissions() {
                                 key={mode}
                                 type="button"
                                 onClick={() => setViewMode(mode)}
-                                style={{
-                                    padding: 10,
-                                    border: "none",
-                                    cursor: "pointer",
-                                    background:
-                                        viewMode === mode
-                                            ? "var(--hms-brand-primary)"
-                                            : "var(--hms-white)",
-                                    color:
-                                        viewMode === mode
-                                            ? "var(--hms-white)"
-                                            : "var(--hms-gray-500)",
-                                    transition: "background 0.15s",
-                                }}
+                                className={`hms-view-toggle__btn ${viewMode === mode ? "is-active" : ""}`}
                                 aria-pressed={viewMode === mode}
                                 aria-label={`${mode} view`}
                             >
@@ -343,129 +248,46 @@ export default function Admissions() {
                 </div>
 
                 {loading ? (
-                    <div
-                        style={{
-                            flex: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "var(--hms-gray-400)",
-                            padding: "64px 0",
-                        }}
-                    >
-                        Loading admissions…
-                    </div>
+                    <div className="hms-admit-state">Loading admissions…</div>
                 ) : admissions.length === 0 ? (
-                    <div
-                        style={{
-                            flex: 1,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 12,
-                            color: "var(--hms-gray-400)",
-                            padding: "64px 0",
-                        }}
-                    >
-                        <BedDouble size={48} style={{ opacity: 0.3 }} />
-                        <p style={{ margin: 0, fontSize: 13 }}>No admissions found</p>
+                    <div className="hms-admit-state is-empty">
+                        <BedDouble size={48} className="opacity-30" />
+                        <p className="m-0 text-13">No admissions found</p>
                         <button
                             type="button"
                             onClick={() => setShowAdmitModal(true)}
-                            style={{
-                                background: "transparent",
-                                border: "none",
-                                color: "var(--hms-gray-900)",
-                                fontSize: 13,
-                                fontWeight: 600,
-                                cursor: "pointer",
-                                textDecoration: "underline",
-                                fontFamily: "var(--hms-font-family)",
-                            }}
+                            className="hms-admit-state__cta"
                         >
                             Admit a patient →
                         </button>
                     </div>
                 ) : viewMode === "grid" ? (
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-                            gap: 16,
-                        }}
-                    >
+                    <div className="hms-admit-card-grid">
                         {admissions.map((a) => {
                             const overdue = isOverdue(a);
+                            const cardMod = overdue ? "is-overdue" : a.inOt ? "is-ot" : "";
                             return (
                                 <Card
                                     key={a.id}
                                     interactive
                                     onClick={() => setSelectedAdmission(a)}
-                                    style={{
-                                        padding: 16,
-                                        position: "relative",
-                                        gap: 12,
-                                        borderLeft: overdue
-                                            ? "4px solid #fb7185"
-                                            : a.inOt
-                                                ? "4px solid #7c3aed"
-                                                : undefined,
-                                    }}
+                                    className={`hms-admit-card ${cardMod}`}
                                 >
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            gap: 8,
-                                        }}
-                                    >
-                                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                            <div
-                                                style={{
-                                                    width: 40,
-                                                    height: 40,
-                                                    borderRadius: 8,
-                                                    background: "var(--hms-gray-100)",
-                                                    color: "var(--hms-gray-700)",
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    flexShrink: 0,
-                                                }}
-                                            >
+                                    <div className="hms-admit-card__head">
+                                        <div className="hms-admit-card__patient">
+                                            <span className="hms-admit-card__avatar">
                                                 <User size={18} />
-                                            </div>
+                                            </span>
                                             <div>
-                                                <p
-                                                    style={{
-                                                        margin: 0,
-                                                        fontSize: 14,
-                                                        fontWeight: 600,
-                                                        color: "var(--hms-gray-900)",
-                                                    }}
-                                                >
+                                                <p className="hms-admit-card__name">
                                                     {a.patientName}
                                                 </p>
-                                                <p
-                                                    style={{
-                                                        margin: 0,
-                                                        fontSize: 11,
-                                                        color: "var(--hms-gray-500)",
-                                                    }}
-                                                >
+                                                <p className="hms-admit-card__uhid">
                                                     UHID: {fmtId(a.patientUhid)}
                                                 </p>
                                             </div>
                                         </div>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                alignItems: "flex-end",
-                                                gap: 4,
-                                            }}
-                                        >
+                                        <div className="hms-admit-card__pills">
                                             <TypePill type={a.admissionType} />
                                             {a.inOt && (
                                                 <Badge tone="violet" soft>
@@ -477,77 +299,40 @@ export default function Admissions() {
                                             )}
                                         </div>
                                     </div>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 6,
-                                            fontSize: 12,
-                                            color: "var(--hms-gray-500)",
-                                        }}
-                                    >
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                            <Building2 size={14} style={{ flexShrink: 0 }} />
+                                    <div className="hms-admit-card__body">
+                                        <div className="hms-admit-card__row">
+                                            <Building2 size={14} className="shrink-0" />
                                             <span>{a.departmentName || "No department"}</span>
                                         </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                            <BedDouble size={14} style={{ flexShrink: 0 }} />
+                                        <div className="hms-admit-card__row">
+                                            <BedDouble size={14} className="shrink-0" />
                                             <span>{a.roomNumber ? roomLabel(a) : "Room not assigned"}</span>
                                         </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                            <Stethoscope size={14} style={{ flexShrink: 0 }} />
+                                        <div className="hms-admit-card__row">
+                                            <Stethoscope size={14} className="shrink-0" />
                                             <span>
                                                 {a.admittingDoctorName
                                                     ? `Dr. ${a.admittingDoctorName}`
                                                     : "No doctor assigned"}
                                             </span>
                                         </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                            <Clock size={14} style={{ flexShrink: 0 }} />
+                                        <div className="hms-admit-card__row">
+                                            <Clock size={14} className="shrink-0" />
                                             <span>{timeAgo(a.admissionDate)}</span>
                                             {overdue && (
-                                                <span style={{ color: "#e11d48", fontWeight: 600 }}>· Overdue</span>
+                                                <span className="hms-admit-overdue-text">· Overdue</span>
                                             )}
                                         </div>
                                     </div>
-                                    <div
-                                        style={{
-                                            paddingTop: 12,
-                                            borderTop: "1px solid var(--hms-gray-100)",
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                        }}
-                                    >
+                                    <div className="hms-admit-card__footer">
                                         <Badge tone={STATUS_TONE[a.status] || "neutral"} soft>
                                             {a.status}
                                         </Badge>
-                                        <div style={{ textAlign: "right" }}>
+                                        <div className="hms-admit-card__ids">
                                             {a.ipdId && (
-                                                <p
-                                                    style={{
-                                                        margin: 0,
-                                                        fontSize: 11,
-                                                        fontFamily:
-                                                            "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                                        fontWeight: 700,
-                                                        color: "var(--hms-gray-900)",
-                                                    }}
-                                                >
-                                                    {fmtId(a.ipdId)}
-                                                </p>
+                                                <p className="hms-admit-card__ipd">{fmtId(a.ipdId)}</p>
                                             )}
-                                            <p
-                                                style={{
-                                                    margin: 0,
-                                                    fontSize: 10,
-                                                    fontFamily:
-                                                        "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                                    color: "var(--hms-gray-400)",
-                                                }}
-                                            >
-                                                {fmtId(a.admissionNumber)}
-                                            </p>
+                                            <p className="hms-admit-card__no">{fmtId(a.admissionNumber)}</p>
                                         </div>
                                     </div>
                                 </Card>
@@ -555,16 +340,11 @@ export default function Admissions() {
                         })}
                     </div>
                 ) : (
-                    <Card style={{ padding: 0, overflow: "hidden" }}>
-                        <div style={{ overflowX: "auto" }}>
-                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <Card className="hms-admit-table-card">
+                        <div className="hms-admit-table-wrap">
+                            <table className="hms-admit-table">
                                 <thead>
-                                    <tr
-                                        style={{
-                                            borderBottom: "1px solid var(--hms-gray-100)",
-                                            background: "var(--hms-gray-50)",
-                                        }}
-                                    >
+                                    <tr>
                                         {[
                                             "Adm. no.",
                                             "Patient",
@@ -574,132 +354,63 @@ export default function Admissions() {
                                             "Admitted",
                                             "Status",
                                         ].map((h) => (
-                                            <th
-                                                key={h}
-                                                style={{
-                                                    padding: "10px 16px",
-                                                    textAlign: "left",
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    color: "var(--hms-gray-500)",
-                                                    textTransform: "uppercase",
-                                                    letterSpacing: "0.06em",
-                                                }}
-                                            >
-                                                {h}
-                                            </th>
+                                            <th key={h}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {admissions.map((a) => {
                                         const overdue = isOverdue(a);
+                                        const rowMod = overdue ? "is-overdue" : a.inOt ? "is-ot" : "";
                                         return (
                                             <tr
                                                 key={a.id}
                                                 onClick={() => setSelectedAdmission(a)}
-                                                style={{
-                                                    borderBottom: "1px solid var(--hms-gray-100)",
-                                                    cursor: "pointer",
-                                                    borderLeft: overdue
-                                                        ? "4px solid #fb7185"
-                                                        : a.inOt
-                                                            ? "4px solid #7c3aed"
-                                                            : undefined,
-                                                }}
+                                                className={rowMod}
                                             >
-                                                <td style={{ padding: "10px 16px" }}>
+                                                <td>
                                                     {a.ipdId && (
-                                                        <p
-                                                            style={{
-                                                                margin: 0,
-                                                                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                                                fontSize: 11,
-                                                                fontWeight: 700,
-                                                                color: "var(--hms-gray-900)",
-                                                            }}
-                                                        >
+                                                        <p className="hms-admit-table__id-primary">
                                                             {fmtId(a.ipdId)}
                                                         </p>
                                                     )}
-                                                    <p
-                                                        style={{
-                                                            margin: 0,
-                                                            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                                            fontSize: 10,
-                                                            color: "var(--hms-gray-400)",
-                                                        }}
-                                                    >
+                                                    <p className="hms-admit-table__id-secondary">
                                                         {fmtId(a.admissionNumber)}
                                                     </p>
                                                 </td>
-                                                <td style={{ padding: "10px 16px" }}>
-                                                    <p
-                                                        style={{
-                                                            margin: 0,
-                                                            fontSize: 13,
-                                                            fontWeight: 500,
-                                                            color: "var(--hms-gray-900)",
-                                                        }}
-                                                    >
-                                                        {a.patientName}
-                                                    </p>
-                                                    <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>
+                                                <td>
+                                                    <p className="hms-admit-table__name">{a.patientName}</p>
+                                                    <p className="hms-admit-table__sub">
                                                         {fmtId(a.patientUhid)}
                                                     </p>
                                                 </td>
-                                                <td
-                                                    style={{
-                                                        padding: "10px 16px",
-                                                        fontSize: 13,
-                                                        color: "var(--hms-gray-600)",
-                                                    }}
-                                                >
+                                                <td className="hms-admit-table__text">
                                                     {a.departmentName || "—"}
                                                 </td>
-                                                <td style={{ padding: "10px 16px" }}>
-                                                    <p style={{ margin: 0, fontSize: 13, color: "var(--hms-gray-600)" }}>
+                                                <td>
+                                                    <p className="hms-admit-table__text m-0">
                                                         {a.roomNumber || (
-                                                            <span style={{ color: "var(--hms-warning)", fontSize: 11 }}>
+                                                            <span className="hms-admit-no-room">
                                                                 Not assigned
                                                             </span>
                                                         )}
                                                     </p>
                                                     {a.inOt && (
-                                                        <span
-                                                            style={{
-                                                                fontSize: 11,
-                                                                fontWeight: 600,
-                                                                color: "#7c3aed",
-                                                                display: "inline-flex",
-                                                                alignItems: "center",
-                                                                gap: 4,
-                                                            }}
-                                                        >
+                                                        <span className="hms-admit-ot-text">
                                                             <Scissors size={12} /> In OT
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td
-                                                    style={{
-                                                        padding: "10px 16px",
-                                                        fontSize: 13,
-                                                        color: "var(--hms-gray-600)",
-                                                    }}
-                                                >
+                                                <td className="hms-admit-table__text">
                                                     {a.admittingDoctorName ? `Dr. ${a.admittingDoctorName}` : "—"}
                                                 </td>
                                                 <td
-                                                    style={{
-                                                        padding: "10px 16px",
-                                                        fontSize: 11,
-                                                        color: "var(--hms-gray-500)",
-                                                    }}
+                                                    className="hms-admit-table__text-sm"
                                                     title={fmtDateTime(a.admissionDate)}
                                                 >
                                                     {timeAgo(a.admissionDate)}
                                                 </td>
-                                                <td style={{ padding: "10px 16px" }}>
+                                                <td>
                                                     <Badge tone={STATUS_TONE[a.status] || "neutral"} soft>
                                                         {a.status}
                                                     </Badge>
