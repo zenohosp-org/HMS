@@ -1959,3 +1959,664 @@
     color: var(--hms-gray-400);
     text-align: center;
 }
+
+
+/* ─────────────────────────── DoctorDetails: fullscreen split-pane page ─────────────────────────── */
+.hms-detail-page {
+    display: flex;
+    gap: 0;
+    height: calc(100vh - 3.5rem);
+    width: calc(100% + 3rem);
+    margin: -1.5rem -1.5rem 0;
+    overflow: hidden;
+    background: var(--hms-white);
+}
+
+.hms-detail-page__aside {
+    width: 288px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--hms-white);
+    border-right: 1px solid var(--hms-gray-200);
+    overflow-y: auto;
+}
+
+.hms-detail-page__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--hms-gray-50);
+}
+
+
+/* Aside top: back button + edit */
+.hms-detail-aside__topbar {
+    padding: 20px 20px 12px;
+    border-bottom: 1px solid var(--hms-gray-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hms-detail-aside__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--hms-gray-500);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-family: var(--hms-font-family);
+}
+
+
+/* Aside hero: avatar + name + subtitle + status */
+.hms-detail-aside__hero {
+    padding: 24px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--hms-gray-200);
+}
+
+.hms-detail-aside__hero-avatar {
+    margin: 0 auto 12px;
+}
+
+.hms-detail-aside__name {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    line-height: 1.2;
+}
+
+.hms-detail-aside__subtitle {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--hms-gray-500);
+}
+
+.hms-detail-aside__reg {
+    margin: 12px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+}
+
+
+/* Status dot inside a Badge (the small green dot when Active) */
+.hms-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    margin-right: 4px;
+}
+
+.hms-status-dot.is-success { background: var(--hms-success); }
+
+
+/* Aside body — sections of side info rows */
+.hms-detail-aside__sections {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    flex: 1;
+}
+
+.hms-side-section__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.hms-side-section__title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--hms-gray-700);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-side-section__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hms-side-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.hms-side-info__icon {
+    flex-shrink: 0;
+    color: var(--hms-gray-400);
+    margin-top: 2px;
+}
+
+.hms-side-info__label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-side-info__value {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--hms-gray-700);
+}
+
+
+/* Main pane tab bar */
+.hms-detail-tabs {
+    padding: 20px 24px 0;
+    background: var(--hms-white);
+    border-bottom: 1px solid var(--hms-gray-200);
+    flex-shrink: 0;
+}
+
+.hms-detail-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+
+/* DoctorDetails: section card (Billing & schedule / Medical registration) */
+.hms-detail-section {
+    padding: 0 !important;
+}
+
+.hms-detail-section__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--hms-gray-100);
+}
+
+.hms-detail-section__icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hms-detail-section__icon.is-success {
+    background: var(--hms-success-bg);
+    color: var(--hms-success);
+}
+
+.hms-detail-section__icon.is-info {
+    background: var(--hms-info-bg);
+    color: var(--hms-info);
+}
+
+.hms-detail-section__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+}
+
+.hms-detail-section__body {
+    padding: 20px;
+}
+
+.hms-detail-section__body.is-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+
+/* DoctorDetails: stat row + stat card content */
+.hms-doctor-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.hms-doctor-stat__head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--hms-gray-500);
+    margin-bottom: 8px;
+}
+
+.hms-doctor-stat__value {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.hms-doctor-stat__sub {
+    margin: 4px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+
+/* DoctorDetails: fee tile grid + tile */
+.hms-fee-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.hms-fee-tile {
+    padding: 14px;
+    background: var(--hms-gray-50);
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-200);
+}
+
+.hms-fee-tile.is-accent {
+    background: var(--hms-success-bg);
+    border-color: var(--hms-success-border);
+}
+
+.hms-fee-tile__label {
+    margin: 0 0 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-fee-tile.is-accent .hms-fee-tile__label { color: #166534; }
+
+.hms-fee-tile__row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hms-fee-tile__row > svg { color: var(--hms-gray-400); }
+
+.hms-fee-tile__value {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--hms-gray-900);
+}
+
+
+/* DoctorDetails: small day chip (compact pill in available-days strip) */
+.hms-day-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-400);
+    border: 1px solid var(--hms-gray-200);
+}
+
+.hms-day-chip.is-on {
+    background: var(--hms-info-bg);
+    color: #0369a1;
+    border-color: var(--hms-info-border);
+}
+
+
+/* DoctorDetails: appointment card with status accent strip */
+.hms-detail-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.hms-appt-card {
+    padding: 20px !important;
+    position: relative;
+    overflow: hidden;
+    gap: 12px !important;
+}
+
+.hms-appt-card__stripe {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+}
+
+.hms-appt-card__stripe.is-success { background: var(--hms-success); }
+.hms-appt-card__stripe.is-danger  { background: var(--hms-danger); }
+.hms-appt-card__stripe.is-warning { background: var(--hms-warning); }
+.hms-appt-card__stripe.is-info    { background: var(--hms-info); }
+
+.hms-appt-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.hms-appt-card__date {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--hms-gray-800);
+}
+
+.hms-appt-card__time {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--hms-gray-500);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hms-appt-card__patient {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hms-appt-card__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-700);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.hms-appt-card__name {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+}
+
+.hms-appt-card__type {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+
+/* Reason for visit panel */
+.hms-appt-reason {
+    background: var(--hms-gray-50);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-100);
+}
+
+.hms-appt-reason__label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-appt-reason__quote {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--hms-gray-700);
+    line-height: 1.5;
+    font-style: italic;
+}
+
+
+/* Patient card (row layout in PatientsTab) */
+.hms-patient-card {
+    flex-direction: row !important;
+    align-items: center;
+    gap: 16px;
+}
+
+.hms-patient-card__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: var(--hms-gray-100);
+    border: 1px solid var(--hms-gray-200);
+    color: var(--hms-gray-700);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.hms-patient-card__name {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-patient-card__sub {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+
+/* Schedule editor: per-day row */
+.hms-schedule-day {
+    border-radius: 12px;
+    border: 1px solid var(--hms-gray-200);
+    background: var(--hms-white);
+    transition: all 0.15s;
+}
+
+.hms-schedule-day.is-off {
+    background: var(--hms-gray-50);
+    opacity: 0.6;
+}
+
+.hms-schedule-day__row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+}
+
+.hms-schedule-day__name-col {
+    width: 112px;
+    flex-shrink: 0;
+}
+
+.hms-schedule-day__name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hms-schedule-day__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--hms-gray-300);
+}
+
+.hms-schedule-day.is-on .hms-schedule-day__dot { background: var(--hms-success); }
+
+.hms-schedule-day__name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-700);
+}
+
+.hms-schedule-day__off {
+    margin: 4px 0 0 16px;
+    font-size: 10px;
+    color: var(--hms-gray-400);
+}
+
+.hms-schedule-day__inputs {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.hms-schedule-day__hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--hms-gray-400);
+}
+
+
+/* Slot field (label + control) */
+.hms-slot-field__label {
+    margin: 0 0 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+
+/* Schedule preview bar (windowed summary at bottom of day row) */
+.hms-schedule-bar {
+    padding: 0 20px 12px;
+}
+
+.hms-schedule-bar__inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--hms-gray-50);
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-100);
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+
+/* Centered empty state (with icon + title + description) */
+.hms-center-empty {
+    padding: 64px 0;
+    text-align: center;
+}
+
+.hms-center-empty__icon {
+    color: var(--hms-gray-300);
+    margin-bottom: 12px;
+}
+
+.hms-center-empty__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-500);
+}
+
+.hms-center-empty__desc {
+    margin: 4px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+}
+
+
+/* Inline link-style button (used in Schedule "Edit doctor" cta) */
+.hms-link-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--hms-gray-600);
+    text-decoration: underline;
+    cursor: pointer;
+    font: inherit;
+}
+
+.hms-link-btn.is-info {
+    color: var(--hms-info);
+    text-decoration: none;
+    font-size: 11px;
+    margin-top: 6px;
+    font-family: var(--hms-font-family);
+}
+
+
+/* DoctorDetails: full-screen loading + 404 wrappers */
+.hms-detail-loading,
+.hms-detail-notfound {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: var(--hms-white);
+}
+
+.hms-detail-notfound {
+    flex-direction: column;
+    gap: 16px;
+}
+
+
+/* DoctorDetails: section heading for the schedule / appointments tab heads */
+.hms-tab-head {
+    margin-bottom: 20px;
+}
+
+.hms-tab-head__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+}
+
+.hms-tab-head__sub {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--hms-gray-500);
+}
+
+
+/* DoctorDetails: available-days strip section label */
+.hms-available-label {
+    margin: 0 0 10px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+
+/* DoctorDetails: schedule tab head (title + Save button) */
+.hms-schedule-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
