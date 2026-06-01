@@ -39,11 +39,21 @@ import {
  * variants and states so a regression in hms-system.css or in the React
  * shells surfaces immediately. Interactive demos cover the components
  * whose behaviour can't be verified statically (Modal/Drawer/Tabs/
- * SearchBar).
- *
- * No business logic — safe to mount on any branch. Public route so it
- * works without backend auth.
+ * SearchBar). Public route so it works without backend auth — no
+ * business logic, safe to mount on any branch.
  */
+const TOKEN_KEYS = [
+    "brand-primary",
+    "gray-50",
+    "gray-200",
+    "gray-500",
+    "gray-800",
+    "success",
+    "warning",
+    "danger",
+    "info",
+];
+
 export default function UiGallery() {
     const [tab, setTab] = useState("overview");
     const [pillTab, setPillTab] = useState("opd");
@@ -61,7 +71,7 @@ export default function UiGallery() {
     ];
 
     return (
-        <div style={{ minHeight: "100vh", background: "var(--hms-gray-50)" }}>
+        <div className="min-h-screen bg-gray-50">
             <PageHeader
                 title="HMS UI Gallery"
                 subtitle="Phase 2 design-system primitives — visual + interaction reference"
@@ -76,8 +86,7 @@ export default function UiGallery() {
                 }
             />
 
-            <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 32px", display: "flex", flexDirection: "column", gap: 32 }}>
-                {/* -------------------------------------------------- */}
+            <div className="max-w-7xl mx-auto px-8 py-6 flex flex-col gap-8">
                 <Section title="Buttons">
                     <Row>
                         <Button variant="primary">Primary</Button>
@@ -108,27 +117,25 @@ export default function UiGallery() {
                     </Row>
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Cards">
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+                    <div className="hms-stat-grid">
                         <Card>
                             <strong>Plain card</strong>
-                            <p style={{ margin: 0, color: "var(--hms-gray-500)", fontSize: 13 }}>
+                            <p className="m-0 text-13 text-gray-500">
                                 Default surface used across the app.
                             </p>
                         </Card>
                         <Card interactive>
                             <strong>Interactive card</strong>
-                            <p style={{ margin: 0, color: "var(--hms-gray-500)", fontSize: 13 }}>Hover to lift.</p>
+                            <p className="m-0 text-13 text-gray-500">Hover to lift.</p>
                         </Card>
                         <Card glass>
                             <strong>Glass card</strong>
-                            <p style={{ margin: 0, color: "var(--hms-gray-500)", fontSize: 13 }}>Translucent variant.</p>
+                            <p className="m-0 text-13 text-gray-500">Translucent variant.</p>
                         </Card>
                     </div>
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Badges">
                     <Row>
                         <Badge tone="success">Success</Badge>
@@ -144,10 +151,9 @@ export default function UiGallery() {
                     </Row>
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Form fields">
                     <Card>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                        <div className="hms-form-grid is-2col">
                             <FormGroup label="Patient name" hint="As shown on ID">
                                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Anita Sharma" />
                             </FormGroup>
@@ -176,21 +182,19 @@ export default function UiGallery() {
                     </Card>
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Search bar">
-                    <div style={{ maxWidth: 480 }}>
+                    <div className="max-w-md">
                         <SearchBar
                             value={search}
                             onChange={setSearch}
                             placeholder="Search patients by name or MRN…"
                         />
                     </div>
-                    <p style={{ margin: "8px 0 0", color: "var(--hms-gray-500)", fontSize: 12 }}>
+                    <p className="mt-2 mb-0 text-gray-500 text-12">
                         Current value: <code>{JSON.stringify(search)}</code>
                     </p>
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Tabs — underline (page navigation)">
                     <Tabs
                         type="underline"
@@ -224,7 +228,6 @@ export default function UiGallery() {
                     />
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Table">
                     <Table
                         columns={[
@@ -253,7 +256,6 @@ export default function UiGallery() {
                     />
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Empty state">
                     <EmptyState
                         icon={<FileSearch size={24} />}
@@ -263,9 +265,8 @@ export default function UiGallery() {
                     />
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Alerts">
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div className="flex flex-col gap-2">
                         <Alert tone="info" icon={<Info size={16} />} title="Note">
                             New external lab entries are scoped to this appointment only.
                         </Alert>
@@ -281,7 +282,6 @@ export default function UiGallery() {
                     </div>
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Overlays — Modal & Drawer">
                     <Row>
                         <Button variant="secondary" onClick={() => setModalSize("sm")}>Small modal</Button>
@@ -292,15 +292,14 @@ export default function UiGallery() {
                     </Row>
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Menu (dropdown / kebab popover)">
                     <Card>
-                        <p style={{ margin: 0, color: "var(--hms-gray-500)", fontSize: 13 }}>
+                        <p className="m-0 text-13 text-gray-500">
                             Portalled to <code>#modal-root</code> and positioned from the trigger's
                             <code> getBoundingClientRect()</code> — never clips inside table overflow.
                             Closes on outside click, ESC, and any ancestor scroll.
                         </p>
-                        <div style={{ display: "flex", gap: 24, marginTop: 12, alignItems: "center" }}>
+                        <div className="flex gap-6 mt-3 items-center">
                             <Menu
                                 triggerIcon={<MoreHorizontal size={18} />}
                                 triggerLabel="Row actions"
@@ -312,12 +311,12 @@ export default function UiGallery() {
                                     { label: "Delete", icon: <Trash2 size={14} />, tone: "danger", onClick: () => console.log("delete") },
                                 ]}
                             />
-                            <span style={{ fontSize: 12, color: "var(--hms-gray-500)" }}>
+                            <span className="text-12 text-gray-500">
                                 ← kebab trigger; right-anchored
                             </span>
-                            <span style={{ flex: 1 }} />
+                            <span className="flex-1" />
                             <Menu
-                                triggerIcon={<>Actions <MoreHorizontal size={14} style={{ marginLeft: 6 }} /></>}
+                                triggerIcon={<>Actions <MoreHorizontal size={14} className="ml-1" /></>}
                                 triggerClassName="hms-btn-secondary is-sm"
                                 triggerLabel="Bulk actions"
                                 align="left"
@@ -328,28 +327,20 @@ export default function UiGallery() {
                                     { label: "Remove selected", icon: <Trash2 size={14} />, tone: "danger", disabled: true },
                                 ]}
                             />
-                            <span style={{ fontSize: 12, color: "var(--hms-gray-500)" }}>
+                            <span className="text-12 text-gray-500">
                                 button trigger; left-anchored
                             </span>
                         </div>
                     </Card>
                 </Section>
 
-                {/* -------------------------------------------------- */}
                 <Section title="Live tokens (read directly from :root)">
                     <Card>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, fontSize: 12 }}>
-                            {["brand-primary", "gray-50", "gray-200", "gray-500", "gray-800", "success", "warning", "danger", "info"].map((k) => (
-                                <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div className="hms-token-grid">
+                            {TOKEN_KEYS.map((k) => (
+                                <div key={k} className="flex items-center gap-2 text-12">
                                     <span
-                                        style={{
-                                            width: 24,
-                                            height: 24,
-                                            borderRadius: 4,
-                                            border: "1px solid var(--hms-gray-200)",
-                                            background: `var(--hms-${k})`,
-                                            flexShrink: 0,
-                                        }}
+                                        className={`hms-color-swatch hms-color-swatch--${k}`}
                                     />
                                     <code>--hms-{k}</code>
                                 </div>
@@ -358,7 +349,7 @@ export default function UiGallery() {
                     </Card>
                 </Section>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--hms-gray-400)", fontSize: 12, padding: "16px 0" }}>
+                <div className="flex items-center gap-2 text-gray-400 text-12 py-4">
                     <Activity size={14} /> Gallery page is dev-only — not linked from the app shell. Mount path is <code>/dev/ui-gallery</code>.
                 </div>
             </div>
@@ -375,11 +366,11 @@ export default function UiGallery() {
                     </>
                 }
             >
-                <p style={{ margin: 0 }}>
+                <p className="m-0">
                     This modal is portalled to <code>#modal-root</code>. ESC closes, click on the dark backdrop closes,
                     clicks inside the dialog don't bubble out.
                 </p>
-                <p style={{ marginTop: 12, color: "var(--hms-gray-500)" }}>
+                <p className="mt-3 text-gray-500">
                     Use this for forms (e.g. new patient, new prescription), confirmations, and any blocking dialog.
                 </p>
             </Modal>
@@ -399,7 +390,7 @@ export default function UiGallery() {
                 <FormGroup label="Patient name">
                     <Input placeholder="Anita Sharma" />
                 </FormGroup>
-                <div style={{ height: 12 }} />
+                <div className="hms-gallery-spacer" />
                 <FormGroup label="Notes">
                     <Textarea rows={5} placeholder="Anything to flag…" />
                 </FormGroup>
@@ -411,14 +402,12 @@ export default function UiGallery() {
 function Section({ title, children }) {
     return (
         <section>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: "var(--hms-gray-500)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px" }}>
-                {title}
-            </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>{children}</div>
+            <h2 className="hms-section-label mb-3">{title}</h2>
+            <div className="flex flex-col gap-3">{children}</div>
         </section>
     );
 }
 
 function Row({ children }) {
-    return <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>{children}</div>;
+    return <div className="flex flex-wrap gap-2 items-center">{children}</div>;
 }

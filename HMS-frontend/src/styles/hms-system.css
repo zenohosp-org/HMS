@@ -1163,6 +1163,35 @@
 .hms-drawer-header .hms-page-subtitle { margin-top: 4px; }
 
 
+/* ---------- Color token swatch + grid (used by UiGallery dev page) ---------- */
+.hms-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid var(--hms-gray-200);
+    flex-shrink: 0;
+}
+
+.hms-color-swatch--brand-primary { background: var(--hms-brand-primary); }
+.hms-color-swatch--gray-50       { background: var(--hms-gray-50); }
+.hms-color-swatch--gray-200      { background: var(--hms-gray-200); }
+.hms-color-swatch--gray-500      { background: var(--hms-gray-500); }
+.hms-color-swatch--gray-800      { background: var(--hms-gray-800); }
+.hms-color-swatch--success       { background: var(--hms-success); }
+.hms-color-swatch--warning       { background: var(--hms-warning); }
+.hms-color-swatch--danger        { background: var(--hms-danger); }
+.hms-color-swatch--info          { background: var(--hms-info); }
+
+.hms-token-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    font-size: 12px;
+}
+
+.hms-gallery-spacer { height: 12px; }
+
+
 /* ===================================================================
    14. Menu — portalled dropdown popover
    -------------------------------------------------------------------
