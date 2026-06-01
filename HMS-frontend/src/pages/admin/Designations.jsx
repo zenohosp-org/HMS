@@ -1,256 +1,440 @@
-import { useEffect, useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
-import { useNotification } from '@/context/NotificationContext'
-import { departmentApi, designationApi } from '@/utils/api'
-import { Award, Plus, ToggleLeft, ToggleRight, X, Check } from 'lucide-react'
-import SearchableSelect from '@/components/ui/SearchableSelect'
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useNotification } from "@/context/NotificationContext";
+import { departmentApi, designationApi } from "@/utils/api";
+import { Award, Plus, ToggleLeft, ToggleRight } from "lucide-react";
+import {
+    Badge,
+    Button,
+    FormGroup,
+    Input,
+    Modal,
+    PageHeader,
+    Table,
+    Tabs,
+} from "@/components/ui";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
-const CATEGORIES = ['MEDICAL', 'NURSING', 'TECHNICAL', 'ADMINISTRATIVE', 'SUPPORT']
+const CATEGORIES = ["MEDICAL", "NURSING", "TECHNICAL", "ADMINISTRATIVE", "SUPPORT"];
 
-const CAT_COLORS = {
-  MEDICAL: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
-  NURSING: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/20',
-  TECHNICAL: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
-  ADMINISTRATIVE: 'bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]',
-  SUPPORT: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20',
-}
+/** Category → Badge tone. Rose / amber are extra tones added to hms-badge
+ *  in this phase so the original colour mapping reads identically. */
+const CAT_TONE = {
+    MEDICAL: "info",
+    NURSING: "rose",
+    TECHNICAL: "amber",
+    ADMINISTRATIVE: "neutral",
+    SUPPORT: "neutral",
+};
 
 const PRESETS = {
-  MEDICAL: ['Senior Consultant', 'Consultant', 'Associate Consultant', 'Senior Resident', 'Junior Resident', 'House Surgeon', 'Registrar'],
-  NURSING: ['Chief Nursing Officer', 'Nursing Superintendent', 'Deputy Nursing Superintendent', 'Ward Sister', 'Staff Nurse', 'Junior Staff Nurse', 'ANM'],
-  TECHNICAL: ['Senior Radiographer', 'Radiographer', 'Senior Lab Technician', 'Lab Technician', 'Lab Assistant', 'Pharmacist', 'Senior Pharmacist', 'Physiotherapist', 'Dietitian'],
-  ADMINISTRATIVE: ['Hospital Administrator', 'Department Manager', 'Executive', 'Officer', 'Coordinator', 'Receptionist', 'Medical Records Officer', 'Billing Executive'],
-  SUPPORT: ['Senior Attender', 'Attender', 'Helper', 'Security Officer', 'Housekeeping Supervisor', 'Housekeeping Staff'],
-}
+    MEDICAL: [
+        "Senior Consultant",
+        "Consultant",
+        "Associate Consultant",
+        "Senior Resident",
+        "Junior Resident",
+        "House Surgeon",
+        "Registrar",
+    ],
+    NURSING: [
+        "Chief Nursing Officer",
+        "Nursing Superintendent",
+        "Deputy Nursing Superintendent",
+        "Ward Sister",
+        "Staff Nurse",
+        "Junior Staff Nurse",
+        "ANM",
+    ],
+    TECHNICAL: [
+        "Senior Radiographer",
+        "Radiographer",
+        "Senior Lab Technician",
+        "Lab Technician",
+        "Lab Assistant",
+        "Pharmacist",
+        "Senior Pharmacist",
+        "Physiotherapist",
+        "Dietitian",
+    ],
+    ADMINISTRATIVE: [
+        "Hospital Administrator",
+        "Department Manager",
+        "Executive",
+        "Officer",
+        "Coordinator",
+        "Receptionist",
+        "Medical Records Officer",
+        "Billing Executive",
+    ],
+    SUPPORT: [
+        "Senior Attender",
+        "Attender",
+        "Helper",
+        "Security Officer",
+        "Housekeeping Supervisor",
+        "Housekeeping Staff",
+    ],
+};
 
-const emptyForm = { name: '', category: 'MEDICAL', departmentId: '' }
+const emptyForm = { name: "", category: "MEDICAL", departmentId: "" };
 
+const titleCase = (s) => s.charAt(0) + s.slice(1).toLowerCase();
+
+/**
+ * Designations — hospital job-titles taxonomy by category, optionally
+ * scoped to a department. Toggle-only row actions (no edit). Phase 5
+ * migration preserves the data layer, the department filter dropdown
+ * and the preset quick-add behaviour byte-for-byte.
+ */
 export default function Designations() {
-  const { user } = useAuth()
-  const { notify } = useNotification()
-  const [designations, setDesignations] = useState([])
-  const [departments, setDepartments] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState(emptyForm)
-  const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState('MEDICAL')
-  const [deptFilter, setDeptFilter] = useState('')
+    const { user } = useAuth();
+    const { notify } = useNotification();
+    const [designations, setDesignations] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [form, setForm] = useState(emptyForm);
+    const [saving, setSaving] = useState(false);
+    const [activeTab, setActiveTab] = useState("MEDICAL");
+    const [deptFilter, setDeptFilter] = useState("");
 
-  const load = async () => {
-    if (!user?.hospitalId) return
-    try {
-      setLoading(true)
-      const [desigs, depts] = await Promise.all([
-        designationApi.list(user.hospitalId),
-        departmentApi.list(user.hospitalId, true),
-      ])
-      setDesignations(desigs)
-      setDepartments(depts)
-    } finally {
-      setLoading(false)
-    }
-  }
+    const load = async () => {
+        if (!user?.hospitalId) return;
+        try {
+            setLoading(true);
+            const [desigs, depts] = await Promise.all([
+                designationApi.list(user.hospitalId),
+                departmentApi.list(user.hospitalId, true),
+            ]);
+            setDesignations(desigs);
+            setDepartments(depts);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  useEffect(() => { load() }, [user?.hospitalId])
+    useEffect(() => {
+        load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.hospitalId]);
 
-  const openCreate = (preset = null) => {
-    setForm(preset ? { name: preset, category: activeTab, departmentId: '' } : { ...emptyForm, category: activeTab })
-    setShowModal(true)
-  }
+    const openCreate = (preset = null) => {
+        setForm(
+            preset
+                ? { name: preset, category: activeTab, departmentId: "" }
+                : { ...emptyForm, category: activeTab }
+        );
+        setShowModal(true);
+    };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSaving(true)
-    try {
-      await designationApi.create({
-        hospitalId: user.hospitalId,
-        name: form.name,
-        category: form.category,
-        departmentId: form.departmentId || null,
-      })
-      notify('Designation created', 'success')
-      setShowModal(false)
-      load()
-    } catch (err) {
-      notify(err.response?.data?.message || 'Failed', 'error')
-    } finally {
-      setSaving(false)
-    }
-  }
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            await designationApi.create({
+                hospitalId: user.hospitalId,
+                name: form.name,
+                category: form.category,
+                departmentId: form.departmentId || null,
+            });
+            notify("Designation created", "success");
+            setShowModal(false);
+            load();
+        } catch (err) {
+            notify(err.response?.data?.message || "Failed", "error");
+        } finally {
+            setSaving(false);
+        }
+    };
 
-  const toggle = async (d) => {
-    try { await designationApi.toggle(d.id); load() }
-    catch { notify('Failed', 'error') }
-  }
+    const toggle = async (d) => {
+        try {
+            await designationApi.toggle(d.id);
+            load();
+        } catch {
+            notify("Failed", "error");
+        }
+    };
 
-  const grouped = CATEGORIES.reduce((acc, c) => {
-    acc[c] = designations.filter(d => d.category === c &&
-      (!deptFilter || d.departmentId === deptFilter || !d.departmentId))
-    return acc
-  }, {})
+    const grouped = CATEGORIES.reduce((acc, c) => {
+        acc[c] = designations.filter(
+            (d) =>
+                d.category === c &&
+                (!deptFilter || d.departmentId === deptFilter || !d.departmentId)
+        );
+        return acc;
+    }, {});
 
-  const existing = new Set(designations.map(d => d.name))
+    const existing = new Set(designations.map((d) => d.name));
+    const rows = grouped[activeTab] || [];
+    const presetsForTab = (PRESETS[activeTab] || []).filter((p) => !existing.has(p));
+    const allPresetsAdded =
+        (PRESETS[activeTab] || []).every((p) => existing.has(p));
 
-  const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-200 transition-all'
-  const labelCls = 'block text-xs font-bold text-slate-600 dark:text-[#aaa] uppercase tracking-wider mb-1.5'
-
-  return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Award className="w-6 h-6 text-slate-700 dark:text-[#cccccc]" /> Designations
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Job titles and roles across departments</p>
-        </div>
-        <button onClick={() => openCreate()} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add Designation
-        </button>
-      </div>
-
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex gap-2 flex-wrap">
-          {CATEGORIES.map(c => (
-            <button key={c} onClick={() => setActiveTab(c)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${activeTab === c ? 'bg-slate-900 text-white border-slate-900' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-slate-300'}`}>
-              {c.charAt(0) + c.slice(1).toLowerCase()} ({grouped[c]?.length ?? 0})
-            </button>
-          ))}
-        </div>
-        <SearchableSelect
-          value={deptFilter}
-          onChange={value => setDeptFilter(value)}
-          options={[
-            { value: '', label: 'All Departments' },
-            ...departments.map(d => ({ value: d.id, label: d.name })),
-          ]}
-          className="ml-auto rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-700 dark:text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-slate-300/50"
-        />
-      </div>
-
-      <div className="rounded-lg bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] overflow-hidden flex-1">
-        <div className="p-5 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
-          <span className="font-semibold text-slate-800 dark:text-white">{activeTab.charAt(0) + activeTab.slice(1).toLowerCase()} Designations</span>
-          <span className="text-xs text-slate-400">{grouped[activeTab]?.length ?? 0} titles</span>
-        </div>
-
-        {loading ? (
-          <div className="p-12 text-center text-slate-400 text-sm">Loading…</div>
-        ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
-                {['Title', 'Category', 'Department', 'Status', ''].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
-              {grouped[activeTab]?.length === 0 && (
-                <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-400 text-sm">No designations yet. Add from presets below.</td></tr>
-              )}
-              {grouped[activeTab]?.map(d => (
-                <tr key={d.id} className="group hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors">
-                  <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-white text-sm">{d.name}</td>
-                  <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${CAT_COLORS[d.category]}`}>
-                      {d.category.charAt(0) + d.category.slice(1).toLowerCase()}
+    const columns = [
+        {
+            header: "Title",
+            width: "36%",
+            render: (d) => (
+                <span style={{ fontWeight: 600, color: "var(--hms-gray-900)", fontSize: 14 }}>
+                    {d.name}
+                </span>
+            ),
+        },
+        {
+            header: "Category",
+            width: "18%",
+            render: (d) => (
+                <Badge tone={CAT_TONE[d.category] || "neutral"} soft>
+                    {titleCase(d.category)}
+                </Badge>
+            ),
+        },
+        {
+            header: "Department",
+            width: "22%",
+            render: (d) =>
+                d.departmentName ? (
+                    <span style={{ fontSize: 13, color: "var(--hms-gray-500)" }}>
+                        {d.departmentName}
                     </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400">{d.departmentName || <span className="text-slate-300 dark:text-slate-600">Cross-department</span>}</td>
-                  <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${d.isActive ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
-                      {d.isActive ? 'Active' : 'Inactive'}
+                ) : (
+                    <span style={{ fontSize: 13, color: "var(--hms-gray-300)" }}>
+                        Cross-department
                     </span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => toggle(d)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-500 transition-colors">
-                        {d.isActive ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4" />}
-                      </button>
+                ),
+        },
+        {
+            header: "Status",
+            width: "12%",
+            render: (d) => (
+                <Badge tone={d.isActive ? "success" : "neutral"} soft>
+                    {d.isActive ? "Active" : "Inactive"}
+                </Badge>
+            ),
+        },
+        {
+            header: "",
+            width: "12%",
+            align: "right",
+            render: (d) => (
+                <button
+                    type="button"
+                    className="hms-btn-icon"
+                    aria-label={d.isActive ? "Deactivate" : "Activate"}
+                    onClick={() => toggle(d)}
+                >
+                    {d.isActive ? (
+                        <ToggleRight size={16} style={{ color: "var(--hms-success)" }} />
+                    ) : (
+                        <ToggleLeft size={16} />
+                    )}
+                </button>
+            ),
+        },
+    ];
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <PageHeader
+                title={
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                        <Award size={20} /> Designations
+                    </span>
+                }
+                subtitle="Job titles and roles across departments"
+                actions={
+                    <Button variant="primary" onClick={() => openCreate()}>
+                        <Plus size={14} strokeWidth={2.4} /> Add designation
+                    </Button>
+                }
+            />
+
+            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <Tabs
+                        type="pill"
+                        active={activeTab}
+                        onChange={setActiveTab}
+                        tabs={CATEGORIES.map((c) => ({
+                            id: c,
+                            label: titleCase(c),
+                            count: grouped[c]?.length ?? 0,
+                        }))}
+                    />
+                    <div style={{ marginLeft: "auto", minWidth: 220 }}>
+                        <SearchableSelect
+                            value={deptFilter}
+                            onChange={(v) => setDeptFilter(v)}
+                            options={[
+                                { value: "", label: "All departments" },
+                                ...departments.map((d) => ({ value: d.id, label: d.name })),
+                            ]}
+                            placeholder="Filter by department"
+                        />
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+                </div>
 
-        <div className="border-t border-slate-100 dark:border-[#1e1e1e] p-5">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Quick Add Presets</p>
-          <div className="flex flex-wrap gap-2">
-            {PRESETS[activeTab]?.filter(p => !existing.has(p)).map(p => (
-              <button key={p} onClick={() => openCreate(p)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-[#333] text-slate-500 dark:text-slate-400 hover:border-slate-400 hover:text-slate-900 dark:text-white dark:hover:text-slate-400 dark:text-[#888] text-xs font-medium transition-colors">
-                <Plus className="w-3 h-3" /> {p}
-              </button>
-            ))}
-            {PRESETS[activeTab]?.every(p => existing.has(p)) && (
-              <span className="text-xs text-slate-400">All presets added</span>
-            )}
-          </div>
-        </div>
-      </div>
+                <div
+                    style={{
+                        background: "var(--hms-white)",
+                        border: "1px solid var(--hms-gray-200)",
+                        borderRadius: "var(--hms-radius)",
+                        overflow: "hidden",
+                    }}
+                >
+                    <div
+                        style={{
+                            padding: "16px 20px",
+                            borderBottom: "1px solid var(--hms-gray-100)",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+                        <span style={{ fontWeight: 600, color: "var(--hms-gray-800)" }}>
+                            {titleCase(activeTab)} designations
+                        </span>
+                        <span style={{ fontSize: 12, color: "var(--hms-gray-400)" }}>
+                            {rows.length} {rows.length === 1 ? "title" : "titles"}
+                        </span>
+                    </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#111] rounded-lg shadow-xl w-full max-w-md border border-slate-200 dark:border-[#2a2a2a]">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-[#1e1e1e]">
-              <h3 className="font-bold text-slate-900 dark:text-white">New Designation</h3>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] text-slate-400 hover:text-slate-600 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
+                    <Table
+                        columns={columns}
+                        data={rows}
+                        loading={loading}
+                        loadingMessage="Loading…"
+                        emptyMessage="No designations yet. Add from presets below."
+                    />
+
+                    <div
+                        style={{
+                            borderTop: "1px solid var(--hms-gray-100)",
+                            padding: 20,
+                        }}
+                    >
+                        <p
+                            style={{
+                                margin: 0,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: "var(--hms-gray-400)",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                marginBottom: 12,
+                            }}
+                        >
+                            Quick add presets
+                        </p>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                            {presetsForTab.map((p) => (
+                                <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => openCreate(p)}
+                                    style={presetChipStyle}
+                                >
+                                    <Plus size={12} /> {p}
+                                </button>
+                            ))}
+                            {allPresetsAdded && (
+                                <span style={{ fontSize: 12, color: "var(--hms-gray-400)" }}>
+                                    All presets added
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
-              <div>
-                <label className={labelCls}>Title / Designation *</label>
-                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                  className={inputCls} placeholder="e.g. Staff Nurse" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>Category *</label>
-                  <SearchableSelect
-                    required
-                    value={form.category}
-                    onChange={value => setForm({ ...form, category: value })}
-                    options={[
-                      { value: 'MEDICAL', label: 'Medical' },
-                      { value: 'NURSING', label: 'Nursing' },
-                      { value: 'TECHNICAL', label: 'Technical' },
-                      { value: 'ADMINISTRATIVE', label: 'Administrative' },
-                      { value: 'SUPPORT', label: 'Support' },
-                    ]}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Department</label>
-                  <SearchableSelect
-                    value={form.departmentId}
-                    onChange={value => setForm({ ...form, departmentId: value })}
-                    options={[
-                      { value: '', label: 'Cross-department' },
-                      ...departments.map(d => ({ value: d.id, label: d.name })),
-                    ]}
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
-                  Cancel
-                </button>
-                <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2">
-                  <Check className="w-4 h-4" /> {saving ? 'Saving…' : 'Create'}
-                </button>
-              </div>
-            </form>
-          </div>
+
+            <Modal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                size="md"
+                title="New designation"
+                footer={
+                    <>
+                        <Button variant="cancel" onClick={() => setShowModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            type="submit"
+                            form="designation-form"
+                            loading={saving}
+                        >
+                            Create
+                        </Button>
+                    </>
+                }
+            >
+                <form
+                    id="designation-form"
+                    onSubmit={handleSubmit}
+                    style={{ display: "flex", flexDirection: "column", gap: 16 }}
+                >
+                    <FormGroup label="Title / designation *">
+                        <Input
+                            required
+                            value={form.name}
+                            onChange={(e) => setForm({ ...form, name: e.target.value })}
+                            placeholder="e.g. Staff Nurse"
+                        />
+                    </FormGroup>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                        <FormGroup label="Category *">
+                            <SearchableSelect
+                                required
+                                value={form.category}
+                                onChange={(v) => setForm({ ...form, category: v })}
+                                options={CATEGORIES.map((c) => ({
+                                    value: c,
+                                    label: titleCase(c),
+                                }))}
+                            />
+                        </FormGroup>
+                        <FormGroup label="Department">
+                            <SearchableSelect
+                                value={form.departmentId}
+                                onChange={(v) => setForm({ ...form, departmentId: v })}
+                                options={[
+                                    { value: "", label: "Cross-department" },
+                                    ...departments.map((d) => ({
+                                        value: d.id,
+                                        label: d.name,
+                                    })),
+                                ]}
+                            />
+                        </FormGroup>
+                    </div>
+                </form>
+            </Modal>
         </div>
-      )}
-    </div>
-  )
+    );
 }
+
+const presetChipStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "6px 12px",
+    borderRadius: 8,
+    border: "1px dashed var(--hms-gray-300)",
+    background: "transparent",
+    color: "var(--hms-gray-500)",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    fontFamily: "var(--hms-font-family)",
+    transition: "border-color 0.15s, color 0.15s",
+};
