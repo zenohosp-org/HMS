@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
@@ -40,6 +40,7 @@ import {
   User,
   AlertTriangle
 } from "lucide-react";
+
 const PAYMENT_METHODS = ["Cash", "UPI", "Card", "Bank Transfer", "Insurance"];
 
 // Cash → CASH-type drawer; UPI/Card/Bank Transfer → SAVINGS or CURRENT.
@@ -59,28 +60,32 @@ function accountsForMethod(accounts, method) {
 
 const GST_RATE = 0.18;
 function fmt(n) {
-  return "\u20B9" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
 const TYPE_META = {
-  MEDICINE: { label: "Medicine", color: "text-emerald-700", bg: "bg-emerald-100", icon: <Pill className="w-3 h-3" /> },
-  LAB_TEST: { label: "Lab Test", color: "text-slate-900", bg: "bg-slate-100", icon: <FlaskConical className="w-3 h-3" /> },
-  CONSULTATION: { label: "Consultation", color: "text-blue-700", bg: "bg-blue-100", icon: <Stethoscope className="w-3 h-3" /> },
-  ROOM_CHARGE: { label: "Room", color: "text-orange-700", bg: "bg-orange-100", icon: <BedDouble className="w-3 h-3" /> },
-  RADIOLOGY: { label: "Radiology", color: "text-slate-900", bg: "bg-slate-100", icon: <ScanLine className="w-3 h-3" /> },
-  CUSTOM: { label: "Custom", color: "text-slate-600", bg: "bg-slate-100", icon: <Wrench className="w-3 h-3" /> },
-  REGISTRATION: { label: "Registration", color: "text-violet-700", bg: "bg-violet-100", icon: <User className="w-3 h-3" /> }
+  MEDICINE:     { label: "Medicine",     icon: <Pill className="w-3 h-3" /> },
+  LAB_TEST:     { label: "Lab Test",     icon: <FlaskConical className="w-3 h-3" /> },
+  CONSULTATION: { label: "Consultation", icon: <Stethoscope className="w-3 h-3" /> },
+  ROOM_CHARGE:  { label: "Room",         icon: <BedDouble className="w-3 h-3" /> },
+  RADIOLOGY:    { label: "Radiology",    icon: <ScanLine className="w-3 h-3" /> },
+  CUSTOM:       { label: "Custom",       icon: <Wrench className="w-3 h-3" /> },
+  REGISTRATION: { label: "Registration", icon: <User className="w-3 h-3" /> }
 };
+
 function TypeBadge({ type }) {
   if (!type) return null;
   const m = TYPE_META[type];
   if (!m) return null;
-  return <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${m.color} ${m.bg}`}>{m.icon}</span>;
+  return <span className={`hms-create-inv-type-chip is-${type}`}>{m.icon}</span>;
 }
+
 const STATUS_CFG = {
-  PAID: { label: "Paid", icon: CheckCircle2, cls: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  UNPAID: { label: "Unpaid", icon: Clock, cls: "text-amber-600 bg-amber-50 border-amber-200" },
-  CANCELLED: { label: "Cancelled", icon: Ban, cls: "text-red-500 bg-red-50 border-red-200" }
+  PAID:      { label: "Paid",      icon: CheckCircle2, cls: "is-paid" },
+  UNPAID:    { label: "Unpaid",    icon: Clock,        cls: "is-unpaid" },
+  CANCELLED: { label: "Cancelled", icon: Ban,          cls: "is-cancelled" }
 };
+
 function CreateInvoice() {
   const { user } = useAuth();
   const { notify } = useNotification();
@@ -113,6 +118,7 @@ function CreateInvoice() {
   const [logStatus, setLogStatus] = useState("ALL");
   const [expandedInvoice, setExpandedInvoice] = useState(null);
   const [markingPaidId, setMarkingPaidId] = useState(null);
+
   const loadLogs = useCallback(async (forPatient) => {
     if (!user?.hospitalId) return;
     setLogsLoading(true);
@@ -125,31 +131,31 @@ function CreateInvoice() {
       setLogsLoading(false);
     }
   }, [user?.hospitalId, patient]);
+
   useEffect(() => {
     loadLogs();
   }, [user?.hospitalId]);
+
   useEffect(() => {
     if (!user?.hospitalId) return;
-    doctorsApi.list(user.hospitalId).then(docs => setDoctors(docs.filter(d => d.userIsActive))).catch(() => {
-    });
-    hospitalServiceApi.list(user.hospitalId).then(setServices).catch(() => {
-    });
+    doctorsApi.list(user.hospitalId).then(docs => setDoctors(docs.filter(d => d.userIsActive))).catch(() => {});
+    hospitalServiceApi.list(user.hospitalId).then(setServices).catch(() => {});
     bankApi.list(user.hospitalId).then((accounts) => {
       setBankAccounts(accounts);
       // Pre-select default for the initial Cash payment method
       const eligible = accountsForMethod(accounts, "Cash");
       const def = eligible.find((a) => a.isDefault) ?? eligible[0];
       if (def) setBankAccountId(def.id);
-    }).catch(() => {
-    });
+    }).catch(() => {});
   }, [user?.hospitalId]);
+
   useEffect(() => {
     const pId = params.get("patientId");
     if (pId && user?.hospitalId) {
-      patientApi.get(Number(pId), user.hospitalId).then((p) => selectPatient(p)).catch(() => {
-      });
+      patientApi.get(Number(pId), user.hospitalId).then((p) => selectPatient(p)).catch(() => {});
     }
   }, [params, user?.hospitalId]);
+
   useEffect(() => {
     if (!patientSearch.trim() || patientSearch.length < 2 || !user?.hospitalId) {
       setPatientResults([]);
@@ -167,6 +173,7 @@ function CreateInvoice() {
     }, 300);
     return () => clearTimeout(t);
   }, [patientSearch, user?.hospitalId]);
+
   useEffect(() => {
     if (!serviceSearch.trim()) {
       setServiceResults([]);
@@ -175,6 +182,7 @@ function CreateInvoice() {
     const q = serviceSearch.toLowerCase();
     setServiceResults(services.filter((s) => s.isActive && s.name.toLowerCase().includes(q)).slice(0, 6));
   }, [serviceSearch, services]);
+
   const selectPatient = async (p) => {
     setPatient(p);
     setPatientResults([]);
@@ -191,18 +199,22 @@ function CreateInvoice() {
       setLoadingSuggestions(false);
     }
   };
+
   const clearPatient = () => {
     setPatient(null);
     setSuggestions(null);
     loadLogs(null);
   };
+
   const addItem = (item, suggKey) => {
     const key = nextKey;
     setNextKey((k) => k + 1);
     setItems((prev) => [...prev, { ...item, key }]);
     if (suggKey) setAddedSuggestions((prev) => /* @__PURE__ */ new Set([...prev, suggKey]));
   };
+
   const removeItem = (key) => setItems((prev) => prev.filter((i) => i.key !== key));
+
   const updateItem = (key, updates) => {
     setItems((prev) => prev.map((item) => {
       if (item.key !== key) return item;
@@ -212,12 +224,14 @@ function CreateInvoice() {
       return merged;
     }));
   };
+
   const subtotal = useMemo(() => items.reduce((s, i) => s + (i.totalPrice || 0), 0), [items]);
   const discountAmt = subtotal * (discountPct / 100);
   const medicineTotal = items.filter((i) => i.itemType === "MEDICINE").reduce((s, i) => s + (i.totalPrice || 0), 0);
   const gstOnMedicines = (medicineTotal - medicineTotal * (discountPct / 100)) * GST_RATE;
   const grandTotal = subtotal - discountAmt + gstOnMedicines;
   const hasSuggestions = suggestions && (suggestions.roomCharge || suggestions.radiologyOrders.length > 0 || suggestions.appointments.length > 0);
+
   const handleSubmit = async () => {
     if (!patient || !user?.hospitalId) {
       notify("Select a patient first", "warning");
@@ -256,11 +270,12 @@ function CreateInvoice() {
       setSaving(false);
     }
   };
+
   const handleMarkPaid = async (invoiceId) => {
     setMarkingPaidId(invoiceId);
     try {
       await invoiceApi.markAsPaid(invoiceId, bankAccountId || void 0);
-      notify("Invoice marked as paid \u2014 bank account credited", "success");
+      notify("Invoice marked as paid — bank account credited", "success");
       loadLogs();
     } catch (e) {
       notify(e?.response?.data?.message || "Failed to mark as paid", "error");
@@ -268,6 +283,7 @@ function CreateInvoice() {
       setMarkingPaidId(null);
     }
   };
+
   const filteredLogs = useMemo(() => {
     const q = logSearch.toLowerCase();
     return allInvoices.filter((inv) => {
@@ -276,198 +292,624 @@ function CreateInvoice() {
       return matchStatus && matchSearch;
     });
   }, [allInvoices, logSearch, logStatus]);
+
   const selectedAccount = bankAccounts.find((a) => a.id === bankAccountId);
-  const inputCls = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all";
-  const cardCls = "bg-white border border-slate-200 rounded-lg p-5";
-  return <><div className="flex h-full overflow-hidden no-print -m-6">{
-    /* ── LEFT: Create Invoice ── */
-  }<div className="flex-1 overflow-y-auto p-6 space-y-4 min-w-0"><div className="flex items-start justify-between"><div><h1 className="text-xl font-bold text-slate-900">Create New Invoice</h1><p className="text-xs text-slate-400 mt-0.5">Smart billing with automatic pending order detection</p></div><button
-    onClick={() => setPaneOpen((o) => !o)}
-    className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors shrink-0"
-    title={paneOpen ? "Hide invoice logs" : "Show invoice logs"}
-  >{paneOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}</button></div>{
-    /* Smart banner */
-  }<div className="flex gap-3 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200"><Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" /><div className="text-xs text-blue-700 space-y-1"><p className="font-bold text-sm">Smart Billing System</p><p>Selecting a patient auto-detects active room charges, pending radiology orders, and recent consultations.</p></div></div>{
-    /* 1. Select Patient */
-  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center">1</span>
-                        Select Patient
-                    </p>{patient ? <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50"><div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0"><User className="w-4 h-4 text-emerald-600" /></div><div><p className="text-sm font-bold text-emerald-800">{patient.firstName} {patient.lastName}</p><p className="text-xs text-emerald-600">{fmtId(patient.uhid)}{patient.phone ? ` \xB7 ${patient.phone}` : ""}</p></div></div><button onClick={clearPatient} className="p-1 text-emerald-500 hover:text-emerald-700 transition-colors"><X className="w-3.5 h-3.5" /></button></div> : <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" /><input className={`${inputCls} pl-9`} placeholder="Search by name or UHID…" value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} />{searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400" />}{patientResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-30 overflow-hidden">{patientResults.map((p) => <button
-    key={p.id}
-    type="button"
-    onClick={() => selectPatient(p)}
-    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
-  ><p className="text-sm font-semibold text-slate-800">{p.firstName} {p.lastName}</p><p className="text-xs text-slate-400">{fmtId(p.uhid)}</p></button>)}</div>}</div>}</div>{
-    /* Smart Suggestions */
-  }{patient && (loadingSuggestions || hasSuggestions) && <div className={cardCls}><p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><Sparkles className="w-3.5 h-3.5 text-amber-500" /> Detected Items
-                            {loadingSuggestions && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}</p>{!loadingSuggestions && suggestions && <div className="space-y-2">{suggestions.roomCharge && (() => {
-    const r = suggestions.roomCharge;
-    const key = `room-${r.roomNumber}`;
-    const added = addedSuggestions.has(key);
-    return <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-orange-200 bg-orange-50"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center shrink-0"><BedDouble className="w-3.5 h-3.5 text-orange-600" /></div><div><p className="text-sm font-semibold text-slate-800">Room {r.roomNumber} — {r.roomType.replace("_", " ")}</p><p className="text-xs text-slate-400">{fmt(r.pricePerDay)}/day × {r.daysStayed} day{r.daysStayed !== 1 ? "s" : ""} = <span className="font-semibold">{fmt(r.totalCharge)}</span></p></div></div><button
-      onClick={() => !added && addItem({ itemType: "ROOM_CHARGE", description: `Room ${r.roomNumber} (${r.roomType}) \u2014 ${r.daysStayed} day${r.daysStayed !== 1 ? "s" : ""}`, quantity: Number(r.daysStayed), unitPrice: r.pricePerDay, totalPrice: r.totalCharge }, key)}
-      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 text-slate-400 cursor-default" : "bg-orange-500 hover:bg-orange-600 text-white"}`}
-    >{added ? "\u2713 Added" : "+ Add"}</button></div>;
-  })()}{suggestions.radiologyOrders.map((r) => {
-    const key = `radiology-${r.orderId}`;
-    const added = addedSuggestions.has(key);
-    return <div key={key} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-100"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0"><ScanLine className="w-3.5 h-3.5 text-slate-900" /></div><div><p className="text-sm font-semibold text-slate-800">{r.serviceName}</p><p className="text-xs text-slate-400">{r.status.replace("_", " ")}{r.scheduledDate ? ` \xB7 ${r.scheduledDate}` : ""}</p></div></div><button
-      onClick={() => !added && addItem({ itemType: "RADIOLOGY", description: r.serviceName, quantity: 1, unitPrice: 0, totalPrice: 0 }, key)}
-      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 text-slate-400 cursor-default" : "bg-slate-900 hover:bg-slate-900 text-white"}`}
-    >{added ? "\u2713 Added" : "+ Add"}</button></div>;
-  })}{suggestions.appointments.map((a) => {
-    const key = `appt-${a.appointmentId}`;
-    const added = addedSuggestions.has(key);
-    return <div key={key} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-blue-200 bg-blue-50"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center shrink-0"><Stethoscope className="w-3.5 h-3.5 text-blue-600" /></div><div><p className="text-sm font-semibold text-slate-800">{a.doctorName}{a.specialization ? ` \u2014 ${a.specialization}` : ""}</p><p className="text-xs text-slate-400">Consultation · {a.apptDate} · <span className="font-semibold">{fmt(a.consultationFee)}</span></p></div></div><button
-      onClick={() => !added && addItem({ itemType: "CONSULTATION", description: `Consultation \u2014 ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ""}`, quantity: 1, unitPrice: a.consultationFee, totalPrice: a.consultationFee }, key)}
-      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 text-slate-400 cursor-default" : "bg-blue-500 hover:bg-blue-600 text-white"}`}
-    >{added ? "\u2713 Added" : "+ Add"}</button></div>;
-  })}</div>}</div>}{
-    /* 2. Referred By */
-  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center">2</span>
-                        Referred By <span className="font-normal normal-case text-slate-400">(Optional)</span></p><SearchableSelect
-  value={referredById}
-  onChange={(v) => setReferredById(v)}
-  options={doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}${d.specialization ? ` \u2014 ${d.specialization}` : ""}` }))}
-  placeholder="Self / Walk-in (No Referral)"
-/></div>{
-    /* 3. Add Tests & Services */
-  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center">3</span>
-                        Add Tests &amp; Services
-                    </p><div className="grid grid-cols-2 gap-3"><div><label className="block text-xs text-slate-400 mb-1.5 flex items-center gap-1"><FlaskConical className="w-3 h-3 text-slate-700" /> Search Lab / Services</label><div className="relative"><input className={inputCls} placeholder="Search by test name…" value={serviceSearch} onChange={(e) => setServiceSearch(e.target.value)} />{serviceResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-20 overflow-hidden">{serviceResults.map((s) => <button
-    key={s.id}
-    type="button"
-    onClick={() => {
-      addItem({ itemType: "LAB_TEST", serviceId: s.id, description: s.name, quantity: 1, unitPrice: s.price, totalPrice: s.price });
-      setServiceSearch("");
-      setServiceResults([]);
-    }}
-    className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
-  ><p className="text-sm font-semibold text-slate-800">{s.name}</p><p className="text-xs text-slate-400">{fmt(s.price)}</p></button>)}</div>}</div></div><div><label className="block text-xs text-slate-400 mb-1.5 flex items-center gap-1"><Pill className="w-3 h-3 text-emerald-500" /> Add Medicine</label><button
-    onClick={() => addItem({ itemType: "MEDICINE", description: "", quantity: 1, unitPrice: 0, totalPrice: 0 })}
-    className="w-full px-3 py-2 rounded-lg border border-dashed border-emerald-300 text-sm text-emerald-600 hover:bg-emerald-50 transition-colors text-left"
-  >
-                                + Add medicine item manually
-                            </button></div></div></div>{
-    /* 4. Invoice Items */
-  }<div className={cardCls}><div className="flex items-center justify-between mb-3"><p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center">4</span>
-                            Invoice Items
-                        </p><button
-    onClick={() => addItem({ itemType: "CUSTOM", description: "", quantity: 1, unitPrice: 0, totalPrice: 0 })}
-    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-  ><Plus className="w-3 h-3" /> Add Custom Item
-                        </button></div>{items.length === 0 ? <div className="py-8 text-center text-sm text-slate-600 border-2 border-dashed border-slate-100 rounded-lg">
-                            No items yet — detect from patient or add manually
-                        </div> : <><div className="grid grid-cols-12 gap-2 pb-2 border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-600 px-1"><div className="col-span-1">Type</div><div className="col-span-5">Description</div><div className="col-span-2 text-center">Qty</div><div className="col-span-2 text-right">Unit ₹</div><div className="col-span-2 text-right">Total ₹</div></div><div className="divide-y divide-slate-50">{items.map((item) => <div key={item.key} className="grid grid-cols-12 gap-2 items-center py-2 group px-1"><div className="col-span-1"><SearchableSelect
-    value={item.itemType ?? "CUSTOM"}
-    onChange={(v) => updateItem(item.key, { itemType: v })}
-    options={Object.keys(TYPE_META).map((k) => ({ value: k, label: TYPE_META[k]?.label || k }))}
-  /></div><div className="col-span-5"><input
-    className="w-full px-2 py-1.5 rounded-lg border border-slate-100 bg-white text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-    placeholder="Description…"
-    value={item.description}
-    onChange={(e) => updateItem(item.key, { description: e.target.value })}
-  /></div><div className="col-span-2"><input
-    type="number"
-    min={1}
-    className="w-full text-center px-2 py-1.5 rounded-lg border border-slate-100 bg-white text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-    value={item.quantity}
-    onChange={(e) => updateItem(item.key, { quantity: parseInt(e.target.value) || 1 })}
-  /></div><div className="col-span-2"><input
-    type="number"
-    min={0}
-    className="w-full text-right px-2 py-1.5 rounded-lg border border-slate-100 bg-white text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-    value={item.unitPrice}
-    onChange={(e) => updateItem(item.key, { unitPrice: parseFloat(e.target.value) || 0 })}
-  /></div><div className="col-span-2 flex items-center justify-end gap-1"><span className="text-sm font-bold text-slate-800">{fmt(item.totalPrice || 0)}</span><button onClick={() => removeItem(item.key)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-300 hover:text-red-500 transition-all"><Trash2 className="w-3 h-3" /></button></div></div>)}</div>{
-    /* Summary */
-  }<div className="mt-3 pt-3 border-t border-slate-100 flex justify-end"><div className="w-56 space-y-2"><div className="flex justify-between text-sm text-slate-500"><span>Subtotal:</span><span className="font-semibold">{fmt(subtotal)}</span></div><div className="flex items-center justify-between text-sm text-slate-500"><span>Discount (%):</span><div className="flex items-center gap-1.5"><input
-    type="number"
-    min={0}
-    max={100}
-    value={discountPct}
-    onChange={(e) => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))}
-    className="w-14 text-center px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none"
-  /><span className="text-red-500 font-semibold">-{fmt(discountAmt)}</span></div></div>{medicineTotal > 0 && <div className="flex justify-between text-sm text-slate-500"><span>GST Medicines (18%):</span><span className="font-semibold">{fmt(gstOnMedicines)}</span></div>}<div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-100"><span>Grand Total:</span><span className="text-blue-600">{fmt(grandTotal)}</span></div></div></div></>}</div>{
-    /* 5. Payment Details */
-  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center">5</span>
-                        Payment Details
-                    </p><div className="grid grid-cols-2 gap-3 mb-4"><div><label className="block text-xs text-slate-400 mb-1.5">Payment Method</label><SearchableSelect
-  value={paymentMethod}
-  onChange={(v) => {
-    setPaymentMethod(v);
-    const eligible = accountsForMethod(bankAccounts, v);
-    const def = eligible.find(a => a.isDefault) ?? eligible[0];
-    setBankAccountId(def ? def.id : "");
-  }}
-  options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
-/></div><div><label className="block text-xs text-slate-400 mb-1.5">Notes (optional)</label><input className={inputCls} placeholder="Additional notes…" value={notes} onChange={(e) => setNotes(e.target.value)} /></div></div>{
-    /* Bank account cards — filtered by payment method type */
-  }{(() => {
-    const eligibleAccounts = accountsForMethod(bankAccounts, paymentMethod);
-    const allowedTypes = PAYMENT_METHOD_TO_ACCOUNT_TYPES[paymentMethod] || [];
-    if (allowedTypes.length === 0) return null;
-    if (eligibleAccounts.length === 0) {
-      return <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" /><p className="text-xs text-amber-700">No {paymentMethod === "Cash" ? "CASH" : "SAVINGS / CURRENT"} account found. Configure banks in the Finance app to track this payment.</p></div>;
-    }
-    return <div><label className="block text-xs text-slate-400 mb-2 flex items-center gap-1.5"><Landmark className="w-3.5 h-3.5" /> Credit payment to
-                            <span className="ml-1 text-[10px] text-slate-300">({paymentMethod === "Cash" ? "CASH only" : "SAVINGS / CURRENT only"})</span>
-                            </label><div className="grid grid-cols-2 gap-2">{eligibleAccounts.map((a) => {
-    const isSelected = bankAccountId === a.id;
-    return <button
-      key={a.id}
-      type="button"
-      onClick={() => setBankAccountId(a.id)}
-      className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:border-slate-300 bg-white"}`}
-    ><div className="flex items-start justify-between gap-2 mb-1"><p className={`text-xs font-bold truncate ${isSelected ? "text-emerald-700" : "text-slate-700"}`}>{a.accountName}</p>{isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}</div><p className="text-[11px] text-slate-400 truncate">{a.bankName ?? "Bank"} · ···{a.accountNumber.slice(-4)}</p><p className={`text-xs font-bold mt-1.5 ${isSelected ? "text-emerald-600" : "text-slate-600"}`}>{fmt(a.currentBalance)}</p></button>;
-  })}<button
-    type="button"
-    onClick={() => setBankAccountId("")}
-    className={`text-left p-3 rounded-lg border-2 transition-all ${bankAccountId === "" ? "border-slate-900 bg-slate-50" : "border-dashed border-slate-200 hover:border-slate-300 bg-white"}`}
-  ><p className="text-xs font-bold text-slate-400">No account</p><p className="text-[11px] text-slate-300 mt-0.5">Skip bank credit</p></button></div>{selectedAccount && <p className="text-xs text-slate-400 mt-2">
-                                    After payment: <span className="font-semibold text-emerald-600">{fmt(selectedAccount.currentBalance + grandTotal)}</span></p>}</div>;
-  })()}</div>{
-    /* Generate button */
-  }<button
-    onClick={handleSubmit}
-    disabled={saving || !patient || items.length === 0}
-    className="w-full py-3.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold flex items-center justify-center gap-2 transition-colors"
-  >{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}{saving ? "Generating\u2026" : "Generate Invoice & Print"}</button><div className="h-4" /></div>{
-    /* ── RIGHT: Invoice Logs (collapsible) ── */
-  }{paneOpen && <div className="w-96 border-l border-slate-200 flex flex-col overflow-hidden bg-white shrink-0">{
-    /* Pane header */
-  }<div className="px-4 py-3.5 border-b border-slate-100 shrink-0"><div className="flex items-center justify-between mb-1"><div className="flex items-center gap-2"><Receipt className="w-4 h-4 text-slate-500" /><div><p className="text-sm font-bold text-slate-800 leading-tight">{patient ? `${patient.firstName} ${patient.lastName}` : "All Invoices"}</p><p className="text-[11px] text-slate-600">{patient ? "Patient invoice history" : "Hospital invoice log"} · {filteredLogs.length} shown
-                                    </p></div></div><button onClick={() => loadLogs()} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" title="Refresh"><RefreshCw className={`w-3.5 h-3.5 ${logsLoading ? "animate-spin" : ""}`} /></button></div>{
-    /* Search */
-  }<div className="relative mt-2.5 mb-2"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" /><input
-    className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
-    placeholder="Search invoice #, patient…"
-    value={logSearch}
-    onChange={(e) => setLogSearch(e.target.value)}
-  />{logSearch && <button onClick={() => setLogSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-3 h-3" /></button>}</div>{
-    /* Status filter */
-  }<div className="flex gap-1.5">{["ALL", "UNPAID", "PAID", "CANCELLED"].map((s) => <button
-    key={s}
-    onClick={() => setLogStatus(s)}
-    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${logStatus === s ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
-  >{s}</button>)}</div></div>{
-    /* Log list */
-  }<div className="flex-1 overflow-y-auto">{logsLoading ? <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin text-slate-300" /></div> : filteredLogs.length === 0 ? <div className="flex flex-col items-center justify-center py-16 gap-2"><Receipt className="w-8 h-8 text-slate-200" /><p className="text-sm text-slate-600">{patient ? `No invoices for ${patient.firstName}` : "No invoices found"}</p></div> : <div className="divide-y divide-slate-50">{filteredLogs.map((inv) => {
-    const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID;
-    const StatusIcon = cfg.icon;
-    const isExpanded = expandedInvoice === inv.id;
-    return <div key={inv.id}><button
-      onClick={() => setExpandedInvoice(isExpanded ? null : inv.id ?? null)}
-      className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors"
-    ><div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="flex items-center gap-1.5 mb-0.5"><p className="text-sm font-bold text-slate-800 truncate">#{fmtId(inv.invoiceNumber)}</p><span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded border ${cfg.cls}`}><StatusIcon className="w-2.5 h-2.5" />{cfg.label}</span></div><p className="text-xs text-slate-600">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata', day: "2-digit", month: "short", year: "numeric" }) : "\u2014"}{inv.paymentMethod ? ` \xB7 ${inv.paymentMethod}` : ""}</p></div><div className="flex items-center gap-1.5 shrink-0"><span className="text-sm font-bold text-slate-800">{fmt(inv.total)}</span><ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isExpanded ? "rotate-90" : ""}`} /></div></div></button>{isExpanded && <div className="px-4 pb-3 bg-slate-50 border-t border-slate-100"><div className="pt-2 space-y-1">{(inv.items ?? []).map((item, idx) => <div key={idx} className="flex items-center justify-between gap-2 py-1"><div className="flex items-center gap-1.5 min-w-0"><TypeBadge type={item.itemType} /><p className="text-xs text-slate-600 truncate">{item.description}</p></div><span className="text-xs font-semibold text-slate-700 shrink-0">×{item.quantity} · {fmt(item.totalPrice)}</span></div>)}<div className="flex justify-between pt-1.5 border-t border-slate-200 mt-1"><span className="text-xs text-slate-400">Total</span><span className="text-xs font-bold text-blue-600">{fmt(inv.total)}</span></div>{inv.status === "UNPAID" && inv.id && <button
-      onClick={() => handleMarkPaid(inv.id)}
-      disabled={markingPaidId === inv.id}
-      className="mt-2 w-full py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-    >{markingPaidId === inv.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                                                                Mark as Paid{selectedAccount ? ` \u2192 ${selectedAccount.accountName}` : ""}</button>}</div></div>}</div>;
-  })}</div>}</div></div>}</div>{
-    /* Print view */
-  }<div className="hidden print:block bg-white text-black p-8"><div className="flex justify-between items-start mb-6"><div><h1 className="text-2xl font-bold">{user?.hospitalName}</h1><p className="text-sm text-gray-500 mt-1">Tax Invoice</p></div><div className="text-right text-sm"><p className="font-bold text-lg">#{invoiceNo}</p><p className="text-gray-500">{(/* @__PURE__ */ new Date()).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata' })}</p></div></div><div className="border-t border-gray-200 pt-4 mb-6"><p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Bill To</p><p className="font-bold">{patient?.firstName} {patient?.lastName}</p><p className="text-sm text-gray-500">{fmtId(patient?.uhid)}</p></div><table className="w-full text-sm border-collapse"><thead><tr className="border-b-2 border-black"><th className="text-left py-2">Description</th><th className="text-center py-2 w-16">Qty</th><th className="text-right py-2 w-24">Unit Price</th><th className="text-right py-2 w-24">Total</th></tr></thead><tbody>{items.map((i, idx) => <tr key={idx} className="border-b border-gray-100"><td className="py-1.5">{i.description}</td><td className="text-center py-1.5">{i.quantity}</td><td className="text-right py-1.5">{fmt(i.unitPrice)}</td><td className="text-right py-1.5">{fmt(i.totalPrice)}</td></tr>)}</tbody></table><div className="mt-6 text-right space-y-1 text-sm"><p>Subtotal: {fmt(subtotal)}</p>{discountAmt > 0 && <p>Discount ({discountPct}%): -{fmt(discountAmt)}</p>}{gstOnMedicines > 0 && <p>GST on Medicines (18%): {fmt(gstOnMedicines)}</p>}<p className="text-lg font-bold border-t border-gray-300 pt-2 mt-2">Grand Total: {fmt(grandTotal)}</p><p className="text-sm text-gray-500">Payment: {paymentMethod}</p></div></div></>;
+
+  return (
+    <>
+      <div className="hms-create-inv-shell no-print">
+        {/* ── LEFT: Create Invoice ── */}
+        <div className="hms-create-inv-main">
+
+          <div className="hms-create-inv-headrow">
+            <div>
+              <h1 className="hms-create-inv-headrow__title">Create New Invoice</h1>
+              <p className="hms-create-inv-headrow__sub">Smart billing with automatic pending order detection</p>
+            </div>
+            <button
+              onClick={() => setPaneOpen((o) => !o)}
+              className="hms-create-inv-toggle"
+              title={paneOpen ? "Hide invoice logs" : "Show invoice logs"}
+            >
+              {paneOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {/* Smart banner */}
+          <div className="hms-create-inv-banner">
+            <Info className="hms-create-inv-banner__icon w-4 h-4" />
+            <div className="hms-create-inv-banner__body">
+              <p className="hms-create-inv-banner__title">Smart Billing System</p>
+              <p>Selecting a patient auto-detects active room charges, pending radiology orders, and recent consultations.</p>
+            </div>
+          </div>
+
+          {/* 1. Select Patient */}
+          <div className="hms-create-inv-card">
+            <p className="hms-create-inv-section-label">
+              <span className="hms-create-inv-section-num">1</span>
+              Select Patient
+            </p>
+            {patient ? (
+              <div className="hms-create-inv-picked">
+                <div className="hms-create-inv-picked__body">
+                  <div className="hms-create-inv-picked__icon">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="hms-create-inv-picked__name">{patient.firstName} {patient.lastName}</p>
+                    <p className="hms-create-inv-picked__sub">{fmtId(patient.uhid)}{patient.phone ? ` · ${patient.phone}` : ""}</p>
+                  </div>
+                </div>
+                <button onClick={clearPatient} className="hms-create-inv-picked__clear">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="hms-create-inv-search">
+                <Search className="hms-create-inv-search__icon w-3.5 h-3.5" />
+                <input
+                  className="hms-create-inv-input has-icon"
+                  placeholder="Search by name or UHID…"
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                />
+                {searching && <Loader2 className="hms-create-inv-search__spinner w-3.5 h-3.5 hms-billing-spin" />}
+                {patientResults.length > 0 && (
+                  <div className="hms-create-inv-suggest">
+                    {patientResults.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => selectPatient(p)}
+                        className="hms-create-inv-suggest__item"
+                      >
+                        <p className="hms-create-inv-suggest__name">{p.firstName} {p.lastName}</p>
+                        <p className="hms-create-inv-suggest__sub">{fmtId(p.uhid)}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Smart Suggestions */}
+          {patient && (loadingSuggestions || hasSuggestions) && (
+            <div className="hms-create-inv-card">
+              <p className="hms-create-inv-section-label">
+                <Sparkles className="w-3.5 h-3.5 text-warning" /> Detected Items
+                {loadingSuggestions && <Loader2 className="w-3 h-3 hms-billing-spin text-gray-400" />}
+              </p>
+              {!loadingSuggestions && suggestions && (
+                <div className="hms-create-inv-sug-list">
+                  {suggestions.roomCharge && (() => {
+                    const r = suggestions.roomCharge;
+                    const key = `room-${r.roomNumber}`;
+                    const added = addedSuggestions.has(key);
+                    return (
+                      <div className="hms-create-inv-sug-row is-room">
+                        <div className="hms-create-inv-sug-row__body">
+                          <div className="hms-create-inv-sug-row__icon is-room">
+                            <BedDouble className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <p className="hms-create-inv-sug-row__name">Room {r.roomNumber} — {r.roomType.replace("_", " ")}</p>
+                            <p className="hms-create-inv-sug-row__sub">{fmt(r.pricePerDay)}/day × {r.daysStayed} day{r.daysStayed !== 1 ? "s" : ""} = <span className="hms-create-inv-sug-row__sub-strong">{fmt(r.totalCharge)}</span></p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => !added && addItem({ itemType: "ROOM_CHARGE", description: `Room ${r.roomNumber} (${r.roomType}) — ${r.daysStayed} day${r.daysStayed !== 1 ? "s" : ""}`, quantity: Number(r.daysStayed), unitPrice: r.pricePerDay, totalPrice: r.totalCharge }, key)}
+                          className={`hms-create-inv-sug-add is-room ${added ? "is-added" : ""}`}
+                        >
+                          {added ? "✓ Added" : "+ Add"}
+                        </button>
+                      </div>
+                    );
+                  })()}
+                  {suggestions.radiologyOrders.map((r) => {
+                    const key = `radiology-${r.orderId}`;
+                    const added = addedSuggestions.has(key);
+                    return (
+                      <div key={key} className="hms-create-inv-sug-row is-radiology">
+                        <div className="hms-create-inv-sug-row__body">
+                          <div className="hms-create-inv-sug-row__icon is-radiology">
+                            <ScanLine className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <p className="hms-create-inv-sug-row__name">{r.serviceName}</p>
+                            <p className="hms-create-inv-sug-row__sub">{r.status.replace("_", " ")}{r.scheduledDate ? ` · ${r.scheduledDate}` : ""}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => !added && addItem({ itemType: "RADIOLOGY", description: r.serviceName, quantity: 1, unitPrice: 0, totalPrice: 0 }, key)}
+                          className={`hms-create-inv-sug-add is-radiology ${added ? "is-added" : ""}`}
+                        >
+                          {added ? "✓ Added" : "+ Add"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {suggestions.appointments.map((a) => {
+                    const key = `appt-${a.appointmentId}`;
+                    const added = addedSuggestions.has(key);
+                    return (
+                      <div key={key} className="hms-create-inv-sug-row is-consultation">
+                        <div className="hms-create-inv-sug-row__body">
+                          <div className="hms-create-inv-sug-row__icon is-consultation">
+                            <Stethoscope className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <p className="hms-create-inv-sug-row__name">{a.doctorName}{a.specialization ? ` — ${a.specialization}` : ""}</p>
+                            <p className="hms-create-inv-sug-row__sub">Consultation · {a.apptDate} · <span className="hms-create-inv-sug-row__sub-strong">{fmt(a.consultationFee)}</span></p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => !added && addItem({ itemType: "CONSULTATION", description: `Consultation — ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ""}`, quantity: 1, unitPrice: a.consultationFee, totalPrice: a.consultationFee }, key)}
+                          className={`hms-create-inv-sug-add is-consultation ${added ? "is-added" : ""}`}
+                        >
+                          {added ? "✓ Added" : "+ Add"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 2. Referred By */}
+          <div className="hms-create-inv-card">
+            <p className="hms-create-inv-section-label">
+              <span className="hms-create-inv-section-num">2</span>
+              Referred By <span className="hms-create-inv-section-label__opt">(Optional)</span>
+            </p>
+            <SearchableSelect
+              value={referredById}
+              onChange={(v) => setReferredById(v)}
+              options={doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}${d.specialization ? ` — ${d.specialization}` : ""}` }))}
+              placeholder="Self / Walk-in (No Referral)"
+            />
+          </div>
+
+          {/* 3. Add Tests & Services */}
+          <div className="hms-create-inv-card">
+            <p className="hms-create-inv-section-label">
+              <span className="hms-create-inv-section-num">3</span>
+              Add Tests &amp; Services
+            </p>
+            <div className="hms-create-inv-pay-grid">
+              <div>
+                <label className="hms-create-inv-field-label">
+                  <FlaskConical className="w-3 h-3" /> Search Lab / Services
+                </label>
+                <div className="hms-create-inv-search">
+                  <input
+                    className="hms-create-inv-input"
+                    placeholder="Search by test name…"
+                    value={serviceSearch}
+                    onChange={(e) => setServiceSearch(e.target.value)}
+                  />
+                  {serviceResults.length > 0 && (
+                    <div className="hms-create-inv-suggest">
+                      {serviceResults.map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => {
+                            addItem({ itemType: "LAB_TEST", serviceId: s.id, description: s.name, quantity: 1, unitPrice: s.price, totalPrice: s.price });
+                            setServiceSearch("");
+                            setServiceResults([]);
+                          }}
+                          className="hms-create-inv-suggest__item"
+                        >
+                          <p className="hms-create-inv-suggest__name">{s.name}</p>
+                          <p className="hms-create-inv-suggest__sub">{fmt(s.price)}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="hms-create-inv-field-label">
+                  <Pill className="w-3 h-3 text-emerald" /> Add Medicine
+                </label>
+                <button
+                  onClick={() => addItem({ itemType: "MEDICINE", description: "", quantity: 1, unitPrice: 0, totalPrice: 0 })}
+                  className="hms-create-inv-add-medicine"
+                >
+                  + Add medicine item manually
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Invoice Items */}
+          <div className="hms-create-inv-card">
+            <div className="hms-create-inv-items-headrow">
+              <p className="hms-create-inv-section-label is-flush">
+                <span className="hms-create-inv-section-num">4</span>
+                Invoice Items
+              </p>
+              <button
+                onClick={() => addItem({ itemType: "CUSTOM", description: "", quantity: 1, unitPrice: 0, totalPrice: 0 })}
+                className="hms-create-inv-add-custom"
+              >
+                <Plus className="w-3 h-3" /> Add Custom Item
+              </button>
+            </div>
+            {items.length === 0 ? (
+              <div className="hms-create-inv-empty-block">
+                No items yet — detect from patient or add manually
+              </div>
+            ) : (
+              <>
+                <div className="hms-create-inv-items-head">
+                  <div className="hms-create-inv-items-head__type">Type</div>
+                  <div className="hms-create-inv-items-head__desc">Description</div>
+                  <div className="hms-create-inv-items-head__qty">Qty</div>
+                  <div className="hms-create-inv-items-head__unit">Unit ₹</div>
+                  <div className="hms-create-inv-items-head__total">Total ₹</div>
+                </div>
+                <div className="hms-create-inv-items-list">
+                  {items.map((item) => (
+                    <div key={item.key} className="hms-create-inv-item-row">
+                      <div className="hms-create-inv-item-row__type">
+                        <SearchableSelect
+                          value={item.itemType ?? "CUSTOM"}
+                          onChange={(v) => updateItem(item.key, { itemType: v })}
+                          options={Object.keys(TYPE_META).map((k) => ({ value: k, label: TYPE_META[k]?.label || k }))}
+                        />
+                      </div>
+                      <div className="hms-create-inv-item-row__desc">
+                        <input
+                          className="hms-create-inv-item-input"
+                          placeholder="Description…"
+                          value={item.description}
+                          onChange={(e) => updateItem(item.key, { description: e.target.value })}
+                        />
+                      </div>
+                      <div className="hms-create-inv-item-row__qty">
+                        <input
+                          type="number"
+                          min={1}
+                          className="hms-create-inv-item-input is-center"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(item.key, { quantity: parseInt(e.target.value) || 1 })}
+                        />
+                      </div>
+                      <div className="hms-create-inv-item-row__unit">
+                        <input
+                          type="number"
+                          min={0}
+                          className="hms-create-inv-item-input is-right"
+                          value={item.unitPrice}
+                          onChange={(e) => updateItem(item.key, { unitPrice: parseFloat(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <div className="hms-create-inv-item-row__total">
+                        <span className="hms-create-inv-item-total">{fmt(item.totalPrice || 0)}</span>
+                        <button onClick={() => removeItem(item.key)} className="hms-create-inv-item-remove">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Summary */}
+                <div className="hms-create-inv-summary">
+                  <div className="hms-create-inv-summary__inner">
+                    <div className="hms-create-inv-summary__row">
+                      <span>Subtotal:</span>
+                      <span>{fmt(subtotal)}</span>
+                    </div>
+                    <div className="hms-create-inv-summary__row">
+                      <span>Discount (%):</span>
+                      <div className="hms-create-inv-summary__disc">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={discountPct}
+                          onChange={(e) => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))}
+                          className="hms-create-inv-summary__disc-input"
+                        />
+                        <span className="hms-create-inv-summary__disc-amt">-{fmt(discountAmt)}</span>
+                      </div>
+                    </div>
+                    {medicineTotal > 0 && (
+                      <div className="hms-create-inv-summary__row">
+                        <span>GST Medicines (18%):</span>
+                        <span>{fmt(gstOnMedicines)}</span>
+                      </div>
+                    )}
+                    <div className="hms-create-inv-summary__grand">
+                      <span>Grand Total:</span>
+                      <span className="hms-create-inv-summary__grand-val">{fmt(grandTotal)}</span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* 5. Payment Details */}
+          <div className="hms-create-inv-card">
+            <p className="hms-create-inv-section-label">
+              <span className="hms-create-inv-section-num">5</span>
+              Payment Details
+            </p>
+            <div className="hms-create-inv-pay-grid">
+              <div>
+                <label className="hms-create-inv-field-label">Payment Method</label>
+                <SearchableSelect
+                  value={paymentMethod}
+                  onChange={(v) => {
+                    setPaymentMethod(v);
+                    const eligible = accountsForMethod(bankAccounts, v);
+                    const def = eligible.find(a => a.isDefault) ?? eligible[0];
+                    setBankAccountId(def ? def.id : "");
+                  }}
+                  options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
+                />
+              </div>
+              <div>
+                <label className="hms-create-inv-field-label">Notes (optional)</label>
+                <input
+                  className="hms-create-inv-input"
+                  placeholder="Additional notes…"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
+            </div>
+            {/* Bank account cards — filtered by payment method type */}
+            {(() => {
+              const eligibleAccounts = accountsForMethod(bankAccounts, paymentMethod);
+              const allowedTypes = PAYMENT_METHOD_TO_ACCOUNT_TYPES[paymentMethod] || [];
+              if (allowedTypes.length === 0) return null;
+              if (eligibleAccounts.length === 0) {
+                return (
+                  <div className="hms-create-inv-pay-warn">
+                    <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+                    <p>No {paymentMethod === "Cash" ? "CASH" : "SAVINGS / CURRENT"} account found. Configure banks in the Finance app to track this payment.</p>
+                  </div>
+                );
+              }
+              return (
+                <div>
+                  <label className="hms-create-inv-pay-method-hint">
+                    <Landmark className="w-3.5 h-3.5" /> Credit payment to
+                    <span className="hms-create-inv-pay-method-hint__detail">({paymentMethod === "Cash" ? "CASH only" : "SAVINGS / CURRENT only"})</span>
+                  </label>
+                  <div className="hms-create-inv-bank-grid">
+                    {eligibleAccounts.map((a) => {
+                      const isSelected = bankAccountId === a.id;
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => setBankAccountId(a.id)}
+                          className={`hms-create-inv-bank-card ${isSelected ? "is-on" : ""}`}
+                        >
+                          <div className="hms-create-inv-bank-card__head">
+                            <p className="hms-create-inv-bank-card__name">{a.accountName}</p>
+                            {isSelected && <CheckCircle2 className="hms-create-inv-bank-card__check w-3.5 h-3.5" />}
+                          </div>
+                          <p className="hms-create-inv-bank-card__sub">{a.bankName ?? "Bank"} · ···{a.accountNumber.slice(-4)}</p>
+                          <p className="hms-create-inv-bank-card__bal">{fmt(a.currentBalance)}</p>
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => setBankAccountId("")}
+                      className={`hms-create-inv-bank-card is-none ${bankAccountId === "" ? "is-on" : ""}`}
+                    >
+                      <p className="hms-create-inv-bank-card__name">No account</p>
+                      <p className="hms-create-inv-bank-card__sub">Skip bank credit</p>
+                    </button>
+                  </div>
+                  {selectedAccount && (
+                    <p className="hms-create-inv-bank-after">
+                      After payment: <span className="hms-create-inv-bank-after__strong">{fmt(selectedAccount.currentBalance + grandTotal)}</span>
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Generate button */}
+          <button
+            onClick={handleSubmit}
+            disabled={saving || !patient || items.length === 0}
+            className="hms-create-inv-gen-btn"
+          >
+            {saving ? <Loader2 className="w-4 h-4 hms-billing-spin" /> : <Printer className="w-4 h-4" />}
+            {saving ? "Generating…" : "Generate Invoice & Print"}
+          </button>
+          <div className="h-4" />
+        </div>
+
+        {/* ── RIGHT: Invoice Logs (collapsible) ── */}
+        {paneOpen && (
+          <div className="hms-create-inv-pane">
+
+            {/* Pane header */}
+            <div className="hms-create-inv-pane__head">
+              <div className="hms-create-inv-pane__head-row">
+                <div className="hms-create-inv-pane__head-id">
+                  <Receipt className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="hms-create-inv-pane__title">{patient ? `${patient.firstName} ${patient.lastName}` : "All Invoices"}</p>
+                    <p className="hms-create-inv-pane__sub">{patient ? "Patient invoice history" : "Hospital invoice log"} · {filteredLogs.length} shown</p>
+                  </div>
+                </div>
+                <button onClick={() => loadLogs()} className="hms-create-inv-pane__refresh" title="Refresh">
+                  <RefreshCw className={`w-3.5 h-3.5 ${logsLoading ? "hms-billing-spin" : ""}`} />
+                </button>
+              </div>
+
+              {/* Search */}
+              <div className="hms-create-inv-pane__search">
+                <Search className="hms-create-inv-pane__search-icon w-3.5 h-3.5" />
+                <input
+                  className="hms-create-inv-pane__search-input"
+                  placeholder="Search invoice #, patient…"
+                  value={logSearch}
+                  onChange={(e) => setLogSearch(e.target.value)}
+                />
+                {logSearch && (
+                  <button onClick={() => setLogSearch("")} className="hms-create-inv-pane__search-clear">
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Status filter */}
+              <div className="hms-create-inv-pane__filters">
+                {["ALL", "UNPAID", "PAID", "CANCELLED"].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setLogStatus(s)}
+                    className={`hms-create-inv-pane__filter ${logStatus === s ? "is-on" : ""}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Log list */}
+            <div className="hms-create-inv-pane__body">
+              {logsLoading ? (
+                <div className="hms-create-inv-pane__loading">
+                  <Loader2 className="w-5 h-5 hms-billing-spin text-gray-300" />
+                </div>
+              ) : filteredLogs.length === 0 ? (
+                <div className="hms-create-inv-pane__empty">
+                  <Receipt className="w-8 h-8 text-gray-300" />
+                  <p className="hms-create-inv-pane__empty-text">{patient ? `No invoices for ${patient.firstName}` : "No invoices found"}</p>
+                </div>
+              ) : (
+                <div className="hms-create-inv-pane__list">
+                  {filteredLogs.map((inv) => {
+                    const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID;
+                    const StatusIcon = cfg.icon;
+                    const isExpanded = expandedInvoice === inv.id;
+                    return (
+                      <div key={inv.id}>
+                        <button
+                          onClick={() => setExpandedInvoice(isExpanded ? null : inv.id ?? null)}
+                          className="hms-create-inv-log__row"
+                        >
+                          <div className="hms-create-inv-log__row-inner">
+                            <div className="min-w-0">
+                              <div className="hms-create-inv-log__head">
+                                <p className="hms-create-inv-log__id">#{fmtId(inv.invoiceNumber)}</p>
+                                <span className={`hms-create-inv-log__status ${cfg.cls}`}>
+                                  <StatusIcon className="w-2.5 h-2.5" />{cfg.label}
+                                </span>
+                              </div>
+                              <p className="hms-create-inv-log__date">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata', day: "2-digit", month: "short", year: "numeric" }) : "—"}{inv.paymentMethod ? ` · ${inv.paymentMethod}` : ""}</p>
+                            </div>
+                            <div className="hms-create-inv-log__right">
+                              <span className="hms-create-inv-log__amt">{fmt(inv.total)}</span>
+                              <ChevronRight className={`hms-create-inv-log__chevron w-3.5 h-3.5 ${isExpanded ? "is-open" : ""}`} />
+                            </div>
+                          </div>
+                        </button>
+                        {isExpanded && (
+                          <div className="hms-create-inv-log__expand">
+                            <div className="hms-create-inv-log__expand-inner">
+                              {(inv.items ?? []).map((item, idx) => (
+                                <div key={idx} className="hms-create-inv-log__item-row">
+                                  <div className="hms-create-inv-log__item-left">
+                                    <TypeBadge type={item.itemType} />
+                                    <p className="hms-create-inv-log__item-desc">{item.description}</p>
+                                  </div>
+                                  <span className="hms-create-inv-log__item-amt">×{item.quantity} · {fmt(item.totalPrice)}</span>
+                                </div>
+                              ))}
+                              <div className="hms-create-inv-log__total-row">
+                                <span className="hms-create-inv-log__total-label">Total</span>
+                                <span className="hms-create-inv-log__total-val">{fmt(inv.total)}</span>
+                              </div>
+                              {inv.status === "UNPAID" && inv.id && (
+                                <button
+                                  onClick={() => handleMarkPaid(inv.id)}
+                                  disabled={markingPaidId === inv.id}
+                                  className="hms-create-inv-log__pay-btn"
+                                >
+                                  {markingPaidId === inv.id ? <Loader2 className="w-3 h-3 hms-billing-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                  Mark as Paid{selectedAccount ? ` → ${selectedAccount.accountName}` : ""}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Print view */}
+      <div className="hms-create-inv-print">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-22 font-bold">{user?.hospitalName}</h1>
+            <p className="text-13 text-gray-500 mt-1">Tax Invoice</p>
+          </div>
+          <div className="text-right text-13">
+            <p className="font-bold text-18">#{invoiceNo}</p>
+            <p className="text-gray-500">{(/* @__PURE__ */ new Date()).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata' })}</p>
+          </div>
+        </div>
+        <div className="border-t pt-4 mb-6">
+          <p className="text-11 text-gray-500 uppercase tracking-wide mb-1">Bill To</p>
+          <p className="font-bold">{patient?.firstName} {patient?.lastName}</p>
+          <p className="text-13 text-gray-500">{fmtId(patient?.uhid)}</p>
+        </div>
+        <table className="w-full text-13">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-2">Description</th>
+              <th className="text-center py-2">Qty</th>
+              <th className="text-right py-2">Unit Price</th>
+              <th className="text-right py-2">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((i, idx) => (
+              <tr key={idx} className="border-b">
+                <td className="py-2">{i.description}</td>
+                <td className="text-center py-2">{i.quantity}</td>
+                <td className="text-right py-2">{fmt(i.unitPrice)}</td>
+                <td className="text-right py-2">{fmt(i.totalPrice)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="mt-6 text-right text-13">
+          <p>Subtotal: {fmt(subtotal)}</p>
+          {discountAmt > 0 && <p>Discount ({discountPct}%): -{fmt(discountAmt)}</p>}
+          {gstOnMedicines > 0 && <p>GST on Medicines (18%): {fmt(gstOnMedicines)}</p>}
+          <p className="text-18 font-bold border-t pt-2 mt-2">Grand Total: {fmt(grandTotal)}</p>
+          <p className="text-13 text-gray-500">Payment: {paymentMethod}</p>
+        </div>
+      </div>
+    </>
+  );
 }
+
 export {
   CreateInvoice as default
 };

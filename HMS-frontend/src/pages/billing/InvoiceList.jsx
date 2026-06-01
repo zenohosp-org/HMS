@@ -28,15 +28,15 @@ function accountsForMethod(accounts, method) {
   return (accounts || []).filter(a => allowed.includes((a.accountType || '').toUpperCase()))
 }
 
-const TYPE_COLORS = {
-  CONSULTATION: 'bg-blue-50 text-blue-600',
-  ROOM_CHARGE:  'bg-purple-50 text-purple-600',
-  FOOD:         'bg-amber-50 text-amber-600',
-  RADIOLOGY:    'bg-rose-50 text-rose-600',
-  LAB_TEST:     'bg-teal-50 text-teal-600',
-  MEDICINE:     'bg-green-50 text-green-600',
-  OT:           'bg-violet-50 text-violet-600',
-  CUSTOM:       'bg-slate-50 text-slate-600',
+const TYPE_CHIP_CLS = {
+  CONSULTATION: 'is-consultation',
+  ROOM_CHARGE:  'is-room-charge',
+  FOOD:         'is-food',
+  RADIOLOGY:    'is-radiology',
+  LAB_TEST:     'is-lab-test',
+  MEDICINE:     'is-medicine',
+  OT:           'is-ot',
+  CUSTOM:       'is-custom',
 }
 
 function fmt(n) {
@@ -73,41 +73,41 @@ function WaiverModal({ item, invoiceId, onClose, onWaived }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm border border-slate-200">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+    <div className="hms-inv-waiver-overlay">
+      <div className="hms-inv-waiver">
+        <div className="hms-inv-waiver__head">
           <div>
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <Scissors className="w-4 h-4 text-rose-500" /> Apply Waiver
+            <h3 className="hms-inv-waiver__title">
+              <Scissors className="hms-inv-waiver__title-icon w-4 h-4" /> Apply Waiver
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[220px]">{item.description}</p>
+            <p className="hms-inv-waiver__sub">{item.description}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors">
+          <button onClick={onClose} className="hms-inv-waiver__close">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="hms-inv-waiver__form">
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-sm font-semibold text-slate-700">
-                Waiver Amount <span className="font-normal text-slate-400">(max {fmt(max)})</span>
+            <div className="hms-inv-waiver__field-head">
+              <label className="hms-inv-waiver__label">
+                Waiver Amount <span className="hms-inv-waiver__label-hint">(max {fmt(max)})</span>
               </label>
             </div>
-            <div className="flex gap-1.5 mb-2">
+            <div className="hms-inv-waiver__pcts">
               {[25, 50, 75, 100].map(p => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => pct(p)}
-                  className="flex-1 py-1 text-xs font-bold rounded-md border border-slate-200 bg-slate-50 text-slate-600 hover:border-rose-400 hover:text-rose-500 transition-all"
+                  className="hms-inv-waiver__pct"
                 >
                   {p}%
                 </button>
               ))}
             </div>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">₹</span>
+            <div className="hms-inv-waiver__amt-wrap">
+              <span className="hms-inv-waiver__amt-prefix">₹</span>
               <input
                 type="number"
                 min="0"
@@ -116,35 +116,35 @@ function WaiverModal({ item, invoiceId, onClose, onWaived }) {
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-rose-500/20 text-slate-700"
+                className="hms-inv-waiver__input has-prefix"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-semibold text-slate-700 block mb-1.5">
-              Reason <span className="text-rose-500">*</span>
+            <label className="hms-inv-waiver__label">
+              Reason <span className="hms-inv-waiver__label-req">*</span>
             </label>
             <textarea
               value={reason}
               onChange={e => setReason(e.target.value)}
               placeholder="e.g. Financial hardship, Doctor's discretion, Insurance adjustment…"
               rows={2}
-              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-rose-500/20 text-slate-700 resize-none"
+              className="hms-inv-waiver__textarea"
               required
             />
           </div>
 
-          <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
+          <div className="hms-inv-waiver__actions">
+            <button type="button" onClick={onClose} className="hms-btn-secondary">Cancel</button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm bg-rose-500 hover:bg-rose-600 text-white transition-colors disabled:opacity-60"
+              className="hms-inv-waiver__submit"
             >
               {submitting
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Applying…</>
+                ? <><Loader2 className="w-4 h-4 hms-billing-spin" /> Applying…</>
                 : <><Scissors className="w-4 h-4" /> Apply Waiver</>
               }
             </button>
@@ -298,39 +298,39 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
   const cgst = tax / 2
 
   const STATUS_CFG = {
-    PAID:      { cls: 'bg-emerald-50 text-emerald-600 border-emerald-200', Icon: CheckCircle2 },
-    SETTLED:   { cls: 'bg-emerald-50 text-emerald-600 border-emerald-200', Icon: CheckCircle2 },
-    PARTIAL:   { cls: 'bg-orange-50 text-orange-600 border-orange-200',   Icon: Clock        },
-    UNPAID:    { cls: 'bg-amber-50 text-amber-600 border-amber-200',           Icon: Clock        },
-    UNSETTLED: { cls: 'bg-amber-50 text-amber-600 border-amber-200',           Icon: Clock        },
-    CANCELLED: { cls: 'bg-rose-50 text-rose-600 border-rose-200',                 Icon: XCircle      },
+    PAID:      { cls: 'is-paid',      Icon: CheckCircle2 },
+    SETTLED:   { cls: 'is-settled',   Icon: CheckCircle2 },
+    PARTIAL:   { cls: 'is-partial',   Icon: Clock        },
+    UNPAID:    { cls: 'is-unpaid',    Icon: Clock        },
+    UNSETTLED: { cls: 'is-unsettled', Icon: Clock        },
+    CANCELLED: { cls: 'is-cancelled', Icon: XCircle      },
   }
   const sc = STATUS_CFG[detail?.status] ?? STATUS_CFG.UNPAID
   const StatusIcon = sc?.Icon ?? Clock
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-8xl max-h-[92vh] flex flex-col border border-slate-200">
+    <div className="hms-inv-detail-overlay">
+      <div className="hms-inv-detail">
 
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+        <div className="hms-inv-detail__header">
           <div>
-            <h2 className="font-bold text-slate-900 text-base">
+            <h2 className="hms-inv-detail__title">
               {loading ? 'Loading…' : fmtId(detail?.invoiceNumber)}
             </h2>
             {!loading && detail && (
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="hms-inv-detail__sub">
                 {detail.patientName}{detail.patientUhid ? ` · ${fmtId(detail.patientUhid)}` : ''} · {invoiceDate}
               </p>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="hms-inv-detail__header-right">
             {!loading && detail && (
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${sc.cls}`}>
+              <span className={`hms-inv-detail__status ${sc.cls}`}>
                 <StatusIcon className="w-3 h-3" />{detail.status}
               </span>
             )}
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors">
+            <button onClick={onClose} className="hms-inv-detail__close">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -338,42 +338,42 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
 
         {/* ── Body ── */}
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+          <div className="hms-inv-detail__loading">
+            <Loader2 className="w-6 h-6 hms-billing-spin" />
           </div>
         ) : (
-          <div className="flex flex-1 overflow-hidden min-h-0">
+          <div className="hms-inv-detail__body">
 
             {/* ════ Left Panel: Services & Bills ════ */}
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-slate-100">
-              <div className="px-6 py-3.5 border-b border-slate-100 shrink-0">
-                <p className="font-bold text-slate-900">Services and Bills</p>
+            <div className="hms-inv-detail__left">
+              <div className="hms-inv-detail__panel-head">
+                Services and Bills
               </div>
 
               {canWaive && (
-                <div className="mx-6 mt-3 flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700 font-medium shrink-0">
+                <div className="hms-inv-detail__waiver-hint">
                   <Scissors className="w-3.5 h-3.5 shrink-0" />
                   Hover a row to apply a waiver on that line item.
                 </div>
               )}
 
-              <div className="overflow-y-auto flex-1">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white z-10">
-                    <tr className="border-b border-slate-100">
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-10">No</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-24">Date</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Services Name</th>
-                      <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider w-24">Amount</th>
-                      <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-16">Gst %</th>
-                      <th className={`px-6 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider ${canWaive ? 'w-24' : 'w-28'}`}>Total</th>
-                      {canWaive && <th className="px-4 py-3 w-10" />}
+              <div className="hms-inv-detail__items-wrap">
+                <table className="hms-inv-detail__items">
+                  <thead>
+                    <tr>
+                      <th className="is-no">No</th>
+                      <th className="is-date">Date</th>
+                      <th>Services Name</th>
+                      <th className="is-amt is-right">Amount</th>
+                      <th className="is-gst is-center">Gst %</th>
+                      <th className="is-total is-right">Total</th>
+                      {canWaive && <th className="is-waive" />}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody>
                     {(detail.items || []).length === 0 ? (
                       <tr>
-                        <td colSpan={canWaive ? 7 : 6} className="px-6 py-12 text-center text-sm text-slate-400">
+                        <td colSpan={canWaive ? 7 : 6} className="is-empty">
                           No line items on this invoice.
                         </td>
                       </tr>
@@ -381,51 +381,47 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                       (detail.items || []).map((item, idx) => {
                         const waived   = Number(item.waiverAmount || 0)
                         const effective = Number(item.totalPrice || 0) - waived
-                        const typeColor = TYPE_COLORS[item.itemType] ?? TYPE_COLORS.CUSTOM
+                        const chipCls = TYPE_CHIP_CLS[item.itemType] ?? TYPE_CHIP_CLS.CUSTOM
                         return (
-                          <tr key={item.id} className="group hover:bg-slate-50/60 transition-colors">
-                            <td className="px-6 py-4 text-slate-400 text-xs">{idx + 1}</td>
-                            <td className="px-4 py-4 text-slate-500 text-xs whitespace-nowrap">{invoiceDate}</td>
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col gap-0.5">
-                                <span className={`self-start inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${typeColor}`}>
+                          <tr key={item.id}>
+                            <td className="is-no">{idx + 1}</td>
+                            <td className="is-date">{invoiceDate}</td>
+                            <td>
+                              <div className="hms-inv-detail__item-stack">
+                                <span className={`hms-inv-detail__type-chip ${chipCls}`}>
                                   {item.itemType?.replace('_', ' ')}
                                 </span>
-                                <span className="text-sm text-slate-800">{item.description}</span>
+                                <span className="hms-inv-detail__item-desc">{item.description}</span>
                                 {item.quantity > 1 && (
-                                  <span className="text-[11px] text-slate-400">×{item.quantity} units</span>
+                                  <span className="hms-inv-detail__item-qty">×{item.quantity} units</span>
                                 )}
                                 {item.waiverReason && (
-                                  <span className="text-[11px] text-rose-500 flex items-center gap-0.5 mt-0.5">
+                                  <span className="hms-inv-detail__item-reason">
                                     <Scissors className="w-2.5 h-2.5 shrink-0" />{item.waiverReason}
                                   </span>
                                 )}
                               </div>
                             </td>
-                            <td className="px-4 py-4 text-right text-slate-600 tabular-nums">
+                            <td className="is-amt">
                               {fmt(item.unitPrice)}
                             </td>
-                            <td className="px-4 py-4 text-center text-slate-400 text-xs">—</td>
-                            <td className="px-6 py-4 text-right tabular-nums">
+                            <td className="is-gst">—</td>
+                            <td className="is-total">
                               {waived > 0 ? (
-                                <span className="flex flex-col items-end gap-0.5">
-                                  <span className="line-through text-slate-300 text-xs">{fmt(item.totalPrice)}</span>
-                                  <span className="font-semibold text-slate-900">{fmt(effective)}</span>
+                                <span className="hms-inv-detail__total-stack">
+                                  <span className="hms-inv-detail__total-strike">{fmt(item.totalPrice)}</span>
+                                  <span className="hms-inv-detail__total-eff">{fmt(effective)}</span>
                                 </span>
                               ) : (
-                                <span className="font-semibold text-slate-900">{fmt(item.totalPrice)}</span>
+                                <span className="hms-inv-detail__total-eff">{fmt(item.totalPrice)}</span>
                               )}
                             </td>
                             {canWaive && (
-                              <td className="px-4 py-4">
+                              <td>
                                 <button
                                   onClick={() => setWaiverItem(item)}
                                   title={waived > 0 ? 'Edit waiver' : 'Apply waiver'}
-                                  className={`p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-all ${
-                                    waived > 0
-                                      ? 'bg-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white'
-                                      : 'bg-slate-100 text-slate-400 hover:bg-rose-500 hover:text-white'
-                                  }`}
+                                  className={`hms-inv-detail__waive-btn ${waived > 0 ? 'is-on' : ''}`}
                                 >
                                   <Scissors className="w-3.5 h-3.5" />
                                 </button>
@@ -440,60 +436,58 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
               </div>
 
               {/* ── Totals footer ── */}
-              <div className="shrink-0 border-t border-slate-100 px-6 py-4 space-y-2 bg-slate-50/60">
-                <div className="flex justify-between text-sm text-slate-600">
-                  <span className="font-medium">Subtotal:</span>
-                  <span className="tabular-nums">{fmt(detail.subtotal ?? detail.total)}</span>
+              <div className="hms-inv-detail__totals">
+                <div className="hms-inv-detail__total-row">
+                  <span className="hms-inv-detail__total-row__label">Subtotal:</span>
+                  <span className="hms-inv-detail__total-row__amt">{fmt(detail.subtotal ?? detail.total)}</span>
                 </div>
                 {tax > 0 && (
                   <>
-                    <div className="flex justify-between text-sm text-slate-600">
-                      <span className="font-medium">SGST:</span>
-                      <span className="tabular-nums">{fmt(sgst)}</span>
+                    <div className="hms-inv-detail__total-row">
+                      <span className="hms-inv-detail__total-row__label">SGST:</span>
+                      <span className="hms-inv-detail__total-row__amt">{fmt(sgst)}</span>
                     </div>
-                    <div className="flex justify-between text-sm text-slate-600">
-                      <span className="font-medium">CGST:</span>
-                      <span className="tabular-nums">{fmt(cgst)}</span>
+                    <div className="hms-inv-detail__total-row">
+                      <span className="hms-inv-detail__total-row__label">CGST:</span>
+                      <span className="hms-inv-detail__total-row__amt">{fmt(cgst)}</span>
                     </div>
                   </>
                 )}
                 {Number(detail.discount || 0) > 0 && (
-                  <div className="flex justify-between text-sm text-rose-500">
-                    <span className="font-medium flex items-center gap-1.5"><Scissors className="w-3 h-3" />Total Waivers:</span>
-                    <span className="tabular-nums font-semibold">−{fmt(detail.discount)}</span>
+                  <div className="hms-inv-detail__total-row is-waiver">
+                    <span className="hms-inv-detail__total-row__label flex items-center gap-1.5"><Scissors className="w-3 h-3" />Total Waivers:</span>
+                    <span className="hms-inv-detail__total-row__amt font-semibold">−{fmt(detail.discount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                  <span className="font-bold text-base text-slate-900">Total:</span>
-                  <span className="tabular-nums font-bold text-base text-slate-900">{fmt(detail.total)}</span>
+                <div className="hms-inv-detail__total-row is-grand">
+                  <span>Total:</span>
+                  <span className="hms-inv-detail__total-row__amt">{fmt(detail.total)}</span>
                 </div>
               </div>
             </div>
 
             {/* ════ Right Panel: Payment Details ════ */}
-            <div className="w-96 shrink-0 flex flex-col overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-slate-100 shrink-0">
-                <p className="font-bold text-slate-900">Payment details</p>
+            <div className="hms-inv-detail__right">
+              <div className="hms-inv-detail__right-head">
+                Payment details
               </div>
 
-              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              <div className="hms-inv-detail__right-body">
 
                 {/* IPD note */}
                 {detail.admissionId && (
-                  <div className="border border-slate-200 rounded-lg px-4 py-2.5">
-                    <p className="text-xs text-center text-slate-500">
-                      Patient billing is mapped as cash during admission
-                    </p>
+                  <div className="hms-inv-detail__ipd-note">
+                    Patient billing is mapped as cash during admission
                   </div>
                 )}
 
                 {/* Payment History header + Record Payment toggle */}
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-slate-900">Payment History</p>
+                <div className="hms-inv-detail__pay-head">
+                  <p className="hms-inv-detail__pay-head-title">Payment History</p>
                   {canPay && (
                     <button
                       onClick={() => setShowRecordPayment(p => !p)}
-                      className="flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                      className="hms-inv-detail__pay-toggle"
                     >
                       <Plus className="w-3.5 h-3.5" /> Record Payment
                     </button>
@@ -502,8 +496,8 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
 
                 {/* Collapsible record payment form */}
                 {showRecordPayment && canPay && (
-                  <div className="space-y-3 p-4 rounded-lg border border-slate-200 bg-slate-50">
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="hms-inv-detail__pay-form">
+                    <div className="hms-inv-detail__pay-grid">
                       <div>
                         <label className="label">Amount</label>
                         <input
@@ -546,30 +540,26 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                       if (allowedTypes.length === 0) return null
                       if (eligibleAccounts.length === 0) {
                         return (
-                          <div className="px-3 py-2.5 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-700">
+                          <div className="hms-inv-detail__pay-warn">
                             No {payMethod === 'Cash' ? 'CASH' : 'SAVINGS / CURRENT'} account found. Configure banks in the Finance app to track this payment.
                           </div>
                         )
                       }
                       return (
                         <div>
-                          <label className="label flex items-center gap-1.5">
+                          <label className="label hms-inv-detail__pay-bank-label">
                             <Landmark className="w-3 h-3" />Credit to
-                            <span className="ml-1 text-[10px] text-slate-300">
+                            <span className="hms-inv-detail__pay-bank-label-detail">
                               ({payMethod === 'Cash' ? 'CASH only' : 'SAVINGS / CURRENT only'})
                             </span>
                           </label>
-                          <div className="flex flex-wrap gap-1.5 mt-1">
+                          <div className="hms-inv-detail__pay-bank-row">
                             {eligibleAccounts.map(a => (
                               <button
                                 key={a.id}
                                 type="button"
                                 onClick={() => setBankAccountId(a.id)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all ${
-                                  bankAccountId === a.id
-                                    ? 'border-slate-900 bg-slate-900 text-white'
-                                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-400'
-                                }`}
+                                className={`hms-inv-detail__pay-bank-btn ${bankAccountId === a.id ? 'is-on' : ''}`}
                               >
                                 {bankAccountId === a.id && <CheckCircle2 className="w-3 h-3 shrink-0" />}
                                 {a.accountName}
@@ -579,25 +569,25 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                         </div>
                       )
                     })()}
-                    <div className="flex gap-2 pt-1">
+                    <div className="hms-inv-detail__pay-actions">
                       <button
                         onClick={handleCollect}
                         disabled={paying}
-                        className="btn-primary flex-1 flex items-center justify-center gap-2"
+                        className="hms-btn-primary"
                       >
                         {paying
-                          ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…</>
+                          ? <><Loader2 className="w-3.5 h-3.5 hms-billing-spin" /> Processing…</>
                           : 'Payment Received'
                         }
                       </button>
-                      <button onClick={printInvoice} className="btn-secondary flex items-center gap-1.5">
+                      <button onClick={printInvoice} className="hms-btn-secondary">
                         <Printer className="w-3.5 h-3.5" /> Print Invoice
                       </button>
                     </div>
                     {balanceDue > 0 && (
-                      <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200">
-                        <span className="text-slate-500 font-medium">Balance due</span>
-                        <span className="font-bold text-orange-600 tabular-nums">{fmt(balanceDue)}</span>
+                      <div className="hms-inv-detail__balance-row">
+                        <span className="hms-inv-detail__balance-row__label">Balance due</span>
+                        <span className="hms-inv-detail__balance-row__amt">{fmt(balanceDue)}</span>
                       </div>
                     )}
                   </div>
@@ -605,35 +595,35 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
 
                 {/* Payment history entries */}
                 {detail.payments?.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="hms-inv-detail__history">
                     {detail.payments.map(p => (
-                      <div key={p.id} className="flex items-start gap-4">
-                        <p className="text-sm text-slate-600 whitespace-nowrap shrink-0 tabular-nums">
+                      <div key={p.id} className="hms-inv-detail__history-row">
+                        <p className="hms-inv-detail__history-date">
                           {new Date(p.paidAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' })}
                         </p>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-slate-500 truncate">{p.referenceNumber || p.notes || 'Notes'}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">{p.paymentMethod}</p>
+                        <div className="hms-inv-detail__history-body">
+                          <p className="hms-inv-detail__history-ref">{p.referenceNumber || p.notes || 'Notes'}</p>
+                          <p className="hms-inv-detail__history-method">{p.paymentMethod}</p>
                         </div>
-                        <p className="text-sm font-semibold text-slate-900 tabular-nums shrink-0">{fmt(p.amount)}</p>
+                        <p className="hms-inv-detail__history-amt">{fmt(p.amount)}</p>
                       </div>
                     ))}
                     {balanceDue > 0 && !showRecordPayment && (
-                      <div className="flex justify-between items-center text-xs pt-3 border-t border-slate-100">
-                        <span className="text-slate-500 font-medium">Balance Due</span>
-                        <span className="font-bold text-orange-600 tabular-nums">{fmt(balanceDue)}</span>
+                      <div className="hms-inv-detail__balance-row">
+                        <span className="hms-inv-detail__balance-row__label">Balance Due</span>
+                        <span className="hms-inv-detail__balance-row__amt">{fmt(balanceDue)}</span>
                       </div>
                     )}
                   </div>
                 ) : (
                   !showRecordPayment && (
-                    <p className="text-sm text-slate-400">No payments recorded yet.</p>
+                    <p className="hms-inv-detail__history-empty">No payments recorded yet.</p>
                   )
                 )}
 
                 {/* PAID invoices: just show print */}
                 {!canPay && (
-                  <button onClick={printInvoice} className="btn-secondary w-full flex items-center justify-center gap-2">
+                  <button onClick={printInvoice} className="hms-btn-secondary is-full">
                     <Printer className="w-4 h-4" /> Print Invoice
                   </button>
                 )}
@@ -689,21 +679,21 @@ function MarkAsPaidModal({ invoice, onClose, onPaid }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-slate-200">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+    <div className="hms-mark-paid-overlay">
+      <div className="hms-mark-paid">
+        <div className="hms-mark-paid__head">
           <div>
-            <h2 className="font-bold text-slate-900 flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-emerald-500" /> Mark as Paid
+            <h2 className="hms-mark-paid__title">
+              <CreditCard className="hms-mark-paid__title-icon w-4 h-4" /> Mark as Paid
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">{fmtId(invoice.invoiceNumber)} · {fmt(invoice.total)}</p>
+            <p className="hms-mark-paid__sub">{fmtId(invoice.invoiceNumber)} · {fmt(invoice.total)}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors">
+          <button onClick={onClose} className="hms-mark-paid__close">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="hms-mark-paid__body">
           <div>
             <label className="label">Payment Method</label>
             <SearchableSelect
@@ -724,35 +714,35 @@ function MarkAsPaidModal({ invoice, onClose, onPaid }) {
             if (allowedTypes.length === 0) return null
             if (eligibleAccounts.length === 0) {
               return (
-                <div className="px-3 py-2.5 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-700">
+                <div className="hms-inv-detail__pay-warn">
                   No {paymentMethod === 'Cash' ? 'CASH' : 'SAVINGS / CURRENT'} account found. Configure banks in the Finance app to track this payment.
                 </div>
               )
             }
             return (
               <div>
-                <label className="label flex items-center gap-1.5">
+                <label className="label hms-inv-detail__pay-bank-label">
                   <Landmark className="w-3.5 h-3.5" /> Credit Payment To
-                  <span className="ml-1 text-[10px] text-slate-300">
+                  <span className="hms-inv-detail__pay-bank-label-detail">
                     ({paymentMethod === 'Cash' ? 'CASH only' : 'SAVINGS / CURRENT only'})
                   </span>
                 </label>
-                <div className="grid grid-cols-2 gap-2 mt-1">
+                <div className="hms-mark-paid__bank-grid">
                   {eligibleAccounts.map(a => (
                     <button
                       key={a.id}
                       type="button"
                       onClick={() => setBankAccountId(a.id)}
-                      className={`text-left p-3 rounded-lg border-2 transition-all ${bankAccountId === a.id ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                      className={`hms-mark-paid__bank-card ${bankAccountId === a.id ? 'is-on' : ''}`}
                     >
-                      <div className="flex items-start justify-between gap-1 mb-0.5">
-                        <p className="text-xs font-bold text-slate-800 truncate">{a.accountName}</p>
-                        {bankAccountId === a.id && <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 shrink-0" />}
+                      <div className="hms-mark-paid__bank-card-head">
+                        <p className="hms-mark-paid__bank-card-name">{a.accountName}</p>
+                        {bankAccountId === a.id && <CheckCircle2 className="hms-mark-paid__bank-card-check w-3.5 h-3.5" />}
                       </div>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="hms-mark-paid__bank-card-sub">
                         {a.accountNumber ? `···${a.accountNumber.slice(-4)}` : a.bankName || 'Cash'}
                       </p>
-                      <p className="text-xs font-semibold text-slate-600 mt-1 tabular-nums">{fmt(a.currentBalance)}</p>
+                      <p className="hms-mark-paid__bank-card-bal">{fmt(a.currentBalance)}</p>
                     </button>
                   ))}
                 </div>
@@ -761,15 +751,15 @@ function MarkAsPaidModal({ invoice, onClose, onPaid }) {
           })()}
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50 rounded-b-xl">
-          <button onClick={onClose} className="btn-secondary">Cancel</button>
+        <div className="hms-mark-paid__footer">
+          <button onClick={onClose} className="hms-btn-secondary">Cancel</button>
           <button
             onClick={handlePay}
             disabled={submitting}
-            className="btn-primary flex items-center gap-2"
+            className="hms-btn-primary"
           >
             {submitting
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
+              ? <><Loader2 className="w-4 h-4 hms-billing-spin" /> Processing…</>
               : <><CheckCircle2 className="w-4 h-4" /> Confirm Payment</>
             }
           </button>
@@ -807,12 +797,12 @@ function InvoiceList() {
       || inv.patientName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getStatusStyle = (status) => {
+  const getStatusCls = (status) => {
     switch (status) {
-      case "PAID":      return "bg-emerald-500/10 text-emerald-500";
-      case "UNPAID":    return "bg-amber-500/10 text-amber-500";
-      case "CANCELLED": return "bg-rose-500/10 text-rose-500";
-      default:          return "bg-slate-500/10 text-slate-500";
+      case "PAID":      return "is-paid";
+      case "UNPAID":    return "is-unpaid";
+      case "CANCELLED": return "is-cancelled";
+      default:          return "is-neutral";
     }
   };
 
@@ -826,109 +816,109 @@ function InvoiceList() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="hms-inv-list-page">
+      <div className="hms-inv-list-headrow">
         <div>
           <button
             onClick={() => navigate("/billing/opd")}
-            className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-emerald-500 mb-2 transition-colors"
+            className="hms-inv-list-back"
           >
             <ChevronLeft className="w-3 h-3" /> Back to Billing
           </button>
-          <h1 className="text-2xl font-bold text-slate-900">Invoice History</h1>
-          <p className="text-sm text-slate-500 font-medium tracking-tight">Track all hospital billing and payments</p>
+          <h1 className="hms-inv-list-title">Invoice History</h1>
+          <p className="hms-inv-list-sub">Track all hospital billing and payments</p>
         </div>
-        <div className="relative group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+        <div className="hms-inv-list-search">
+          <Search className="hms-inv-list-search__icon w-4 h-4" />
           <input
             type="text"
             placeholder="Search invoice or patient…"
-            className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-slate-300/50 w-64"
+            className="hms-inv-list-search__input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+      <div className="hms-inv-list-card">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="hms-inv-list-table">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50">
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Invoice</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Patient</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Total</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Actions</th>
+              <tr>
+                <th>Invoice</th>
+                <th>Patient</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th className="is-center">Status</th>
+                <th className="is-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {isLoading
                 ? Array(5).fill(0).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td colSpan={6} className="px-6 py-4 h-16 bg-slate-50/20" />
+                    <tr key={i}>
+                      <td colSpan={6} className="hms-inv-list-table__skel" />
                     </tr>
                   ))
                 : filteredInvoices.length === 0
                   ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-500 text-sm">
-                        <FileText className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                      <td colSpan={6} className="hms-inv-list-table__empty">
+                        <FileText className="w-12 h-12" />
                         No invoices found
                       </td>
                     </tr>
                   )
                   : filteredInvoices.map((inv) => (
-                    <tr key={inv.id} className="group hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900">{fmtId(inv.invoiceNumber)}</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-0.5">
+                    <tr key={inv.id}>
+                      <td>
+                        <div className="hms-inv-list-table__primary">{fmtId(inv.invoiceNumber)}</div>
+                        <div className="hms-inv-list-table__sub">
                           {fmtId(inv.admissionNumber) || `ID: ${inv.id?.slice(0, 8)}…`}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-700">
+                      <td>
                         {inv.patientName || '—'}
-                        {inv.patientUhid && <div className="text-[11px] text-slate-400">{fmtId(inv.patientUhid)}</div>}
+                        {inv.patientUhid && <div className="hms-inv-list-table__patient-sub">{fmtId(inv.patientUhid)}</div>}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
+                      <td>
                         {new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900 tabular-nums">{fmt(inv.total)}</div>
+                      <td>
+                        <div className="hms-inv-list-table__amt">{fmt(inv.total)}</div>
                         {Number(inv.discount || 0) > 0 && (
-                          <div className="text-[11px] text-rose-500 flex items-center gap-0.5">
+                          <div className="hms-inv-list-table__waived">
                             <Scissors className="w-2.5 h-2.5" /> -{fmt(inv.discount)} waived
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-center">
-                          <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(inv.status)}`}>
+                      <td>
+                        <div className="hms-billing-status-center">
+                          <span className={`hms-inv-list-status ${getStatusCls(inv.status)}`}>
                             {getStatusIcon(inv.status)}{inv.status}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
+                      <td>
+                        <div className="hms-inv-list-actions">
                           {inv.status === 'UNPAID' && (
                             <button
                               onClick={() => setPayingInvoice(inv)}
-                              className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
+                              className="hms-inv-list-actbtn is-pay"
                               title="Mark as Paid"
                             >
                               <CreditCard className="w-3.5 h-3.5" />
                             </button>
                           )}
                           <button
-                            className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
+                            className="hms-inv-list-actbtn is-neutral"
                             title="Print Invoice"
                           >
                             <Printer className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setDetailInvoiceId(inv.id)}
-                            className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-indigo-500 hover:text-white transition-all shadow-sm"
+                            className="hms-inv-list-actbtn is-neutral is-eye"
                             title="View Details"
                           >
                             <Eye className="w-3.5 h-3.5" />

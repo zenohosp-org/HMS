@@ -1,30 +1,29 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { ambulanceApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import {
   Ambulance, Search, CheckCircle2, Clock3, XCircle,
-  Truck, Activity, Filter, MapPin, Car, Phone, User
+  Truck, Activity, MapPin, Car, Phone, User
 } from "lucide-react";
 
 const STATUS_CONFIG = {
-  PENDING: { label: "Pending", bg: "bg-amber-500", light: "bg-amber-50 text-amber-700", icon: Clock3 },
-  DISPATCHED: { label: "Dispatched", bg: "bg-blue-500", light: "bg-blue-50 text-blue-700", icon: Truck },
-  EN_ROUTE: { label: "En Route", bg: "bg-slate-900", light: "bg-slate-100 text-slate-900", icon: Activity },
-  COMPLETED: { label: "Completed", bg: "bg-emerald-500", light: "bg-emerald-50 text-emerald-700", icon: CheckCircle2 },
-  CANCELLED: { label: "Cancelled", bg: "bg-rose-500", light: "bg-rose-50 text-rose-700", icon: XCircle },
+  PENDING:    { label: "Pending",    cls: "is-pending",    icon: Clock3 },
+  DISPATCHED: { label: "Dispatched", cls: "is-dispatched", icon: Truck },
+  EN_ROUTE:   { label: "En Route",   cls: "is-enroute",    icon: Activity },
+  COMPLETED:  { label: "Completed",  cls: "is-completed",  icon: CheckCircle2 },
+  CANCELLED:  { label: "Cancelled",  cls: "is-cancelled",  icon: XCircle },
 };
 
 const NEXT_STATUS = { PENDING: "DISPATCHED", DISPATCHED: "EN_ROUTE", EN_ROUTE: "COMPLETED" };
-const NEXT_LABEL = { PENDING: "Dispatch", DISPATCHED: "En Route", EN_ROUTE: "Complete" };
-
-const ALL_STATUSES = ["ALL", "PENDING", "DISPATCHED", "EN_ROUTE", "COMPLETED", "CANCELLED"];
+const NEXT_LABEL  = { PENDING: "Dispatch",   DISPATCHED: "En Route",  EN_ROUTE: "Complete" };
+const NEXT_BTN_CLS = { PENDING: "is-blue",   DISPATCHED: "is-slate",  EN_ROUTE: "is-emerald" };
 
 function StatusPill({ status }) {
   const cfg = STATUS_CONFIG[status];
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${cfg.light}`}>
+    <span className={`hms-amb-status-chip ${cfg.cls}`}>
       <Icon className="w-3 h-3" /> {cfg.label}
     </span>
   );
@@ -47,23 +46,21 @@ function StatusSelect({ current, bookingId, onUpdate }) {
     finally { setLoading(false); }
   };
 
-  if (!NEXT_STATUS[current] && current !== "CANCELLED") return <StatusPill status={current} />;
   if (current === "CANCELLED" || current === "COMPLETED") return <StatusPill status={current} />;
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="hms-amb-status-ctrl">
       <StatusPill status={current} />
-      <button
-        onClick={advance}
-        disabled={loading}
-        className={`px-3 py-1 rounded-full text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-50
-          ${current === "PENDING" ? "bg-blue-500 hover:bg-blue-600" : current === "DISPATCHED" ? "bg-slate-900 hover:bg-slate-900" : "bg-emerald-500 hover:bg-emerald-600"}`}>
-        → {NEXT_LABEL[current]}
-      </button>
-      <button
-        onClick={cancel}
-        disabled={loading}
-        className="px-3 py-1 rounded-full text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors disabled:opacity-50">
+      {NEXT_STATUS[current] && (
+        <button
+          onClick={advance}
+          disabled={loading}
+          className={`hms-amb-next-btn ${NEXT_BTN_CLS[current]}`}
+        >
+          → {NEXT_LABEL[current]}
+        </button>
+      )}
+      <button onClick={cancel} disabled={loading} className="hms-amb-cancel-btn">
         Cancel
       </button>
     </div>
@@ -108,68 +105,59 @@ export default function AmbulanceStatus() {
   }, {});
 
   return (
-    <div className="min-h-screen bg-slate-50 space-y-6">
+    <div className="hms-amb-dispatch-page">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center">
-            <Activity className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Ambulance Status</h1>
-            <p className="text-sm text-slate-500">Live dispatch tracking and status updates</p>
-          </div>
+      <div className="hms-amb-header-row">
+        <div className="hms-amb-header__icon">
+          <Activity className="w-5 h-5" />
+        </div>
+        <div className="hms-amb-header__body">
+          <h1>Ambulance Status</h1>
+          <p>Live dispatch tracking and status updates</p>
         </div>
       </div>
 
-      {/* Status summary pills */}
-      <div className="flex flex-wrap gap-2">
+      {/* Status filter pills */}
+      <div className="hms-amb-filter-tabs">
         {Object.entries(STATUS_CONFIG).map(([s, cfg]) => (
           <button
             key={s}
             onClick={() => setFilterStatus(filterStatus === s ? "ALL" : s)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all
-              ${filterStatus === s
-                ? `${cfg.bg} text-white border-transparent shadow-lg`
-                : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"}`}>
+            className={`hms-amb-filter-tab ${cfg.cls} ${filterStatus === s ? "is-on" : ""}`}
+          >
             {counts[s] > 0 && (
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold
-                ${filterStatus === s ? "bg-white/20 text-white" : `${cfg.light}`}`}>
-                {counts[s]}
-              </span>
+              <span className="hms-amb-filter-tab__count">{counts[s]}</span>
             )}
             {cfg.label}
           </button>
         ))}
         {filterStatus !== "ALL" && (
-          <button onClick={() => setFilterStatus("ALL")}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors">
+          <button onClick={() => setFilterStatus("ALL")} className="hms-amb-filter-clear">
             Clear
           </button>
         )}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      <div className="hms-amb-filter-bar">
+        <div className="hms-amb-filter-search">
+          <Search className="hms-amb-filter-search__icon w-4 h-4" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search patient, driver, vehicle…"
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400"
+            className="hms-amb-filter-search__input"
           />
         </div>
         <input
           type="date"
           value={filterDate}
           onChange={e => setFilterDate(e.target.value)}
-          className="px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400"
+          className="hms-amb-filter-date"
         />
         {filterDate && (
-          <button onClick={() => setFilterDate("")}
-            className="px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-600 border border-slate-200 bg-white transition-colors">
+          <button onClick={() => setFilterDate("")} className="hms-amb-filter-date-clear">
             Clear date
           </button>
         )}
@@ -177,92 +165,106 @@ export default function AmbulanceStatus() {
 
       {/* Cards */}
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="hms-amb-status-grid">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white border border-slate-200 rounded-lg p-5 animate-pulse">
-              <div className="h-4 bg-slate-100 rounded w-1/3 mb-3" />
-              <div className="h-3 bg-slate-100 rounded w-2/3 mb-2" />
-              <div className="h-3 bg-slate-100 rounded w-1/2" />
+            <div key={i} className="hms-amb-dispatch-skeleton">
+              <div className="hms-amb-dispatch-skeleton__line is-title" />
+              <div className="hms-amb-dispatch-skeleton__line is-sub1" />
+              <div className="hms-amb-dispatch-skeleton__line is-sub2" />
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center py-20 bg-white border border-slate-200 rounded-lg text-slate-400">
-          <Ambulance className="w-12 h-12 mb-3 opacity-25" />
-          <p className="font-semibold text-sm">No bookings match the filter</p>
-          <p className="text-xs mt-1">Try adjusting your search or status filter</p>
+        <div className="hms-amb-dispatch-empty">
+          <div className="hms-amb-dispatch-empty__icon">
+            <Ambulance className="w-12 h-10" />
+          </div>
+          <p className="hms-amb-dispatch-empty__title">No bookings match the filter</p>
+          <p className="hms-amb-dispatch-empty__sub">Try adjusting your search or status filter</p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="hms-amb-status-grid">
           {filtered.map(b => {
             const cfg = STATUS_CONFIG[b.status];
             return (
-              <div key={b.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                {/* Colored top bar */}
-                <div className={`h-1 w-full ${cfg.bg}`} />
+              <div key={b.id} className="hms-amb-status-card">
+                <div className={`hms-amb-status-card__stripe ${cfg.cls}`} />
 
-                <div className="p-5 space-y-4">
-                  {/* Top row: date + status */}
-                  <div className="flex items-start justify-between gap-3">
+                {/* Head: date + ref */}
+                <div className="hms-amb-status-card__head">
+                  <div>
+                    <p className="hms-amb-status-card__ref">{b.bookingDate}</p>
+                    <p className="hms-amb-status-card__time">{b.bookingTime}</p>
+                  </div>
+                  <span className="hms-amb-status-card__time">#{b.id}</span>
+                </div>
+
+                {/* Patient */}
+                <div className="hms-amb-status-card__pat-block">
+                  <div className="hms-amb-status-card__avatar">
+                    <User className="w-3 h-3" />
+                  </div>
+                  {b.patient ? (
                     <div>
-                      <p className="text-sm font-bold text-slate-900">{b.bookingDate}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{b.bookingTime}</p>
+                      <p className="hms-amb-status-card__pat">
+                        {b.patient.firstName} {b.patient.lastName}
+                      </p>
+                      <p className="hms-amb-status-card__time">{fmtId(b.patient.uhid)}</p>
                     </div>
-                    <span className="text-xs font-bold text-slate-400">#{b.id}</span>
-                  </div>
-
-                  {/* Patient */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                      <User className="w-3.5 h-3.5 text-slate-500" />
-                    </div>
-                    {b.patient ? (
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">{b.patient.firstName} {b.patient.lastName}</p>
-                        <p className="text-xs text-slate-400">{fmtId(b.patient.uhid)}</p>
-                      </div>
-                    ) : <p className="text-sm text-slate-400 italic">Walk-in / No patient</p>}
-                  </div>
-
-                  {/* Pickup / Destination */}
-                  {(b.pickupAddress || b.destinationAddress) && (
-                    <div className="space-y-1.5 p-3 rounded-lg bg-slate-50">
-                      {b.pickupAddress && (
-                        <div className="flex gap-2 text-xs text-slate-600">
-                          <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">{b.pickupAddress}</span>
-                        </div>
-                      )}
-                      {b.destinationAddress && (
-                        <div className="flex gap-2 text-xs text-slate-500">
-                          <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">{b.destinationAddress}</span>
-                        </div>
-                      )}
-                    </div>
+                  ) : (
+                    <p className="hms-amb-status-card__time">Walk-in / No patient</p>
                   )}
+                </div>
 
-                  {/* Type + Charge */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">{b.ambulanceType?.name || "Standard"}</span>
-                    {b.charge && (
-                      <span className="text-sm font-bold text-emerald-600">₹{b.charge}</span>
+                {/* Route */}
+                {(b.pickupAddress || b.destinationAddress) && (
+                  <div className="hms-amb-status-card__route">
+                    {b.pickupAddress && (
+                      <div className="hms-amb-status-card__route-row">
+                        <MapPin className="w-3 h-3" />
+                        <span>{b.pickupAddress}</span>
+                      </div>
+                    )}
+                    {b.destinationAddress && (
+                      <div className="hms-amb-status-card__route-row">
+                        <MapPin className="w-3 h-3" />
+                        <span>{b.destinationAddress}</span>
+                      </div>
                     )}
                   </div>
+                )}
 
-                  {/* Driver / Vehicle */}
-                  {(b.driverName || b.vehicleNumber) && (
-                    <div className="flex gap-4 text-xs text-slate-500">
-                      {b.driverName && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{b.driverName}{b.driverPhone && ` · ${b.driverPhone}`}</span>}
-                      {b.vehicleNumber && <span className="flex items-center gap-1"><Car className="w-3 h-3" />{b.vehicleNumber}</span>}
-                    </div>
+                {/* Type + Charge */}
+                <div className="flex items-center justify-between">
+                  <span className="hms-amb-status-card__type">
+                    {b.ambulanceType?.name || "Standard"}
+                  </span>
+                  {b.charge && (
+                    <span className="hms-amb-status-card__charge">
+                      ₹{b.charge}
+                    </span>
                   )}
-
-                  {/* Status control */}
-                  <div className="pt-1 border-t border-slate-100">
-                    <StatusSelect current={b.status} bookingId={b.id} onUpdate={load} />
-                  </div>
                 </div>
+
+                {/* Driver / Vehicle */}
+                {(b.driverName || b.vehicleNumber) && (
+                  <div className="hms-amb-status-card__driver-row">
+                    {b.driverName && (
+                      <span className="hms-amb-status-card__driver-item">
+                        <Phone className="w-3 h-3" />
+                        {b.driverName}{b.driverPhone && ` · ${b.driverPhone}`}
+                      </span>
+                    )}
+                    {b.vehicleNumber && (
+                      <span className="hms-amb-status-card__driver-item">
+                        <Car className="w-3 h-3" />{b.vehicleNumber}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Status control */}
+                <StatusSelect current={b.status} bookingId={b.id} onUpdate={load} />
               </div>
             );
           })}

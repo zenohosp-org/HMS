@@ -15,19 +15,19 @@ import {
 const PAGE_SIZE = 10
 
 const STATUS_CFG = {
-  PAID:      { label: 'Paid',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: CheckCircle2 },
-  UNPAID:    { label: 'Unpaid',    cls: 'bg-amber-50 text-amber-700 border-amber-200',             Icon: Clock        },
-  PARTIAL:   { label: 'Partial',   cls: 'bg-orange-50 text-orange-700 border-orange-200',       Icon: AlertCircle  },
-  CANCELLED: { label: 'Cancelled', cls: 'bg-rose-50 text-rose-700 border-rose-200',                   Icon: XCircle      },
+  PAID:      { label: 'Paid',      cls: 'is-paid',      Icon: CheckCircle2 },
+  UNPAID:    { label: 'Unpaid',    cls: 'is-unpaid',    Icon: Clock        },
+  PARTIAL:   { label: 'Partial',   cls: 'is-partial',   Icon: AlertCircle  },
+  CANCELLED: { label: 'Cancelled', cls: 'is-cancelled', Icon: XCircle      },
 }
 
 const TYPE_META = {
-  MEDICINE:     { bg: 'bg-emerald-100', icon: <Pill        className="w-3 h-3 text-emerald-600" /> },
-  LAB_TEST:     { bg: 'bg-slate-100',     icon: <FlaskConical className="w-3 h-3 text-slate-600" />    },
-  CONSULTATION: { bg: 'bg-blue-100',       icon: <Stethoscope className="w-3 h-3 text-blue-600" />       },
-  ROOM_CHARGE:  { bg: 'bg-orange-100',   icon: <BedDouble   className="w-3 h-3 text-orange-600" />   },
-  RADIOLOGY:    { bg: 'bg-violet-100',   icon: <ScanLine    className="w-3 h-3 text-violet-600" />   },
-  CUSTOM:       { bg: 'bg-slate-100',           icon: <Wrench      className="w-3 h-3 text-slate-500" />                          },
+  MEDICINE:     { cls: 'is-medicine',     icon: <Pill className="w-3 h-3" /> },
+  LAB_TEST:     { cls: 'is-lab',          icon: <FlaskConical className="w-3 h-3" /> },
+  CONSULTATION: { cls: 'is-consultation', icon: <Stethoscope className="w-3 h-3" /> },
+  ROOM_CHARGE:  { cls: 'is-room',         icon: <BedDouble className="w-3 h-3" /> },
+  RADIOLOGY:    { cls: 'is-radiology',    icon: <ScanLine className="w-3 h-3" /> },
+  CUSTOM:       { cls: 'is-custom',       icon: <Wrench className="w-3 h-3" /> },
 }
 
 function fmt(n) {
@@ -36,39 +36,33 @@ function fmt(n) {
 }
 
 function ItemTypePips({ items }) {
-  if (!items?.length) return <span className="text-xs text-slate-400">—</span>
+  if (!items?.length) return <span className="text-11 text-gray-400">—</span>
   const unique = [...new Set(items.map(i => i.itemType))]
   return (
-    <div className="flex items-center gap-1 flex-wrap">
+    <div className="hms-billing-pips">
       {unique.map(type => {
         const m = TYPE_META[type] ?? TYPE_META.CUSTOM
         return (
-          <span key={type} className={`w-5 h-5 rounded flex items-center justify-center ${m.bg}`}>
+          <span key={type} className={`hms-billing-pip ${m.cls}`}>
             {m.icon}
           </span>
         )
       })}
-      <span className="text-xs text-slate-400 ml-0.5">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+      <span className="hms-billing-pips__count">{items.length} item{items.length !== 1 ? 's' : ''}</span>
     </div>
   )
 }
 
 function StatCard({ label, value, sub, Icon, accent }) {
-  const accents = {
-    blue:    'bg-blue-50 border-blue-100 text-blue-600',
-    emerald: 'bg-emerald-50 border-emerald-100 text-emerald-600',
-    amber:   'bg-amber-50 border-amber-100 text-amber-600',
-    rose:    'bg-rose-50 border-rose-100 text-rose-600',
-  }
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-5 flex items-center gap-4">
-      <div className={`w-11 h-11 rounded-lg border flex items-center justify-center shrink-0 ${accents[accent]}`}>
+    <div className="hms-billing-stat">
+      <div className={`hms-billing-stat__icon is-${accent}`}>
         <Icon className="w-5 h-5" />
       </div>
-      <div className="min-w-0">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</p>
-        <p className="text-xl font-bold text-slate-900 mt-0.5 truncate">{value}</p>
-        {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+      <div className="hms-billing-stat__body">
+        <p className="hms-billing-stat__label">{label}</p>
+        <p className="hms-billing-stat__value">{value}</p>
+        {sub && <p className="hms-billing-stat__sub">{sub}</p>}
       </div>
     </div>
   )
@@ -223,26 +217,22 @@ export default function OPDBilling() {
     todayCount: invoices.filter(i => new Date(i.createdAt).toDateString() === new Date().toDateString()).length,
   }
 
-  const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-left'
-
   return (
-    <div className="flex flex-col h-full bg-slate-50 gap-6">
+    <div className="hms-billing-page">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">OPD Billing</h1>
-          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold border border-blue-100">
-            {totalElements} invoices
-          </span>
+      <div className="hms-billing-header">
+        <div className="hms-billing-header__title-row">
+          <h1 className="hms-billing-header__title">OPD Billing</h1>
+          <span className="hms-billing-header__count">{totalElements} invoices</span>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-2">
+        <button onClick={() => setShowCreate(true)} className="hms-btn-primary">
           <ReceiptText className="w-4 h-4" /> New Invoice
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="hms-billing-stats">
         <StatCard label="Total OPD Invoices" value={stats.total}             sub="matching filters"       Icon={ReceiptText} accent="blue"    />
         <StatCard label="Revenue Collected"  value={fmt(stats.collected)}    sub="from loaded paid"       Icon={TrendingUp}  accent="emerald" />
         <StatCard label="Outstanding Due"    value={fmt(stats.outstanding)}  sub="from loaded unpaid"     Icon={AlertCircle} accent="amber"   />
@@ -250,14 +240,12 @@ export default function OPDBilling() {
       </div>
 
       {/* Table Container */}
-      <div className="flex flex-col flex-1 bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden min-h-0">
+      <div className="hms-billing-tablecard">
 
         {/* Controls bar */}
-        <div className="flex items-center justify-end px-5 py-3 border-b border-slate-100 gap-3 flex-wrap">
-
-          {/* Status filters + search */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
+        <div className="hms-billing-controls">
+          <div className="hms-billing-controls__group">
+            <div className="hms-billing-segment">
               {[
                 { key: 'ALL', label: 'All' },
                 { key: 'UNPAID', label: 'Unpaid' },
@@ -266,61 +254,57 @@ export default function OPDBilling() {
                 <button
                   key={key}
                   onClick={() => handleFilterChange(key)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                    statusFilter === key
-                      ? 'bg-slate-900 text-white shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                  className={`hms-billing-segment__btn ${statusFilter === key ? 'is-active' : ''}`}
                 >
                   {label}
                 </button>
               ))}
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <div className="hms-billing-search">
+              <Search className="hms-billing-search__icon w-3.5 h-3.5" />
               <input
                 type="text"
                 placeholder="Search invoice, patient…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9 pr-3 py-2 w-52 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="hms-billing-search__input"
               />
             </div>
           </div>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto overflow-y-auto flex-1">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 z-10">
-              <tr className="border-b border-slate-100 bg-white/95 backdrop-blur-sm">
-                <th className={thCls}>Invoice</th>
-                <th className={thCls}>Patient</th>
-                <th className={thCls}>Items</th>
-                <th className={thCls}>Amount</th>
-                <th className={thCls}>Method</th>
-                <th className={thCls + ' text-center'}>Status</th>
-                <th className={thCls + ' text-right'}>Actions</th>
+        <div className="hms-billing-tablescroll">
+          <table className="hms-billing-table">
+            <thead>
+              <tr>
+                <th>Invoice</th>
+                <th>Patient</th>
+                <th>Items</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th className="is-center">Status</th>
+                <th className="is-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                      <p className="text-sm font-medium text-slate-400">Loading invoices…</p>
+                  <td colSpan={7} className="hms-billing-cell-state">
+                    <div className="hms-billing-cell-state__stack">
+                      <Loader2 className="w-8 h-8 hms-billing-spin is-blue" />
+                      <p className="hms-billing-cell-state__text">Loading invoices…</p>
                     </div>
                   </td>
                 </tr>
               ) : invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center">
-                        <ReceiptText className="w-8 h-8 text-slate-200" />
+                  <td colSpan={7} className="hms-billing-cell-state">
+                    <div className="hms-billing-cell-state__stack">
+                      <div className="hms-billing-cell-state__icon-bg">
+                        <ReceiptText className="w-8 h-8" />
                       </div>
-                      <p className="text-sm font-medium text-slate-400">
+                      <p className="hms-billing-cell-state__text">
                         {search ? 'No invoices match your search.' : 'No OPD invoices yet.'}
                       </p>
                     </div>
@@ -331,52 +315,47 @@ export default function OPDBilling() {
                   const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID
                   const StatusIcon = cfg.Icon
                   return (
-                    <tr
-                      key={inv.id}
-                      className="group hover:bg-slate-50/50 transition-all"
-                    >
-                      <td className="px-5 py-4">
-                        <p className="font-bold text-sm text-slate-900">{fmtId(inv.invoiceNumber)}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                    <tr key={inv.id}>
+                      <td>
+                        <p className="hms-billing-cell__primary">{fmtId(inv.invoiceNumber)}</p>
+                        <p className="hms-billing-cell__secondary">
                           {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                         </p>
                       </td>
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-sm text-slate-900">{inv.patientName ?? '—'}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{fmtId(inv.patientUhid) ?? ''}</p>
+                      <td>
+                        <p className="hms-billing-cell__strong">{inv.patientName ?? '—'}</p>
+                        <p className="hms-billing-cell__secondary">{fmtId(inv.patientUhid) ?? ''}</p>
                       </td>
-                      <td className="px-5 py-4">
+                      <td>
                         <ItemTypePips items={inv.items} />
                       </td>
-                      <td className="px-5 py-4">
-                        <p className="font-bold text-sm text-slate-900">{fmt(inv.total)}</p>
+                      <td>
+                        <p className="hms-billing-cell__primary">{fmt(inv.total)}</p>
                         {inv.status === 'PARTIAL' && Number(inv.paidAmount) > 0 && (
-                          <p className="text-[11px] text-emerald-600 mt-0.5">{fmt(inv.paidAmount)} paid</p>
+                          <p className="hms-billing-cell__paid">{fmt(inv.paidAmount)} paid</p>
                         )}
                         {Number(inv.discount) > 0 && (
-                          <p className="text-xs text-red-500 mt-0.5">−{fmt(inv.discount)} disc.</p>
+                          <p className="hms-billing-cell__discount">−{fmt(inv.discount)} disc.</p>
                         )}
                       </td>
-                      <td className="px-5 py-4">
+                      <td>
                         {inv.paymentMethod ? (
-                          <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-xs font-semibold text-slate-600">
-                            {inv.paymentMethod}
-                          </span>
+                          <span className="hms-billing-method">{inv.paymentMethod}</span>
                         ) : (
-                          <span className="text-slate-300">—</span>
+                          <span className="hms-billing-cell__muted">—</span>
                         )}
                       </td>
-                      <td className="px-5 py-4">
-                        <div className="flex justify-center">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${cfg.cls}`}>
+                      <td>
+                        <div className="hms-billing-status-center">
+                          <span className={`hms-billing-status ${cfg.cls}`}>
                             <StatusIcon className="w-3 h-3" /> {cfg.label}
                           </span>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-right" onClick={e => e.stopPropagation()}>
+                      <td className="hms-billing-actions-cell" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={(e) => { e.stopPropagation(); openRowMenu(inv, e.currentTarget) }}
-                          className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
+                          className="hms-billing-rowbtn"
                         >
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
@@ -390,7 +369,7 @@ export default function OPDBilling() {
         </div>
 
         {!loading && totalElements > 0 && (
-          <div className="px-5 py-3 border-t border-slate-100">
+          <div className="hms-billing-pagination">
             <Pagination
               currentPage={page}
               totalPages={totalPages}
@@ -405,27 +384,26 @@ export default function OPDBilling() {
       {/* Context Action Menu */}
       {menuState && (() => {
         const { inv, right, top, bottom } = menuState
-        const itemClass = "w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors text-left disabled:opacity-40"
         return (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setMenuState(null)} />
+            <div className="hms-billing-menu-overlay" onClick={() => setMenuState(null)} />
             <div
-              style={{ position: 'fixed', right, ...(top !== undefined ? { top } : { bottom }), zIndex: 50 }}
-              className="w-52 bg-white rounded-xl shadow-2xl border border-slate-100 py-1.5"
+              style={{ right, ...(top !== undefined ? { top } : { bottom }) }}
+              className="hms-billing-menu"
             >
               {(inv.status === 'UNPAID' || inv.status === 'PARTIAL') && (
-                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className={itemClass}>
-                  <Receipt className="w-4 h-4 shrink-0" /> Collect Payment
+                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
+                  <Receipt className="hms-billing-menu__item-icon w-4 h-4" /> Collect Payment
                 </button>
               )}
               {inv.status !== 'UNPAID' && inv.status !== 'PARTIAL' && (
-                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className={itemClass}>
-                  <Eye className="w-4 h-4 shrink-0" /> View Details
+                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
+                  <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
                 </button>
               )}
-              <div className="h-px bg-slate-100 mx-3 my-1" />
-              <button onClick={() => { setMenuState(null); printInvoice(inv) }} className={itemClass}>
-                <Printer className="w-4 h-4 shrink-0" /> Print Invoice
+              <div className="hms-billing-menu__divider" />
+              <button onClick={() => { setMenuState(null); printInvoice(inv) }} className="hms-billing-menu__item">
+                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
               </button>
             </div>
           </>

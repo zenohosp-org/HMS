@@ -4,13 +4,13 @@ import { useAuth } from "@/context/AuthContext";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import { patientApi, appointmentsApi, doctorsApi } from "@/utils/api";
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import {
   Users, Calendar, ReceiptText, ChevronRight, Phone,
   Droplets, Activity, Clock, UserPlus, Loader2,
-  CheckCircle2, XCircle, AlertCircle, TrendingUp, ArrowRight
+  CheckCircle2, XCircle, AlertCircle, ArrowRight
 } from "lucide-react";
 import { format, subDays, parseISO, isToday as fnsIsToday, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 
@@ -53,60 +53,58 @@ function buildWeekAppts(appts) {
 }
 
 const BLOOD_COLORS = {
-  "A+": "bg-red-100 text-red-700 border-red-200",
-  "A-": "bg-rose-100 text-rose-700 border-rose-200",
-  "B+": "bg-orange-100 text-orange-700 border-orange-200",
-  "B-": "bg-amber-100 text-amber-700 border-amber-200",
-  "O+": "bg-blue-100 text-blue-700 border-blue-200",
-  "O-": "bg-slate-100 text-slate-700 border-slate-200",
-  "AB+": "bg-slate-100 text-slate-900 border-slate-200",
-  "AB-": "bg-slate-100 text-slate-900 border-slate-200",
+  "A+":  "is-aplus",
+  "A-":  "is-aminus",
+  "B+":  "is-bplus",
+  "B-":  "is-bminus",
+  "O+":  "is-oplus",
+  "O-":  "is-ominus",
+  "AB+": "is-abplus",
+  "AB-": "is-abminus",
 };
 
 const STATUS_META = {
-  SCHEDULED: { icon: Clock, color: "text-blue-600", bg: "bg-blue-50", label: "Scheduled" },
-  COMPLETED: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", label: "Completed" },
-  CANCELLED: { icon: XCircle, color: "text-rose-500", bg: "bg-rose-50", label: "Cancelled" },
-  NO_SHOW: { icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-50", label: "No Show" },
+  SCHEDULED: { icon: Clock, mod: "is-info", label: "Scheduled" },
+  COMPLETED: { icon: CheckCircle2, mod: "is-emerald", label: "Completed" },
+  CANCELLED: { icon: XCircle, mod: "is-rose", label: "Cancelled" },
+  NO_SHOW:   { icon: AlertCircle, mod: "is-amber", label: "No Show" },
 };
 
 const STATUS_BAR_CLS = {
-  SCHEDULED: "bg-slate-900",
-  COMPLETED: "bg-emerald-500",
-  CANCELLED: "bg-rose-500",
-  NO_SHOW: "bg-amber-500",
+  SCHEDULED: "is-scheduled",
+  COMPLETED: "is-completed",
+  CANCELLED: "is-cancelled",
+  NO_SHOW:   "is-no-show",
 };
-
-const TOOLTIP_CLS = "bg-white border border-slate-200 rounded-lg shadow-xl px-4 py-3 text-xs";
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function StatPill({ label, value, icon, accent }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-5 flex items-center gap-4">
-      <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${accent}`}>
+    <div className="hms-dash-stat">
+      <div className={`hms-dash-stat__icon ${accent}`}>
         {icon}
       </div>
       <div>
-        <p className="text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-0.5">{label}</p>
+        <p className="hms-dash-stat__value">{value}</p>
+        <p className="hms-dash-stat__label">{label}</p>
       </div>
     </div>
   );
 }
 
-function SectionCard({ title, subtitle, children, action, actionLabel, actionFn }) {
+function SectionCard({ title, subtitle, children, actionLabel, actionFn }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-6 flex flex-col gap-5">
-      <div className="flex items-start justify-between">
+    <div className="hms-dash-section-card">
+      <div className="hms-dash-section-card__head">
         <div>
-          <p className="font-bold text-slate-900 text-sm">{title}</p>
-          {subtitle && <p className="text-xs text-slate-600 mt-0.5">{subtitle}</p>}
+          <p className="hms-dash-section-card__title">{title}</p>
+          {subtitle && <p className="hms-dash-section-card__sub">{subtitle}</p>}
         </div>
         {actionFn && (
           <button
             onClick={actionFn}
-            className="flex items-center gap-1 text-xs font-semibold text-slate-900 hover:underline"
+            className="hms-dash-section-card__action"
           >
             {actionLabel} <ArrowRight className="w-3 h-3" />
           </button>
@@ -118,27 +116,28 @@ function SectionCard({ title, subtitle, children, action, actionLabel, actionFn 
 }
 
 function AppointmentStatusRow({ status, count, total }) {
-  const meta = STATUS_META[status] ?? { icon: Clock, color: "text-slate-600", bg: "bg-slate-100", label: status };
+  const meta = STATUS_META[status] ?? { icon: Clock, mod: "is-slate", label: status };
   const Icon = meta.icon;
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  const fillMod = STATUS_BAR_CLS[status] ?? "is-default";
   return (
-    <div className="flex items-center gap-3">
-      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${meta.bg}`}>
-        <Icon className={`w-3.5 h-3.5 ${meta.color}`} />
+    <div className="hms-dash-status-row">
+      <div className={`hms-dash-status-row__icon ${meta.mod}`}>
+        <Icon className="w-3 h-3" />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-semibold text-slate-700">{meta.label}</span>
-          <span className="text-xs font-bold text-slate-800">{count}</span>
+      <div className="hms-dash-status-row__body">
+        <div className="hms-dash-status-row__head">
+          <span className="hms-dash-status-row__label">{meta.label}</span>
+          <span className="hms-dash-status-row__count">{count}</span>
         </div>
-        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+        <div className="hms-dash-status-row__bar">
           <div
-            className={`h-full rounded-full transition-all duration-700 ${STATUS_BAR_CLS[status] ?? "bg-slate-400"}`}
+            className={`hms-dash-status-row__fill ${fillMod}`}
             style={{ width: `${pct}%` }}
           />
         </div>
       </div>
-      <span className="text-[10px] text-slate-600 w-7 text-right">{pct}%</span>
+      <span className="hms-dash-status-row__pct">{pct}%</span>
     </div>
   );
 }
@@ -146,40 +145,37 @@ function AppointmentStatusRow({ status, count, total }) {
 function PatientRowCard({ p }) {
   const navigate = useNavigate();
   const blood = p.bloodGroup ?? "N/A";
-  const bloodCls = BLOOD_COLORS[blood] ?? "bg-slate-100 text-slate-600 border-slate-200";
+  const bloodMod = BLOOD_COLORS[blood] ?? "is-default";
   return (
-    <tr
-      className="hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-100 last:border-0"
-      onClick={() => navigate(`/patients/${p.id}`)}
-    >
-      <td className="px-5 py-3.5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
+    <tr onClick={() => navigate(`/patients/${p.id}`)}>
+      <td>
+        <div className="hms-dash-pat-cell">
+          <div className="hms-dash-pat-cell__avatar">
             {p.firstName[0]}{p.lastName?.[0] ?? ""}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-800">{p.firstName} {p.lastName}</p>
-            <p className="text-xs text-slate-600">{fmtId(p.uhid)}</p>
+            <p className="hms-dash-pat-cell__name">{p.firstName} {p.lastName}</p>
+            <p className="hms-dash-pat-cell__uhid">{fmtId(p.uhid)}</p>
           </div>
         </div>
       </td>
-      <td className="px-5 py-3.5 text-xs text-slate-500">{calcAge(p.dob)} · {p.gender ?? "—"}</td>
-      <td className="px-5 py-3.5">
+      <td>{calcAge(p.dob)} · {p.gender ?? "—"}</td>
+      <td>
         {p.phone ? (
-          <span className="flex items-center gap-1 text-xs text-slate-500">
+          <span className="hms-dash-phone">
             <Phone className="w-3 h-3" />{p.phone}
           </span>
         ) : (
-          <span className="text-xs text-slate-500">—</span>
+          <span>—</span>
         )}
       </td>
-      <td className="px-5 py-3.5">
-        <span className={`px-2 py-0.5 border text-[10px] font-bold rounded-full ${bloodCls}`}>
-          <Droplets className="inline w-2.5 h-2.5 mr-0.5" />{blood}
+      <td>
+        <span className={`hms-dash-blood-chip ${bloodMod}`}>
+          <Droplets className="inline w-2 h-2" />{blood}
         </span>
       </td>
-      <td className="px-5 py-3.5 text-right">
-        <span className="flex items-center gap-1 text-xs text-slate-600 justify-end">
+      <td>
+        <span className="hms-dash-time">
           <Clock className="w-3 h-3" />{timeAgo(p.createdAt)}
         </span>
       </td>
@@ -249,8 +245,8 @@ function DoctorStaffDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-slate-900" />
+      <div className="hms-dash-loading">
+        <Loader2 className="w-5 h-5 animate-spin text-gray-900" />
       </div>
     );
   }
@@ -258,53 +254,53 @@ function DoctorStaffDashboard() {
   const totalAppts = appointments.length;
 
   return (
-    <div className="space-y-8">
+    <div className="hms-dash-doctor">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between">
+      <div className="hms-dash-doctor__header">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="hms-dash-doctor__greeting">
             {greeting}, {isDoctor ? "Dr." : ""} {user?.firstName}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="hms-dash-doctor__subtitle">
             {user?.hospitalName} · {dateStr}
           </p>
         </div>
-        <button onClick={() => navigate("/patients")} className="btn-primary hidden sm:flex">
+        <button onClick={() => navigate("/patients")} className="hms-btn-primary">
           <UserPlus className="w-4 h-4" /> Register Patient
         </button>
       </div>
 
       {/* ── KPIs ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="hms-dash-doctor__kpis">
         <StatPill
           label="Total Patients"
           value={patients.length}
-          icon={<Users className="w-5 h-5 text-blue-600" />}
-          accent="bg-blue-50"
+          icon={<Users className="w-4 h-4" />}
+          accent="is-info"
         />
         <StatPill
           label="New Today"
           value={todayPatients.length}
-          icon={<UserPlus className="w-5 h-5 text-slate-900" />}
-          accent="bg-slate-100"
+          icon={<UserPlus className="w-4 h-4" />}
+          accent="is-neutral"
         />
         <StatPill
           label={isDoctor ? "My Appointments" : "Appointments"}
           value={totalAppts}
-          icon={<Calendar className="w-5 h-5 text-slate-900" />}
-          accent="bg-slate-100"
+          icon={<Calendar className="w-4 h-4" />}
+          accent="is-neutral"
         />
         <StatPill
           label="Today's Schedule"
           value={todayAppts.length}
-          icon={<Activity className="w-5 h-5 text-amber-600" />}
-          accent="bg-amber-50"
+          icon={<Activity className="w-4 h-4" />}
+          accent="is-warning"
         />
       </div>
 
       {/* ── Row 2: Patient trend sparkline + weekly appointment bar ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="hms-dash-doctor__row-2col">
 
         {/* 14-day patient sparkline */}
         <SectionCard
@@ -327,9 +323,9 @@ function DoctorStaffDashboard() {
               <Tooltip
                 content={({ active, payload, label }) =>
                   active && payload?.length ? (
-                    <div className={TOOLTIP_CLS}>
-                      <p className="font-bold text-slate-700 mb-1">{label}</p>
-                      <p className="text-slate-700">{payload[0].value} patients</p>
+                    <div className="hms-dash-tooltip">
+                      <p className="hms-dash-tooltip__title">{label}</p>
+                      <p className="hms-dash-tooltip__line">{payload[0].value} patients</p>
                     </div>
                   ) : null
                 }
@@ -362,9 +358,9 @@ function DoctorStaffDashboard() {
               <Tooltip
                 content={({ active, payload, label }) =>
                   active && payload?.length ? (
-                    <div className={TOOLTIP_CLS}>
-                      <p className="font-bold text-slate-700 mb-1">{label}</p>
-                      <p className="text-slate-900">{payload[0].value} appointments</p>
+                    <div className="hms-dash-tooltip">
+                      <p className="hms-dash-tooltip__title">{label}</p>
+                      <p className="hms-dash-tooltip__line is-strong">{payload[0].value} appointments</p>
                     </div>
                   ) : null
                 }
@@ -382,7 +378,7 @@ function DoctorStaffDashboard() {
       </div>
 
       {/* ── Row 3: Appointment status + today's patients table ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="hms-dash-doctor__row-3col">
 
         {/* Appointment status breakdown */}
         <SectionCard
@@ -392,27 +388,27 @@ function DoctorStaffDashboard() {
           actionFn={() => navigate("/appointments")}
         >
           {totalAppts > 0 ? (
-            <div className="space-y-3">
+            <div className="hms-dash-status-list">
               {Object.entries(apptStatusCounts).map(([status, count]) => (
                 <AppointmentStatusRow key={status} status={status} count={count} total={totalAppts} />
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-32 gap-2 text-slate-500">
-              <Calendar className="w-8 h-8" />
-              <p className="text-xs text-slate-600">No appointments yet</p>
+            <div className="hms-dash-empty-chart">
+              <Calendar className="w-5 h-5" />
+              <p className="hms-dash-empty-chart__text">No appointments yet</p>
             </div>
           )}
           {totalAppts > 0 && (
-            <div className="mt-1 pt-4 border-t border-slate-100">
-              <div className="flex items-center justify-between text-xs text-slate-500">
+            <div className="hms-dash-status-foot">
+              <div className="hms-dash-status-foot__row">
                 <span>Total appointments</span>
-                <span className="font-bold text-slate-800">{totalAppts}</span>
+                <span className="hms-dash-status-foot__row-strong">{totalAppts}</span>
               </div>
               {apptStatusCounts.COMPLETED > 0 && (
-                <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
+                <div className="hms-dash-status-foot__row">
                   <span>Completion rate</span>
-                  <span className="font-bold text-slate-900">
+                  <span className="hms-dash-status-foot__row-strong is-dark">
                     {((apptStatusCounts.COMPLETED / totalAppts) * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -422,45 +418,45 @@ function DoctorStaffDashboard() {
         </SectionCard>
 
         {/* Today's patients */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-blue-500" />
-              <p className="font-bold text-slate-900 text-sm">New Patients Today</p>
+        <div className="hms-dash-today hms-dash-doctor__col-span-2">
+          <div className="hms-dash-today__head">
+            <div className="hms-dash-today__head-left">
+              <UserPlus className="w-4 h-4 hms-dash-today__head-icon" />
+              <p className="hms-dash-today__head-title">New Patients Today</p>
               {todayPatients.length > 0 && (
-                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-full border border-blue-100">
+                <span className="hms-dash-today__head-count">
                   {todayPatients.length}
                 </span>
               )}
             </div>
             <button
               onClick={() => navigate("/patients")}
-              className="flex items-center gap-1 text-xs font-semibold text-slate-900 hover:underline"
+              className="hms-dash-today__head-link"
             >
               All patients <ArrowRight className="w-3 h-3" />
             </button>
           </div>
 
           {todayPatients.length === 0 ? (
-            <div className="flex flex-col items-center justify-center flex-1 py-16 gap-3">
-              <div className="w-14 h-14 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center">
-                <UserPlus className="w-7 h-7 text-slate-200" />
+            <div className="hms-dash-today__empty">
+              <div className="hms-dash-today__empty-icon">
+                <UserPlus className="w-5 h-5" />
               </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-slate-500">No new patients today</p>
-                <p className="text-xs text-slate-600 mt-0.5">New registrations will appear here</p>
+              <div>
+                <p className="hms-dash-today__empty-title">No new patients today</p>
+                <p className="hms-dash-today__empty-sub">New registrations will appear here</p>
               </div>
-              <button onClick={() => navigate("/patients")} className="btn-primary text-xs mt-1">
+              <button onClick={() => navigate("/patients")} className="hms-btn-primary is-sm">
                 Register Patient
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-sm">
+            <div className="hms-dash-today__table-wrap">
+              <table className="hms-dash-today__table">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
+                  <tr>
                     {["Patient", "Age / Gender", "Phone", "Blood", "Registered"].map((h) => (
-                      <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-600 uppercase tracking-widest last:text-right">
+                      <th key={h}>
                         {h}
                       </th>
                     ))}
@@ -478,25 +474,25 @@ function DoctorStaffDashboard() {
       </div>
 
       {/* ── Quick actions row ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="hms-dash-doctor__quick-row">
         {[
-          { label: "Patients", sub: "Register or find a patient", to: "/patients", icon: <Users className="w-5 h-5" />, color: "text-blue-600 bg-blue-50" },
-          ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "text-slate-900 bg-slate-100" }] : []),
-          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing/opd", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 bg-slate-100" },
+          { label: "Patients", sub: "Register or find a patient", to: "/patients", icon: <Users className="w-5 h-5" />, color: "is-info" },
+          ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "is-neutral" }] : []),
+          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing/opd", icon: <ReceiptText className="w-5 h-5" />, color: "is-neutral" },
         ].map((item) => (
           <button
             key={item.to}
             onClick={() => navigate(item.to)}
-            className="group flex items-center gap-4 bg-white border border-slate-200 rounded-lg p-5 text-left hover:border-slate-300 hover:shadow-md transition-all"
+            className="hms-dash-quick"
           >
-            <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${item.color}`}>
+            <div className={`hms-dash-quick__icon ${item.color}`}>
               {item.icon}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-slate-800 text-sm">{item.label}</p>
-              <p className="text-xs text-slate-600 mt-0.5">{item.sub}</p>
+            <div className="hms-dash-quick__body">
+              <p className="hms-dash-quick__label">{item.label}</p>
+              <p className="hms-dash-quick__sub">{item.sub}</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="w-4 h-4 hms-dash-quick__chev" />
           </button>
         ))}
       </div>

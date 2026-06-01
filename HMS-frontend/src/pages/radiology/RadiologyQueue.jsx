@@ -18,9 +18,9 @@ import {
 import NewOrderModal from "./NewOrderModal";
 import WriteReportModal from "./WriteReportModal";
 const PRIORITY_META = {
-  ROUTINE: { cls: "bg-slate-100 text-slate-600 border-slate-200", icon: Clock },
-  URGENT: { cls: "bg-amber-50 text-amber-700 border-amber-200", icon: AlertTriangle },
-  STAT: { cls: "bg-red-50 text-red-700 border-red-200", icon: Zap }
+  ROUTINE: { cls: "is-routine", icon: Clock },
+  URGENT: { cls: "is-urgent", icon: AlertTriangle },
+  STAT: { cls: "is-stat", icon: Zap }
 };
 function RadiologyQueue() {
   const { user } = useAuth();
@@ -58,7 +58,7 @@ function RadiologyQueue() {
     setActionMenu(null);
     try {
       await radiologyApi.markScanned(order.id);
-      notify("Marked as scanned \u2014 moved to Awaiting Report", "success");
+      notify("Marked as scanned — moved to Awaiting Report", "success");
       load();
     } catch {
       notify("Failed to update status", "error");
@@ -81,107 +81,220 @@ function RadiologyQueue() {
   };
   const filteredPending = applyFilters(pending);
   const filteredAwaiting = applyFilters(awaiting);
-  return <div className="space-y-5" onClick={() => setActionMenu(null)}>{
-    /* Page header */
-  }<div className="flex items-start justify-between gap-4 flex-wrap"><div><h1 className="text-xl font-bold text-slate-900 flex items-center gap-2"><ScanLine className="w-5 h-5 text-slate-700" /> Radiology Queue
-  </h1><p className="text-sm text-slate-500 mt-0.5">
-      X-Ray, CT Scan, MRI, Ultrasound, and other imaging investigations
-    </p></div><div className="flex items-center gap-3"><div className="flex items-center gap-2 text-xs font-semibold"><span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700"><ScanLine className="w-3 h-3" /> {stats.pendingScan} awaiting scan
-    </span><span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 bg-slate-100 text-slate-900"><Clock className="w-3 h-3" /> {stats.awaitingReport} awaiting report
-      </span><span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700"><CheckCircle2 className="w-3 h-3" /> {stats.reportGenerated} done
-      </span></div><button onClick={() => setShowNewModal(true)} className="btn-primary flex items-center gap-2"><Plus className="w-4 h-4" /> New Order
-        </button></div></div>{
-      /* Stat cards */
-    }<div className="grid grid-cols-3 gap-4"><div className="bg-white border-l-4 border-amber-400 border-t border-r border-b border-slate-200 rounded-lg p-5 flex items-center justify-between"><div><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending Scans</p><p className="text-3xl font-bold text-amber-500 mt-1">{stats.pendingScan}</p></div><ScanLine className="w-8 h-8 text-amber-200" /></div><div className="bg-white border-l-4 border-slate-400 border-t border-r border-b border-slate-200 rounded-lg p-5 flex items-center justify-between"><div><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Awaiting Reports</p><p className="text-3xl font-bold text-slate-700 mt-1">{stats.awaitingReport}</p></div><Clock className="w-8 h-8 text-slate-300" /></div><div className="bg-white border-l-4 border-emerald-400 border-t border-r border-b border-slate-200 rounded-lg p-5 flex items-center justify-between"><div><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Completed Today</p><p className="text-3xl font-bold text-emerald-500 mt-1">{stats.reportGenerated}</p></div><CheckCircle2 className="w-8 h-8 text-emerald-200" /></div></div>{
-      /* Search + filters */
-    }<div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row gap-3">
-      <div className="flex gap-1.5">{["ALL", "ROUTINE", "URGENT", "STAT"].map((p) => <button
-        key={p}
-        onClick={() => setPriorityFilter(p)}
-        className={`px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors
-                                ${priorityFilter === p ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-100"}`}
-      >{p}</button>)}
+  return (
+    <div className="hms-rad-page" onClick={() => setActionMenu(null)}>
+      {/* Page header */}
+      <div className="hms-rad-page__head">
+        <div>
+          <h1 className="hms-rad-page__title">
+            <ScanLine className="w-5 h-5 hms-rad-page__title-icon" /> Radiology Queue
+          </h1>
+          <p className="hms-rad-page__sub">
+            X-Ray, CT Scan, MRI, Ultrasound, and other imaging investigations
+          </p>
+        </div>
+        <div className="hms-rad-page__chips">
+          <div className="hms-rad-chip-row">
+            <span className="hms-rad-chip is-amber">
+              <ScanLine className="w-3 h-3" /> {stats.pendingScan} awaiting scan
+            </span>
+            <span className="hms-rad-chip is-slate">
+              <Clock className="w-3 h-3" /> {stats.awaitingReport} awaiting report
+            </span>
+            <span className="hms-rad-chip is-emerald">
+              <CheckCircle2 className="w-3 h-3" /> {stats.reportGenerated} done
+            </span>
+          </div>
+          <button onClick={() => setShowNewModal(true)} className="hms-btn-primary">
+            <Plus className="w-4 h-4" /> New Order
+          </button>
+        </div>
       </div>
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input
-          className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300/50"
-          placeholder="Search patient, test, UHID, technician…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {/* Stat cards */}
+      <div className="hms-rad-stat-grid">
+        <div className="hms-rad-stat is-amber">
+          <div>
+            <p className="hms-rad-stat__label">Pending Scans</p>
+            <p className="hms-rad-stat__value">{stats.pendingScan}</p>
+          </div>
+          <ScanLine className="hms-rad-stat__icon" />
+        </div>
+        <div className="hms-rad-stat is-slate">
+          <div>
+            <p className="hms-rad-stat__label">Awaiting Reports</p>
+            <p className="hms-rad-stat__value">{stats.awaitingReport}</p>
+          </div>
+          <Clock className="hms-rad-stat__icon" />
+        </div>
+        <div className="hms-rad-stat is-emerald">
+          <div>
+            <p className="hms-rad-stat__label">Completed Today</p>
+            <p className="hms-rad-stat__value">{stats.reportGenerated}</p>
+          </div>
+          <CheckCircle2 className="hms-rad-stat__icon" />
+        </div>
       </div>
-    </div>
-    {loading ? <div className="flex items-center justify-center py-20"><Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-    </div> : <>{
-      /* Pending Scans section */
-    }<QueueSection
-        title="Imaging Queue (Ready for Scan)"
-        subtitle="Orders waiting for the imaging procedure to be performed"
-        color="border-amber-400"
-        orders={filteredPending}
-        emptyText="No pending scans"
-        emptySubtext="New orders will appear here"
-        actionLabel="Mark Scanned"
-        actionCls="bg-amber-500 hover:bg-amber-600 text-white"
-        onAction={handleMarkScanned}
-        loadingId={markingScanned}
-        actionMenu={actionMenu}
-        setActionMenu={setActionMenu}
-        onWriteReport={() => {
-        }}
-        showScanAction
-      />{
-        /* Awaiting Report section */
-      }<QueueSection
-        title="Awaiting Reports"
-        subtitle="Scans completed — radiologist findings pending"
-        color="border-slate-400"
-        orders={filteredAwaiting}
-        emptyText="No scans awaiting reports"
-        emptySubtext="Completed scans will appear here"
-        actionLabel="Write Report"
-        actionCls="bg-slate-900 hover:bg-slate-900 text-white"
-        onAction={(o) => setWriteReport(o)}
-        loadingId={null}
-        actionMenu={actionMenu}
-        setActionMenu={setActionMenu}
-        onWriteReport={(o) => setWriteReport(o)}
-      /></>}{showNewModal && <NewOrderModal onClose={() => setShowNewModal(false)} onCreated={() => {
+      {/* Search + filters */}
+      <div className="hms-rad-filterbar">
+        <div className="hms-rad-priority-row">
+          {["ALL", "ROUTINE", "URGENT", "STAT"].map((p) => (
+            <button
+              key={p}
+              onClick={() => setPriorityFilter(p)}
+              className={`hms-rad-priority-btn ${priorityFilter === p ? "is-on" : ""}`}
+            >{p}</button>
+          ))}
+        </div>
+        <div className="hms-rad-search">
+          <Search className="w-4 h-4 hms-rad-search__icon" />
+          <input
+            className="hms-rad-search__input"
+            placeholder="Search patient, test, UHID, technician…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+      {loading ? (
+        <div className="hms-rad-section__loading">
+          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <>
+          {/* Pending Scans section */}
+          <QueueSection
+            title="Imaging Queue (Ready for Scan)"
+            subtitle="Orders waiting for the imaging procedure to be performed"
+            colorMod="is-amber"
+            orders={filteredPending}
+            emptyText="No pending scans"
+            emptySubtext="New orders will appear here"
+            actionLabel="Mark Scanned"
+            actionMod="is-amber"
+            onAction={handleMarkScanned}
+            loadingId={markingScanned}
+            actionMenu={actionMenu}
+            setActionMenu={setActionMenu}
+            onWriteReport={() => {
+            }}
+            showScanAction
+          />
+          {/* Awaiting Report section */}
+          <QueueSection
+            title="Awaiting Reports"
+            subtitle="Scans completed — radiologist findings pending"
+            colorMod="is-slate"
+            orders={filteredAwaiting}
+            emptyText="No scans awaiting reports"
+            emptySubtext="Completed scans will appear here"
+            actionLabel="Write Report"
+            actionMod="is-slate"
+            onAction={(o) => setWriteReport(o)}
+            loadingId={null}
+            actionMenu={actionMenu}
+            setActionMenu={setActionMenu}
+            onWriteReport={(o) => setWriteReport(o)}
+          />
+        </>
+      )}
+      {showNewModal && <NewOrderModal onClose={() => setShowNewModal(false)} onCreated={() => {
         setShowNewModal(false);
         load();
-      }} />}{writeReport && <WriteReportModal order={writeReport} onClose={() => setWriteReport(null)} onSaved={() => {
+      }} />}
+      {writeReport && <WriteReportModal order={writeReport} onClose={() => setWriteReport(null)} onSaved={() => {
         setWriteReport(null);
         load();
-      }} />}</div>;
+      }} />}
+    </div>
+  );
 }
-function QueueSection({ title, subtitle, color, orders, emptyText, emptySubtext, actionLabel, actionCls, onAction, loadingId, actionMenu, setActionMenu, showScanAction }) {
-  return <div className={`bg-white border border-slate-200 rounded-lg overflow-hidden border-t-4 ${color}`}><div className="px-6 py-4 border-b border-slate-100"><p className="text-sm font-bold text-slate-800">{title}</p><p className="text-xs text-slate-600 mt-0.5">{subtitle}</p></div>{orders.length === 0 ? <div className="flex flex-col items-center justify-center py-14 gap-2 text-slate-600"><ScanLine className="w-8 h-8 opacity-30" /><p className="text-sm font-medium">{emptyText}</p><p className="text-xs">{emptySubtext}</p></div> : <div className="divide-y divide-slate-100">{
-    /* Column headers */
-  }<div className="hidden md:grid grid-cols-[2.5fr_2fr_1.5fr_1fr_1fr_auto] gap-4 px-6 py-2.5 bg-slate-50 border-b border-slate-100">{["Patient", "Investigation", "Technician", "Priority", "Scheduled", ""].map((h) => <p key={h} className="text-[10px] font-bold uppercase tracking-widest text-slate-600">{h}</p>)}</div>{orders.map((order) => {
-    const pmeta = PRIORITY_META[order.priority];
-    const PIcon = pmeta.icon;
-    return <div key={order.id} className="px-6 py-4 hover:bg-slate-50 transition-colors md:grid md:grid-cols-[2.5fr_2fr_1.5fr_1fr_1fr_auto] md:gap-4 md:items-center space-y-2 md:space-y-0" onClick={(e) => e.stopPropagation()}>{
-      /* Patient */
-    }<div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">{order.patientName[0]}</div><div><p className="text-sm font-semibold text-slate-800 leading-tight">{order.patientName}</p><p className="text-xs text-slate-600">{fmtId(order.patientUhid)}</p></div></div>{
-        /* Investigation */
-      }<div><p className="text-sm font-medium text-slate-700">{order.serviceName}</p>{order.referredByName && <div className="flex items-center gap-1 mt-0.5"><Stethoscope className="w-3 h-3 text-slate-600" /><p className="text-xs text-slate-600">{order.referredByName}</p></div>}</div>{
-        /* Technician */
-      }<div>{order.technicianName ? <div className="flex items-center gap-1.5"><User className="w-3 h-3 text-slate-600 shrink-0" /><p className="text-xs text-slate-600">{order.technicianName}</p></div> : <p className="text-xs text-slate-300">Unassigned</p>}</div>{
-        /* Priority */
-      }<div><span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${pmeta.cls}`}><PIcon className="w-2.5 h-2.5" />{order.priority}</span></div>{
-        /* Scheduled */
-      }<div><p className="text-xs text-slate-500">{order.scheduledDate ?? "\u2014"}</p></div>{
-        /* Action */
-      }<div className="flex items-center justify-end">{showScanAction ? <button
-        onClick={() => onAction(order)}
-        disabled={loadingId === order.id}
-        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 ${actionCls}`}
-      >{loadingId === order.id ? "Updating\u2026" : actionLabel}</button> : <button
-        onClick={() => onAction(order)}
-        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${actionCls}`}
-      >{actionLabel}</button>}</div></div>;
-  })}</div>}</div>;
+function QueueSection({ title, subtitle, colorMod, orders, emptyText, emptySubtext, actionLabel, actionMod, onAction, loadingId, actionMenu, setActionMenu, showScanAction }) {
+  return (
+    <div className={`hms-rad-section ${colorMod}`}>
+      <div className="hms-rad-section__head">
+        <p className="hms-rad-section__title">{title}</p>
+        <p className="hms-rad-section__sub">{subtitle}</p>
+      </div>
+      {orders.length === 0 ? (
+        <div className="hms-rad-section__empty">
+          <ScanLine className="w-5 h-5 hms-rad-section__empty-icon" />
+          <p className="hms-rad-section__empty-title">{emptyText}</p>
+          <p className="hms-rad-section__empty-sub">{emptySubtext}</p>
+        </div>
+      ) : (
+        <div className="hms-rad-section__list">
+          {/* Column headers */}
+          <div className="hms-rad-table-head">
+            {["Patient", "Investigation", "Technician", "Priority", "Scheduled", ""].map((h) => (
+              <p key={h} className="hms-rad-table-head__cell">{h}</p>
+            ))}
+          </div>
+          {orders.map((order) => {
+            const pmeta = PRIORITY_META[order.priority];
+            const PIcon = pmeta.icon;
+            return (
+              <div key={order.id} className="hms-rad-row" onClick={(e) => e.stopPropagation()}>
+                {/* Patient */}
+                <div className="hms-rad-patient">
+                  <div className="hms-rad-patient__avatar">{order.patientName[0]}</div>
+                  <div>
+                    <p className="hms-rad-patient__name">{order.patientName}</p>
+                    <p className="hms-rad-patient__uhid">{fmtId(order.patientUhid)}</p>
+                  </div>
+                </div>
+                {/* Investigation */}
+                <div>
+                  <p className="hms-rad-row__svc-name">{order.serviceName}</p>
+                  {order.referredByName && (
+                    <div className="hms-rad-row__svc-doc">
+                      <Stethoscope className="w-3 h-3 hms-rad-row__svc-doc-icon" />
+                      <p>{order.referredByName}</p>
+                    </div>
+                  )}
+                </div>
+                {/* Technician */}
+                <div>
+                  {order.technicianName ? (
+                    <div className="hms-rad-tech">
+                      <User className="w-3 h-3 hms-rad-tech__icon" />
+                      <p>{order.technicianName}</p>
+                    </div>
+                  ) : (
+                    <p className="hms-rad-tech-empty">Unassigned</p>
+                  )}
+                </div>
+                {/* Priority */}
+                <div>
+                  <span className={`hms-rad-priority ${pmeta.cls}`}>
+                    <PIcon className="w-2 h-2" />{order.priority}
+                  </span>
+                </div>
+                {/* Scheduled */}
+                <div>
+                  <p className="hms-rad-row__date-empty">{order.scheduledDate ?? "—"}</p>
+                </div>
+                {/* Action */}
+                <div className="hms-rad-row__action">
+                  {showScanAction ? (
+                    <button
+                      onClick={() => onAction(order)}
+                      disabled={loadingId === order.id}
+                      className={`hms-rad-row__action-btn ${actionMod}`}
+                    >{loadingId === order.id ? "Updating…" : actionLabel}</button>
+                  ) : (
+                    <button
+                      onClick={() => onAction(order)}
+                      className={`hms-rad-row__action-btn ${actionMod}`}
+                    >{actionLabel}</button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 export {
   RadiologyQueue as default

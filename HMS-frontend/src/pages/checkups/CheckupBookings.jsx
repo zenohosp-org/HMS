@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { checkupApi, patientApi, doctorsApi } from "@/utils/api";
@@ -11,19 +11,19 @@ import {
 } from "lucide-react";
 
 const STATUS_CONFIG = {
-  SCHEDULED: { label: "Scheduled", color: "bg-blue-50 text-blue-700", dot: "bg-blue-500" },
-  CHECKED_IN: { label: "Checked In", color: "bg-amber-50 text-amber-700", dot: "bg-amber-500" },
-  IN_PROGRESS: { label: "In Progress", color: "bg-slate-100 text-slate-900", dot: "bg-slate-900" },
-  COMPLETED: { label: "Completed", color: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
-  CANCELLED: { label: "Cancelled", color: "bg-slate-100 text-slate-500", dot: "bg-slate-400" },
-  NO_SHOW: { label: "No Show", color: "bg-rose-50 text-rose-700", dot: "bg-rose-500" },
+  SCHEDULED:   { label: "Scheduled",   cls: "is-scheduled" },
+  CHECKED_IN:  { label: "Checked In",  cls: "is-checked-in" },
+  IN_PROGRESS: { label: "In Progress", cls: "is-in-progress" },
+  COMPLETED:   { label: "Completed",   cls: "is-completed" },
+  CANCELLED:   { label: "Cancelled",   cls: "is-cancelled" },
+  NO_SHOW:     { label: "No Show",     cls: "is-no-show" },
 };
 
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.SCHEDULED;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cfg.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+    <span className={`hms-checkup-status-badge ${cfg.cls}`}>
+      <span className="hms-checkup-status-badge__dot" />
       {cfg.label}
     </span>
   );
@@ -33,16 +33,16 @@ function StatusBadge({ status }) {
 // → PAID (invoice fully collected). PARTIAL covers staff-entered split payments
 // at booking time. Unknown strings fall back to a neutral chip.
 const PAYMENT_BADGE_CLS = {
-  PAID:    "bg-emerald-50 text-emerald-700",
-  BILLED:  "bg-blue-50 text-blue-700",
-  PARTIAL: "bg-amber-50 text-amber-700",
-  PENDING: "bg-slate-100 text-slate-500",
+  PAID:    "is-paid",
+  BILLED:  "is-billed",
+  PARTIAL: "is-partial",
+  PENDING: "is-pending",
 };
 
 function PaymentBadge({ status }) {
   const cls = PAYMENT_BADGE_CLS[status] || PAYMENT_BADGE_CLS.PENDING;
   return (
-    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${cls}`}>
+    <span className={`hms-checkup-pay-badge ${cls}`}>
       {status || "—"}
     </span>
   );
@@ -112,23 +112,20 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
     finally { setSaving(false); }
   };
 
-  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400";
-  const labelCls = "block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5";
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white border border-slate-200 rounded-lg shadow-2xl w-full max-w-lg">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+    <div className="hms-checkup-modal-overlay">
+      <div className="hms-checkup-modal">
+        <div className="hms-checkup-modal__head">
           <div>
-            <h2 className="font-bold text-slate-900">Book Health Checkup</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Step {step} of 2</p>
+            <h2 className="hms-checkup-modal__title">Book Health Checkup</h2>
+            <p className="hms-checkup-modal__sub">Step {step} of 2</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="hms-checkup-modal__close"><X className="w-4 h-4" /></button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="hms-checkup-modal__body">
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+            <div className="hms-checkup-modal__alert">
               <AlertCircle className="w-4 h-4 shrink-0" />{error}
             </div>
           )}
@@ -136,17 +133,17 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
           {step === 1 && (
             <>
               <div ref={patientRef} className="relative">
-                <label className={labelCls}><User className="inline w-3 h-3 mr-1" />Patient *</label>
+                <label className="hms-checkup-modal__label"><User className="inline w-3 h-3 mr-1" />Patient *</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input value={patientQuery} onChange={e => searchPatient(e.target.value)} onFocus={() => patientResults.length && setPatientOpen(true)} placeholder="Search by name, UHID or phone…" className={`${inputCls} pl-9`} />
+                  <Search className="hms-checkup-modal__search-icon w-4 h-4" />
+                  <input value={patientQuery} onChange={e => searchPatient(e.target.value)} onFocus={() => patientResults.length && setPatientOpen(true)} placeholder="Search by name, UHID or phone…" className="hms-checkup-modal__input has-icon" />
                 </div>
                 {patientOpen && patientResults.length > 0 && (
-                  <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden">
+                  <div className="hms-checkup-modal__suggest">
                     {patientResults.slice(0, 5).map(p => (
-                      <button key={p.id} onClick={() => selectPatient(p)} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0">
-                        <p className="text-sm font-semibold text-slate-800">{p.firstName} {p.lastName}</p>
-                        <p className="text-xs text-slate-400">{fmtId(p.uhid)} · {p.phone}</p>
+                      <button key={p.id} onClick={() => selectPatient(p)} className="hms-checkup-modal__suggest-row">
+                        <p className="hms-checkup-modal__suggest-name">{p.firstName} {p.lastName}</p>
+                        <p className="hms-checkup-modal__suggest-sub">{fmtId(p.uhid)} · {p.phone}</p>
                       </button>
                     ))}
                   </div>
@@ -154,31 +151,30 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
               </div>
 
               <div>
-                <label className={labelCls}>Package *</label>
+                <label className="hms-checkup-modal__label">Package *</label>
                 <SearchableSelect
                   options={packages.map(p => ({ value: p.id, label: `${p.name} — ₹${Number(p.price).toLocaleString("en-IN")}` }))}
                   value={form.packageId}
                   onChange={v => set("packageId", v)}
                   placeholder="— Select a package —"
-                  className={inputCls}
                 />
               </div>
 
               {selectedPkg && (
-                <div className="px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200">
-                  <p className="text-xs font-bold text-emerald-700 mb-1">{selectedPkg.tests?.length || 0} tests included</p>
-                  <p className="text-xs text-emerald-600 line-clamp-2">{selectedPkg.tests?.map(t => t.testName).join(" · ")}</p>
+                <div className="hms-checkup-modal__pkg-tile">
+                  <p className="hms-checkup-modal__pkg-tile-title">{selectedPkg.tests?.length || 0} tests included</p>
+                  <p className="hms-checkup-modal__pkg-tile-tests">{selectedPkg.tests?.map(t => t.testName).join(" · ")}</p>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="hms-form-grid is-2col">
                 <div>
-                  <label className={labelCls}><Calendar className="inline w-3 h-3 mr-1" />Date *</label>
-                  <input type="date" value={form.scheduledDate} onChange={e => set("scheduledDate", e.target.value)} className={inputCls} />
+                  <label className="hms-checkup-modal__label"><Calendar className="inline w-3 h-3 mr-1" />Date *</label>
+                  <input type="date" value={form.scheduledDate} onChange={e => set("scheduledDate", e.target.value)} className="hms-checkup-modal__input" />
                 </div>
                 <div>
-                  <label className={labelCls}><Clock className="inline w-3 h-3 mr-1" />Time</label>
-                  <input type="time" value={form.scheduledTime} onChange={e => set("scheduledTime", e.target.value)} className={inputCls} />
+                  <label className="hms-checkup-modal__label"><Clock className="inline w-3 h-3 mr-1" />Time</label>
+                  <input type="time" value={form.scheduledTime} onChange={e => set("scheduledTime", e.target.value)} className="hms-checkup-modal__input" />
                 </div>
               </div>
             </>
@@ -187,18 +183,17 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
           {step === 2 && (
             <>
               <div>
-                <label className={labelCls}><UserCheck className="inline w-3 h-3 mr-1" />Assigned Doctor</label>
+                <label className="hms-checkup-modal__label"><UserCheck className="inline w-3 h-3 mr-1" />Assigned Doctor</label>
                 <SearchableSelect
                   value={form.doctorId}
                   onChange={value => set("doctorId", value)}
                   options={[{ value: "", label: "— Assign later —" }, ...doctors.map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName} · ${d.specialization}` }))]}
-                  className={inputCls}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="hms-form-grid is-2col">
                 <div>
-                  <label className={labelCls}><Banknote className="inline w-3 h-3 mr-1" />Payment Status</label>
+                  <label className="hms-checkup-modal__label"><Banknote className="inline w-3 h-3 mr-1" />Payment Status</label>
                   <SearchableSelect
                     value={form.paymentStatus}
                     onChange={value => set("paymentStatus", value)}
@@ -207,43 +202,42 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
                       { value: "PAID", label: "Paid" },
                       { value: "PARTIAL", label: "Partial" },
                     ]}
-                    className={inputCls}
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Amount Paid (₹)</label>
-                  <input type="number" step="0.01" value={form.amountPaid} onChange={e => set("amountPaid", e.target.value)} placeholder={selectedPkg ? String(selectedPkg.price) : "0.00"} className={inputCls} />
+                  <label className="hms-checkup-modal__label">Amount Paid (₹)</label>
+                  <input type="number" step="0.01" value={form.amountPaid} onChange={e => set("amountPaid", e.target.value)} placeholder={selectedPkg ? String(selectedPkg.price) : "0.00"} className="hms-checkup-modal__input" />
                 </div>
               </div>
 
               <div>
-                <label className={labelCls}>Notes</label>
-                <textarea rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Any special instructions or notes…" className={`${inputCls} resize-none`} />
+                <label className="hms-checkup-modal__label">Notes</label>
+                <textarea rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Any special instructions or notes…" className="hms-checkup-modal__input" />
               </div>
 
               {/* Summary */}
-              <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 space-y-1.5 text-sm">
-                <p className="font-bold text-slate-700 text-xs uppercase tracking-wide mb-2">Booking Summary</p>
-                <p className="text-slate-600"><span className="font-semibold">Patient:</span> {form.patient?.firstName} {form.patient?.lastName}</p>
-                <p className="text-slate-600"><span className="font-semibold">Package:</span> {selectedPkg?.name}</p>
-                <p className="text-slate-600"><span className="font-semibold">Date:</span> {form.scheduledDate} at {form.scheduledTime}</p>
-                <p className="text-emerald-600 font-bold">Total: ₹{selectedPkg ? Number(selectedPkg.price).toLocaleString("en-IN") : "—"}</p>
+              <div className="hms-checkup-modal__summary">
+                <p className="hms-checkup-modal__summary-title">Booking Summary</p>
+                <p className="hms-checkup-modal__summary-row"><strong>Patient:</strong> {form.patient?.firstName} {form.patient?.lastName}</p>
+                <p className="hms-checkup-modal__summary-row"><strong>Package:</strong> {selectedPkg?.name}</p>
+                <p className="hms-checkup-modal__summary-row"><strong>Date:</strong> {form.scheduledDate} at {form.scheduledTime}</p>
+                <p className="hms-checkup-modal__summary-total">Total: ₹{selectedPkg ? Number(selectedPkg.price).toLocaleString("en-IN") : "—"}</p>
               </div>
             </>
           )}
         </div>
 
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100">
+        <div className="hms-checkup-modal__foot">
           {step === 2 ? (
-            <button onClick={() => setStep(1)} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">← Back</button>
+            <button onClick={() => setStep(1)} className="hms-checkup-modal__btn-back">← Back</button>
           ) : <div />}
           {step === 1 ? (
-            <button disabled={!canProceed} onClick={() => setStep(2)} className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold disabled:opacity-50 transition-colors">
+            <button disabled={!canProceed} onClick={() => setStep(2)} className="hms-checkup-modal__btn-next">
               Next →
             </button>
           ) : (
-            <button disabled={saving} onClick={handleBook} className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold disabled:opacity-50 transition-colors">
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Booking…</> : <><CheckCircle2 className="w-4 h-4" /> Confirm Booking</>}
+            <button disabled={saving} onClick={handleBook} className="hms-checkup-modal__btn-next">
+              {saving ? <><Loader2 className="w-4 h-4 hms-billing-spin" /> Booking…</> : <><CheckCircle2 className="w-4 h-4" /> Confirm Booking</>}
             </button>
           )}
         </div>
@@ -284,26 +278,26 @@ function AssignDoctorCell({ booking, doctors, onAssigned }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className={`flex items-center gap-1.5 text-sm transition-colors ${name ? "text-slate-700 hover:text-emerald-600" : "text-slate-600 hover:text-emerald-600"}`}
+        className="hms-checkup-assign"
       >
-        {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3 shrink-0" />}
+        {saving ? <Loader2 className="w-3 h-3 hms-billing-spin" /> : <UserPlus className="w-3 h-3 shrink-0" />}
         <span>{name ?? "Assign doctor"}</span>
       </button>
       {open && (
-        <div className="absolute z-30 left-0 top-full mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden">
-          <button onClick={() => assign(null)} className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-slate-50 border-b border-slate-100">
+        <div className="hms-checkup-assign-pop">
+          <button onClick={() => assign(null)} className="hms-checkup-assign-pop__row is-clear">
             — Unassign doctor
           </button>
           {doctors.map(d => {
             const dn = doctorName(d);
             const isCurrent = booking.assignedDoctor?.id === d.id;
             return (
-              <button key={d.id} onClick={() => assign(d.id)} className="w-full text-left px-3 py-2.5 hover:bg-slate-50 flex items-center justify-between gap-2 border-b border-slate-100 last:border-0">
+              <button key={d.id} onClick={() => assign(d.id)} className="hms-checkup-assign-pop__row">
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{dn}</p>
-                  <p className="text-xs text-slate-400">{d.specialization}</p>
+                  <p className="hms-checkup-assign-pop__name">{dn}</p>
+                  <p className="hms-checkup-assign-pop__spec">{d.specialization}</p>
                 </div>
-                {isCurrent && <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                {isCurrent && <Check className="hms-checkup-assign-pop__check w-3.5 h-3.5" />}
               </button>
             );
           })}
@@ -351,101 +345,100 @@ export default function CheckupBookings() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="hms-checkup-page">
+      <div className="hms-checkup-header">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Checkup Bookings</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Schedule and track health checkup appointments</p>
+          <h1 className="hms-checkup-header__title">Checkup Bookings</h1>
+          <p className="hms-checkup-header__sub">Schedule and track health checkup appointments</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-black text-white text-sm font-bold shadow-lg shadow-slate-200/20 transition-all active:scale-[0.98]">
+        <button onClick={() => setShowModal(true)} className="hms-btn-primary">
           <Plus className="w-4 h-4" /> New Booking
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="hms-checkup-stat-grid">
         {[
-          { label: "Today's Checkups", value: stats.today, icon: Calendar, color: "bg-blue-50 text-blue-500" },
-          { label: "Scheduled", value: stats.scheduled, icon: Clock3, color: "bg-amber-50 text-amber-500" },
-          { label: "In Progress", value: stats.inProgress, icon: Activity, color: "bg-slate-100 text-slate-700" },
-          { label: "Completed", value: stats.completed, icon: CheckCircle2, color: "bg-emerald-50 text-emerald-500" },
+          { label: "Today's Checkups", value: stats.today, icon: Calendar, accent: "blue" },
+          { label: "Scheduled", value: stats.scheduled, icon: Clock3, accent: "amber" },
+          { label: "In Progress", value: stats.inProgress, icon: Activity, accent: "slate" },
+          { label: "Completed", value: stats.completed, icon: CheckCircle2, accent: "emerald" },
         ].map(s => (
-          <div key={s.label} className="bg-white border border-slate-200 rounded-lg p-5 flex items-center gap-4">
-            <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}>
+          <div key={s.label} className="hms-checkup-stat">
+            <div className={`hms-checkup-stat__icon is-${s.accent}`}>
               <s.icon className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-900">{s.value}</p>
-              <p className="text-xs text-slate-500 mt-0.5 font-medium">{s.label}</p>
+              <p className="hms-checkup-stat__value">{s.value}</p>
+              <p className="hms-checkup-stat__label">{s.label}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, UHID, booking number…" className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400" />
+      <div className="hms-checkup-filters">
+        <div className="hms-checkup-filters__search">
+          <Search className="hms-checkup-filters__search-icon w-4 h-4" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, UHID, booking number…" className="hms-checkup-filters__search-input" />
         </div>
         <SearchableSelect
           options={[{ value: "ALL", label: "All Status" }, ...Object.entries(STATUS_CONFIG).map(([k, v]) => ({ value: k, label: v.label }))]}
           value={filterStatus}
           onChange={v => setFilterStatus(v)}
           placeholder="All Status"
-          className="px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300/50"
         />
-        <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300/50" />
+        <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="hms-checkup-filters__date" />
       </div>
 
       {/* Bookings table */}
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div className="hms-checkup-tablecard">
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-slate-400">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading…
+          <div className="hms-checkup-table-loading">
+            <Loader2 className="w-5 h-5 hms-billing-spin mr-2" /> Loading…
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center py-16 text-slate-400">
-            <ClipboardList className="w-10 h-10 mb-3 opacity-25" />
-            <p className="text-sm font-semibold">No bookings found</p>
+          <div className="hms-checkup-cell-state">
+            <ClipboardList className="hms-checkup-cell-state__icon" />
+            <p className="hms-checkup-cell-state__text">No bookings found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="hms-checkup-table">
               <thead>
-                <tr className="border-b border-slate-100">
+                <tr>
                   {["Booking #", "Patient", "Package", "Scheduled", "Doctor", "Payment", "Status", ""].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600">{h}</th>
+                    <th key={h}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(b => (
-                  <tr key={b.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="text-xs font-bold text-slate-700">{fmtId(b.bookingNumber)}</p>
+                  <tr key={b.id}>
+                    <td>
+                      <p className="hms-checkup-cell__primary">{fmtId(b.bookingNumber)}</p>
                     </td>
-                    <td className="px-4 py-3">
-                      <p className="text-sm font-semibold text-slate-800">{b.patient?.firstName} {b.patient?.lastName}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{fmtId(b.patient?.uhid)}</p>
+                    <td>
+                      <p className="hms-checkup-cell__primary">{b.patient?.firstName} {b.patient?.lastName}</p>
+                      <p className="hms-checkup-cell__secondary">{fmtId(b.patient?.uhid)}</p>
                     </td>
-                    <td className="px-4 py-3 max-w-[160px]">
-                      <p className="text-sm text-slate-700 truncate">{b.healthPackage?.name}</p>
-                      <p className="text-xs text-emerald-600 font-semibold mt-0.5">₹{Number(b.healthPackage?.price || 0).toLocaleString("en-IN")}</p>
+                    <td className="hms-checkup-table__pkg">
+                      <p className="hms-checkup-table__pkg-name">{b.healthPackage?.name}</p>
+                      <p className="hms-checkup-table__pkg-price">₹{Number(b.healthPackage?.price || 0).toLocaleString("en-IN")}</p>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <p className="text-sm text-slate-700">{b.scheduledDate}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{b.scheduledTime || "—"}</p>
+                    <td className="whitespace-nowrap">
+                      <p className="hms-checkup-cell__primary">{b.scheduledDate}</p>
+                      <p className="hms-checkup-cell__secondary">{b.scheduledTime || "—"}</p>
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       <AssignDoctorCell booking={b} doctors={doctors} onAssigned={load} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       <PaymentBadge status={b.paymentStatus} />
                     </td>
-                    <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => navigate(`/checkups/bookings/${b.id}`)} className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+                    <td><StatusBadge status={b.status} /></td>
+                    <td>
+                      <button onClick={() => navigate(`/checkups/bookings/${b.id}`)} className="hms-checkup-table__open">
                         Open <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </td>

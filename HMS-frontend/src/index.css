@@ -25,6 +25,7 @@
 @import './styles/modules/admin.css';
 @import './styles/modules/clinical.css';
 @import './styles/modules/rooms.css';
+@import './styles/modules/finance.css';
 @import './styles/modules/dashboard.css';
 
 @tailwind base;

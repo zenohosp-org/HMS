@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar as CalendarIcon, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Stethoscope, Activity, FlaskConical, Printer } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Stethoscope, Activity, FlaskConical, Printer } from "lucide-react";
 import ConsultationModal from "@/components/modals/ConsultationModal";
 import VitalsModal from "@/components/modals/VitalsModal";
 import ExternalResultsModal from "@/components/modals/ExternalResultsModal";
@@ -38,51 +38,45 @@ const TYPE_LABEL = {
   TELECONSULT: "Teleconsult",
   HEALTH_CHECKUP: "Health Checkup",
 };
-const STATUS_STYLES = {
-  SCHEDULED: "border border-blue-400 text-blue-500 bg-white",
-  CONFIRMED: "border border-blue-400 text-blue-500 bg-white",
-  IN_PROGRESS: "bg-amber-500 text-white border-transparent",
-  CHECKED_IN: "bg-amber-500 text-white border-transparent",
-  COMPLETED: "bg-emerald-500 text-white border-transparent",
-  CANCELLED: "border border-red-400 text-red-500 bg-white",
-  NO_SHOW: "border border-red-400 text-red-500 bg-white"
+const STATUS_MOD = {
+  SCHEDULED: "is-scheduled",
+  CONFIRMED: "is-confirmed",
+  IN_PROGRESS: "is-in-progress",
+  CHECKED_IN: "is-checked-in",
+  COMPLETED: "is-completed",
+  CANCELLED: "is-cancelled",
+  NO_SHOW: "is-no-show",
 };
-const APPT_COLORS = [
-  "bg-blue-50 text-blue-700 border-blue-200",
-  "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "bg-amber-50 text-amber-700 border-amber-200",
-  "bg-slate-100 text-slate-900 border-slate-200",
-  "bg-rose-50 text-rose-700 border-rose-200"
-];
+const APPT_TONE_MODS = ["is-blue", "is-emerald", "is-amber", "is-slate", "is-rose"];
 const STATUS_TRANSITIONS = {
   SCHEDULED: [
-    { status: "CONFIRMED", label: "Confirm", icon: "confirm", color: "text-slate-600" },
-    { status: "CHECKED_IN", label: "Check In", icon: "checkin", color: "text-slate-600" },
-    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600" },
-    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600" },
-    { status: "NO_SHOW", label: "No Show", icon: "noshow", color: "text-slate-600" }
+    { status: "CONFIRMED", label: "Confirm", icon: "confirm" },
+    { status: "CHECKED_IN", label: "Check In", icon: "checkin" },
+    { status: "COMPLETED", label: "Mark Completed", icon: "complete" },
+    { status: "CANCELLED", label: "Cancel", icon: "cancel" },
+    { status: "NO_SHOW", label: "No Show", icon: "noshow" }
   ],
   CONFIRMED: [
-    { status: "CHECKED_IN", label: "Check In", icon: "checkin", color: "text-slate-600" },
-    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600" },
-    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600" },
-    { status: "NO_SHOW", label: "No Show", icon: "noshow", color: "text-slate-600" }
+    { status: "CHECKED_IN", label: "Check In", icon: "checkin" },
+    { status: "COMPLETED", label: "Mark Completed", icon: "complete" },
+    { status: "CANCELLED", label: "Cancel", icon: "cancel" },
+    { status: "NO_SHOW", label: "No Show", icon: "noshow" }
   ],
   CHECKED_IN: [
-    { status: "IN_PROGRESS", label: "Start Consultation", icon: "progress", color: "text-slate-600" },
-    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600" },
-    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600" }
+    { status: "IN_PROGRESS", label: "Start Consultation", icon: "progress" },
+    { status: "COMPLETED", label: "Mark Completed", icon: "complete" },
+    { status: "CANCELLED", label: "Cancel", icon: "cancel" }
   ],
   IN_PROGRESS: [
-    { status: "COMPLETED", label: "Mark Completed", icon: "complete", color: "text-slate-600" },
-    { status: "CANCELLED", label: "Cancel", icon: "cancel", color: "text-slate-600" }
+    { status: "COMPLETED", label: "Mark Completed", icon: "complete" },
+    { status: "CANCELLED", label: "Cancel", icon: "cancel" }
   ],
   COMPLETED: [],
   CANCELLED: [
-    { status: "SCHEDULED", label: "Reschedule", icon: "reschedule", color: "text-slate-600" }
+    { status: "SCHEDULED", label: "Reschedule", icon: "reschedule" }
   ],
   NO_SHOW: [
-    { status: "SCHEDULED", label: "Reschedule", icon: "reschedule", color: "text-slate-600" }
+    { status: "SCHEDULED", label: "Reschedule", icon: "reschedule" }
   ]
 };
 function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsultation, onRecordVitals, onAddExternalResults, onPrintConsultation, hasDraft, hasVitals }) {
@@ -122,60 +116,126 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
     setCancelReason("");
   };
   const iconFor = (icon) => {
-    if (icon === "complete") return <CheckCircle2 className="w-4 h-4 opacity-70" />;
-    if (icon === "cancel") return <XCircle className="w-4 h-4 opacity-70" />;
-    if (icon === "checkin") return <LogIn className="w-4 h-4 opacity-70" />;
-    if (icon === "progress") return <PlayCircle className="w-4 h-4 opacity-70" />;
-    if (icon === "noshow") return <AlertCircle className="w-4 h-4 opacity-70" />;
-    if (icon === "reschedule") return <CalendarIcon className="w-4 h-4 opacity-70" />;
-    return <CheckCircle2 className="w-4 h-4 opacity-70" />;
+    if (icon === "complete") return <CheckCircle2 className="w-4 h-4 hms-appt-am__item-icon" />;
+    if (icon === "cancel") return <XCircle className="w-4 h-4 hms-appt-am__item-icon" />;
+    if (icon === "checkin") return <LogIn className="w-4 h-4 hms-appt-am__item-icon" />;
+    if (icon === "progress") return <PlayCircle className="w-4 h-4 hms-appt-am__item-icon" />;
+    if (icon === "noshow") return <AlertCircle className="w-4 h-4 hms-appt-am__item-icon" />;
+    if (icon === "reschedule") return <CalendarIcon className="w-4 h-4 hms-appt-am__item-icon" />;
+    return <CheckCircle2 className="w-4 h-4 hms-appt-am__item-icon" />;
   };
-  return <div className="relative" ref={ref}><button
-    onClick={() => {
-      setOpen(!open);
-      setShowCancelReason(false);
-    }}
-    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-    disabled={loading}
-  >{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreHorizontal className="w-4 h-4" />}</button>{open && <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-30 overflow-hidden"><div className="px-4 py-3"><p className="text-sm font-bold text-slate-900">Actions</p></div>{!showCancelReason ? <div className="py-1">{actions.map((action) => <button
-    key={action.status}
-    onClick={() => handleAction(action.status)}
-    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium hover:bg-slate-50 transition-colors text-left ${action.color}`}
-  >{iconFor(action.icon)}{action.label}</button>)}{actions.length > 0 && <div className="border-t border-slate-100" />}<button
-    onClick={() => { setOpen(false); onViewPatientDetails(); }}
-    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors text-left"
-  ><HeartPulse className="w-4 h-4 opacity-70" />Patient Details</button>{VITALS_ELIGIBLE.has(appt.status) && <button
-    onClick={() => { setOpen(false); onRecordVitals(); }}
-    className="w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-sm font-medium text-rose-700 hover:bg-rose-50 transition-colors text-left"
-  ><span className="flex items-center gap-2.5"><Activity className="w-4 h-4 opacity-70" />{hasVitals ? "Edit Vitals" : "Record Vitals"}</span>{hasVitals && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700">DONE</span>}</button>}{EXTERNAL_RESULTS_ELIGIBLE.has(appt.status) && <button
-    onClick={() => { setOpen(false); onAddExternalResults(); }}
-    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-violet-700 hover:bg-violet-50 transition-colors text-left"
-  ><FlaskConical className="w-4 h-4 opacity-70" />Add Lab Reports</button>}{CONSULT_OPEN_ELIGIBLE.has(appt.status) && <button
-    onClick={() => { setOpen(false); onOpenConsultation(); }}
-    className="w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors text-left"
-  ><span className="flex items-center gap-2.5"><Stethoscope className="w-4 h-4 opacity-70" />{hasDraft ? "Resume Consultation" : "Open Consultation"}</span>{hasDraft && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700">DRAFT</span>}</button>}{PRINT_ELIGIBLE.has(appt.status) && <button
-    onClick={() => { setOpen(false); onPrintConsultation(); }}
-    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors text-left"
-  ><Printer className="w-4 h-4 opacity-70" />Print Consultation</button>}{(appt.status === "COMPLETED" || appt.status === "IN_PROGRESS") && <button
-    onClick={() => { setOpen(false); onAdmit(); }}
-    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-violet-700 hover:bg-violet-50 transition-colors text-left"
-  ><BedDouble className="w-4 h-4 opacity-70" />Admit Patient</button>}</div> : <div className="p-3 space-y-2"><p className="text-xs font-semibold text-slate-700">Cancellation Reason <span className="text-slate-400">(optional)</span></p><textarea
-    value={cancelReason}
-    onChange={(e) => setCancelReason(e.target.value)}
-    rows={2}
-    placeholder="Enter reason..."
-    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 outline-none resize-none focus:border-red-400"
-    autoFocus
-  /><div className="flex gap-2"><button
-    onClick={() => {
-      setShowCancelReason(false);
-      setCancelReason("");
-    }}
-    className="btn-secondary flex-1 py-1.5 text-xs"
-  >Back</button><button
-    onClick={submitCancel}
-    className="btn-primary flex-1 py-1.5 text-xs bg-red-500 hover:bg-red-600 border-transparent"
-  >Confirm Cancel</button></div></div>}</div>}</div>;
+  return (
+    <div className="hms-appt-am" ref={ref}>
+      <button
+        onClick={() => {
+          setOpen(!open);
+          setShowCancelReason(false);
+        }}
+        className="hms-appt-am__btn"
+        disabled={loading}
+      >
+        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreHorizontal className="w-4 h-4" />}
+      </button>
+      {open && (
+        <div className="hms-appt-am__pop">
+          <div className="hms-appt-am__head">
+            <p className="hms-appt-am__title">Actions</p>
+          </div>
+          {!showCancelReason ? (
+            <div className="hms-appt-am__list">
+              {actions.map((action) => (
+                <button
+                  key={action.status}
+                  onClick={() => handleAction(action.status)}
+                  className="hms-appt-am__item is-neutral"
+                >
+                  {iconFor(action.icon)}{action.label}
+                </button>
+              ))}
+              {actions.length > 0 && <div className="hms-appt-am__divider" />}
+              <button
+                onClick={() => { setOpen(false); onViewPatientDetails(); }}
+                className="hms-appt-am__item is-neutral"
+              >
+                <HeartPulse className="w-4 h-4 hms-appt-am__item-icon" />Patient Details
+              </button>
+              {VITALS_ELIGIBLE.has(appt.status) && (
+                <button
+                  onClick={() => { setOpen(false); onRecordVitals(); }}
+                  className="hms-appt-am__item is-rose"
+                >
+                  <span className="hms-appt-am__item-leading">
+                    <Activity className="w-4 h-4 hms-appt-am__item-icon" />{hasVitals ? "Edit Vitals" : "Record Vitals"}
+                  </span>
+                  {hasVitals && <span className="hms-appt-am__badge is-done">DONE</span>}
+                </button>
+              )}
+              {EXTERNAL_RESULTS_ELIGIBLE.has(appt.status) && (
+                <button
+                  onClick={() => { setOpen(false); onAddExternalResults(); }}
+                  className="hms-appt-am__item is-violet"
+                >
+                  <FlaskConical className="w-4 h-4 hms-appt-am__item-icon" />Add Lab Reports
+                </button>
+              )}
+              {CONSULT_OPEN_ELIGIBLE.has(appt.status) && (
+                <button
+                  onClick={() => { setOpen(false); onOpenConsultation(); }}
+                  className="hms-appt-am__item is-blue"
+                >
+                  <span className="hms-appt-am__item-leading">
+                    <Stethoscope className="w-4 h-4 hms-appt-am__item-icon" />{hasDraft ? "Resume Consultation" : "Open Consultation"}
+                  </span>
+                  {hasDraft && <span className="hms-appt-am__badge is-draft">DRAFT</span>}
+                </button>
+              )}
+              {PRINT_ELIGIBLE.has(appt.status) && (
+                <button
+                  onClick={() => { setOpen(false); onPrintConsultation(); }}
+                  className="hms-appt-am__item is-slate"
+                >
+                  <Printer className="w-4 h-4 hms-appt-am__item-icon" />Print Consultation
+                </button>
+              )}
+              {(appt.status === "COMPLETED" || appt.status === "IN_PROGRESS") && (
+                <button
+                  onClick={() => { setOpen(false); onAdmit(); }}
+                  className="hms-appt-am__item is-violet"
+                >
+                  <BedDouble className="w-4 h-4 hms-appt-am__item-icon" />Admit Patient
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="hms-appt-am__cancel">
+              <p className="hms-appt-am__cancel-label">Cancellation Reason <span className="hms-appt-am__cancel-label-hint">(optional)</span></p>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={2}
+                placeholder="Enter reason..."
+                className="hms-appt-am__cancel-textarea"
+                autoFocus
+              />
+              <div className="hms-appt-am__cancel-actions">
+                <button
+                  onClick={() => {
+                    setShowCancelReason(false);
+                    setCancelReason("");
+                  }}
+                  className="hms-btn-secondary is-sm flex-1"
+                >Back</button>
+                <button
+                  onClick={submitCancel}
+                  className="hms-btn-danger is-sm flex-1"
+                >Confirm Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 function AppointmentsDashboard() {
   const { user } = useAuth();
@@ -384,50 +444,164 @@ function AppointmentsDashboard() {
   };
   const getColorForDoctor = (doctorId) => {
     const index = doctors.findIndex((d) => d.id === doctorId);
-    return APPT_COLORS[(index >= 0 ? index : 0) % APPT_COLORS.length];
+    return APPT_TONE_MODS[(index >= 0 ? index : 0) % APPT_TONE_MODS.length];
   };
-  const renderListView = () => <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col flex-1"><div className="flex items-center justify-between p-5 border-b border-slate-200"><h3 className="text-xl font-bold tracking-tight text-slate-800">All Appointments</h3><div className="flex gap-3 items-center w-full max-w-lg justify-end"><div className="relative flex-1 max-w-xs"><Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" /><input
-    type="text"
-    placeholder="Search patient, UHID, doctor..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-    className="w-full pl-9 pr-4 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-900 placeholder-slate-400 outline-none focus:ring-2 focus:ring-slate-300/50 transition-all"
-  /></div><SearchableSelect
-    value={selectedDoctorId}
-    onChange={(value) => setSelectedDoctorId(value)}
-    options={[{ value: "all", label: "All Doctors" }, ...doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}` }))]}
-    className="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-sm font-medium py-2 pl-4 pr-10 rounded-lg outline-none focus:ring-2 focus:ring-slate-300/50 transition-all cursor-pointer"
-  /></div></div><div className="flex flex-col flex-1 overflow-hidden"><div className="overflow-x-auto flex-1"><table className="w-full text-left border-collapse"><thead><tr className="border-b border-slate-200 bg-slate-50/50"><th className="py-3 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Token</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Patient</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Doctor</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date &amp; Time</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th><th className="py-3 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredAppointments.length === 0 ? <tr><td colSpan={7} className="py-12 text-center text-slate-500"><CalendarIcon className="w-8 h-8 mx-auto mb-3 opacity-50" />
-    No appointments found for the selected filters.
-  </td></tr> : filteredAppointments.map((appt) => <tr key={appt.id} className="hover:bg-slate-50/50 transition-colors group"><td className="py-3 px-5">{appt.tokenNumber != null ? <span className="inline-flex items-center justify-center min-w-[2.25rem] h-7 px-2 rounded-md bg-slate-900 text-white text-xs font-bold tabular-nums">#{appt.tokenNumber}</span> : <span className="text-xs text-slate-300">—</span>}</td><td className="py-3 px-5"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm shrink-0">{appt.patientName.charAt(0)}</div><div><p className="font-semibold text-sm text-slate-900">{appt.patientName}</p>{appt.checkupBookingId && <button onClick={() => navigate(`/checkups/bookings/${appt.checkupBookingId}`)} className="flex items-center gap-1 mt-0.5 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"><HeartPulse className="w-3 h-3" />{appt.checkupBookingNumber}</button>}</div></div></td><td className="py-3 px-5 text-sm text-slate-600">
-    Dr. {appt.doctorName}</td><td className="py-3 px-5"><p className="text-sm font-medium text-slate-900">{format(parseISO(appt.apptDate), "yyyy-MM-dd")}</p><p className="text-xs text-slate-500 mt-0.5">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p></td><td className="py-3 px-5"><span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide ${STATUS_STYLES[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span></td><td className="py-3 px-5 text-sm text-slate-600">{TYPE_LABEL[appt.type] ?? appt.type}</td><td className="py-3 px-5"><div className="flex items-center gap-2"><ActionMenu
-    appt={appt}
-    onUpdate={handleStatusUpdate}
-    onAdmit={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), uhid: appt.patientUhid }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })}
-    onViewPatientDetails={() => navigate(`/patients/${appt.patientId}`)}
-    onOpenConsultation={() => setConsultationAppointment(appt)}
-    onRecordVitals={() => setVitalsAppointment(appt)}
-    onAddExternalResults={() => setExternalResultsAppointment(appt)}
-    onPrintConsultation={() => window.open(`/print/appointment/${appt.id}`, "_blank", "noopener,noreferrer")}
-    hasDraft={draftAppointmentIds.has(String(appt.id))}
-    hasVitals={vitalsAppointmentIds.has(String(appt.id))}
-  /></div></td></tr>)}</tbody></table></div><div className="px-5 pb-4"><Pagination
-      currentPage={apptPage}
-      totalPages={totalPages}
-      totalItems={totalItems}
-      pageSize={APPT_PAGE_SIZE}
-      onPageChange={setApptPage}
-    /></div></div></div>;
+  const renderListView = () => (
+    <div className="hms-appt-list">
+      <div className="hms-appt-list__head">
+        <h3 className="hms-appt-list__title">All Appointments</h3>
+        <div className="hms-appt-list__filters">
+          <div className="hms-appt-list__search">
+            <Search className="w-4 h-4 hms-appt-list__search-icon" />
+            <input
+              type="text"
+              placeholder="Search patient, UHID, doctor..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="hms-appt-list__search-input"
+            />
+          </div>
+          <SearchableSelect
+            value={selectedDoctorId}
+            onChange={(value) => setSelectedDoctorId(value)}
+            options={[{ value: "all", label: "All Doctors" }, ...doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}` }))]}
+            className="hms-appt-list__doctor-select"
+          />
+        </div>
+      </div>
+      <div className="hms-appt-list__body">
+        <div className="hms-appt-list__table-wrap">
+          <table className="hms-appt-table">
+            <thead>
+              <tr>
+                <th className="is-token">Token</th>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Date &amp; Time</th>
+                <th>Status</th>
+                <th>Type</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAppointments.length === 0 ? (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="hms-appt-empty-cell">
+                      <CalendarIcon className="hms-appt-empty-cell__icon" />
+                      No appointments found for the selected filters.
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredAppointments.map((appt) => (
+                <tr key={appt.id}>
+                  <td>
+                    {appt.tokenNumber != null
+                      ? <span className="hms-appt-token-chip">#{appt.tokenNumber}</span>
+                      : <span className="hms-appt-token-empty">—</span>}
+                  </td>
+                  <td>
+                    <div className="hms-appt-pat">
+                      <div className="hms-appt-pat__avatar">{appt.patientName.charAt(0)}</div>
+                      <div>
+                        <p className="hms-appt-pat__name">{appt.patientName}</p>
+                        {appt.checkupBookingId && (
+                          <button onClick={() => navigate(`/checkups/bookings/${appt.checkupBookingId}`)} className="hms-appt-pat__checkup-link">
+                            <HeartPulse className="w-3 h-3" />{appt.checkupBookingNumber}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    Dr. {appt.doctorName}
+                  </td>
+                  <td>
+                    <p className="hms-appt-table__date">{format(parseISO(appt.apptDate), "yyyy-MM-dd")}</p>
+                    <p className="hms-appt-table__time">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p>
+                  </td>
+                  <td>
+                    <span className={`hms-appt-status ${STATUS_MOD[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span>
+                  </td>
+                  <td>{TYPE_LABEL[appt.type] ?? appt.type}</td>
+                  <td>
+                    <div className="hms-appt-row-actions">
+                      <ActionMenu
+                        appt={appt}
+                        onUpdate={handleStatusUpdate}
+                        onAdmit={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), uhid: appt.patientUhid }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })}
+                        onViewPatientDetails={() => navigate(`/patients/${appt.patientId}`)}
+                        onOpenConsultation={() => setConsultationAppointment(appt)}
+                        onRecordVitals={() => setVitalsAppointment(appt)}
+                        onAddExternalResults={() => setExternalResultsAppointment(appt)}
+                        onPrintConsultation={() => window.open(`/print/appointment/${appt.id}`, "_blank", "noopener,noreferrer")}
+                        hasDraft={draftAppointmentIds.has(String(appt.id))}
+                        hasVitals={vitalsAppointmentIds.has(String(appt.id))}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="hms-appt-list__paging">
+          <Pagination
+            currentPage={apptPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={APPT_PAGE_SIZE}
+            onPageChange={setApptPage}
+          />
+        </div>
+      </div>
+    </div>
+  );
   const renderWeekView = () => {
     const startDate = startOfWeek(currentDate);
     const days = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
-    return <div className="flex-1 flex flex-col bg-slate-50 rounded-lg border border-slate-200 overflow-hidden"><div className="grid grid-cols-7 border-b border-slate-200 bg-white">{days.map((day) => <div key={day.toISOString()} className="py-3 px-4 text-center border-r last:border-0 border-slate-200"><p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{format(day, "EEE")}</p><p className="text-xl font-bold text-slate-800 mt-1">{format(day, "d")}</p></div>)}</div><div className="grid grid-cols-7 flex-1 divide-x divide-slate-200 bg-white">{days.map((day) => {
-      const dayAppts = filteredAppointments.filter((a) => isSameDay(parseISO(a.apptDate), day)).sort((a, b) => a.apptTime.localeCompare(b.apptTime));
-      return <div key={day.toISOString()} className={`p-2 h-[600px] overflow-y-auto w-full ${isToday(day) ? "bg-emerald-50/30" : ""}`}>{dayAppts.length === 0 ? <div className="h-full flex items-center justify-center"><p className="text-xs text-slate-400 font-medium">No appointments</p></div> : <div className="space-y-2">{dayAppts.map((appt) => {
-        const colors = getColorForDoctor(appt.doctorId);
-        return <div key={appt.id} className={`p-3 rounded-lg border flex flex-col gap-1 transition-all hover:-translate-y-0.5 hover:shadow-sm ${colors}`}><div className="flex items-start justify-between"><p className="font-bold text-sm tracking-tight truncate flex-1">{appt.patientName}</p><span className="text-xs font-semibold opacity-70 shrink-0 ml-2">{appt.apptTime.substring(0, 5)}</span></div><p className="text-xs font-medium opacity-80">{TYPE_LABEL[appt.type] ?? appt.type}</p><p className="text-xs opacity-75 truncate mt-1">Dr. {appt.doctorName}</p></div>;
-      })}</div>}</div>;
-    })}</div></div>;
+    return (
+      <div className="hms-appt-cal is-week-bg">
+        <div className="hms-appt-cal__row">
+          {days.map((day) => (
+            <div key={day.toISOString()} className="hms-appt-cal__day-head">
+              <p className="hms-appt-cal__dow-label">{format(day, "EEE")}</p>
+              <p className="hms-appt-cal__dom">{format(day, "d")}</p>
+            </div>
+          ))}
+        </div>
+        <div className="hms-appt-cal__week">
+          {days.map((day) => {
+            const dayAppts = filteredAppointments.filter((a) => isSameDay(parseISO(a.apptDate), day)).sort((a, b) => a.apptTime.localeCompare(b.apptTime));
+            return (
+              <div key={day.toISOString()} className={`hms-appt-cal__col ${isToday(day) ? "is-today" : ""}`}>
+                {dayAppts.length === 0 ? (
+                  <div className="hms-appt-cal__col-empty">
+                    <p>No appointments</p>
+                  </div>
+                ) : (
+                  <div className="hms-appt-cal__col-list">
+                    {dayAppts.map((appt) => {
+                      const tone = getColorForDoctor(appt.doctorId);
+                      return (
+                        <div key={appt.id} className={`hms-appt-cal-card ${tone}`}>
+                          <div className="hms-appt-cal-card__head">
+                            <p className="hms-appt-cal-card__name">{appt.patientName}</p>
+                            <span className="hms-appt-cal-card__time">{appt.apptTime.substring(0, 5)}</span>
+                          </div>
+                          <p className="hms-appt-cal-card__type">{TYPE_LABEL[appt.type] ?? appt.type}</p>
+                          <p className="hms-appt-cal-card__doctor">Dr. {appt.doctorName}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
@@ -441,92 +615,227 @@ function AppointmentsDashboard() {
       for (let i = 0; i < 7; i++) {
         const cloneDay = day;
         const dayAppts = filteredAppointments.filter((a) => isSameDay(parseISO(a.apptDate), cloneDay)).sort((a, b) => a.apptTime.localeCompare(b.apptTime));
+        const cellMods = [];
+        if (!isSameMonth(day, monthStart)) cellMods.push("is-other-month");
+        if (isToday(day)) cellMods.push("is-today");
         days.push(
           <div
             key={day.toISOString()}
-            className={`min-h-[120px] p-2 border-r border-b border-slate-200 ${!isSameMonth(day, monthStart) ? "bg-slate-50/50 text-slate-600" : "bg-white text-slate-800"} ${isToday(day) ? "bg-emerald-50/30" : ""}`}
-          ><div className="flex justify-between items-center mb-1.5 px-1">{isToday(day) ? <span className="bg-emerald-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold leading-none">{format(day, "d")}</span> : <span className={`text-sm font-semibold ${!isSameMonth(day, monthStart) ? "opacity-50" : ""}`}>{format(day, "d")}</span>}</div><div className="space-y-1 mt-2">{dayAppts.slice(0, 3).map((appt) => {
-            const colors = getColorForDoctor(appt.doctorId);
-            return <div key={appt.id} className={`px-2 py-1.5 rounded-lg text-xs truncate border ${colors}`}><span className="font-semibold opacity-90 mr-1">{appt.apptTime.substring(0, 5)}</span><span className="font-medium tracking-tight truncate">{appt.patientName}</span></div>;
-          })}{dayAppts.length > 3 && <div className="text-xs font-semibold text-slate-500 px-1 pt-1 ml-1 cursor-pointer hover:text-emerald-500 transition-colors">
-            + {dayAppts.length - 3} more
-          </div>}</div></div>
+            className={`hms-appt-mon-cell ${cellMods.join(" ")}`}
+          >
+            <div className="hms-appt-mon-cell__head">
+              {isToday(day)
+                ? <span className="hms-appt-mon-cell__today-chip">{format(day, "d")}</span>
+                : <span className={`hms-appt-mon-cell__day ${!isSameMonth(day, monthStart) ? "is-other" : ""}`}>{format(day, "d")}</span>}
+            </div>
+            <div className="hms-appt-mon-cell__list">
+              {dayAppts.slice(0, 3).map((appt) => {
+                const tone = getColorForDoctor(appt.doctorId);
+                return (
+                  <div key={appt.id} className={`hms-appt-mon-pill ${tone}`}>
+                    <span className="hms-appt-mon-pill__time">{appt.apptTime.substring(0, 5)}</span>
+                    <span className="hms-appt-mon-pill__name">{appt.patientName}</span>
+                  </div>
+                );
+              })}
+              {dayAppts.length > 3 && (
+                <div className="hms-appt-mon-more">
+                  + {dayAppts.length - 3} more
+                </div>
+              )}
+            </div>
+          </div>
         );
         day = addDays(day, 1);
       }
-      rows.push(<div className="grid grid-cols-7" key={day.toISOString()}>{days}</div>);
+      rows.push(<div className="hms-appt-cal__row" key={day.toISOString()}>{days}</div>);
       days = [];
     }
-    return <div className="flex-1 flex flex-col bg-white rounded-lg border border-slate-200 overflow-hidden"><div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => <div key={d} className="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider border-r last:border-0 border-slate-200">{d}</div>)}</div><div className="flex-1 overflow-y-auto minimal-scrollbar">{rows}</div></div>;
+    return (
+      <div className="hms-appt-cal">
+        <div className="hms-appt-mon-dows">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+            <div key={d} className="hms-appt-mon-dow">{d}</div>
+          ))}
+        </div>
+        <div className="hms-appt-mon-body">{rows}</div>
+      </div>
+    );
   };
-  return <div className="flex flex-col h-full bg-slate-50">{
-    /* Header */
-  }<header className="flex-none py-5 bg-white border-b border-slate-200"><div className="flex items-center justify-between mb-0"><div><h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 tracking-tight">{viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}</h1><p className="text-sm text-slate-500 mt-1 font-medium">{viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}</p></div><div className="flex items-center gap-3"><button
-    onClick={() => setViewMode(viewMode === "list" ? "calendar" : "list")}
-    className="btn-secondary"
-  ><CalendarIcon className="w-4 h-4" />{viewMode === "list" ? "Calendar View" : "List View"}</button><button
-    onClick={() => navigate("/consultation-view")}
-    className="btn-secondary"
-    title="Walk through today's queue patient-by-patient"
-  ><Stethoscope className="w-4 h-4" />Consultation View</button><button
-    onClick={() => setIsBookingModalOpen(true)}
-    className="btn-primary"
-  ><Plus className="w-4 h-4" />
-      New Appointment
-    </button></div></div>{viewMode === "list" && <div className="flex items-center justify-between gap-2 mt-6 pb-1"><div className="flex gap-2 overflow-x-auto minimal-scrollbar">{["all", "upcoming", "today", "completed", "cancelled"].map((f) => <button
-      key={f}
-      onClick={() => setListFilter(f)}
-      className={`px-4 py-2 text-sm font-semibold rounded-lg capitalize transition-all ${listFilter === f ? "bg-slate-950 text-white shadow-md" : "text-slate-600 hover:bg-slate-100"}`}
-    >{f === "all" ? "All Appointments" : f}</button>)}</div>{listFilter === "today" && <button
-      onClick={handleRefreshTokens}
-      disabled={isRefreshingTokens}
-      title="Renumber today's tokens starting from 1, in booking order"
-      className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-    >{isRefreshingTokens ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}<span>Refresh Tokens</span></button>}</div>}</header>{
-      /* Content Area */
-    }<div className="flex-1 overflow-hidden flex flex-col gap-6">{viewMode === "calendar" && <div className="flex items-center justify-between pb-2"><div className="flex items-center bg-white rounded-lg p-1 shadow-sm border border-slate-200">{["day", "week", "month"].map((v) => <button
-      key={v}
-      onClick={() => setCalendarView(v)}
-      className={`px-4 py-1.5 text-sm font-semibold rounded-lg capitalize transition-all ${calendarView === v ? "bg-white text-slate-950 shadow-md" : "text-slate-500 hover:text-slate-700"}`}
-    >{v}</button>)}</div><div className="flex items-center gap-4"><SearchableSelect
-      value={selectedDoctorId}
-      onChange={(value) => setSelectedDoctorId(value)}
-      options={[{ value: "all", label: "All Doctors" }, ...doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}` }))]}
-      className="appearance-none bg-white border border-slate-200 text-slate-700 text-sm font-semibold py-2 pl-4 pr-10 rounded-lg outline-none focus:ring-2 focus:ring-slate-300/50 transition-all cursor-pointer shadow-sm"
-    /><div className="flex items-center gap-2"><button onClick={goToday} className="btn-secondary py-2">Today</button><div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm"><button onClick={prevPeriod} className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"><ChevronLeft className="w-5 h-5" /></button><button onClick={nextPeriod} className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"><ChevronRight className="w-5 h-5" /></button></div></div><h2 className="text-lg font-bold text-slate-800 min-w-[200px] text-right">{renderHeaderTitle()}</h2></div></div>}{isLoading ? <div className="flex-1 flex items-center justify-center"><div className="animate-pulse flex flex-col items-center gap-4"><div className="w-10 h-10 rounded-full border-4 border-slate-200 border-t-slate-900 animate-spin" /><p className="text-sm font-semibold text-slate-500">Loading appointments...</p></div></div> : viewMode === "list" ? renderListView() : calendarView === "month" ? renderMonthView() : calendarView === "week" ? renderWeekView() : <div className="flex-1 flex flex-col bg-white rounded-lg border border-slate-200 overflow-hidden"><div className="border-b border-slate-200 bg-slate-50/50 p-4"><h3 className="text-lg font-bold text-slate-800">{format(currentDate, "EEEE, MMMM do, yyyy")}</h3></div><div className="p-4 space-y-3 overflow-y-auto flex-1">{filteredAppointments.filter((a) => isSameDay(parseISO(a.apptDate), currentDate)).length === 0 ? <div className="py-12 text-center text-slate-500">No appointments for today.</div> : filteredAppointments.filter((a) => isSameDay(parseISO(a.apptDate), currentDate)).sort((a, b) => a.apptTime.localeCompare(b.apptTime)).map((appt) => {
-      const colors = getColorForDoctor(appt.doctorId);
-      return <div key={appt.id} className={`p-4 rounded-lg border flex items-center gap-4 ${colors}`}><div className="w-16 text-center shrink-0"><p className="font-bold text-lg leading-none">{appt.apptTime.substring(0, 5)}</p><p className="text-[10px] uppercase font-bold opacity-70 mt-1">{parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p></div><div className="w-px h-10 bg-current opacity-20" /><div className="flex-1"><p className="font-bold text-lg">{appt.patientName}</p><p className="text-sm font-medium opacity-80 mt-0.5">{TYPE_LABEL[appt.type] ?? appt.type} &middot; Dr. {appt.doctorName}</p></div><div className={`px-3 py-1 text-xs font-bold rounded uppercase ${STATUS_STYLES[appt.status] || ""}`}>{appt.status.replace("_", " ")}</div></div>;
-    })}</div></div>}</div><BookAppointmentModal
-      isOpen={isBookingModalOpen}
-      onClose={() => setIsBookingModalOpen(false)}
-      onSuccess={() => {
-        setIsBookingModalOpen(false);
-        loadData();
-      }}
-    />{admitPrefill && <AdmitPatientModal prefill={admitPrefill} onClose={() => setAdmitPrefill(null)} onAdmitted={() => { setAdmitPrefill(null); }} />}{consultationAppointment && <ConsultationModal
-      appointment={consultationAppointment}
-      onClose={() => {
-        setConsultationAppointment(null);
-        // Re-fetch so a freshly-autosaved draft surfaces as a badge
-        // immediately when the doctor closes mid-edit.
-        refreshDraftSet();
-      }}
-      onSaved={() => {
-        setConsultationAppointment(null);
-        loadData();
-      }}
-    />}{vitalsAppointment && <VitalsModal
-      appointment={vitalsAppointment}
-      onClose={() => setVitalsAppointment(null)}
-      onSaved={() => {
-        setVitalsAppointment(null);
-        refreshVitalsSet();
-      }}
-    />}{externalResultsAppointment && <ExternalResultsModal
-      appointment={externalResultsAppointment}
-      onClose={() => setExternalResultsAppointment(null)}
-      onSaved={() => setExternalResultsAppointment(null)}
-    />}</div>;
+  return (
+    <div className="hms-appt-page">
+      {/* Header */}
+      <header className="hms-appt-page__header">
+        <div className="hms-appt-page__header-top">
+          <div>
+            <h1 className="hms-appt-page__title">{viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}</h1>
+            <p className="hms-appt-page__subtitle">{viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}</p>
+          </div>
+          <div className="hms-appt-page__actions">
+            <button
+              onClick={() => setViewMode(viewMode === "list" ? "calendar" : "list")}
+              className="hms-btn-secondary"
+            >
+              <CalendarIcon className="w-4 h-4" />{viewMode === "list" ? "Calendar View" : "List View"}
+            </button>
+            <button
+              onClick={() => navigate("/consultation-view")}
+              className="hms-btn-secondary"
+              title="Walk through today's queue patient-by-patient"
+            >
+              <Stethoscope className="w-4 h-4" />Consultation View
+            </button>
+            <button
+              onClick={() => setIsBookingModalOpen(true)}
+              className="hms-btn-primary"
+            >
+              <Plus className="w-4 h-4" />
+              New Appointment
+            </button>
+          </div>
+        </div>
+        {viewMode === "list" && (
+          <div className="hms-appt-filters">
+            <div className="hms-appt-filters__pills">
+              {["all", "upcoming", "today", "completed", "cancelled"].map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setListFilter(f)}
+                  className={`hms-appt-filter-pill ${listFilter === f ? "is-active" : ""}`}
+                >
+                  {f === "all" ? "All Appointments" : f}
+                </button>
+              ))}
+            </div>
+            {listFilter === "today" && (
+              <button
+                onClick={handleRefreshTokens}
+                disabled={isRefreshingTokens}
+                title="Renumber today's tokens starting from 1, in booking order"
+                className="hms-appt-refresh-tokens"
+              >
+                {isRefreshingTokens ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                <span>Refresh Tokens</span>
+              </button>
+            )}
+          </div>
+        )}
+      </header>
+      {/* Content Area */}
+      <div className="hms-appt-body">
+        {viewMode === "calendar" && (
+          <div className="hms-appt-cal-bar">
+            <div className="hms-appt-cal-bar__views">
+              {["day", "week", "month"].map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setCalendarView(v)}
+                  className={`hms-appt-cal-view-btn ${calendarView === v ? "is-active" : ""}`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+            <div className="hms-appt-cal-bar__right">
+              <SearchableSelect
+                value={selectedDoctorId}
+                onChange={(value) => setSelectedDoctorId(value)}
+                options={[{ value: "all", label: "All Doctors" }, ...doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}` }))]}
+                className="hms-appt-list__doctor-select"
+              />
+              <div className="hms-appt-cal-bar__nav">
+                <button onClick={goToday} className="hms-btn-secondary">Today</button>
+                <div className="hms-appt-cal-bar__pager">
+                  <button onClick={prevPeriod} className="hms-appt-cal-pager-btn"><ChevronLeft className="w-5 h-5" /></button>
+                  <button onClick={nextPeriod} className="hms-appt-cal-pager-btn"><ChevronRight className="w-5 h-5" /></button>
+                </div>
+              </div>
+              <h2 className="hms-appt-cal-bar__title">{renderHeaderTitle()}</h2>
+            </div>
+          </div>
+        )}
+        {isLoading ? (
+          <div className="hms-appt-loading">
+            <div className="hms-appt-loading__inner">
+              <div className="hms-appt-loading__spinner" />
+              <p className="hms-appt-loading__label">Loading appointments...</p>
+            </div>
+          </div>
+        ) : viewMode === "list" ? renderListView()
+        : calendarView === "month" ? renderMonthView()
+        : calendarView === "week" ? renderWeekView()
+        : (
+          <div className="hms-appt-day">
+            <div className="hms-appt-day__head">
+              <h3 className="hms-appt-day__title">{format(currentDate, "EEEE, MMMM do, yyyy")}</h3>
+            </div>
+            <div className="hms-appt-day__body">
+              {filteredAppointments.filter((a) => isSameDay(parseISO(a.apptDate), currentDate)).length === 0
+                ? <div className="hms-appt-day__empty">No appointments for today.</div>
+                : filteredAppointments.filter((a) => isSameDay(parseISO(a.apptDate), currentDate)).sort((a, b) => a.apptTime.localeCompare(b.apptTime)).map((appt) => {
+                  const tone = getColorForDoctor(appt.doctorId);
+                  return (
+                    <div key={appt.id} className={`hms-appt-day-row ${tone}`}>
+                      <div className="hms-appt-day-row__time">
+                        <p className="hms-appt-day-row__time-h">{appt.apptTime.substring(0, 5)}</p>
+                        <p className="hms-appt-day-row__time-ampm">{parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p>
+                      </div>
+                      <div className="hms-appt-day-row__sep" />
+                      <div className="hms-appt-day-row__body">
+                        <p className="hms-appt-day-row__name">{appt.patientName}</p>
+                        <p className="hms-appt-day-row__meta">{TYPE_LABEL[appt.type] ?? appt.type} &middot; Dr. {appt.doctorName}</p>
+                      </div>
+                      <div className={`hms-appt-day-row__status ${STATUS_MOD[appt.status] || ""}`}>{appt.status.replace("_", " ")}</div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+      </div>
+      <BookAppointmentModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        onSuccess={() => {
+          setIsBookingModalOpen(false);
+          loadData();
+        }}
+      />
+      {admitPrefill && <AdmitPatientModal prefill={admitPrefill} onClose={() => setAdmitPrefill(null)} onAdmitted={() => { setAdmitPrefill(null); }} />}
+      {consultationAppointment && (
+        <ConsultationModal
+          appointment={consultationAppointment}
+          onClose={() => {
+            setConsultationAppointment(null);
+            // Re-fetch so a freshly-autosaved draft surfaces as a badge
+            // immediately when the doctor closes mid-edit.
+            refreshDraftSet();
+          }}
+          onSaved={() => {
+            setConsultationAppointment(null);
+            loadData();
+          }}
+        />
+      )}
+      {vitalsAppointment && (
+        <VitalsModal
+          appointment={vitalsAppointment}
+          onClose={() => setVitalsAppointment(null)}
+          onSaved={() => {
+            setVitalsAppointment(null);
+            refreshVitalsSet();
+          }}
+        />
+      )}
+      {externalResultsAppointment && (
+        <ExternalResultsModal
+          appointment={externalResultsAppointment}
+          onClose={() => setExternalResultsAppointment(null)}
+          onSaved={() => setExternalResultsAppointment(null)}
+        />
+      )}
+    </div>
+  );
 }
 export {
   AppointmentsDashboard as default

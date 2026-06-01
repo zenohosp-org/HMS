@@ -146,66 +146,63 @@ export default function NewOrderModal({ onClose, onCreated }) {
     }
   };
 
-  const labelCls = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5";
-  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300/50 transition-all";
   const noResults = patientSearch.length >= 2 && !patientSearching && patients.length === 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg border border-slate-200 flex flex-col max-h-[90vh]">
+    <div className="hms-rad-modal-overlay">
+      <div className="hms-rad-modal">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="hms-rad-modal__hdr">
+          <div className="hms-rad-modal__hdr-left">
             {showRegister && (
               <button type="button" onClick={() => setShowRegister(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                className="hms-rad-modal__back-btn">
                 <ChevronLeft className="w-4 h-4" />
               </button>
             )}
             <div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="hms-rad-modal__title">
                 {showRegister ? "Register New Patient" : "New Radiology Order"}
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="hms-rad-modal__sub">
                 {showRegister
                   ? "Quick registration — patient will be added to the system"
                   : "Create an imaging request for a patient"}
               </p>
             </div>
           </div>
-          <button onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+          <button onClick={onClose} className="hms-rad-modal__close">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* ── Quick Register Form ── */}
         {showRegister ? (
-          <form onSubmit={handleQuickRegister} className="flex-1 overflow-y-auto p-6 space-y-5">
-            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700 flex items-start gap-2">
-              <UserPlus className="w-4 h-4 shrink-0 mt-0.5" />
+          <form onSubmit={handleQuickRegister} className="hms-rad-modal__body">
+            <div className="hms-rad-info-bar">
+              <UserPlus className="w-4 h-4 hms-rad-info-bar__icon" />
               <span>Walk-in patient — minimum info needed. Full profile can be completed later from the Patients section.</span>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="hms-rad-grid">
               <div>
-                <label className={labelCls}>First Name *</label>
-                <input required type="text" className={inputCls} placeholder="e.g. Ravi"
+                <label className="hms-rad-label">First Name *</label>
+                <input required type="text" className="hms-rad-input" placeholder="e.g. Ravi"
                   value={quickForm.firstName} onChange={(e) => setQ("firstName", e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>Last Name</label>
-                <input type="text" className={inputCls} placeholder="e.g. Kumar"
+                <label className="hms-rad-label">Last Name</label>
+                <input type="text" className="hms-rad-input" placeholder="e.g. Kumar"
                   value={quickForm.lastName} onChange={(e) => setQ("lastName", e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>Phone</label>
-                <input type="text" className={inputCls} placeholder="+91 98765 43210"
+                <label className="hms-rad-label">Phone</label>
+                <input type="text" className="hms-rad-input" placeholder="+91 98765 43210"
                   value={quickForm.phone} onChange={(e) => setQ("phone", e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>Gender</label>
-                <SearchableSelect className={inputCls} value={quickForm.gender} onChange={(v) => setQ("gender", v)}
+                <label className="hms-rad-label">Gender</label>
+                <SearchableSelect className="hms-rad-input" value={quickForm.gender} onChange={(v) => setQ("gender", v)}
                   options={[
                     { value: "MALE", label: "Male" },
                     { value: "FEMALE", label: "Female" },
@@ -214,20 +211,20 @@ export default function NewOrderModal({ onClose, onCreated }) {
                 />
               </div>
               <div>
-                <label className={labelCls}>Date of Birth</label>
-                <input type="date" className={inputCls} value={quickForm.dob}
+                <label className="hms-rad-label">Date of Birth</label>
+                <input type="date" className="hms-rad-input" value={quickForm.dob}
                   onChange={(e) => setQ("dob", e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>Blood Group</label>
-                <SearchableSelect className={inputCls} value={quickForm.bloodGroup} onChange={(v) => setQ("bloodGroup", v)}
+                <label className="hms-rad-label">Blood Group</label>
+                <SearchableSelect className="hms-rad-input" value={quickForm.bloodGroup} onChange={(v) => setQ("bloodGroup", v)}
                   options={[{ value: "", label: "Unknown" }, ...BLOOD_GROUPS.map((b) => ({ value: b, label: b }))]}
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={() => setShowRegister(false)} className="btn-secondary">Back</button>
-              <button type="submit" disabled={registering} className="btn-primary">
+            <div className="hms-rad-modal__foot">
+              <button type="button" onClick={() => setShowRegister(false)} className="hms-btn-secondary">Back</button>
+              <button type="submit" disabled={registering} className="hms-btn-primary">
                 {registering
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Registering…</>
                   : <><UserPlus className="w-4 h-4" /> Register &amp; Continue</>}
@@ -237,82 +234,80 @@ export default function NewOrderModal({ onClose, onCreated }) {
 
         ) : (
           /* ── Order Form ── */
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="hms-rad-modal__body">
 
             {/* Patient */}
             <div>
-              <label className={labelCls}>Patient *</label>
+              <label className="hms-rad-label">Patient *</label>
               {selectedPatient ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-slate-200 bg-slate-50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
+                <div className="hms-rad-pat-picked">
+                  <div className="hms-rad-pat-picked__row">
+                    <div className="hms-rad-pat-picked__body">
+                      <div className="hms-rad-pat-picked__avatar">
                         {selectedPatient.firstName[0]}{selectedPatient.lastName?.[0] ?? ""}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">
+                        <p className="hms-rad-pat-picked__name">
                           {selectedPatient.firstName} {selectedPatient.lastName}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="hms-rad-pat-picked__sub">
                           {fmtId(selectedPatient.uhid) ?? "New patient"}
                           {selectedPatient.phone ? ` · ${selectedPatient.phone}` : ""}
                         </p>
                       </div>
                     </div>
-                    <button type="button" onClick={clearPatient}
-                      className="text-slate-400 hover:text-slate-600 p-1 rounded transition-colors">
+                    <button type="button" onClick={clearPatient} className="hms-rad-pat-picked__clear">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
 
                   {/* Active admission banner */}
                   {checkingAdmission && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-100">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
-                      <span className="text-xs text-slate-500">Checking admission status…</span>
+                    <div className="hms-rad-admit-check">
+                      <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
+                      <span className="hms-rad-admit-check__text">Checking admission status…</span>
                     </div>
                   )}
                   {!checkingAdmission && activeAdmission && (
-                    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-blue-50 border border-blue-200">
-                      <BedDouble className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
+                    <div className="hms-rad-admit-banner">
+                      <BedDouble className="w-3 h-3 hms-rad-admit-banner__icon" />
                       <div>
-                        <p className="text-xs font-semibold text-blue-700">
+                        <p className="hms-rad-admit-banner__title">
                           Currently admitted · {fmtId(activeAdmission.admissionNumber)}
                         </p>
-                        <p className="text-xs text-blue-600 mt-0.5">
+                        <p className="hms-rad-admit-banner__sub">
                           This order will be linked to their active IPD admission and included in the discharge bill automatically.
                         </p>
                       </div>
                     </div>
                   )}
                   {!checkingAdmission && !activeAdmission && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-100">
-                      <span className="text-xs text-slate-500">Outpatient — order will not be linked to any admission.</span>
+                    <div className="hms-rad-admit-outpatient">
+                      <span>Outpatient — order will not be linked to any admission.</span>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input className={`${inputCls} pl-9`} placeholder="Search by name or UHID…"
+                <div className="hms-rad-pat-search">
+                  <Search className="w-4 h-4 hms-rad-pat-search__icon" />
+                  <input className="hms-rad-input has-icon" placeholder="Search by name or UHID…"
                     value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} autoFocus />
                   {patientSearching && (
-                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-slate-400" />
+                    <Loader2 className="w-4 h-4 animate-spin hms-rad-pat-search__spinner" />
                   )}
 
                   {patients.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-10 overflow-hidden">
+                    <div className="hms-rad-pat-suggest">
                       {patients.map((p) => (
-                        <button key={p.id} type="button" onClick={() => selectPatient(p)}
-                          className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-50 last:border-0">
-                          <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 shrink-0">
+                        <button key={p.id} type="button" onClick={() => selectPatient(p)} className="hms-rad-pat-suggest__item">
+                          <div className="hms-rad-pat-suggest__avatar">
                             {p.firstName[0]}{p.lastName?.[0] ?? ""}
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-slate-800">
+                            <p className="hms-rad-pat-suggest__name">
                               {p.firstName} {p.lastName}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="hms-rad-pat-suggest__sub">
                               {fmtId(p.uhid)}{p.phone ? ` · ${p.phone}` : ""}
                             </p>
                           </div>
@@ -322,8 +317,8 @@ export default function NewOrderModal({ onClose, onCreated }) {
                   )}
 
                   {noResults && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-10 overflow-hidden">
-                      <div className="px-4 py-3 text-xs text-slate-500 border-b border-slate-100">
+                    <div className="hms-rad-pat-suggest">
+                      <div className="hms-rad-pat-suggest__notice">
                         No patient found for "{patientSearch}"
                       </div>
                       <button type="button" onClick={() => {
@@ -331,13 +326,13 @@ export default function NewOrderModal({ onClose, onCreated }) {
                         const parts = patientSearch.trim().split(" ");
                         setQuickForm((f) => ({ ...f, firstName: parts[0] ?? "", lastName: parts.slice(1).join(" ") ?? "" }));
                         setShowRegister(true);
-                      }} className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                          <UserPlus className="w-3.5 h-3.5 text-blue-500" />
+                      }} className="hms-rad-pat-suggest__reg">
+                        <div className="hms-rad-pat-suggest__reg-icon">
+                          <UserPlus className="w-3 h-3" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-blue-600">Register as new patient</p>
-                          <p className="text-xs text-slate-500">Walk-in — add to system and continue</p>
+                          <p className="hms-rad-pat-suggest__reg-title">Register as new patient</p>
+                          <p className="hms-rad-pat-suggest__sub">Walk-in — add to system and continue</p>
                         </div>
                       </button>
                     </div>
@@ -348,24 +343,24 @@ export default function NewOrderModal({ onClose, onCreated }) {
 
             {/* Investigation */}
             <div>
-              <label className={labelCls}>Investigation (Test) *</label>
+              <label className="hms-rad-label">Investigation (Test) *</label>
               {services.length > 0 ? (
-                <SearchableSelect className={inputCls} value={form.serviceName} required
+                <SearchableSelect className="hms-rad-input" value={form.serviceName} required
                   onChange={(v) => setForm((f) => ({ ...f, serviceName: v }))}
                   options={[{ value: "", label: "Select investigation…" }, ...services.filter((s) => s.isActive).map((s) => ({ value: s.name, label: s.name }))]}
                 />
               ) : (
-                <input className={inputCls} placeholder="e.g. X-Ray Chest, CT Scan Abdomen…"
+                <input className="hms-rad-input" placeholder="e.g. X-Ray Chest, CT Scan Abdomen…"
                   value={form.serviceName} required
                   onChange={(e) => setForm((f) => ({ ...f, serviceName: e.target.value }))} />
               )}
             </div>
 
             {/* Technician + Priority */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="hms-rad-grid">
               <div>
-                <label className={labelCls}>Technician</label>
-                <SearchableSelect className={inputCls} value={form.technicianId} onChange={(v) => {
+                <label className="hms-rad-label">Technician</label>
+                <SearchableSelect className="hms-rad-input" value={form.technicianId} onChange={(v) => {
                   const tech = technicians.find((t) => t.id === v);
                   setForm((f) => ({
                     ...f, technicianId: v,
@@ -376,8 +371,8 @@ export default function NewOrderModal({ onClose, onCreated }) {
                 />
               </div>
               <div>
-                <label className={labelCls}>Priority</label>
-                <SearchableSelect className={inputCls} value={form.priority}
+                <label className="hms-rad-label">Priority</label>
+                <SearchableSelect className="hms-rad-input" value={form.priority}
                   onChange={(v) => setForm((f) => ({ ...f, priority: v }))}
                   options={PRIORITIES.map((p) => ({ value: p, label: p }))}
                 />
@@ -385,19 +380,19 @@ export default function NewOrderModal({ onClose, onCreated }) {
             </div>
 
             {/* Scheduled date + Price */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="hms-rad-grid">
               <div>
-                <label className={labelCls}>Scheduled Date</label>
-                <input type="date" className={inputCls} value={form.scheduledDate}
+                <label className="hms-rad-label">Scheduled Date</label>
+                <input type="date" className="hms-rad-input" value={form.scheduledDate}
                   onChange={(e) => setForm((f) => ({ ...f, scheduledDate: e.target.value }))} />
               </div>
               <div>
-                <label className={labelCls}>Price (₹)</label>
-                <input type="number" min="0" step="0.01" className={inputCls}
+                <label className="hms-rad-label">Price (₹)</label>
+                <input type="number" min="0" step="0.01" className="hms-rad-input"
                   placeholder="e.g. 500"
                   value={form.price}
                   onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="hms-rad-price-hint">
                   {activeAdmission
                     ? "Will be added to the IPD bill when the report is generated."
                     : "A standalone OPD radiology invoice will be created when the report is generated."}
@@ -410,9 +405,9 @@ export default function NewOrderModal({ onClose, onCreated }) {
 
         {/* Footer */}
         {!showRegister && (
-          <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 shrink-0">
-            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-            <button onClick={handleSubmit} disabled={saving || !selectedPatient || checkingAdmission} className="btn-primary">
+          <div className="hms-rad-modal__foot">
+            <button type="button" onClick={onClose} className="hms-btn-secondary">Cancel</button>
+            <button onClick={handleSubmit} disabled={saving || !selectedPatient || checkingAdmission} className="hms-btn-primary">
               {saving
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</>
                 : <><CheckCircle2 className="w-4 h-4" /> Create Order</>}

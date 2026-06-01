@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { checkupApi } from "@/utils/api";
 import SearchableSelect from "@/components/ui/SearchableSelect";
@@ -21,16 +21,16 @@ const CATEGORIES = [
 
 const TEST_CATEGORIES = ["BLOOD_TEST", "RADIOLOGY", "CONSULTATION", "PHYSICAL", "VISION", "DENTAL", "GENERAL"];
 
-const CATEGORY_COLORS = {
-  GENERAL: "bg-slate-100 text-slate-700",
-  CARDIAC: "bg-rose-50 text-rose-700",
-  DIABETIC: "bg-amber-50 text-amber-700",
-  CANCER_SCREENING: "bg-slate-100 text-slate-900",
-  WOMENS_HEALTH: "bg-pink-50 text-pink-700",
-  SENIOR: "bg-blue-50 text-blue-700",
-  PAEDIATRIC: "bg-slate-100 text-slate-700",
-  COMPREHENSIVE: "bg-emerald-50 text-emerald-700",
-  CUSTOM: "bg-orange-50 text-orange-700",
+const CATEGORY_CHIP_CLS = {
+  GENERAL: "is-cat-general",
+  CARDIAC: "is-cat-cardiac",
+  DIABETIC: "is-cat-diabetic",
+  CANCER_SCREENING: "is-cat-cancer",
+  WOMENS_HEALTH: "is-cat-womens",
+  SENIOR: "is-cat-senior",
+  PAEDIATRIC: "is-cat-paediatric",
+  COMPREHENSIVE: "is-cat-comprehensive",
+  CUSTOM: "is-cat-custom",
 };
 
 const EMPTY_TEST = { testName: "", testCategory: "GENERAL", normalRange: "", mandatory: true };
@@ -70,38 +70,35 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
     finally { setSaving(false); }
   };
 
-  const inputCls = "w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400";
-  const labelCls = "block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5";
-
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8 px-4">
-      <div className="bg-white border border-slate-200 rounded-lg shadow-2xl w-full max-w-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="font-bold text-slate-900">{form.id ? "Edit Package" : "New Health Package"}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"><X className="w-4 h-4" /></button>
+    <div className="hms-pkg-modal-overlay">
+      <div className="hms-pkg-modal">
+        <div className="hms-pkg-modal__head">
+          <h2 className="hms-pkg-modal__title">{form.id ? "Edit Package" : "New Health Package"}</h2>
+          <button onClick={onClose} className="hms-pkg-modal__close"><X className="w-4 h-4" /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="hms-pkg-modal__form">
           {error && (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+            <div className="hms-pkg-modal__error">
               <AlertCircle className="w-4 h-4 shrink-0" /> {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className={labelCls}>Package Name</label>
-              <input value={form.name} onChange={e => set("name", e.target.value)} placeholder="e.g. Executive Health Package" className={inputCls} />
+          <div className="hms-pkg-modal__grid">
+            <div className="is-span-2">
+              <label className="hms-pkg-modal__label">Package Name</label>
+              <input value={form.name} onChange={e => set("name", e.target.value)} placeholder="e.g. Executive Health Package" className="hms-pkg-modal__input" />
             </div>
             <div>
-              <label className={labelCls}>Category</label>
-              <SearchableSelect value={form.category} onChange={v => set("category", v)} className={inputCls}
+              <label className="hms-pkg-modal__label">Category</label>
+              <SearchableSelect value={form.category} onChange={v => set("category", v)}
                 options={CATEGORIES.map(c => ({ value: c.value, label: c.label }))}
               />
             </div>
             <div>
-              <label className={labelCls}>Target Gender</label>
-              <SearchableSelect value={form.targetGender} onChange={v => set("targetGender", v)} className={inputCls}
+              <label className="hms-pkg-modal__label">Target Gender</label>
+              <SearchableSelect value={form.targetGender} onChange={v => set("targetGender", v)}
                 options={[
                   { value: "ANY", label: "Any / Unisex" },
                   { value: "MALE", label: "Male Only" },
@@ -110,57 +107,57 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
               />
             </div>
             <div>
-              <label className={labelCls}>Price (₹)</label>
-              <input type="number" step="0.01" value={form.price} onChange={e => set("price", e.target.value)} placeholder="0.00" className={inputCls} />
+              <label className="hms-pkg-modal__label">Price (₹)</label>
+              <input type="number" step="0.01" value={form.price} onChange={e => set("price", e.target.value)} placeholder="0.00" className="hms-pkg-modal__input" />
             </div>
             <div>
-              <label className={labelCls}>Validity (Days)</label>
-              <input type="number" min="1" value={form.validityDays} onChange={e => set("validityDays", parseInt(e.target.value))} className={inputCls} />
+              <label className="hms-pkg-modal__label">Validity (Days)</label>
+              <input type="number" min="1" value={form.validityDays} onChange={e => set("validityDays", parseInt(e.target.value))} className="hms-pkg-modal__input" />
             </div>
-            <div className="md:col-span-2">
-              <label className={labelCls}>Description</label>
-              <textarea rows={2} value={form.description} onChange={e => set("description", e.target.value)} placeholder="Brief description of what this package covers…" className={`${inputCls} resize-none`} />
+            <div className="is-span-2">
+              <label className="hms-pkg-modal__label">Description</label>
+              <textarea rows={2} value={form.description} onChange={e => set("description", e.target.value)} placeholder="Brief description of what this package covers…" className="hms-pkg-modal__input" />
             </div>
           </div>
 
           {/* Tests */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className={labelCls}>Tests Included ({form.tests.length})</label>
-              <button type="button" onClick={addTest} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-bold hover:bg-emerald-100 transition-colors border border-emerald-200">
+            <div className="hms-pkg-modal__test-head">
+              <label className="hms-pkg-modal__label">Tests Included ({form.tests.length})</label>
+              <button type="button" onClick={addTest} className="hms-pkg-modal__add-test">
                 <Plus className="w-3 h-3" /> Add Test
               </button>
             </div>
 
             {form.tests.length === 0 ? (
-              <div className="py-8 flex flex-col items-center rounded-lg border border-dashed border-slate-200 text-slate-400">
-                <Package className="w-6 h-6 mb-2 opacity-40" />
-                <p className="text-xs">No tests added yet. Click "Add Test" to begin.</p>
+              <div className="hms-pkg-modal__tests-empty">
+                <Package className="w-6 h-6 opacity-40" />
+                <p className="hms-pkg-modal__tests-empty-text">No tests added yet. Click "Add Test" to begin.</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {form.tests.map((t, i) => (
-                  <div key={i} className="flex gap-2 p-3 rounded-lg border border-slate-100 bg-slate-50">
-                    <GripVertical className="w-4 h-4 text-slate-500 mt-2.5 shrink-0" />
-                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2">
-                      <div className="col-span-2 md:col-span-2">
-                        <input value={t.testName} onChange={e => updateTest(i, "testName", e.target.value)} placeholder="Test name (e.g. Complete Blood Count)" className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 placeholder:text-slate-400" />
+                  <div key={i} className="hms-pkg-modal__test-row">
+                    <GripVertical className="hms-pkg-modal__test-grip w-4 h-4" />
+                    <div className="hms-pkg-modal__test-fields">
+                      <div className="is-span-2">
+                        <input value={t.testName} onChange={e => updateTest(i, "testName", e.target.value)} placeholder="Test name (e.g. Complete Blood Count)" className="hms-pkg-modal__test-field" />
                       </div>
                       <div>
-                        <SearchableSelect value={t.testCategory} onChange={v => updateTest(i, "testCategory", v)} className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300/50"
+                        <SearchableSelect value={t.testCategory} onChange={v => updateTest(i, "testCategory", v)}
                           options={TEST_CATEGORIES.map(c => ({ value: c, label: c.replace("_", " ") }))}
                         />
                       </div>
                       <div>
-                        <input value={t.normalRange} onChange={e => updateTest(i, "normalRange", e.target.value)} placeholder="Normal range" className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300/50 placeholder:text-slate-400" />
+                        <input value={t.normalRange} onChange={e => updateTest(i, "normalRange", e.target.value)} placeholder="Normal range" className="hms-pkg-modal__test-field" />
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
-                        <input type="checkbox" checked={t.mandatory} onChange={e => updateTest(i, "mandatory", e.target.checked)} className="rounded" />
+                    <div className="hms-pkg-modal__test-actions">
+                      <label className="hms-pkg-modal__test-req">
+                        <input type="checkbox" checked={t.mandatory} onChange={e => updateTest(i, "mandatory", e.target.checked)} />
                         Req.
                       </label>
-                      <button type="button" onClick={() => removeTest(i)} className="p-1 rounded text-slate-300 hover:text-rose-500 transition-colors">
+                      <button type="button" onClick={() => removeTest(i)} className="hms-pkg-modal__test-remove">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -170,14 +167,14 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.active} onChange={e => set("active", e.target.checked)} className="rounded" />
-              <span className="text-sm font-medium text-slate-600">Active (visible for booking)</span>
+          <div className="hms-pkg-modal__foot">
+            <label className="hms-pkg-modal__active-toggle">
+              <input type="checkbox" checked={form.active} onChange={e => set("active", e.target.checked)} />
+              <span>Active (visible for booking)</span>
             </label>
-            <div className="flex gap-3">
-              <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
-              <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold transition-colors disabled:opacity-50">
+            <div className="hms-pkg-modal__foot-actions">
+              <button type="button" onClick={onClose} className="hms-btn-cancel">Cancel</button>
+              <button type="submit" disabled={saving} className="hms-btn-primary is-green">
                 {saving ? "Saving…" : "Save Package"}
               </button>
             </div>
@@ -191,41 +188,42 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
 function PackageCard({ pkg, onEdit, onToggle, onDelete }) {
   const [expanded, setExpanded] = useState(false);
   const label = CATEGORIES.find(c => c.value === pkg.category)?.label || pkg.category;
+  const chipCls = CATEGORY_CHIP_CLS[pkg.category] || CATEGORY_CHIP_CLS.CUSTOM;
 
   return (
-    <div className={`bg-white border rounded-lg overflow-hidden transition-all ${pkg.active ? "border-slate-200" : "border-slate-100 opacity-60"}`}>
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h3 className="font-bold text-slate-900 text-sm">{pkg.name}</h3>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[pkg.category] || CATEGORY_COLORS.CUSTOM}`}>{label}</span>
+    <div className={`hms-checkup-pkg-tile ${pkg.active ? "" : "is-inactive"}`}>
+      <div className="hms-checkup-pkg-tile__body">
+        <div className="hms-checkup-pkg-tile__row">
+          <div className="hms-checkup-pkg-tile__main">
+            <div className="hms-checkup-pkg-tile__title-row">
+              <h3 className="hms-checkup-pkg-tile__name">{pkg.name}</h3>
+              <span className={`hms-checkup-pkg-tile__chip ${chipCls}`}>{label}</span>
               {pkg.targetGender !== "ANY" && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-900">{pkg.targetGender}</span>
+                <span className="hms-checkup-pkg-tile__chip is-gender">{pkg.targetGender}</span>
               )}
-              {!pkg.active && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">Inactive</span>}
+              {!pkg.active && <span className="hms-checkup-pkg-tile__chip is-inactive">Inactive</span>}
             </div>
-            {pkg.description && <p className="text-xs text-slate-500 line-clamp-2 mt-1">{pkg.description}</p>}
+            {pkg.description && <p className="hms-checkup-pkg-tile__desc">{pkg.description}</p>}
           </div>
-          <div className="shrink-0 text-right">
-            <p className="text-lg font-bold text-emerald-600">₹{Number(pkg.price).toLocaleString("en-IN")}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">{pkg.validityDays === 1 ? "Single visit" : `${pkg.validityDays} days`}</p>
+          <div className="hms-checkup-pkg-tile__price-col">
+            <p className="hms-checkup-pkg-tile__price">₹{Number(pkg.price).toLocaleString("en-IN")}</p>
+            <p className="hms-checkup-pkg-tile__validity">{pkg.validityDays === 1 ? "Single visit" : `${pkg.validityDays} days`}</p>
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-3">
-          <button onClick={() => setExpanded(v => !v)} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 transition-colors font-medium">
+        <div className="hms-checkup-pkg-tile__foot">
+          <button onClick={() => setExpanded(v => !v)} className="hms-checkup-pkg-tile__count">
             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             {pkg.tests?.length || 0} tests
           </button>
-          <div className="flex items-center gap-1">
-            <button onClick={onToggle} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 transition-colors" title={pkg.active ? "Deactivate" : "Activate"}>
-              {pkg.active ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4" />}
+          <div className="hms-checkup-pkg-tile__actions">
+            <button onClick={onToggle} className={`hms-checkup-pkg-tile__act ${pkg.active ? 'is-on-toggle' : ''}`} title={pkg.active ? "Deactivate" : "Activate"}>
+              {pkg.active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
             </button>
-            <button onClick={onEdit} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
+            <button onClick={onEdit} className="hms-checkup-pkg-tile__act is-edit">
               <Edit2 className="w-3.5 h-3.5" />
             </button>
-            <button onClick={onDelete} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors">
+            <button onClick={onDelete} className="hms-checkup-pkg-tile__act is-delete">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -233,18 +231,16 @@ function PackageCard({ pkg, onEdit, onToggle, onDelete }) {
       </div>
 
       {expanded && pkg.tests?.length > 0 && (
-        <div className="border-t border-slate-100 bg-slate-50 px-5 py-4">
-          <div className="space-y-1.5">
-            {pkg.tests.map((t, i) => (
-              <div key={i} className="flex items-center gap-3 text-xs">
-                <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold shrink-0 text-[10px]">{i + 1}</span>
-                <span className="font-medium text-slate-700 flex-1">{t.testName}</span>
-                <span className="text-slate-600 text-[10px]">{t.testCategory?.replace("_", " ")}</span>
-                {t.normalRange && <span className="text-slate-600 text-[10px]">({t.normalRange})</span>}
-                {t.mandatory && <Check className="w-3 h-3 text-emerald-500 shrink-0" />}
-              </div>
-            ))}
-          </div>
+        <div className="hms-checkup-pkg-tile__tests">
+          {pkg.tests.map((t, i) => (
+            <div key={i} className="hms-checkup-pkg-tile__test-row">
+              <span className="hms-checkup-pkg-tile__test-num">{i + 1}</span>
+              <span className="hms-checkup-pkg-tile__test-name">{t.testName}</span>
+              <span className="hms-checkup-pkg-tile__test-cat">{t.testCategory?.replace("_", " ")}</span>
+              {t.normalRange && <span className="hms-checkup-pkg-tile__test-range">({t.normalRange})</span>}
+              {t.mandatory && <Check className="w-3 h-3 text-emerald shrink-0" />}
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -292,44 +288,44 @@ export default function PackageManager() {
   const filtered = filterCat === "ALL" ? packages : packages.filter(p => p.category === filterCat);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="hms-checkup-page">
+      <div className="hms-checkup-header">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Health Packages</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Define checkup packages your hospital offers</p>
+          <h1 className="hms-checkup-header__title">Health Packages</h1>
+          <p className="hms-checkup-header__sub">Define checkup packages your hospital offers</p>
         </div>
         <button
           onClick={() => { setEditing(null); setShowForm(true); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-black text-white text-sm font-bold transition-all active:scale-[0.98]"
+          className="hms-btn-primary"
         >
           <Plus className="w-4 h-4" /> New Package
         </button>
       </div>
 
       {/* Category filter */}
-      <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setFilterCat("ALL")} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterCat === "ALL" ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-50"}`}>
+      <div className="hms-checkup-pkg-cat-row">
+        <button onClick={() => setFilterCat("ALL")} className={`hms-checkup-pkg-cat-pill ${filterCat === "ALL" ? "is-on" : ""}`}>
           All ({packages.length})
         </button>
         {CATEGORIES.filter(c => packages.some(p => p.category === c.value)).map(c => (
-          <button key={c.value} onClick={() => setFilterCat(c.value)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterCat === c.value ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-50"}`}>
+          <button key={c.value} onClick={() => setFilterCat(c.value)} className={`hms-checkup-pkg-cat-pill ${filterCat === c.value ? "is-on" : ""}`}>
             {c.label}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {[1, 2, 3].map(i => <div key={i} className="h-32 rounded-lg bg-white border border-slate-200 animate-pulse" />)}
+        <div className="hms-checkup-pkg-list">
+          {[1, 2, 3].map(i => <div key={i} className="hms-checkup-pkg-skel" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center py-20 bg-white border border-slate-200 rounded-lg text-slate-400">
-          <Package className="w-12 h-12 mb-3 opacity-25" />
-          <p className="font-semibold text-sm">No packages yet</p>
-          <p className="text-xs mt-1">Create your first health checkup package to get started</p>
+        <div className="hms-checkup-pkg-empty">
+          <Package className="w-12 h-12 opacity-25" />
+          <p className="hms-checkup-pkg-empty__title">No packages yet</p>
+          <p className="hms-checkup-pkg-empty__sub">Create your first health checkup package to get started</p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="hms-checkup-pkg-list">
           {filtered.map(pkg => (
             <PackageCard
               key={pkg.id}

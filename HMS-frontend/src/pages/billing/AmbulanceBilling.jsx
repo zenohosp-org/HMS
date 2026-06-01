@@ -14,16 +14,16 @@ import {
 const PAGE_SIZE = 30
 
 const BOOKING_STATUS_CFG = {
-  PENDING:    { label: 'Pending',    cls: 'bg-amber-50 text-amber-700 border-amber-200',     Icon: Clock         },
-  DISPATCHED: { label: 'Dispatched', cls: 'bg-blue-50 text-blue-700 border-blue-200',           Icon: Navigation    },
-  EN_ROUTE:   { label: 'En Route',   cls: 'bg-violet-50 text-violet-700 border-violet-200', Icon: Ambulance    },
-  COMPLETED:  { label: 'Completed',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: CheckCircle2 },
-  CANCELLED:  { label: 'Cancelled',  cls: 'bg-rose-50 text-rose-700 border-rose-200',             Icon: XCircle      },
+  PENDING:    { label: 'Pending',    cls: 'is-pending',    Icon: Clock         },
+  DISPATCHED: { label: 'Dispatched', cls: 'is-dispatched', Icon: Navigation    },
+  EN_ROUTE:   { label: 'En Route',   cls: 'is-enroute',    Icon: Ambulance     },
+  COMPLETED:  { label: 'Completed',  cls: 'is-completed',  Icon: CheckCircle2  },
+  CANCELLED:  { label: 'Cancelled',  cls: 'is-cancelled',  Icon: XCircle       },
 }
 
 const PAY_STATUS_CFG = {
-  PAID:   { label: 'Paid',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: CheckCircle2 },
-  UNPAID: { label: 'Unpaid', cls: 'bg-amber-50 text-amber-700 border-amber-200',             Icon: Clock        },
+  PAID:   { label: 'Paid',   cls: 'is-paid',   Icon: CheckCircle2 },
+  UNPAID: { label: 'Unpaid', cls: 'is-unpaid', Icon: Clock        },
 }
 
 function fmt(n) {
@@ -38,21 +38,15 @@ function fmtDate(dateStr, timeStr) {
 }
 
 function StatCard({ label, value, sub, Icon, accent }) {
-  const accents = {
-    blue:    'bg-blue-50 border-blue-100 text-blue-600',
-    emerald: 'bg-emerald-50 border-emerald-100 text-emerald-600',
-    amber:   'bg-amber-50 border-amber-100 text-amber-600',
-    rose:    'bg-rose-50 border-rose-100 text-rose-600',
-  }
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-5 flex items-center gap-4">
-      <div className={`w-11 h-11 rounded-lg border flex items-center justify-center shrink-0 ${accents[accent]}`}>
+    <div className="hms-billing-stat">
+      <div className={`hms-billing-stat__icon is-${accent}`}>
         <Icon className="w-5 h-5" />
       </div>
-      <div className="min-w-0">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</p>
-        <p className="text-xl font-bold text-slate-900 mt-0.5 truncate">{value}</p>
-        {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+      <div className="hms-billing-stat__body">
+        <p className="hms-billing-stat__label">{label}</p>
+        <p className="hms-billing-stat__value">{value}</p>
+        {sub && <p className="hms-billing-stat__sub">{sub}</p>}
       </div>
     </div>
   )
@@ -214,21 +208,17 @@ export default function AmbulanceBilling() {
     }, 250)
   }
 
-  const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-left'
-
   return (
-    <div className="flex flex-col h-full bg-slate-50 gap-6">
+    <div className="hms-billing-page">
 
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Ambulance Billing</h1>
-        <span className="px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-600 text-xs font-bold border border-orange-100">
-          {bookings.length} bookings
-        </span>
+      <div className="hms-billing-header__title-row">
+        <h1 className="hms-billing-header__title">Ambulance Billing</h1>
+        <span className="hms-billing-header__count is-orange">{bookings.length} bookings</span>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="hms-billing-stats">
         <StatCard label="Total Bookings"  value={stats.total}              sub="all time"                Icon={Ambulance}   accent="blue"    />
         <StatCard label="Collected"       value={fmt(stats.collected)}     sub="from paid bookings"      Icon={TrendingUp}  accent="emerald" />
         <StatCard label="Outstanding"     value={fmt(stats.outstanding)}   sub="completed but unpaid"    Icon={AlertCircle} accent="amber"   />
@@ -236,12 +226,12 @@ export default function AmbulanceBilling() {
       </div>
 
       {/* Table Container */}
-      <div className="flex flex-col flex-1 bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden min-h-0">
+      <div className="hms-billing-tablecard">
 
         {/* Controls */}
-        <div className="flex items-center justify-end px-5 py-3 border-b border-slate-100 gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
+        <div className="hms-billing-controls">
+          <div className="hms-billing-controls__group">
+            <div className="hms-billing-segment">
               {[
                 { key: 'ALL',    label: 'All'    },
                 { key: 'UNPAID', label: 'Unpaid' },
@@ -250,62 +240,58 @@ export default function AmbulanceBilling() {
                 <button
                   key={key}
                   onClick={() => handlePayFilter(key)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                    payFilter === key
-                      ? 'bg-slate-900 text-white shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                  className={`hms-billing-segment__btn ${payFilter === key ? 'is-active' : ''}`}
                 >
                   {label}
                 </button>
               ))}
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <div className="hms-billing-search">
+              <Search className="hms-billing-search__icon w-3.5 h-3.5" />
               <input
                 type="text"
                 placeholder="Search patient, vehicle, address…"
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1) }}
-                className="pl-9 pr-3 py-2 w-60 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="hms-billing-search__input is-wide"
               />
             </div>
           </div>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto overflow-y-auto flex-1">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 z-10">
-              <tr className="border-b border-slate-100 bg-white/95 backdrop-blur-sm">
-                <th className={thCls}>Ref & Date</th>
-                <th className={thCls}>Patient</th>
-                <th className={thCls}>Vehicle</th>
-                <th className={thCls}>Route</th>
-                <th className={thCls}>Charge</th>
-                <th className={thCls + ' text-center'}>Status</th>
-                <th className={thCls + ' text-center'}>Payment</th>
-                <th className={thCls + ' text-right'}>Actions</th>
+        <div className="hms-billing-tablescroll">
+          <table className="hms-billing-table">
+            <thead>
+              <tr>
+                <th>Ref & Date</th>
+                <th>Patient</th>
+                <th>Vehicle</th>
+                <th>Route</th>
+                <th>Charge</th>
+                <th className="is-center">Status</th>
+                <th className="is-center">Payment</th>
+                <th className="is-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                      <p className="text-sm font-medium text-slate-400">Loading bookings…</p>
+                  <td colSpan={8} className="hms-billing-cell-state">
+                    <div className="hms-billing-cell-state__stack">
+                      <Loader2 className="w-8 h-8 hms-billing-spin is-orange" />
+                      <p className="hms-billing-cell-state__text">Loading bookings…</p>
                     </div>
                   </td>
                 </tr>
               ) : paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center">
-                        <Ambulance className="w-8 h-8 text-slate-200" />
+                  <td colSpan={8} className="hms-billing-cell-state">
+                    <div className="hms-billing-cell-state__stack">
+                      <div className="hms-billing-cell-state__icon-bg">
+                        <Ambulance className="w-8 h-8" />
                       </div>
-                      <p className="text-sm font-medium text-slate-400">
+                      <p className="hms-billing-cell-state__text">
                         {search || payFilter !== 'ALL' ? 'No bookings match your filters.' : 'No ambulance bookings yet.'}
                       </p>
                     </div>
@@ -322,36 +308,35 @@ export default function AmbulanceBilling() {
                   const patName   = b.patient
                     ? `${b.patient.firstName ?? ''} ${b.patient.lastName ?? ''}`.trim()
                     : null
-                  const canMarkPaid = b.status === 'COMPLETED' && b.paymentStatus !== 'PAID'
 
                   return (
-                    <tr key={b.id} className="group hover:bg-slate-50/50 transition-all">
+                    <tr key={b.id}>
 
                       {/* Ref & Date */}
-                      <td className="px-5 py-4">
-                        <p className="font-bold text-sm text-slate-900 font-mono">
+                      <td>
+                        <p className="hms-billing-cell__primary is-mono">
                           AMB-{String(b.id).padStart(6, '0')}
                         </p>
-                        <p className="text-xs text-slate-400 mt-0.5">{fmtDate(b.bookingDate, b.bookingTime)}</p>
+                        <p className="hms-billing-cell__secondary">{fmtDate(b.bookingDate, b.bookingTime)}</p>
                       </td>
 
                       {/* Patient */}
-                      <td className="px-5 py-4">
+                      <td>
                         {patName ? (
                           <>
-                            <p className="font-semibold text-sm text-slate-900">{patName}</p>
+                            <p className="hms-billing-cell__strong">{patName}</p>
                             {b.patient?.uhid && (
-                              <p className="text-xs text-slate-400 mt-0.5">{fmtId(b.patient.uhid)}</p>
+                              <p className="hms-billing-cell__secondary">{fmtId(b.patient.uhid)}</p>
                             )}
                           </>
                         ) : (
                           <>
-                            <div className="flex items-center gap-1.5">
-                              <User className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                              <p className="font-semibold text-sm text-amber-700">Walk-in / Emergency</p>
+                            <div className="hms-billing-walkin">
+                              <User className="hms-billing-walkin__icon w-3.5 h-3.5" />
+                              <p className="hms-billing-walkin__label">Walk-in / Emergency</p>
                             </div>
                             {b.pickupAddress && (
-                              <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[160px]" title={b.pickupAddress}>
+                              <p className="hms-billing-cell__secondary truncate" title={b.pickupAddress}>
                                 {b.pickupAddress}
                               </p>
                             )}
@@ -360,70 +345,70 @@ export default function AmbulanceBilling() {
                       </td>
 
                       {/* Vehicle */}
-                      <td className="px-5 py-4">
+                      <td>
                         {typeName && (
-                          <p className="font-semibold text-sm text-slate-900">{typeName}</p>
+                          <p className="hms-billing-cell__strong">{typeName}</p>
                         )}
                         {vehNum && (
-                          <p className="text-xs text-slate-400 mt-0.5 font-mono">{vehNum}</p>
+                          <p className="hms-billing-cell__secondary font-mono">{vehNum}</p>
                         )}
                         {!typeName && !vehNum && (
-                          <span className="text-slate-300">—</span>
+                          <span className="hms-billing-cell__muted">—</span>
                         )}
                       </td>
 
                       {/* Route */}
-                      <td className="px-5 py-4 max-w-[180px]">
+                      <td className="hms-billing-route__cell">
                         {b.pickupAddress && (
-                          <div className="flex items-start gap-1">
-                            <MapPin className="w-3 h-3 text-emerald-500 mt-0.5 shrink-0" />
-                            <p className="text-xs text-slate-600 truncate" title={b.pickupAddress}>{b.pickupAddress}</p>
+                          <div className="hms-billing-route__row">
+                            <MapPin className="hms-billing-route__pin is-pickup w-3 h-3" />
+                            <p className="hms-billing-route__text" title={b.pickupAddress}>{b.pickupAddress}</p>
                           </div>
                         )}
                         {b.destinationAddress && (
-                          <div className="flex items-start gap-1 mt-1">
-                            <MapPin className="w-3 h-3 text-rose-500 mt-0.5 shrink-0" />
-                            <p className="text-xs text-slate-600 truncate" title={b.destinationAddress}>{b.destinationAddress}</p>
+                          <div className="hms-billing-route__row">
+                            <MapPin className="hms-billing-route__pin is-drop w-3 h-3" />
+                            <p className="hms-billing-route__text" title={b.destinationAddress}>{b.destinationAddress}</p>
                           </div>
                         )}
                         {!b.pickupAddress && !b.destinationAddress && (
-                          <span className="text-slate-300">—</span>
+                          <span className="hms-billing-cell__muted">—</span>
                         )}
                       </td>
 
                       {/* Charge */}
-                      <td className="px-5 py-4">
-                        <p className="font-bold text-sm text-slate-900">
-                          {b.charge != null ? fmt(b.charge) : <span className="text-slate-300">—</span>}
+                      <td>
+                        <p className="hms-billing-cell__primary">
+                          {b.charge != null ? fmt(b.charge) : <span className="hms-billing-cell__muted">—</span>}
                         </p>
                       </td>
 
                       {/* Booking Status */}
-                      <td className="px-5 py-4">
-                        <div className="flex justify-center">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${bCfg.cls}`}>
+                      <td>
+                        <div className="hms-billing-status-center">
+                          <span className={`hms-billing-status ${bCfg.cls}`}>
                             <BIcon className="w-3 h-3" /> {bCfg.label}
                           </span>
                         </div>
                       </td>
 
                       {/* Payment Status */}
-                      <td className="px-5 py-4">
-                        <div className="flex justify-center">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${pCfg.cls}`}>
+                      <td>
+                        <div className="hms-billing-status-center">
+                          <span className={`hms-billing-status ${pCfg.cls}`}>
                             <PIcon className="w-3 h-3" /> {pCfg.label}
                           </span>
                         </div>
                       </td>
 
                       {/* Actions */}
-                      <td className="px-5 py-4 text-right" onClick={e => e.stopPropagation()}>
+                      <td className="hms-billing-actions-cell" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={e => { e.stopPropagation(); openMenu(b, e.currentTarget) }}
-                          className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
+                          className="hms-billing-rowbtn"
                         >
                           {markingId === b.id
-                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            ? <Loader2 className="w-4 h-4 hms-billing-spin" />
                             : <MoreHorizontal className="w-4 h-4" />}
                         </button>
                       </td>
@@ -436,7 +421,7 @@ export default function AmbulanceBilling() {
         </div>
 
         {!loading && filtered.length > PAGE_SIZE && (
-          <div className="px-5 py-3 border-t border-slate-100">
+          <div className="hms-billing-pagination">
             <Pagination
               currentPage={page}
               totalPages={totalPages}
@@ -452,27 +437,26 @@ export default function AmbulanceBilling() {
       {menuState && (() => {
         const { booking, right, top, bottom } = menuState
         const canMarkPaid = booking.status === 'COMPLETED' && booking.paymentStatus !== 'PAID'
-        const itemClass = 'w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors text-left disabled:opacity-40'
         return (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setMenuState(null)} />
+            <div className="hms-billing-menu-overlay" onClick={() => setMenuState(null)} />
             <div
-              style={{ position: 'fixed', right, ...(top !== undefined ? { top } : { bottom }), zIndex: 50 }}
-              className="w-52 bg-white rounded-xl shadow-2xl border border-slate-100 py-1.5"
+              style={{ right, ...(top !== undefined ? { top } : { bottom }) }}
+              className="hms-billing-menu"
             >
               {canMarkPaid && (
                 <button
                   onClick={() => { setMenuState(null); markPaid(booking) }}
-                  className={itemClass}
+                  className="hms-billing-menu__item"
                 >
-                  <IndianRupee className="w-4 h-4 shrink-0 text-emerald-500" /> Mark as Paid
+                  <IndianRupee className="hms-billing-menu__item-icon is-success w-4 h-4" /> Mark as Paid
                 </button>
               )}
               <button
                 onClick={() => { setMenuState(null); printReceipt(booking) }}
-                className={itemClass}
+                className="hms-billing-menu__item"
               >
-                <Printer className="w-4 h-4 shrink-0" /> Print Receipt
+                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Receipt
               </button>
             </div>
           </>

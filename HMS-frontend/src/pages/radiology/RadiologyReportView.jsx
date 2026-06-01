@@ -5,9 +5,9 @@ import { radiologyApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import { ArrowLeft, Printer, Loader2, ScanLine, AlertCircle } from "lucide-react";
 const PRIORITY_CLS = {
-  ROUTINE: "bg-slate-100 text-slate-600 border-slate-200",
-  URGENT: "bg-amber-50 text-amber-700 border-amber-200",
-  STAT: "bg-red-50 text-red-700 border-red-200"
+  ROUTINE: "is-routine",
+  URGENT: "is-urgent",
+  STAT: "is-stat"
 };
 import { fmtDateTime } from '@/utils/date'
 const fmt = fmtDateTime
@@ -21,47 +21,127 @@ function RadiologyReportView() {
     if (!id) return;
     radiologyApi.get(Number(id)).then(setOrder).catch(() => setOrder(null)).finally(() => setLoading(false));
   }, [id]);
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
-  if (!order) return <div className="flex flex-col items-center justify-center h-64 gap-3"><AlertCircle className="w-10 h-10 text-slate-300" /><p className="text-slate-500">Report not found.</p><button onClick={() => navigate("/radiology/reports")} className="btn-secondary text-sm">← Back to Reports</button></div>;
-  return <div className="space-y-4 max-w-4xl mx-auto">{
-    /* Toolbar */
-  }<div className="flex items-center justify-between print:hidden"><button
-    onClick={() => navigate("/radiology/reports")}
-    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
-  ><ArrowLeft className="w-4 h-4" /> Back to Reports
-                </button><button
-    onClick={() => window.print()}
-    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 hover:bg-slate-900 text-white transition-colors"
-  ><Printer className="w-4 h-4" /> Print Report
-                </button></div>{
-    /* Report card */
-  }<div className="bg-white border border-slate-200 rounded-lg overflow-hidden print:border-none print:shadow-none">{
-    /* Hospital header */
-  }<div className="px-8 py-6 border-b-2 border-slate-200"><div className="flex items-start justify-between"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-lg bg-slate-100 flex items-center justify-center shrink-0"><ScanLine className="w-7 h-7 text-slate-900" /></div><div><h1 className="text-xl font-bold text-slate-900">{user?.hospitalName ?? "Hospital"}</h1><p className="text-sm text-slate-500 mt-0.5">Radiology Department</p></div></div><div className="text-right"><span className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-slate-100 text-slate-900">
-                                Department of Radiology
-                            </span>{order.reportId && <p className="text-xs text-slate-600 mt-2 font-mono">
-                                    Report ID: <span className="font-bold text-slate-700">{fmtId(order.reportId)}</span></p>}</div></div></div>{
-    /* Patient info grid */
-  }<div className="px-8 py-6 border-b border-slate-100 bg-slate-50"><div className="grid grid-cols-2 gap-x-8 gap-y-4"><InfoRow label="Patient Name" value={order.patientName} /><InfoRow label="Patient ID" value={fmtId(order.patientUhid)} bold /><InfoRow label="Referred By" value={order.referredByName} /><InfoRow label="Technician" value={order.technicianName ?? "N/A"} /><InfoRow label="Scan Date" value={fmt(order.scannedAt)} /><InfoRow label="Report Date" value={fmt(order.reportedAt)} /></div></div>{
-    /* Investigation block */
-  }<div className="px-8 py-6 space-y-5">{
-    /* Investigation tab */
-  }<div><div className="inline-flex items-center gap-2 px-4 py-2 rounded-t-lg bg-slate-900 text-white text-sm font-bold">{order.serviceName}</div><div className="border border-slate-200 rounded-b-lg rounded-tr-lg p-4"><div className="flex items-center justify-between">{order.billNo && <p className="text-xs text-slate-500">
-                                        Bill No: <span className="font-semibold text-slate-700">{order.billNo}</span></p>}<span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${PRIORITY_CLS[order.priority]}`}>
-                                    Priority: {order.priority}</span></div></div></div>{
-    /* Findings */
-  }{order.findings && <div><h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-2 pb-1 border-b border-slate-200">
-                                Findings
-                            </h3><p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{order.findings}</p></div>}{
-    /* Observation */
-  }{order.observation && <div><h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-2 pb-1 border-b border-slate-200">
-                                Observation / Impression
-                            </h3><p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{order.observation}</p></div>}{
-    /* Signature row */
-  }<div className="flex items-end justify-between mt-10 pt-6 border-t border-slate-200"><div className="flex flex-col items-center gap-2"><div className="w-24 h-16 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center"><p className="text-[10px] text-slate-600">QR Code</p></div></div><div className="text-right"><div className="w-40 border-b border-slate-400 mb-2" /><p className="text-xs font-semibold text-slate-600">Radiologist</p><p className="text-[10px] text-slate-600 mt-0.5">Signature &amp; Stamp</p></div></div></div></div></div>;
+  if (loading) return (
+    <div className="hms-rad-rep-loading">
+      <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
+    </div>
+  );
+  if (!order) return (
+    <div className="hms-rad-rep-notfound">
+      <AlertCircle className="w-5 h-5 text-gray-300" />
+      <p className="hms-rad-rep-notfound__text">Report not found.</p>
+      <button onClick={() => navigate("/radiology/reports")} className="hms-btn-secondary is-sm">← Back to Reports</button>
+    </div>
+  );
+  return (
+    <div className="hms-rad-rep-view">
+      {/* Toolbar */}
+      <div className="hms-rad-rep-toolbar">
+        <button
+          onClick={() => navigate("/radiology/reports")}
+          className="hms-rad-rep-back-btn"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Reports
+        </button>
+        <button
+          onClick={() => window.print()}
+          className="hms-rad-rep-print-btn"
+        >
+          <Printer className="w-4 h-4" /> Print Report
+        </button>
+      </div>
+      {/* Report card */}
+      <div className="hms-rad-rep-card">
+        {/* Hospital header */}
+        <div className="hms-rad-rep-card__hdr">
+          <div className="hms-rad-rep-card__hdr-row">
+            <div className="hms-rad-rep-card__hosp">
+              <div className="hms-rad-rep-card__hosp-icon">
+                <ScanLine className="w-5 h-5 text-gray-900" />
+              </div>
+              <div>
+                <h1 className="hms-rad-rep-card__hosp-name">{user?.hospitalName ?? "Hospital"}</h1>
+                <p className="hms-rad-rep-card__hosp-dept">Radiology Department</p>
+              </div>
+            </div>
+            <div className="hms-rad-rep-card__dept">
+              <span className="hms-rad-rep-card__dept-chip">
+                Department of Radiology
+              </span>
+              {order.reportId && (
+                <p className="hms-rad-rep-card__report-id">
+                  Report ID: <span className="hms-rad-rep-card__report-id-strong">{fmtId(order.reportId)}</span>
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* Patient info grid */}
+        <div className="hms-rad-rep-card__pinfo">
+          <div className="hms-rad-rep-card__pinfo-grid">
+            <InfoRow label="Patient Name" value={order.patientName} />
+            <InfoRow label="Patient ID" value={fmtId(order.patientUhid)} bold />
+            <InfoRow label="Referred By" value={order.referredByName} />
+            <InfoRow label="Technician" value={order.technicianName ?? "N/A"} />
+            <InfoRow label="Scan Date" value={fmt(order.scannedAt)} />
+            <InfoRow label="Report Date" value={fmt(order.reportedAt)} />
+          </div>
+        </div>
+        {/* Investigation block */}
+        <div className="hms-rad-rep-card__body">
+          {/* Investigation tab */}
+          <div className="hms-rad-rep-inv">
+            <div className="hms-rad-rep-inv__tab">{order.serviceName}</div>
+            <div className="hms-rad-rep-inv__body">
+              {order.billNo && (
+                <p className="hms-rad-rep-inv__bill">
+                  Bill No: <span className="hms-rad-rep-inv__bill-strong">{order.billNo}</span>
+                </p>
+              )}
+              <span className={`hms-rad-priority ${PRIORITY_CLS[order.priority]}`}>
+                Priority: {order.priority}
+              </span>
+            </div>
+          </div>
+          {/* Findings */}
+          {order.findings && (
+            <div>
+              <h3 className="hms-rad-rep-h3">Findings</h3>
+              <p className="hms-rad-rep-prose">{order.findings}</p>
+            </div>
+          )}
+          {/* Observation */}
+          {order.observation && (
+            <div>
+              <h3 className="hms-rad-rep-h3">Observation / Impression</h3>
+              <p className="hms-rad-rep-prose">{order.observation}</p>
+            </div>
+          )}
+          {/* Signature row */}
+          <div className="hms-rad-rep-sig">
+            <div className="hms-rad-rep-sig__qr">
+              <div className="hms-rad-rep-sig__qr-box">
+                <p className="hms-rad-rep-sig__qr-text">QR Code</p>
+              </div>
+            </div>
+            <div className="hms-rad-rep-sig__doc">
+              <div className="hms-rad-rep-sig__doc-line" />
+              <p className="hms-rad-rep-sig__doc-name">Radiologist</p>
+              <p className="hms-rad-rep-sig__doc-stamp">Signature &amp; Stamp</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 function InfoRow({ label, value, bold }) {
-  return <div><p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-0.5">{label}</p><p className={`text-sm ${bold ? "font-bold text-slate-900" : "text-slate-700"}`}>{value ?? "N/A"}</p></div>;
+  return (
+    <div>
+      <p className="hms-rad-rep-card__pinfo-label">{label}</p>
+      <p className={`hms-rad-rep-card__pinfo-value ${bold ? "is-bold" : ""}`}>{value ?? "N/A"}</p>
+    </div>
+  );
 }
 export {
   RadiologyReportView as default

@@ -177,58 +177,48 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
     setOpen(false);
   };
 
-  const inputCls = "w-full px-2.5 py-1.5 rounded-md border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300/50";
-
   return (
-    <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/50 relative">
-      <div className="flex items-start gap-3">
-        <div className="w-6 h-6 rounded-md bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold shrink-0 mt-1">
-          {index + 1}
-        </div>
+    <div className="hms-drug-row">
+      <div className="hms-drug-row__inner">
+        <div className="hms-drug-row__num">{index + 1}</div>
 
-        <div className="flex-1 space-y-2">
+        <div className="hms-drug-row__fields">
           {/* Drug typeahead */}
-          <div className="relative">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <div className="hms-drug-row__search">
+            <div className="hms-drug-row__search-wrap">
+              <Search className="hms-drug-row__search-icon w-3 h-3" />
               <input
                 value={query}
                 onChange={e => onQueryChange(e.target.value)}
                 onFocus={() => { clearTimeout(blurTimer.current); setOpen(true); if (results.length === 0 && query) doSearch(query); }}
                 onBlur={() => { blurTimer.current = setTimeout(() => setOpen(false), 150); }}
                 placeholder="Drug name (e.g. Amoxicillin, Crocin)"
-                className="w-full pl-8 pr-3 py-1.5 rounded-md border border-slate-200 bg-white text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300/50"
+                className="hms-drug-row__search-input"
               />
-              {searching && <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400" />}
+              {searching && <Loader2 className="hms-drug-row__search-spinner w-3 h-3" />}
             </div>
 
             {open && results.length > 0 && (
-              <div className="absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-xl">
+              <div className="hms-drug-row__results">
                 {results.map(d => (
                   <button
                     key={d.id}
                     type="button"
                     onMouseDown={() => pickDrug(d)}
-                    className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors"
+                    className="hms-drug-row__result-item"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{d.brandName}</p>
-                        <p className="text-[11px] text-slate-500 truncate">
+                    <div className="hms-drug-row__result-head">
+                      <div>
+                        <p className="hms-drug-row__result-name">{d.brandName}</p>
+                        <p className="hms-drug-row__result-sub">
                           {[d.genericName, d.strength, d.form].filter(Boolean).join(" · ")}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="hms-drug-row__result-badges">
                         {d.schedule && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200/60">
-                            SCH-{d.schedule}
-                          </span>
+                          <span className="hms-drug-row__schedule-badge">SCH-{d.schedule}</span>
                         )}
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
-                          d.inStock
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-slate-100 text-slate-500 border-slate-200"
-                        }`}>
+                        <span className={`hms-drug-row__stock-badge ${d.inStock ? "is-stocked" : "is-out"}`}>
                           {d.inStock ? "In stock" : "Not stocked"}
                         </span>
                       </div>
@@ -240,51 +230,50 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
           </div>
 
           {item.drugId && (
-            <p className="text-[11px] text-slate-500">
+            <p className="hms-drug-row__linked">
               {[item.drugGeneric, item.drugStrength, item.drugForm].filter(Boolean).join(" · ") || "Linked to master"}
             </p>
           )}
           {!item.drugId && query.trim().length >= 2 && (
-            <p className="text-[11px] text-amber-600 flex items-center gap-1">
+            <p className="hms-drug-row__warn">
               <AlertCircle className="w-3 h-3" />
               Not linked to drug master — pharmacy will see free-text only
             </p>
           )}
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <div className="hms-drug-row__grid">
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Dose</label>
+              <label className="hms-drug-row__col-label">Dose</label>
               <input
                 value={item.dose}
                 onChange={e => onChange("dose", e.target.value)}
                 placeholder="1 tab / 5ml"
-                className={inputCls}
+                className="hms-drug-row__field"
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Frequency</label>
+              <label className="hms-drug-row__col-label">Frequency</label>
               <SearchableSelect
                 value={item.frequency}
                 onChange={(v) => onChange("frequency", v)}
                 options={FREQUENCIES}
-                className={inputCls}
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Duration (days)</label>
+              <label className="hms-drug-row__col-label">Duration (days)</label>
               <input
                 type="number" min="0"
                 value={item.durationDays}
                 onChange={e => onChange("durationDays", e.target.value)}
                 placeholder="5"
-                className={inputCls}
+                className="hms-drug-row__field"
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <label className="hms-drug-row__col-label">
                 Quantity *
                 {!item.quantityTouched && item.quantity && (
-                  <span className="ml-1 font-normal normal-case text-emerald-600">· auto</span>
+                  <span className="hms-drug-row__auto-badge">· auto</span>
                 )}
               </label>
               <input
@@ -297,16 +286,15 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
                 }}
                 placeholder="15"
                 required
-                className={inputCls}
+                className="hms-drug-row__field"
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Route</label>
+              <label className="hms-drug-row__col-label">Route</label>
               <SearchableSelect
                 value={item.route}
                 onChange={(v) => onChange("route", v)}
                 options={ROUTES}
-                className={inputCls}
               />
             </div>
           </div>
@@ -315,7 +303,7 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
             value={item.instructions}
             onChange={e => onChange("instructions", e.target.value)}
             placeholder="After meals · With milk · Taper over 5 days"
-            className={inputCls}
+            className="hms-drug-row__instructions"
           />
         </div>
 
@@ -324,7 +312,7 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
           onClick={onRemove}
           disabled={!isLastRemovable}
           title={isLastRemovable ? "Remove drug" : "At least one drug is required"}
-          className="p-1.5 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="hms-drug-row__remove"
         >
           <Trash2 className="w-4 h-4" />
         </button>

@@ -255,26 +255,26 @@ export default function ConsultationViewPage() {
   // ── Render gates ─────────────────────────────────────────────────────
   if (loadingQueue) {
     return (
-      <div className="h-full flex items-center justify-center text-slate-500 text-base">
-        <Loader2 className="w-5 h-5 animate-spin mr-2.5" /> Loading today's queue…
+      <div className="hms-cv-loading">
+        <Loader2 className="w-5 h-5 animate-spin" /> Loading today's queue…
       </div>
     );
   }
   if (queue.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-4 text-center px-6">
-        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
-          <CalendarClock className="w-8 h-8 text-slate-400" />
+      <div className="hms-cv-empty">
+        <div className="hms-cv-empty__icon">
+          <CalendarClock className="w-5 h-5 text-gray-400" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-slate-900">No active appointments today</h2>
-          <p className="text-sm text-slate-500 mt-1 max-w-md">
+          <h2 className="hms-cv-empty__title">No active appointments today</h2>
+          <p className="hms-cv-empty__desc">
             {user?.role === "doctor"
               ? "There are no checked-in or in-progress patients in your queue right now."
               : "There are no checked-in or in-progress patients in the hospital queue right now."}
           </p>
         </div>
-        <button onClick={handleExit} className="btn-secondary mt-2">
+        <button onClick={handleExit} className="hms-btn-secondary mt-2">
           <LogOut className="w-4 h-4" /> Back to Appointments
         </button>
       </div>
@@ -282,7 +282,7 @@ export default function ConsultationViewPage() {
   }
 
   return (
-    <div className="h-full flex bg-slate-100/60">
+    <div className="hms-cv">
       <LeftPanel
         appointment={current}
         vitals={draft.vitals}
@@ -293,7 +293,7 @@ export default function ConsultationViewPage() {
         onOpenPastRecord={setOpenedPastRecord}
       />
 
-      <section className="flex-1 flex flex-col min-w-0 bg-white">
+      <section className="hms-cv-main">
         <TopActionBar
           autosaveStatus={draft.autosaveStatus}
           hydrating={draft.hydrating}
@@ -302,7 +302,7 @@ export default function ConsultationViewPage() {
         />
         <TabBar tab={tab} setTab={setTab} drugCount={draft.drugCount} labCount={labOrders.length + externalResults.length} />
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="hms-cv-tab-body">
           {tab === "consult" && <ConsultTab draft={draft} />}
           {tab === "rx" && <RxTab draft={draft} />}
           {tab === "lab" && <LabTab orders={labOrders} loading={loadingLabs} externalResults={externalResults} loadingExternal={loadingExternal} />}
@@ -345,8 +345,8 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
   const wt = vitals?.weightKg != null ? `${Number(vitals.weightKg).toFixed(1)}` : placeholder;
 
   return (
-    <aside className="w-[26rem] shrink-0 border-r border-slate-200 bg-white overflow-y-auto">
-      <div className="px-6 py-7 space-y-8">
+    <aside className="hms-cv-aside">
+      <div className="hms-cv-aside__inner">
 
         {/* Patient profile card */}
         <PatientHeroCard
@@ -359,7 +359,7 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
 
         {/* Patient details */}
         <SidebarSection title="Patient Details">
-          <div className="space-y-1">
+          <div>
             <SidebarRow icon={<UserIcon className="w-4 h-4" />} label="Name" value={fullName} />
             <SidebarRow icon={<IdCard className="w-4 h-4" />} label="UHID" value={uhid} mono />
             <SidebarRow icon={<Clock className="w-4 h-4" />} label="Age" value={age || "—"} />
@@ -374,21 +374,21 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
                                       recordedByName={vitals?.recordedByName}
                                       recordedAt={vitals?.updatedAt || vitals?.recordedAt} />}
         >
-          <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-rose-50/40 via-white to-white px-4 py-3 mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-rose-50 flex items-center justify-center">
-                <Droplet className="w-4 h-4 text-rose-600" />
+          <div className="hms-cv-blood">
+            <div className="hms-cv-blood__left">
+              <div className="hms-cv-blood__icon">
+                <Droplet className="w-4 h-4" />
               </div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <span className="hms-cv-blood__label">
                 Blood Group
               </span>
             </div>
-            <span className="text-xl font-bold text-rose-700 tabular-nums">
+            <span className="hms-cv-blood__value">
               {appointment?.patientBloodGroup || "—"}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="hms-cv-vital-grid">
             <VitalTile
               icon={<HeartPulse className="w-4 h-4" />}
               label="BP"
@@ -423,18 +423,18 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
         {/* Previous records */}
         <SidebarSection title="Previous Records">
           {loadingPast ? (
-            <p className="text-sm text-slate-400 flex items-center gap-1.5">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
+            <p className="hms-cv-past-loading">
+              <Loader2 className="w-3 h-3 animate-spin" /> Loading…
             </p>
           ) : pastRecords.length === 0 ? (
-            <p className="text-sm text-slate-400">No prior records for this patient.</p>
+            <p className="hms-cv-past-empty">No prior records for this patient.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="hms-cv-past-list">
               {pastRecords.slice(0, 5).map(rec => (
                 <PastRecordCard key={rec.id} record={rec} onOpen={() => onOpenPastRecord?.(rec)} />
               ))}
               {pastRecords.length > 5 && (
-                <p className="text-[11px] text-slate-400 pl-1">
+                <p className="hms-cv-past-more">
                   {pastRecords.length - 5} older · view full chart on Patients page
                 </p>
               )}
@@ -446,26 +446,34 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
   );
 }
 
+const STATUS_TONE_MOD = {
+  SCHEDULED:   "is-scheduled",
+  CONFIRMED:   "is-confirmed",
+  CHECKED_IN:  "is-checked-in",
+  IN_PROGRESS: "is-in-progress",
+  DEFAULT:     "is-default",
+};
+
 function PatientHeroCard({ name, token, status, time, onStartConsultation }) {
-  const statusTone = STATUS_TONE[status] || STATUS_TONE.DEFAULT;
+  const statusMod = STATUS_TONE_MOD[status] || STATUS_TONE_MOD.DEFAULT;
   const canStart = status === "CHECKED_IN";
   return (
-    <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50/60 via-white to-white p-5 shadow-sm space-y-4">
-      <div className="min-w-0">
-        <p className="text-xl font-bold text-slate-900 truncate leading-tight">{name}</p>
-        <div className="mt-2 flex items-center gap-2 flex-wrap">
+    <div className="hms-cv-hero">
+      <div>
+        <p className="hms-cv-hero__name">{name}</p>
+        <div className="hms-cv-hero__meta">
           {token != null && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-900 text-white text-[11px] font-bold tabular-nums">
+            <span className="hms-cv-hero__token">
               #{token}
             </span>
           )}
           {time && (
-            <span className="text-xs text-slate-500 tabular-nums">
+            <span className="hms-cv-hero__time">
               {time.substring(0, 5)}
             </span>
           )}
           {status && (
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${statusTone}`}>
+            <span className={`hms-cv-hero__status ${statusMod}`}>
               {status.replace(/_/g, " ")}
             </span>
           )}
@@ -479,14 +487,14 @@ function PatientHeroCard({ name, token, status, time, onStartConsultation }) {
         <button
           type="button"
           onClick={onStartConsultation}
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-colors"
+          className="hms-cv-hero__start"
         >
           <PlayCircle className="w-4 h-4" />
           Start Consultation
         </button>
       )}
       {status === "IN_PROGRESS" && (
-        <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200">
+        <div className="hms-cv-hero__in-progress">
           <Activity className="w-4 h-4" />
           Consultation in progress
         </div>
@@ -495,19 +503,11 @@ function PatientHeroCard({ name, token, status, time, onStartConsultation }) {
   );
 }
 
-const STATUS_TONE = {
-  SCHEDULED:   "text-blue-700 bg-blue-50 border-blue-200",
-  CONFIRMED:   "text-blue-700 bg-blue-50 border-blue-200",
-  CHECKED_IN:  "text-amber-700 bg-amber-50 border-amber-200",
-  IN_PROGRESS: "text-emerald-700 bg-emerald-50 border-emerald-200",
-  DEFAULT:     "text-slate-600 bg-slate-100 border-slate-200",
-};
-
 function SidebarSection({ title, trailing, children }) {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+    <div className="hms-cv-sec">
+      <div className="hms-cv-sec__head">
+        <h3 className="hms-cv-sec__title">
           {title}
         </h3>
         {trailing}
@@ -519,12 +519,12 @@ function SidebarSection({ title, trailing, children }) {
 
 function SidebarRow({ icon, label, value, mono }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5">
-      <span className="flex items-center gap-2 text-sm font-medium text-slate-500">
-        <span className="text-slate-400">{icon}</span>
+    <div className="hms-cv-row">
+      <span className="hms-cv-row__label">
+        <span className="hms-cv-row__label-icon">{icon}</span>
         {label}
       </span>
-      <span className={`text-sm font-semibold text-slate-800 text-right truncate ${mono ? "font-mono tabular-nums" : ""}`}>
+      <span className={`hms-cv-row__value ${mono ? "is-mono" : ""}`}>
         {value}
       </span>
     </div>
@@ -532,24 +532,17 @@ function SidebarRow({ icon, label, value, mono }) {
 }
 
 function VitalTile({ icon, label, value, unit, tone }) {
-  const map = {
-    rose:    "from-rose-50/60 text-rose-600 ring-rose-100/60",
-    blue:    "from-blue-50/60 text-blue-600 ring-blue-100/60",
-    emerald: "from-emerald-50/60 text-emerald-600 ring-emerald-100/60",
-    amber:   "from-amber-50/60 text-amber-600 ring-amber-100/60",
-  };
-  const t = map[tone] || map.blue;
   return (
-    <div className={`rounded-xl border border-slate-200 bg-gradient-to-br to-white ${t.split(" ").filter(c => c.startsWith("from-")).join(" ")} px-3.5 py-3`}>
-      <div className="flex items-center gap-1.5">
-        <span className={`${t.split(" ").filter(c => c.startsWith("text-")).join(" ")}`}>{icon}</span>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+    <div className={`hms-cv-vital-tile is-${tone}`}>
+      <div className="hms-cv-vital-tile__head">
+        <span className="hms-cv-vital-tile__icon">{icon}</span>
+        <span className="hms-cv-vital-tile__label">
           {label}
         </span>
       </div>
-      <div className="mt-2 flex items-baseline gap-1">
-        <span className="text-xl font-bold text-slate-900 tabular-nums leading-none">{value}</span>
-        <span className="text-[11px] font-medium text-slate-400">{unit}</span>
+      <div className="hms-cv-vital-tile__value-row">
+        <span className="hms-cv-vital-tile__value">{value}</span>
+        <span className="hms-cv-vital-tile__unit">{unit}</span>
       </div>
     </div>
   );
@@ -560,27 +553,27 @@ function VitalsStateHint({ status, vitals, recordedByName, recordedAt }) {
         vitals.bpSystolic != null || vitals.spo2 != null ||
         vitals.heartRate != null  || vitals.weightKg != null)) {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium" title={[recordedByName, recordedAt && new Date(recordedAt).toLocaleString()].filter(Boolean).join(" · ")}>
+      <span className="hms-cv-vital-state is-ok" title={[recordedByName, recordedAt && new Date(recordedAt).toLocaleString()].filter(Boolean).join(" · ")}>
         <Activity className="w-3 h-3" /> Recorded
       </span>
     );
   }
   if (status === "loading") {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+      <span className="hms-cv-vital-state is-loading">
         <Loader2 className="w-3 h-3 animate-spin" /> Loading
       </span>
     );
   }
   if (status === "error") {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 font-medium">
+      <span className="hms-cv-vital-state is-error">
         <AlertCircle className="w-3 h-3" /> Failed
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+    <span className="hms-cv-vital-state is-neutral">
       <Activity className="w-3 h-3" /> Not recorded
     </span>
   );
@@ -600,22 +593,22 @@ function PastRecordCard({ record, onOpen }) {
     <button
       type="button"
       onClick={onOpen}
-      className="w-full text-left rounded-lg border border-slate-200 bg-white px-3 py-2.5 hover:border-blue-300 hover:bg-blue-50/30 transition-colors group focus:outline-none focus:ring-2 focus:ring-blue-300/60"
+      className="hms-cv-past-card"
     >
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700">
+      <div className="hms-cv-past-card__head">
+        <div className="hms-cv-past-card__chips">
+          <span className="hms-cv-past-card__type">
             {typeLabel}
           </span>
           {drugCount > 0 && (
-            <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+            <span className="hms-cv-past-card__rx-count">
               {drugCount} Rx
             </span>
           )}
         </div>
-        <span className="text-[11px] text-slate-400 tabular-nums">{date}</span>
+        <span className="hms-cv-past-card__date">{date}</span>
       </div>
-      <p className="text-xs text-slate-600 line-clamp-2 leading-snug" title={summary}>
+      <p className="hms-cv-past-card__summary" title={summary}>
         {summary}
       </p>
     </button>
@@ -627,8 +620,8 @@ function PastRecordCard({ record, onOpen }) {
 // ────────────────────────────────────────────────────────────────────────
 function TabBar({ tab, setTab, drugCount, labCount }) {
   return (
-    <div className="shrink-0 px-8 pt-5 border-b border-slate-200 bg-white">
-      <div className="flex items-end gap-2">
+    <div className="hms-cv-tabs">
+      <div className="hms-cv-tabs__row">
         <TabButton active={tab === "consult"} onClick={() => setTab("consult")}
                    icon={<Stethoscope className="w-4 h-4" />} label="Consultation" />
         <TabButton active={tab === "rx"} onClick={() => setTab("rx")}
@@ -645,19 +638,11 @@ function TabButton({ active, onClick, icon, label, count }) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-2 px-5 py-3 -mb-px border-b-2 text-sm font-semibold transition-colors ${
-        active
-          ? "border-blue-600 text-blue-700"
-          : "border-transparent text-slate-500 hover:text-slate-800"
-      }`}
+      className={`hms-cv-tab-btn ${active ? "is-active" : ""}`}
     >
       {icon}{label}
       {count > 0 && (
-        <span className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${
-          active
-            ? "bg-blue-100 text-blue-700"
-            : "bg-slate-100 text-slate-600"
-        }`}>
+        <span className="hms-cv-tab-count">
           {count}
         </span>
       )}
@@ -667,7 +652,7 @@ function TabButton({ active, onClick, icon, label, count }) {
 
 function ConsultTab({ draft }) {
   return (
-    <div className="px-8 py-8 space-y-7">
+    <div className="hms-cv-pane">
       <Section icon={<ClipboardList className="w-4 h-4" />} title="Chief complaint" hint="What brought the patient in today">
         <textarea
           rows={2}
@@ -712,32 +697,32 @@ function ConsultTab({ draft }) {
 
 function RxTab({ draft }) {
   return (
-    <div className="px-8 py-8">
-      <div className="flex items-center justify-between mb-5">
+    <div className="hms-cv-pane">
+      <div className="hms-cv-rx-head">
         <div>
-          <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-700">
-            <Pill className="w-4 h-4 text-emerald-600" />
+          <h3 className="hms-cv-rx-head__title">
+            <Pill className="w-4 h-4 hms-cv-rx-head__title-icon" />
             Prescription
             {draft.drugCount > 0 && (
-              <span className="ml-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700">
+              <span className="hms-cv-rx-head__count">
                 {draft.drugCount} drug{draft.drugCount === 1 ? "" : "s"}
               </span>
             )}
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="hms-cv-rx-head__hint">
             Leave empty for a notes-only consultation
           </p>
         </div>
         <button
           type="button"
           onClick={draft.addItem}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors"
+          className="hms-cv-rx-add-btn"
         >
           <Plus className="w-4 h-4" /> Add drug
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div className="hms-cv-rx-list">
         {draft.items.map((item, idx) => (
           <PrescriptionDrugRow
             key={item.key}
@@ -759,20 +744,20 @@ function LabTab({ orders, loading, externalResults, loadingExternal }) {
 
   if (loading && loadingExternal) {
     return (
-      <div className="px-8 py-8 text-base text-slate-500 flex items-center gap-2">
-        <Loader2 className="w-5 h-5 animate-spin" /> Loading lab results…
+      <div className="hms-cv-loading-row">
+        <Loader2 className="w-4 h-4 animate-spin" /> Loading lab results…
       </div>
     );
   }
 
   if (!hasInternal && !hasExternal && !loading && !loadingExternal) {
     return (
-      <div className="px-8 py-20 text-center">
-        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-          <FlaskConical className="w-8 h-8 text-slate-400" />
+      <div className="hms-cv-lab-empty">
+        <div className="hms-cv-lab-empty__icon">
+          <FlaskConical className="w-5 h-5" />
         </div>
-        <p className="text-base font-semibold text-slate-700">No lab results yet</p>
-        <p className="text-sm text-slate-400 mt-1.5 max-w-md mx-auto">
+        <p className="hms-cv-lab-empty__title">No lab results yet</p>
+        <p className="hms-cv-lab-empty__desc">
           Outside-clinic reports go in at check-in from the appointments dashboard.
           Internal radiology orders show up here once raised.
         </p>
@@ -781,14 +766,14 @@ function LabTab({ orders, loading, externalResults, loadingExternal }) {
   }
 
   return (
-    <div className="px-8 py-8 space-y-7">
+    <div className="hms-cv-pane">
       {/* External Results — top because outside-clinic reports usually
           drive immediate clinical decisions and the doctor is reading
           left-to-right from this column first. */}
       <ExternalResultsSection rows={externalResults} loading={loadingExternal} />
 
       {hasExternal && hasInternal && (
-        <div className="border-t border-slate-100" />
+        <div className="hms-cv-lab-divider" />
       )}
 
       {/* Internal radiology — the existing radiologyApi.getByPatient data. */}
@@ -808,7 +793,7 @@ function ExternalResultsSection({ rows, loading }) {
           title="External Results"
           hint="Captured from outside labs / clinics"
         />
-        <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+        <div className="hms-cv-loading-row">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading external results…
         </div>
       </div>
@@ -822,7 +807,7 @@ function ExternalResultsSection({ rows, loading }) {
           title="External Results"
           hint="Captured from outside labs / clinics"
         />
-        <p className="mt-3 text-sm text-slate-400 italic">
+        <p className="hms-cv-empty-row">
           Nothing recorded yet for this patient.
         </p>
       </div>
@@ -837,7 +822,7 @@ function ExternalResultsSection({ rows, loading }) {
         hint="Captured from outside labs / clinics"
         tone="violet"
       />
-      <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="hms-cv-ext-grid">
         {rows.map(r => <ExternalResultCard key={r.id} result={r} />)}
       </div>
     </div>
@@ -845,47 +830,47 @@ function ExternalResultsSection({ rows, loading }) {
 }
 
 function ExternalResultCard({ result }) {
-  const categoryTone =
-    result.category === "LAB"        ? "text-emerald-700 bg-emerald-50 border-emerald-200" :
-    result.category === "RADIOLOGY"  ? "text-blue-700 bg-blue-50 border-blue-200" :
-    result.category === "PATHOLOGY"  ? "text-rose-700 bg-rose-50 border-rose-200" :
-    "text-slate-700 bg-slate-100 border-slate-200";
+  const categoryMod =
+    result.category === "LAB"        ? "is-lab" :
+    result.category === "RADIOLOGY"  ? "is-radiology" :
+    result.category === "PATHOLOGY"  ? "is-pathology" :
+    "is-other";
   const testDate = result.testDate
     ? new Date(result.testDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
     : "—";
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 hover:border-slate-300 transition-colors">
-      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${categoryTone}`}>
+    <div className="hms-cv-ext-card">
+      <div className="hms-cv-ext-card__head">
+        <div className="hms-cv-ext-card__chips">
+          <span className={`hms-cv-ext-cat ${categoryMod}`}>
             {result.category}
           </span>
           {result.isAbnormal && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border text-amber-700 bg-amber-50 border-amber-200">
+            <span className="hms-cv-ext-abnormal">
               ⚠ Abnormal
             </span>
           )}
         </div>
-        <span className="text-xs text-slate-400 tabular-nums">{testDate}</span>
+        <span className="hms-cv-ext-card__date">{testDate}</span>
       </div>
-      <h4 className="text-base font-bold text-slate-900 truncate">{result.testName}</h4>
-      <p className="mt-1 text-xs text-slate-500 truncate">
+      <h4 className="hms-cv-ext-card__test">{result.testName}</h4>
+      <p className="hms-cv-ext-card__src">
         {result.sourceName}
-        {result.sourceDoctorName && <span className="text-slate-400"> · {result.sourceDoctorName}</span>}
+        {result.sourceDoctorName && <span className="hms-cv-ext-card__src-sep"> · {result.sourceDoctorName}</span>}
       </p>
       {(result.resultValue || result.resultUnit) && (
-        <div className="mt-3 flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-slate-900 tabular-nums">{result.resultValue || "—"}</span>
-          {result.resultUnit && <span className="text-xs font-medium text-slate-400">{result.resultUnit}</span>}
+        <div className="hms-cv-ext-card__values">
+          <span className="hms-cv-ext-card__value">{result.resultValue || "—"}</span>
+          {result.resultUnit && <span className="hms-cv-ext-card__unit">{result.resultUnit}</span>}
           {result.referenceRange && (
-            <span className="ml-auto text-[11px] text-slate-400 tabular-nums">
+            <span className="hms-cv-ext-card__ref">
               ref: {result.referenceRange}
             </span>
           )}
         </div>
       )}
       {result.notes && (
-        <p className="mt-3 text-sm text-slate-700 leading-snug">
+        <p className="hms-cv-ext-card__notes">
           {result.notes}
         </p>
       )}
@@ -902,7 +887,7 @@ function InternalRadiologySection({ orders, loading }) {
           title="Internal Radiology"
           hint="Orders raised inside HMS"
         />
-        <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+        <div className="hms-cv-loading-row">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </div>
       </div>
@@ -917,40 +902,40 @@ function InternalRadiologySection({ orders, loading }) {
         hint="Orders raised inside HMS"
         tone="blue"
       />
-      <div className="mt-3 rounded-xl border border-slate-200 overflow-hidden">
-        <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500">
-          <div className="col-span-5">Investigation</div>
-          <div className="col-span-3">Status</div>
-          <div className="col-span-3">Date</div>
-          <div className="col-span-1 text-right">Report</div>
+      <div className="hms-cv-rad-table">
+        <div className="hms-cv-rad-head">
+          <div className="hms-cv-rad-head__col-5">Investigation</div>
+          <div className="hms-cv-rad-head__col-3">Status</div>
+          <div className="hms-cv-rad-head__col-3">Date</div>
+          <div className="hms-cv-rad-head__col-1">Report</div>
         </div>
-        <div className="divide-y divide-slate-100">
+        <div className="hms-cv-rad-body">
           {orders.map(order => (
-            <div key={order.id} className="grid grid-cols-12 gap-3 items-center px-5 py-4 bg-white hover:bg-slate-50/60 transition-colors">
-              <div className="col-span-5">
-                <p className="text-sm font-semibold text-slate-900 truncate">
+            <div key={order.id} className="hms-cv-rad-row">
+              <div className="hms-cv-rad-head__col-5">
+                <p className="hms-cv-rad-row__name">
                   {order.serviceName || order.investigationName || "—"}
                 </p>
                 {order.modality && (
-                  <p className="text-xs text-slate-400 mt-0.5">{order.modality}</p>
+                  <p className="hms-cv-rad-row__mod">{order.modality}</p>
                 )}
               </div>
-              <div className="col-span-3"><StatusPill status={order.status} /></div>
-              <div className="col-span-3 text-sm text-slate-500 tabular-nums">
+              <div className="hms-cv-rad-head__col-3"><StatusPill status={order.status} /></div>
+              <div className="hms-cv-rad-head__col-3 hms-cv-rad-row__date">
                 {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "—"}
               </div>
-              <div className="col-span-1 text-right">
+              <div className="hms-cv-rad-head__col-1 hms-cv-rad-row__report-cell">
                 {order.reportUrl || order.reportId ? (
                   <a
                     href={order.reportUrl || `/radiology/reports/${order.reportId}`}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+                    className="hms-cv-rad-row__report-link"
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <FileBarChart className="w-3.5 h-3.5" /> Open
+                    <FileBarChart className="w-3 h-3" /> Open
                   </a>
                 ) : (
-                  <span className="text-xs text-slate-300">—</span>
+                  <span className="hms-cv-rad-row__report-empty">—</span>
                 )}
               </div>
             </div>
@@ -962,29 +947,22 @@ function InternalRadiologySection({ orders, loading }) {
 }
 
 function SectionHeading({ icon, title, count, hint, tone }) {
-  const toneCls =
-    tone === "violet" ? "text-violet-600" :
-    tone === "blue"   ? "text-blue-600" :
-    "text-slate-500";
+  const toneMod = tone === "violet" ? "is-violet" : tone === "blue" ? "is-blue" : "";
   return (
-    <div className="flex items-baseline justify-between flex-wrap gap-2">
-      <div className="flex items-center gap-2">
-        <span className={toneCls}>{icon}</span>
-        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">
+    <div className="hms-cv-sheading">
+      <div className="hms-cv-sheading__left">
+        <span className={`hms-cv-sheading__icon ${toneMod}`}>{icon}</span>
+        <h3 className="hms-cv-sheading__title">
           {title}
         </h3>
         {count > 0 && (
-          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-            tone === "violet"
-              ? "bg-violet-50 text-violet-700"
-              : "bg-blue-50 text-blue-700"
-          }`}>
+          <span className={`hms-cv-sheading__count ${toneMod}`}>
             {count}
           </span>
         )}
       </div>
       {hint && (
-        <span className="text-[11px] text-slate-400 font-normal normal-case">
+        <span className="hms-cv-sheading__hint">
           {hint}
         </span>
       )}
@@ -1007,15 +985,15 @@ function ScanIcon() {
 
 function StatusPill({ status }) {
   const map = {
-    PENDING_SCAN:    "text-amber-700 bg-amber-50 border-amber-200",
-    AWAITING_REPORT: "text-blue-700 bg-blue-50 border-blue-200",
-    REPORTED:        "text-emerald-700 bg-emerald-50 border-emerald-200",
-    BILLED:          "text-emerald-700 bg-emerald-50 border-emerald-200",
-    CANCELLED:       "text-rose-700 bg-rose-50 border-rose-200",
+    PENDING_SCAN:    "is-pending",
+    AWAITING_REPORT: "is-awaiting",
+    REPORTED:        "is-reported",
+    BILLED:          "is-billed",
+    CANCELLED:       "is-cancelled",
   };
-  const cls = map[status] || "text-slate-600 bg-slate-100 border-slate-200";
+  const mod = map[status] || "is-default";
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold border ${cls}`}>
+    <span className={`hms-cv-rad-status ${mod}`}>
       {(status || "—").replace(/_/g, " ")}
     </span>
   );
@@ -1029,12 +1007,12 @@ function StatusPill({ status }) {
 // always at the top-right where the eye expects status to live.
 function TopActionBar({ autosaveStatus, hydrating, saving, onMarkComplete }) {
   return (
-    <div className="shrink-0 border-b border-slate-200 bg-white px-8 py-3 flex items-center justify-between gap-6">
+    <div className="hms-cv-top">
       <button
         type="button"
         onClick={onMarkComplete}
         disabled={saving}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-blue-600/20"
+        className="hms-cv-complete-btn"
       >
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
         Mark Complete
@@ -1051,25 +1029,25 @@ function BottomBar({ index, total, saving, onPrev, onNext, onExit }) {
   const isFirst = index <= 0;
   const isLast = index >= total - 1;
   return (
-    <div className="shrink-0 border-t border-slate-200 bg-white px-8 py-4 flex items-center justify-end gap-2.5">
+    <div className="hms-cv-bottom">
       <button
         type="button"
         onClick={onPrev}
         disabled={isFirst || saving}
-        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="hms-cv-nav-btn"
       >
         <ChevronLeft className="w-4 h-4" /> Previous
       </button>
 
-      <span className="px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 border border-slate-200 tabular-nums min-w-[80px] text-center">
-        {index + 1} <span className="text-slate-400 font-normal">/ {total}</span>
+      <span className="hms-cv-pager">
+        {index + 1} <span className="hms-cv-pager__sep">/ {total}</span>
       </span>
 
       <button
         type="button"
         onClick={onNext}
         disabled={isLast || saving}
-        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="hms-cv-nav-btn"
       >
         Next <ChevronRight className="w-4 h-4" />
       </button>
@@ -1078,7 +1056,7 @@ function BottomBar({ index, total, saving, onPrev, onNext, onExit }) {
         type="button"
         onClick={onExit}
         disabled={saving}
-        className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
+        className="hms-cv-exit-btn"
       >
         <LogOut className="w-4 h-4" /> Exit
       </button>
@@ -1089,33 +1067,33 @@ function BottomBar({ index, total, saving, onPrev, onNext, onExit }) {
 function AutosaveIndicator({ status, hydrating }) {
   if (hydrating) {
     return (
-      <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading draft…
+      <span className="hms-cv-autosave is-hydrating">
+        <Loader2 className="w-3 h-3 animate-spin" /> Loading draft…
       </span>
     );
   }
   if (status === "saving") {
     return (
-      <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving draft…
+      <span className="hms-cv-autosave is-saving">
+        <Loader2 className="w-3 h-3 animate-spin" /> Saving draft…
       </span>
     );
   }
   if (status === "saved") {
     return (
-      <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-        <Save className="w-3.5 h-3.5" /> Draft saved
+      <span className="hms-cv-autosave is-saved">
+        <Save className="w-3 h-3" /> Draft saved
       </span>
     );
   }
   if (status === "error") {
     return (
-      <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
-        <AlertCircle className="w-3.5 h-3.5" /> Autosave failed
+      <span className="hms-cv-autosave is-error">
+        <AlertCircle className="w-3 h-3" /> Autosave failed
       </span>
     );
   }
-  return <span className="text-xs text-slate-400">Draft autosaves as you type</span>;
+  return <span className="hms-cv-autosave is-idle">Draft autosaves as you type</span>;
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -1123,14 +1101,14 @@ function AutosaveIndicator({ status, hydrating }) {
 // ────────────────────────────────────────────────────────────────────────
 function Section({ icon, title, hint, children }) {
   return (
-    <div>
-      <div className="flex items-baseline justify-between mb-3">
-        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-700">
-          <span className="text-slate-400">{icon}</span>
+    <div className="hms-cv-section">
+      <div className="hms-cv-section__head">
+        <h3 className="hms-cv-section__title">
+          <span className="hms-cv-section__title-icon">{icon}</span>
           {title}
         </h3>
         {hint && (
-          <span className="text-xs text-slate-400 normal-case font-normal">
+          <span className="hms-cv-section__hint">
             {hint}
           </span>
         )}
