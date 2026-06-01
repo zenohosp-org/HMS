@@ -6,16 +6,7 @@
      2. hms-system.css     — component primitives + reusable patterns
      3. utilities.css      — atomic helpers (.flex, .gap-3, …)
      4. modules/*.css      — page-area-specific compositions
-     5. @tailwind          — kept until the final cleanup phase
-     6. legacy block below — original .btn-primary / .card / .input etc.
-
-   Why this order
-     hms-* primitive classes win over later utility resets, but page-
-     module classes win over hms-* defaults. Tailwind sits last among
-     library layers, so any class still authored as a Tailwind utility
-     continues to apply during the transition. Legacy classes at the
-     bottom of this file remain authoritative for pages that haven't
-     been migrated yet.
+     5. legacy block below — original .btn-primary / .card / .input etc.
    ------------------------------------------------------------------- */
 @import './styles/base.css';
 @import './styles/hms-system.css';
@@ -27,10 +18,6 @@
 @import './styles/modules/rooms.css';
 @import './styles/modules/finance.css';
 @import './styles/modules/dashboard.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* Base styles */
 * {
