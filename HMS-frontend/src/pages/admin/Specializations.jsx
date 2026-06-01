@@ -157,13 +157,11 @@ function Specializations() {
             />
 
             <div className="hms-page-content">
-                <div className="max-w-lg">
-                    <SearchBar
-                        value={searchQuery}
-                        onChange={setSearchQuery}
-                        placeholder="Search by name or description…"
-                    />
-                </div>
+                <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search by name or description…"
+                />
 
                 <Table
                     columns={columns}

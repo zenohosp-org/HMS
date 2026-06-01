@@ -209,16 +209,14 @@ function DoctorsList() {
             />
 
             <div className="hms-page-content">
-                <div className="max-w-lg">
-                    <SearchBar
-                        value={search}
-                        onChange={(v) => {
-                            setSearch(v);
-                            setPage(1);
-                        }}
-                        placeholder="Search by name, email or specialization…"
-                    />
-                </div>
+                <SearchBar
+                    value={search}
+                    onChange={(v) => {
+                        setSearch(v);
+                        setPage(1);
+                    }}
+                    placeholder="Search by name, email or specialization…"
+                />
 
                 <Table
                     columns={columns}

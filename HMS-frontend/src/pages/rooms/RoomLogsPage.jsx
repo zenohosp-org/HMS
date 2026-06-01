@@ -122,13 +122,11 @@ function RoomLogsPage() {
             />
 
             <div className="hms-rooms-page-content">
-                <div className="max-w-xl">
-                    <SearchBar
-                        value={search}
-                        onChange={setSearch}
-                        placeholder="Search by room, patient, UHID, attender or performed by…"
-                    />
-                </div>
+                <SearchBar
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search by room, patient, UHID, attender or performed by…"
+                />
 
                 <Card className="hms-rooms-log-table">
                     <div className="hms-rooms-log-table__head">

@@ -122,6 +122,7 @@
     background: var(--hms-white);
     border: 1px solid var(--hms-gray-200);
     border-radius: var(--hms-radius);
+    box-shadow: var(--hms-shadow-xs);
     overflow: hidden;
 }
 
