@@ -1791,7 +1791,7 @@
 
 
 /* --- Searchable select (generic option dropdown) --- */
-.hms-select {
+.hms-searchable-select {
     position: relative;
 }
 .hms-select__trigger {

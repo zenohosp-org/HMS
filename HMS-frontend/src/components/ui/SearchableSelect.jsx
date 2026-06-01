@@ -66,7 +66,7 @@ export default function SearchableSelect({
   };
 
   return (
-    <div ref={containerRef} className="hms-select">
+    <div ref={containerRef} className="hms-searchable-select">
       <button
         type="button"
         disabled={disabled || loading}
