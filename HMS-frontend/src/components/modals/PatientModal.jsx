@@ -106,34 +106,34 @@ function PatientModal({ patient, onClose, onSave }) {
   };
 
   const formContent = (
-    <form id="patientForm" onSubmit={handleSubmit} className="space-y-6">
+    <form id="patientForm" onSubmit={handleSubmit} className="hms-patient-form">
 
       {/* ── Personal Information ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Personal Information</p>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">First Name *</label>
-              <input className="input" value={form.firstName} onChange={(e) => set("firstName", e.target.value)} />
-              {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
+        <p className="hms-form-section-label">Personal Information</p>
+        <div className="hms-patient-form__group">
+          <div className="hms-form-grid is-2col">
+            <div className="hms-form-group">
+              <label className="hms-label">First Name *</label>
+              <input className="hms-input" value={form.firstName} onChange={(e) => set("firstName", e.target.value)} />
+              {errors.firstName && <p className="hms-field-error">{errors.firstName}</p>}
             </div>
-            <div>
-              <label className="label">Last Name *</label>
-              <input className="input" value={form.lastName} onChange={(e) => set("lastName", e.target.value)} />
-              {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
+            <div className="hms-form-group">
+              <label className="hms-label">Last Name *</label>
+              <input className="hms-input" value={form.lastName} onChange={(e) => set("lastName", e.target.value)} />
+              {errors.lastName && <p className="hms-field-error">{errors.lastName}</p>}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Date of Birth *</label>
-              <input type="date" className="input" value={form.dob} onChange={(e) => set("dob", e.target.value)} />
-              {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob}</p>}
+          <div className="hms-form-grid is-2col">
+            <div className="hms-form-group">
+              <label className="hms-label">Date of Birth *</label>
+              <input type="date" className="hms-input" value={form.dob} onChange={(e) => set("dob", e.target.value)} />
+              {errors.dob && <p className="hms-field-error">{errors.dob}</p>}
             </div>
-            <div>
-              <label className="label">Gender *</label>
+            <div className="hms-form-group">
+              <label className="hms-label">Gender *</label>
               <SearchableSelect
-                className="input"
+                className="hms-input"
                 options={[
                   { value: "Male", label: "Male" },
                   { value: "Female", label: "Female" },
@@ -143,14 +143,14 @@ function PatientModal({ patient, onClose, onSave }) {
                 onChange={(v) => set("gender", v)}
                 placeholder="Select gender"
               />
-              {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender}</p>}
+              {errors.gender && <p className="hms-field-error">{errors.gender}</p>}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Marital Status</label>
+          <div className="hms-form-grid is-2col">
+            <div className="hms-form-group">
+              <label className="hms-label">Marital Status</label>
               <SearchableSelect
-                className="input"
+                className="hms-input"
                 options={[
                   { value: "Single", label: "Single" },
                   { value: "Married", label: "Married" },
@@ -163,9 +163,9 @@ function PatientModal({ patient, onClose, onSave }) {
                 placeholder="Select"
               />
             </div>
-            <div>
-              <label className="label">Occupation</label>
-              <input className="input" value={form.occupation} onChange={(e) => set("occupation", e.target.value)} placeholder="e.g. Farmer, Teacher, Business" />
+            <div className="hms-form-group">
+              <label className="hms-label">Occupation</label>
+              <input className="hms-input" value={form.occupation} onChange={(e) => set("occupation", e.target.value)} placeholder="e.g. Farmer, Teacher, Business" />
             </div>
           </div>
         </div>
@@ -173,46 +173,46 @@ function PatientModal({ patient, onClose, onSave }) {
 
       {/* ── Contact ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Contact</p>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Phone *</label>
-              <input className="input" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91 98765 43210" />
-              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+        <p className="hms-form-section-label">Contact</p>
+        <div className="hms-patient-form__group">
+          <div className="hms-form-grid is-2col">
+            <div className="hms-form-group">
+              <label className="hms-label">Phone *</label>
+              <input className="hms-input" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91 98765 43210" />
+              {errors.phone && <p className="hms-field-error">{errors.phone}</p>}
             </div>
-            <div>
-              <label className="label">Email</label>
-              <input type="email" className="input" value={form.email} onChange={(e) => set("email", e.target.value)} />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+            <div className="hms-form-group">
+              <label className="hms-label">Email</label>
+              <input type="email" className="hms-input" value={form.email} onChange={(e) => set("email", e.target.value)} />
+              {errors.email && <p className="hms-field-error">{errors.email}</p>}
             </div>
           </div>
-          <div>
-            <label className="label">Address</label>
-            <textarea rows={2} className="input resize-none" value={form.address} onChange={(e) => set("address", e.target.value)} />
+          <div className="hms-form-group">
+            <label className="hms-label">Address</label>
+            <textarea rows={2} className="hms-textarea" value={form.address} onChange={(e) => set("address", e.target.value)} />
           </div>
           <StateSelect value={form.state} onChange={(val) => set("state", val)}
-            inputClassName="input w-full flex items-center justify-between text-left"
-            labelClassName="label" />
+            inputClassName="hms-input"
+            labelClassName="hms-label" />
         </div>
       </div>
 
       {/* ── Emergency Contact ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Emergency Contact</p>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="label">Name</label>
-            <input className="input" value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} placeholder="Full name" />
+        <p className="hms-form-section-label">Emergency Contact</p>
+        <div className="hms-form-grid is-3col">
+          <div className="hms-form-group">
+            <label className="hms-label">Name</label>
+            <input className="hms-input" value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} placeholder="Full name" />
           </div>
-          <div>
-            <label className="label">Phone</label>
-            <input className="input" value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} placeholder="+91 XXXXX XXXXX" />
+          <div className="hms-form-group">
+            <label className="hms-label">Phone</label>
+            <input className="hms-input" value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} placeholder="+91 XXXXX XXXXX" />
           </div>
-          <div>
-            <label className="label">Relation</label>
+          <div className="hms-form-group">
+            <label className="hms-label">Relation</label>
             <SearchableSelect
-              className="input"
+              className="hms-input"
               options={EMERGENCY_RELATIONS.map((r) => ({ value: r, label: r }))}
               value={form.emergencyContactRelation}
               onChange={(v) => set("emergencyContactRelation", v)}
@@ -224,30 +224,30 @@ function PatientModal({ patient, onClose, onSave }) {
 
       {/* ── Medical Identifiers ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Medical Identifiers</p>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label">Blood Group</label>
+        <p className="hms-form-section-label">Medical Identifiers</p>
+        <div className="hms-form-grid is-2col">
+          <div className="hms-form-group">
+            <label className="hms-label">Blood Group</label>
             <SearchableSelect
-              className="input"
+              className="hms-input"
               options={BLOOD_GROUPS.map((g) => ({ value: g, label: g }))}
               value={form.bloodGroup}
               onChange={(v) => set("bloodGroup", v)}
               placeholder="Select"
             />
           </div>
-          <div>
-            <label className="label">Aadhaar Number</label>
+          <div className="hms-form-group">
+            <label className="hms-label">Aadhaar Number</label>
             <input
-              className={"input" + (errors.aadhaarNumber ? " border-red-400" : "")}
+              className="hms-input"
               value={form.aadhaarNumber}
               onChange={(e) => set("aadhaarNumber", formatAadhaar(e.target.value))}
               placeholder="XXXX-XXXX-XXXX"
               maxLength={14}
             />
             {errors.aadhaarNumber
-              ? <p className="text-red-500 text-xs mt-1">{errors.aadhaarNumber}</p>
-              : <p className="text-slate-400 text-[10px] mt-1">Used for Ayushman Bharat / PMJAY identification</p>
+              ? <p className="hms-field-error">{errors.aadhaarNumber}</p>
+              : <p className="hms-field-hint">Used for Ayushman Bharat / PMJAY identification</p>
             }
           </div>
         </div>
@@ -255,40 +255,40 @@ function PatientModal({ patient, onClose, onSave }) {
 
       {/* ── Insurance ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Insurance</p>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label">Scheme</label>
+        <p className="hms-form-section-label">Insurance</p>
+        <div className="hms-form-grid is-2col">
+          <div className="hms-form-group">
+            <label className="hms-label">Scheme</label>
             <SearchableSelect
-              className="input"
+              className="hms-input"
               options={INSURANCE_SCHEMES.map((s) => ({ value: s, label: s }))}
               value={form.insuranceScheme}
               onChange={(v) => set("insuranceScheme", v)}
               placeholder="Select"
             />
           </div>
-          <div>
-            <label className="label">Policy / Card Number</label>
-            <input className="input" value={form.insurancePolicyNumber} onChange={(e) => set("insurancePolicyNumber", e.target.value)} placeholder="e.g. PMJAY-XXXXXXXX" />
+          <div className="hms-form-group">
+            <label className="hms-label">Policy / Card Number</label>
+            <input className="hms-input" value={form.insurancePolicyNumber} onChange={(e) => set("insurancePolicyNumber", e.target.value)} placeholder="e.g. PMJAY-XXXXXXXX" />
           </div>
         </div>
       </div>
 
       {/* ── Clinical History ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Clinical History</p>
-        <div className="space-y-4">
-          <div>
-            <label className="label">Known Allergies</label>
-            <textarea rows={2} className="input resize-none" value={form.allergies} onChange={(e) => set("allergies", e.target.value)} placeholder="e.g. Penicillin, Aspirin, Peanuts — leave blank if none" />
+        <p className="hms-form-section-label">Clinical History</p>
+        <div className="hms-patient-form__group">
+          <div className="hms-form-group">
+            <label className="hms-label">Known Allergies</label>
+            <textarea rows={2} className="hms-textarea" value={form.allergies} onChange={(e) => set("allergies", e.target.value)} placeholder="e.g. Penicillin, Aspirin, Peanuts — leave blank if none" />
           </div>
-          <div>
-            <label className="label">Chronic Conditions / Medical History</label>
-            <textarea rows={2} className="input resize-none" value={form.chronicConditions} onChange={(e) => set("chronicConditions", e.target.value)} placeholder="e.g. Diabetes Type 2, Hypertension, Asthma" />
+          <div className="hms-form-group">
+            <label className="hms-label">Chronic Conditions / Medical History</label>
+            <textarea rows={2} className="hms-textarea" value={form.chronicConditions} onChange={(e) => set("chronicConditions", e.target.value)} placeholder="e.g. Diabetes Type 2, Hypertension, Asthma" />
           </div>
-          <div>
-            <label className="label">Referred By</label>
-            <input className="input" value={form.referredBy} onChange={(e) => set("referredBy", e.target.value)} placeholder="Doctor name or clinic" />
+          <div className="hms-form-group">
+            <label className="hms-label">Referred By</label>
+            <input className="hms-input" value={form.referredBy} onChange={(e) => set("referredBy", e.target.value)} placeholder="Doctor name or clinic" />
           </div>
         </div>
       </div>
@@ -304,8 +304,8 @@ function PatientModal({ patient, onClose, onSave }) {
         title="Edit Patient"
         footer={
           <div className="flex justify-end gap-3">
-            <button type="button" className="btn-secondary" onClick={handleClose}>Cancel</button>
-            <button type="submit" form="patientForm" className="btn-primary" disabled={saving}>
+            <button type="button" className="hms-btn-cancel" onClick={handleClose}>Cancel</button>
+            <button type="submit" form="patientForm" className="hms-btn-primary" disabled={saving}>
               {saving ? "Saving…" : "Update Patient"}
             </button>
           </div>
@@ -317,17 +317,17 @@ function PatientModal({ patient, onClose, onSave }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="card w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-800">Register New Patient</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+    <div className="hms-cmodal-overlay">
+      <div className="hms-patient-modal">
+        <div className="hms-patient-modal__head">
+          <h2 className="hms-patient-modal__title">Register New Patient</h2>
+          <button onClick={onClose} className="hms-cmodal__close">✕</button>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="hms-patient-modal__body">
           {formContent}
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" form="patientForm" className="btn-primary" disabled={saving}>
+            <button type="button" className="hms-btn-cancel" onClick={onClose}>Cancel</button>
+            <button type="submit" form="patientForm" className="hms-btn-primary" disabled={saving}>
               {saving ? "Saving…" : "Register Patient"}
             </button>
           </div>

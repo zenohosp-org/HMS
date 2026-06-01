@@ -655,24 +655,24 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
   // ── Collect Payment form (shared between Cash and Credit early-collect) ──────
   const collectFormJSX = (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label">Amount (₹)</label>
+    <div className="hms-form-rows">
+      <div className="hms-form-grid is-2col">
+        <div className="hms-form-group">
+          <label className="hms-label">Amount (₹)</label>
           <input
             type="number"
             min="0"
             step="1"
-            className="input"
+            className="hms-input"
             value={payAmount}
             onChange={e => setPayAmount(e.target.value)}
             placeholder={String(Math.round(balanceDue))}
           />
         </div>
-        <div>
-          <label className="label">Payment Method</label>
+        <div className="hms-form-group">
+          <label className="hms-label">Payment Method</label>
           <SearchableSelect
-            className="input"
+            className="hms-input"
             value={payMethod}
             onChange={val => {
               setPayMethod(val)
@@ -685,32 +685,28 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         </div>
       </div>
       {needsBankAccount && eligibleAccounts.length === 0 && (
-        <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200">
-          <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-700">
+        <div className="hms-finalize-alert is-amber">
+          <AlertCircle className="hms-finalize-alert__icon w-3.5 h-3.5" />
+          <p className="m-0">
             No {payMethod === 'Cash' ? 'CASH' : 'SAVINGS / CURRENT'} account found. Configure banks in the Finance app to track this payment.
           </p>
         </div>
       )}
       {needsBankAccount && eligibleAccounts.length > 0 && (
-        <div>
-          <label className="label flex items-center gap-1.5">
+        <div className="hms-form-group">
+          <label className="hms-label flex items-center gap-1.5">
             <Landmark className="w-3 h-3" /> Credit to
-            <span className="ml-1.5 text-[10px] font-medium text-slate-400">
+            <span className="hms-inv-pay-method-hint">
               ({payMethod === 'Cash' ? 'CASH only' : 'SAVINGS / CURRENT only'})
             </span>
           </label>
-          <div className="flex flex-wrap gap-1.5 mt-1">
+          <div className="hms-pay-account-chips">
             {eligibleAccounts.map(a => (
               <button
                 key={a.id}
                 type="button"
                 onClick={() => setPayBankAccountId(a.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all ${
-                  payBankAccountId === a.id
-                    ? 'border-slate-900 bg-slate-900 text-white'
-                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-400'
-                }`}
+                className={`hms-pay-account-chip${payBankAccountId === a.id ? ' is-on' : ''}`}
               >
                 {payBankAccountId === a.id && <CheckCircle2 className="w-3 h-3 shrink-0" />}
                 {a.accountName}
@@ -720,40 +716,40 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         </div>
       )}
       {balanceDue > 0 && (
-        <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
-          <span className="text-slate-500 font-medium">Balance due</span>
-          <span className="font-bold text-blue-600 tabular-nums">{fmt(balanceDue)}</span>
+        <div className="hms-pay-balance-row">
+          <span className="hms-pay-balance-row__label">Balance due</span>
+          <span className="hms-pay-balance-row__amt">{fmt(balanceDue)}</span>
         </div>
       )}
     </div>
   )
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-8xl max-h-[92vh] flex flex-col border border-slate-200">
+    <div className="hms-cmodal-overlay">
+      <div className="hms-cmodal is-full">
 
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+        <div className="hms-cmodal__header-row">
           <div>
-            <h2 className="font-bold text-slate-900 flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-indigo-500" /> IPD Bill
+            <h2 className="hms-cmodal__title flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-info" /> IPD Bill
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="hms-cmodal__subtitle">
               {admission.patientName} · {fmtId(admission.admissionNumber)}
             </p>
           </div>
           <div className="flex items-center gap-2">
             {(invoiceStatus === 'PAID' || invoiceStatus === 'SETTLED') && (
-              <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+              <span className="hms-badge is-success">
                 Settled
               </span>
             )}
             {(invoiceStatus === 'PARTIAL' || invoiceStatus === 'UNSETTLED') && (
-              <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+              <span className="hms-badge is-warning">
                 Not Settled
               </span>
             )}
-            <button onClick={() => onClose(dirty)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors">
+            <button onClick={() => onClose(dirty)} className="hms-cmodal__close">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -761,39 +757,39 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
         {/* ── Body ── */}
         {loadingBill ? (
-          <div className="flex flex-col items-center gap-3 py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-            <p className="text-sm font-medium text-slate-600">Loading bill and pending charges…</p>
+          <div className="hms-loader-stack">
+            <Loader2 className="w-8 h-8 animate-spin text-info" />
+            <p className="text-13 font-medium text-gray-600">Loading bill and pending charges…</p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="flex">
+          <div className="hms-finalize-layout">
+            <div className="hms-finalize-cols">
 
             {/* ════ LEFT PANEL ════ */}
-            <div className="flex flex-col flex-1 min-w-0 border-r border-slate-100">
+            <div className="hms-finalize-cols__main">
 
               {/* Left sub-header */}
-              <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 shrink-0">
-                <p className="font-bold text-slate-900">Bill Items</p>
-                <button onClick={addBlankItem} className="btn-secondary text-xs flex items-center gap-1.5">
+              <div className="hms-finalize-subhead">
+                <p className="hms-finalize-subhead__title">Bill Items</p>
+                <button onClick={addBlankItem} className="hms-btn-secondary is-sm">
                   <Plus className="w-3.5 h-3.5" /> Add Item
                 </button>
               </div>
 
-              {/* Alerts (shrink-0) */}
+              {/* Alerts */}
               <div className="shrink-0">
                 {hasOpdCarryOver && (
-                  <div className="flex items-start gap-2.5 mx-5 mt-3 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200">
-                    <Stethoscope className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                    <p className="text-xs font-medium text-blue-700">
+                  <div className="hms-finalize-alert is-info">
+                    <Stethoscope className="hms-finalize-alert__icon w-4 h-4" />
+                    <p className="m-0">
                       OPD → IPD: consultation charge carried over from the originating OPD visit.
                     </p>
                   </div>
                 )}
                 {hasZeroPrice && !isPaid && (
-                  <div className="flex items-start gap-2.5 mx-5 mt-3 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200">
-                    <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-amber-700 font-medium">
+                  <div className="hms-finalize-alert is-amber">
+                    <AlertCircle className="hms-finalize-alert__icon w-4 h-4" />
+                    <p className="m-0">
                       Some items have ₹0 — check radiology charges or add unit price manually.
                     </p>
                   </div>
@@ -803,46 +799,46 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
               {/* Items table */}
               <div>
                 {items.length === 0 ? (
-                  <div className="py-16 mx-6 mt-4 text-center border-2 border-dashed border-slate-100 rounded-lg">
-                    <p className="text-sm font-medium text-slate-500">No charges detected</p>
-                    <p className="text-xs text-slate-400 mt-1">Add items manually above</p>
+                  <div className="hms-finalize-empty">
+                    <p className="hms-finalize-empty__title">No charges detected</p>
+                    <p className="hms-finalize-empty__sub">Add items manually above</p>
                   </div>
                 ) : (
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-white z-10">
-                      <tr className="border-b border-slate-100">
-                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-8">No</th>
-                        <th className="px-2 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28">Type</th>
-                        <th className="px-2 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</th>
-                        <th className="px-2 py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-20">Qty</th>
-                        <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider w-24">Unit ₹</th>
-                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider w-24">Total</th>
-                        <th className="px-2 py-3 w-8" />
+                  <table className="hms-finalize-table">
+                    <thead>
+                      <tr>
+                        <th className="is-no">No</th>
+                        <th className="is-type">Type</th>
+                        <th>Description</th>
+                        <th className="is-center is-qty">Qty</th>
+                        <th className="is-right is-unit">Unit ₹</th>
+                        <th className="is-right is-total">Total</th>
+                        <th className="is-action" />
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody>
                       {items.map((item, idx) => (
                         <tr
                           key={item.key}
-                          className={`group hover:bg-slate-50/50 transition-colors ${item.fromOpd ? 'border-l-2 border-blue-400 bg-blue-50/30' : ''}`}
+                          className={item.fromOpd ? 'is-opd' : ''}
                         >
-                          <td className="px-4 py-2.5 text-xs text-slate-400">{idx + 1}</td>
-                          <td className="px-2 py-2.5">
+                          <td className="is-no">{idx + 1}</td>
+                          <td>
                             <SearchableSelect
                               value={item.itemType ?? 'CUSTOM'}
                               onChange={val => updateItem(item.key, { itemType: val })}
                               disabled={isPaid}
-                              className="w-full text-[10px] rounded-lg border border-slate-200 bg-slate-50 px-1.5 py-1 text-slate-700 focus:outline-none disabled:opacity-60"
+                              className="hms-finalize-table__type-select"
                               options={Object.keys(TYPE_META).map(k => ({ value: k, label: TYPE_META[k]?.label || k }))}
                             />
                           </td>
-                          <td className="px-2 py-2.5">
-                            <div className="flex items-center gap-1.5">
+                          <td>
+                            <div className="hms-finalize-table__desc-wrap">
                               {item.fromOpd && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 shrink-0">OPD</span>
+                                <span className="hms-finalize-table__opd-badge">OPD</span>
                               )}
                               <input
-                                className="input py-1.5 text-sm"
+                                className="hms-finalize-table__input"
                                 placeholder="Description…"
                                 value={item.description}
                                 disabled={isPaid}
@@ -850,35 +846,35 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                               />
                             </div>
                           </td>
-                          <td className="px-2 py-2.5">
+                          <td>
                             <input
                               type="number"
                               min={1}
-                              className="input py-1.5 text-sm text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              className="hms-finalize-table__input is-center no-spin"
                               value={item.quantity}
                               disabled={isPaid}
                               onChange={e => updateItem(item.key, { quantity: parseInt(e.target.value) || 1 })}
                             />
                           </td>
-                          <td className="px-2 py-2.5">
+                          <td>
                             <input
                               type="number"
                               min={0}
                               step="0.01"
-                              className="input py-1.5 text-sm text-right"
+                              className="hms-finalize-table__input is-right"
                               value={item.unitPrice}
                               disabled={isPaid}
                               onChange={e => updateItem(item.key, { unitPrice: parseFloat(e.target.value) || 0 })}
                             />
                           </td>
-                          <td className="px-4 py-2.5 text-right">
-                            <span className="text-sm font-bold text-slate-800 tabular-nums">{fmt(item.totalPrice || 0)}</span>
+                          <td className="is-total">
+                            <span className="hms-finalize-table__total">{fmt(item.totalPrice || 0)}</span>
                           </td>
-                          <td className="px-2 py-2.5">
+                          <td>
                             {!isPaid && (
                               <button
                                 onClick={() => removeItem(item.key)}
-                                className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-slate-300 hover:text-rose-500 transition-all"
+                                className="hms-finalize-table__remove"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -892,81 +888,81 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
               </div>
 
               {/* Totals footer */}
-              <div className="shrink-0 border-t border-slate-100 px-6 py-4 space-y-2 bg-slate-50/60">
-                <div className="flex justify-between text-sm text-slate-500">
+              <div className="hms-finalize-totals">
+                <div className="hms-finalize-totals__row">
                   <span>Subtotal</span>
-                  <span className="font-semibold tabular-nums">{fmt(subtotal)}</span>
+                  <span className="font-semibold">{fmt(subtotal)}</span>
                 </div>
                 {!isPaid && (
-                  <div className="flex items-center justify-between text-sm text-slate-500">
+                  <div className="hms-finalize-totals__row">
                     <span>Discount (%)</span>
                     <input
                       type="number"
                       min={0}
                       max={100}
-                      className="input !w-16 shrink-0 py-1 text-sm text-center"
+                      className="hms-finalize-discount-input"
                       value={discountPct}
                       onChange={e => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))}
                     />
                   </div>
                 )}
                 {discountAmt > 0 && (
-                  <div className="flex justify-between text-sm text-rose-500">
+                  <div className="hms-finalize-totals__row is-discount">
                     <span>Discount</span>
-                    <span className="tabular-nums">-{fmt(discountAmt)}</span>
+                    <span>-{fmt(discountAmt)}</span>
                   </div>
                 )}
                 {medicineSubtotal > 0 && (
-                  <div className="flex justify-between text-sm text-slate-500">
+                  <div className="hms-finalize-totals__row">
                     <span>GST on medicines (18%)</span>
-                    <span className="tabular-nums">{fmt(gst)}</span>
+                    <span>{fmt(gst)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center font-bold text-base text-slate-900 border-t border-slate-100 pt-2.5 mt-1">
+                <div className="hms-finalize-totals__row is-grand">
                   <span>Grand Total</span>
-                  <span className="tabular-nums">{fmt(grandTotal)}</span>
+                  <span>{fmt(grandTotal)}</span>
                 </div>
                 {advanceAdjusted > 0 && (
-                  <div className="flex justify-between text-sm font-medium text-emerald-600">
+                  <div className="hms-finalize-totals__row is-advance">
                     <span className="flex items-center gap-1"><Wallet className="w-3.5 h-3.5" /> Advance Credit</span>
-                    <span className="tabular-nums">-{fmt(advanceAdjusted)}</span>
+                    <span>-{fmt(advanceAdjusted)}</span>
                   </div>
                 )}
                 {totalCashPaid > 0 && (
-                  <div className="flex justify-between text-sm text-slate-500">
+                  <div className="hms-finalize-totals__row">
                     <span>Paid so far</span>
-                    <span className="tabular-nums">-{fmt(totalCashPaid)}</span>
+                    <span>-{fmt(totalCashPaid)}</span>
                   </div>
                 )}
-                <div className={`flex justify-between font-bold text-base border-t border-slate-100 pt-2.5 mt-1 ${isPaid ? 'text-emerald-600' : 'text-blue-600'}`}>
+                <div className={`hms-finalize-totals__row is-balance${isPaid ? ' is-settled' : ''}`}>
                   <span>{isPaid ? 'Fully Settled' : 'Balance Due'}</span>
-                  <span className="tabular-nums">{fmt(balanceDue)}</span>
+                  <span>{fmt(balanceDue)}</span>
                 </div>
               </div>
             </div>
 
             {/* ════ RIGHT PANEL ════ */}
-            <div className="w-96 shrink-0 flex flex-col">
+            <div className="hms-finalize-cols__side">
 
               {/* Right sub-header */}
-              <div className="px-5 py-3.5 border-b border-slate-100 shrink-0">
-                <p className="font-bold text-slate-900">Payment details</p>
+              <div className="hms-finalize-subhead">
+                <p className="hms-finalize-subhead__title">Payment details</p>
               </div>
 
-              <div className="p-5 space-y-5">
+              <div className="hms-finalize-side">
 
                 {/* 1. Payment category badge */}
                 {isCash ? (
-                  <div className="flex items-center gap-2.5 px-4 py-3 rounded-lg bg-slate-900">
-                    <Wallet className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span className="text-xs font-semibold text-white">
+                  <div className="hms-pay-cat-pill is-cash">
+                    <Wallet className="w-3.5 h-3.5 shrink-0" />
+                    <span>
                       Cash · Pay during stay
                     </span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2.5 px-4 py-3 rounded-lg bg-amber-100 border border-amber-200">
-                    <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                    <span className="text-xs font-semibold text-amber-800">
+                  <div className="hms-pay-cat-pill is-credit">
+                    <Clock className="w-3.5 h-3.5 shrink-0" />
+                    <span>
                       Credit · Payment due at discharge
                     </span>
                   </div>
@@ -974,25 +970,25 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
                 {/* 2. Advance Credits */}
                 {advances.length > 0 && (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 overflow-hidden">
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-emerald-100">
-                      <Wallet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
+                  <div className="hms-advance-block">
+                    <div className="hms-advance-block__head">
+                      <Wallet className="w-3.5 h-3.5 shrink-0 text-success" />
+                      <p className="hms-advance-block__head-label">
                         Advance Credits — {fmt(totalAdvance)} available
                       </p>
                     </div>
-                    <div className="divide-y divide-emerald-100">
+                    <div className="hms-advance-block__list">
                       {advances.map(a => {
                         const remaining = Math.max(0, Number(a.amount) - Number(a.appliedAmount || 0))
                         return (
-                          <div key={a.id} className="flex items-center justify-between px-4 py-2 text-xs">
+                          <div key={a.id} className="hms-advance-row">
                             <div>
-                              <span className="font-semibold text-emerald-700">{fmtId(a.receiptNumber)}</span>
-                              <span className="text-emerald-600/70 ml-2">
+                              <span className="hms-advance-row__id">{fmtId(a.receiptNumber)}</span>
+                              <span className="hms-advance-row__source">
                                 {a.source} · {a.paymentMethod}
                               </span>
                             </div>
-                            <span className="font-bold text-emerald-700 tabular-nums">
+                            <span className="hms-advance-row__amt">
                               {fmt(remaining)} available
                             </span>
                           </div>
@@ -1004,21 +1000,21 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
                 {/* 3. Payment History */}
                 {existingPayments.length > 0 && (
-                  <div>
-                    <p className="font-semibold text-slate-900 mb-3">Payment History</p>
-                    <div className="space-y-3">
+                  <div className="hms-pay-history">
+                    <p className="hms-pay-history__title">Payment History</p>
+                    <div className="flex flex-col gap-3">
                       {existingPayments.map((p, i) => (
-                        <div key={p.id ?? i} className="flex items-start gap-4">
-                          <p className="text-sm text-slate-600 whitespace-nowrap shrink-0 tabular-nums">
+                        <div key={p.id ?? i} className="hms-pay-history__row">
+                          <p className="hms-pay-history__time">
                             {fmtTime(p.paidAt)}
                           </p>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-slate-400 mt-0.5">{p.paymentMethod}</p>
+                          <div className="hms-pay-history__body">
+                            <p className="hms-pay-history__method">{p.paymentMethod}</p>
                             {p.collectedBy && (
-                              <p className="text-xs text-slate-400">· {p.collectedBy}</p>
+                              <p className="hms-pay-history__method">· {p.collectedBy}</p>
                             )}
                           </div>
-                          <p className="text-sm font-semibold text-slate-900 tabular-nums shrink-0">{fmt(p.amount)}</p>
+                          <p className="hms-pay-history__amt">{fmt(p.amount)}</p>
                         </div>
                       ))}
                     </div>
@@ -1028,7 +1024,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                 {/* 4a. CASH patients — Collect Payment */}
                 {isCash && !isPaid && (
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <p className="hms-pay-section-label">
                       <IndianRupee className="w-3.5 h-3.5" /> Amount Paid
                     </p>
                     {collectFormJSX}
@@ -1037,22 +1033,22 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
                 {/* 4b. CREDIT patients — Deferred notice + optional early collect */}
                 {!isCash && !isPaid && (
-                  <div className="space-y-3">
-                    <div className="px-4 py-3.5 rounded-lg bg-amber-50 border border-amber-200">
-                      <p className="text-xs font-medium text-amber-800">
+                  <div className="flex flex-col gap-3">
+                    <div className="hms-pay-defer-note">
+                      <p className="hms-pay-defer-note__text">
                         Payment deferred to discharge. The full balance will be collected when the patient is discharged.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setShowEarlyCollect(v => !v)}
-                      className="text-xs text-slate-500 hover:text-slate-700 transition-colors"
+                      className="hms-pay-early-toggle"
                     >
                       {showEarlyCollect ? '− Hide early payment' : '+ Collect early payment'}
                     </button>
                     {showEarlyCollect && (
                       <div className="pt-1">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <p className="hms-pay-section-label">
                           <IndianRupee className="w-3.5 h-3.5" /> Amount Paid
                         </p>
                         {collectFormJSX}
@@ -1062,10 +1058,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                 )}
 
                 {/* 5. Bill Notes */}
-                <div>
-                  <label className="label">Bill Notes (optional)</label>
+                <div className="hms-form-group">
+                  <label className="hms-label">Bill Notes (optional)</label>
                   <input
-                    className="input"
+                    className="hms-input"
                     placeholder={`IPD Bill — Admission ${fmtId(admission.admissionNumber)}`}
                     value={billNotes}
                     onChange={e => setBillNotes(e.target.value)}
@@ -1082,14 +1078,14 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
         {/* ── Footer ── */}
         {!loadingBill && (
-          <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-xl shrink-0">
-            <button type="button" onClick={() => onClose(dirty)} className="btn-secondary">Close</button>
+          <div className="hms-finalize-footer">
+            <button type="button" onClick={() => onClose(dirty)} className="hms-btn-cancel">Close</button>
             {!isPaid && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleSaveBill}
                   disabled={savingBill || items.length === 0}
-                  className="btn-secondary flex items-center gap-2"
+                  className="hms-btn-secondary flex items-center gap-2"
                 >
                   {savingBill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
                   {savingBill ? 'Saving…' : 'Save Bill'}
@@ -1098,7 +1094,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   <button
                     onClick={handleCollectPayment}
                     disabled={collectingPayment || !Number(payAmount)}
-                    className="btn-primary flex items-center gap-2"
+                    className="hms-btn-primary flex items-center gap-2"
                   >
                     {collectingPayment
                       ? <><Loader2 className="w-4 h-4 animate-spin" /> Recording…</>

@@ -26,25 +26,26 @@ function MiniCalendar({ value, onChange }) {
     onChange(ds);
   };
   return (
-    <div className="select-none">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold text-slate-800">{MONTHS[view.month]} {view.year}</span>
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={prevMonth} className="p-1 rounded hover:bg-slate-100 text-slate-500 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-          <button type="button" onClick={nextMonth} className="p-1 rounded hover:bg-slate-100 text-slate-500 transition-colors"><ChevronRight className="w-4 h-4" /></button>
+    <div className="hms-mini-cal">
+      <div className="hms-mini-cal__head">
+        <span className="hms-mini-cal__title">{MONTHS[view.month]} {view.year}</span>
+        <div className="hms-mini-cal__nav">
+          <button type="button" onClick={prevMonth} className="hms-mini-cal__nav-btn"><ChevronLeft className="w-4 h-4" /></button>
+          <button type="button" onClick={nextMonth} className="hms-mini-cal__nav-btn"><ChevronRight className="w-4 h-4" /></button>
         </div>
       </div>
-      <div className="grid grid-cols-7 mb-1">{DAYS.map(d => <div key={d} className="text-center text-[10px] font-bold text-slate-600 uppercase py-1">{d}</div>)}</div>
-      <div className="grid grid-cols-7 gap-y-0.5">
+      <div className="hms-mini-cal__dow">{DAYS.map(d => <div key={d} className="hms-mini-cal__dow-cell">{d}</div>)}</div>
+      <div className="hms-mini-cal__grid">
         {cells.map((day, i) => {
           if (!day) return <div key={`e-${i}`} />;
           const ds = `${view.year}-${String(view.month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
           const isPast = ds < todayStr;
           const isSelected = ds === value;
           const isToday = ds === todayStr;
+          const cls = isSelected ? " is-selected" : isToday ? " is-today" : "";
           return (
             <button type="button" key={ds} onClick={() => pick(day)} disabled={isPast}
-              className={`text-xs py-1.5 rounded-lg font-medium transition-colors ${isSelected ? "bg-emerald-500 text-white font-bold" : isToday ? "bg-emerald-50 text-emerald-600 font-bold" : isPast ? "text-slate-300 cursor-not-allowed" : "text-slate-700 hover:bg-slate-100"}`}
+              className={`hms-mini-cal__day${cls}`}
             >{day}</button>
           );
         })}
@@ -62,13 +63,13 @@ const TYPE_OPTIONS = [
 
 function SectionLabel({ step, label, icon }) {
   return (
-    <div className="flex items-center gap-2.5 mb-3">
-      <div className="w-5 h-5 rounded-full bg-slate-900 flex items-center justify-center shrink-0">
-        <span className="text-[10px] font-bold text-white">{step}</span>
+    <div className="hms-book-section-label">
+      <div className="hms-book-section-num">
+        <span>{step}</span>
       </div>
-      <div className="flex items-center gap-1.5">
-        {icon && <span className="text-slate-400">{icon}</span>}
-        <span className="text-sm font-bold text-slate-700 uppercase tracking-wider">{label}</span>
+      <div className="hms-book-section-title">
+        {icon && <span className="hms-book-section-title__icon">{icon}</span>}
+        <span>{label}</span>
       </div>
     </div>
   );
@@ -245,70 +246,72 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   const timeSlots = generateTimeSlots();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
+    <div className="hms-cmodal-overlay">
+      <div className="hms-cmodal is-xl">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-7 py-5 border-b border-slate-200 shrink-0">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              {isEmergency && <AlertTriangle className="w-5 h-5 text-rose-500" />}
-              {isEmergency ? "Emergency Appointment" : "Add Appointment"}
-            </h2>
-            <p className="text-sm text-slate-500 mt-0.5">
-              {isEmergency ? "Quick entry — complete details can be updated after." : "Schedule a new appointment for a patient."}
-            </p>
+        <div className="hms-cmodal__header">
+          <div className="hms-cmodal__header-row">
+            <div>
+              <h2 className="hms-cmodal__title flex items-center gap-2">
+                {isEmergency && <AlertTriangle className="w-5 h-5 text-rose" />}
+                {isEmergency ? "Emergency Appointment" : "Add Appointment"}
+              </h2>
+              <p className="hms-cmodal__subtitle">
+                {isEmergency ? "Quick entry — complete details can be updated after." : "Schedule a new appointment for a patient."}
+              </p>
+            </div>
+            <button onClick={() => { resetForm(); onClose(); }} className="hms-cmodal__close">
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button onClick={() => { resetForm(); onClose(); }} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-7 py-6">
-          <form id="book-form" onSubmit={handleSubmit} className="space-y-7">
+        <div className="hms-cmodal__body">
+          <form id="book-form" onSubmit={handleSubmit} className="hms-form-stack">
 
             {/* ── Step 1: Patient ── */}
-            <div>
+            <div className="hms-book-section">
               <SectionLabel step="1" label="Patient" />
               {isEmergency ? (
-                <div className="space-y-3">
+                <div className="hms-form-rows">
                   <div>
                     <input
                       type="text" value={emergencyName}
                       onChange={e => { setEmergencyName(e.target.value); setErrors(er => ({...er, patient:""})); }}
                       placeholder="Patient full name *"
-                      className={`w-full px-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200"} bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none`}
+                      className={`hms-book-emergency-input${errors.patient ? " is-error" : ""}`}
                     />
-                    {errors.patient && <p className="text-xs text-red-500 mt-1">{errors.patient}</p>}
+                    {errors.patient && <p className="hms-field-error">{errors.patient}</p>}
                   </div>
                   <input
                     type="tel" value={emergencyPhone} onChange={e => setEmergencyPhone(e.target.value)}
                     placeholder="Mobile number (optional)"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none"
+                    className="hms-book-emergency-input"
                   />
                 </div>
               ) : (
                 <div>
-                  <div className="relative" ref={patientRef}>
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <div className="hms-book-search" ref={patientRef}>
+                    <Search className="hms-book-search__icon w-4 h-4" />
                     <input type="text" value={patientSearch}
                       onChange={e => { setPatientSearch(e.target.value); setPatientOpen(true); }}
                       onFocus={() => setPatientOpen(true)}
                       placeholder="Search by name or UHID…"
-                      className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.patient ? "border-red-400" : "border-slate-200"} bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 outline-none transition-all`}
+                      className={`hms-book-search__input${errors.patient ? " is-error" : ""}`}
                     />
                     {patientOpen && filteredPatients.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 border border-slate-200 rounded-lg overflow-hidden bg-white shadow-lg max-h-44 overflow-y-auto">
+                      <div className="hms-book-suggest">
                         {(patientSearch ? filteredPatients : filteredPatients.slice(0, 5)).map(p => (
                           <button key={p.id} type="button"
                             onMouseDown={e => e.preventDefault()}
                             onClick={() => { setPatientId(String(p.id)); setPatientSearch(""); setPatientOpen(false); setErrors(e => ({...e, patient:""})); }}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left border-b last:border-b-0 border-slate-100">
-                            <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-xs font-bold text-blue-600 shrink-0">{p.firstName[0]}</div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-semibold text-slate-800 truncate">{p.firstName} {p.lastName}</p>
-                              <p className="text-[11px] text-slate-400">{fmtId(p.uhid)}</p>
+                            className="hms-book-suggest__item">
+                            <div className="hms-book-suggest__avatar">{p.firstName[0]}</div>
+                            <div className="hms-book-suggest__body">
+                              <p className="hms-book-suggest__name">{p.firstName} {p.lastName}</p>
+                              <p className="hms-book-suggest__sub">{fmtId(p.uhid)}</p>
                             </div>
                           </button>
                         ))}
@@ -317,203 +320,210 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                   </div>
 
                   {selectedPatient ? (
-                    <div className="flex items-center gap-3 px-3 py-2.5 mt-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-                      <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700 shrink-0">{selectedPatient.firstName[0]}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-emerald-800 truncate">{selectedPatient.firstName} {selectedPatient.lastName}</p>
-                        <p className="text-[11px] text-emerald-600">{fmtId(selectedPatient.uhid)}</p>
+                    <div className="hms-book-picked">
+                      <div className="hms-book-picked__avatar">{selectedPatient.firstName[0]}</div>
+                      <div className="hms-book-picked__body">
+                        <p className="hms-book-picked__name">{selectedPatient.firstName} {selectedPatient.lastName}</p>
+                        <p className="hms-book-picked__sub">{fmtId(selectedPatient.uhid)}</p>
                       </div>
-                      <button type="button" onClick={() => { setPatientId(""); setPastDoctors([]); }} className="text-emerald-500 hover:text-emerald-700"><X className="w-3.5 h-3.5" /></button>
+                      <button type="button" onClick={() => { setPatientId(""); setPastDoctors([]); }} className="hms-book-picked__clear"><X className="w-3.5 h-3.5" /></button>
                     </div>
                   ) : (
-                    errors.patient && <p className="text-xs text-red-500 mt-1">{errors.patient}</p>
+                    errors.patient && <p className="hms-field-error">{errors.patient}</p>
                   )}
 
                   <button type="button"
                     onClick={() => { onClose(); navigate("/patients", { state: { openRegistration: true } }); }}
-                    className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors">
+                    className="hms-book-register-btn">
                     <UserPlus className="w-3.5 h-3.5" /> Register new patient
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="border-t border-slate-100" />
+            <hr className="hms-book-divider" />
 
             {/* ── Step 2: Appointment Type ── */}
-            <div>
+            <div className="hms-book-section">
               <SectionLabel step="2" label="Appointment Type" />
-              <div className="grid grid-cols-2 gap-2">
-                {TYPE_OPTIONS.map(opt => (
-                  <button key={opt.value} type="button" onClick={() => setType(opt.value)}
-                    className={`text-left px-4 py-3 rounded-lg border transition-all ${type === opt.value ? (opt.value === "EMERGENCY" ? "border-rose-500 bg-rose-50" : "border-emerald-500 bg-emerald-50") : "border-slate-200 hover:border-slate-300"}`}>
-                    <p className={`text-sm font-semibold ${type === opt.value ? (opt.value === "EMERGENCY" ? "text-rose-700" : "text-emerald-700") : "text-slate-700"}`}>
-                      {type === opt.value && <CheckCircle className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />}{opt.label}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">{opt.desc}</p>
-                  </button>
-                ))}
+              <div className="hms-book-type-grid">
+                {TYPE_OPTIONS.map(opt => {
+                  const on = type === opt.value;
+                  const isEmer = opt.value === "EMERGENCY";
+                  const cls = `hms-book-type-card${on ? " is-on" : ""}${on && isEmer ? " is-emergency" : ""}`;
+                  return (
+                    <button key={opt.value} type="button" onClick={() => setType(opt.value)} className={cls}>
+                      <p className="hms-book-type-card__title">
+                        {on && <CheckCircle className="w-3.5 h-3.5" />}{opt.label}
+                      </p>
+                      <p className="hms-book-type-card__sub">{opt.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Health Checkup package picker */}
               {isHealthCheckup && packages.length > 0 && (
-                <div className="mt-3">
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                    Package <span className="text-rose-500">*</span>
+                <div className="hms-form-group">
+                  <label className="hms-label">
+                    Package <span className="text-rose">*</span>
                   </label>
                   <SearchableSelect
                     value={packageId}
                     onChange={(v) => setPackageId(v)}
                     options={packages.map(p => ({ value: p.id, label: p.name }))}
                     placeholder="Select a checkup package"
-                    className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className="hms-input"
                   />
                   {selectedPkg && (
-                    <div className="mt-2 px-3 py-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
-                      <p className="text-xs font-bold text-emerald-700">{selectedPkg.tests?.length || 0} tests included</p>
-                      <p className="text-xs text-emerald-600 mt-0.5 line-clamp-2">{selectedPkg.tests?.map(t => t.testName).join(", ")}</p>
+                    <div className="hms-book-pkg-info">
+                      <p className="hms-book-pkg-info__title">{selectedPkg.tests?.length || 0} tests included</p>
+                      <p className="hms-book-pkg-info__sub">{selectedPkg.tests?.map(t => t.testName).join(", ")}</p>
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            <div className="border-t border-slate-100" />
+            <hr className="hms-book-divider" />
 
             {/* ── Step 3: Doctor ── */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
+            <div className="hms-book-section">
+              <div className="hms-book-section__head">
                 <SectionLabel step="3" label={isEmergency ? "Assign Doctor (optional)" : "Doctor"} />
                 {isFollowUp && pastDoctors.length > 0 && (
-                  <button type="button" onClick={() => setShowAllDoctors(s => !s)} className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+                  <button type="button" onClick={() => setShowAllDoctors(s => !s)} className="hms-book-section-link">
                     {showAllDoctors ? "Show past doctors" : "Show all doctors"}
                   </button>
                 )}
               </div>
 
               {isFollowUp && patientId && pastDoctors.length > 0 && !showAllDoctors && (
-                <p className="text-xs text-slate-500 mb-2">
+                <p className="hms-book-hint">
                   {pastDoctors.length} doctor{pastDoctors.length > 1 ? "s have" : " has"} previously seen this patient.
                 </p>
               )}
 
-              <div className="relative" ref={doctorRef}>
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <div className="hms-book-search" ref={doctorRef}>
+                <Search className="hms-book-search__icon w-4 h-4" />
                 <input type="text" value={doctorSearch}
                   onChange={e => { setDoctorSearch(e.target.value); setDoctorOpen(true); }}
                   onFocus={() => { if (!selectedDoctor && user?.role !== "doctor") setDoctorOpen(true); }}
                   disabled={user?.role === "doctor"}
                   placeholder="Search by name or specialization…"
-                  className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border ${errors.doctor ? "border-red-400" : "border-slate-200"} bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 outline-none disabled:opacity-60 disabled:cursor-not-allowed transition-all`}
+                  className={`hms-book-search__input${errors.doctor ? " is-error" : ""}`}
                 />
                 {doctorOpen && filteredDoctors.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 border border-slate-200 rounded-lg overflow-hidden bg-white shadow-lg max-h-44 overflow-y-auto">
+                  <div className="hms-book-suggest">
                     {(doctorSearch ? filteredDoctors : filteredDoctors.slice(0, 5)).map(d => (
                       <button key={d.id} type="button"
                         onMouseDown={e => e.preventDefault()}
                         onClick={() => { setDoctorId(d.id); setDoctorSearch(""); setDoctorOpen(false); setApptTime(""); setErrors(p => ({...p, doctor:""})); }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left border-b last:border-b-0 border-slate-100">
-                        <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-xs font-bold text-blue-600 shrink-0">{d.firstName[0]}</div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">Dr. {d.firstName} {d.lastName}</p>
-                          <p className="text-[11px] text-slate-400">{d.specialization}</p>
+                        className="hms-book-suggest__item">
+                        <div className="hms-book-suggest__avatar">{d.firstName[0]}</div>
+                        <div className="hms-book-suggest__body">
+                          <p className="hms-book-suggest__name">Dr. {d.firstName} {d.lastName}</p>
+                          <p className="hms-book-suggest__sub">{d.specialization}</p>
                         </div>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              {errors.doctor && <p className="text-xs text-red-500 mt-1">{errors.doctor}</p>}
+              {errors.doctor && <p className="hms-field-error">{errors.doctor}</p>}
 
               {selectedDoctor && (
-                <div className="mt-2 flex items-center gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-sm font-bold text-blue-600 shrink-0">{selectedDoctor.firstName[0]}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800">Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}</p>
-                    <p className="text-xs text-slate-500">{selectedDoctor.specialization}</p>
+                <div className="hms-book-picked is-neutral">
+                  <div className="hms-book-picked__avatar">{selectedDoctor.firstName[0]}</div>
+                  <div className="hms-book-picked__body">
+                    <p className="hms-book-picked__name">Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}</p>
+                    <p className="hms-book-picked__sub">{selectedDoctor.specialization}</p>
                   </div>
                   {(() => {
                     const fee = isFollowUp && selectedDoctor.followUpFee != null ? selectedDoctor.followUpFee : selectedDoctor.consultationFee;
                     return fee != null ? (
-                      <div className="text-right shrink-0">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">{isFollowUp ? "Follow-up" : "Consult"}</p>
-                        <p className="text-sm font-bold text-slate-800">₹{fee}</p>
+                      <div className="hms-book-fee">
+                        <p className="hms-book-fee__label">{isFollowUp ? "Follow-up" : "Consult"}</p>
+                        <p className="hms-book-fee__value">₹{fee}</p>
                       </div>
                     ) : null;
                   })()}
-                  <button type="button" onClick={() => { setDoctorId(""); setApptTime(""); }} className="text-slate-400 hover:text-slate-600 shrink-0 ml-1">
+                  <button type="button" onClick={() => { setDoctorId(""); setApptTime(""); }} className="hms-book-picked__clear">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="border-t border-slate-100" />
+            <hr className="hms-book-divider" />
 
             {/* ── Step 4: Date & Time ── */}
-            <div>
+            <div className="hms-book-section">
               <SectionLabel step="4" label="Date & Time" icon={<Calendar className="w-4 h-4" />} />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="hms-book-date-grid">
                 {/* Calendar */}
-                <div className="border border-slate-200 rounded-lg p-4 bg-white">
+                <div className="hms-book-cal">
                   {apptDate && (
-                    <div className="mb-3 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-100">
-                      <p className="text-xs font-semibold text-emerald-700">{formatDisplayDate(apptDate)}</p>
+                    <div className="hms-book-cal__selected">
+                      <p className="hms-book-cal__selected-text">{formatDisplayDate(apptDate)}</p>
                     </div>
                   )}
                   <MiniCalendar value={apptDate} onChange={v => { setApptDate(v); setApptTime(""); }} />
                 </div>
 
                 {/* Time slots */}
-                <div className="flex flex-col">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                    Time {isEmergency && <span className="font-normal normal-case text-slate-400">(optional)</span>}
+                <div className="hms-book-time-col">
+                  <p className="hms-book-time-col__label">
+                    Time {isEmergency && <span className="hms-book-time-col__label-hint">(optional)</span>}
                   </p>
 
                   {isEmergency ? (
-                    <div className="flex flex-col gap-2">
+                    <div className="hms-book-time-stack">
                       <input type="time" value={apptTime ? apptTime.substring(0,5) : ""}
                         onChange={e => setApptTime(e.target.value ? e.target.value + ":00" : "")}
-                        className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                        className="hms-input"
                       />
                       <button type="button" onClick={() => { const n = new Date(); setApptTime(`${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}:00`); }}
-                        className="w-full px-4 py-2.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold hover:bg-rose-100 transition-colors">
+                        className="hms-book-emergency-now">
                         Set to Now
                       </button>
                     </div>
                   ) : !doctorId ? (
-                    <div className="flex-1 border border-dashed border-slate-200 rounded-lg flex items-center justify-center text-center p-4">
-                      <p className="text-sm text-slate-400">Select a doctor first to see available time slots.</p>
+                    <div className="hms-book-time-empty">
+                      <p className="m-0">Select a doctor first to see available time slots.</p>
                     </div>
                   ) : (
-                    <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden bg-white">
-                      <div className="h-full max-h-56 overflow-y-auto divide-y divide-slate-100">
-                        {timeSlots.map(slot => (
-                          <button key={slot.timeStr} type="button" disabled={slot.isBooked}
-                            onClick={() => { setApptTime(slot.timeStr); setErrors(e => ({...e, time:""})); }}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left ${slot.isBooked ? "text-slate-300 cursor-not-allowed bg-slate-50/50" : apptTime === slot.timeStr ? "bg-emerald-50 text-emerald-700 font-semibold" : "hover:bg-slate-50 text-slate-700"}`}>
-                            <Clock className={`w-3.5 h-3.5 shrink-0 ${slot.isBooked ? "text-slate-300" : apptTime === slot.timeStr ? "text-emerald-500" : "text-slate-400"}`} />
-                            <span>{slot.displayTime}</span>
-                            {slot.isBooked && <span className="ml-auto text-[10px] font-semibold uppercase text-slate-400">Booked</span>}
-                            {apptTime === slot.timeStr && <CheckCircle className="ml-auto w-3.5 h-3.5 text-emerald-500" />}
-                          </button>
-                        ))}
+                    <div className="hms-book-time-list">
+                      <div className="hms-book-time-list__inner">
+                        {timeSlots.map(slot => {
+                          const on = apptTime === slot.timeStr;
+                          return (
+                            <button key={slot.timeStr} type="button" disabled={slot.isBooked}
+                              onClick={() => { setApptTime(slot.timeStr); setErrors(e => ({...e, time:""})); }}
+                              className={`hms-book-slot${on ? " is-on" : ""}`}>
+                              <Clock className="hms-book-slot__icon w-3.5 h-3.5" />
+                              <span>{slot.displayTime}</span>
+                              {slot.isBooked && <span className="hms-book-slot__booked">Booked</span>}
+                              {on && <CheckCircle className="hms-book-slot__ok w-3.5 h-3.5" />}
+                            </button>
+                          );
+                        })}
                       </div>
-                      {errors.time && <p className="text-xs text-red-500 px-4 py-2 border-t border-slate-100">{errors.time}</p>}
+                      {errors.time && <p className="hms-book-time-list__err">{errors.time}</p>}
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-slate-100" />
+            <hr className="hms-book-divider" />
 
             {/* ── Step 5: Reason for Visit ── */}
-            <div>
+            <div className="hms-book-section">
               <SectionLabel step="5" label="Reason for Visit" icon={<FileText className="w-4 h-4" />} />
               <textarea value={chiefComplaint} onChange={e => setChiefComplaint(e.target.value)} rows={3}
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder-slate-400 focus:ring-2 focus:ring-slate-300/50 focus:border-slate-400 outline-none transition-all resize-none"
+                className="hms-book-textarea"
                 placeholder={isEmergency ? "Brief description of emergency (optional)" : "Enter the reason for the appointment (optional)"} />
             </div>
 
@@ -521,10 +531,10 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-slate-200 bg-white shrink-0">
-          <button type="button" onClick={() => { resetForm(); onClose(); }} className="btn-secondary">Cancel</button>
+        <div className="hms-cmodal__footer">
+          <button type="button" onClick={() => { resetForm(); onClose(); }} className="hms-btn-cancel">Cancel</button>
           <button type="submit" form="book-form" disabled={isLoading}
-            className={isEmergency ? "px-5 py-2.5 rounded-lg font-semibold text-sm text-white bg-rose-500 hover:bg-rose-600 disabled:opacity-50 transition-colors" : "btn-primary"}>
+            className={isEmergency ? "hms-book-emergency-btn" : "hms-btn-primary"}>
             {isLoading ? "Saving…" : isEmergency ? "Create Emergency Appointment" : "Schedule Appointment"}
           </button>
         </div>

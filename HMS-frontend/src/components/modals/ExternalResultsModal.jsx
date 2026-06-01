@@ -185,19 +185,19 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm pointer-events-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] border border-slate-200 flex flex-col overflow-hidden">
+    <div className="hms-cmodal-overlay">
+      <div className="hms-cmodal is-xl">
 
         {/* Header */}
-        <div className="shrink-0 border-b border-slate-100">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center shrink-0">
-                <FlaskConical className="w-5 h-5 text-violet-600" />
+        <div className="hms-cmodal__header">
+          <div className="hms-cmodal__header-row">
+            <div className="hms-cmodal__title-block">
+              <div className="hms-icon-tile is-violet">
+                <FlaskConical className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-base font-bold text-slate-900">Add Lab Reports</h2>
-                <p className="text-xs text-slate-500 mt-0.5 truncate">
+                <h2 className="hms-cmodal__title">Add Lab Reports</h2>
+                <p className="hms-cmodal__subtitle">
                   Outside-lab results the patient walked in with
                 </p>
               </div>
@@ -206,7 +206,7 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-40"
+              className="hms-cmodal__close"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -214,7 +214,7 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
           </div>
 
           {/* Patient strip */}
-          <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-3 gap-3 border-t border-slate-100 bg-slate-50/60">
+          <div className="hms-cmodal__meta is-3col">
             <PreField icon={<UserIcon className="w-3.5 h-3.5" />} label="Patient" value={patientFullName || "—"} />
             <PreField icon={<IdCard className="w-3.5 h-3.5" />} label="UHID" value={uhidDisplay} mono />
             <PreField icon={<CalendarClock className="w-3.5 h-3.5" />} label="Appointment" value={dateTimeText || "—"} />
@@ -222,155 +222,159 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+        <div className="hms-cmodal__body">
+          <div className="hms-form-stack">
 
-          {/* Quick picks */}
-          <div>
-            <div className="flex items-baseline justify-between mb-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Quick pick
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                Tap to pre-fill — you can still edit
-              </p>
-            </div>
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-              {QUICK_PICKS.map((p) => (
-                <button
-                  key={p.test}
-                  type="button"
-                  onClick={() => handleQuickPick(p)}
-                  className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all ${
-                    form.testName === p.test && form.category === p.category
-                      ? "border-violet-400 bg-violet-50 shadow-sm shadow-violet-500/10"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                  }`}
-                >
-                  <p.icon className={`w-4 h-4 shrink-0 ${
-                    p.category === "LAB" ? "text-emerald-600" :
-                    p.category === "RADIOLOGY" ? "text-blue-600" :
-                    "text-rose-600"
-                  }`} />
-                  <span className="text-xs font-semibold text-slate-800 truncate">{p.test}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Entry form */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-5 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Field label="Category">
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                  className="external-input"
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Test name" required className="md:col-span-2">
-                <input
-                  ref={testNameRef}
-                  value={form.testName}
-                  onChange={(e) => setForm((f) => ({ ...f, testName: e.target.value }))}
-                  placeholder="e.g. CBC, X-Ray Chest, Biopsy"
-                  className="external-input"
-                />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Lab / clinic name" required>
-                <input
-                  value={form.sourceName}
-                  onChange={(e) => setForm((f) => ({ ...f, sourceName: e.target.value }))}
-                  placeholder="e.g. Apollo Lab, Coimbatore"
-                  className="external-input"
-                />
-              </Field>
-
-              <Field label="Test date" required icon={<Calendar className="w-3.5 h-3.5" />}>
-                <input
-                  type="date"
-                  value={form.testDate}
-                  onChange={(e) => setForm((f) => ({ ...f, testDate: e.target.value }))}
-                  className="external-input"
-                />
-              </Field>
-            </div>
-
-            <Field label="Summary" hint="One line headline the doctor should see">
-              <textarea
-                rows={2}
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                placeholder="e.g. WBC 12,500 — high, bacterial picture"
-                className="external-textarea"
-              />
-            </Field>
-
-            <div className="flex items-center justify-between gap-3">
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={form.isAbnormal}
-                  onChange={(e) => setForm((f) => ({ ...f, isAbnormal: e.target.checked }))}
-                  className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-                />
-                <span className="flex items-center gap-1.5">
-                  <AlertTriangle className={`w-4 h-4 ${form.isAbnormal ? "text-amber-600" : "text-slate-300"}`} />
-                  Flag as abnormal
-                </span>
-              </label>
-              <button
-                type="button"
-                onClick={handleAddToList}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-100 transition-colors"
-              >
-                <Plus className="w-4 h-4" /> Add to list
-              </button>
-            </div>
-          </div>
-
-          {/* Staging list */}
-          {staged.length > 0 && (
-            <div>
-              <div className="flex items-baseline justify-between mb-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Pending
+            {/* Quick picks */}
+            <div className="hms-clinical-section">
+              <div className="hms-clinical-section__head">
+                <h3 className="hms-clinical-section__title">
+                  Quick pick
                 </h3>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
-                  {staged.length} ready to save
-                </span>
+                <p className="hms-clinical-section__hint">
+                  Tap to pre-fill — you can still edit
+                </p>
               </div>
-              <div className="rounded-xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
-                {staged.map((entry) => (
-                  <StagedRow key={entry._key} entry={entry} onRemove={() => handleRemoveStaged(entry._key)} />
-                ))}
+              <div className="hms-ext-quickpicks">
+                {QUICK_PICKS.map((p) => {
+                  const on = form.testName === p.test && form.category === p.category;
+                  const toneCls =
+                    p.category === "LAB" ? "is-lab" :
+                    p.category === "RADIOLOGY" ? "is-radiology" : "is-pathology";
+                  return (
+                    <button
+                      key={p.test}
+                      type="button"
+                      onClick={() => handleQuickPick(p)}
+                      className={`hms-ext-quickpick${on ? " is-on" : ""}`}
+                    >
+                      <span className={`hms-ext-quickpick__icon ${toneCls}`}>
+                        <p.icon className="w-4 h-4" />
+                      </span>
+                      <span className="hms-ext-quickpick__label">{p.test}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          )}
+
+            {/* Entry form */}
+            <div className="hms-ext-form-card">
+              <div className="hms-form-grid is-3col">
+                <Field label="Category">
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                    className="hms-ext-select"
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Test name" required className="is-span-2">
+                  <input
+                    ref={testNameRef}
+                    value={form.testName}
+                    onChange={(e) => setForm((f) => ({ ...f, testName: e.target.value }))}
+                    placeholder="e.g. CBC, X-Ray Chest, Biopsy"
+                    className="hms-ext-input"
+                  />
+                </Field>
+              </div>
+
+              <div className="hms-form-grid is-2col">
+                <Field label="Lab / clinic name" required>
+                  <input
+                    value={form.sourceName}
+                    onChange={(e) => setForm((f) => ({ ...f, sourceName: e.target.value }))}
+                    placeholder="e.g. Apollo Lab, Coimbatore"
+                    className="hms-ext-input"
+                  />
+                </Field>
+
+                <Field label="Test date" required icon={<Calendar className="w-3.5 h-3.5" />}>
+                  <input
+                    type="date"
+                    value={form.testDate}
+                    onChange={(e) => setForm((f) => ({ ...f, testDate: e.target.value }))}
+                    className="hms-ext-input"
+                  />
+                </Field>
+              </div>
+
+              <Field label="Summary" hint="One line headline the doctor should see">
+                <textarea
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                  placeholder="e.g. WBC 12,500 — high, bacterial picture"
+                  className="hms-ext-textarea"
+                />
+              </Field>
+
+              <div className="hms-ext-abnormal-row">
+                <label className="hms-ext-abnormal-label">
+                  <input
+                    type="checkbox"
+                    checked={form.isAbnormal}
+                    onChange={(e) => setForm((f) => ({ ...f, isAbnormal: e.target.checked }))}
+                    className="hms-ext-abnormal-label__cb"
+                  />
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className={`hms-ext-abnormal-label__icon${form.isAbnormal ? " is-on" : ""}`}>
+                      <AlertTriangle className="w-4 h-4" />
+                    </span>
+                    Flag as abnormal
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddToList}
+                  className="hms-ext-add-btn"
+                >
+                  <Plus className="w-4 h-4" /> Add to list
+                </button>
+              </div>
+            </div>
+
+            {/* Staging list */}
+            {staged.length > 0 && (
+              <div className="hms-clinical-section">
+                <div className="hms-ext-pending-head">
+                  <h3 className="hms-clinical-section__title">
+                    Pending
+                  </h3>
+                  <span className="hms-ext-pending-count">
+                    {staged.length} ready to save
+                  </span>
+                </div>
+                <div className="hms-ext-pending-list">
+                  {staged.map((entry) => (
+                    <StagedRow key={entry._key} entry={entry} onRemove={() => handleRemoveStaged(entry._key)} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-3 bg-white">
-          <p className="text-[11px] text-slate-400 hidden md:block">
+        <div className="hms-cmodal__footer is-split">
+          <p className="hms-ext-footer-hint">
             <FileText className="inline w-3 h-3 mr-1" />
             Reports stay on the patient chart forever — corrections add a new row, never overwrite.
           </p>
-          <div className="flex items-center gap-3 ml-auto">
-            <button type="button" onClick={onClose} disabled={saving} className="btn-secondary">
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={onClose} disabled={saving} className="hms-btn-cancel">
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSaveAll}
               disabled={saving}
-              className="btn-primary"
+              className="hms-btn-primary"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               {saving ? "Saving…" : `Save All${staged.length > 0 ? ` (${staged.length}${form.testName.trim() && form.sourceName.trim() ? "+1" : ""})` : ""}`}
@@ -384,12 +388,12 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
 
 function PreField({ icon, label, value, mono }) {
   return (
-    <div className="min-w-0">
-      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+    <div className="hms-meta-field">
+      <div className="hms-meta-field__label">
         {icon}
         {label}
       </div>
-      <p className={`mt-0.5 text-sm font-semibold text-slate-900 truncate ${mono ? "font-mono tabular-nums" : ""}`}>
+      <p className={`hms-meta-field__value${mono ? " is-mono" : ""}`}>
         {value}
       </p>
     </div>
@@ -398,13 +402,13 @@ function PreField({ icon, label, value, mono }) {
 
 function Field({ label, hint, icon, required, className = "", children }) {
   return (
-    <div className={className}>
-      <div className="flex items-baseline justify-between mb-1.5">
-        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+    <div className={`hms-ext-field ${className}`.trim()}>
+      <div className="hms-ext-field__head">
+        <label className="hms-ext-field__label">
           {icon}{label}
-          {required && <span className="text-rose-500">*</span>}
+          {required && <span className="hms-ext-field__label-req">*</span>}
         </label>
-        {hint && <span className="text-[10px] font-normal normal-case text-slate-400">{hint}</span>}
+        {hint && <span className="hms-ext-field__hint">{hint}</span>}
       </div>
       {children}
     </div>
@@ -412,36 +416,36 @@ function Field({ label, hint, icon, required, className = "", children }) {
 }
 
 function StagedRow({ entry, onRemove }) {
+  const catCls =
+    entry.category === "LAB" ? "is-lab" :
+    entry.category === "RADIOLOGY" ? "is-radiology" :
+    entry.category === "PATHOLOGY" ? "is-pathology" :
+    "is-other";
   return (
-    <div className="flex items-start justify-between gap-3 px-4 py-3 bg-white hover:bg-slate-50/60 transition-colors">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-            entry.category === "LAB"        ? "text-emerald-700 bg-emerald-50 border-emerald-200" :
-            entry.category === "RADIOLOGY"  ? "text-blue-700 bg-blue-50 border-blue-200" :
-            entry.category === "PATHOLOGY"  ? "text-rose-700 bg-rose-50 border-rose-200" :
-            "text-slate-700 bg-slate-100 border-slate-200"
-          }`}>
+    <div className="hms-ext-row">
+      <div className="hms-ext-row__body">
+        <div className="hms-ext-row__chips">
+          <span className={`hms-ext-cat-badge ${catCls}`}>
             {entry.category}
           </span>
-          <span className="text-sm font-semibold text-slate-900 truncate">{entry.testName}</span>
+          <span className="hms-ext-row__name">{entry.testName}</span>
           {entry.isAbnormal && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200">
+            <span className="hms-ext-abnormal-badge">
               <AlertTriangle className="w-3 h-3" /> Abnormal
             </span>
           )}
         </div>
-        <p className="text-xs text-slate-500 truncate">
-          {entry.sourceName} <span className="text-slate-300">·</span> {entry.testDate}
+        <p className="hms-ext-row__sub">
+          {entry.sourceName} <span className="hms-ext-row__sub-sep">·</span> {entry.testDate}
         </p>
         {entry.notes && (
-          <p className="text-xs text-slate-600 mt-1 line-clamp-2">{entry.notes}</p>
+          <p className="hms-ext-row__notes">{entry.notes}</p>
         )}
       </div>
       <button
         type="button"
         onClick={onRemove}
-        className="shrink-0 p-1.5 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+        className="hms-ext-row__remove"
         aria-label="Remove from list"
       >
         <Trash2 className="w-4 h-4" />

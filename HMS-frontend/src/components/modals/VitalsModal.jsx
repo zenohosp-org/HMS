@@ -114,32 +114,32 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
   const bloodGroup = appointment?.patientBloodGroup || "—";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm pointer-events-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] border border-slate-200 flex flex-col overflow-hidden">
+    <div className="hms-cmodal-overlay">
+      <div className="hms-cmodal is-lg">
 
         {/* Header */}
-        <div className="shrink-0 border-b border-slate-100">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center shrink-0">
-                <Activity className="w-5 h-5 text-rose-600" />
+        <div className="hms-cmodal__header">
+          <div className="hms-cmodal__header-row">
+            <div className="hms-cmodal__title-block">
+              <div className="hms-icon-tile is-rose">
+                <Activity className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-base font-bold text-slate-900">Record Vitals</h2>
-                <p className="text-xs text-slate-500 mt-0.5 truncate">
+                <h2 className="hms-cmodal__title">Record Vitals</h2>
+                <p className="hms-cmodal__subtitle">
                   Triage before the doctor starts the consultation
                 </p>
               </div>
             </div>
             {existing && (
-              <span className="px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
+              <span className="hms-vitals-recheck">
                 RE-CHECK
               </span>
             )}
           </div>
 
           {/* Patient meta strip */}
-          <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-slate-100 bg-slate-50/60">
+          <div className="hms-cmodal__meta is-4col">
             <PreField icon={<UserIcon className="w-3.5 h-3.5" />} label="Patient" value={patientFullName || "—"} />
             <PreField icon={<IdCard className="w-3.5 h-3.5" />} label="UHID" value={uhidDisplay} mono />
             <PreField icon={<Droplet className="w-3.5 h-3.5" />} label="Blood group" value={bloodGroup} />
@@ -148,13 +148,13 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="hms-cmodal__body">
           {loading ? (
-            <div className="flex items-center justify-center py-16 text-slate-500 text-sm">
-              <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading vitals…
+            <div className="hms-modal-loading">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading vitals…
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="hms-form-stack">
 
               {/* BP — split into two paired inputs */}
               <VitalField
@@ -162,41 +162,41 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
                 label="Blood Pressure"
                 hint="Systolic / Diastolic, mmHg"
               >
-                <div className="flex items-center gap-2">
+                <div className="hms-vitals-row">
                   <input
                     type="number" min="40" max="300" step="1" inputMode="numeric"
                     value={bpSystolic}
                     onChange={e => setBpSystolic(e.target.value)}
                     placeholder="120"
-                    className="vital-input w-24 text-center"
+                    className="hms-vitals-input"
                   />
-                  <span className="text-slate-400 font-bold text-lg">/</span>
+                  <span className="hms-vitals-row__sep">/</span>
                   <input
                     type="number" min="20" max="200" step="1" inputMode="numeric"
                     value={bpDiastolic}
                     onChange={e => setBpDiastolic(e.target.value)}
                     placeholder="80"
-                    className="vital-input w-24 text-center"
+                    className="hms-vitals-input"
                   />
-                  <span className="text-xs text-slate-500 ml-1">mmHg</span>
+                  <span className="hms-vitals-row__unit">mmHg</span>
                 </div>
               </VitalField>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="hms-vitals-grid">
                 <VitalField
                   icon={<Wind className="w-3.5 h-3.5" />}
                   label="SpO₂"
                   hint="Oxygen saturation"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="hms-vitals-row">
                     <input
                       type="number" min="0" max="100" step="1" inputMode="numeric"
                       value={spo2}
                       onChange={e => setSpo2(e.target.value)}
                       placeholder="98"
-                      className="vital-input w-24 text-center"
+                      className="hms-vitals-input"
                     />
-                    <span className="text-xs text-slate-500">%</span>
+                    <span className="hms-vitals-row__unit">%</span>
                   </div>
                 </VitalField>
 
@@ -205,15 +205,15 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
                   label="Heart Rate"
                   hint="Pulse, bpm"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="hms-vitals-row">
                     <input
                       type="number" min="20" max="300" step="1" inputMode="numeric"
                       value={heartRate}
                       onChange={e => setHeartRate(e.target.value)}
                       placeholder="72"
-                      className="vital-input w-24 text-center"
+                      className="hms-vitals-input"
                     />
-                    <span className="text-xs text-slate-500">bpm</span>
+                    <span className="hms-vitals-row__unit">bpm</span>
                   </div>
                 </VitalField>
 
@@ -222,24 +222,24 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
                   label="Weight"
                   hint="Body weight"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="hms-vitals-row">
                     <input
                       type="number" min="0" max="999" step="0.1" inputMode="decimal"
                       value={weightKg}
                       onChange={e => setWeightKg(e.target.value)}
                       placeholder="68.5"
-                      className="vital-input w-24 text-center"
+                      className="hms-vitals-input"
                     />
-                    <span className="text-xs text-slate-500">kg</span>
+                    <span className="hms-vitals-row__unit">kg</span>
                   </div>
                 </VitalField>
               </div>
 
               {existing && (
-                <div className="rounded-lg border border-slate-100 bg-slate-50/60 px-4 py-3 text-[11px] text-slate-500 flex items-center gap-2">
+                <div className="hms-vitals-prev">
                   <Stethoscope className="w-3 h-3" />
                   Previously recorded by{" "}
-                  <span className="font-semibold text-slate-700">
+                  <span className="hms-vitals-prev__strong">
                     {existing.recordedByName || "—"}
                   </span>
                   {existing.updatedAt && (
@@ -257,11 +257,11 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 px-6 py-4 border-t border-slate-100 flex justify-end gap-3 bg-white">
-          <button type="button" onClick={onClose} disabled={saving} className="btn-secondary">
+        <div className="hms-cmodal__footer">
+          <button type="button" onClick={onClose} disabled={saving} className="hms-btn-cancel">
             Cancel
           </button>
-          <button type="button" onClick={handleSave} disabled={saving || loading} className="btn-primary">
+          <button type="button" onClick={handleSave} disabled={saving || loading} className="hms-btn-primary">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             {existing ? "Update Vitals" : "Save Vitals"}
           </button>
@@ -273,12 +273,12 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
 
 function PreField({ icon, label, value, mono }) {
   return (
-    <div className="min-w-0">
-      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+    <div className="hms-meta-field">
+      <div className="hms-meta-field__label">
         {icon}
         {label}
       </div>
-      <p className={`mt-0.5 text-sm font-semibold text-slate-900 truncate ${mono ? "font-mono tabular-nums" : ""}`}>
+      <p className={`hms-meta-field__value${mono ? " is-mono" : ""}`}>
         {value}
       </p>
     </div>
@@ -287,14 +287,14 @@ function PreField({ icon, label, value, mono }) {
 
 function VitalField({ icon, label, hint, children }) {
   return (
-    <div>
-      <div className="flex items-baseline justify-between mb-2">
-        <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-          <span className="text-slate-400">{icon}</span>
+    <div className="hms-vitals-field">
+      <div className="hms-vitals-field__head">
+        <h3 className="hms-vitals-field__title">
+          <span className="hms-vitals-field__title-icon">{icon}</span>
           {label}
         </h3>
         {hint && (
-          <span className="text-[10px] text-slate-400 normal-case font-normal">
+          <span className="hms-vitals-field__hint">
             {hint}
           </span>
         )}
