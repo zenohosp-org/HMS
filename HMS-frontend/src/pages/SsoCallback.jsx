@@ -74,9 +74,9 @@ function SsoCallback() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#0f0f0f]">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center space-y-4">
-          <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
             <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -89,10 +89,10 @@ function SsoCallback() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#0f0f0f]">
+    <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="text-center space-y-4">
         <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-slate-700 dark:text-slate-300 font-semibold">Completing sign-in...</p>
+        <p className="text-slate-700 font-semibold">Completing sign-in...</p>
         <p className="text-slate-400 text-sm">Please wait while we set up your session.</p>
       </div>
     </div>

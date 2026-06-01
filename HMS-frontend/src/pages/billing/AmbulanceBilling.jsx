@@ -14,16 +14,16 @@ import {
 const PAGE_SIZE = 30
 
 const BOOKING_STATUS_CFG = {
-  PENDING:    { label: 'Pending',    cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',     Icon: Clock         },
-  DISPATCHED: { label: 'Dispatched', cls: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',           Icon: Navigation    },
-  EN_ROUTE:   { label: 'En Route',   cls: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20', Icon: Ambulance    },
-  COMPLETED:  { label: 'Completed',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
-  CANCELLED:  { label: 'Cancelled',  cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',             Icon: XCircle      },
+  PENDING:    { label: 'Pending',    cls: 'bg-amber-50 text-amber-700 border-amber-200',     Icon: Clock         },
+  DISPATCHED: { label: 'Dispatched', cls: 'bg-blue-50 text-blue-700 border-blue-200',           Icon: Navigation    },
+  EN_ROUTE:   { label: 'En Route',   cls: 'bg-violet-50 text-violet-700 border-violet-200', Icon: Ambulance    },
+  COMPLETED:  { label: 'Completed',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: CheckCircle2 },
+  CANCELLED:  { label: 'Cancelled',  cls: 'bg-rose-50 text-rose-700 border-rose-200',             Icon: XCircle      },
 }
 
 const PAY_STATUS_CFG = {
-  PAID:   { label: 'Paid',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
-  UNPAID: { label: 'Unpaid', cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',             Icon: Clock        },
+  PAID:   { label: 'Paid',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: CheckCircle2 },
+  UNPAID: { label: 'Unpaid', cls: 'bg-amber-50 text-amber-700 border-amber-200',             Icon: Clock        },
 }
 
 function fmt(n) {
@@ -39,19 +39,19 @@ function fmtDate(dateStr, timeStr) {
 
 function StatCard({ label, value, sub, Icon, accent }) {
   const accents = {
-    blue:    'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400',
-    emerald: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-    amber:   'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-600 dark:text-amber-400',
-    rose:    'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400',
+    blue:    'bg-blue-50 border-blue-100 text-blue-600',
+    emerald: 'bg-emerald-50 border-emerald-100 text-emerald-600',
+    amber:   'bg-amber-50 border-amber-100 text-amber-600',
+    rose:    'bg-rose-50 border-rose-100 text-rose-600',
   }
   return (
-    <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] p-5 flex items-center gap-4">
+    <div className="bg-white rounded-lg border border-slate-200 p-5 flex items-center gap-4">
       <div className={`w-11 h-11 rounded-lg border flex items-center justify-center shrink-0 ${accents[accent]}`}>
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">{label}</p>
-        <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">{value}</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</p>
+        <p className="text-xl font-bold text-slate-900 mt-0.5 truncate">{value}</p>
         {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
       </div>
     </div>
@@ -214,15 +214,15 @@ export default function AmbulanceBilling() {
     }, 250)
   }
 
-  const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left'
+  const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-left'
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">
+    <div className="flex flex-col h-full bg-slate-50 gap-6">
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Ambulance Billing</h1>
-        <span className="px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-xs font-bold border border-orange-100 dark:border-orange-800/30">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Ambulance Billing</h1>
+        <span className="px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-600 text-xs font-bold border border-orange-100">
           {bookings.length} bookings
         </span>
       </div>
@@ -236,12 +236,12 @@ export default function AmbulanceBilling() {
       </div>
 
       {/* Table Container */}
-      <div className="flex flex-col flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden min-h-0">
+      <div className="flex flex-col flex-1 bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden min-h-0">
 
         {/* Controls */}
-        <div className="flex items-center justify-end px-5 py-3 border-b border-slate-100 dark:border-[#1a1a1a] gap-3 flex-wrap">
+        <div className="flex items-center justify-end px-5 py-3 border-b border-slate-100 gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#2a2a2a] rounded-lg p-0.5">
+            <div className="flex items-center gap-0.5 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
               {[
                 { key: 'ALL',    label: 'All'    },
                 { key: 'UNPAID', label: 'Unpaid' },
@@ -252,8 +252,8 @@ export default function AmbulanceBilling() {
                   onClick={() => handlePayFilter(key)}
                   className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                     payFilter === key
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
-                      : 'text-slate-500 dark:text-[#888] hover:text-slate-700 dark:hover:text-[#aaa]'
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
                   {label}
@@ -267,7 +267,7 @@ export default function AmbulanceBilling() {
                 placeholder="Search patient, vehicle, address…"
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1) }}
-                className="pl-9 pr-3 py-2 w-60 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="pl-9 pr-3 py-2 w-60 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               />
             </div>
           </div>
@@ -277,7 +277,7 @@ export default function AmbulanceBilling() {
         <div className="overflow-x-auto overflow-y-auto flex-1">
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-slate-100 dark:border-[#1a1a1a] bg-white/95 dark:bg-[#111]/95 backdrop-blur-sm">
+              <tr className="border-b border-slate-100 bg-white/95 backdrop-blur-sm">
                 <th className={thCls}>Ref & Date</th>
                 <th className={thCls}>Patient</th>
                 <th className={thCls}>Vehicle</th>
@@ -288,7 +288,7 @@ export default function AmbulanceBilling() {
                 <th className={thCls + ' text-right'}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
+            <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-20 text-center">
@@ -302,8 +302,8 @@ export default function AmbulanceBilling() {
                 <tr>
                   <td colSpan={8} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-[#1a1a1a] flex items-center justify-center">
-                        <Ambulance className="w-8 h-8 text-slate-200 dark:text-slate-700" />
+                      <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center">
+                        <Ambulance className="w-8 h-8 text-slate-200" />
                       </div>
                       <p className="text-sm font-medium text-slate-400">
                         {search || payFilter !== 'ALL' ? 'No bookings match your filters.' : 'No ambulance bookings yet.'}
@@ -325,11 +325,11 @@ export default function AmbulanceBilling() {
                   const canMarkPaid = b.status === 'COMPLETED' && b.paymentStatus !== 'PAID'
 
                   return (
-                    <tr key={b.id} className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all">
+                    <tr key={b.id} className="group hover:bg-slate-50/50 transition-all">
 
                       {/* Ref & Date */}
                       <td className="px-5 py-4">
-                        <p className="font-bold text-sm text-slate-900 dark:text-white font-mono">
+                        <p className="font-bold text-sm text-slate-900 font-mono">
                           AMB-{String(b.id).padStart(6, '0')}
                         </p>
                         <p className="text-xs text-slate-400 mt-0.5">{fmtDate(b.bookingDate, b.bookingTime)}</p>
@@ -339,7 +339,7 @@ export default function AmbulanceBilling() {
                       <td className="px-5 py-4">
                         {patName ? (
                           <>
-                            <p className="font-semibold text-sm text-slate-900 dark:text-white">{patName}</p>
+                            <p className="font-semibold text-sm text-slate-900">{patName}</p>
                             {b.patient?.uhid && (
                               <p className="text-xs text-slate-400 mt-0.5">{fmtId(b.patient.uhid)}</p>
                             )}
@@ -348,7 +348,7 @@ export default function AmbulanceBilling() {
                           <>
                             <div className="flex items-center gap-1.5">
                               <User className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                              <p className="font-semibold text-sm text-amber-700 dark:text-amber-400">Walk-in / Emergency</p>
+                              <p className="font-semibold text-sm text-amber-700">Walk-in / Emergency</p>
                             </div>
                             {b.pickupAddress && (
                               <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[160px]" title={b.pickupAddress}>
@@ -362,13 +362,13 @@ export default function AmbulanceBilling() {
                       {/* Vehicle */}
                       <td className="px-5 py-4">
                         {typeName && (
-                          <p className="font-semibold text-sm text-slate-900 dark:text-white">{typeName}</p>
+                          <p className="font-semibold text-sm text-slate-900">{typeName}</p>
                         )}
                         {vehNum && (
                           <p className="text-xs text-slate-400 mt-0.5 font-mono">{vehNum}</p>
                         )}
                         {!typeName && !vehNum && (
-                          <span className="text-slate-300 dark:text-slate-700">—</span>
+                          <span className="text-slate-300">—</span>
                         )}
                       </td>
 
@@ -377,24 +377,24 @@ export default function AmbulanceBilling() {
                         {b.pickupAddress && (
                           <div className="flex items-start gap-1">
                             <MapPin className="w-3 h-3 text-emerald-500 mt-0.5 shrink-0" />
-                            <p className="text-xs text-slate-600 dark:text-[#aaa] truncate" title={b.pickupAddress}>{b.pickupAddress}</p>
+                            <p className="text-xs text-slate-600 truncate" title={b.pickupAddress}>{b.pickupAddress}</p>
                           </div>
                         )}
                         {b.destinationAddress && (
                           <div className="flex items-start gap-1 mt-1">
                             <MapPin className="w-3 h-3 text-rose-500 mt-0.5 shrink-0" />
-                            <p className="text-xs text-slate-600 dark:text-[#aaa] truncate" title={b.destinationAddress}>{b.destinationAddress}</p>
+                            <p className="text-xs text-slate-600 truncate" title={b.destinationAddress}>{b.destinationAddress}</p>
                           </div>
                         )}
                         {!b.pickupAddress && !b.destinationAddress && (
-                          <span className="text-slate-300 dark:text-slate-700">—</span>
+                          <span className="text-slate-300">—</span>
                         )}
                       </td>
 
                       {/* Charge */}
                       <td className="px-5 py-4">
-                        <p className="font-bold text-sm text-slate-900 dark:text-white">
-                          {b.charge != null ? fmt(b.charge) : <span className="text-slate-300 dark:text-slate-700">—</span>}
+                        <p className="font-bold text-sm text-slate-900">
+                          {b.charge != null ? fmt(b.charge) : <span className="text-slate-300">—</span>}
                         </p>
                       </td>
 
@@ -420,7 +420,7 @@ export default function AmbulanceBilling() {
                       <td className="px-5 py-4 text-right" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={e => { e.stopPropagation(); openMenu(b, e.currentTarget) }}
-                          className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
+                          className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
                         >
                           {markingId === b.id
                             ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -436,7 +436,7 @@ export default function AmbulanceBilling() {
         </div>
 
         {!loading && filtered.length > PAGE_SIZE && (
-          <div className="px-5 py-3 border-t border-slate-100 dark:border-[#1a1a1a]">
+          <div className="px-5 py-3 border-t border-slate-100">
             <Pagination
               currentPage={page}
               totalPages={totalPages}
@@ -452,13 +452,13 @@ export default function AmbulanceBilling() {
       {menuState && (() => {
         const { booking, right, top, bottom } = menuState
         const canMarkPaid = booking.status === 'COMPLETED' && booking.paymentStatus !== 'PAID'
-        const itemClass = 'w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222] transition-colors text-left disabled:opacity-40'
+        const itemClass = 'w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors text-left disabled:opacity-40'
         return (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setMenuState(null)} />
             <div
               style={{ position: 'fixed', right, ...(top !== undefined ? { top } : { bottom }), zIndex: 50 }}
-              className="w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-slate-100 dark:border-[#252525] py-1.5"
+              className="w-52 bg-white rounded-xl shadow-2xl border border-slate-100 py-1.5"
             >
               {canMarkPaid && (
                 <button

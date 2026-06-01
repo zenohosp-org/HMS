@@ -53,21 +53,21 @@ function buildWeekAppts(appts) {
 }
 
 const BLOOD_COLORS = {
-  "A+": "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
-  "A-": "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
-  "B+": "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20",
-  "B-": "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
-  "O+": "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
-  "O-": "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-100 dark:text-slate-400 dark:border-slate-200/20",
-  "AB+": "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]",
-  "AB-": "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-slate-900/10 dark:text-slate-400 dark:border-slate-200/20",
+  "A+": "bg-red-100 text-red-700 border-red-200",
+  "A-": "bg-rose-100 text-rose-700 border-rose-200",
+  "B+": "bg-orange-100 text-orange-700 border-orange-200",
+  "B-": "bg-amber-100 text-amber-700 border-amber-200",
+  "O+": "bg-blue-100 text-blue-700 border-blue-200",
+  "O-": "bg-slate-100 text-slate-700 border-slate-200",
+  "AB+": "bg-slate-100 text-slate-900 border-slate-200",
+  "AB-": "bg-slate-100 text-slate-900 border-slate-200",
 };
 
 const STATUS_META = {
-  SCHEDULED: { icon: Clock, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-500/10", label: "Scheduled" },
-  COMPLETED: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-500/10", label: "Completed" },
-  CANCELLED: { icon: XCircle, color: "text-rose-500", bg: "bg-rose-50 dark:bg-rose-500/10", label: "Cancelled" },
-  NO_SHOW: { icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10", label: "No Show" },
+  SCHEDULED: { icon: Clock, color: "text-blue-600", bg: "bg-blue-50", label: "Scheduled" },
+  COMPLETED: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", label: "Completed" },
+  CANCELLED: { icon: XCircle, color: "text-rose-500", bg: "bg-rose-50", label: "Cancelled" },
+  NO_SHOW: { icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-50", label: "No Show" },
 };
 
 const STATUS_BAR_CLS = {
@@ -77,19 +77,19 @@ const STATUS_BAR_CLS = {
   NO_SHOW: "bg-amber-500",
 };
 
-const TOOLTIP_CLS = "bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-xl px-4 py-3 text-xs";
+const TOOLTIP_CLS = "bg-white border border-slate-200 rounded-lg shadow-xl px-4 py-3 text-xs";
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function StatPill({ label, value, icon, accent }) {
   return (
-    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-5 flex items-center gap-4">
+    <div className="bg-white border border-slate-200 rounded-lg p-5 flex items-center gap-4">
       <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${accent}`}>
         {icon}
       </div>
       <div>
-        <p className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{value}</p>
-        <p className="text-xs font-semibold text-slate-500 dark:text-[#666] uppercase tracking-wide mt-0.5">{label}</p>
+        <p className="text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-0.5">{label}</p>
       </div>
     </div>
   );
@@ -97,16 +97,16 @@ function StatPill({ label, value, icon, accent }) {
 
 function SectionCard({ title, subtitle, children, action, actionLabel, actionFn }) {
   return (
-    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-6 flex flex-col gap-5">
+    <div className="bg-white border border-slate-200 rounded-lg p-6 flex flex-col gap-5">
       <div className="flex items-start justify-between">
         <div>
-          <p className="font-bold text-slate-900 dark:text-white text-sm">{title}</p>
-          {subtitle && <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{subtitle}</p>}
+          <p className="font-bold text-slate-900 text-sm">{title}</p>
+          {subtitle && <p className="text-xs text-slate-600 mt-0.5">{subtitle}</p>}
         </div>
         {actionFn && (
           <button
             onClick={actionFn}
-            className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-slate-900 hover:underline"
           >
             {actionLabel} <ArrowRight className="w-3 h-3" />
           </button>
@@ -118,7 +118,7 @@ function SectionCard({ title, subtitle, children, action, actionLabel, actionFn 
 }
 
 function AppointmentStatusRow({ status, count, total }) {
-  const meta = STATUS_META[status] ?? { icon: Clock, color: "text-slate-600", bg: "bg-slate-100 dark:bg-[#1e1e1e]", label: status };
+  const meta = STATUS_META[status] ?? { icon: Clock, color: "text-slate-600", bg: "bg-slate-100", label: status };
   const Icon = meta.icon;
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
@@ -128,17 +128,17 @@ function AppointmentStatusRow({ status, count, total }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-semibold text-slate-700 dark:text-[#ccc]">{meta.label}</span>
-          <span className="text-xs font-bold text-slate-800 dark:text-[#ddd]">{count}</span>
+          <span className="text-xs font-semibold text-slate-700">{meta.label}</span>
+          <span className="text-xs font-bold text-slate-800">{count}</span>
         </div>
-        <div className="h-1.5 bg-slate-100 dark:bg-[#222] rounded-full overflow-hidden">
+        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-700 ${STATUS_BAR_CLS[status] ?? "bg-slate-400"}`}
             style={{ width: `${pct}%` }}
           />
         </div>
       </div>
-      <span className="text-[10px] text-slate-600 dark:text-[#999999] w-7 text-right">{pct}%</span>
+      <span className="text-[10px] text-slate-600 w-7 text-right">{pct}%</span>
     </div>
   );
 }
@@ -146,31 +146,31 @@ function AppointmentStatusRow({ status, count, total }) {
 function PatientRowCard({ p }) {
   const navigate = useNavigate();
   const blood = p.bloodGroup ?? "N/A";
-  const bloodCls = BLOOD_COLORS[blood] ?? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#1e1e1e] dark:text-[#888] dark:border-[#2a2a2a]";
+  const bloodCls = BLOOD_COLORS[blood] ?? "bg-slate-100 text-slate-600 border-slate-200";
   return (
     <tr
-      className="hover:bg-slate-50 dark:hover:bg-[#161616] cursor-pointer transition-colors border-b border-slate-100 dark:border-[#1a1a1a] last:border-0"
+      className="hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-100 last:border-0"
       onClick={() => navigate(`/patients/${p.id}`)}
     >
       <td className="px-5 py-3.5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-[#222] dark:to-[#2a2a2a] border border-slate-200 dark:border-[#333] flex items-center justify-center text-xs font-bold text-slate-600 dark:text-[#aaa] shrink-0">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
             {p.firstName[0]}{p.lastName?.[0] ?? ""}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-800 dark:text-[#e5e5e5]">{p.firstName} {p.lastName}</p>
-            <p className="text-xs text-slate-600 dark:text-[#999999]">{fmtId(p.uhid)}</p>
+            <p className="text-sm font-semibold text-slate-800">{p.firstName} {p.lastName}</p>
+            <p className="text-xs text-slate-600">{fmtId(p.uhid)}</p>
           </div>
         </div>
       </td>
-      <td className="px-5 py-3.5 text-xs text-slate-500 dark:text-[#777]">{calcAge(p.dob)} · {p.gender ?? "—"}</td>
+      <td className="px-5 py-3.5 text-xs text-slate-500">{calcAge(p.dob)} · {p.gender ?? "—"}</td>
       <td className="px-5 py-3.5">
         {p.phone ? (
-          <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-[#666]">
+          <span className="flex items-center gap-1 text-xs text-slate-500">
             <Phone className="w-3 h-3" />{p.phone}
           </span>
         ) : (
-          <span className="text-xs text-slate-500 dark:text-[#888888]">—</span>
+          <span className="text-xs text-slate-500">—</span>
         )}
       </td>
       <td className="px-5 py-3.5">
@@ -179,7 +179,7 @@ function PatientRowCard({ p }) {
         </span>
       </td>
       <td className="px-5 py-3.5 text-right">
-        <span className="flex items-center gap-1 text-xs text-slate-600 dark:text-[#999999] justify-end">
+        <span className="flex items-center gap-1 text-xs text-slate-600 justify-end">
           <Clock className="w-3 h-3" />{timeAgo(p.createdAt)}
         </span>
       </td>
@@ -250,7 +250,7 @@ function DoctorStaffDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-slate-900 dark:text-white" />
+        <Loader2 className="w-8 h-8 animate-spin text-slate-900" />
       </div>
     );
   }
@@ -263,10 +263,10 @@ function DoctorStaffDashboard() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             {greeting}, {isDoctor ? "Dr." : ""} {user?.firstName}
           </h1>
-          <p className="text-sm text-slate-500 dark:text-[#666] mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             {user?.hospitalName} · {dateStr}
           </p>
         </div>
@@ -280,26 +280,26 @@ function DoctorStaffDashboard() {
         <StatPill
           label="Total Patients"
           value={patients.length}
-          icon={<Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
-          accent="bg-blue-50 dark:bg-blue-500/10"
+          icon={<Users className="w-5 h-5 text-blue-600" />}
+          accent="bg-blue-50"
         />
         <StatPill
           label="New Today"
           value={todayPatients.length}
-          icon={<UserPlus className="w-5 h-5 text-slate-900 dark:text-white" />}
-          accent="bg-slate-100 dark:bg-[#1e1e1e]"
+          icon={<UserPlus className="w-5 h-5 text-slate-900" />}
+          accent="bg-slate-100"
         />
         <StatPill
           label={isDoctor ? "My Appointments" : "Appointments"}
           value={totalAppts}
-          icon={<Calendar className="w-5 h-5 text-slate-900 dark:text-white dark:text-slate-300" />}
-          accent="bg-slate-100 dark:bg-[#1e1e1e]"
+          icon={<Calendar className="w-5 h-5 text-slate-900" />}
+          accent="bg-slate-100"
         />
         <StatPill
           label="Today's Schedule"
           value={todayAppts.length}
-          icon={<Activity className="w-5 h-5 text-amber-600 dark:text-amber-400" />}
-          accent="bg-amber-50 dark:bg-amber-500/10"
+          icon={<Activity className="w-5 h-5 text-amber-600" />}
+          accent="bg-amber-50"
         />
       </div>
 
@@ -328,7 +328,7 @@ function DoctorStaffDashboard() {
                 content={({ active, payload, label }) =>
                   active && payload?.length ? (
                     <div className={TOOLTIP_CLS}>
-                      <p className="font-bold text-slate-700 dark:text-[#ccc] mb-1">{label}</p>
+                      <p className="font-bold text-slate-700 mb-1">{label}</p>
                       <p className="text-slate-700">{payload[0].value} patients</p>
                     </div>
                   ) : null
@@ -363,8 +363,8 @@ function DoctorStaffDashboard() {
                 content={({ active, payload, label }) =>
                   active && payload?.length ? (
                     <div className={TOOLTIP_CLS}>
-                      <p className="font-bold text-slate-700 dark:text-[#ccc] mb-1">{label}</p>
-                      <p className="text-slate-900 dark:text-white">{payload[0].value} appointments</p>
+                      <p className="font-bold text-slate-700 mb-1">{label}</p>
+                      <p className="text-slate-900">{payload[0].value} appointments</p>
                     </div>
                   ) : null
                 }
@@ -398,21 +398,21 @@ function DoctorStaffDashboard() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-32 gap-2 text-slate-500 dark:text-[#777777]">
+            <div className="flex flex-col items-center justify-center h-32 gap-2 text-slate-500">
               <Calendar className="w-8 h-8" />
-              <p className="text-xs text-slate-600 dark:text-[#999999]">No appointments yet</p>
+              <p className="text-xs text-slate-600">No appointments yet</p>
             </div>
           )}
           {totalAppts > 0 && (
-            <div className="mt-1 pt-4 border-t border-slate-100 dark:border-[#1a1a1a]">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#999999]">
+            <div className="mt-1 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between text-xs text-slate-500">
                 <span>Total appointments</span>
-                <span className="font-bold text-slate-800 dark:text-[#ddd]">{totalAppts}</span>
+                <span className="font-bold text-slate-800">{totalAppts}</span>
               </div>
               {apptStatusCounts.COMPLETED > 0 && (
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#999999] mt-1">
+                <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
                   <span>Completion rate</span>
-                  <span className="font-bold text-slate-900 dark:text-white">
+                  <span className="font-bold text-slate-900">
                     {((apptStatusCounts.COMPLETED / totalAppts) * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -422,20 +422,20 @@ function DoctorStaffDashboard() {
         </SectionCard>
 
         {/* Today's patients */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-[#1a1a1a]">
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-blue-500" />
-              <p className="font-bold text-slate-900 dark:text-white text-sm">New Patients Today</p>
+              <p className="font-bold text-slate-900 text-sm">New Patients Today</p>
               {todayPatients.length > 0 && (
-                <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full border border-blue-100 dark:border-blue-500/20">
+                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-full border border-blue-100">
                   {todayPatients.length}
                 </span>
               )}
             </div>
             <button
               onClick={() => navigate("/patients")}
-              className="flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-white hover:underline"
+              className="flex items-center gap-1 text-xs font-semibold text-slate-900 hover:underline"
             >
               All patients <ArrowRight className="w-3 h-3" />
             </button>
@@ -443,12 +443,12 @@ function DoctorStaffDashboard() {
 
           {todayPatients.length === 0 ? (
             <div className="flex flex-col items-center justify-center flex-1 py-16 gap-3">
-              <div className="w-14 h-14 rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-100 dark:border-[#222] flex items-center justify-center">
-                <UserPlus className="w-7 h-7 text-slate-200 dark:text-[#777777]" />
+              <div className="w-14 h-14 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center">
+                <UserPlus className="w-7 h-7 text-slate-200" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-semibold text-slate-500 dark:text-[#999999]">No new patients today</p>
-                <p className="text-xs text-slate-600 dark:text-[#888888] mt-0.5">New registrations will appear here</p>
+                <p className="text-sm font-semibold text-slate-500">No new patients today</p>
+                <p className="text-xs text-slate-600 mt-0.5">New registrations will appear here</p>
               </div>
               <button onClick={() => navigate("/patients")} className="btn-primary text-xs mt-1">
                 Register Patient
@@ -458,9 +458,9 @@ function DoctorStaffDashboard() {
             <div className="overflow-x-auto flex-1">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-[#0f0f0f] border-b border-slate-100 dark:border-[#1a1a1a]">
+                  <tr className="bg-slate-50 border-b border-slate-100">
                     {["Patient", "Age / Gender", "Phone", "Blood", "Registered"].map((h) => (
-                      <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-600 dark:text-[#999999] uppercase tracking-widest last:text-right">
+                      <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-600 uppercase tracking-widest last:text-right">
                         {h}
                       </th>
                     ))}
@@ -480,23 +480,23 @@ function DoctorStaffDashboard() {
       {/* ── Quick actions row ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Patients", sub: "Register or find a patient", to: "/patients", icon: <Users className="w-5 h-5" />, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
-          ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e]" }] : []),
-          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing/opd", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 dark:text-white bg-slate-100 dark:bg-[#1e1e1e]" },
+          { label: "Patients", sub: "Register or find a patient", to: "/patients", icon: <Users className="w-5 h-5" />, color: "text-blue-600 bg-blue-50" },
+          ...(isDoctor ? [{ label: "My Appointments", sub: "View your schedule", to: "/appointments", icon: <Calendar className="w-5 h-5" />, color: "text-slate-900 bg-slate-100" }] : []),
+          { label: "Create Invoice", sub: "Generate a patient bill", to: "/billing/opd", icon: <ReceiptText className="w-5 h-5" />, color: "text-slate-900 bg-slate-100" },
         ].map((item) => (
           <button
             key={item.to}
             onClick={() => navigate(item.to)}
-            className="group flex items-center gap-4 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-5 text-left hover:border-slate-300 dark:hover:border-[#2a2a2a] hover:shadow-md transition-all"
+            className="group flex items-center gap-4 bg-white border border-slate-200 rounded-lg p-5 text-left hover:border-slate-300 hover:shadow-md transition-all"
           >
             <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${item.color}`}>
               {item.icon}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-slate-800 dark:text-[#e5e5e5] text-sm">{item.label}</p>
-              <p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{item.sub}</p>
+              <p className="font-semibold text-slate-800 text-sm">{item.label}</p>
+              <p className="text-xs text-slate-600 mt-0.5">{item.sub}</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-500 dark:text-[#777777] group-hover:text-slate-500 dark:group-hover:text-[#666] group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />
           </button>
         ))}
       </div>

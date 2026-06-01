@@ -45,30 +45,30 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm pointer-events-auto">
-      <div className="bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-2xl w-full max-w-8xl max-h-[96vh] border border-slate-200 dark:border-[#262626] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-8xl max-h-[96vh] border border-slate-200 flex flex-col overflow-hidden">
 
         {/* ── Header: title row + 4-column meta strip + vitals strip ─── */}
-        <div className="shrink-0 border-b border-slate-100 dark:border-[#1c1c1c]">
+        <div className="shrink-0 border-b border-slate-100">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
-                <Stethoscope className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                <Stethoscope className="w-5 h-5 text-blue-600" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">Consultation</h2>
-                <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5 truncate">
+                <h2 className="text-base font-bold text-slate-900">Consultation</h2>
+                <p className="text-xs text-slate-500 mt-0.5 truncate">
                   Auto-opened on check-in · saves to the patient record
                 </p>
               </div>
             </div>
             {appointment?.tokenNumber != null && (
-              <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-[#1a1a1a] text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-[#2a2a2a]">
+              <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
                 Token #{appointment.tokenNumber}
               </span>
             )}
           </div>
 
-          <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-slate-100 dark:border-[#1c1c1c] bg-slate-50/60 dark:bg-[#0d0d0d]">
+          <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-slate-100 bg-slate-50/60">
             <PreField icon={<UserIcon className="w-3.5 h-3.5" />} label="Patient" value={patientFullName || "—"} />
             <PreField icon={<IdCard className="w-3.5 h-3.5" />} label="UHID" value={uhidDisplay} mono />
             <PreField icon={<Stethoscope className="w-3.5 h-3.5" />} label="Doctor" value={appointment?.doctorName || "—"} />
@@ -80,7 +80,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
 
         {/* ── Body: clinical (left, wider) + prescription (right) ─────── */}
         <div className="flex-1 overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 dark:divide-[#1c1c1c]">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
 
             <div className="lg:col-span-3 px-7 py-6 space-y-6">
               <Section icon={<ClipboardList className="w-3.5 h-3.5" />} title="Chief complaint" hint="What brought the patient in today">
@@ -123,26 +123,26 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
               </Section>
             </div>
 
-            <div className="lg:col-span-2 px-6 py-6 bg-slate-50/40 dark:bg-[#0c0c0c]">
+            <div className="lg:col-span-2 px-6 py-6 bg-slate-50/40">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#ccc]">
-                    <Pill className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+                    <Pill className="w-3.5 h-3.5 text-emerald-600" />
                     Prescription
                     {drugCount > 0 && (
-                      <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                      <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">
                         {drugCount} drug{drugCount === 1 ? "" : "s"}
                       </span>
                     )}
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-[#777] mt-0.5">
+                  <p className="text-[11px] text-slate-500 mt-0.5">
                     Leave empty for a notes-only consultation
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={addItem}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 shadow-sm transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add drug
                 </button>
@@ -165,7 +165,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
         </div>
 
         {/* ── Footer ──────────────────────────────────────────────────── */}
-        <div className="shrink-0 px-7 py-4 border-t border-slate-100 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f] flex items-center justify-between gap-4">
+        <div className="shrink-0 px-7 py-4 border-t border-slate-100 bg-white flex items-center justify-between gap-4">
           <AutosaveIndicator status={autosaveStatus} hydrating={hydrating} />
           <div className="flex items-center gap-3">
             <button type="button" onClick={onClose} disabled={saving} className="btn-secondary">
@@ -202,8 +202,8 @@ function VitalsStrip({ vitals, vitalsStatus, bloodGroup }) {
   else trailing = "Vitals not recorded yet";
 
   return (
-    <div className="px-6 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f]">
-      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+    <div className="px-6 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 bg-white">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-600">
         <Activity className="w-3 h-3" /> Vitals
       </div>
       <VitalChip icon={<Droplet className="w-3 h-3 text-rose-500" />} label="Blood" value={bloodGroup || "—"} />
@@ -211,7 +211,7 @@ function VitalsStrip({ vitals, vitalsStatus, bloodGroup }) {
       <VitalChip icon={<Wind className="w-3 h-3 text-blue-500" />} label="SpO₂" value={spo2 || placeholder} />
       <VitalChip icon={<HeartPulse className="w-3 h-3 text-emerald-500" />} label="Pulse" value={hr || placeholder} />
       <VitalChip icon={<Scale className="w-3 h-3 text-amber-500" />} label="Weight" value={wt || placeholder} />
-      <span className="ml-auto text-[10px] text-slate-400 dark:text-[#666]">
+      <span className="ml-auto text-[10px] text-slate-400">
         {trailing}
       </span>
     </div>
@@ -222,12 +222,12 @@ function VitalChip({ icon, label, value, unit }) {
   return (
     <div className="flex items-center gap-1.5">
       {icon}
-      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#888]">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
         {label}
       </span>
-      <span className="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">
+      <span className="text-sm font-semibold text-slate-900 tabular-nums">
         {value}
-        {unit && <span className="ml-1 text-[10px] font-normal text-slate-400 dark:text-[#666]">{unit}</span>}
+        {unit && <span className="ml-1 text-[10px] font-normal text-slate-400">{unit}</span>}
       </span>
     </div>
   );
@@ -236,11 +236,11 @@ function VitalChip({ icon, label, value, unit }) {
 function PreField({ icon, label, value, mono }) {
   return (
     <div className="min-w-0">
-      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#888]">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
         {icon}
         {label}
       </div>
-      <p className={`mt-0.5 text-sm font-semibold text-slate-900 dark:text-white truncate ${mono ? "font-mono tabular-nums" : ""}`}>
+      <p className={`mt-0.5 text-sm font-semibold text-slate-900 truncate ${mono ? "font-mono tabular-nums" : ""}`}>
         {value}
       </p>
     </div>
@@ -251,12 +251,12 @@ function Section({ icon, title, hint, children }) {
   return (
     <div>
       <div className="flex items-baseline justify-between mb-2">
-        <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#ccc]">
-          <span className="text-slate-400 dark:text-[#666]">{icon}</span>
+        <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+          <span className="text-slate-400">{icon}</span>
           {title}
         </h3>
         {hint && (
-          <span className="text-[10px] text-slate-400 dark:text-[#666] normal-case font-normal">
+          <span className="text-[10px] text-slate-400 normal-case font-normal">
             {hint}
           </span>
         )}
@@ -269,7 +269,7 @@ function Section({ icon, title, hint, children }) {
 function AutosaveIndicator({ status, hydrating }) {
   if (hydrating) {
     return (
-      <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-[#888]">
+      <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
         <Loader2 className="w-3 h-3 animate-spin" />
         Loading draft…
       </span>
@@ -277,7 +277,7 @@ function AutosaveIndicator({ status, hydrating }) {
   }
   if (status === "saving") {
     return (
-      <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-[#888]">
+      <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
         <Loader2 className="w-3 h-3 animate-spin" />
         Saving draft…
       </span>
@@ -285,7 +285,7 @@ function AutosaveIndicator({ status, hydrating }) {
   }
   if (status === "saved") {
     return (
-      <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+      <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600">
         <Save className="w-3 h-3" />
         Draft saved — safe to close and resume later
       </span>
@@ -293,11 +293,11 @@ function AutosaveIndicator({ status, hydrating }) {
   }
   if (status === "error") {
     return (
-      <span className="flex items-center gap-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+      <span className="flex items-center gap-1.5 text-[11px] font-medium text-amber-600">
         <AlertCircle className="w-3 h-3" />
         Autosave failed — your changes are only in this tab
       </span>
     );
   }
-  return <span className="text-[11px] text-slate-400 dark:text-[#666]">Draft autosaves as you type</span>;
+  return <span className="text-[11px] text-slate-400">Draft autosaves as you type</span>;
 }

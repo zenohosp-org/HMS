@@ -110,7 +110,7 @@ function PatientModal({ patient, onClose, onSave }) {
 
       {/* ── Personal Information ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Personal Information</p>
+        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Personal Information</p>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -173,7 +173,7 @@ function PatientModal({ patient, onClose, onSave }) {
 
       {/* ── Contact ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Contact</p>
+        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Contact</p>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -199,7 +199,7 @@ function PatientModal({ patient, onClose, onSave }) {
 
       {/* ── Emergency Contact ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Emergency Contact</p>
+        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Emergency Contact</p>
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="label">Name</label>
@@ -224,7 +224,7 @@ function PatientModal({ patient, onClose, onSave }) {
 
       {/* ── Medical Identifiers ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Medical Identifiers</p>
+        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Medical Identifiers</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Blood Group</label>
@@ -255,7 +255,7 @@ function PatientModal({ patient, onClose, onSave }) {
 
       {/* ── Insurance ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Insurance</p>
+        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Insurance</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Scheme</label>
@@ -276,7 +276,7 @@ function PatientModal({ patient, onClose, onSave }) {
 
       {/* ── Clinical History ── */}
       <div>
-        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Clinical History</p>
+        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Clinical History</p>
         <div className="space-y-4">
           <div>
             <label className="label">Known Allergies</label>
@@ -319,8 +319,8 @@ function PatientModal({ patient, onClose, onSave }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Register New Patient</h2>
+        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-800">Register New Patient</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
         </div>
         <div className="p-6 space-y-4">

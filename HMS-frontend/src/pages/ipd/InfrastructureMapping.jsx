@@ -41,10 +41,10 @@ function Stepper({ value, onChange, min = 0, max = 20, variant = "default" }) {
   const dark = variant === "dark";
   const btn = dark
     ? "w-7 h-7 flex items-center justify-center rounded-md text-white/50 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
-    : "w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed";
+    : "w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed";
   const num = dark
     ? "w-8 text-center text-sm font-bold text-white tabular-nums"
-    : "w-7 text-center text-sm font-semibold text-slate-700 dark:text-[#cccccc] tabular-nums";
+    : "w-7 text-center text-sm font-semibold text-slate-700 tabular-nums";
   return (
     <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
       <button type="button" className={btn} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}>
@@ -62,34 +62,34 @@ function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom, roomType }) {
   if (!rooms.length) return null;
 
   let CardIcon = Bed;
-  let themeClass = "hover:border-emerald-300 dark:hover:border-emerald-500/40 focus-within:border-emerald-400 dark:focus-within:border-emerald-500/60";
-  let iconClass = "text-slate-300 dark:text-[#444444] group-hover:text-emerald-400 dark:group-hover:text-emerald-500";
+  let themeClass = "hover:border-emerald-300 focus-within:border-emerald-400";
+  let iconClass = "text-slate-300 group-hover:text-emerald-400";
 
   if (roomType === "OT") {
     CardIcon = Scissors;
-    themeClass = "hover:border-rose-300 dark:hover:border-rose-500/40 focus-within:border-rose-400 dark:focus-within:border-rose-500/60";
-    iconClass = "text-rose-300 dark:text-rose-900 group-hover:text-rose-500";
+    themeClass = "hover:border-rose-300 focus-within:border-rose-400";
+    iconClass = "text-rose-300 group-hover:text-rose-500";
   } else if (roomType === "STORE") {
     CardIcon = Package;
-    themeClass = "hover:border-amber-300 dark:hover:border-amber-500/40 focus-within:border-amber-400 dark:focus-within:border-amber-500/60";
-    iconClass = "text-amber-300 dark:text-amber-900 group-hover:text-amber-500";
+    themeClass = "hover:border-amber-300 focus-within:border-amber-400";
+    iconClass = "text-amber-300 group-hover:text-amber-500";
   }
 
   return (
-    <div className="border-t border-slate-100 dark:border-[#1e1e1e] p-3 bg-slate-50/50 dark:bg-[#0a0a0a]/30">
-      <p className="text-[10px] font-bold text-slate-400 dark:text-[#666666] uppercase tracking-widest mb-2.5">
+    <div className="border-t border-slate-100 p-3 bg-slate-50/50">
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
         Rooms · {rooms.length}
       </p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {rooms.map((room, rIdx) => (
           <div
             key={rIdx}
-            className={`flex items-center bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#252525] rounded-lg group transition-all overflow-hidden ${themeClass}`}
+            className={`flex items-center bg-white border border-slate-200 rounded-lg group transition-all overflow-hidden ${themeClass}`}
           >
             <div className="flex items-center gap-2 px-3 py-2.5 flex-1">
               <CardIcon className={`w-3.5 h-3.5 shrink-0 transition-colors ${iconClass}`} />
               <input
-                className="flex-1 text-xs text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#444] min-w-0 font-medium"
+                className="flex-1 text-xs text-slate-700 bg-transparent focus:outline-none placeholder-slate-300 min-w-0 font-medium"
                 value={room.name}
                 onChange={(e) => updateRoom(bIdx, fIdx, wIdx, rIdx, "name", e.target.value)}
                 placeholder={`Room ${rIdx + 1}`}
@@ -125,15 +125,15 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-[#252525] overflow-hidden bg-white dark:bg-[#121212] shadow-sm hover:shadow-md transition-all duration-200">
-      <div className="flex flex-wrap items-center divide-y divide-slate-100 dark:divide-[#1e1e1e] md:divide-y-0 md:flex-nowrap">
+    <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-200">
+      <div className="flex flex-wrap items-center divide-y divide-slate-100 md:divide-y-0 md:flex-nowrap">
         {/* Title / Name */}
         <div className="flex items-center gap-2.5 px-4 py-3 flex-1 min-w-[200px]">
           <div className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md border ${badgeColor}`}>
             {themeName}
           </div>
           <input
-            className="flex-1 text-sm font-semibold text-slate-800 dark:text-[#eeeeee] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#444] min-w-0"
+            className="flex-1 text-sm font-semibold text-slate-800 bg-transparent focus:outline-none placeholder-slate-300 min-w-0"
             value={ward.name}
             onChange={(e) => updateWard(bIdx, fIdx, wIdx, "name", e.target.value)}
             placeholder={`Ward ${wIdx + 1}`}
@@ -143,7 +143,7 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
         {/* Type select */}
         <div className="flex items-center px-3 py-3 w-36 shrink-0">
           <SearchableSelect
-            className="w-full text-xs text-slate-600 dark:text-[#aaaaaa] bg-transparent focus:outline-none cursor-pointer font-medium"
+            className="w-full text-xs text-slate-600 bg-transparent focus:outline-none cursor-pointer font-medium"
             value={ward.roomType || "GENERAL"}
             onChange={(v) => updateWard(bIdx, fIdx, wIdx, "roomType", v)}
             options={roomTypes.map((t) => ({ value: t.value, label: t.label }))}
@@ -153,7 +153,7 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
         {/* Daily charge — applies per occupied bed-day. Cascaded server-side
             onto every room in the ward so the IPD billing flow picks it up
             via Room.pricePerDay → AdmissionDTO.roomPricePerDay. */}
-        <div className="flex items-center gap-2 px-4 py-3 shrink-0 border-l border-slate-100 dark:border-[#1e1e1e]">
+        <div className="flex items-center gap-2 px-4 py-3 shrink-0 border-l border-slate-100">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">₹ / day</span>
           <input
             type="number"
@@ -163,12 +163,12 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
             value={ward.dailyCharge ?? ""}
             onChange={(e) => updateWard(bIdx, fIdx, wIdx, "dailyCharge", e.target.value)}
             placeholder="0"
-            className="w-24 px-2 py-1 text-sm font-semibold text-right text-slate-800 dark:text-[#eeeeee] bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-md focus:outline-none focus:ring-2 focus:ring-slate-300/50 tabular-nums"
+            className="w-24 px-2 py-1 text-sm font-semibold text-right text-slate-800 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-300/50 tabular-nums"
           />
         </div>
 
         {/* Rooms Stepper */}
-        <div className="flex items-center gap-2 px-4 py-3 shrink-0 border-l border-slate-100 dark:border-[#1e1e1e]">
+        <div className="flex items-center gap-2 px-4 py-3 shrink-0 border-l border-slate-100">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rooms</span>
           <Stepper value={(ward.rooms || []).length} onChange={(n) => setRoomCount(bIdx, fIdx, wIdx, n)} min={0} max={50} />
         </div>
@@ -178,7 +178,7 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
           <button
             type="button"
             onClick={removeWard}
-            className="p-1.5 text-slate-300 hover:text-rose-500 dark:text-[#444] dark:hover:text-rose-400 transition-colors"
+            className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors"
             title="Delete Ward Section"
           >
             <Trash2 className="w-4 h-4" />
@@ -204,17 +204,17 @@ function SpecialRoomCard({ room, onUpdate, onRemove, roomTypes }) {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-[#252525] overflow-hidden bg-white dark:bg-[#121212] shadow-sm hover:shadow-md transition-all duration-200">
-      <div className="flex items-stretch divide-x divide-slate-100 dark:divide-[#1e1e1e]">
+    <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-200">
+      <div className="flex items-stretch divide-x divide-slate-100">
         <div className="flex items-center gap-2.5 px-4 py-3 flex-1 min-w-0">
           <div className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md border shrink-0 ${badgeColor}`}>
             SPECIAL
           </div>
-          <div className="w-5 h-5 rounded-md bg-slate-50 dark:bg-[#1a1a1a] flex items-center justify-center shrink-0">
-            <CardIcon className="w-3.5 h-3.5 text-slate-400 dark:text-[#888]" />
+          <div className="w-5 h-5 rounded-md bg-slate-50 flex items-center justify-center shrink-0">
+            <CardIcon className="w-3.5 h-3.5 text-slate-400" />
           </div>
           <input
-            className="flex-1 text-sm font-semibold text-slate-800 dark:text-[#eeeeee] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] min-w-0"
+            className="flex-1 text-sm font-semibold text-slate-800 bg-transparent focus:outline-none placeholder-slate-300 min-w-0"
             value={room.name}
             onChange={(e) => onUpdate("name", e.target.value)}
             placeholder="Special Room name (e.g. OT-1 or Main Store)"
@@ -222,7 +222,7 @@ function SpecialRoomCard({ room, onUpdate, onRemove, roomTypes }) {
         </div>
         <div className="flex items-center px-3 py-3 w-36 shrink-0">
           <SearchableSelect
-            className="w-full text-xs text-slate-600 dark:text-[#aaaaaa] bg-transparent focus:outline-none cursor-pointer font-medium"
+            className="w-full text-xs text-slate-600 bg-transparent focus:outline-none cursor-pointer font-medium"
             value={room.roomType}
             onChange={(v) => onUpdate("roomType", v)}
             options={roomTypes.map((t) => ({ value: t.value, label: t.label }))}
@@ -232,7 +232,7 @@ function SpecialRoomCard({ room, onUpdate, onRemove, roomTypes }) {
           <span className="text-xs font-semibold text-slate-400">₹</span>
           <input
             type="number" min="0"
-            className="flex-1 text-sm text-slate-700 dark:text-[#cccccc] bg-transparent focus:outline-none placeholder-slate-300 dark:placeholder-[#3a3a3a] tabular-nums min-w-0 font-medium"
+            className="flex-1 text-sm text-slate-700 bg-transparent focus:outline-none placeholder-slate-300 tabular-nums min-w-0 font-medium"
             value={room.dailyCharge}
             onChange={(e) => onUpdate("dailyCharge", e.target.value)}
             placeholder="0"
@@ -240,7 +240,7 @@ function SpecialRoomCard({ room, onUpdate, onRemove, roomTypes }) {
           <span className="text-[10px] text-slate-400">/day</span>
         </div>
         <button type="button" onClick={onRemove}
-          className="flex items-center justify-center px-4 text-slate-300 hover:text-rose-500 dark:text-[#444] dark:hover:text-rose-400 transition-colors">
+          className="flex items-center justify-center px-4 text-slate-300 hover:text-rose-500 transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -263,18 +263,18 @@ function FloorSection({
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-[#2a2a2a] overflow-hidden shadow-sm bg-white dark:bg-[#0d0d0d] transition-all">
+    <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm bg-white transition-all">
       <div 
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-3 px-4 py-3 bg-slate-50/80 dark:bg-[#1a1a1a]/80 border-b border-slate-200 dark:border-[#1e1e1e] cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-[#202020] transition-colors"
+        className="flex items-center gap-3 px-4 py-3 bg-slate-50/80 border-b border-slate-200 cursor-pointer select-none hover:bg-slate-100 transition-colors"
       >
         <div className="flex items-center gap-2 shrink-0">
           <Layers className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-widest">Floor {fIdx + 1}</span>
+          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">Floor {fIdx + 1}</span>
         </div>
         <div onClick={(e) => e.stopPropagation()} className="flex-1 min-w-0">
           <input
-            className="w-full text-sm text-slate-800 dark:text-[#eeeeee] bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-200/20 rounded-md px-2.5 py-1 focus:outline-none focus:border-slate-300 placeholder-slate-300 dark:placeholder-[#3a3a3a] font-semibold"
+            className="w-full text-sm text-slate-800 bg-white border border-slate-200 rounded-md px-2.5 py-1 focus:outline-none focus:border-slate-300 placeholder-slate-300 font-semibold"
             value={floor.name}
             onChange={(e) => updateFloor(bIdx, fIdx, "name", e.target.value)}
             placeholder={`Floor ${fIdx + 1}`}
@@ -310,7 +310,7 @@ function FloorSection({
               ))}
             </div>
           ) : (
-            <div className="py-6 text-center text-xs text-slate-400 dark:text-[#555555] border-2 border-dashed border-slate-100 dark:border-[#1a1a1a] rounded-xl">
+            <div className="py-6 text-center text-xs text-slate-400 border-2 border-dashed border-slate-100 rounded-xl">
               Set Ward Count to generate Wards on this floor
             </div>
           )}
@@ -613,41 +613,41 @@ export default function InfrastructureMapping() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#fafbfe] dark:bg-[#0b0c10]">
+      <div className="flex items-center justify-center h-full bg-[#fafbfe]">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-sm font-semibold text-slate-500 dark:text-[#888888]">Loading master structure…</p>
+          <p className="text-sm font-semibold text-slate-500">Loading master structure…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#f8fafc] dark:bg-[#09090b] text-slate-900 dark:text-slate-100 overflow-hidden">
+    <div className="flex flex-col h-full bg-[#f8fafc] text-slate-900 overflow-hidden">
       {/* Header Banner */}
-      <div className="shrink-0 bg-white/80 dark:bg-[#0e0e11]/80 backdrop-blur-md border-b border-slate-200 dark:border-[#1e1e24] px-6 py-4 flex items-center justify-between gap-6 flex-wrap z-10">
+      <div className="shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between gap-6 flex-wrap z-10">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <Network className="w-5 h-5 text-emerald-500" />
             <h1 className="text-lg font-bold tracking-tight">Hospital Infrastructure Master</h1>
           </div>
-          <p className="text-xs text-slate-500 dark:text-[#888888]">
+          <p className="text-xs text-slate-500">
             Configure core building maps. Updates reflect in OT and Store modules.
           </p>
         </div>
 
         {/* Stats Panel */}
-        <div className="flex items-center gap-1.5 shrink-0 bg-slate-100/80 dark:bg-[#1a1a22]/80 p-1 rounded-xl border border-slate-200/50 dark:border-[#2a2a35]/50">
+        <div className="flex items-center gap-1.5 shrink-0 bg-slate-100/80 p-1 rounded-xl border border-slate-200/50">
           {[
-            { label: "Bldgs", value: buildings.length, color: "text-slate-600 dark:text-slate-400" },
+            { label: "Bldgs", value: buildings.length, color: "text-slate-600" },
             { label: "Floors", value: stats.floors, color: "text-blue-500" },
             { label: "Rooms", value: stats.rooms, color: "text-purple-500" },
             { label: "OTs", value: stats.ots, color: "text-emerald-500" },
             { label: "Stores", value: stats.stores, color: "text-amber-500" }
           ].map(({ label, value, color }) => (
-            <div key={label} className="px-3 py-1.5 text-center bg-white dark:bg-[#121217] rounded-lg shadow-sm border border-slate-200/10 min-w-[64px]">
+            <div key={label} className="px-3 py-1.5 text-center bg-white rounded-lg shadow-sm border border-slate-200/10 min-w-[64px]">
               <p className={`text-sm font-extrabold tabular-nums ${color}`}>{value}</p>
-              <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{label}</p>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
             </div>
           ))}
         </div>
@@ -656,8 +656,8 @@ export default function InfrastructureMapping() {
       {/* Main Split-Pane Workspace */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side Tree Navigation Pane */}
-        <div className="w-64 border-r border-slate-200 dark:border-[#1e1e24] bg-white dark:bg-[#0c0c0e] flex flex-col shrink-0">
-          <div className="p-3 border-b border-slate-100 dark:border-[#18181c] space-y-2 shrink-0">
+        <div className="w-64 border-r border-slate-200 bg-white flex flex-col shrink-0">
+          <div className="p-3 border-b border-slate-100 space-y-2 shrink-0">
             {/* Search filter */}
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
@@ -666,7 +666,7 @@ export default function InfrastructureMapping() {
                 placeholder="Search wards, rooms..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-[#141416] border border-slate-200 dark:border-[#25252b] rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-700 dark:text-[#cccccc] focus:outline-none focus:border-slate-300 placeholder-slate-400"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-300 placeholder-slate-400"
               />
             </div>
 
@@ -679,7 +679,7 @@ export default function InfrastructureMapping() {
                 setActiveBuildingIdx(nextIdx);
                 setActiveFloorIdx(0);
               }}
-              className="w-full py-1.5 text-xs font-bold bg-slate-900 text-white dark:bg-[#1e1e24] hover:bg-slate-800 dark:hover:bg-[#25252b] rounded-lg transition-colors flex items-center justify-center gap-1.5 border border-slate-200/10"
+              className="w-full py-1.5 text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center justify-center gap-1.5 border border-slate-200/10"
             >
               <Plus className="w-3.5 h-3.5" /> Add Block
             </button>
@@ -704,24 +704,24 @@ export default function InfrastructureMapping() {
                       }}
                       className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${
                         isBActive
-                          ? "bg-slate-100 dark:bg-[#1c1c24]/50 border-l-2 border-emerald-500"
-                          : "hover:bg-slate-50 dark:hover:bg-[#121215]"
+                          ? "bg-slate-100 border-l-2 border-emerald-500"
+                          : "hover:bg-slate-50"
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-                        <span className="text-xs font-bold truncate text-slate-800 dark:text-[#dddddd]">
+                        <span className="text-xs font-bold truncate text-slate-800">
                           {b.name || `Building ${actualBIdx + 1}`}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 dark:text-[#555] font-semibold">
+                      <span className="text-[10px] text-slate-400 font-semibold">
                         {(b.floors || []).length} flr
                       </span>
                     </div>
 
                     {/* Floor items under building */}
                     {isBActive && (
-                      <div className="pl-3.5 space-y-0.5 border-l border-slate-100 dark:border-[#1e1e24] ml-4">
+                      <div className="pl-3.5 space-y-0.5 border-l border-slate-100 ml-4">
                         {(b.floors || []).map((f, fIdx) => {
                           const actualFIdx = f.originalIdx !== undefined ? f.originalIdx : fIdx;
                           const isFActive = activeFloorIdx === actualFIdx;
@@ -732,8 +732,8 @@ export default function InfrastructureMapping() {
                               onClick={() => setActiveFloorIdx(actualFIdx)}
                               className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md cursor-pointer transition-colors ${
                                 isFActive
-                                  ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
-                                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#121215]"
+                                  ? "bg-emerald-50 text-emerald-600 font-semibold"
+                                  : "text-slate-500 hover:bg-slate-50"
                               }`}
                             >
                               <div className="flex items-center gap-1.5 min-w-0">
@@ -742,7 +742,7 @@ export default function InfrastructureMapping() {
                                   {f.name || `Floor ${actualFIdx + 1}`}
                                 </span>
                               </div>
-                              <span className="text-[9px] px-1 rounded bg-slate-100 dark:bg-[#1c1c24] text-slate-400 dark:text-[#666]">
+                              <span className="text-[9px] px-1 rounded bg-slate-100 text-slate-400">
                                 {(f.wards || []).length + (f.specialRooms || []).length}
                               </span>
                             </div>
@@ -770,25 +770,25 @@ export default function InfrastructureMapping() {
         </div>
 
         {/* Right Side Visual Canvas / Detail Editor Pane */}
-        <div className="flex-1 flex flex-col bg-[#fbfcfd] dark:bg-[#0c0c0e] overflow-hidden">
+        <div className="flex-1 flex flex-col bg-[#fbfcfd] overflow-hidden">
           {activeBuilding ? (
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Floor Header Controls */}
-              <div className="shrink-0 bg-white dark:bg-[#0f0f12] border-b border-slate-200/60 dark:border-[#1e1e24] p-4 flex items-center justify-between gap-4 flex-wrap">
+              <div className="shrink-0 bg-white border-b border-slate-200/60 p-4 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
-                  <div className="bg-emerald-50 dark:bg-emerald-500/10 p-2 rounded-lg text-emerald-600 dark:text-emerald-400">
+                  <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600">
                     <Layers className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-sm font-bold">{activeBuilding.name}</h2>
-                      <span className="text-slate-300 dark:text-slate-700">/</span>
+                      <span className="text-slate-300">/</span>
                       <input
                         type="text"
                         value={activeFloor?.name || ""}
                         onChange={(e) => updateFloor(activeBuildingIdx, activeFloorIdx, "name", e.target.value)}
                         placeholder={`Floor ${activeFloorIdx + 1}`}
-                        className="text-sm font-semibold text-slate-800 dark:text-white bg-transparent border-b border-transparent hover:border-slate-200 dark:hover:border-slate-800 focus:border-emerald-500 focus:outline-none pb-0.5 w-32"
+                        className="text-sm font-semibold text-slate-800 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-emerald-500 focus:outline-none pb-0.5 w-32"
                       />
                     </div>
                     <p className="text-[10px] text-slate-400 mt-0.5">Edit floor layout, manage wards, OTs and stores below</p>
@@ -805,11 +805,11 @@ export default function InfrastructureMapping() {
                       max={10} 
                     />
                   </div>
-                  <div className="h-6 w-px bg-slate-200 dark:bg-slate-800"></div>
+                  <div className="h-6 w-px bg-slate-200"></div>
                   <button
                     type="button"
                     onClick={() => deleteBuilding(activeBuildingIdx)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-[#2a2a35] hover:border-rose-500 hover:text-rose-500 dark:hover:border-rose-500/40 text-xs font-bold rounded-lg transition-colors text-slate-500 dark:text-slate-400"
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-rose-500 hover:text-rose-500 text-xs font-bold rounded-lg transition-colors text-slate-500"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Delete Block
                   </button>
@@ -819,7 +819,7 @@ export default function InfrastructureMapping() {
               {/* Visual Floor Canvas Area */}
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {/* Active Building Edit Section */}
-                <div className="bg-slate-50 dark:bg-[#141416]/50 rounded-xl border border-slate-200/50 dark:border-[#22222a]/50 p-4 mb-4 flex items-center justify-between gap-4 flex-wrap">
+                <div className="bg-slate-50 rounded-xl border border-slate-200/50 p-4 mb-4 flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Building2 className="w-4 h-4 text-slate-400" />
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Configure Block Details:</span>
@@ -828,10 +828,10 @@ export default function InfrastructureMapping() {
                       value={activeBuilding.name}
                       onChange={(e) => updateBuilding(activeBuildingIdx, "name", e.target.value)}
                       placeholder="Building name"
-                      className="text-sm font-semibold bg-white dark:bg-[#121214] border border-slate-200 dark:border-[#222] rounded-lg px-2.5 py-1 focus:outline-none focus:border-slate-300 w-64"
+                      className="text-sm font-semibold bg-white border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:border-slate-300 w-64"
                     />
                   </div>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Building Index {activeBuildingIdx + 1}</span>
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase">Building Index {activeBuildingIdx + 1}</span>
                 </div>
 
                 {activeFloor ? (
@@ -848,8 +848,8 @@ export default function InfrastructureMapping() {
                     roomTypes={roomTypes}
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-[#111114]/30 rounded-xl border-2 border-dashed border-slate-200 dark:border-[#222]">
-                    <Layers className="w-10 h-10 text-slate-300 dark:text-[#333] mb-3" />
+                  <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border-2 border-dashed border-slate-200">
+                    <Layers className="w-10 h-10 text-slate-300 mb-3" />
                     <p className="text-xs font-semibold text-slate-500">No floor selected</p>
                     <p className="text-[10px] text-slate-400 mt-1">Select or add a floor from the left pane</p>
                   </div>
@@ -857,12 +857,12 @@ export default function InfrastructureMapping() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white dark:bg-[#0c0c0e]">
-              <div className="w-16 h-16 rounded-xl bg-slate-50 dark:bg-[#1a1a24]/50 flex items-center justify-center mb-4 border border-slate-100 dark:border-[#252530]">
-                <Building2 className="w-8 h-8 text-slate-300 dark:text-[#444]" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white">
+              <div className="w-16 h-16 rounded-xl bg-slate-50 flex items-center justify-center mb-4 border border-slate-100">
+                <Building2 className="w-8 h-8 text-slate-300" />
               </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-[#dddddd]">No Buildings Configured</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs text-center mt-1">
+              <p className="text-sm font-bold text-slate-700">No Buildings Configured</p>
+              <p className="text-xs text-slate-400 max-w-xs text-center mt-1">
                 Add a hospital block or building from the left panel to begin mapping out zones, wards, and rooms.
               </p>
             </div>
@@ -872,12 +872,12 @@ export default function InfrastructureMapping() {
 
       {/* Sticky Save Bar */}
       {buildings.length > 0 && (
-        <div className="shrink-0 bg-white dark:bg-[#0e0e11] border-t border-slate-200 dark:border-[#1e1e24] px-6 py-4 flex items-center justify-between gap-4 z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+        <div className="shrink-0 bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between gap-4 z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
             <div>
-              <p className="text-xs font-semibold text-slate-700 dark:text-[#cccccc]">Sync core master settings.</p>
-              <p className="text-[10px] text-slate-400 dark:text-[#666666] mt-0.5">
+              <p className="text-xs font-semibold text-slate-700">Sync core master settings.</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">
                 Saved changes automatically reflect across surgical OTs and warehouse inventory stores.
               </p>
             </div>
@@ -896,20 +896,20 @@ export default function InfrastructureMapping() {
 
       {/* Safety Confirmation Modal */}
       {confirmModal.show && (
-        <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#17171c] rounded-2xl border border-slate-200 dark:border-[#2a2a35] shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3 text-rose-500 mb-3">
               <AlertTriangle className="w-6 h-6" />
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Confirm Removal</h3>
+              <h3 className="text-base font-bold text-slate-900">Confirm Removal</h3>
             </div>
-            <p className="text-sm text-slate-600 dark:text-[#aaaaaa] leading-relaxed">
+            <p className="text-sm text-slate-600 leading-relaxed">
               {confirmModal.message}
             </p>
             <div className="flex items-center justify-end gap-3 mt-6">
               <button
                 type="button"
                 onClick={() => setConfirmModal({ show: false, message: "", onConfirm: null })}
-                className="px-4 py-2 text-xs font-bold text-slate-500 border border-slate-200 dark:border-[#2a2a35] rounded-xl hover:bg-slate-50 dark:hover:bg-[#1c1c24] transition-colors"
+                className="px-4 py-2 text-xs font-bold text-slate-500 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>

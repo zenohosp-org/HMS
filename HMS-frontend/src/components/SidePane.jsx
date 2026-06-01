@@ -25,21 +25,21 @@ export default function SidePane({ isOpen, onClose, title, children, footer }) {
       onClick={onClose}
     >
       <div
-        className={`relative flex flex-col h-full w-[520px] max-w-[95vw] bg-white dark:bg-[#111111] border-l border-slate-200 dark:border-[#222222] shadow-2xl transition-transform duration-300 ease-in-out ${visible ? "translate-x-0" : "translate-x-full"}`}
+        className={`relative flex flex-col h-full w-[520px] max-w-[95vw] bg-white border-l border-slate-200 shadow-2xl transition-transform duration-300 ease-in-out ${visible ? "translate-x-0" : "translate-x-full"}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-[#1a1a1a] shrink-0">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 shrink-0">
+          <h2 className="text-lg font-bold text-slate-800">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-6">{children}</div>
         {footer && (
-          <div className="shrink-0 px-6 py-4 border-t border-slate-100 dark:border-[#1a1a1a] bg-slate-50/50 dark:bg-[#0a0a0a]">
+          <div className="shrink-0 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
             {footer}
           </div>
         )}

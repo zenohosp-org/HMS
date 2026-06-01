@@ -14,7 +14,7 @@ import Header from "./Header";
  */
 export default function FocusLayout() {
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-[#0f0f0f]">
+    <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
       <div className="no-print">
         <Header />
       </div>

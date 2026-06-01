@@ -42,23 +42,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Dark mode body — true neutral dark, not blue */
-.dark body {
-  background-color: #0f0f0f;
-  color: #e5e5e5;
-}
-
 /* Card component */
 .card {
   background: white;
   border-radius: 8px;
   box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
   border: 2px solid #e2e8f0;
-}
-
-.dark .card {
-  background: #1a1a1a;
-  border-color: #2a2a2a;
 }
 
 /* Button components */
@@ -122,26 +111,6 @@ body {
 .btn-secondary:active {
   background-color: #f1f5f9; /* slate-100 */
 }
-.dark .btn-primary {
-  background-color: #ffffff;
-  color: #020617;
-}
-.dark .btn-primary:hover {
-  background-color: #f1f5f9;
-}
-
-.dark .btn-secondary {
-  background-color: #111111;
-  color: #aaaaaa;
-  border-color: #222222;
-}
-
-.dark .btn-secondary:hover {
-  background-color: #1e1e1e;
-  border-color: #2a2a2a;
-  color: #cccccc;
-}
-
 /* Input component */
 .input {
   width: 100%;
@@ -165,16 +134,6 @@ body {
   color: #94a3b8;
 }
 
-.dark .input {
-  background: #1e1e1e;
-  border-color: #333333;
-  color: #e5e5e5;
-}
-
-.dark .input::placeholder {
-  color: #555555;
-}
-
 /* Label */
 .label {
   display: block;
@@ -182,10 +141,6 @@ body {
   font-weight: 500;
   color: #374151;
   margin-bottom: 0.25rem;
-}
-
-.dark .label {
-  color: #d1d5db;
 }
 
 /* Consultation modal form fields — shared by chief-complaint, notes,
@@ -225,30 +180,6 @@ body {
 .consult-input::placeholder,
 .consult-textarea::placeholder {
   color: #94a3b8;
-}
-
-.dark .consult-input,
-.dark .consult-textarea {
-  background: #161616;
-  border-color: #262626;
-  color: #e5e5e5;
-}
-
-.dark .consult-input:hover,
-.dark .consult-textarea:hover {
-  border-color: #333333;
-}
-
-.dark .consult-input:focus,
-.dark .consult-textarea:focus {
-  border-color: #4b5563;
-  background: #1a1a1a;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
-}
-
-.dark .consult-input::placeholder,
-.dark .consult-textarea::placeholder {
-  color: #555555;
 }
 
 /* Consultation View page form fields — bigger sibling of .consult-input
@@ -292,30 +223,6 @@ body {
   color: #94a3b8;
 }
 
-.dark .focus-input,
-.dark .focus-textarea {
-  background: #161616;
-  border-color: #262626;
-  color: #e5e5e5;
-}
-
-.dark .focus-input:hover,
-.dark .focus-textarea:hover {
-  border-color: #333333;
-}
-
-.dark .focus-input:focus,
-.dark .focus-textarea:focus {
-  border-color: #4b5563;
-  background: #1a1a1a;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
-}
-
-.dark .focus-input::placeholder,
-.dark .focus-textarea::placeholder {
-  color: #555555;
-}
-
 /* Vitals modal numeric input — wider, bigger digits, monospace for
    nurse-station scannability. Shared across BP / SpO2 / HR / weight. */
 .vital-input {
@@ -345,25 +252,6 @@ body {
 .vital-input::placeholder {
   color: #cbd5e1;
   font-weight: 400;
-}
-
-.dark .vital-input {
-  background: #161616;
-  border-color: #262626;
-  color: #e5e5e5;
-}
-
-.dark .vital-input:hover {
-  border-color: #333333;
-}
-
-.dark .vital-input:focus {
-  border-color: #4b5563;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
-}
-
-.dark .vital-input::placeholder {
-  color: #444444;
 }
 
 /* External-results modal — front-desk capture form for outside-clinic
@@ -405,29 +293,6 @@ body {
   color: #94a3b8;
 }
 
-.dark .external-input,
-.dark .external-textarea {
-  background: #161616;
-  border-color: #262626;
-  color: #e5e5e5;
-}
-
-.dark .external-input:hover,
-.dark .external-textarea:hover {
-  border-color: #333333;
-}
-
-.dark .external-input:focus,
-.dark .external-textarea:focus {
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
-}
-
-.dark .external-input::placeholder,
-.dark .external-textarea::placeholder {
-  color: #555555;
-}
-
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -438,26 +303,13 @@ body {
   background: #f1f5f9;
 }
 
-.dark ::-webkit-scrollbar-track {
-  background: #111111;
-}
-
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 8px;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: #333333;
-  border-radius: 8px;
-}
-
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #555555;
 }
 
 /* Print */

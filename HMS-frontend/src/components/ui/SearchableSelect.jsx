@@ -74,13 +74,13 @@ export default function SearchableSelect({
         onClick={() => setOpen((o) => !o)}
         className={`${className} flex items-center justify-between text-left w-full`}
       >
-        <span className={selected ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-[#555555]"}>
+        <span className={selected ? "text-slate-900" : "text-slate-400"}>
           {loading ? "Loading…" : (selected?.label ?? placeholder)}
         </span>
         <span className="flex items-center gap-1 shrink-0 ml-2">
           {value && !disabled && (
             <X
-              className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600"
               onClick={clear}
             />
           )}
@@ -91,8 +91,8 @@ export default function SearchableSelect({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full min-w-[180px] rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] shadow-xl overflow-hidden">
-          <div className="px-3 py-2 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center gap-2">
+        <div className="absolute z-50 mt-1 w-full min-w-[180px] rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden">
+          <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2">
             <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <input
               ref={searchRef}
@@ -100,7 +100,7 @@ export default function SearchableSelect({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search…"
-              className="w-full text-sm bg-transparent outline-none text-slate-900 dark:text-white placeholder:text-slate-400"
+              className="w-full text-sm bg-transparent outline-none text-slate-900 placeholder:text-slate-400"
             />
           </div>
           <ul className="max-h-52 overflow-y-auto py-1">
@@ -111,10 +111,10 @@ export default function SearchableSelect({
               <li
                 key={opt.value}
                 onClick={() => pick(opt)}
-                className={`px-4 py-2.5 text-sm cursor-pointer select-none transition-colors hover:bg-slate-50 dark:hover:bg-[#1a1a1a] ${
+                className={`px-4 py-2.5 text-sm cursor-pointer select-none transition-colors hover:bg-slate-50 ${
                   String(value) === String(opt.value)
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-medium"
-                    : "text-slate-800 dark:text-[#cccccc]"
+                    ? "bg-blue-50 text-blue-700 font-medium"
+                    : "text-slate-800"
                 }`}
               >
                 {opt.label}

@@ -255,7 +255,7 @@ export default function ConsultationViewPage() {
   // ── Render gates ─────────────────────────────────────────────────────
   if (loadingQueue) {
     return (
-      <div className="h-full flex items-center justify-center text-slate-500 dark:text-[#888] text-base">
+      <div className="h-full flex items-center justify-center text-slate-500 text-base">
         <Loader2 className="w-5 h-5 animate-spin mr-2.5" /> Loading today's queue…
       </div>
     );
@@ -263,12 +263,12 @@ export default function ConsultationViewPage() {
   if (queue.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-4 text-center px-6">
-        <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-[#161616] flex items-center justify-center">
-          <CalendarClock className="w-8 h-8 text-slate-400 dark:text-[#666]" />
+        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+          <CalendarClock className="w-8 h-8 text-slate-400" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">No active appointments today</h2>
-          <p className="text-sm text-slate-500 dark:text-[#888] mt-1 max-w-md">
+          <h2 className="text-lg font-bold text-slate-900">No active appointments today</h2>
+          <p className="text-sm text-slate-500 mt-1 max-w-md">
             {user?.role === "doctor"
               ? "There are no checked-in or in-progress patients in your queue right now."
               : "There are no checked-in or in-progress patients in the hospital queue right now."}
@@ -282,7 +282,7 @@ export default function ConsultationViewPage() {
   }
 
   return (
-    <div className="h-full flex bg-slate-100/60 dark:bg-[#0a0a0a]">
+    <div className="h-full flex bg-slate-100/60">
       <LeftPanel
         appointment={current}
         vitals={draft.vitals}
@@ -293,7 +293,7 @@ export default function ConsultationViewPage() {
         onOpenPastRecord={setOpenedPastRecord}
       />
 
-      <section className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#0f0f0f]">
+      <section className="flex-1 flex flex-col min-w-0 bg-white">
         <TopActionBar
           autosaveStatus={draft.autosaveStatus}
           hydrating={draft.hydrating}
@@ -345,7 +345,7 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
   const wt = vitals?.weightKg != null ? `${Number(vitals.weightKg).toFixed(1)}` : placeholder;
 
   return (
-    <aside className="w-[26rem] shrink-0 border-r border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#0d0d0d] overflow-y-auto">
+    <aside className="w-[26rem] shrink-0 border-r border-slate-200 bg-white overflow-y-auto">
       <div className="px-6 py-7 space-y-8">
 
         {/* Patient profile card */}
@@ -374,16 +374,16 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
                                       recordedByName={vitals?.recordedByName}
                                       recordedAt={vitals?.updatedAt || vitals?.recordedAt} />}
         >
-          <div className="rounded-xl border border-slate-200 dark:border-[#1c1c1c] bg-gradient-to-br from-rose-50/40 via-white to-white dark:from-rose-500/5 dark:via-[#0d0d0d] dark:to-[#0d0d0d] px-4 py-3 mb-3 flex items-center justify-between">
+          <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-rose-50/40 via-white to-white px-4 py-3 mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center">
-                <Droplet className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <div className="w-9 h-9 rounded-lg bg-rose-50 flex items-center justify-center">
+                <Droplet className="w-4 h-4 text-rose-600" />
               </div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#888]">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Blood Group
               </span>
             </div>
-            <span className="text-xl font-bold text-rose-700 dark:text-rose-300 tabular-nums">
+            <span className="text-xl font-bold text-rose-700 tabular-nums">
               {appointment?.patientBloodGroup || "—"}
             </span>
           </div>
@@ -423,18 +423,18 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
         {/* Previous records */}
         <SidebarSection title="Previous Records">
           {loadingPast ? (
-            <p className="text-sm text-slate-400 dark:text-[#666] flex items-center gap-1.5">
+            <p className="text-sm text-slate-400 flex items-center gap-1.5">
               <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
             </p>
           ) : pastRecords.length === 0 ? (
-            <p className="text-sm text-slate-400 dark:text-[#666]">No prior records for this patient.</p>
+            <p className="text-sm text-slate-400">No prior records for this patient.</p>
           ) : (
             <div className="space-y-2">
               {pastRecords.slice(0, 5).map(rec => (
                 <PastRecordCard key={rec.id} record={rec} onOpen={() => onOpenPastRecord?.(rec)} />
               ))}
               {pastRecords.length > 5 && (
-                <p className="text-[11px] text-slate-400 dark:text-[#666] pl-1">
+                <p className="text-[11px] text-slate-400 pl-1">
                   {pastRecords.length - 5} older · view full chart on Patients page
                 </p>
               )}
@@ -450,17 +450,17 @@ function PatientHeroCard({ name, token, status, time, onStartConsultation }) {
   const statusTone = STATUS_TONE[status] || STATUS_TONE.DEFAULT;
   const canStart = status === "CHECKED_IN";
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-[#1f1f1f] bg-gradient-to-br from-blue-50/60 via-white to-white dark:from-blue-500/5 dark:via-[#101010] dark:to-[#101010] p-5 shadow-sm space-y-4">
+    <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50/60 via-white to-white p-5 shadow-sm space-y-4">
       <div className="min-w-0">
-        <p className="text-xl font-bold text-slate-900 dark:text-white truncate leading-tight">{name}</p>
+        <p className="text-xl font-bold text-slate-900 truncate leading-tight">{name}</p>
         <div className="mt-2 flex items-center gap-2 flex-wrap">
           {token != null && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[11px] font-bold tabular-nums">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-900 text-white text-[11px] font-bold tabular-nums">
               #{token}
             </span>
           )}
           {time && (
-            <span className="text-xs text-slate-500 dark:text-[#888] tabular-nums">
+            <span className="text-xs text-slate-500 tabular-nums">
               {time.substring(0, 5)}
             </span>
           )}
@@ -479,14 +479,14 @@ function PatientHeroCard({ name, token, status, time, onStartConsultation }) {
         <button
           type="button"
           onClick={onStartConsultation}
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-sm shadow-blue-600/20 dark:shadow-blue-500/20 transition-colors"
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-colors"
         >
           <PlayCircle className="w-4 h-4" />
           Start Consultation
         </button>
       )}
       {status === "IN_PROGRESS" && (
-        <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+        <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200">
           <Activity className="w-4 h-4" />
           Consultation in progress
         </div>
@@ -496,18 +496,18 @@ function PatientHeroCard({ name, token, status, time, onStartConsultation }) {
 }
 
 const STATUS_TONE = {
-  SCHEDULED:   "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-500/10 dark:border-blue-500/20",
-  CONFIRMED:   "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-500/10 dark:border-blue-500/20",
-  CHECKED_IN:  "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-500/10 dark:border-amber-500/20",
-  IN_PROGRESS: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/20",
-  DEFAULT:     "text-slate-600 bg-slate-100 border-slate-200 dark:text-[#aaa] dark:bg-[#1a1a1a] dark:border-[#2a2a2a]",
+  SCHEDULED:   "text-blue-700 bg-blue-50 border-blue-200",
+  CONFIRMED:   "text-blue-700 bg-blue-50 border-blue-200",
+  CHECKED_IN:  "text-amber-700 bg-amber-50 border-amber-200",
+  IN_PROGRESS: "text-emerald-700 bg-emerald-50 border-emerald-200",
+  DEFAULT:     "text-slate-600 bg-slate-100 border-slate-200",
 };
 
 function SidebarSection({ title, trailing, children }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#888]">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
           {title}
         </h3>
         {trailing}
@@ -520,11 +520,11 @@ function SidebarSection({ title, trailing, children }) {
 function SidebarRow({ icon, label, value, mono }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
-      <span className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-[#888]">
-        <span className="text-slate-400 dark:text-[#666]">{icon}</span>
+      <span className="flex items-center gap-2 text-sm font-medium text-slate-500">
+        <span className="text-slate-400">{icon}</span>
         {label}
       </span>
-      <span className={`text-sm font-semibold text-slate-800 dark:text-[#e5e5e5] text-right truncate ${mono ? "font-mono tabular-nums" : ""}`}>
+      <span className={`text-sm font-semibold text-slate-800 text-right truncate ${mono ? "font-mono tabular-nums" : ""}`}>
         {value}
       </span>
     </div>
@@ -533,23 +533,23 @@ function SidebarRow({ icon, label, value, mono }) {
 
 function VitalTile({ icon, label, value, unit, tone }) {
   const map = {
-    rose:    "from-rose-50/60 dark:from-rose-500/5 text-rose-600 dark:text-rose-400 ring-rose-100/60 dark:ring-rose-500/20",
-    blue:    "from-blue-50/60 dark:from-blue-500/5 text-blue-600 dark:text-blue-400 ring-blue-100/60 dark:ring-blue-500/20",
-    emerald: "from-emerald-50/60 dark:from-emerald-500/5 text-emerald-600 dark:text-emerald-400 ring-emerald-100/60 dark:ring-emerald-500/20",
-    amber:   "from-amber-50/60 dark:from-amber-500/5 text-amber-600 dark:text-amber-400 ring-amber-100/60 dark:ring-amber-500/20",
+    rose:    "from-rose-50/60 text-rose-600 ring-rose-100/60",
+    blue:    "from-blue-50/60 text-blue-600 ring-blue-100/60",
+    emerald: "from-emerald-50/60 text-emerald-600 ring-emerald-100/60",
+    amber:   "from-amber-50/60 text-amber-600 ring-amber-100/60",
   };
   const t = map[tone] || map.blue;
   return (
-    <div className={`rounded-xl border border-slate-200 dark:border-[#1c1c1c] bg-gradient-to-br to-white dark:to-[#0d0d0d] ${t.split(" ").filter(c => c.startsWith("from-")).join(" ")} px-3.5 py-3`}>
+    <div className={`rounded-xl border border-slate-200 bg-gradient-to-br to-white ${t.split(" ").filter(c => c.startsWith("from-")).join(" ")} px-3.5 py-3`}>
       <div className="flex items-center gap-1.5">
         <span className={`${t.split(" ").filter(c => c.startsWith("text-")).join(" ")}`}>{icon}</span>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#888]">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
           {label}
         </span>
       </div>
       <div className="mt-2 flex items-baseline gap-1">
-        <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums leading-none">{value}</span>
-        <span className="text-[11px] font-medium text-slate-400 dark:text-[#666]">{unit}</span>
+        <span className="text-xl font-bold text-slate-900 tabular-nums leading-none">{value}</span>
+        <span className="text-[11px] font-medium text-slate-400">{unit}</span>
       </div>
     </div>
   );
@@ -560,27 +560,27 @@ function VitalsStateHint({ status, vitals, recordedByName, recordedAt }) {
         vitals.bpSystolic != null || vitals.spo2 != null ||
         vitals.heartRate != null  || vitals.weightKg != null)) {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium" title={[recordedByName, recordedAt && new Date(recordedAt).toLocaleString()].filter(Boolean).join(" · ")}>
+      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium" title={[recordedByName, recordedAt && new Date(recordedAt).toLocaleString()].filter(Boolean).join(" · ")}>
         <Activity className="w-3 h-3" /> Recorded
       </span>
     );
   }
   if (status === "loading") {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-[#888] font-medium">
+      <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 font-medium">
         <Loader2 className="w-3 h-3 animate-spin" /> Loading
       </span>
     );
   }
   if (status === "error") {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+      <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 font-medium">
         <AlertCircle className="w-3 h-3" /> Failed
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-[#666] font-medium">
+    <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 font-medium">
       <Activity className="w-3 h-3" /> Not recorded
     </span>
   );
@@ -600,22 +600,22 @@ function PastRecordCard({ record, onOpen }) {
     <button
       type="button"
       onClick={onOpen}
-      className="w-full text-left rounded-lg border border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#111] px-3 py-2.5 hover:border-blue-300 dark:hover:border-blue-500/40 hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-colors group focus:outline-none focus:ring-2 focus:ring-blue-300/60 dark:focus:ring-blue-500/40"
+      className="w-full text-left rounded-lg border border-slate-200 bg-white px-3 py-2.5 hover:border-blue-300 hover:bg-blue-50/30 transition-colors group focus:outline-none focus:ring-2 focus:ring-blue-300/60"
     >
       <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700">
             {typeLabel}
           </span>
           {drugCount > 0 && (
-            <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-500/20">
+            <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
               {drugCount} Rx
             </span>
           )}
         </div>
-        <span className="text-[11px] text-slate-400 dark:text-[#666] tabular-nums">{date}</span>
+        <span className="text-[11px] text-slate-400 tabular-nums">{date}</span>
       </div>
-      <p className="text-xs text-slate-600 dark:text-[#bbb] line-clamp-2 leading-snug" title={summary}>
+      <p className="text-xs text-slate-600 line-clamp-2 leading-snug" title={summary}>
         {summary}
       </p>
     </button>
@@ -627,7 +627,7 @@ function PastRecordCard({ record, onOpen }) {
 // ────────────────────────────────────────────────────────────────────────
 function TabBar({ tab, setTab, drugCount, labCount }) {
   return (
-    <div className="shrink-0 px-8 pt-5 border-b border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f]">
+    <div className="shrink-0 px-8 pt-5 border-b border-slate-200 bg-white">
       <div className="flex items-end gap-2">
         <TabButton active={tab === "consult"} onClick={() => setTab("consult")}
                    icon={<Stethoscope className="w-4 h-4" />} label="Consultation" />
@@ -647,16 +647,16 @@ function TabButton({ active, onClick, icon, label, count }) {
       onClick={onClick}
       className={`flex items-center gap-2 px-5 py-3 -mb-px border-b-2 text-sm font-semibold transition-colors ${
         active
-          ? "border-blue-600 text-blue-700 dark:border-blue-400 dark:text-blue-300"
-          : "border-transparent text-slate-500 hover:text-slate-800 dark:text-[#888] dark:hover:text-white"
+          ? "border-blue-600 text-blue-700"
+          : "border-transparent text-slate-500 hover:text-slate-800"
       }`}
     >
       {icon}{label}
       {count > 0 && (
         <span className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${
           active
-            ? "bg-blue-100 text-blue-700 dark:bg-blue-500/30 dark:text-blue-200"
-            : "bg-slate-100 text-slate-600 dark:bg-[#1a1a1a] dark:text-[#aaa]"
+            ? "bg-blue-100 text-blue-700"
+            : "bg-slate-100 text-slate-600"
         }`}>
           {count}
         </span>
@@ -715,23 +715,23 @@ function RxTab({ draft }) {
     <div className="px-8 py-8">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-[#ccc]">
-            <Pill className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-700">
+            <Pill className="w-4 h-4 text-emerald-600" />
             Prescription
             {draft.drugCount > 0 && (
-              <span className="ml-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+              <span className="ml-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700">
                 {draft.drugCount} drug{draft.drugCount === 1 ? "" : "s"}
               </span>
             )}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-[#777] mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Leave empty for a notes-only consultation
           </p>
         </div>
         <button
           type="button"
           onClick={draft.addItem}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 shadow-sm transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors"
         >
           <Plus className="w-4 h-4" /> Add drug
         </button>
@@ -759,7 +759,7 @@ function LabTab({ orders, loading, externalResults, loadingExternal }) {
 
   if (loading && loadingExternal) {
     return (
-      <div className="px-8 py-8 text-base text-slate-500 dark:text-[#888] flex items-center gap-2">
+      <div className="px-8 py-8 text-base text-slate-500 flex items-center gap-2">
         <Loader2 className="w-5 h-5 animate-spin" /> Loading lab results…
       </div>
     );
@@ -768,11 +768,11 @@ function LabTab({ orders, loading, externalResults, loadingExternal }) {
   if (!hasInternal && !hasExternal && !loading && !loadingExternal) {
     return (
       <div className="px-8 py-20 text-center">
-        <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-[#161616] flex items-center justify-center mx-auto mb-4">
-          <FlaskConical className="w-8 h-8 text-slate-400 dark:text-[#666]" />
+        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+          <FlaskConical className="w-8 h-8 text-slate-400" />
         </div>
-        <p className="text-base font-semibold text-slate-700 dark:text-[#ccc]">No lab results yet</p>
-        <p className="text-sm text-slate-400 dark:text-[#666] mt-1.5 max-w-md mx-auto">
+        <p className="text-base font-semibold text-slate-700">No lab results yet</p>
+        <p className="text-sm text-slate-400 mt-1.5 max-w-md mx-auto">
           Outside-clinic reports go in at check-in from the appointments dashboard.
           Internal radiology orders show up here once raised.
         </p>
@@ -788,7 +788,7 @@ function LabTab({ orders, loading, externalResults, loadingExternal }) {
       <ExternalResultsSection rows={externalResults} loading={loadingExternal} />
 
       {hasExternal && hasInternal && (
-        <div className="border-t border-slate-100 dark:border-[#1c1c1c]" />
+        <div className="border-t border-slate-100" />
       )}
 
       {/* Internal radiology — the existing radiologyApi.getByPatient data. */}
@@ -808,7 +808,7 @@ function ExternalResultsSection({ rows, loading }) {
           title="External Results"
           hint="Captured from outside labs / clinics"
         />
-        <div className="mt-3 flex items-center gap-2 text-sm text-slate-500 dark:text-[#888]">
+        <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading external results…
         </div>
       </div>
@@ -822,7 +822,7 @@ function ExternalResultsSection({ rows, loading }) {
           title="External Results"
           hint="Captured from outside labs / clinics"
         />
-        <p className="mt-3 text-sm text-slate-400 dark:text-[#666] italic">
+        <p className="mt-3 text-sm text-slate-400 italic">
           Nothing recorded yet for this patient.
         </p>
       </div>
@@ -846,46 +846,46 @@ function ExternalResultsSection({ rows, loading }) {
 
 function ExternalResultCard({ result }) {
   const categoryTone =
-    result.category === "LAB"        ? "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/20" :
-    result.category === "RADIOLOGY"  ? "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-500/10 dark:border-blue-500/20" :
-    result.category === "PATHOLOGY"  ? "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-500/10 dark:border-rose-500/20" :
-    "text-slate-700 bg-slate-100 border-slate-200 dark:text-[#ccc] dark:bg-[#1a1a1a] dark:border-[#2a2a2a]";
+    result.category === "LAB"        ? "text-emerald-700 bg-emerald-50 border-emerald-200" :
+    result.category === "RADIOLOGY"  ? "text-blue-700 bg-blue-50 border-blue-200" :
+    result.category === "PATHOLOGY"  ? "text-rose-700 bg-rose-50 border-rose-200" :
+    "text-slate-700 bg-slate-100 border-slate-200";
   const testDate = result.testDate
     ? new Date(result.testDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
     : "—";
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#111] p-4 hover:border-slate-300 dark:hover:border-[#2a2a2a] transition-colors">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 hover:border-slate-300 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${categoryTone}`}>
             {result.category}
           </span>
           {result.isAbnormal && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-500/10 dark:border-amber-500/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border text-amber-700 bg-amber-50 border-amber-200">
               ⚠ Abnormal
             </span>
           )}
         </div>
-        <span className="text-xs text-slate-400 dark:text-[#666] tabular-nums">{testDate}</span>
+        <span className="text-xs text-slate-400 tabular-nums">{testDate}</span>
       </div>
-      <h4 className="text-base font-bold text-slate-900 dark:text-white truncate">{result.testName}</h4>
-      <p className="mt-1 text-xs text-slate-500 dark:text-[#888] truncate">
+      <h4 className="text-base font-bold text-slate-900 truncate">{result.testName}</h4>
+      <p className="mt-1 text-xs text-slate-500 truncate">
         {result.sourceName}
-        {result.sourceDoctorName && <span className="text-slate-400 dark:text-[#666]"> · {result.sourceDoctorName}</span>}
+        {result.sourceDoctorName && <span className="text-slate-400"> · {result.sourceDoctorName}</span>}
       </p>
       {(result.resultValue || result.resultUnit) && (
         <div className="mt-3 flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{result.resultValue || "—"}</span>
-          {result.resultUnit && <span className="text-xs font-medium text-slate-400 dark:text-[#666]">{result.resultUnit}</span>}
+          <span className="text-2xl font-bold text-slate-900 tabular-nums">{result.resultValue || "—"}</span>
+          {result.resultUnit && <span className="text-xs font-medium text-slate-400">{result.resultUnit}</span>}
           {result.referenceRange && (
-            <span className="ml-auto text-[11px] text-slate-400 dark:text-[#666] tabular-nums">
+            <span className="ml-auto text-[11px] text-slate-400 tabular-nums">
               ref: {result.referenceRange}
             </span>
           )}
         </div>
       )}
       {result.notes && (
-        <p className="mt-3 text-sm text-slate-700 dark:text-[#ccc] leading-snug">
+        <p className="mt-3 text-sm text-slate-700 leading-snug">
           {result.notes}
         </p>
       )}
@@ -902,7 +902,7 @@ function InternalRadiologySection({ orders, loading }) {
           title="Internal Radiology"
           hint="Orders raised inside HMS"
         />
-        <div className="mt-3 flex items-center gap-2 text-sm text-slate-500 dark:text-[#888]">
+        <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </div>
       </div>
@@ -917,40 +917,40 @@ function InternalRadiologySection({ orders, loading }) {
         hint="Orders raised inside HMS"
         tone="blue"
       />
-      <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1c1c1c] overflow-hidden">
-        <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-slate-50 dark:bg-[#141414] border-b border-slate-100 dark:border-[#1c1c1c] text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#888]">
+      <div className="mt-3 rounded-xl border border-slate-200 overflow-hidden">
+        <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500">
           <div className="col-span-5">Investigation</div>
           <div className="col-span-3">Status</div>
           <div className="col-span-3">Date</div>
           <div className="col-span-1 text-right">Report</div>
         </div>
-        <div className="divide-y divide-slate-100 dark:divide-[#1c1c1c]">
+        <div className="divide-y divide-slate-100">
           {orders.map(order => (
-            <div key={order.id} className="grid grid-cols-12 gap-3 items-center px-5 py-4 bg-white dark:bg-[#0f0f0f] hover:bg-slate-50/60 dark:hover:bg-[#141414] transition-colors">
+            <div key={order.id} className="grid grid-cols-12 gap-3 items-center px-5 py-4 bg-white hover:bg-slate-50/60 transition-colors">
               <div className="col-span-5">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                <p className="text-sm font-semibold text-slate-900 truncate">
                   {order.serviceName || order.investigationName || "—"}
                 </p>
                 {order.modality && (
-                  <p className="text-xs text-slate-400 dark:text-[#666] mt-0.5">{order.modality}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{order.modality}</p>
                 )}
               </div>
               <div className="col-span-3"><StatusPill status={order.status} /></div>
-              <div className="col-span-3 text-sm text-slate-500 dark:text-[#888] tabular-nums">
+              <div className="col-span-3 text-sm text-slate-500 tabular-nums">
                 {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "—"}
               </div>
               <div className="col-span-1 text-right">
                 {order.reportUrl || order.reportId ? (
                   <a
                     href={order.reportUrl || `/radiology/reports/${order.reportId}`}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
                     target="_blank"
                     rel="noreferrer"
                   >
                     <FileBarChart className="w-3.5 h-3.5" /> Open
                   </a>
                 ) : (
-                  <span className="text-xs text-slate-300 dark:text-[#444]">—</span>
+                  <span className="text-xs text-slate-300">—</span>
                 )}
               </div>
             </div>
@@ -963,28 +963,28 @@ function InternalRadiologySection({ orders, loading }) {
 
 function SectionHeading({ icon, title, count, hint, tone }) {
   const toneCls =
-    tone === "violet" ? "text-violet-600 dark:text-violet-400" :
-    tone === "blue"   ? "text-blue-600 dark:text-blue-400" :
-    "text-slate-500 dark:text-[#888]";
+    tone === "violet" ? "text-violet-600" :
+    tone === "blue"   ? "text-blue-600" :
+    "text-slate-500";
   return (
     <div className="flex items-baseline justify-between flex-wrap gap-2">
       <div className="flex items-center gap-2">
         <span className={toneCls}>{icon}</span>
-        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-[#ccc]">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">
           {title}
         </h3>
         {count > 0 && (
           <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
             tone === "violet"
-              ? "bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300"
-              : "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
+              ? "bg-violet-50 text-violet-700"
+              : "bg-blue-50 text-blue-700"
           }`}>
             {count}
           </span>
         )}
       </div>
       {hint && (
-        <span className="text-[11px] text-slate-400 dark:text-[#666] font-normal normal-case">
+        <span className="text-[11px] text-slate-400 font-normal normal-case">
           {hint}
         </span>
       )}
@@ -1007,13 +1007,13 @@ function ScanIcon() {
 
 function StatusPill({ status }) {
   const map = {
-    PENDING_SCAN:    "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20",
-    AWAITING_REPORT: "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20",
-    REPORTED:        "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20",
-    BILLED:          "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20",
-    CANCELLED:       "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-400 dark:bg-rose-500/10 dark:border-rose-500/20",
+    PENDING_SCAN:    "text-amber-700 bg-amber-50 border-amber-200",
+    AWAITING_REPORT: "text-blue-700 bg-blue-50 border-blue-200",
+    REPORTED:        "text-emerald-700 bg-emerald-50 border-emerald-200",
+    BILLED:          "text-emerald-700 bg-emerald-50 border-emerald-200",
+    CANCELLED:       "text-rose-700 bg-rose-50 border-rose-200",
   };
-  const cls = map[status] || "text-slate-600 bg-slate-100 border-slate-200 dark:text-[#aaa] dark:bg-[#1a1a1a] dark:border-[#2a2a2a]";
+  const cls = map[status] || "text-slate-600 bg-slate-100 border-slate-200";
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold border ${cls}`}>
       {(status || "—").replace(/_/g, " ")}
@@ -1029,12 +1029,12 @@ function StatusPill({ status }) {
 // always at the top-right where the eye expects status to live.
 function TopActionBar({ autosaveStatus, hydrating, saving, onMarkComplete }) {
   return (
-    <div className="shrink-0 border-b border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f] px-8 py-3 flex items-center justify-between gap-6">
+    <div className="shrink-0 border-b border-slate-200 bg-white px-8 py-3 flex items-center justify-between gap-6">
       <button
         type="button"
         onClick={onMarkComplete}
         disabled={saving}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-blue-600/20 dark:shadow-blue-500/20"
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-blue-600/20"
       >
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
         Mark Complete
@@ -1051,25 +1051,25 @@ function BottomBar({ index, total, saving, onPrev, onNext, onExit }) {
   const isFirst = index <= 0;
   const isLast = index >= total - 1;
   return (
-    <div className="shrink-0 border-t border-slate-200 dark:border-[#1c1c1c] bg-white dark:bg-[#0f0f0f] px-8 py-4 flex items-center justify-end gap-2.5">
+    <div className="shrink-0 border-t border-slate-200 bg-white px-8 py-4 flex items-center justify-end gap-2.5">
       <button
         type="button"
         onClick={onPrev}
         disabled={isFirst || saving}
-        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-[#ccc] bg-slate-100 hover:bg-slate-200 dark:bg-[#1a1a1a] dark:hover:bg-[#222] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <ChevronLeft className="w-4 h-4" /> Previous
       </button>
 
-      <span className="px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-[#ccc] bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#1c1c1c] tabular-nums min-w-[80px] text-center">
-        {index + 1} <span className="text-slate-400 dark:text-[#666] font-normal">/ {total}</span>
+      <span className="px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 border border-slate-200 tabular-nums min-w-[80px] text-center">
+        {index + 1} <span className="text-slate-400 font-normal">/ {total}</span>
       </span>
 
       <button
         type="button"
         onClick={onNext}
         disabled={isLast || saving}
-        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-[#ccc] bg-slate-100 hover:bg-slate-200 dark:bg-[#1a1a1a] dark:hover:bg-[#222] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Next <ChevronRight className="w-4 h-4" />
       </button>
@@ -1078,7 +1078,7 @@ function BottomBar({ index, total, saving, onPrev, onNext, onExit }) {
         type="button"
         onClick={onExit}
         disabled={saving}
-        className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-500 dark:text-[#888] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
+        className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
       >
         <LogOut className="w-4 h-4" /> Exit
       </button>
@@ -1089,33 +1089,33 @@ function BottomBar({ index, total, saving, onPrev, onNext, onExit }) {
 function AutosaveIndicator({ status, hydrating }) {
   if (hydrating) {
     return (
-      <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-[#888]">
+      <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
         <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading draft…
       </span>
     );
   }
   if (status === "saving") {
     return (
-      <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-[#888]">
+      <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
         <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving draft…
       </span>
     );
   }
   if (status === "saved") {
     return (
-      <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+      <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
         <Save className="w-3.5 h-3.5" /> Draft saved
       </span>
     );
   }
   if (status === "error") {
     return (
-      <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+      <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
         <AlertCircle className="w-3.5 h-3.5" /> Autosave failed
       </span>
     );
   }
-  return <span className="text-xs text-slate-400 dark:text-[#666]">Draft autosaves as you type</span>;
+  return <span className="text-xs text-slate-400">Draft autosaves as you type</span>;
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -1125,12 +1125,12 @@ function Section({ icon, title, hint, children }) {
   return (
     <div>
       <div className="flex items-baseline justify-between mb-3">
-        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-[#ccc]">
-          <span className="text-slate-400 dark:text-[#666]">{icon}</span>
+        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-700">
+          <span className="text-slate-400">{icon}</span>
           {title}
         </h3>
         {hint && (
-          <span className="text-xs text-slate-400 dark:text-[#666] normal-case font-normal">
+          <span className="text-xs text-slate-400 normal-case font-normal">
             {hint}
           </span>
         )}

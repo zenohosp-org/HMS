@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
-import { ThemeProvider } from "@/context/ThemeContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { ReferenceDataProvider } from "@/context/ReferenceDataContext";
 import { FeatureFlagsProvider } from "@/context/FeatureFlagsContext";
@@ -45,103 +44,103 @@ import CheckupBookings from "@/pages/checkups/CheckupBookings";
 import CheckupBookingDetail from "@/pages/checkups/CheckupBookingDetail";
 import UiGallery from "@/pages/dev/UiGallery";
 function App() {
-  return <ErrorBoundary><ThemeProvider><AuthProvider><FeatureFlagsProvider><NotificationProvider><ReferenceDataProvider><BrowserRouter><Routes>{
-    /* Public */
-  }<Route path="/login" element={<Login />} /><Route path="/unauthorized" element={<Unauthorized />} /><Route path="/sso/callback" element={<SsoCallback />} />{
-    /* Dev-only — design-system gallery. Not gated by auth so it
-       loads even when the backend is unreachable. Stripped from
-       production builds via import.meta.env.DEV. */
-  }{import.meta.env.DEV && <Route path="/dev/ui-gallery" element={<UiGallery />} />}{
-    /* Protected — authenticated + hospital assigned */
-  }<Route element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><Layout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          
-          {/* Patients */}
-          <Route path="patients" element={<Patients />} />
-          <Route path="patients/:id" element={<PatientDetails />} />
-          
-          {/* Settings */}
-          <Route path="settings" element={<Navigate to="/settings/general" replace />} />
-          <Route path="settings/general" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><GeneralSettings /></ProtectedRoute>} />
-          <Route path="settings/infrastructure" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Settings /></ProtectedRoute>} />
-          <Route path="settings/patient-services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><PatientServices /></ProtectedRoute>} />
-          <Route path="ipd/infrastructure" element={<Navigate to="/settings/infrastructure" replace />} />
-          
-          {/* Ambulance */}
-          <Route path="ambulance" element={<Navigate to="/ambulance/book" replace />} />
-          <Route path="ambulance/book" element={<AmbulanceBook />} />
-          <Route path="ambulance/status" element={<AmbulanceStatus />} />
-          
-          {/* Health Checkups */}
-          <Route path="checkups/packages" element={<PackageManager />} />
-          <Route path="checkups/bookings" element={<CheckupBookings />} />
-          <Route path="checkups/bookings/:id" element={<CheckupBookingDetail />} />
-          
-          {/* Rooms */}
-          <Route path="rooms" element={<Navigate to="/rooms/allocation" replace />} />
-          <Route path="rooms/allocation" element={<Rooms />} />
-          <Route path="rooms/logs" element={<RoomLogsPage />} />
-          
-          {/* Billing */}
-          <Route path="billing" element={<Navigate to="/billing/opd" replace />} />
-          <Route path="billing/opd" element={<OPDBilling />} />
-          <Route path="billing/ipd" element={<IPDBilling />} />
-          <Route path="billing/ambulance" element={<AmbulanceBilling />} />
-          
-          {/* Appointments */}
-          <Route path="appointments" element={<AppointmentsDashboard />} />
-          
-          {/* Radiology */}
-          <Route path="radiology" element={<Navigate to="/radiology/imaging-queue" replace />} />
-          <Route path="radiology/imaging-queue" element={<RadiologyQueue />} />
-          <Route path="radiology/imagin-queue" element={<RadiologyQueue />} />
-          <Route path="radiology/reports" element={<RadiologyReports />} />
-          <Route path="radiology/reports/:id" element={<RadiologyReportView />} />
-          
-          {/* Doctors */}
-          <Route path="doctors" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><DoctorsList /></ProtectedRoute>} />
-          <Route path="doctors/:id" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor"]}><DoctorDetails /></ProtectedRoute>} />
-          
-          {/* Staffs / HR */}
-          <Route path="staffs" element={<Navigate to="/staffs/directory" replace />} />
-          <Route path="staffs/directory" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><StaffsList /></ProtectedRoute>} />
-          <Route path="staffs/roster" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><ShiftRoster /></ProtectedRoute>} />
-          <Route path="staffs/departments" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Departments /></ProtectedRoute>} />
-          <Route path="staffs/designations" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Designations /></ProtectedRoute>} />
-          
-          {/* Admissions */}
-          <Route path="admissions" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><Admissions /></ProtectedRoute>} />
-          
-          {/* Admin Metadata */}
-          <Route path="specializations" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Specializations /></ProtectedRoute>} />
-          <Route path="services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Services /></ProtectedRoute>} />
-        </Route>
+ return <ErrorBoundary><AuthProvider><FeatureFlagsProvider><NotificationProvider><ReferenceDataProvider><BrowserRouter><Routes>{
+ /* Public */
+ }<Route path="/login" element={<Login />} /><Route path="/unauthorized" element={<Unauthorized />} /><Route path="/sso/callback" element={<SsoCallback />} />{
+ /* Dev-only — design-system gallery. Not gated by auth so it
+ loads even when the backend is unreachable. Stripped from
+ production builds via import.meta.env.DEV. */
+ }{import.meta.env.DEV && <Route path="/dev/ui-gallery" element={<UiGallery />} />}{
+ /* Protected — authenticated + hospital assigned */
+ }<Route element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><Layout /></ProtectedRoute>}>
+ <Route index element={<Navigate to="/dashboard" replace />} />
+ <Route path="dashboard" element={<Dashboard />} />
+ 
+ {/* Patients */}
+ <Route path="patients" element={<Patients />} />
+ <Route path="patients/:id" element={<PatientDetails />} />
+ 
+ {/* Settings */}
+ <Route path="settings" element={<Navigate to="/settings/general" replace />} />
+ <Route path="settings/general" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><GeneralSettings /></ProtectedRoute>} />
+ <Route path="settings/infrastructure" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Settings /></ProtectedRoute>} />
+ <Route path="settings/patient-services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><PatientServices /></ProtectedRoute>} />
+ <Route path="ipd/infrastructure" element={<Navigate to="/settings/infrastructure" replace />} />
+ 
+ {/* Ambulance */}
+ <Route path="ambulance" element={<Navigate to="/ambulance/book" replace />} />
+ <Route path="ambulance/book" element={<AmbulanceBook />} />
+ <Route path="ambulance/status" element={<AmbulanceStatus />} />
+ 
+ {/* Health Checkups */}
+ <Route path="checkups/packages" element={<PackageManager />} />
+ <Route path="checkups/bookings" element={<CheckupBookings />} />
+ <Route path="checkups/bookings/:id" element={<CheckupBookingDetail />} />
+ 
+ {/* Rooms */}
+ <Route path="rooms" element={<Navigate to="/rooms/allocation" replace />} />
+ <Route path="rooms/allocation" element={<Rooms />} />
+ <Route path="rooms/logs" element={<RoomLogsPage />} />
+ 
+ {/* Billing */}
+ <Route path="billing" element={<Navigate to="/billing/opd" replace />} />
+ <Route path="billing/opd" element={<OPDBilling />} />
+ <Route path="billing/ipd" element={<IPDBilling />} />
+ <Route path="billing/ambulance" element={<AmbulanceBilling />} />
+ 
+ {/* Appointments */}
+ <Route path="appointments" element={<AppointmentsDashboard />} />
+ 
+ {/* Radiology */}
+ <Route path="radiology" element={<Navigate to="/radiology/imaging-queue" replace />} />
+ <Route path="radiology/imaging-queue" element={<RadiologyQueue />} />
+ <Route path="radiology/imagin-queue" element={<RadiologyQueue />} />
+ <Route path="radiology/reports" element={<RadiologyReports />} />
+ <Route path="radiology/reports/:id" element={<RadiologyReportView />} />
+ 
+ {/* Doctors */}
+ <Route path="doctors" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><DoctorsList /></ProtectedRoute>} />
+ <Route path="doctors/:id" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor"]}><DoctorDetails /></ProtectedRoute>} />
+ 
+ {/* Staffs / HR */}
+ <Route path="staffs" element={<Navigate to="/staffs/directory" replace />} />
+ <Route path="staffs/directory" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><StaffsList /></ProtectedRoute>} />
+ <Route path="staffs/roster" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><ShiftRoster /></ProtectedRoute>} />
+ <Route path="staffs/departments" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Departments /></ProtectedRoute>} />
+ <Route path="staffs/designations" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Designations /></ProtectedRoute>} />
+ 
+ {/* Admissions */}
+ <Route path="admissions" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><Admissions /></ProtectedRoute>} />
+ 
+ {/* Admin Metadata */}
+ <Route path="specializations" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Specializations /></ProtectedRoute>} />
+ <Route path="services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Services /></ProtectedRoute>} />
+ </Route>
 
-        {/* Focus-mode routes — topbar persists, sidebar hidden so the
-            workspace can take the full viewport width. Currently the
-            doctor's queue-walked Consultation View; future workflows
-            (OT case viewer, ward round) can hang off the same shell. */}
-        <Route element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><FocusLayout /></ProtectedRoute>}>
-          <Route path="consultation-view" element={<ConsultationViewPage />} />
-        </Route>
+ {/* Focus-mode routes — topbar persists, sidebar hidden so the
+ workspace can take the full viewport width. Currently the
+ doctor's queue-walked Consultation View; future workflows
+ (OT case viewer, ward round) can hang off the same shell. */}
+ <Route element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}><FocusLayout /></ProtectedRoute>}>
+ <Route path="consultation-view" element={<ConsultationViewPage />} />
+ </Route>
 
-        {/* Print routes — no chrome at all so the rendered page IS the
-            printable artefact. ProtectedRoute still wraps so an
-            unauthenticated user can't fetch someone else's record by
-            URL-stuffing. */}
-        <Route
-          path="/print/appointment/:appointmentId"
-          element={
-            <ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}>
-              <PrintConsultation />
-            </ProtectedRoute>
-          }
-        />
-        {
-    /* Fallback */
-  }<Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></BrowserRouter></ReferenceDataProvider></NotificationProvider></FeatureFlagsProvider></AuthProvider></ThemeProvider></ErrorBoundary>;
+ {/* Print routes — no chrome at all so the rendered page IS the
+ printable artefact. ProtectedRoute still wraps so an
+ unauthenticated user can't fetch someone else's record by
+ URL-stuffing. */}
+ <Route
+ path="/print/appointment/:appointmentId"
+ element={
+ <ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}>
+ <PrintConsultation />
+ </ProtectedRoute>
+ }
+ />
+ {
+ /* Fallback */
+ }<Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></BrowserRouter></ReferenceDataProvider></NotificationProvider></FeatureFlagsProvider></AuthProvider></ErrorBoundary>;
 }
 export {
-  App as default
+ App as default
 };

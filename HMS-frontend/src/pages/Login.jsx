@@ -26,7 +26,7 @@ export default function Login() {
   const errorMessage = error ? (errorMessages[error] ?? "Login failed. Please try again.") : null;
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-white dark:bg-[#0f0f0f]">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white">
 
       {/* Left — Sign in */}
       <div className="w-full lg:w-[45%] flex items-center justify-center p-8 lg:p-12">
@@ -34,31 +34,31 @@ export default function Login() {
 
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-lg flex items-center justify-center shadow-lg">
-              <Activity className="w-6 h-6 text-white dark:text-slate-900" />
+            <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center shadow-lg">
+              <Activity className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-none">ZenoHosp</h1>
-              <p className="text-xs text-slate-600 dark:text-[#666] font-medium mt-1">Hospital Management System</p>
+              <h1 className="text-xl font-bold text-slate-900 leading-none">ZenoHosp</h1>
+              <p className="text-xs text-slate-600 font-medium mt-1">Hospital Management System</p>
             </div>
           </div>
 
           {/* Heading */}
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome back</h2>
-            <p className="text-sm text-slate-500 dark:text-[#666]">
+            <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
+            <p className="text-sm text-slate-500">
               Sign in with your ZenoHosp account to continue.
             </p>
           </div>
 
           {/* Alerts */}
           {loggedOut && (
-            <div className="px-4 py-3 rounded-lg bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] text-sm text-slate-600 dark:text-[#888]">
+            <div className="px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-600">
               You have been signed out successfully.
             </div>
           )}
           {errorMessage && (
-            <div className="px-4 py-3 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-sm text-rose-700 dark:text-rose-400">
+            <div className="px-4 py-3 rounded-lg bg-rose-50 border border-rose-200 text-sm text-rose-700">
               {errorMessage}
             </div>
           )}
@@ -67,15 +67,15 @@ export default function Login() {
           <button
             type="button"
             onClick={() => { window.location.href = "/oauth2/authorization/directory"; }}
-            className="w-full py-4 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-sm rounded-lg shadow-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+            className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-lg shadow-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
           >
             <Activity className="w-5 h-5" />
             Sign in with ZenoHosp Directory
           </button>
 
-          <p className="text-center text-xs text-slate-600 dark:text-[#999] font-medium">
+          <p className="text-center text-xs text-slate-600 font-medium">
             By continuing, you agree to our{" "}
-            <span className="text-slate-900 dark:text-white hover:underline cursor-pointer">
+            <span className="text-slate-900 hover:underline cursor-pointer">
               Terms of Service
             </span>
           </p>

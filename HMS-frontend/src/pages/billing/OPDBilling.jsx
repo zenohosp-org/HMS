@@ -15,19 +15,19 @@ import {
 const PAGE_SIZE = 10
 
 const STATUS_CFG = {
-  PAID:      { label: 'Paid',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20', Icon: CheckCircle2 },
-  UNPAID:    { label: 'Unpaid',    cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',             Icon: Clock        },
-  PARTIAL:   { label: 'Partial',   cls: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20',       Icon: AlertCircle  },
-  CANCELLED: { label: 'Cancelled', cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',                   Icon: XCircle      },
+  PAID:      { label: 'Paid',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: CheckCircle2 },
+  UNPAID:    { label: 'Unpaid',    cls: 'bg-amber-50 text-amber-700 border-amber-200',             Icon: Clock        },
+  PARTIAL:   { label: 'Partial',   cls: 'bg-orange-50 text-orange-700 border-orange-200',       Icon: AlertCircle  },
+  CANCELLED: { label: 'Cancelled', cls: 'bg-rose-50 text-rose-700 border-rose-200',                   Icon: XCircle      },
 }
 
 const TYPE_META = {
-  MEDICINE:     { bg: 'bg-emerald-100 dark:bg-emerald-500/20', icon: <Pill        className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> },
-  LAB_TEST:     { bg: 'bg-slate-100 dark:bg-slate-700/40',     icon: <FlaskConical className="w-3 h-3 text-slate-600 dark:text-slate-300" />    },
-  CONSULTATION: { bg: 'bg-blue-100 dark:bg-blue-500/20',       icon: <Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" />       },
-  ROOM_CHARGE:  { bg: 'bg-orange-100 dark:bg-orange-500/20',   icon: <BedDouble   className="w-3 h-3 text-orange-600 dark:text-orange-400" />   },
-  RADIOLOGY:    { bg: 'bg-violet-100 dark:bg-violet-500/20',   icon: <ScanLine    className="w-3 h-3 text-violet-600 dark:text-violet-400" />   },
-  CUSTOM:       { bg: 'bg-slate-100 dark:bg-[#222]',           icon: <Wrench      className="w-3 h-3 text-slate-500" />                          },
+  MEDICINE:     { bg: 'bg-emerald-100', icon: <Pill        className="w-3 h-3 text-emerald-600" /> },
+  LAB_TEST:     { bg: 'bg-slate-100',     icon: <FlaskConical className="w-3 h-3 text-slate-600" />    },
+  CONSULTATION: { bg: 'bg-blue-100',       icon: <Stethoscope className="w-3 h-3 text-blue-600" />       },
+  ROOM_CHARGE:  { bg: 'bg-orange-100',   icon: <BedDouble   className="w-3 h-3 text-orange-600" />   },
+  RADIOLOGY:    { bg: 'bg-violet-100',   icon: <ScanLine    className="w-3 h-3 text-violet-600" />   },
+  CUSTOM:       { bg: 'bg-slate-100',           icon: <Wrench      className="w-3 h-3 text-slate-500" />                          },
 }
 
 function fmt(n) {
@@ -55,19 +55,19 @@ function ItemTypePips({ items }) {
 
 function StatCard({ label, value, sub, Icon, accent }) {
   const accents = {
-    blue:    'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400',
-    emerald: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-    amber:   'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-600 dark:text-amber-400',
-    rose:    'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400',
+    blue:    'bg-blue-50 border-blue-100 text-blue-600',
+    emerald: 'bg-emerald-50 border-emerald-100 text-emerald-600',
+    amber:   'bg-amber-50 border-amber-100 text-amber-600',
+    rose:    'bg-rose-50 border-rose-100 text-rose-600',
   }
   return (
-    <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] p-5 flex items-center gap-4">
+    <div className="bg-white rounded-lg border border-slate-200 p-5 flex items-center gap-4">
       <div className={`w-11 h-11 rounded-lg border flex items-center justify-center shrink-0 ${accents[accent]}`}>
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-bold text-slate-500 dark:text-[#888] uppercase tracking-wider">{label}</p>
-        <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">{value}</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</p>
+        <p className="text-xl font-bold text-slate-900 mt-0.5 truncate">{value}</p>
         {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
       </div>
     </div>
@@ -223,16 +223,16 @@ export default function OPDBilling() {
     todayCount: invoices.filter(i => new Date(i.createdAt).toDateString() === new Date().toDateString()).length,
   }
 
-  const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left'
+  const thCls = 'px-5 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-left'
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#050505] gap-6">
+    <div className="flex flex-col h-full bg-slate-50 gap-6">
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">OPD Billing</h1>
-          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-800/30">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">OPD Billing</h1>
+          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold border border-blue-100">
             {totalElements} invoices
           </span>
         </div>
@@ -250,14 +250,14 @@ export default function OPDBilling() {
       </div>
 
       {/* Table Container */}
-      <div className="flex flex-col flex-1 bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#222222] shadow-sm overflow-hidden min-h-0">
+      <div className="flex flex-col flex-1 bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden min-h-0">
 
         {/* Controls bar */}
-        <div className="flex items-center justify-end px-5 py-3 border-b border-slate-100 dark:border-[#1a1a1a] gap-3 flex-wrap">
+        <div className="flex items-center justify-end px-5 py-3 border-b border-slate-100 gap-3 flex-wrap">
 
           {/* Status filters + search */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#2a2a2a] rounded-lg p-0.5">
+            <div className="flex items-center gap-0.5 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
               {[
                 { key: 'ALL', label: 'All' },
                 { key: 'UNPAID', label: 'Unpaid' },
@@ -268,8 +268,8 @@ export default function OPDBilling() {
                   onClick={() => handleFilterChange(key)}
                   className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                     statusFilter === key
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
-                      : 'text-slate-500 dark:text-[#888] hover:text-slate-700 dark:hover:text-[#aaa]'
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
                   {label}
@@ -283,7 +283,7 @@ export default function OPDBilling() {
                 placeholder="Search invoice, patient…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9 pr-3 py-2 w-52 rounded-lg border border-slate-200 dark:border-[#222222] bg-white dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="pl-9 pr-3 py-2 w-52 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               />
             </div>
           </div>
@@ -293,7 +293,7 @@ export default function OPDBilling() {
         <div className="overflow-x-auto overflow-y-auto flex-1">
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-slate-100 dark:border-[#1a1a1a] bg-white/95 dark:bg-[#111]/95 backdrop-blur-sm">
+              <tr className="border-b border-slate-100 bg-white/95 backdrop-blur-sm">
                 <th className={thCls}>Invoice</th>
                 <th className={thCls}>Patient</th>
                 <th className={thCls}>Items</th>
@@ -303,7 +303,7 @@ export default function OPDBilling() {
                 <th className={thCls + ' text-right'}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">
+            <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="py-20 text-center">
@@ -317,8 +317,8 @@ export default function OPDBilling() {
                 <tr>
                   <td colSpan={7} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-[#1a1a1a] flex items-center justify-center">
-                        <ReceiptText className="w-8 h-8 text-slate-200 dark:text-slate-700" />
+                      <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center">
+                        <ReceiptText className="w-8 h-8 text-slate-200" />
                       </div>
                       <p className="text-sm font-medium text-slate-400">
                         {search ? 'No invoices match your search.' : 'No OPD invoices yet.'}
@@ -333,25 +333,25 @@ export default function OPDBilling() {
                   return (
                     <tr
                       key={inv.id}
-                      className="group hover:bg-slate-50/50 dark:hover:bg-[#151515] transition-all"
+                      className="group hover:bg-slate-50/50 transition-all"
                     >
                       <td className="px-5 py-4">
-                        <p className="font-bold text-sm text-slate-900 dark:text-white">{fmtId(inv.invoiceNumber)}</p>
+                        <p className="font-bold text-sm text-slate-900">{fmtId(inv.invoiceNumber)}</p>
                         <p className="text-xs text-slate-400 mt-0.5">
                           {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                         </p>
                       </td>
                       <td className="px-5 py-4">
-                        <p className="font-semibold text-sm text-slate-900 dark:text-white">{inv.patientName ?? '—'}</p>
+                        <p className="font-semibold text-sm text-slate-900">{inv.patientName ?? '—'}</p>
                         <p className="text-xs text-slate-400 mt-0.5">{fmtId(inv.patientUhid) ?? ''}</p>
                       </td>
                       <td className="px-5 py-4">
                         <ItemTypePips items={inv.items} />
                       </td>
                       <td className="px-5 py-4">
-                        <p className="font-bold text-sm text-slate-900 dark:text-white">{fmt(inv.total)}</p>
+                        <p className="font-bold text-sm text-slate-900">{fmt(inv.total)}</p>
                         {inv.status === 'PARTIAL' && Number(inv.paidAmount) > 0 && (
-                          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">{fmt(inv.paidAmount)} paid</p>
+                          <p className="text-[11px] text-emerald-600 mt-0.5">{fmt(inv.paidAmount)} paid</p>
                         )}
                         {Number(inv.discount) > 0 && (
                           <p className="text-xs text-red-500 mt-0.5">−{fmt(inv.discount)} disc.</p>
@@ -359,11 +359,11 @@ export default function OPDBilling() {
                       </td>
                       <td className="px-5 py-4">
                         {inv.paymentMethod ? (
-                          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#1a1a1a] text-xs font-semibold text-slate-600 dark:text-[#aaa]">
+                          <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-xs font-semibold text-slate-600">
                             {inv.paymentMethod}
                           </span>
                         ) : (
-                          <span className="text-slate-300 dark:text-slate-700">—</span>
+                          <span className="text-slate-300">—</span>
                         )}
                       </td>
                       <td className="px-5 py-4">
@@ -376,7 +376,7 @@ export default function OPDBilling() {
                       <td className="px-5 py-4 text-right" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={(e) => { e.stopPropagation(); openRowMenu(inv, e.currentTarget) }}
-                          className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all"
+                          className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
                         >
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
@@ -390,7 +390,7 @@ export default function OPDBilling() {
         </div>
 
         {!loading && totalElements > 0 && (
-          <div className="px-5 py-3 border-t border-slate-100 dark:border-[#1a1a1a]">
+          <div className="px-5 py-3 border-t border-slate-100">
             <Pagination
               currentPage={page}
               totalPages={totalPages}
@@ -405,13 +405,13 @@ export default function OPDBilling() {
       {/* Context Action Menu */}
       {menuState && (() => {
         const { inv, right, top, bottom } = menuState
-        const itemClass = "w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#222] transition-colors text-left disabled:opacity-40"
+        const itemClass = "w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors text-left disabled:opacity-40"
         return (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setMenuState(null)} />
             <div
               style={{ position: 'fixed', right, ...(top !== undefined ? { top } : { bottom }), zIndex: 50 }}
-              className="w-52 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-slate-100 dark:border-[#252525] py-1.5"
+              className="w-52 bg-white rounded-xl shadow-2xl border border-slate-100 py-1.5"
             >
               {(inv.status === 'UNPAID' || inv.status === 'PARTIAL') && (
                 <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className={itemClass}>
@@ -423,7 +423,7 @@ export default function OPDBilling() {
                   <Eye className="w-4 h-4 shrink-0" /> View Details
                 </button>
               )}
-              <div className="h-px bg-slate-100 dark:bg-[#252525] mx-3 my-1" />
+              <div className="h-px bg-slate-100 mx-3 my-1" />
               <button onClick={() => { setMenuState(null); printInvoice(inv) }} className={itemClass}>
                 <Printer className="w-4 h-4 shrink-0" /> Print Invoice
               </button>

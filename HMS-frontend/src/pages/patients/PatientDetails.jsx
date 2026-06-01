@@ -32,53 +32,53 @@ const TYPE_META = {
   CONSULTATION: {
     label: "Consultation",
     color: "bg-blue-50 text-blue-700 border-blue-200",
-    darkColor: "dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
+    darkColor: "",
     dot: "bg-blue-500"
   },
   PRESCRIPTION: {
     label: "Prescription",
-    color: "bg-slate-100 text-slate-900 dark:text-white border-slate-200",
-    darkColor: "dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]",
+    color: "bg-slate-100 text-slate-900 border-slate-200",
+    darkColor: "",
     dot: "bg-slate-900"
   },
   LAB_RESULT: {
     label: "Lab Result",
     color: "bg-amber-50 text-amber-700 border-amber-200",
-    darkColor: "dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
+    darkColor: "",
     dot: "bg-amber-500"
   },
   SURGERY: {
     label: "Surgery",
     color: "bg-red-50 text-red-700 border-red-200",
-    darkColor: "dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
+    darkColor: "",
     dot: "bg-red-500"
   },
   DIAGNOSIS: {
     label: "Diagnosis",
     color: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    darkColor: "dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
+    darkColor: "",
     dot: "bg-emerald-500"
   },
   OTHER: {
     label: "Other",
     color: "bg-slate-100 text-slate-600 border-slate-200",
-    darkColor: "dark:bg-[#2a2a2a] dark:text-[#888888] dark:border-[#333333]",
+    darkColor: "",
     dot: "bg-slate-400"
   }
 };
 const BLOOD_DARK = {
-  "A+": "dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
-  "A-": "dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
-  "B+": "dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20",
-  "AB+": "dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]",
-  "O+": "dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
-  "O-": "dark:bg-slate-100 dark:text-slate-400 dark:border-slate-200/20"
+  "A+": "",
+  "A-": "",
+  "B+": "",
+  "AB+": "",
+  "O+": "",
+  "O-": ""
 };
 function SideInfoRow({ icon, label, value }) {
-  return <div className="flex items-start gap-3"><div className="w-4 h-4 mt-0.5 shrink-0 text-[#555] dark:text-[#555555]">{icon}</div><div><p className="text-[11px] uppercase tracking-wider text-slate-600 dark:text-[#999999] font-semibold">{label}</p><p className="text-sm text-slate-700 dark:text-[#cccccc] mt-0.5">{value || "\u2014"}</p></div></div>;
+  return <div className="flex items-start gap-3"><div className="w-4 h-4 mt-0.5 shrink-0 text-[#555]">{icon}</div><div><p className="text-[11px] uppercase tracking-wider text-slate-600 font-semibold">{label}</p><p className="text-sm text-slate-700 mt-0.5">{value || "\u2014"}</p></div></div>;
 }
 function SectionHeader({ icon, title }) {
-  return <div className="flex items-center gap-2 mb-4"><div className="text-[#666666]">{icon}</div><h3 className="text-sm font-semibold text-slate-700 dark:text-[#cccccc] uppercase tracking-wide">{title}</h3></div>;
+  return <div className="flex items-center gap-2 mb-4"><div className="text-[#666666]">{icon}</div><h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">{title}</h3></div>;
 }
 function RecordCard({ record }) {
   const meta = TYPE_META[record.historyType] ?? TYPE_META.OTHER;
@@ -93,29 +93,29 @@ function RecordCard({ record }) {
     <div className="flex gap-3 group">
       <div className="flex flex-col items-center shrink-0">
         <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${meta.dot}`} />
-        <div className="w-px flex-1 bg-slate-100 dark:bg-[#1e1e1e] mt-1" />
+        <div className="w-px flex-1 bg-slate-100 mt-1" />
       </div>
       <div className="flex-1 pb-3">
-        <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-4 hover:border-slate-300 dark:hover:border-[#2a2a2a] transition-colors">
+        <div className="bg-white border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
           <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border ${meta.color} ${meta.darkColor}`}>{meta.label}</span>
-              {record.mrn && <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-[#1a1a1a] text-slate-500 dark:text-[#888] border border-slate-200 dark:border-[#2a2a2a]">{fmtId(record.mrn)}</span>}
+              {record.mrn && <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">{fmtId(record.mrn)}</span>}
               {isLegacyPrescription && record.description && (
-                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" title="Written before structured prescriptions — pharmacy reads the text only, no auto-dispense">
+                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200" title="Written before structured prescriptions — pharmacy reads the text only, no auto-dispense">
                   Legacy text
                 </span>
               )}
             </div>
-            <span className="text-xs text-slate-400 dark:text-[#666] flex items-center gap-1"><Clock className="w-3 h-3" />{formatDateTime(record.createdAt)}</span>
+            <span className="text-xs text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" />{formatDateTime(record.createdAt)}</span>
           </div>
 
           {/* Structured prescription drugs */}
           {isPrescription && items.length > 0 && (
-            <div className="mt-1 mb-2 border border-slate-100 dark:border-[#1e1e1e] rounded-md overflow-hidden">
+            <div className="mt-1 mb-2 border border-slate-100 rounded-md overflow-hidden">
               <table className="w-full text-xs">
-                <thead className="bg-slate-50 dark:bg-[#0d0d0d]">
-                  <tr className="text-left text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#666]">
+                <thead className="bg-slate-50">
+                  <tr className="text-left text-[9px] font-bold uppercase tracking-widest text-slate-500">
                     <th className="px-2.5 py-1.5">Drug</th>
                     <th className="px-2.5 py-1.5">Dose</th>
                     <th className="px-2.5 py-1.5">Freq</th>
@@ -123,13 +123,13 @@ function RecordCard({ record }) {
                     <th className="px-2.5 py-1.5 text-right">Qty</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">
+                <tbody className="divide-y divide-slate-100">
                   {items.map((d) => (
-                    <tr key={d.id} className="text-slate-700 dark:text-[#ccc]">
+                    <tr key={d.id} className="text-slate-700">
                       <td className="px-2.5 py-1.5">
                         <div className="font-semibold">{d.drugName}</div>
                         {(d.drugStrength || d.drugForm) && (
-                          <div className="text-[10px] text-slate-400 dark:text-[#666]">
+                          <div className="text-[10px] text-slate-400">
                             {[d.drugStrength, d.drugForm].filter(Boolean).join(" · ")}
                           </div>
                         )}
@@ -146,20 +146,20 @@ function RecordCard({ record }) {
           )}
 
           {record.description && (
-            <p className="text-sm text-slate-700 dark:text-[#ccc] leading-snug whitespace-pre-wrap">
+            <p className="text-sm text-slate-700 leading-snug whitespace-pre-wrap">
               {isPrescription && items.length > 0 && (
-                <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#666] mb-0.5">Doctor's notes</span>
+                <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Doctor's notes</span>
               )}
               {record.description}
             </p>
           )}
           <div className="flex items-center justify-between mt-2.5">
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-[#666]">
+            <div className="flex items-center gap-1.5 text-xs text-slate-400">
               <Stethoscope className="w-3 h-3" />
               <span>{record.createdBy.firstName} {record.createdBy.lastName} · {record.createdBy.role}</span>
             </div>
             {record.nextVisitDate && (
-              <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              <div className="flex items-center gap-1 text-xs font-medium text-emerald-600">
                 <Calendar className="w-3 h-3" />
                 <span>{formatDate(record.nextVisitDate)}</span>
               </div>
@@ -269,22 +269,22 @@ function PatientDetails() {
     return { ipdGroups: [...ipdMap.entries()], general };
   }, [records]);
   const blood = patient?.bloodGroup ?? null;
-  const bloodDarkClass = blood ? BLOOD_DARK[blood] ?? "dark:bg-[#2a2a2a] dark:text-[#888888] dark:border-[#333333]" : "";
+  const bloodDarkClass = blood ? BLOOD_DARK[blood] ?? "" : "";
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#444444]" /></div>;
-  if (!patient) return <div className="flex flex-col items-center justify-center h-64 gap-3"><AlertCircle className="w-10 h-10 text-slate-300 dark:text-[#333333]" /><p className="text-slate-500 dark:text-[#666666]">Patient not found.</p><button className="btn-secondary text-sm" onClick={() => navigate(-1)}>← Go Back</button></div>;
+  if (!patient) return <div className="flex flex-col items-center justify-center h-64 gap-3"><AlertCircle className="w-10 h-10 text-slate-300" /><p className="text-slate-500">Patient not found.</p><button className="btn-secondary text-sm" onClick={() => navigate(-1)}>← Go Back</button></div>;
   const age = patient.dob ? calcAge(patient.dob) : null;
-  return <div className="flex gap-0 h-[calc(100vh-3.5rem)] w-[calc(100%+3rem)] -mx-6 -mt-6 overflow-hidden bg-white dark:bg-[#0f0f0f]">{
+  return <div className="flex gap-0 h-[calc(100vh-3.5rem)] w-[calc(100%+3rem)] -mx-6 -mt-6 overflow-hidden bg-white">{
     /* ━━━━━━━━━━━━━━━  LEFT PANE — Patient Profile  ━━━━━━━━━━━━━━━ */
-  }<aside className="w-72 shrink-0 flex flex-col bg-white dark:bg-[#111111] border-r border-slate-200 dark:border-[#1e1e1e] overflow-y-auto">{
+  }<aside className="w-72 shrink-0 flex flex-col bg-white border-r border-slate-200 overflow-y-auto">{
     /* Back & Actions */
-  }<div className="px-5 pt-5 pb-3 border-b border-slate-200 dark:border-[#1e1e1e] flex justify-between items-center relative"><button
+  }<div className="px-5 pt-5 pb-3 border-b border-slate-200 flex justify-between items-center relative"><button
     onClick={() => navigate(-1)}
-    className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#666666] hover:text-slate-800 dark:hover:text-[#cccccc] transition-colors"
+    className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors"
   ><ArrowLeft className="w-3.5 h-3.5" /> Back to Patients
                     </button><div className="relative"><button
     onClick={() => setMenuOpen(!menuOpen)}
-    className="text-slate-500 dark:text-[#666666] hover:text-slate-800 dark:hover:text-[#cccccc] transition-colors p-1"
-  ><MoreHorizontal className="w-5 h-5" /></button>{menuOpen && <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded shadow-xl z-20 overflow-hidden"><div className="px-3 py-2 text-xs font-semibold text-slate-500 dark:text-[#888888] border-b border-slate-100 dark:border-[#2a2a2a] uppercase tracking-wider">
+    className="text-slate-500 hover:text-slate-800 transition-colors p-1"
+  ><MoreHorizontal className="w-5 h-5" /></button>{menuOpen && <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-slate-200 rounded shadow-xl z-20 overflow-hidden"><div className="px-3 py-2 text-xs font-semibold text-slate-500 border-b border-slate-100 uppercase tracking-wider">
                                     Actions
                                 </div><button
     onClick={() => {
@@ -292,32 +292,32 @@ function PatientDetails() {
       setMenuOpen(false);
     }}
     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm
-                                        text-slate-700 dark:text-[#cccccc] hover:text-slate-900 hover:bg-slate-50 dark:hover:text-white dark:hover:bg-[#222222] transition-colors text-left"
-  ><Edit2 className="w-4 h-4 text-slate-400 dark:text-[#cccccc]" />
+                                        text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors text-left"
+  ><Edit2 className="w-4 h-4 text-slate-400" />
                                     Edit Patient
                                 </button></div>}{menuOpen && <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />}</div></div>{
     /* Avatar + Name block */
-  }<div className="px-5 py-6 text-center border-b border-slate-200 dark:border-[#1e1e1e]"><div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#2a2a2a] mx-auto mb-3
-                        flex items-center justify-center text-2xl font-bold text-slate-700 dark:text-white">{patient.firstName[0]}{patient.lastName?.[0] ?? ""}</div><h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{patient.firstName} {patient.lastName}</h2><p className="text-sm text-slate-500 dark:text-[#888888] mt-0.5">{age !== null ? `${age} years` : "—"} · {patient.gender}</p><div className="flex items-center justify-center gap-2 mt-3"><span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+  }<div className="px-5 py-6 text-center border-b border-slate-200"><div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 mx-auto mb-3
+                        flex items-center justify-center text-2xl font-bold text-slate-700">{patient.firstName[0]}{patient.lastName?.[0] ?? ""}</div><h2 className="text-lg font-bold text-slate-900 leading-tight">{patient.firstName} {patient.lastName}</h2><p className="text-sm text-slate-500 mt-0.5">{age !== null ? `${age} years` : "—"} · {patient.gender}</p><div className="flex items-center justify-center gap-2 mt-3"><span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             Active
                         </span>{blood && <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border
-                                bg-red-50 text-red-700 border-red-200 ${bloodDarkClass}`}><Droplets className="inline w-3 h-3 mr-0.5" />{blood}</span>}</div><p className="text-xs text-slate-400 dark:text-[#444444] mt-3">{fmtId(patient.uhid)}</p></div>{
+                                bg-red-50 text-red-700 border-red-200 ${bloodDarkClass}`}><Droplets className="inline w-3 h-3 mr-0.5" />{blood}</span>}</div><p className="text-xs text-slate-400 mt-3">{fmtId(patient.uhid)}</p></div>{
     /* Sections */
   }<div className="px-5 py-5 space-y-6 flex-1">{
     /* Personal Information */
   }<div><SectionHeader icon={<User className="w-4 h-4" />} title="Personal Information" /><div className="space-y-3"><SideInfoRow icon={<Calendar className="w-4 h-4" />} label="Date of Birth" value={patient.dob ? formatDate(patient.dob) : null} /><SideInfoRow icon={<Phone className="w-4 h-4" />} label="Phone" value={patient.phone} /><SideInfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={patient.email} /><SideInfoRow icon={<MapPin className="w-4 h-4" />} label="Address" value={patient.address} /></div></div>{
     /* Room Allocation */
-  }{allocatedRoom && <div><SectionHeader icon={<Bed className="w-4 h-4" />} title="Allocation" /><div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg p-3"><p className="text-xs font-semibold text-emerald-800 dark:text-emerald-400 mb-1">Current Room</p><div className="flex items-center gap-2"><p className="text-sm font-bold text-emerald-900 dark:text-emerald-300">{allocatedRoom.roomNumber}</p><span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-white dark:bg-[#111111] text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">{allocatedRoom.roomType}</span></div>{allocatedRoom.approxDischargeTime && <p className="text-xs text-emerald-700 dark:text-emerald-500 mt-2 flex items-center gap-1.5"><CalendarClock className="w-3.5 h-3.5" />
+  }{allocatedRoom && <div><SectionHeader icon={<Bed className="w-4 h-4" />} title="Allocation" /><div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3"><p className="text-xs font-semibold text-emerald-800 mb-1">Current Room</p><div className="flex items-center gap-2"><p className="text-sm font-bold text-emerald-900">{allocatedRoom.roomNumber}</p><span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-white text-emerald-700 border border-emerald-200">{allocatedRoom.roomType}</span></div>{allocatedRoom.approxDischargeTime && <p className="text-xs text-emerald-700 mt-2 flex items-center gap-1.5"><CalendarClock className="w-3.5 h-3.5" />
                                         Est. Discharge: {new Date(allocatedRoom.approxDischargeTime).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata', month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>}</div></div>}{
     /* Medical Information */
   }<div><SectionHeader icon={<Activity className="w-4 h-4" />} title="Medical Information" /><div className="space-y-3"><SideInfoRow icon={<Droplets className="w-4 h-4" />} label="Blood Type" value={patient.bloodGroup} /><SideInfoRow icon={<FileText className="w-4 h-4" />} label="Total Records" value={recordsLoading ? "\u2026" : String(records.length)} /><SideInfoRow icon={<Calendar className="w-4 h-4" />} label="Registered" value={formatDate(patient.createdAt)} /></div></div></div></aside>{
     /* ━━━━━━━━━━━━━━━  RIGHT PANE — Details  ━━━━━━━━━━━━━━━ */
-  }<div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0f0f0f] relative w-full">{
+  }<div className="flex-1 flex flex-col overflow-hidden bg-white relative w-full">{
     /* Tab bar */
-  }<div className="flex items-center gap-1 px-6 pt-5 pb-0 border-b border-slate-200 dark:border-[#1e1e1e] shrink-0">{["overview", "appointments", "records", "radiology", "billing"].map((t) => <button
+  }<div className="flex items-center gap-1 px-6 pt-5 pb-0 border-b border-slate-200 shrink-0">{["overview", "appointments", "records", "radiology", "billing"].map((t) => <button
     key={t}
     onClick={() => setTab(t)}
-    className={`px-4 py-2.5 text-sm font-semibold capitalize border-b-2 -mb-px transition-colors ${tab === t ? "border-emerald-500 text-emerald-600 dark:text-emerald-400" : "border-transparent text-slate-500 dark:text-[#666666] hover:text-slate-700 dark:hover:text-[#aaaaaa]"}`}
+    className={`px-4 py-2.5 text-sm font-semibold capitalize border-b-2 -mb-px transition-colors ${tab === t ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
   >{t === "records" ? `Records ${!recordsLoading ? `(${records.length})` : ""}` : t === "appointments" ? `Appointments ${!appointmentsLoading ? `(${appointments.length})` : ""}` : t === "radiology" ? `Radiology ${!radiologyLoading ? `(${radiologyOrders.length})` : ""}` : t === "billing" ? `Billing ${!invoicesLoading ? `(${invoices.length})` : ""}` : "Overview"}</button>)}</div>{
     /* Tab content */
   }<div className="flex-1 overflow-y-auto p-6">{
@@ -326,76 +326,76 @@ function PatientDetails() {
     /* Summary cards row */
   }<div className="grid grid-cols-3 gap-4">{
     /* Next Appointment */
-  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-4"><div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#999999] mb-3"><Calendar className="w-3.5 h-3.5" /> Next Appointment
-                                    </div>{nextVisit ? <><p className="text-base font-bold text-slate-800 dark:text-[#f0f0f0]">{formatDate(nextVisit.apptDate)}, {nextVisit.apptTime.substring(0, 5)}</p><p className="text-xs text-slate-500 dark:text-[#666666] mt-1 font-semibold">{nextVisit.type.replace("_", " ")}</p><p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">
-                                                Dr. {nextVisit.doctorName}</p></> : <p className="text-sm text-slate-600 dark:text-[#999999]">No upcoming visit</p>}</div>{
+  }<div className="bg-white border border-slate-200 rounded-lg p-4"><div className="flex items-center gap-1.5 text-xs text-slate-600 mb-3"><Calendar className="w-3.5 h-3.5" /> Next Appointment
+                                    </div>{nextVisit ? <><p className="text-base font-bold text-slate-800">{formatDate(nextVisit.apptDate)}, {nextVisit.apptTime.substring(0, 5)}</p><p className="text-xs text-slate-500 mt-1 font-semibold">{nextVisit.type.replace("_", " ")}</p><p className="text-xs text-slate-600 mt-0.5">
+                                                Dr. {nextVisit.doctorName}</p></> : <p className="text-sm text-slate-600">No upcoming visit</p>}</div>{
     /* Active Prescriptions */
-  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-4"><div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#999999] mb-3"><FileText className="w-3.5 h-3.5" /> Prescriptions
-                                    </div><p className="text-base font-bold text-slate-800 dark:text-[#f0f0f0]">{recordsLoading ? "\u2026" : prescriptions.length} Records
-                                    </p>{prescriptions.length > 0 && <><p className="text-xs text-slate-500 dark:text-[#666666] mt-1">
+  }<div className="bg-white border border-slate-200 rounded-lg p-4"><div className="flex items-center gap-1.5 text-xs text-slate-600 mb-3"><FileText className="w-3.5 h-3.5" /> Prescriptions
+                                    </div><p className="text-base font-bold text-slate-800">{recordsLoading ? "\u2026" : prescriptions.length} Records
+                                    </p>{prescriptions.length > 0 && <><p className="text-xs text-slate-500 mt-1">
                                                 Last: {formatDate(prescriptions[0].createdAt)}</p><button
     onClick={() => setTab("records")}
-    className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-0.5"
+    className="text-xs text-blue-500 hover:text-blue-600 mt-2 flex items-center gap-0.5"
   >
-                                                View all <ChevronRight className="w-3 h-3" /></button></>}{prescriptions.length === 0 && <p className="text-xs text-slate-600 dark:text-[#999999] mt-1">None recorded</p>}</div>{
+                                                View all <ChevronRight className="w-3 h-3" /></button></>}{prescriptions.length === 0 && <p className="text-xs text-slate-600 mt-1">None recorded</p>}</div>{
     /* Recent Lab Result */
-  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-4"><div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#999999] mb-3"><Activity className="w-3.5 h-3.5" /> Recent Lab Result
-                                    </div>{labResults[0] ? <><p className="text-sm font-semibold text-slate-800 dark:text-[#e0e0e0] leading-snug">{labResults[0].historyType.replace("_", " ")}</p><p className="text-xs text-slate-500 dark:text-[#666666] mt-1">{formatDate(labResults[0].createdAt)}</p><button
+  }<div className="bg-white border border-slate-200 rounded-lg p-4"><div className="flex items-center gap-1.5 text-xs text-slate-600 mb-3"><Activity className="w-3.5 h-3.5" /> Recent Lab Result
+                                    </div>{labResults[0] ? <><p className="text-sm font-semibold text-slate-800 leading-snug">{labResults[0].historyType.replace("_", " ")}</p><p className="text-xs text-slate-500 mt-1">{formatDate(labResults[0].createdAt)}</p><button
     onClick={() => setTab("records")}
-    className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-0.5"
+    className="text-xs text-blue-500 hover:text-blue-600 mt-2 flex items-center gap-0.5"
   >
-                                                View results <ChevronRight className="w-3 h-3" /></button></> : <p className="text-sm text-slate-600 dark:text-[#999999]">No lab results</p>}</div></div>{
+                                                View results <ChevronRight className="w-3 h-3" /></button></> : <p className="text-sm text-slate-600">No lab results</p>}</div></div>{
     /* Recent Records */
-  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden"><div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-[#1e1e1e]"><h3 className="font-semibold text-slate-800 dark:text-[#e5e5e5] text-sm">Recent Records</h3><button
+  }<div className="bg-white border border-slate-200 rounded-lg overflow-hidden"><div className="flex items-center justify-between px-5 py-4 border-b border-slate-100"><h3 className="font-semibold text-slate-800 text-sm">Recent Records</h3><button
     onClick={() => setTab("records")}
-    className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 flex items-center gap-0.5"
+    className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-0.5"
   >
-                                        View all <ChevronRight className="w-3 h-3" /></button></div>{recordsLoading ? <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-[#444444]" /></div> : records.length === 0 ? <div className="py-10 text-center"><ClipboardList className="w-8 h-8 text-slate-200 dark:text-[#2a2a2a] mx-auto mb-2" /><p className="text-sm text-slate-600 dark:text-[#999999]">No records yet</p></div> : <div className="divide-y divide-slate-100 dark:divide-transparent space-y-3 px-5 pb-5">{records.slice(0, 4).map((r) => {
+                                        View all <ChevronRight className="w-3 h-3" /></button></div>{recordsLoading ? <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-[#444444]" /></div> : records.length === 0 ? <div className="py-10 text-center"><ClipboardList className="w-8 h-8 text-slate-200 mx-auto mb-2" /><p className="text-sm text-slate-600">No records yet</p></div> : <div className="divide-y divide-slate-100 space-y-3 px-5 pb-5">{records.slice(0, 4).map((r) => {
     const meta = TYPE_META[r.historyType] ?? TYPE_META.OTHER;
-    return <div key={r.id} className="flex gap-4 group"><div className="flex flex-col items-center"><div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${meta.dot}`} /><div className="w-px flex-1 bg-slate-200 dark:bg-[#1e1e1e] my-1" /></div><div className="flex-1 pb-1"><div className="bg-white dark:bg-[#161616] border border-slate-200 dark:border-[#222222] rounded-lg p-4"><div className="flex items-start justify-between gap-3 mb-2"><span className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded border ${meta.color} ${meta.darkColor}`}>{meta.label}</span><p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5 flex items-center gap-1"><Clock className="w-3 h-3" />{formatDateTime(r.createdAt)}</p></div>{r.description && <p className="text-sm text-slate-600 dark:text-[#cccccc] truncate">{r.description}</p>}<div className="flex items-center gap-1.5 mt-2 text-xs text-slate-600 dark:text-[#999999]"><Stethoscope className="w-3.5 h-3.5" /><span>{r.createdBy.firstName} {r.createdBy.lastName}</span></div>{r.nextVisitDate && <div className="text-xs text-emerald-500 dark:text-emerald-400 mt-2 flex items-center gap-1.5 font-medium"><Calendar className="w-3.5 h-3.5" />
+    return <div key={r.id} className="flex gap-4 group"><div className="flex flex-col items-center"><div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${meta.dot}`} /><div className="w-px flex-1 bg-slate-200 my-1" /></div><div className="flex-1 pb-1"><div className="bg-white border border-slate-200 rounded-lg p-4"><div className="flex items-start justify-between gap-3 mb-2"><span className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded border ${meta.color} ${meta.darkColor}`}>{meta.label}</span><p className="text-xs text-slate-600 mt-0.5 flex items-center gap-1"><Clock className="w-3 h-3" />{formatDateTime(r.createdAt)}</p></div>{r.description && <p className="text-sm text-slate-600 truncate">{r.description}</p>}<div className="flex items-center gap-1.5 mt-2 text-xs text-slate-600"><Stethoscope className="w-3.5 h-3.5" /><span>{r.createdBy.firstName} {r.createdBy.lastName}</span></div>{r.nextVisitDate && <div className="text-xs text-emerald-500 mt-2 flex items-center gap-1.5 font-medium"><Calendar className="w-3.5 h-3.5" />
                                                                     Next visit: {formatDate(r.nextVisitDate)}</div>}</div></div></div>;
   })}</div>}</div></div>}{
     /* ── RECORDS TAB ── */
   }{tab === "records" && <div className="w-full max-w-5xl">{
     /* Header + Add button */
-  }<div className="flex items-center justify-between mb-5"><div><h3 className="font-semibold text-slate-800 dark:text-[#e5e5e5]">Medical Records</h3><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{records.length} record{records.length !== 1 ? "s" : ""} for {patient.firstName}</p></div></div>{
+  }<div className="flex items-center justify-between mb-5"><div><h3 className="font-semibold text-slate-800">Medical Records</h3><p className="text-xs text-slate-500 mt-0.5">{records.length} record{records.length !== 1 ? "s" : ""} for {patient.firstName}</p></div></div>{
     /* Records listing only — record creation lives in the Consultation
        View / consultation modal flow now; this page is read-only. */
   }{
     /* Timeline */
-  }{recordsLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : records.length === 0 ? <div className="py-16 text-center"><ClipboardList className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No records yet</p><p className="text-xs text-slate-400 dark:text-[#444444] mt-1">Add the first medical record above.</p></div> : <div className="space-y-6">{groupedRecords.ipdGroups.map(([admNum, recs]) => <div key={admNum}><div className="flex items-center gap-2 mb-3"><span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900">{admNum}</span><div className="flex-1 h-px bg-slate-100 dark:bg-[#1e1e1e]" /><span className="text-[10px] text-slate-400 dark:text-[#555]">{recs.length} record{recs.length !== 1 ? "s" : ""}</span></div><div>{recs.map(r => <RecordCard key={r.id} record={r} />)}</div></div>)}{groupedRecords.general.length > 0 && <div>{groupedRecords.ipdGroups.length > 0 && <div className="flex items-center gap-2 mb-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-slate-500 dark:text-[#666] border border-slate-200 dark:border-[#2a2a2a]">General</span><div className="flex-1 h-px bg-slate-100 dark:bg-[#1e1e1e]" /></div>}<div>{groupedRecords.general.map(r => <RecordCard key={r.id} record={r} />)}</div></div>}</div>}</div>}{
+  }{recordsLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : records.length === 0 ? <div className="py-16 text-center"><ClipboardList className="w-10 h-10 text-slate-200 mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500">No records yet</p><p className="text-xs text-slate-400 mt-1">Add the first medical record above.</p></div> : <div className="space-y-6">{groupedRecords.ipdGroups.map(([admNum, recs]) => <div key={admNum}><div className="flex items-center gap-2 mb-3"><span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 text-white">{admNum}</span><div className="flex-1 h-px bg-slate-100" /><span className="text-[10px] text-slate-400">{recs.length} record{recs.length !== 1 ? "s" : ""}</span></div><div>{recs.map(r => <RecordCard key={r.id} record={r} />)}</div></div>)}{groupedRecords.general.length > 0 && <div>{groupedRecords.ipdGroups.length > 0 && <div className="flex items-center gap-2 mb-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-slate-500 border border-slate-200">General</span><div className="flex-1 h-px bg-slate-100" /></div>}<div>{groupedRecords.general.map(r => <RecordCard key={r.id} record={r} />)}</div></div>}</div>}</div>}{
     /* ── APPOINTMENTS TAB ── */
-  }{tab === "appointments" && <div className="w-full max-w-5xl"><div className="flex items-center justify-between mb-5"><div><h3 className="font-semibold text-slate-800 dark:text-[#e5e5e5]">Appointments</h3><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{appointments.length} appointment{appointments.length !== 1 ? "s" : ""} for {patient.firstName}</p></div></div>{appointmentsLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : appointments.length === 0 ? <div className="py-16 text-center"><Calendar className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No appointments yet</p><p className="text-xs text-slate-400 dark:text-[#444444] mt-1">Book an appointment from the Appointments Dashboard.</p></div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{appointments.map((appt) => <div key={appt.id} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg p-5 hover:border-slate-300 dark:hover:border-[#333333] transition-colors relative overflow-hidden">{
+  }{tab === "appointments" && <div className="w-full max-w-5xl"><div className="flex items-center justify-between mb-5"><div><h3 className="font-semibold text-slate-800">Appointments</h3><p className="text-xs text-slate-500 mt-0.5">{appointments.length} appointment{appointments.length !== 1 ? "s" : ""} for {patient.firstName}</p></div></div>{appointmentsLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : appointments.length === 0 ? <div className="py-16 text-center"><Calendar className="w-10 h-10 text-slate-200 mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500">No appointments yet</p><p className="text-xs text-slate-400 mt-1">Book an appointment from the Appointments Dashboard.</p></div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{appointments.map((appt) => <div key={appt.id} className="bg-white border border-slate-200 rounded-lg p-5 hover:border-slate-300 transition-colors relative overflow-hidden">{
     /* Status indicator line */
-  }<div className={`absolute left-0 top-0 bottom-0 w-1 ${["COMPLETED"].includes(appt.status) ? "bg-emerald-500" : ["CANCELLED", "NO_SHOW"].includes(appt.status) ? "bg-red-500" : ["IN_PROGRESS"].includes(appt.status) ? "bg-amber-500" : "bg-blue-500"}`} /><div className="flex justify-between items-start mb-4"><div><p className="text-lg font-bold text-slate-800 dark:text-white">{formatDate(appt.apptDate)}</p><p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 font-medium"><Clock className="w-3.5 h-3.5" />{appt.apptTime.substring(0, 5)} - {appt.apptEndTime ? appt.apptEndTime.substring(0, 5) : "Unknown"}</p></div><span className={`px-2.5 py-1 rounded text-xs font-bold uppercase ${["COMPLETED"].includes(appt.status) ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : ["CANCELLED", "NO_SHOW"].includes(appt.status) ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400" : ["IN_PROGRESS"].includes(appt.status) ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"}`}>{appt.status.replace("_", " ")}</span></div><div className="space-y-3"><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1a1a1a] flex items-center justify-center shrink-0"><Stethoscope className="w-4 h-4 text-emerald-600 dark:text-emerald-500" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                                            Dr. {appt.doctorName}</p>{appt.doctorSpecialization && <p className="text-xs text-slate-500 dark:text-slate-400">{appt.doctorSpecialization}</p>}</div></div><div className="pt-3 border-t border-slate-100 dark:border-[#222222] grid grid-cols-2 gap-3"><div><p className="text-[10px] uppercase font-bold text-slate-400 dark:text-[#666666]">Type</p><p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-0.5">{appt.type}</p></div>{appt.tokenNumber && <div><p className="text-[10px] uppercase font-bold text-slate-400 dark:text-[#666666]">Token No</p><p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-0.5">
-                                                                #{appt.tokenNumber}</p></div>}</div>{appt.chiefComplaint && <div className="bg-slate-50 dark:bg-[#161616] p-3 rounded-lg mt-2 border border-slate-100 dark:border-[#222222]"><p className="text-[10px] uppercase font-bold text-slate-400 dark:text-[#666666] mb-1 flex items-center gap-1"><FileText className="w-3 h-3" /> Reason for visit
-                                                        </p><p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed italic">
+  }<div className={`absolute left-0 top-0 bottom-0 w-1 ${["COMPLETED"].includes(appt.status) ? "bg-emerald-500" : ["CANCELLED", "NO_SHOW"].includes(appt.status) ? "bg-red-500" : ["IN_PROGRESS"].includes(appt.status) ? "bg-amber-500" : "bg-blue-500"}`} /><div className="flex justify-between items-start mb-4"><div><p className="text-lg font-bold text-slate-800">{formatDate(appt.apptDate)}</p><p className="text-sm text-slate-500 mt-0.5 flex items-center gap-1.5 font-medium"><Clock className="w-3.5 h-3.5" />{appt.apptTime.substring(0, 5)} - {appt.apptEndTime ? appt.apptEndTime.substring(0, 5) : "Unknown"}</p></div><span className={`px-2.5 py-1 rounded text-xs font-bold uppercase ${["COMPLETED"].includes(appt.status) ? "bg-emerald-50 text-emerald-700" : ["CANCELLED", "NO_SHOW"].includes(appt.status) ? "bg-red-50 text-red-700" : ["IN_PROGRESS"].includes(appt.status) ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`}>{appt.status.replace("_", " ")}</span></div><div className="space-y-3"><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0"><Stethoscope className="w-4 h-4 text-emerald-600" /></div><div><p className="text-sm font-semibold text-slate-800">
+                                                            Dr. {appt.doctorName}</p>{appt.doctorSpecialization && <p className="text-xs text-slate-500">{appt.doctorSpecialization}</p>}</div></div><div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] uppercase font-bold text-slate-400">Type</p><p className="text-xs font-semibold text-slate-700 mt-0.5">{appt.type}</p></div>{appt.tokenNumber && <div><p className="text-[10px] uppercase font-bold text-slate-400">Token No</p><p className="text-xs font-semibold text-slate-700 mt-0.5">
+                                                                #{appt.tokenNumber}</p></div>}</div>{appt.chiefComplaint && <div className="bg-slate-50 p-3 rounded-lg mt-2 border border-slate-100"><p className="text-[10px] uppercase font-bold text-slate-400 mb-1 flex items-center gap-1"><FileText className="w-3 h-3" /> Reason for visit
+                                                        </p><p className="text-xs text-slate-700 leading-relaxed italic">
                                                             "{appt.chiefComplaint}"
                                                         </p></div>}</div></div>)}</div>}</div>}{
     /* ── RADIOLOGY TAB ── */
-  }{tab === "radiology" && <div className="w-full max-w-5xl space-y-4"><div className="flex items-center justify-between mb-2"><div><h3 className="font-semibold text-slate-800 dark:text-[#e5e5e5]">Radiology History</h3><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">
-                                        All imaging investigations for {patient.firstName}</p></div></div>{radiologyLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : radiologyOrders.length === 0 ? <div className="py-16 text-center"><ScanLine className="w-10 h-10 text-slate-200 dark:text-[#282828] mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500 dark:text-[#666666]">No radiology orders</p><p className="text-xs text-slate-400 dark:text-[#444444] mt-1">Orders created from the Radiology Queue will appear here.</p></div> : <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-hidden"><div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{radiologyOrders.map((order) => {
-    const statusCls = order.status === "REPORT_GENERATED" ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" : order.status === "AWAITING_REPORT" ? "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]" : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
+  }{tab === "radiology" && <div className="w-full max-w-5xl space-y-4"><div className="flex items-center justify-between mb-2"><div><h3 className="font-semibold text-slate-800">Radiology History</h3><p className="text-xs text-slate-500 mt-0.5">
+                                        All imaging investigations for {patient.firstName}</p></div></div>{radiologyLoading ? <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#444444]" /></div> : radiologyOrders.length === 0 ? <div className="py-16 text-center"><ScanLine className="w-10 h-10 text-slate-200 mx-auto mb-3" /><p className="text-sm font-semibold text-slate-500">No radiology orders</p><p className="text-xs text-slate-400 mt-1">Orders created from the Radiology Queue will appear here.</p></div> : <div className="bg-white border border-slate-200 rounded-lg overflow-hidden"><div className="divide-y divide-slate-100">{radiologyOrders.map((order) => {
+    const statusCls = order.status === "REPORT_GENERATED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : order.status === "AWAITING_REPORT" ? "bg-slate-100 text-slate-900 border-slate-200" : "bg-amber-50 text-amber-700 border-amber-200";
     const statusLabel = order.status === "REPORT_GENERATED" ? "Report Ready" : order.status === "AWAITING_REPORT" ? "Awaiting Report" : "Pending Scan";
-    return <div key={order.id} className="px-5 py-4 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333] flex items-center justify-center shrink-0"><ScanLine className="w-4 h-4 text-slate-700 dark:text-[#cccccc] dark:text-slate-300" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{order.serviceName}</p><div className="flex items-center gap-2 mt-0.5">{order.referredByName && <p className="text-xs text-slate-600 dark:text-[#999999]">by {order.referredByName}</p>}<p className="text-xs text-slate-300 dark:text-[#444444]">·</p><p className="text-xs text-slate-600 dark:text-[#999999]">{new Date(order.createdAt).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata', day: "2-digit", month: "short", year: "numeric" })}</p></div></div></div><div className="flex items-center gap-3"><span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${statusCls}`}>{statusLabel}</span>{order.status === "REPORT_GENERATED" && order.id && <button
+    return <div key={order.id} className="px-5 py-4 flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0"><ScanLine className="w-4 h-4 text-slate-700" /></div><div><p className="text-sm font-semibold text-slate-800">{order.serviceName}</p><div className="flex items-center gap-2 mt-0.5">{order.referredByName && <p className="text-xs text-slate-600">by {order.referredByName}</p>}<p className="text-xs text-slate-300">·</p><p className="text-xs text-slate-600">{new Date(order.createdAt).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata', day: "2-digit", month: "short", year: "numeric" })}</p></div></div></div><div className="flex items-center gap-3"><span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${statusCls}`}>{statusLabel}</span>{order.status === "REPORT_GENERATED" && order.id && <button
       onClick={() => navigate(`/radiology/reports/${order.id}`)}
-      className="text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-300 hover:underline flex items-center gap-1"
+      className="text-xs font-semibold text-slate-900 hover:underline flex items-center gap-1"
     >
                                                                 View Report
                                                             </button>}</div></div>;
   })}</div></div>}</div>}{
     /* ── Billing tab ── */
-  }{tab === "billing" && <div className="p-6 space-y-4"><div className="flex items-center justify-between"><p className="text-sm font-bold text-slate-700 dark:text-[#cccccc]">Invoice History</p><button
+  }{tab === "billing" && <div className="p-6 space-y-4"><div className="flex items-center justify-between"><p className="text-sm font-bold text-slate-700">Invoice History</p><button
     onClick={() => navigate(`/billing/opd?patientId=${id}`)}
     className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
   >
                                     + New Invoice
-                                </button></div>{invoicesLoading ? <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-slate-300" /></div> : invoices.length === 0 ? <div className="py-12 text-center"><p className="text-sm text-slate-600 dark:text-[#999999]">No invoices yet</p><button onClick={() => navigate(`/billing/opd?patientId=${id}`)} className="mt-3 text-sm font-semibold text-slate-900 dark:text-white hover:underline">
+                                </button></div>{invoicesLoading ? <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-slate-300" /></div> : invoices.length === 0 ? <div className="py-12 text-center"><p className="text-sm text-slate-600">No invoices yet</p><button onClick={() => navigate(`/billing/opd?patientId=${id}`)} className="mt-3 text-sm font-semibold text-slate-900 hover:underline">
                                         Create first invoice
                                     </button></div> : <div className="space-y-2">{invoices.map((inv) => {
-    const statusCls = (inv.status === "PAID" || inv.status === "SETTLED") ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" : inv.status === "CANCELLED" ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20" : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
-    return <div key={inv.id} className="flex items-center justify-between px-4 py-3 rounded-lg border border-slate-100 dark:border-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-[#0f0f0f] transition-colors"><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">#{fmtId(inv.invoiceNumber)}</p><p className="text-xs text-slate-600 dark:text-[#999999] mt-0.5">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata' }) : ""}{inv.paymentMethod ? ` \xB7 ${inv.paymentMethod}` : ""}{" \xB7 "}{inv.items?.length ?? 0} item{(inv.items?.length ?? 0) !== 1 ? "s" : ""}</p></div><div className="flex items-center gap-3"><span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${statusCls}`}>{inv.status}</span><span className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">₹{inv.total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div></div>;
+    const statusCls = (inv.status === "PAID" || inv.status === "SETTLED") ? "bg-emerald-50 text-emerald-700 border-emerald-200" : inv.status === "CANCELLED" ? "bg-red-50 text-red-700 border-red-200" : "bg-amber-50 text-amber-700 border-amber-200";
+    return <div key={inv.id} className="flex items-center justify-between px-4 py-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors"><div><p className="text-sm font-semibold text-slate-800">#{fmtId(inv.invoiceNumber)}</p><p className="text-xs text-slate-600 mt-0.5">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata' }) : ""}{inv.paymentMethod ? ` \xB7 ${inv.paymentMethod}` : ""}{" \xB7 "}{inv.items?.length ?? 0} item{(inv.items?.length ?? 0) !== 1 ? "s" : ""}</p></div><div className="flex items-center gap-3"><span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${statusCls}`}>{inv.status}</span><span className="text-sm font-bold text-slate-800">₹{inv.total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div></div>;
   })}</div>}</div>}</div></div>{
     /* Edit modal */
   }{editing && <PatientModal

@@ -62,13 +62,13 @@ function fmt(n) {
   return "\u20B9" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 const TYPE_META = {
-  MEDICINE: { label: "Medicine", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-500/20", icon: <Pill className="w-3 h-3" /> },
-  LAB_TEST: { label: "Lab Test", color: "text-slate-900 dark:text-white dark:text-slate-300", bg: "bg-slate-100 dark:bg-slate-200", icon: <FlaskConical className="w-3 h-3" /> },
-  CONSULTATION: { label: "Consultation", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-500/20", icon: <Stethoscope className="w-3 h-3" /> },
-  ROOM_CHARGE: { label: "Room", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-500/20", icon: <BedDouble className="w-3 h-3" /> },
-  RADIOLOGY: { label: "Radiology", color: "text-slate-900 dark:text-white dark:text-slate-300", bg: "bg-slate-100 dark:bg-slate-200", icon: <ScanLine className="w-3 h-3" /> },
-  CUSTOM: { label: "Custom", color: "text-slate-600 dark:text-[#aaaaaa]", bg: "bg-slate-100 dark:bg-[#222222]", icon: <Wrench className="w-3 h-3" /> },
-  REGISTRATION: { label: "Registration", color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-500/20", icon: <User className="w-3 h-3" /> }
+  MEDICINE: { label: "Medicine", color: "text-emerald-700", bg: "bg-emerald-100", icon: <Pill className="w-3 h-3" /> },
+  LAB_TEST: { label: "Lab Test", color: "text-slate-900", bg: "bg-slate-100", icon: <FlaskConical className="w-3 h-3" /> },
+  CONSULTATION: { label: "Consultation", color: "text-blue-700", bg: "bg-blue-100", icon: <Stethoscope className="w-3 h-3" /> },
+  ROOM_CHARGE: { label: "Room", color: "text-orange-700", bg: "bg-orange-100", icon: <BedDouble className="w-3 h-3" /> },
+  RADIOLOGY: { label: "Radiology", color: "text-slate-900", bg: "bg-slate-100", icon: <ScanLine className="w-3 h-3" /> },
+  CUSTOM: { label: "Custom", color: "text-slate-600", bg: "bg-slate-100", icon: <Wrench className="w-3 h-3" /> },
+  REGISTRATION: { label: "Registration", color: "text-violet-700", bg: "bg-violet-100", icon: <User className="w-3 h-3" /> }
 };
 function TypeBadge({ type }) {
   if (!type) return null;
@@ -77,9 +77,9 @@ function TypeBadge({ type }) {
   return <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${m.color} ${m.bg}`}>{m.icon}</span>;
 }
 const STATUS_CFG = {
-  PAID: { label: "Paid", icon: CheckCircle2, cls: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20" },
-  UNPAID: { label: "Unpaid", icon: Clock, cls: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20" },
-  CANCELLED: { label: "Cancelled", icon: Ban, cls: "text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20" }
+  PAID: { label: "Paid", icon: CheckCircle2, cls: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  UNPAID: { label: "Unpaid", icon: Clock, cls: "text-amber-600 bg-amber-50 border-amber-200" },
+  CANCELLED: { label: "Cancelled", icon: Ban, cls: "text-red-500 bg-red-50 border-red-200" }
 };
 function CreateInvoice() {
   const { user } = useAuth();
@@ -277,53 +277,53 @@ function CreateInvoice() {
     });
   }, [allInvoices, logSearch, logStatus]);
   const selectedAccount = bankAccounts.find((a) => a.id === bankAccountId);
-  const inputCls = "w-full rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm text-slate-900 dark:text-[#dddddd] focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all";
-  const cardCls = "bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg p-5";
+  const inputCls = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all";
+  const cardCls = "bg-white border border-slate-200 rounded-lg p-5";
   return <><div className="flex h-full overflow-hidden no-print -m-6">{
     /* ── LEFT: Create Invoice ── */
-  }<div className="flex-1 overflow-y-auto p-6 space-y-4 min-w-0"><div className="flex items-start justify-between"><div><h1 className="text-xl font-bold text-slate-900 dark:text-white">Create New Invoice</h1><p className="text-xs text-slate-400 dark:text-[#666666] mt-0.5">Smart billing with automatic pending order detection</p></div><button
+  }<div className="flex-1 overflow-y-auto p-6 space-y-4 min-w-0"><div className="flex items-start justify-between"><div><h1 className="text-xl font-bold text-slate-900">Create New Invoice</h1><p className="text-xs text-slate-400 mt-0.5">Smart billing with automatic pending order detection</p></div><button
     onClick={() => setPaneOpen((o) => !o)}
-    className="p-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors shrink-0"
+    className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors shrink-0"
     title={paneOpen ? "Hide invoice logs" : "Show invoice logs"}
   >{paneOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}</button></div>{
     /* Smart banner */
-  }<div className="flex gap-3 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20"><Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" /><div className="text-xs text-blue-700 dark:text-blue-300 space-y-1"><p className="font-bold text-sm">Smart Billing System</p><p>Selecting a patient auto-detects active room charges, pending radiology orders, and recent consultations.</p></div></div>{
+  }<div className="flex gap-3 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200"><Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" /><div className="text-xs text-blue-700 space-y-1"><p className="font-bold text-sm">Smart Billing System</p><p>Selecting a patient auto-detects active room charges, pending radiology orders, and recent consultations.</p></div></div>{
     /* 1. Select Patient */
-  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">1</span>
+  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center">1</span>
                         Select Patient
-                    </p>{patient ? <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10"><div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0"><User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /></div><div><p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{patient.firstName} {patient.lastName}</p><p className="text-xs text-emerald-600 dark:text-emerald-500">{fmtId(patient.uhid)}{patient.phone ? ` \xB7 ${patient.phone}` : ""}</p></div></div><button onClick={clearPatient} className="p-1 text-emerald-500 hover:text-emerald-700 transition-colors"><X className="w-3.5 h-3.5" /></button></div> : <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" /><input className={`${inputCls} pl-9`} placeholder="Search by name or UHID…" value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} />{searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400" />}{patientResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-lg shadow-xl z-30 overflow-hidden">{patientResults.map((p) => <button
+                    </p>{patient ? <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50"><div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0"><User className="w-4 h-4 text-emerald-600" /></div><div><p className="text-sm font-bold text-emerald-800">{patient.firstName} {patient.lastName}</p><p className="text-xs text-emerald-600">{fmtId(patient.uhid)}{patient.phone ? ` \xB7 ${patient.phone}` : ""}</p></div></div><button onClick={clearPatient} className="p-1 text-emerald-500 hover:text-emerald-700 transition-colors"><X className="w-3.5 h-3.5" /></button></div> : <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" /><input className={`${inputCls} pl-9`} placeholder="Search by name or UHID…" value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} />{searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400" />}{patientResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-30 overflow-hidden">{patientResults.map((p) => <button
     key={p.id}
     type="button"
     onClick={() => selectPatient(p)}
-    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0"
-  ><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{p.firstName} {p.lastName}</p><p className="text-xs text-slate-400">{fmtId(p.uhid)}</p></button>)}</div>}</div>}</div>{
+    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
+  ><p className="text-sm font-semibold text-slate-800">{p.firstName} {p.lastName}</p><p className="text-xs text-slate-400">{fmtId(p.uhid)}</p></button>)}</div>}</div>}</div>{
     /* Smart Suggestions */
-  }{patient && (loadingSuggestions || hasSuggestions) && <div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2"><Sparkles className="w-3.5 h-3.5 text-amber-500" /> Detected Items
+  }{patient && (loadingSuggestions || hasSuggestions) && <div className={cardCls}><p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><Sparkles className="w-3.5 h-3.5 text-amber-500" /> Detected Items
                             {loadingSuggestions && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}</p>{!loadingSuggestions && suggestions && <div className="space-y-2">{suggestions.roomCharge && (() => {
     const r = suggestions.roomCharge;
     const key = `room-${r.roomNumber}`;
     const added = addedSuggestions.has(key);
-    return <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-orange-200 dark:border-orange-500/20 bg-orange-50 dark:bg-orange-500/5"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center shrink-0"><BedDouble className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">Room {r.roomNumber} — {r.roomType.replace("_", " ")}</p><p className="text-xs text-slate-400">{fmt(r.pricePerDay)}/day × {r.daysStayed} day{r.daysStayed !== 1 ? "s" : ""} = <span className="font-semibold">{fmt(r.totalCharge)}</span></p></div></div><button
+    return <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-orange-200 bg-orange-50"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center shrink-0"><BedDouble className="w-3.5 h-3.5 text-orange-600" /></div><div><p className="text-sm font-semibold text-slate-800">Room {r.roomNumber} — {r.roomType.replace("_", " ")}</p><p className="text-xs text-slate-400">{fmt(r.pricePerDay)}/day × {r.daysStayed} day{r.daysStayed !== 1 ? "s" : ""} = <span className="font-semibold">{fmt(r.totalCharge)}</span></p></div></div><button
       onClick={() => !added && addItem({ itemType: "ROOM_CHARGE", description: `Room ${r.roomNumber} (${r.roomType}) \u2014 ${r.daysStayed} day${r.daysStayed !== 1 ? "s" : ""}`, quantity: Number(r.daysStayed), unitPrice: r.pricePerDay, totalPrice: r.totalCharge }, key)}
-      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default" : "bg-orange-500 hover:bg-orange-600 text-white"}`}
+      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 text-slate-400 cursor-default" : "bg-orange-500 hover:bg-orange-600 text-white"}`}
     >{added ? "\u2713 Added" : "+ Add"}</button></div>;
   })()}{suggestions.radiologyOrders.map((r) => {
     const key = `radiology-${r.orderId}`;
     const added = addedSuggestions.has(key);
-    return <div key={key} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-slate-200 dark:border-[#333333] bg-slate-100 dark:bg-slate-900/5"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-200 flex items-center justify-center shrink-0"><ScanLine className="w-3.5 h-3.5 text-slate-900 dark:text-white dark:text-slate-300" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{r.serviceName}</p><p className="text-xs text-slate-400">{r.status.replace("_", " ")}{r.scheduledDate ? ` \xB7 ${r.scheduledDate}` : ""}</p></div></div><button
+    return <div key={key} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-100"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0"><ScanLine className="w-3.5 h-3.5 text-slate-900" /></div><div><p className="text-sm font-semibold text-slate-800">{r.serviceName}</p><p className="text-xs text-slate-400">{r.status.replace("_", " ")}{r.scheduledDate ? ` \xB7 ${r.scheduledDate}` : ""}</p></div></div><button
       onClick={() => !added && addItem({ itemType: "RADIOLOGY", description: r.serviceName, quantity: 1, unitPrice: 0, totalPrice: 0 }, key)}
-      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default" : "bg-slate-900 hover:bg-slate-900 text-white"}`}
+      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 text-slate-400 cursor-default" : "bg-slate-900 hover:bg-slate-900 text-white"}`}
     >{added ? "\u2713 Added" : "+ Add"}</button></div>;
   })}{suggestions.appointments.map((a) => {
     const key = `appt-${a.appointmentId}`;
     const added = addedSuggestions.has(key);
-    return <div key={key} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/5"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center shrink-0"><Stethoscope className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /></div><div><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{a.doctorName}{a.specialization ? ` \u2014 ${a.specialization}` : ""}</p><p className="text-xs text-slate-400">Consultation · {a.apptDate} · <span className="font-semibold">{fmt(a.consultationFee)}</span></p></div></div><button
+    return <div key={key} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-blue-200 bg-blue-50"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center shrink-0"><Stethoscope className="w-3.5 h-3.5 text-blue-600" /></div><div><p className="text-sm font-semibold text-slate-800">{a.doctorName}{a.specialization ? ` \u2014 ${a.specialization}` : ""}</p><p className="text-xs text-slate-400">Consultation · {a.apptDate} · <span className="font-semibold">{fmt(a.consultationFee)}</span></p></div></div><button
       onClick={() => !added && addItem({ itemType: "CONSULTATION", description: `Consultation \u2014 ${a.doctorName}${a.specialization ? ` (${a.specialization})` : ""}`, quantity: 1, unitPrice: a.consultationFee, totalPrice: a.consultationFee }, key)}
-      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 dark:bg-[#222222] text-slate-400 cursor-default" : "bg-blue-500 hover:bg-blue-600 text-white"}`}
+      className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${added ? "bg-slate-100 text-slate-400 cursor-default" : "bg-blue-500 hover:bg-blue-600 text-white"}`}
     >{added ? "\u2713 Added" : "+ Add"}</button></div>;
   })}</div>}</div>}{
     /* 2. Referred By */
-  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">2</span>
+  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center">2</span>
                         Referred By <span className="font-normal normal-case text-slate-400">(Optional)</span></p><SearchableSelect
   value={referredById}
   onChange={(v) => setReferredById(v)}
@@ -331,9 +331,9 @@ function CreateInvoice() {
   placeholder="Self / Walk-in (No Referral)"
 /></div>{
     /* 3. Add Tests & Services */
-  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">3</span>
+  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center">3</span>
                         Add Tests &amp; Services
-                    </p><div className="grid grid-cols-2 gap-3"><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5 flex items-center gap-1"><FlaskConical className="w-3 h-3 text-slate-700 dark:text-[#cccccc]" /> Search Lab / Services</label><div className="relative"><input className={inputCls} placeholder="Search by test name…" value={serviceSearch} onChange={(e) => setServiceSearch(e.target.value)} />{serviceResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#333333] rounded-lg shadow-xl z-20 overflow-hidden">{serviceResults.map((s) => <button
+                    </p><div className="grid grid-cols-2 gap-3"><div><label className="block text-xs text-slate-400 mb-1.5 flex items-center gap-1"><FlaskConical className="w-3 h-3 text-slate-700" /> Search Lab / Services</label><div className="relative"><input className={inputCls} placeholder="Search by test name…" value={serviceSearch} onChange={(e) => setServiceSearch(e.target.value)} />{serviceResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-20 overflow-hidden">{serviceResults.map((s) => <button
     key={s.id}
     type="button"
     onClick={() => {
@@ -341,57 +341,57 @@ function CreateInvoice() {
       setServiceSearch("");
       setServiceResults([]);
     }}
-    className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors border-b border-slate-100 dark:border-[#1e1e1e] last:border-0"
-  ><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{s.name}</p><p className="text-xs text-slate-400">{fmt(s.price)}</p></button>)}</div>}</div></div><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5 flex items-center gap-1"><Pill className="w-3 h-3 text-emerald-500" /> Add Medicine</label><button
+    className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
+  ><p className="text-sm font-semibold text-slate-800">{s.name}</p><p className="text-xs text-slate-400">{fmt(s.price)}</p></button>)}</div>}</div></div><div><label className="block text-xs text-slate-400 mb-1.5 flex items-center gap-1"><Pill className="w-3 h-3 text-emerald-500" /> Add Medicine</label><button
     onClick={() => addItem({ itemType: "MEDICINE", description: "", quantity: 1, unitPrice: 0, totalPrice: 0 })}
-    className="w-full px-3 py-2 rounded-lg border border-dashed border-emerald-300 dark:border-emerald-500/30 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors text-left"
+    className="w-full px-3 py-2 rounded-lg border border-dashed border-emerald-300 text-sm text-emerald-600 hover:bg-emerald-50 transition-colors text-left"
   >
                                 + Add medicine item manually
                             </button></div></div></div>{
     /* 4. Invoice Items */
-  }<div className={cardCls}><div className="flex items-center justify-between mb-3"><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">4</span>
+  }<div className={cardCls}><div className="flex items-center justify-between mb-3"><p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center">4</span>
                             Invoice Items
                         </p><button
     onClick={() => addItem({ itemType: "CUSTOM", description: "", quantity: 1, unitPrice: 0, totalPrice: 0 })}
-    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
+    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
   ><Plus className="w-3 h-3" /> Add Custom Item
-                        </button></div>{items.length === 0 ? <div className="py-8 text-center text-sm text-slate-600 dark:text-[#999999] border-2 border-dashed border-slate-100 dark:border-[#1e1e1e] rounded-lg">
+                        </button></div>{items.length === 0 ? <div className="py-8 text-center text-sm text-slate-600 border-2 border-dashed border-slate-100 rounded-lg">
                             No items yet — detect from patient or add manually
-                        </div> : <><div className="grid grid-cols-12 gap-2 pb-2 border-b border-slate-100 dark:border-[#1e1e1e] text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#999999] px-1"><div className="col-span-1">Type</div><div className="col-span-5">Description</div><div className="col-span-2 text-center">Qty</div><div className="col-span-2 text-right">Unit ₹</div><div className="col-span-2 text-right">Total ₹</div></div><div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{items.map((item) => <div key={item.key} className="grid grid-cols-12 gap-2 items-center py-2 group px-1"><div className="col-span-1"><SearchableSelect
+                        </div> : <><div className="grid grid-cols-12 gap-2 pb-2 border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-600 px-1"><div className="col-span-1">Type</div><div className="col-span-5">Description</div><div className="col-span-2 text-center">Qty</div><div className="col-span-2 text-right">Unit ₹</div><div className="col-span-2 text-right">Total ₹</div></div><div className="divide-y divide-slate-50">{items.map((item) => <div key={item.key} className="grid grid-cols-12 gap-2 items-center py-2 group px-1"><div className="col-span-1"><SearchableSelect
     value={item.itemType ?? "CUSTOM"}
     onChange={(v) => updateItem(item.key, { itemType: v })}
     options={Object.keys(TYPE_META).map((k) => ({ value: k, label: TYPE_META[k]?.label || k }))}
   /></div><div className="col-span-5"><input
-    className="w-full px-2 py-1.5 rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+    className="w-full px-2 py-1.5 rounded-lg border border-slate-100 bg-white text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
     placeholder="Description…"
     value={item.description}
     onChange={(e) => updateItem(item.key, { description: e.target.value })}
   /></div><div className="col-span-2"><input
     type="number"
     min={1}
-    className="w-full text-center px-2 py-1.5 rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+    className="w-full text-center px-2 py-1.5 rounded-lg border border-slate-100 bg-white text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
     value={item.quantity}
     onChange={(e) => updateItem(item.key, { quantity: parseInt(e.target.value) || 1 })}
   /></div><div className="col-span-2"><input
     type="number"
     min={0}
-    className="w-full text-right px-2 py-1.5 rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+    className="w-full text-right px-2 py-1.5 rounded-lg border border-slate-100 bg-white text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
     value={item.unitPrice}
     onChange={(e) => updateItem(item.key, { unitPrice: parseFloat(e.target.value) || 0 })}
-  /></div><div className="col-span-2 flex items-center justify-end gap-1"><span className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{fmt(item.totalPrice || 0)}</span><button onClick={() => removeItem(item.key)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-300 hover:text-red-500 transition-all"><Trash2 className="w-3 h-3" /></button></div></div>)}</div>{
+  /></div><div className="col-span-2 flex items-center justify-end gap-1"><span className="text-sm font-bold text-slate-800">{fmt(item.totalPrice || 0)}</span><button onClick={() => removeItem(item.key)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-300 hover:text-red-500 transition-all"><Trash2 className="w-3 h-3" /></button></div></div>)}</div>{
     /* Summary */
-  }<div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] flex justify-end"><div className="w-56 space-y-2"><div className="flex justify-between text-sm text-slate-500 dark:text-[#888888]"><span>Subtotal:</span><span className="font-semibold">{fmt(subtotal)}</span></div><div className="flex items-center justify-between text-sm text-slate-500 dark:text-[#888888]"><span>Discount (%):</span><div className="flex items-center gap-1.5"><input
+  }<div className="mt-3 pt-3 border-t border-slate-100 flex justify-end"><div className="w-56 space-y-2"><div className="flex justify-between text-sm text-slate-500"><span>Subtotal:</span><span className="font-semibold">{fmt(subtotal)}</span></div><div className="flex items-center justify-between text-sm text-slate-500"><span>Discount (%):</span><div className="flex items-center gap-1.5"><input
     type="number"
     min={0}
     max={100}
     value={discountPct}
     onChange={(e) => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))}
-    className="w-14 text-center px-2 py-1 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-sm focus:outline-none"
-  /><span className="text-red-500 font-semibold">-{fmt(discountAmt)}</span></div></div>{medicineTotal > 0 && <div className="flex justify-between text-sm text-slate-500 dark:text-[#888888]"><span>GST Medicines (18%):</span><span className="font-semibold">{fmt(gstOnMedicines)}</span></div>}<div className="flex justify-between text-base font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-[#1e1e1e]"><span>Grand Total:</span><span className="text-blue-600 dark:text-blue-400">{fmt(grandTotal)}</span></div></div></div></>}</div>{
+    className="w-14 text-center px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none"
+  /><span className="text-red-500 font-semibold">-{fmt(discountAmt)}</span></div></div>{medicineTotal > 0 && <div className="flex justify-between text-sm text-slate-500"><span>GST Medicines (18%):</span><span className="font-semibold">{fmt(gstOnMedicines)}</span></div>}<div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-100"><span>Grand Total:</span><span className="text-blue-600">{fmt(grandTotal)}</span></div></div></div></>}</div>{
     /* 5. Payment Details */
-  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider mb-4 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-[#222222] text-[10px] font-bold text-slate-600 dark:text-[#aaaaaa] flex items-center justify-center">5</span>
+  }<div className={cardCls}><p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center">5</span>
                         Payment Details
-                    </p><div className="grid grid-cols-2 gap-3 mb-4"><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Payment Method</label><SearchableSelect
+                    </p><div className="grid grid-cols-2 gap-3 mb-4"><div><label className="block text-xs text-slate-400 mb-1.5">Payment Method</label><SearchableSelect
   value={paymentMethod}
   onChange={(v) => {
     setPaymentMethod(v);
@@ -400,31 +400,31 @@ function CreateInvoice() {
     setBankAccountId(def ? def.id : "");
   }}
   options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
-/></div><div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-1.5">Notes (optional)</label><input className={inputCls} placeholder="Additional notes…" value={notes} onChange={(e) => setNotes(e.target.value)} /></div></div>{
+/></div><div><label className="block text-xs text-slate-400 mb-1.5">Notes (optional)</label><input className={inputCls} placeholder="Additional notes…" value={notes} onChange={(e) => setNotes(e.target.value)} /></div></div>{
     /* Bank account cards — filtered by payment method type */
   }{(() => {
     const eligibleAccounts = accountsForMethod(bankAccounts, paymentMethod);
     const allowedTypes = PAYMENT_METHOD_TO_ACCOUNT_TYPES[paymentMethod] || [];
     if (allowedTypes.length === 0) return null;
     if (eligibleAccounts.length === 0) {
-      return <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" /><p className="text-xs text-amber-700 dark:text-amber-400">No {paymentMethod === "Cash" ? "CASH" : "SAVINGS / CURRENT"} account found. Configure banks in the Finance app to track this payment.</p></div>;
+      return <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" /><p className="text-xs text-amber-700">No {paymentMethod === "Cash" ? "CASH" : "SAVINGS / CURRENT"} account found. Configure banks in the Finance app to track this payment.</p></div>;
     }
-    return <div><label className="block text-xs text-slate-400 dark:text-[#666666] mb-2 flex items-center gap-1.5"><Landmark className="w-3.5 h-3.5" /> Credit payment to
-                            <span className="ml-1 text-[10px] text-slate-300 dark:text-[#555]">({paymentMethod === "Cash" ? "CASH only" : "SAVINGS / CURRENT only"})</span>
+    return <div><label className="block text-xs text-slate-400 mb-2 flex items-center gap-1.5"><Landmark className="w-3.5 h-3.5" /> Credit payment to
+                            <span className="ml-1 text-[10px] text-slate-300">({paymentMethod === "Cash" ? "CASH only" : "SAVINGS / CURRENT only"})</span>
                             </label><div className="grid grid-cols-2 gap-2">{eligibleAccounts.map((a) => {
     const isSelected = bankAccountId === a.id;
     return <button
       key={a.id}
       type="button"
       onClick={() => setBankAccountId(a.id)}
-      className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" : "border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a]"}`}
-    ><div className="flex items-start justify-between gap-2 mb-1"><p className={`text-xs font-bold truncate ${isSelected ? "text-emerald-700 dark:text-emerald-400" : "text-slate-700 dark:text-[#cccccc]"}`}>{a.accountName}</p>{isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}</div><p className="text-[11px] text-slate-400 dark:text-[#666666] truncate">{a.bankName ?? "Bank"} · ···{a.accountNumber.slice(-4)}</p><p className={`text-xs font-bold mt-1.5 ${isSelected ? "text-emerald-600 dark:text-emerald-400" : "text-slate-600 dark:text-[#aaaaaa]"}`}>{fmt(a.currentBalance)}</p></button>;
+      className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:border-slate-300 bg-white"}`}
+    ><div className="flex items-start justify-between gap-2 mb-1"><p className={`text-xs font-bold truncate ${isSelected ? "text-emerald-700" : "text-slate-700"}`}>{a.accountName}</p>{isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}</div><p className="text-[11px] text-slate-400 truncate">{a.bankName ?? "Bank"} · ···{a.accountNumber.slice(-4)}</p><p className={`text-xs font-bold mt-1.5 ${isSelected ? "text-emerald-600" : "text-slate-600"}`}>{fmt(a.currentBalance)}</p></button>;
   })}<button
     type="button"
     onClick={() => setBankAccountId("")}
-    className={`text-left p-3 rounded-lg border-2 transition-all ${bankAccountId === "" ? "border-slate-900 dark:border-white bg-slate-50 dark:bg-[#1a1a1a]" : "border-dashed border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 bg-white dark:bg-[#111111]"}`}
-  ><p className="text-xs font-bold text-slate-400 dark:text-[#666666]">No account</p><p className="text-[11px] text-slate-300 dark:text-[#444444] mt-0.5">Skip bank credit</p></button></div>{selectedAccount && <p className="text-xs text-slate-400 dark:text-[#666666] mt-2">
-                                    After payment: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{fmt(selectedAccount.currentBalance + grandTotal)}</span></p>}</div>;
+    className={`text-left p-3 rounded-lg border-2 transition-all ${bankAccountId === "" ? "border-slate-900 bg-slate-50" : "border-dashed border-slate-200 hover:border-slate-300 bg-white"}`}
+  ><p className="text-xs font-bold text-slate-400">No account</p><p className="text-[11px] text-slate-300 mt-0.5">Skip bank credit</p></button></div>{selectedAccount && <p className="text-xs text-slate-400 mt-2">
+                                    After payment: <span className="font-semibold text-emerald-600">{fmt(selectedAccount.currentBalance + grandTotal)}</span></p>}</div>;
   })()}</div>{
     /* Generate button */
   }<button
@@ -433,13 +433,13 @@ function CreateInvoice() {
     className="w-full py-3.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold flex items-center justify-center gap-2 transition-colors"
   >{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}{saving ? "Generating\u2026" : "Generate Invoice & Print"}</button><div className="h-4" /></div>{
     /* ── RIGHT: Invoice Logs (collapsible) ── */
-  }{paneOpen && <div className="w-96 border-l border-slate-200 dark:border-[#1e1e1e] flex flex-col overflow-hidden bg-white dark:bg-[#0d0d0d] shrink-0">{
+  }{paneOpen && <div className="w-96 border-l border-slate-200 flex flex-col overflow-hidden bg-white shrink-0">{
     /* Pane header */
-  }<div className="px-4 py-3.5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0"><div className="flex items-center justify-between mb-1"><div className="flex items-center gap-2"><Receipt className="w-4 h-4 text-slate-500 dark:text-[#888888]" /><div><p className="text-sm font-bold text-slate-800 dark:text-[#dddddd] leading-tight">{patient ? `${patient.firstName} ${patient.lastName}` : "All Invoices"}</p><p className="text-[11px] text-slate-600 dark:text-[#999999]">{patient ? "Patient invoice history" : "Hospital invoice log"} · {filteredLogs.length} shown
-                                    </p></div></div><button onClick={() => loadLogs()} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-[#cccccc] hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors" title="Refresh"><RefreshCw className={`w-3.5 h-3.5 ${logsLoading ? "animate-spin" : ""}`} /></button></div>{
+  }<div className="px-4 py-3.5 border-b border-slate-100 shrink-0"><div className="flex items-center justify-between mb-1"><div className="flex items-center gap-2"><Receipt className="w-4 h-4 text-slate-500" /><div><p className="text-sm font-bold text-slate-800 leading-tight">{patient ? `${patient.firstName} ${patient.lastName}` : "All Invoices"}</p><p className="text-[11px] text-slate-600">{patient ? "Patient invoice history" : "Hospital invoice log"} · {filteredLogs.length} shown
+                                    </p></div></div><button onClick={() => loadLogs()} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" title="Refresh"><RefreshCw className={`w-3.5 h-3.5 ${logsLoading ? "animate-spin" : ""}`} /></button></div>{
     /* Search */
   }<div className="relative mt-2.5 mb-2"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" /><input
-    className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-800 dark:text-[#dddddd] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
+    className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
     placeholder="Search invoice #, patient…"
     value={logSearch}
     onChange={(e) => setLogSearch(e.target.value)}
@@ -448,17 +448,17 @@ function CreateInvoice() {
   }<div className="flex gap-1.5">{["ALL", "UNPAID", "PAID", "CANCELLED"].map((s) => <button
     key={s}
     onClick={() => setLogStatus(s)}
-    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${logStatus === s ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" : "bg-slate-100 dark:bg-[#1e1e1e] text-slate-500 dark:text-[#888888] hover:bg-slate-200 dark:hover:bg-[#2a2a2a]"}`}
+    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${logStatus === s ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
   >{s}</button>)}</div></div>{
     /* Log list */
-  }<div className="flex-1 overflow-y-auto">{logsLoading ? <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin text-slate-300" /></div> : filteredLogs.length === 0 ? <div className="flex flex-col items-center justify-center py-16 gap-2"><Receipt className="w-8 h-8 text-slate-200 dark:text-[#2a2a2a]" /><p className="text-sm text-slate-600 dark:text-[#999999]">{patient ? `No invoices for ${patient.firstName}` : "No invoices found"}</p></div> : <div className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{filteredLogs.map((inv) => {
+  }<div className="flex-1 overflow-y-auto">{logsLoading ? <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin text-slate-300" /></div> : filteredLogs.length === 0 ? <div className="flex flex-col items-center justify-center py-16 gap-2"><Receipt className="w-8 h-8 text-slate-200" /><p className="text-sm text-slate-600">{patient ? `No invoices for ${patient.firstName}` : "No invoices found"}</p></div> : <div className="divide-y divide-slate-50">{filteredLogs.map((inv) => {
     const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.UNPAID;
     const StatusIcon = cfg.icon;
     const isExpanded = expandedInvoice === inv.id;
     return <div key={inv.id}><button
       onClick={() => setExpandedInvoice(isExpanded ? null : inv.id ?? null)}
-      className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-[#111111] transition-colors"
-    ><div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="flex items-center gap-1.5 mb-0.5"><p className="text-sm font-bold text-slate-800 dark:text-[#dddddd] truncate">#{fmtId(inv.invoiceNumber)}</p><span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded border ${cfg.cls}`}><StatusIcon className="w-2.5 h-2.5" />{cfg.label}</span></div><p className="text-xs text-slate-600 dark:text-[#999999]">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata', day: "2-digit", month: "short", year: "numeric" }) : "\u2014"}{inv.paymentMethod ? ` \xB7 ${inv.paymentMethod}` : ""}</p></div><div className="flex items-center gap-1.5 shrink-0"><span className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{fmt(inv.total)}</span><ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isExpanded ? "rotate-90" : ""}`} /></div></div></button>{isExpanded && <div className="px-4 pb-3 bg-slate-50 dark:bg-[#0a0a0a] border-t border-slate-100 dark:border-[#1e1e1e]"><div className="pt-2 space-y-1">{(inv.items ?? []).map((item, idx) => <div key={idx} className="flex items-center justify-between gap-2 py-1"><div className="flex items-center gap-1.5 min-w-0"><TypeBadge type={item.itemType} /><p className="text-xs text-slate-600 dark:text-[#aaaaaa] truncate">{item.description}</p></div><span className="text-xs font-semibold text-slate-700 dark:text-[#cccccc] shrink-0">×{item.quantity} · {fmt(item.totalPrice)}</span></div>)}<div className="flex justify-between pt-1.5 border-t border-slate-200 dark:border-[#1e1e1e] mt-1"><span className="text-xs text-slate-400">Total</span><span className="text-xs font-bold text-blue-600 dark:text-blue-400">{fmt(inv.total)}</span></div>{inv.status === "UNPAID" && inv.id && <button
+      className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors"
+    ><div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="flex items-center gap-1.5 mb-0.5"><p className="text-sm font-bold text-slate-800 truncate">#{fmtId(inv.invoiceNumber)}</p><span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded border ${cfg.cls}`}><StatusIcon className="w-2.5 h-2.5" />{cfg.label}</span></div><p className="text-xs text-slate-600">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-IN", { timeZone: 'Asia/Kolkata', day: "2-digit", month: "short", year: "numeric" }) : "\u2014"}{inv.paymentMethod ? ` \xB7 ${inv.paymentMethod}` : ""}</p></div><div className="flex items-center gap-1.5 shrink-0"><span className="text-sm font-bold text-slate-800">{fmt(inv.total)}</span><ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isExpanded ? "rotate-90" : ""}`} /></div></div></button>{isExpanded && <div className="px-4 pb-3 bg-slate-50 border-t border-slate-100"><div className="pt-2 space-y-1">{(inv.items ?? []).map((item, idx) => <div key={idx} className="flex items-center justify-between gap-2 py-1"><div className="flex items-center gap-1.5 min-w-0"><TypeBadge type={item.itemType} /><p className="text-xs text-slate-600 truncate">{item.description}</p></div><span className="text-xs font-semibold text-slate-700 shrink-0">×{item.quantity} · {fmt(item.totalPrice)}</span></div>)}<div className="flex justify-between pt-1.5 border-t border-slate-200 mt-1"><span className="text-xs text-slate-400">Total</span><span className="text-xs font-bold text-blue-600">{fmt(inv.total)}</span></div>{inv.status === "UNPAID" && inv.id && <button
       onClick={() => handleMarkPaid(inv.id)}
       disabled={markingPaidId === inv.id}
       className="mt-2 w-full py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
