@@ -47,7 +47,7 @@ function AssignAttenderModal({ admissionId, label, existing, onClose, onSuccess 
             title={
                 <span>
                     Assign attender{" "}
-                    <span style={{ color: "var(--hms-gray-400)", fontWeight: 400 }}>
+                    <span className="hms-rooms-title-suffix">
                         · {label}
                     </span>
                 </span>
@@ -72,12 +72,12 @@ function AssignAttenderModal({ admissionId, label, existing, onClose, onSuccess 
             <form
                 id="attender-form"
                 onSubmit={handleSubmit}
-                style={{ display: "flex", flexDirection: "column", gap: 16 }}
+                className="hms-rooms-form"
             >
                 <FormGroup
                     label={
                         <>
-                            Attender name <span style={{ color: "var(--hms-danger)" }}>*</span>
+                            Attender name <span className="hms-rooms-required">*</span>
                         </>
                     }
                 >
@@ -90,7 +90,7 @@ function AssignAttenderModal({ admissionId, label, existing, onClose, onSuccess 
                         }
                     />
                 </FormGroup>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="hms-rooms-form-grid-2">
                     <FormGroup label="Phone">
                         <Input
                             placeholder="Phone number"

@@ -31,24 +31,6 @@ import {
     SearchBar,
 } from "@/components/ui";
 
-/** Room status visual tone — dot colour + accent strip + icon tint. */
-const STATUS_ACCENT = {
-    AVAILABLE: "var(--hms-success)",
-    OCCUPIED: "var(--hms-info)",
-};
-const STATUS_ICON_BG = {
-    AVAILABLE: "var(--hms-success-bg)",
-    OCCUPIED: "var(--hms-info-bg)",
-};
-const STATUS_ICON_COLOR = {
-    AVAILABLE: "var(--hms-success)",
-    OCCUPIED: "#0369a1",
-};
-const STATUS_TEXT_COLOR = {
-    AVAILABLE: "var(--hms-success)",
-    OCCUPIED: "var(--hms-info)",
-};
-
 const TYPE_TONE = {
     ICU: "rose",
     OT: "amber",
@@ -56,83 +38,55 @@ const TYPE_TONE = {
 
 const normalizeKey = (v) => v?.toString()?.trim()?.toLowerCase() || "";
 
+const statusTone = (status) => {
+    if (status === "AVAILABLE") return "is-available";
+    if (status === "OCCUPIED") return "is-occupied";
+    return "";
+};
+
+const chipStatusClass = (status) => {
+    if (status === "AVAILABLE") return "hms-status-chip is-success";
+    if (status === "OCCUPIED") return "hms-status-chip is-info";
+    return "hms-status-chip is-neutral";
+};
+
 /** Compact dot+label status chip used in card headers. */
 function StatusChip({ status }) {
-    const color = STATUS_ACCENT[status] || "var(--hms-gray-300)";
-    const textColor = STATUS_TEXT_COLOR[status] || "var(--hms-gray-400)";
     return (
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-            <div
-                style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: 999,
-                    background: color,
-                }}
-            />
-            <span
-                style={{
-                    fontSize: 9,
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    color: textColor,
-                }}
-            >
-                {status ?? "Not Set"}
-            </span>
-        </div>
+        <span className={chipStatusClass(status)}>
+            {status ?? "Not Set"}
+        </span>
     );
 }
 
 /** Occupancy fill bar — green / amber / red by percentage. */
 function OccupancyBar({ occupied, total, size = "md" }) {
     const pct = total > 0 ? Math.round((occupied / total) * 100) : 0;
-    const fill =
+    const fillCls =
         pct >= 85
-            ? "var(--hms-danger)"
+            ? "is-high"
             : pct >= 60
-                ? "var(--hms-warning)"
+                ? "is-medium"
                 : pct > 0
-                    ? "var(--hms-success)"
-                    : "var(--hms-gray-300)";
-    const h = size === "sm" ? 4 : size === "lg" ? 10 : 6;
+                    ? "is-low"
+                    : "is-empty";
+    const sizeCls = size === "sm" ? " is-sm" : size === "lg" ? " is-lg" : "";
     return (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-            <div
-                style={{
-                    flex: 1,
-                    background: "var(--hms-gray-100)",
-                    borderRadius: 999,
-                    height: h,
-                    overflow: "hidden",
-                }}
-            >
+        <div className={"hms-room-occ" + sizeCls}>
+            <div className="hms-room-occ__track">
                 <div
-                    style={{
-                        height: "100%",
-                        background: fill,
-                        width: `${pct}%`,
-                        transition: "width 0.2s",
-                    }}
+                    className={"hms-room-occ__fill " + fillCls}
+                    style={{ width: `${pct}%` }}
                 />
             </div>
-            <span
-                style={{
-                    fontSize: 10,
-                    fontVariantNumeric: "tabular-nums",
-                    color: "var(--hms-gray-500)",
-                    flexShrink: 0,
-                    fontWeight: 600,
-                }}
-            >
+            <span className="hms-room-occ__text">
                 {occupied}/{total}
             </span>
         </div>
     );
 }
 
-function RoomMenu({ room, onView, onAttender, alwaysVisible = false }) {
+function RoomMenu({ room, onView, onAttender }) {
     const isMultiBed = room.bedCount != null && room.bedCount > 1;
     const items = [
         {
@@ -149,7 +103,7 @@ function RoomMenu({ room, onView, onAttender, alwaysVisible = false }) {
         });
     }
     return (
-        <div style={{ opacity: alwaysVisible ? 1 : undefined }}>
+        <div>
             <Menu
                 triggerIcon={<MoreHorizontal size={16} />}
                 triggerLabel="Room actions"
@@ -165,90 +119,35 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
     const isMultiBed = roomData?.bedCount != null && roomData.bedCount > 1;
     const status = roomData?.status;
     const roomType = roomData?.roomType ?? roomInfo.roomType ?? "GENERAL";
-    const accent = !roomData
-        ? "var(--hms-gray-300)"
-        : STATUS_ACCENT[status] || "var(--hms-gray-300)";
+    const accentTone = roomData ? statusTone(status) : "";
+    const iconTone = roomData ? statusTone(status) : "";
 
     return (
         <div
             onClick={() => roomData && onSelect(roomData)}
-            style={{
-                position: "relative",
-                overflow: "hidden",
-                background: "var(--hms-white)",
-                border: `1px solid ${isSelected ? "#60a5fa" : "var(--hms-gray-200)"}`,
-                borderRadius: 8,
-                padding: "12px 12px 12px 14px",
-                cursor: roomData ? "pointer" : "default",
-                opacity: roomData ? 1 : 0.6,
-                boxShadow: isSelected ? "0 0 0 2px rgba(59, 130, 246, 0.1)" : "none",
-                transition: "all 0.15s",
-                fontFamily: "var(--hms-font-family)",
-            }}
+            className={
+                "hms-room-cell" +
+                (!roomData ? " is-empty" : "") +
+                (isSelected ? " is-selected" : "")
+            }
         >
-            <div
-                style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 3,
-                    background: accent,
-                }}
-            />
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                <div
-                    style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 6,
-                        background: STATUS_ICON_BG[status] || "var(--hms-gray-50)",
-                        color: STATUS_ICON_COLOR[status] || "var(--hms-gray-400)",
-                        border: `1px solid ${status ? "transparent" : "var(--hms-gray-100)"}`,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                    }}
-                >
+            <div className={"hms-room-cell__accent " + accentTone} />
+            <div className="hms-room-cell__head">
+                <div className={"hms-room-cell__icon " + iconTone}>
                     <Bed size={16} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, lineHeight: 1 }}>
-                        <p
-                            style={{
-                                margin: 0,
-                                fontSize: 13,
-                                fontWeight: 700,
-                                color: "var(--hms-gray-900)",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
+                <div className="hms-room-cell__body">
+                    <div className="hms-room-cell__title-row">
+                        <p className="hms-room-cell__title">
                             {roomInfo.name}
                         </p>
                         {roomData?.roomCode && (
-                            <span
-                                style={{
-                                    fontSize: 10,
-                                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                    color: "var(--hms-gray-400)",
-                                }}
-                            >
+                            <span className="hms-room-cell__code">
                                 {fmtId(roomData.roomCode)}
                             </span>
                         )}
                     </div>
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            marginTop: 6,
-                            flexWrap: "wrap",
-                        }}
-                    >
+                    <div className="hms-room-cell__tags">
                         <Badge tone={TYPE_TONE[roomType] || "neutral"} soft>
                             {roomType}
                         </Badge>
@@ -268,97 +167,33 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
             </div>
 
             {roomData && status === "OCCUPIED" && roomData.currentPatient && !isMultiBed && (
-                <div
-                    style={{
-                        marginTop: 10,
-                        paddingTop: 10,
-                        borderTop: "1px dashed var(--hms-gray-200)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 4,
-                    }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                        <User size={12} style={{ color: "var(--hms-gray-400)", flexShrink: 0 }} />
-                        <span
-                            style={{
-                                fontSize: 11,
-                                fontWeight: 600,
-                                color: "var(--hms-gray-800)",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
+                <div className="hms-room-cell__patient">
+                    <div className="hms-room-cell__patient-row">
+                        <User size={12} className="text-gray-400 shrink-0" />
+                        <span className="hms-room-cell__patient-name">
                             {roomData.currentPatient.firstName} {roomData.currentPatient.lastName}
                         </span>
-                        <span
-                            style={{
-                                fontSize: 10,
-                                color: "var(--hms-gray-400)",
-                                flexShrink: 0,
-                                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                            }}
-                        >
+                        <span className="hms-room-cell__patient-uhid">
                             {fmtId(roomData.currentPatient.uhid)}
                         </span>
                     </div>
                     {roomData.attenderName ? (
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "baseline",
-                                gap: 6,
-                                paddingLeft: 16,
-                                minWidth: 0,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontSize: 9,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.08em",
-                                    color: "var(--hms-gray-400)",
-                                    flexShrink: 0,
-                                }}
-                            >
+                        <div className="hms-room-cell__attender">
+                            <span className="hms-room-cell__attender-label">
                                 Attender
                             </span>
-                            <span
-                                style={{
-                                    fontSize: 11,
-                                    fontWeight: 500,
-                                    color: "var(--hms-gray-600)",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                }}
-                            >
+                            <span className="hms-room-cell__attender-name">
                                 {roomData.attenderName}
                                 {roomData.attenderRelationship && (
-                                    <span
-                                        style={{
-                                            fontSize: 9,
-                                            color: "var(--hms-gray-400)",
-                                            marginLeft: 4,
-                                        }}
-                                    >
+                                    <span className="hms-room-cell__attender-rel">
                                         ({roomData.attenderRelationship})
                                     </span>
                                 )}
                             </span>
                         </div>
                     ) : (
-                        <div style={{ paddingLeft: 16 }}>
-                            <span
-                                style={{
-                                    fontSize: 9,
-                                    color: "var(--hms-warning)",
-                                    fontWeight: 600,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.08em",
-                                }}
-                            >
+                        <div className="hms-room-cell__no-attender">
+                            <span className="hms-room-cell__no-attender-text">
                                 No attender
                             </span>
                         </div>
@@ -366,28 +201,12 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
                 </div>
             )}
             {roomData && isMultiBed && (
-                <p
-                    style={{
-                        margin: "8px 0 0",
-                        fontSize: 10,
-                        color: "var(--hms-gray-400)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                    }}
-                >
+                <p className="hms-room-cell__footer-hint">
                     Open panel to view beds →
                 </p>
             )}
             {!roomData && (
-                <p
-                    style={{
-                        margin: "8px 0 0",
-                        fontSize: 10,
-                        color: "var(--hms-gray-400)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                    }}
-                >
+                <p className="hms-room-cell__footer-hint">
                     Not provisioned
                 </p>
             )}
@@ -397,27 +216,13 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
 
 function SectionLabel({ icon: Icon, label, count, onDark }) {
     return (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                color: onDark ? "rgba(255, 255, 255, 0.55)" : "var(--hms-gray-400)",
-            }}
-        >
+        <div className={"hms-room-section-label" + (onDark ? " is-on-dark" : "")}>
             <Icon size={12} />
-            <span
-                style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                }}
-            >
+            <span className="hms-room-section-label__text">
                 {label}
             </span>
             {count != null && (
-                <span style={{ fontSize: 10, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                <span className="hms-room-section-label__count">
                     · {count}
                 </span>
             )}
@@ -425,54 +230,22 @@ function SectionLabel({ icon: Icon, label, count, onDark }) {
     );
 }
 
-function StatCell({ label, value, dotColor, sub }) {
+function StatCell({ label, value, dotTone, sub }) {
     return (
-        <div style={{ padding: "16px 20px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {dotColor && (
-                    <span
-                        style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: 999,
-                            background: dotColor,
-                        }}
-                    />
+        <div className="hms-rooms-stats__cell">
+            <div className="hms-rooms-stats__head">
+                {dotTone && (
+                    <span className={"hms-rooms-stats__dot " + dotTone} />
                 )}
-                <p
-                    style={{
-                        margin: 0,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                        color: "var(--hms-gray-500)",
-                    }}
-                >
+                <p className="hms-rooms-stats__label">
                     {label}
                 </p>
             </div>
-            <p
-                style={{
-                    margin: "8px 0 0",
-                    fontSize: 28,
-                    fontWeight: 700,
-                    color: "var(--hms-gray-900)",
-                    fontVariantNumeric: "tabular-nums",
-                    lineHeight: 1,
-                }}
-            >
+            <p className="hms-rooms-stats__value">
                 {value}
             </p>
             {sub && (
-                <p
-                    style={{
-                        margin: "8px 0 0",
-                        fontSize: 11,
-                        color: "var(--hms-gray-500)",
-                        fontVariantNumeric: "tabular-nums",
-                    }}
-                >
+                <p className="hms-rooms-stats__sub">
                     {sub}
                 </p>
             )}
@@ -665,111 +438,40 @@ function Rooms() {
         onAttender: (r) => setShowAttenderModal({ open: true, room: r }),
     });
 
-    const roomGridStyle = {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-        gap: 10,
-    };
-
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Header — dark gradient banner */}
-            <Card style={{ padding: 0, overflow: "hidden" }}>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 16,
-                        padding: 20,
-                        flexWrap: "wrap",
-                    }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                        <div
-                            style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 8,
-                                background: "var(--hms-brand-primary)",
-                                color: "var(--hms-white)",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                            }}
-                        >
+        <div className="hms-rooms-page">
+            {/* Header — banner card */}
+            <Card className="hms-rooms-banner">
+                <div className="hms-rooms-banner__inner">
+                    <div className="hms-rooms-banner__lead">
+                        <div className="hms-rooms-banner__icon">
                             <Stethoscope size={20} />
                         </div>
                         <div>
-                            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                                <h1
-                                    style={{
-                                        margin: 0,
-                                        fontSize: 20,
-                                        fontWeight: 700,
-                                        color: "var(--hms-gray-900)",
-                                        letterSpacing: "-0.02em",
-                                    }}
-                                >
+                            <div className="hms-rooms-banner__title-row">
+                                <h1 className="hms-rooms-banner__title">
                                     Room allocation
                                 </h1>
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 600,
-                                        color: "var(--hms-gray-400)",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.1em",
-                                    }}
-                                >
+                                <span className="hms-rooms-banner__eyebrow">
                                     Infrastructure
                                 </span>
                             </div>
-                            <p
-                                style={{
-                                    margin: "4px 0 0",
-                                    fontSize: 12,
-                                    color: "var(--hms-gray-500)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    flexWrap: "wrap",
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontVariantNumeric: "tabular-nums",
-                                        fontWeight: 600,
-                                        color: "var(--hms-gray-700)",
-                                    }}
-                                >
+                            <p className="hms-rooms-banner__meta">
+                                <span className="hms-rooms-banner__meta-num">
                                     {rooms.length}
                                 </span>
                                 <span>rooms</span>
                                 {showInfrastructureView && (
                                     <>
-                                        <span style={{ color: "var(--hms-gray-300)" }}>·</span>
-                                        <span
-                                            style={{
-                                                fontVariantNumeric: "tabular-nums",
-                                                fontWeight: 600,
-                                                color: "var(--hms-gray-700)",
-                                            }}
-                                        >
+                                        <span className="hms-rooms-banner__meta-sep">·</span>
+                                        <span className="hms-rooms-banner__meta-num">
                                             {totalBuildings}
                                         </span>
                                         <span>
                                             {totalBuildings === 1 ? "building" : "buildings"}
                                         </span>
-                                        <span style={{ color: "var(--hms-gray-300)" }}>·</span>
-                                        <span
-                                            style={{
-                                                fontVariantNumeric: "tabular-nums",
-                                                fontWeight: 600,
-                                                color: "var(--hms-gray-700)",
-                                            }}
-                                        >
+                                        <span className="hms-rooms-banner__meta-sep">·</span>
+                                        <span className="hms-rooms-banner__meta-num">
                                             {totalFloors}
                                         </span>
                                         <span>{totalFloors === 1 ? "floor" : "floors"}</span>
@@ -785,17 +487,12 @@ function Rooms() {
             </Card>
 
             {/* Stats strip */}
-            <Card style={{ padding: 0, overflow: "hidden" }}>
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-                    }}
-                >
+            <Card className="hms-rooms-stats">
+                <div className="hms-rooms-stats__grid">
                     {[
                         { label: "Total rooms", value: rooms.length },
-                        { label: "Available", value: availableCount, dotColor: "var(--hms-success)" },
-                        { label: "Occupied", value: occupiedCount, dotColor: "var(--hms-info)" },
+                        { label: "Available", value: availableCount, dotTone: "is-success" },
+                        { label: "Occupied", value: occupiedCount, dotTone: "is-info" },
                         {
                             label: "ICU",
                             value: icuOccupied + icuAvailable,
@@ -806,29 +503,15 @@ function Rooms() {
                             value: otOccupied + otAvailable,
                             sub: `${otOccupied} in use · ${otAvailable} free`,
                         },
-                    ].map((s, i) => (
-                        <div
-                            key={s.label}
-                            style={{ borderLeft: i === 0 ? "none" : "1px solid var(--hms-gray-200)" }}
-                        >
-                            <StatCell {...s} />
-                        </div>
+                    ].map((s) => (
+                        <StatCell key={s.label} {...s} />
                     ))}
                 </div>
             </Card>
 
             {/* Controls */}
-            <Card style={{ padding: 10, flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <div
-                    style={{
-                        background: "var(--hms-gray-100)",
-                        borderRadius: 8,
-                        padding: 4,
-                        display: "flex",
-                        gap: 4,
-                        flexShrink: 0,
-                    }}
-                >
+            <Card className="hms-rooms-controls">
+                <div className="hms-rooms-filter-pills">
                     {["ALL", "AVAILABLE", "OCCUPIED"].map((f) => {
                         const active = filter === f;
                         return (
@@ -836,23 +519,9 @@ function Rooms() {
                                 key={f}
                                 type="button"
                                 onClick={() => setFilter(f)}
-                                style={{
-                                    padding: "6px 12px",
-                                    borderRadius: 6,
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.06em",
-                                    background: active ? "var(--hms-white)" : "transparent",
-                                    color: active
-                                        ? "var(--hms-gray-900)"
-                                        : "var(--hms-gray-500)",
-                                    boxShadow: active ? "var(--hms-shadow-xs)" : "none",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    fontFamily: "var(--hms-font-family)",
-                                    transition: "all 0.15s",
-                                }}
+                                className={
+                                    "hms-rooms-filter-pill" + (active ? " is-active" : "")
+                                }
                             >
                                 {f}
                             </button>
@@ -860,7 +529,7 @@ function Rooms() {
                     })}
                 </div>
 
-                <div style={{ flex: 1 }}>
+                <div className="flex-1">
                     <SearchBar
                         value={search}
                         onChange={setSearch}
@@ -870,52 +539,20 @@ function Rooms() {
             </Card>
 
             {/* Content */}
-            <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="hms-rooms-body">
+                <div className="hms-rooms-body__list">
                     {loading ? (
-                        <Card style={{ padding: 64, alignItems: "center", gap: 12 }}>
-                            <span
-                                style={{
-                                    position: "relative",
-                                    display: "inline-flex",
-                                    width: 8,
-                                    height: 8,
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        borderRadius: 999,
-                                        background: "var(--hms-info)",
-                                        opacity: 0.75,
-                                        animation: "ping 1s cubic-bezier(0, 0, 0.2, 1) infinite",
-                                    }}
-                                />
-                                <span
-                                    style={{
-                                        position: "relative",
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: 999,
-                                        background: "var(--hms-info)",
-                                    }}
-                                />
+                        <Card className="hms-rooms-loading-card">
+                            <span className="hms-rooms-ping">
+                                <span className="hms-rooms-ping__ring" />
+                                <span className="hms-rooms-ping__dot" />
                             </span>
-                            <span
-                                style={{
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.1em",
-                                    color: "var(--hms-gray-500)",
-                                }}
-                            >
+                            <span className="hms-rooms-loading-label">
                                 Loading infrastructure
                             </span>
                         </Card>
                     ) : showInfrastructureView ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div className="hms-rooms-tree">
                             {filteredInfrastructure.map((building, bIdx) => {
                                 const bRooms = building.floors.flatMap((f) =>
                                     f.wards.flatMap((w) =>
@@ -925,97 +562,31 @@ function Rooms() {
                                 const bOcc = bRooms.filter((r) => r.status === "OCCUPIED").length;
                                 const bldgCode = `BLDG-${String(bIdx + 1).padStart(2, "0")}`;
                                 return (
-                                    <div
-                                        key={building.id ?? bIdx}
-                                        style={{
-                                            borderRadius: 12,
-                                            border: "1px solid var(--hms-gray-200)",
-                                            background: "var(--hms-white)",
-                                            overflow: "hidden",
-                                        }}
-                                    >
+                                    <div key={building.id ?? bIdx} className="hms-room-building">
                                         {/* Building header */}
-                                        <div
-                                            style={{
-                                                padding: "12px 16px",
-                                                background:
-                                                    "linear-gradient(90deg, var(--hms-gray-900), var(--hms-gray-800))",
-                                                borderBottom: "1px solid var(--hms-gray-700)",
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "space-between",
-                                                    gap: 16,
-                                                    flexWrap: "wrap",
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 12,
-                                                    }}
-                                                >
-                                                    <div
-                                                        style={{
-                                                            width: 32,
-                                                            height: 32,
-                                                            borderRadius: 6,
-                                                            background: "rgba(255, 255, 255, 0.1)",
-                                                            backdropFilter: "blur(4px)",
-                                                            color: "var(--hms-white)",
-                                                            display: "inline-flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                            flexShrink: 0,
-                                                        }}
-                                                    >
+                                        <div className="hms-room-building__header">
+                                            <div className="hms-room-building__header-row">
+                                                <div className="hms-room-building__lead">
+                                                    <div className="hms-room-building__icon">
                                                         <Building2 size={16} />
                                                     </div>
                                                     <div>
-                                                        <p
-                                                            style={{
-                                                                margin: 0,
-                                                                fontSize: 13,
-                                                                fontWeight: 700,
-                                                                color: "var(--hms-white)",
-                                                                letterSpacing: "-0.02em",
-                                                            }}
-                                                        >
+                                                        <p className="hms-room-building__name">
                                                             {building.name || `Building ${bIdx + 1}`}
                                                         </p>
-                                                        <p
-                                                            style={{
-                                                                margin: "2px 0 0",
-                                                                fontSize: 10,
-                                                                fontFamily:
-                                                                    "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                                                textTransform: "uppercase",
-                                                                letterSpacing: "0.1em",
-                                                                color: "rgba(255, 255, 255, 0.4)",
-                                                            }}
-                                                        >
+                                                        <p className="hms-room-building__code">
                                                             {bldgCode}
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 16,
-                                                    }}
-                                                >
+                                                <div className="hms-room-building__aside">
                                                     <SectionLabel
                                                         icon={Layers}
                                                         label="floors"
                                                         count={building.floors.length}
                                                         onDark
                                                     />
-                                                    <div style={{ width: 176 }}>
+                                                    <div className="hms-room-building__occupancy">
                                                         <OccupancyBar
                                                             occupied={bOcc}
                                                             total={bRooms.length}
@@ -1026,14 +597,7 @@ function Rooms() {
                                             </div>
                                         </div>
 
-                                        <div
-                                            style={{
-                                                padding: 12,
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                gap: 8,
-                                            }}
-                                        >
+                                        <div className="hms-room-building__body">
                                             {building.floors.map((floor, fIdx) => {
                                                 const floorKey = floor.id ?? `${bIdx}-${fIdx}`;
                                                 const floorCollapsed = collapsedFloors.has(floorKey);
@@ -1044,61 +608,28 @@ function Rooms() {
                                                     (r) => r.status === "OCCUPIED"
                                                 ).length;
                                                 return (
-                                                    <div
-                                                        key={floorKey}
-                                                        style={{
-                                                            borderRadius: 8,
-                                                            border: "1px solid var(--hms-gray-100)",
-                                                            overflow: "hidden",
-                                                        }}
-                                                    >
+                                                    <div key={floorKey} className="hms-room-floor">
                                                         <div
                                                             onClick={() => toggleFloor(floorKey)}
-                                                            style={{
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                justifyContent: "space-between",
-                                                                padding: "8px 12px",
-                                                                background: "var(--hms-gray-50)",
-                                                                borderBottom:
-                                                                    "1px solid var(--hms-gray-100)",
-                                                                cursor: "pointer",
-                                                                userSelect: "none",
-                                                            }}
+                                                            className="hms-room-floor__head"
                                                         >
-                                                            <div
-                                                                style={{
-                                                                    display: "flex",
-                                                                    alignItems: "center",
-                                                                    gap: 8,
-                                                                }}
-                                                            >
+                                                            <div className="hms-room-floor__head-lead">
                                                                 {floorCollapsed ? (
                                                                     <ChevronRight
                                                                         size={14}
-                                                                        style={{
-                                                                            color: "var(--hms-gray-400)",
-                                                                        }}
+                                                                        className="text-gray-400"
                                                                     />
                                                                 ) : (
                                                                     <ChevronDown
                                                                         size={14}
-                                                                        style={{
-                                                                            color: "var(--hms-gray-400)",
-                                                                        }}
+                                                                        className="text-gray-400"
                                                                     />
                                                                 )}
                                                                 <Layers
                                                                     size={12}
-                                                                    style={{ color: "var(--hms-gray-400)" }}
+                                                                    className="text-gray-400"
                                                                 />
-                                                                <span
-                                                                    style={{
-                                                                        fontSize: 12,
-                                                                        fontWeight: 600,
-                                                                        color: "var(--hms-gray-700)",
-                                                                    }}
-                                                                >
+                                                                <span className="hms-room-floor__name">
                                                                     {floor.name || `Floor ${fIdx + 1}`}
                                                                 </span>
                                                                 <SectionLabel
@@ -1107,7 +638,7 @@ function Rooms() {
                                                                     count={floor.wards.length}
                                                                 />
                                                             </div>
-                                                            <div style={{ width: 144 }}>
+                                                            <div className="hms-room-floor__occupancy">
                                                                 <OccupancyBar
                                                                     occupied={fOcc}
                                                                     total={fRooms.length}
@@ -1117,14 +648,7 @@ function Rooms() {
                                                         </div>
 
                                                         {!floorCollapsed && (
-                                                            <div
-                                                                style={{
-                                                                    padding: 12,
-                                                                    display: "flex",
-                                                                    flexDirection: "column",
-                                                                    gap: 12,
-                                                                }}
-                                                            >
+                                                            <div className="hms-room-floor__body">
                                                                 {floor.wards.map((ward, wIdx) => {
                                                                     const wardKey =
                                                                         ward.id ??
@@ -1143,73 +667,34 @@ function Rooms() {
                                                                                 onClick={() =>
                                                                                     toggleWard(wardKey)
                                                                                 }
-                                                                                style={{
-                                                                                    display: "flex",
-                                                                                    alignItems: "center",
-                                                                                    justifyContent:
-                                                                                        "space-between",
-                                                                                    marginBottom: 8,
-                                                                                    padding: "4px 6px",
-                                                                                    borderRadius: 6,
-                                                                                    cursor: "pointer",
-                                                                                    userSelect: "none",
-                                                                                }}
+                                                                                className="hms-room-ward__head"
                                                                             >
-                                                                                <div
-                                                                                    style={{
-                                                                                        display: "flex",
-                                                                                        alignItems: "center",
-                                                                                        gap: 6,
-                                                                                    }}
-                                                                                >
+                                                                                <div className="hms-room-ward__head-lead">
                                                                                     {wardCollapsed ? (
                                                                                         <ChevronRight
                                                                                             size={12}
-                                                                                            style={{
-                                                                                                color: "var(--hms-gray-400)",
-                                                                                            }}
+                                                                                            className="text-gray-400"
                                                                                         />
                                                                                     ) : (
                                                                                         <ChevronDown
                                                                                             size={12}
-                                                                                            style={{
-                                                                                                color: "var(--hms-gray-400)",
-                                                                                            }}
+                                                                                            className="text-gray-400"
                                                                                         />
                                                                                     )}
                                                                                     <LayoutGrid
                                                                                         size={12}
-                                                                                        style={{
-                                                                                            color: "var(--hms-gray-400)",
-                                                                                        }}
+                                                                                        className="text-gray-400"
                                                                                     />
-                                                                                    <span
-                                                                                        style={{
-                                                                                            fontSize: 12,
-                                                                                            fontWeight: 600,
-                                                                                            color: "var(--hms-gray-600)",
-                                                                                        }}
-                                                                                    >
+                                                                                    <span className="hms-room-ward__name">
                                                                                         {ward.name ||
                                                                                             `Ward ${wIdx + 1}`}
                                                                                     </span>
-                                                                                    <span
-                                                                                        style={{
-                                                                                            fontSize: 10,
-                                                                                            fontVariantNumeric:
-                                                                                                "tabular-nums",
-                                                                                            color: "var(--hms-gray-400)",
-                                                                                        }}
-                                                                                    >
+                                                                                    <span className="hms-room-ward__count">
                                                                                         ·{" "}
                                                                                         {ward.rooms.length}
                                                                                     </span>
                                                                                 </div>
-                                                                                <div
-                                                                                    style={{
-                                                                                        width: 112,
-                                                                                    }}
-                                                                                >
+                                                                                <div className="hms-room-ward__occupancy">
                                                                                     <OccupancyBar
                                                                                         occupied={wOcc}
                                                                                         total={wRooms.length}
@@ -1219,9 +704,7 @@ function Rooms() {
                                                                             </div>
 
                                                                             {!wardCollapsed && (
-                                                                                <div
-                                                                                    style={roomGridStyle}
-                                                                                >
+                                                                                <div className="hms-room-grid">
                                                                                     {ward.rooms.map(
                                                                                         (room) => (
                                                                                             <InfrastructureRoomCard
@@ -1252,109 +735,34 @@ function Rooms() {
                             })}
 
                             {unmappedRooms.length > 0 && (
-                                <div
-                                    style={{
-                                        position: "relative",
-                                        borderRadius: 12,
-                                        border: "1px solid var(--hms-gray-200)",
-                                        background: "var(--hms-white)",
-                                        overflow: "hidden",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            position: "absolute",
-                                            left: 0,
-                                            top: 0,
-                                            bottom: 0,
-                                            width: 4,
-                                            background: "var(--hms-warning)",
-                                        }}
-                                    />
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                            gap: 16,
-                                            padding: "14px 20px 14px 24px",
-                                            borderBottom: "1px solid var(--hms-gray-100)",
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 12,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: 32,
-                                                    height: 32,
-                                                    borderRadius: 6,
-                                                    background: "var(--hms-warning-bg)",
-                                                    border: "1px solid var(--hms-warning-border)",
-                                                    color: "var(--hms-warning)",
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    flexShrink: 0,
-                                                }}
-                                            >
+                                <div className="hms-rooms-unmapped">
+                                    <div className="hms-rooms-unmapped__accent" />
+                                    <div className="hms-rooms-unmapped__head">
+                                        <div className="hms-rooms-unmapped__lead">
+                                            <div className="hms-rooms-unmapped__icon">
                                                 <Link2Off size={16} />
                                             </div>
                                             <div>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 8,
-                                                    }}
-                                                >
-                                                    <p
-                                                        style={{
-                                                            margin: 0,
-                                                            fontSize: 13,
-                                                            fontWeight: 700,
-                                                            color: "var(--hms-gray-900)",
-                                                        }}
-                                                    >
+                                                <div className="hms-rooms-unmapped__title-row">
+                                                    <p className="hms-rooms-unmapped__title">
                                                         Unmapped rooms
                                                     </p>
                                                     <Badge tone="warning" soft>
                                                         {unmappedRooms.length}
                                                     </Badge>
                                                 </div>
-                                                <p
-                                                    style={{
-                                                        margin: "2px 0 0",
-                                                        fontSize: 11,
-                                                        color: "var(--hms-gray-500)",
-                                                    }}
-                                                >
+                                                <p className="hms-rooms-unmapped__desc">
                                                     Exist in room allocation but not linked to the
                                                     infrastructure tree
                                                 </p>
                                             </div>
                                         </div>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 8,
-                                                fontSize: 10,
-                                                textTransform: "uppercase",
-                                                letterSpacing: "0.1em",
-                                                color: "var(--hms-gray-400)",
-                                                fontWeight: 600,
-                                            }}
-                                        >
+                                        <div className="hms-rooms-unmapped__badge">
                                             <AlertCircle size={12} />
                                             <span>Data quality</span>
                                         </div>
                                     </div>
-                                    <div style={{ ...roomGridStyle, padding: "12px 12px 12px 16px" }}>
+                                    <div className="hms-room-grid is-padded">
                                         {unmappedRooms.map((room) => (
                                             <InfrastructureRoomCard
                                                 key={room.id}
@@ -1371,84 +779,28 @@ function Rooms() {
                             )}
 
                             {filteredInfrastructure.length === 0 && unmappedRooms.length === 0 && (
-                                <Card
-                                    style={{
-                                        padding: 64,
-                                        textAlign: "center",
-                                        alignItems: "center",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: 56,
-                                            height: 56,
-                                            borderRadius: 999,
-                                            background: "var(--hms-gray-100)",
-                                            color: "var(--hms-gray-300)",
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            margin: "0 auto 12px",
-                                        }}
-                                    >
+                                <Card className="hms-rooms-empty">
+                                    <div className="hms-rooms-empty__icon">
                                         <Bed size={28} />
                                     </div>
-                                    <p
-                                        style={{
-                                            margin: 0,
-                                            fontSize: 13,
-                                            fontWeight: 600,
-                                            color: "var(--hms-gray-700)",
-                                        }}
-                                    >
+                                    <p className="hms-rooms-empty__title">
                                         No rooms match the current filter
                                     </p>
-                                    <p
-                                        style={{
-                                            margin: "4px 0 0",
-                                            fontSize: 11,
-                                            color: "var(--hms-gray-400)",
-                                        }}
-                                    >
+                                    <p className="hms-rooms-empty__desc">
                                         Try clearing the search or switching filters above.
                                     </p>
                                 </Card>
                             )}
                         </div>
                     ) : filteredRooms.length === 0 ? (
-                        <Card style={{ padding: 64, textAlign: "center", alignItems: "center" }}>
-                            <div
-                                style={{
-                                    width: 56,
-                                    height: 56,
-                                    borderRadius: 999,
-                                    background: "var(--hms-gray-100)",
-                                    color: "var(--hms-gray-300)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    margin: "0 auto 12px",
-                                }}
-                            >
+                        <Card className="hms-rooms-empty">
+                            <div className="hms-rooms-empty__icon">
                                 <Bed size={28} />
                             </div>
-                            <p
-                                style={{
-                                    margin: 0,
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    color: "var(--hms-gray-700)",
-                                }}
-                            >
+                            <p className="hms-rooms-empty__title">
                                 No rooms found matching criteria
                             </p>
-                            <p
-                                style={{
-                                    margin: "4px 0 0",
-                                    fontSize: 11,
-                                    color: "var(--hms-gray-400)",
-                                }}
-                            >
+                            <p className="hms-rooms-empty__desc">
                                 Adjust the filter or search above.
                             </p>
                         </Card>
@@ -1505,85 +857,29 @@ function FlatRoomList({ rooms, selectedRoom, onSelect, onView, onAttender }) {
         <>
             {rooms.map((room) => {
                 const isMultiBed = room.bedCount != null && room.bedCount > 1;
-                const accent = STATUS_ACCENT[room.status] || "var(--hms-gray-300)";
                 const isSelected = selectedRoom?.id === room.id;
+                const accentCls = statusTone(room.status);
+                const iconCls = statusTone(room.status);
                 return (
                     <div
                         key={room.id}
                         onClick={() => onSelect(room)}
-                        style={{
-                            position: "relative",
-                            overflow: "hidden",
-                            background: "var(--hms-white)",
-                            border: `1px solid ${isSelected ? "#60a5fa" : "var(--hms-gray-200)"
-                                }`,
-                            borderRadius: 12,
-                            padding: "16px 16px 16px 20px",
-                            display: "flex",
-                            flexDirection: "row",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: 16,
-                            cursor: "pointer",
-                            boxShadow: isSelected ? "0 0 0 2px rgba(59, 130, 246, 0.1)" : "none",
-                            transition: "all 0.15s",
-                            fontFamily: "var(--hms-font-family)",
-                        }}
+                        className={
+                            "hms-room-row" + (isSelected ? " is-selected" : "")
+                        }
                     >
-                        <div
-                            style={{
-                                position: "absolute",
-                                left: 0,
-                                top: 0,
-                                bottom: 0,
-                                width: 3,
-                                background: accent,
-                            }}
-                        />
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            <div
-                                style={{
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: 8,
-                                    background: STATUS_ICON_BG[room.status] || "var(--hms-gray-50)",
-                                    color: STATUS_ICON_COLOR[room.status] || "var(--hms-gray-400)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    flexShrink: 0,
-                                }}
-                            >
+                        <div className={"hms-room-cell__accent " + accentCls} />
+                        <div className="hms-room-row__lead">
+                            <div className={"hms-room-row__icon " + iconCls}>
                                 <Bed size={20} />
                             </div>
                             <div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8,
-                                        flexWrap: "wrap",
-                                    }}
-                                >
-                                    <p
-                                        style={{
-                                            margin: 0,
-                                            fontSize: 13,
-                                            fontWeight: 700,
-                                            color: "var(--hms-gray-900)",
-                                        }}
-                                    >
+                                <div className="hms-room-row__title-row">
+                                    <p className="hms-room-row__title">
                                         {room.roomNumber}
                                     </p>
                                     {room.roomCode && (
-                                        <span
-                                            style={{
-                                                fontSize: 10,
-                                                fontFamily:
-                                                    "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                                color: "var(--hms-gray-400)",
-                                            }}
-                                        >
+                                        <span className="hms-room-row__code">
                                             {fmtId(room.roomCode)}
                                         </span>
                                     )}
@@ -1596,218 +892,74 @@ function FlatRoomList({ rooms, selectedRoom, onSelect, onView, onAttender }) {
                                         </Badge>
                                     )}
                                 </div>
-                                <div style={{ marginTop: 4 }}>
+                                <div className="mt-1">
                                     <StatusChip status={room.status} />
                                 </div>
                             </div>
                         </div>
 
                         {isMultiBed ? (
-                            <div
-                                style={{
-                                    flex: 1,
-                                    paddingLeft: 24,
-                                    borderLeft: "1px solid var(--hms-gray-100)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                }}
-                            >
-                                <p
-                                    style={{
-                                        margin: 0,
-                                        fontSize: 12,
-                                        color: "var(--hms-gray-500)",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.06em",
-                                        fontWeight: 500,
-                                    }}
-                                >
+                            <div className="hms-room-row__main">
+                                <p className="hms-room-row__hint">
                                     Open panel to view beds →
                                 </p>
                             </div>
                         ) : room.status === "OCCUPIED" && room.currentPatient ? (
-                            <div
-                                style={{
-                                    flex: 1,
-                                    paddingLeft: 24,
-                                    borderLeft: "1px solid var(--hms-gray-100)",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "flex-start",
-                                        justifyContent: "space-between",
-                                        gap: 16,
-                                    }}
-                                >
-                                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            <div className="hms-room-row__main is-block">
+                                <div className="hms-room-row__split">
+                                    <div className="hms-room-row__patient">
                                         <div>
-                                            <p
-                                                style={{
-                                                    margin: 0,
-                                                    fontSize: 10,
-                                                    color: "var(--hms-gray-400)",
-                                                    textTransform: "uppercase",
-                                                    letterSpacing: "0.1em",
-                                                    fontWeight: 600,
-                                                }}
-                                            >
+                                            <p className="hms-room-kv-label">
                                                 Patient
                                             </p>
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 6,
-                                                    marginTop: 2,
-                                                }}
-                                            >
-                                                <User
-                                                    size={14}
-                                                    style={{ color: "var(--hms-gray-400)" }}
-                                                />
-                                                <p
-                                                    style={{
-                                                        margin: 0,
-                                                        fontSize: 13,
-                                                        fontWeight: 700,
-                                                        color: "var(--hms-gray-800)",
-                                                    }}
-                                                >
+                                            <div className="hms-room-row__name-row">
+                                                <User size={14} className="text-gray-400" />
+                                                <p className="hms-room-row__name">
                                                     {room.currentPatient.firstName}{" "}
                                                     {room.currentPatient.lastName}
                                                 </p>
                                             </div>
-                                            <p
-                                                style={{
-                                                    margin: "2px 0 0",
-                                                    fontSize: 11,
-                                                    color: "var(--hms-gray-500)",
-                                                    fontFamily:
-                                                        "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                                }}
-                                            >
+                                            <p className="hms-room-row__uhid">
                                                 {fmtId(room.currentPatient.uhid)}
                                             </p>
                                         </div>
                                         {room.attenderName ? (
                                             <div>
-                                                <p
-                                                    style={{
-                                                        margin: 0,
-                                                        fontSize: 10,
-                                                        color: "var(--hms-gray-400)",
-                                                        textTransform: "uppercase",
-                                                        letterSpacing: "0.1em",
-                                                        fontWeight: 600,
-                                                    }}
-                                                >
+                                                <p className="hms-room-kv-label">
                                                     Attender
                                                 </p>
-                                                <p
-                                                    style={{
-                                                        margin: "2px 0 0",
-                                                        fontSize: 13,
-                                                        fontWeight: 500,
-                                                        color: "var(--hms-gray-700)",
-                                                    }}
-                                                >
+                                                <p className="hms-room-row__att-name">
                                                     {room.attenderName}
                                                     {room.attenderRelationship && (
-                                                        <span
-                                                            style={{
-                                                                fontSize: 12,
-                                                                color: "var(--hms-gray-400)",
-                                                                marginLeft: 4,
-                                                            }}
-                                                        >
+                                                        <span className="hms-room-row__att-rel">
                                                             ({room.attenderRelationship})
                                                         </span>
                                                     )}
                                                 </p>
                                             </div>
                                         ) : (
-                                            <p
-                                                style={{
-                                                    margin: 0,
-                                                    fontSize: 10,
-                                                    color: "var(--hms-warning)",
-                                                    textTransform: "uppercase",
-                                                    letterSpacing: "0.06em",
-                                                    fontWeight: 700,
-                                                }}
-                                            >
+                                            <p className="hms-room-row__no-att">
                                                 No attender assigned
                                             </p>
                                         )}
                                     </div>
-                                    <div
-                                        style={{
-                                            textAlign: "right",
-                                            flexShrink: 0,
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 8,
-                                        }}
-                                    >
+                                    <div className="hms-room-row__aside">
                                         {room.allocationToken && (
                                             <div>
-                                                <p
-                                                    style={{
-                                                        margin: "0 0 2px",
-                                                        fontSize: 10,
-                                                        color: "var(--hms-gray-400)",
-                                                        textTransform: "uppercase",
-                                                        letterSpacing: "0.1em",
-                                                        fontWeight: 600,
-                                                    }}
-                                                >
+                                                <p className="hms-room-kv-label">
                                                     Token
                                                 </p>
-                                                <span
-                                                    style={{
-                                                        padding: "4px 8px",
-                                                        borderRadius: 6,
-                                                        background: "var(--hms-gray-100)",
-                                                        border: "1px solid var(--hms-gray-200)",
-                                                        fontSize: 13,
-                                                        fontWeight: 700,
-                                                        fontFamily:
-                                                            "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                                        color: "var(--hms-gray-900)",
-                                                    }}
-                                                >
+                                                <span className="hms-room-row__token">
                                                     {room.allocationToken}
                                                 </span>
                                             </div>
                                         )}
                                         {room.approxDischargeTime && (
                                             <div>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 4,
-                                                        fontSize: 10,
-                                                        color: "var(--hms-gray-400)",
-                                                        marginBottom: 2,
-                                                        justifyContent: "flex-end",
-                                                        textTransform: "uppercase",
-                                                        letterSpacing: "0.1em",
-                                                        fontWeight: 600,
-                                                    }}
-                                                >
+                                                <div className="hms-room-row__discharge">
                                                     <CalendarClock size={12} /> Est. discharge
                                                 </div>
-                                                <p
-                                                    style={{
-                                                        margin: 0,
-                                                        fontSize: 12,
-                                                        fontWeight: 500,
-                                                        color: "var(--hms-gray-600)",
-                                                    }}
-                                                >
+                                                <p className="hms-room-row__discharge-time">
                                                     {formatDateTime(room.approxDischargeTime)}
                                                 </p>
                                             </div>
@@ -1816,25 +968,8 @@ function FlatRoomList({ rooms, selectedRoom, onSelect, onView, onAttender }) {
                                 </div>
                             </div>
                         ) : (
-                            <div
-                                style={{
-                                    flex: 1,
-                                    paddingLeft: 24,
-                                    borderLeft: "1px solid var(--hms-gray-100)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                }}
-                            >
-                                <p
-                                    style={{
-                                        margin: 0,
-                                        fontSize: 12,
-                                        color: "var(--hms-success)",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.06em",
-                                        fontWeight: 600,
-                                    }}
-                                >
+                            <div className="hms-room-row__main">
+                                <p className="hms-room-row__hint is-success">
                                     Ready for allocation
                                 </p>
                             </div>
@@ -1845,7 +980,6 @@ function FlatRoomList({ rooms, selectedRoom, onSelect, onView, onAttender }) {
                                 room={room}
                                 onView={onView}
                                 onAttender={onAttender}
-                                alwaysVisible
                             />
                         </div>
                     </div>

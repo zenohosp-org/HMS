@@ -106,7 +106,7 @@ function RoomLogsPage() {
     const totalPages = Math.ceil(filteredLogs.length / PAGE_SIZE);
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="hms-rooms-page">
             <PageHeader
                 title={
                     roomNumber
@@ -121,15 +121,8 @@ function RoomLogsPage() {
                 onBack={() => navigate("/rooms/allocation")}
             />
 
-            <div
-                style={{
-                    padding: "0 24px 24px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 16,
-                }}
-            >
-                <div style={{ maxWidth: 560 }}>
+            <div className="hms-rooms-page-content">
+                <div className="max-w-xl">
                     <SearchBar
                         value={search}
                         onChange={setSearch}
@@ -137,29 +130,15 @@ function RoomLogsPage() {
                     />
                 </div>
 
-                <Card style={{ padding: 0, overflow: "hidden" }}>
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "2fr 2fr 2fr 1.5fr 1fr",
-                            gap: 16,
-                            padding: "12px 24px",
-                            background: "var(--hms-gray-50)",
-                            borderBottom: "1px solid var(--hms-gray-100)",
-                        }}
-                    >
+                <Card className="hms-rooms-log-table">
+                    <div className="hms-rooms-log-table__head">
                         {["Event", "Patient", "Attender", "Performed by", "Time"].map((h, i) => (
                             <p
                                 key={h}
-                                style={{
-                                    margin: 0,
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.06em",
-                                    color: "var(--hms-gray-500)",
-                                    textAlign: i === 4 ? "right" : "left",
-                                }}
+                                className={
+                                    "hms-rooms-log-table__head-cell" +
+                                    (i === 4 ? " is-right" : "")
+                                }
                             >
                                 {h}
                             </p>
@@ -167,40 +146,22 @@ function RoomLogsPage() {
                     </div>
 
                     {loading ? (
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                padding: "80px 0",
-                                color: "var(--hms-gray-400)",
-                            }}
-                        >
+                        <div className="hms-rooms-log-loader">
                             <Loader2 size={20} className="animate-spin" />
                         </div>
                     ) : filteredLogs.length === 0 ? (
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                padding: "80px 0",
-                                gap: 12,
-                                color: "var(--hms-gray-500)",
-                            }}
-                        >
-                            <CalendarClock size={40} style={{ opacity: 0.3 }} />
-                            <p style={{ margin: 0, fontSize: 13 }}>No log entries found</p>
+                        <div className="hms-rooms-log-empty">
+                            <CalendarClock size={40} className="opacity-30" />
+                            <p className="hms-rooms-log-empty__text">No log entries found</p>
                             {search && (
-                                <p style={{ margin: 0, fontSize: 11 }}>
+                                <p className="hms-rooms-log-empty__hint">
                                     Try clearing the search filter
                                 </p>
                             )}
                         </div>
                     ) : (
                         <div>
-                            {paginatedLogs.map((log, idx) => {
+                            {paginatedLogs.map((log) => {
                                 const meta = EVENT_META[log.event] || {
                                     label: log.event,
                                     tone: "neutral",
@@ -208,65 +169,19 @@ function RoomLogsPage() {
                                 };
                                 const Icon = meta.icon;
                                 return (
-                                    <div
-                                        key={log.id}
-                                        style={{
-                                            padding: "16px 24px",
-                                            display: "grid",
-                                            gridTemplateColumns: "2fr 2fr 2fr 1.5fr 1fr",
-                                            gap: 16,
-                                            alignItems: "center",
-                                            borderTop:
-                                                idx === 0 ? "none" : "1px solid var(--hms-gray-100)",
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 8,
-                                                flexWrap: "wrap",
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: 28,
-                                                    height: 28,
-                                                    borderRadius: 8,
-                                                    background: "var(--hms-white)",
-                                                    border: "1px solid var(--hms-gray-200)",
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    color: "var(--hms-gray-500)",
-                                                    flexShrink: 0,
-                                                }}
-                                            >
+                                    <div key={log.id} className="hms-rooms-log-row">
+                                        <div className="hms-rooms-log-row__event">
+                                            <div className="hms-rooms-log-row__icon">
                                                 <Icon size={14} />
                                             </div>
                                             <div>
                                                 <Badge tone={meta.tone} soft>
                                                     {meta.label}
                                                 </Badge>
-                                                <p
-                                                    style={{
-                                                        margin: "4px 0 0",
-                                                        fontSize: 11,
-                                                        fontWeight: 700,
-                                                        color: "var(--hms-gray-700)",
-                                                    }}
-                                                >
+                                                <p className="hms-rooms-log-row__room">
                                                     {log.roomNumber}
                                                     {log.allocationToken && (
-                                                        <span
-                                                            style={{
-                                                                marginLeft: 8,
-                                                                fontFamily:
-                                                                    "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                                                color: "var(--hms-gray-900)",
-                                                                fontWeight: 600,
-                                                            }}
-                                                        >
+                                                        <span className="hms-rooms-log-row__token">
                                                             #{log.allocationToken}
                                                         </span>
                                                     )}
@@ -276,93 +191,61 @@ function RoomLogsPage() {
 
                                         <div>
                                             {log.patientName ? (
-                                                <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+                                                <div className="flex items-start gap-1.5">
                                                     <User
                                                         size={14}
-                                                        style={{
-                                                            color: "var(--hms-gray-500)",
-                                                            flexShrink: 0,
-                                                            marginTop: 2,
-                                                        }}
+                                                        className="hms-rooms-log-row__pat-icon"
                                                     />
                                                     <div>
-                                                        <p
-                                                            style={{
-                                                                margin: 0,
-                                                                fontSize: 13,
-                                                                fontWeight: 600,
-                                                                color: "var(--hms-gray-800)",
-                                                                lineHeight: 1.3,
-                                                            }}
-                                                        >
+                                                        <p className="hms-rooms-log-row__pat-name">
                                                             {log.patientName}
                                                         </p>
                                                         {log.patientUhid && (
-                                                            <p
-                                                                style={{
-                                                                    margin: 0,
-                                                                    fontSize: 11,
-                                                                    color: "var(--hms-gray-500)",
-                                                                }}
-                                                            >
+                                                            <p className="hms-rooms-log-row__pat-uhid">
                                                                 {fmtId(log.patientUhid)}
                                                             </p>
                                                         )}
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-300)" }}>—</p>
+                                                <p className="hms-rooms-log-row__dash">—</p>
                                             )}
                                         </div>
 
                                         <div>
                                             {log.attenderName ? (
-                                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                                <div className="flex items-center gap-1.5">
                                                     <Users
                                                         size={14}
-                                                        style={{
-                                                            color: "var(--hms-gray-500)",
-                                                            flexShrink: 0,
-                                                        }}
+                                                        className="text-gray-500 shrink-0"
                                                     />
-                                                    <p style={{ margin: 0, fontSize: 13, color: "var(--hms-gray-700)" }}>
+                                                    <p className="hms-rooms-log-row__att-name">
                                                         {log.attenderName}
                                                     </p>
                                                 </div>
                                             ) : (
-                                                <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-300)" }}>—</p>
+                                                <p className="hms-rooms-log-row__dash">—</p>
                                             )}
                                         </div>
 
                                         <div>
                                             {log.performedBy ? (
-                                                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: "var(--hms-gray-700)" }}>
+                                                <p className="hms-rooms-log-row__performer">
                                                     {log.performedBy}
                                                 </p>
                                             ) : (
-                                                <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-300)" }}>—</p>
+                                                <p className="hms-rooms-log-row__dash">—</p>
                                             )}
                                         </div>
 
-                                        <div style={{ textAlign: "right" }}>
+                                        <div className="hms-rooms-log-row__time">
                                             <p
-                                                style={{
-                                                    margin: 0,
-                                                    fontSize: 11,
-                                                    fontWeight: 500,
-                                                    color: "var(--hms-gray-500)",
-                                                }}
+                                                className="hms-rooms-log-row__time-ago"
                                                 title={formatFull(log.createdAt)}
                                             >
                                                 {formatRelative(log.createdAt)}
                                             </p>
-                                            <p
-                                                style={{
-                                                    margin: "2px 0 0",
-                                                    fontSize: 10,
-                                                    color: "var(--hms-gray-500)",
-                                                }}
-                                            >
+                                            <p className="hms-rooms-log-row__time-full">
                                                 {formatFull(log.createdAt)}
                                             </p>
                                         </div>
@@ -373,12 +256,7 @@ function RoomLogsPage() {
                     )}
 
                     {!loading && filteredLogs.length > 0 && totalPages > 1 && (
-                        <div
-                            style={{
-                                padding: "12px 24px",
-                                borderTop: "1px solid var(--hms-gray-100)",
-                            }}
-                        >
+                        <div className="hms-rooms-log-pagination">
                             <Pagination
                                 currentPage={page}
                                 totalPages={totalPages}

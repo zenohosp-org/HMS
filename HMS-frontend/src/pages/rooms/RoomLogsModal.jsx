@@ -3,7 +3,6 @@ import { useAuth } from "@/context/AuthContext";
 import { roomLogsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import {
-    Search,
     Loader2,
     Bed,
     User,
@@ -92,10 +91,10 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
             size="xl"
             title={
                 <div>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--hms-gray-900)" }}>
+                    <p className="hms-rooms-modal-title">
                         {title}
                     </p>
-                    <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>
+                    <p className="hms-rooms-modal-sub">
                         {loading
                             ? "Loading…"
                             : `${filteredLogs.length} event${filteredLogs.length !== 1 ? "s" : ""}`}
@@ -108,7 +107,7 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
                 </Button>
             }
         >
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="hms-rooms-form">
                 <SearchBar
                     value={search}
                     onChange={setSearch}
@@ -116,41 +115,17 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
                 />
 
                 {loading ? (
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: 192,
-                            color: "var(--hms-gray-400)",
-                        }}
-                    >
+                    <div className="hms-rooms-log-modal-loader">
                         <Loader2 size={20} className="animate-spin" />
                     </div>
                 ) : filteredLogs.length === 0 ? (
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: 192,
-                            gap: 8,
-                            color: "var(--hms-gray-500)",
-                        }}
-                    >
-                        <CalendarClock size={32} style={{ opacity: 0.4 }} />
-                        <p style={{ margin: 0, fontSize: 13 }}>No logs found</p>
+                    <div className="hms-rooms-log-modal-empty">
+                        <CalendarClock size={32} className="opacity-40" />
+                        <p className="m-0 text-13">No logs found</p>
                     </div>
                 ) : (
-                    <div
-                        style={{
-                            border: "1px solid var(--hms-gray-100)",
-                            borderRadius: 8,
-                            overflow: "hidden",
-                        }}
-                    >
-                        {filteredLogs.map((log, idx) => {
+                    <div className="hms-rooms-log-modal-list">
+                        {filteredLogs.map((log) => {
                             const meta = EVENT_META[log.event] || {
                                 label: log.event,
                                 tone: "neutral",
@@ -158,172 +133,59 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
                             };
                             const Icon = meta.icon;
                             return (
-                                <div
-                                    key={log.id}
-                                    style={{
-                                        padding: "14px 20px",
-                                        display: "flex",
-                                        alignItems: "flex-start",
-                                        gap: 16,
-                                        borderTop:
-                                            idx === 0 ? "none" : "1px solid var(--hms-gray-50)",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 8,
-                                            background: "var(--hms-white)",
-                                            border: "1px solid var(--hms-gray-200)",
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            flexShrink: 0,
-                                            marginTop: 2,
-                                            color: "var(--hms-gray-500)",
-                                        }}
-                                    >
+                                <div key={log.id} className="hms-rooms-log-modal-row">
+                                    <div className="hms-rooms-log-modal-row__icon">
                                         <Icon size={14} />
                                     </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 8,
-                                                flexWrap: "wrap",
-                                            }}
-                                        >
+                                    <div className="hms-rooms-log-modal-row__body">
+                                        <div className="hms-rooms-log-modal-row__head">
                                             <Badge tone={meta.tone} soft>
                                                 {meta.label}
                                             </Badge>
-                                            <span
-                                                style={{
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    color: "var(--hms-gray-700)",
-                                                    background: "var(--hms-gray-100)",
-                                                    padding: "2px 8px",
-                                                    borderRadius: 6,
-                                                }}
-                                            >
+                                            <span className="hms-rooms-log-modal-row__room">
                                                 {log.roomNumber}
                                             </span>
                                             {log.allocationToken && (
-                                                <span
-                                                    style={{
-                                                        fontSize: 10,
-                                                        fontWeight: 700,
-                                                        letterSpacing: "0.06em",
-                                                        color: "var(--hms-gray-900)",
-                                                        background: "var(--hms-gray-100)",
-                                                        border: "1px solid var(--hms-gray-200)",
-                                                        padding: "2px 8px",
-                                                        borderRadius: 6,
-                                                        fontFamily:
-                                                            "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                                    }}
-                                                >
+                                                <span className="hms-rooms-log-modal-row__token">
                                                     {log.allocationToken}
                                                 </span>
                                             )}
                                         </div>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                flexWrap: "wrap",
-                                                gap: "4px 20px",
-                                                marginTop: 8,
-                                            }}
-                                        >
+                                        <div className="hms-rooms-log-modal-row__meta">
                                             {log.patientName && (
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 6,
-                                                        fontSize: 11,
-                                                        color: "var(--hms-gray-600)",
-                                                    }}
-                                                >
-                                                    <User
-                                                        size={12}
-                                                        style={{
-                                                            color: "var(--hms-gray-500)",
-                                                            flexShrink: 0,
-                                                        }}
-                                                    />
-                                                    <span style={{ fontWeight: 500 }}>
+                                                <div className="hms-rooms-log-modal-row__chip">
+                                                    <User size={12} className="text-gray-500 shrink-0" />
+                                                    <span className="font-medium">
                                                         {log.patientName}
                                                     </span>
                                                     {log.patientUhid && (
-                                                        <span style={{ color: "var(--hms-gray-500)" }}>
+                                                        <span className="text-gray-500">
                                                             · {fmtId(log.patientUhid)}
                                                         </span>
                                                     )}
                                                 </div>
                                             )}
                                             {log.attenderName && (
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 6,
-                                                        fontSize: 11,
-                                                        color: "var(--hms-gray-600)",
-                                                    }}
-                                                >
-                                                    <Users
-                                                        size={12}
-                                                        style={{
-                                                            color: "var(--hms-gray-500)",
-                                                            flexShrink: 0,
-                                                        }}
-                                                    />
+                                                <div className="hms-rooms-log-modal-row__chip">
+                                                    <Users size={12} className="text-gray-500 shrink-0" />
                                                     <span>{log.attenderName}</span>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                    <div
-                                        style={{
-                                            textAlign: "right",
-                                            flexShrink: 0,
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 2,
-                                        }}
-                                    >
+                                    <div className="hms-rooms-log-modal-row__aside">
                                         {log.performedBy && (
-                                            <p
-                                                style={{
-                                                    margin: 0,
-                                                    fontSize: 11,
-                                                    fontWeight: 500,
-                                                    color: "var(--hms-gray-700)",
-                                                }}
-                                            >
+                                            <p className="hms-rooms-log-modal-row__performer">
                                                 {log.performedBy}
                                             </p>
                                         )}
                                         <p
-                                            style={{
-                                                margin: 0,
-                                                fontSize: 10,
-                                                color: "var(--hms-gray-500)",
-                                            }}
+                                            className="hms-rooms-log-modal-row__time-ago"
                                             title={formatFull(log.createdAt)}
                                         >
                                             {formatRelative(log.createdAt)}
                                         </p>
-                                        <p
-                                            style={{
-                                                margin: 0,
-                                                fontSize: 10,
-                                                color: "var(--hms-gray-300)",
-                                            }}
-                                        >
+                                        <p className="hms-rooms-log-modal-row__time-full">
                                             {formatFull(log.createdAt)}
                                         </p>
                                     </div>

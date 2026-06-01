@@ -72,7 +72,7 @@ function GenerateRoomsModal({ onClose, onSuccess }) {
             <form
                 id="generate-rooms-form"
                 onSubmit={handleSubmit}
-                style={{ display: "flex", flexDirection: "column", gap: 16 }}
+                className="hms-rooms-form"
             >
                 <FormGroup
                     label="Room prefix"

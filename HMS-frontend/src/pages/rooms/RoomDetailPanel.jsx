@@ -98,76 +98,26 @@ function AssignAssetDropdown({ hospitalId, roomId, onAssigned }) {
     };
 
     return (
-        <div ref={ref} style={{ position: "relative" }}>
-            <div style={{ position: "relative" }}>
-                <Search
-                    size={14}
-                    style={{
-                        position: "absolute",
-                        left: 10,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        color: "var(--hms-gray-400)",
-                        pointerEvents: "none",
-                    }}
-                />
+        <div ref={ref} className="relative">
+            <div className="hms-room-asset-search">
+                <Search size={14} className="hms-room-asset-search__icon" />
                 <input
                     value={query}
                     onChange={(e) => onChange(e.target.value)}
                     onFocus={onFocus}
                     placeholder="Search available assets…"
-                    style={{
-                        width: "100%",
-                        padding: "8px 12px 8px 32px",
-                        borderRadius: 8,
-                        border: "1px solid var(--hms-gray-200)",
-                        background: "var(--hms-gray-50)",
-                        color: "var(--hms-gray-800)",
-                        fontSize: 12,
-                        outline: "none",
-                        fontFamily: "var(--hms-font-family)",
-                    }}
+                    className="hms-room-asset-search__input"
                 />
             </div>
 
             {open && (
-                <div
-                    style={{
-                        position: "absolute",
-                        zIndex: 30,
-                        left: 0,
-                        right: 0,
-                        marginTop: 4,
-                        background: "var(--hms-white)",
-                        border: "1px solid var(--hms-gray-200)",
-                        borderRadius: 8,
-                        boxShadow: "var(--hms-shadow-lg)",
-                        overflow: "hidden",
-                        maxHeight: 208,
-                        overflowY: "auto",
-                    }}
-                >
+                <div className="hms-room-asset-dropdown">
                     {loading ? (
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                                padding: "12px",
-                                fontSize: 11,
-                                color: "var(--hms-gray-400)",
-                            }}
-                        >
+                        <div className="hms-room-asset-dropdown__loading">
                             <Loader2 size={14} className="animate-spin" /> Searching…
                         </div>
                     ) : results.length === 0 ? (
-                        <div
-                            style={{
-                                padding: 12,
-                                fontSize: 11,
-                                color: "var(--hms-gray-400)",
-                            }}
-                        >
+                        <div className="hms-room-asset-dropdown__empty">
                             No available assets found
                         </div>
                     ) : (
@@ -176,62 +126,28 @@ function AssignAssetDropdown({ hospitalId, roomId, onAssigned }) {
                                 key={a.assetId}
                                 disabled={!!assigning}
                                 onClick={() => assign(a)}
-                                style={{
-                                    width: "100%",
-                                    textAlign: "left",
-                                    padding: "10px 12px",
-                                    borderBottom: "1px solid var(--hms-gray-100)",
-                                    background: "transparent",
-                                    border: "none",
-                                    cursor: assigning ? "wait" : "pointer",
-                                    opacity: assigning ? 0.5 : 1,
-                                    fontFamily: "var(--hms-font-family)",
-                                }}
-                                onMouseEnter={(e) =>
-                                    (e.currentTarget.style.background = "var(--hms-gray-50)")
-                                }
-                                onMouseLeave={(e) =>
-                                    (e.currentTarget.style.background = "transparent")
-                                }
+                                className="hms-room-asset-dropdown__item"
                             >
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        gap: 8,
-                                    }}
-                                >
-                                    <div style={{ minWidth: 0 }}>
-                                        <p
-                                            style={{
-                                                margin: 0,
-                                                fontSize: 12,
-                                                fontWeight: 600,
-                                                color: "var(--hms-gray-800)",
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap",
-                                            }}
-                                        >
+                                <div className="hms-room-asset-dropdown__item-row">
+                                    <div className="min-w-0">
+                                        <p className="hms-room-asset-dropdown__name">
                                             {a.assetName}
                                         </p>
-                                        <p style={{ margin: "2px 0 0", fontSize: 10, color: "var(--hms-gray-400)" }}>
+                                        <p className="hms-room-asset-dropdown__sub">
                                             {a.assetCode}
                                             {a.make ? ` · ${a.make}` : ""}
                                             {a.model ? ` ${a.model}` : ""}
                                         </p>
                                     </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                    <div className="hms-room-asset-dropdown__tail">
                                         <AssetStatusBadge status={a.status} />
                                         {assigning === a.assetId ? (
                                             <Loader2
                                                 size={12}
-                                                style={{ color: "var(--hms-gray-700)" }}
-                                                className="animate-spin"
+                                                className="animate-spin text-gray-700"
                                             />
                                         ) : (
-                                            <Plus size={12} style={{ color: "var(--hms-success)" }} />
+                                            <Plus size={12} className="text-success" />
                                         )}
                                     </div>
                                 </div>
@@ -269,17 +185,9 @@ function BedsSection({ room, hospitalId }) {
 
     if (loading) {
         return (
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "24px 0",
-                    color: "var(--hms-gray-400)",
-                }}
-            >
-                <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} />
-                <span style={{ fontSize: 11 }}>Loading beds…</span>
+            <div className="hms-room-inline-loader">
+                <Loader2 size={16} className="animate-spin" />
+                <span className="hms-room-inline-loader__text">Loading beds…</span>
             </div>
         );
     }
@@ -292,26 +200,10 @@ function BedsSection({ room, hospitalId }) {
 
     return (
         <div>
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 12,
-                }}
-            >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <BedDouble size={14} style={{ color: "var(--hms-gray-400)" }} />
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: "var(--hms-gray-500)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.06em",
-                        }}
-                    >
+            <div className="hms-room-panel-section-row">
+                <div className="flex items-center gap-2">
+                    <BedDouble size={14} className="text-gray-400" />
+                    <p className="hms-room-panel-section-head__label">
                         Beds
                     </p>
                     <Badge tone={occupancyTone} soft>
@@ -320,63 +212,29 @@ function BedsSection({ room, hospitalId }) {
                 </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="hms-room-bed-list">
                 {beds.map((bed) => {
                     const occupied = bed.status === "OCCUPIED";
                     return (
                         <div
                             key={bed.id}
-                            style={{
-                                borderRadius: 8,
-                                background: occupied
-                                    ? "var(--hms-info-bg)"
-                                    : "var(--hms-success-bg)",
-                                border: `1px solid ${occupied
-                                    ? "var(--hms-info-border)"
-                                    : "var(--hms-success-border)"
-                                    }`,
-                            }}
+                            className={`hms-room-bed${occupied ? " is-occupied" : ""}`}
                         >
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    gap: 12,
-                                    padding: 12,
-                                }}
-                            >
-                                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                            <div className="hms-room-bed__row">
+                                <div className="hms-room-bed__lead">
                                     <div
-                                        style={{
-                                            width: 8,
-                                            height: 8,
-                                            borderRadius: 999,
-                                            background: occupied
-                                                ? "var(--hms-info)"
-                                                : "var(--hms-success)",
-                                            flexShrink: 0,
-                                        }}
+                                        className={`hms-room-bed__dot${occupied ? " is-occupied" : ""}`}
                                     />
-                                    <div style={{ minWidth: 0 }}>
-                                        <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "var(--hms-gray-800)" }}>
+                                    <div className="min-w-0">
+                                        <p className="hms-room-bed__number">
                                             {bed.bedNumber}
                                         </p>
                                         {bed.patientName ? (
-                                            <p
-                                                style={{
-                                                    margin: 0,
-                                                    fontSize: 11,
-                                                    color: "var(--hms-gray-500)",
-                                                    overflow: "hidden",
-                                                    textOverflow: "ellipsis",
-                                                    whiteSpace: "nowrap",
-                                                }}
-                                            >
+                                            <p className="hms-room-bed__name">
                                                 {bed.patientName}
                                             </p>
                                         ) : (
-                                            <p style={{ margin: 0, fontSize: 11, color: "var(--hms-success)" }}>
+                                            <p className="hms-room-bed__name is-available">
                                                 Available
                                             </p>
                                         )}
@@ -386,21 +244,7 @@ function BedsSection({ room, hospitalId }) {
                                     <button
                                         type="button"
                                         onClick={() => setEditingAttender(bed)}
-                                        style={{
-                                            flexShrink: 0,
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            gap: 4,
-                                            padding: "4px 8px",
-                                            borderRadius: 6,
-                                            fontSize: 10,
-                                            fontWeight: 600,
-                                            color: "var(--hms-gray-600)",
-                                            background: "rgba(255, 255, 255, 0.6)",
-                                            border: "1px solid var(--hms-gray-200)",
-                                            cursor: "pointer",
-                                            fontFamily: "var(--hms-font-family)",
-                                        }}
+                                        className="hms-room-bed__btn"
                                         title={bed.attenderName ? "Edit attender" : "Assign attender"}
                                     >
                                         <Pencil size={12} />
@@ -409,18 +253,9 @@ function BedsSection({ room, hospitalId }) {
                                 )}
                             </div>
                             {occupied && bed.attenderName && (
-                                <div
-                                    style={{
-                                        padding: "0 12px 12px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8,
-                                        flexWrap: "wrap",
-                                        fontSize: 11,
-                                    }}
-                                >
-                                    <Users size={12} style={{ color: "var(--hms-gray-400)" }} />
-                                    <span style={{ fontWeight: 600, color: "var(--hms-gray-700)" }}>
+                                <div className="hms-room-bed__attender">
+                                    <Users size={12} className="text-gray-400" />
+                                    <span className="hms-room-bed__attender-name">
                                         {bed.attenderName}
                                     </span>
                                     {bed.attenderRelationship && (
@@ -429,14 +264,7 @@ function BedsSection({ room, hospitalId }) {
                                         </Badge>
                                     )}
                                     {bed.attenderPhone && (
-                                        <span
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: 4,
-                                                color: "var(--hms-gray-500)",
-                                            }}
-                                        >
+                                        <span className="hms-room-bed__attender-phone">
                                             <Phone size={12} />
                                             {bed.attenderPhone}
                                         </span>
@@ -514,25 +342,9 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
     const isMultiBed = room.bedCount != null && room.bedCount > 1;
 
     const sectionLabel = (Icon, label, suffix) => (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-            }}
-        >
-            <Icon size={14} style={{ color: "var(--hms-gray-400)" }} />
-            <p
-                style={{
-                    margin: 0,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "var(--hms-gray-500)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                }}
-            >
+        <div className="hms-room-panel-section-head">
+            <Icon size={14} className="text-gray-400" />
+            <p className="hms-room-panel-section-head__label">
                 {label}
                 {suffix}
             </p>
@@ -540,46 +352,14 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
     );
 
     return (
-        <div
-            style={{
-                width: 560,
-                flexShrink: 0,
-                background: "var(--hms-white)",
-                border: "1px solid var(--hms-gray-200)",
-                borderRadius: "var(--hms-radius)",
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-                alignSelf: "flex-start",
-                position: "sticky",
-                top: 0,
-                fontFamily: "var(--hms-font-family)",
-            }}
-        >
+        <div className="hms-room-panel">
             {/* Header */}
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    padding: 20,
-                    borderBottom: "1px solid var(--hms-gray-100)",
-                }}
-            >
+            <div className="hms-room-panel__head">
                 <div>
-                    <p
-                        style={{
-                            margin: "0 0 6px",
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "var(--hms-gray-400)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.06em",
-                        }}
-                    >
+                    <p className="hms-room-panel__eyebrow">
                         {room.roomNumber}
                     </p>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div className="hms-room-panel__badges">
                         <Badge tone={room.roomType === "ICU" ? "danger" : "neutral"} soft>
                             {room.roomType}
                         </Badge>
@@ -603,70 +383,24 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
                 </button>
             </div>
 
-            <div
-                style={{
-                    flex: 1,
-                    overflowY: "auto",
-                    padding: 20,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 20,
-                }}
-            >
+            <div className="hms-room-panel__body">
                 {!isMultiBed && room.allocationToken && (
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "10px 14px",
-                            borderRadius: 8,
-                            background: "var(--hms-gray-100)",
-                            border: "1px solid var(--hms-gray-200)",
-                        }}
-                    >
-                        <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: "var(--hms-gray-700)" }}>
+                    <div className="hms-room-panel-chip">
+                        <p className="hms-room-panel-chip__label">
                             Allocation token
                         </p>
-                        <span
-                            style={{
-                                fontSize: 13,
-                                fontWeight: 700,
-                                letterSpacing: "0.1em",
-                                color: "var(--hms-gray-900)",
-                                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                            }}
-                        >
+                        <span className="hms-room-panel-chip__value">
                             {room.allocationToken}
                         </span>
                     </div>
                 )}
 
                 {!isMultiBed && room.approxDischargeTime && (
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "10px 14px",
-                            borderRadius: 8,
-                            background: "var(--hms-warning-bg)",
-                            border: "1px solid var(--hms-warning-border)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                color: "#b45309",
-                            }}
-                        >
+                    <div className="hms-room-panel-chip is-warning">
+                        <div className="hms-room-panel-chip__label is-warning">
                             <CalendarClock size={14} /> Est. discharge
                         </div>
-                        <p style={{ margin: 0, fontSize: 11, fontWeight: 500, color: "#b45309" }}>
+                        <p className="hms-room-panel-chip__value is-warning">
                             {formatDateTime(room.approxDischargeTime)}
                         </p>
                     </div>
@@ -678,33 +412,31 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
                     <div>
                         {sectionLabel(User, "Patient", "")}
                         {room.currentPatient ? (
-                            <div style={{ paddingLeft: 4 }}>
-                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--hms-gray-800)" }}>
+                            <div className="hms-room-panel-patient">
+                                <p className="hms-room-panel-patient__name">
                                     {room.currentPatient.firstName} {room.currentPatient.lastName}
                                 </p>
-                                <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--hms-gray-500)" }}>
+                                <p className="hms-room-panel-patient__uhid">
                                     {fmtId(room.currentPatient.uhid)}
                                 </p>
                             </div>
                         ) : (
-                            <p style={{ margin: "0 0 0 4px", fontSize: 13, color: "var(--hms-gray-500)" }}>
+                            <p className="hms-room-panel-empty">
                                 No patient assigned
                             </p>
                         )}
                     </div>
                 )}
 
-                {(!isMultiBed || isMultiBed) && (
-                    <div style={{ borderTop: "1px solid var(--hms-gray-100)" }} />
-                )}
+                <div className="hms-room-panel__divider" />
 
                 {!isMultiBed && (
                     <div>
                         {sectionLabel(Users, "Attender", "")}
                         {room.attenderName ? (
-                            <div style={{ paddingLeft: 4, display: "flex", flexDirection: "column", gap: 6 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--hms-gray-800)" }}>
+                            <div className="hms-room-panel-attender">
+                                <div className="hms-room-panel-attender__row">
+                                    <p className="hms-room-panel-attender__name">
                                         {room.attenderName}
                                     </p>
                                     {room.attenderRelationship && (
@@ -714,52 +446,28 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
                                     )}
                                 </div>
                                 {room.attenderPhone && (
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 6,
-                                            fontSize: 11,
-                                            color: "var(--hms-gray-500)",
-                                        }}
-                                    >
+                                    <div className="hms-room-panel-attender__phone">
                                         <Phone size={12} />
                                         {room.attenderPhone}
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            <p style={{ margin: "0 0 0 4px", fontSize: 13, color: "var(--hms-warning)" }}>
+                            <p className="hms-room-panel-empty is-warning">
                                 No attender assigned
                             </p>
                         )}
                     </div>
                 )}
 
-                <div style={{ borderTop: "1px solid var(--hms-gray-100)" }} />
+                <div className="hms-room-panel__divider" />
 
                 {/* Assets */}
                 <div>
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginBottom: 12,
-                        }}
-                    >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <Package size={14} style={{ color: "var(--hms-gray-400)" }} />
-                            <p
-                                style={{
-                                    margin: 0,
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    color: "var(--hms-gray-500)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.06em",
-                                }}
-                            >
+                    <div className="hms-room-panel-section-row">
+                        <div className="flex items-center gap-2">
+                            <Package size={14} className="text-gray-400" />
+                            <p className="hms-room-panel-section-head__label">
                                 Assets in room
                             </p>
                             {assets.length > 0 && (
@@ -771,27 +479,14 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
                         <button
                             type="button"
                             onClick={() => setShowAssign((v) => !v)}
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4,
-                                padding: "4px 10px",
-                                borderRadius: 8,
-                                fontSize: 10,
-                                fontWeight: 700,
-                                color: "var(--hms-success)",
-                                background: "var(--hms-success-bg)",
-                                border: "1px solid var(--hms-success-border)",
-                                cursor: "pointer",
-                                fontFamily: "var(--hms-font-family)",
-                            }}
+                            className="hms-room-asset-assign-btn"
                         >
                             <Plus size={12} /> Assign
                         </button>
                     </div>
 
                     {showAssign && (
-                        <div style={{ marginBottom: 12 }}>
+                        <div className="mb-3">
                             <AssignAssetDropdown
                                 hospitalId={hospitalId}
                                 roomId={room.id}
@@ -804,103 +499,34 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
                     )}
 
                     {assetsLoading ? (
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                padding: "24px 0",
-                                color: "var(--hms-gray-400)",
-                            }}
-                        >
-                            <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} />
-                            <span style={{ fontSize: 11 }}>Loading assets…</span>
+                        <div className="hms-room-inline-loader">
+                            <Loader2 size={16} className="animate-spin" />
+                            <span className="hms-room-inline-loader__text">Loading assets…</span>
                         </div>
                     ) : assets.length === 0 ? (
-                        <div
-                            style={{
-                                padding: "20px 16px",
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                borderRadius: 8,
-                                border: "1px dashed var(--hms-gray-200)",
-                            }}
-                        >
-                            <Package size={24} style={{ color: "var(--hms-gray-300)", marginBottom: 6 }} />
-                            <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>
+                        <div className="hms-room-asset-empty">
+                            <Package size={24} className="text-gray-300 mb-1.5" />
+                            <p className="hms-room-asset-empty__text">
                                 No assets assigned yet
                             </p>
                         </div>
                     ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div className="hms-room-asset-list">
                             {assets.map((a) => (
-                                <div
-                                    key={a.assetId}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "flex-start",
-                                        gap: 10,
-                                        padding: 10,
-                                        borderRadius: 8,
-                                        border: "1px solid var(--hms-gray-100)",
-                                        background: "var(--hms-gray-50)",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: 28,
-                                            height: 28,
-                                            borderRadius: 8,
-                                            background: "var(--hms-white)",
-                                            border: "1px solid var(--hms-gray-200)",
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            flexShrink: 0,
-                                            marginTop: 2,
-                                            color: "var(--hms-gray-400)",
-                                        }}
-                                    >
+                                <div key={a.assetId} className="hms-room-asset">
+                                    <div className="hms-room-asset__icon">
                                         <Package size={14} />
                                     </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                justifyContent: "space-between",
-                                                gap: 4,
-                                            }}
-                                        >
-                                            <p
-                                                style={{
-                                                    margin: 0,
-                                                    fontSize: 12,
-                                                    fontWeight: 600,
-                                                    color: "var(--hms-gray-800)",
-                                                    lineHeight: 1.3,
-                                                    overflow: "hidden",
-                                                    textOverflow: "ellipsis",
-                                                    whiteSpace: "nowrap",
-                                                }}
-                                            >
+                                    <div className="hms-room-asset__body">
+                                        <div className="hms-room-asset__title-row">
+                                            <p className="hms-room-asset__title">
                                                 {a.assetName}
                                             </p>
                                             <button
                                                 type="button"
                                                 onClick={() => handleUnassign(a.assetId)}
                                                 disabled={removingId === a.assetId}
-                                                style={{
-                                                    flexShrink: 0,
-                                                    padding: 2,
-                                                    background: "transparent",
-                                                    border: "none",
-                                                    color: "var(--hms-gray-300)",
-                                                    cursor: "pointer",
-                                                    opacity: removingId === a.assetId ? 0.5 : 1,
-                                                }}
+                                                className="hms-room-asset__remove"
                                                 title="Remove from room"
                                             >
                                                 {removingId === a.assetId ? (
@@ -910,56 +536,26 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
                                                 )}
                                             </button>
                                         </div>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 8,
-                                                marginTop: 4,
-                                                flexWrap: "wrap",
-                                            }}
-                                        >
+                                        <div className="hms-room-asset__meta">
                                             {a.assetCode && (
-                                                <span
-                                                    style={{
-                                                        display: "inline-flex",
-                                                        alignItems: "center",
-                                                        gap: 2,
-                                                        fontSize: 10,
-                                                        color: "var(--hms-gray-400)",
-                                                    }}
-                                                >
+                                                <span className="hms-room-asset__meta-item">
                                                     <Tag size={10} />
                                                     {a.assetCode}
                                                 </span>
                                             )}
                                             {(a.make || a.model) && (
-                                                <span style={{ fontSize: 10, color: "var(--hms-gray-400)" }}>
+                                                <span className="hms-room-asset__meta-item">
                                                     {[a.make, a.model].filter(Boolean).join(" ")}
                                                 </span>
                                             )}
                                         </div>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "space-between",
-                                                marginTop: 6,
-                                            }}
-                                        >
+                                        <div className="hms-room-asset__foot">
                                             <AssetStatusBadge status={a.status} />
                                             <a
                                                 href={`https://asset.zenohosp.com/assets/${a.assetId}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                style={{
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    gap: 2,
-                                                    fontSize: 10,
-                                                    color: "var(--hms-gray-400)",
-                                                    textDecoration: "none",
-                                                }}
+                                                className="hms-room-asset__link"
                                                 title="View in Assets app"
                                             >
                                                 Details <ArrowUpRight size={10} />
@@ -974,13 +570,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
             </div>
 
             {/* Footer */}
-            <div
-                style={{
-                    padding: 16,
-                    borderTop: "1px solid var(--hms-gray-100)",
-                    flexShrink: 0,
-                }}
-            >
+            <div className="hms-room-panel__footer">
                 <Button variant="secondary" full onClick={onViewLogs}>
                     <ScrollText size={14} /> View room logs
                 </Button>
