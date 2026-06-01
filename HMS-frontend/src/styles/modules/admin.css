@@ -1906,6 +1906,7 @@
 .hms-bill-type.is-radiology     { background: #f5f3ff; color: #6d28d9; }
 .hms-bill-type.is-lab           { background: #f0fdfa; color: #0f766e; }
 .hms-bill-type.is-medicine      { background: var(--hms-success-bg); color: #166534; }
+.hms-bill-type.is-ot            { background: #f5f3ff; color: #7c3aed; }
 .hms-bill-type.is-custom        { background: var(--hms-gray-100); color: var(--hms-gray-600); }
 
 
@@ -2619,4 +2620,382 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+}
+
+
+/* ─────────────────────────── AdminDashboard: page shell ─────────────────────────── */
+.hms-dash {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.hms-dash__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.hms-dash__greeting {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    letter-spacing: -0.02em;
+}
+
+.hms-dash__subtitle {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--hms-gray-500);
+}
+
+
+/* AdminDashboard: KPI grid + KPI card */
+.hms-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.hms-kpi-card {
+    padding: 20px !important;
+    gap: 16px !important;
+}
+
+.hms-kpi-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hms-kpi-card__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-700);
+}
+
+.hms-kpi-card__icon.is-info    { background: var(--hms-info-bg);    color: var(--hms-info); }
+.hms-kpi-card__icon.is-success { background: var(--hms-success-bg); color: var(--hms-success); }
+.hms-kpi-card__icon.is-warning { background: var(--hms-warning-bg); color: #b45309; }
+.hms-kpi-card__icon.is-neutral { background: var(--hms-gray-100);   color: var(--hms-gray-700); }
+.hms-kpi-card__icon.is-rose    { background: #fff1f2;               color: #be123c; }
+
+.hms-kpi-card__trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 999px;
+}
+
+.hms-kpi-card__trend.is-up   { background: var(--hms-success-bg); color: var(--hms-success); }
+.hms-kpi-card__trend.is-down { background: #fff1f2;               color: #be123c; }
+
+.hms-kpi-card__value {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--hms-gray-900);
+    letter-spacing: -0.02em;
+}
+
+.hms-kpi-card__label {
+    margin: 2px 0 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--hms-gray-500);
+}
+
+.hms-kpi-card__sub {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+
+/* AdminDashboard: chart card + title row */
+.hms-chart-card {
+    padding: 24px !important;
+    gap: 20px !important;
+}
+
+.hms-chart-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.hms-chart-card__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.hms-chart-card__subtitle {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-chart-card__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--hms-gray-900);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: var(--hms-font-family);
+}
+
+
+/* AdminDashboard: row layouts */
+.hms-dash-row.is-3-2 {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 24px;
+}
+
+.hms-dash-row.is-3col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+
+/* AdminDashboard: recharts custom tooltip surface */
+.hms-tooltip {
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 8px;
+    box-shadow: var(--hms-shadow-lg);
+    padding: 10px 14px;
+    font-size: 11px;
+    font-family: var(--hms-font-family);
+}
+
+.hms-tooltip__title {
+    margin: 0 0 4px;
+    font-weight: 700;
+    color: var(--hms-gray-700);
+}
+
+.hms-tooltip__line {
+    margin: 0;
+}
+
+.hms-tooltip__line.is-paid        { color: #10b981; }
+.hms-tooltip__line.is-outstanding { color: #f43f5e; }
+
+
+/* AdminDashboard: donut centre text */
+.hms-donut-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hms-donut-center {
+    position: absolute;
+    text-align: center;
+    pointer-events: none;
+}
+
+.hms-donut-center__value {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--hms-gray-900);
+}
+
+.hms-donut-center__label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+
+/* AdminDashboard: legend dot row */
+.hms-legend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hms-legend-row__left,
+.hms-legend-row__right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hms-legend-row__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    flex-shrink: 0;
+}
+
+.hms-legend-row__label {
+    font-size: 11px;
+    color: var(--hms-gray-600);
+}
+
+.hms-legend-row__value {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hms-gray-800);
+}
+
+.hms-legend-row__pct {
+    font-size: 10px;
+    color: var(--hms-gray-500);
+    width: 32px;
+    text-align: right;
+}
+
+.hms-legend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+
+/* AdminDashboard: revenue bar legend (paid + outstanding squares) */
+.hms-rev-legend {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 4px;
+}
+
+.hms-rev-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-rev-legend__sq {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.hms-rev-legend__sq.is-paid        { background: #10b981; }
+.hms-rev-legend__sq.is-outstanding { background: #f43f5e; opacity: 0.7; }
+
+
+/* AdminDashboard: empty-chart placeholder */
+.hms-empty-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 160px;
+    gap: 8px;
+    color: var(--hms-gray-400);
+}
+
+
+/* AdminDashboard: quick-actions card */
+.hms-quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.hms-quick-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+    font-family: var(--hms-font-family);
+}
+
+.hms-quick-action:hover {
+    background: var(--hms-gray-50);
+}
+
+.hms-quick-action__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hms-quick-action__icon.is-success { background: var(--hms-success-bg); color: var(--hms-success); }
+.hms-quick-action__icon.is-neutral { background: var(--hms-gray-100);   color: var(--hms-gray-700); }
+.hms-quick-action__icon.is-info    { background: var(--hms-info-bg);    color: var(--hms-info); }
+.hms-quick-action__icon.is-warning { background: var(--hms-warning-bg); color: #b45309; }
+.hms-quick-action__icon.is-rose    { background: #fff1f2;               color: #be123c; }
+
+.hms-quick-action__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.hms-quick-action__label {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+}
+
+.hms-quick-action__sub {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* AdminDashboard: card heading block (Quick actions card title) */
+.hms-card-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.hms-card-head__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.hms-card-head__sub {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
 }

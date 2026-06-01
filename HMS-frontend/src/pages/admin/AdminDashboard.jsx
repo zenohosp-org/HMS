@@ -32,96 +32,26 @@ import {
 } from "lucide-react";
 import { Button, Card } from "@/components/ui";
 
-/** Recharts tooltip outer style — shared by all 4 custom tooltips so
- *  every hover popup matches the design system. */
-const TOOLTIP_STYLE = {
-    background: "var(--hms-white)",
-    border: "1px solid var(--hms-gray-200)",
-    borderRadius: 8,
-    boxShadow: "var(--hms-shadow-lg)",
-    padding: "10px 14px",
-    fontSize: 11,
-    fontFamily: "var(--hms-font-family)",
-};
-
-/** KPI tile — icon avatar + bold number + label + optional MoM trend. */
-function KpiCard({ label, value, sub, icon, iconBg, iconColor, trend, trendLabel }) {
+/** KPI tile — icon avatar + bold number + label + optional MoM trend.
+ *  The icon tile + trend pill use `.hms-kpi-card__icon` and `.hms-kpi-card__trend`
+ *  modifier classes for colour tones (no inline styles). */
+function KpiCard({ label, value, sub, icon, iconTone = "neutral", trend, trendLabel }) {
     const isUp = trend === "up";
     return (
-        <Card style={{ padding: 20, gap: 16 }}>
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                }}
-            >
-                <div
-                    style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 8,
-                        background: iconBg,
-                        color: iconColor,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    {icon}
-                </div>
+        <Card className="hms-kpi-card">
+            <div className="hms-kpi-card__head">
+                <div className={`hms-kpi-card__icon is-${iconTone}`}>{icon}</div>
                 {trendLabel && (
-                    <span
-                        style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            padding: "4px 8px",
-                            borderRadius: 999,
-                            background: isUp ? "var(--hms-success-bg)" : "#fff1f2",
-                            color: isUp ? "var(--hms-success)" : "#be123c",
-                        }}
-                    >
+                    <span className={`hms-kpi-card__trend ${isUp ? "is-up" : "is-down"}`}>
                         {isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                         {trendLabel}
                     </span>
                 )}
             </div>
             <div>
-                <p
-                    style={{
-                        margin: 0,
-                        fontSize: 28,
-                        fontWeight: 800,
-                        color: "var(--hms-gray-900)",
-                        letterSpacing: "-0.02em",
-                    }}
-                >
-                    {value}
-                </p>
-                <p
-                    style={{
-                        margin: "2px 0 0",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        color: "var(--hms-gray-500)",
-                    }}
-                >
-                    {label}
-                </p>
-                {sub && (
-                    <p
-                        style={{
-                            margin: "2px 0 0",
-                            fontSize: 11,
-                            color: "var(--hms-gray-500)",
-                        }}
-                    >
-                        {sub}
-                    </p>
-                )}
+                <p className="hms-kpi-card__value">{value}</p>
+                <p className="hms-kpi-card__label">{label}</p>
+                {sub && <p className="hms-kpi-card__sub">{sub}</p>}
             </div>
         </Card>
     );
@@ -132,48 +62,17 @@ function KpiCard({ label, value, sub, icon, iconBg, iconColor, trend, trendLabel
 function ChartCard({ title, subtitle, children, action, actionLabel }) {
     const navigate = useNavigate();
     return (
-        <Card style={{ padding: 24, gap: 20 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <Card className="hms-chart-card">
+            <div className="hms-chart-card__head">
                 <div>
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: "var(--hms-gray-900)",
-                        }}
-                    >
-                        {title}
-                    </p>
-                    {subtitle && (
-                        <p
-                            style={{
-                                margin: "2px 0 0",
-                                fontSize: 11,
-                                color: "var(--hms-gray-500)",
-                            }}
-                        >
-                            {subtitle}
-                        </p>
-                    )}
+                    <p className="hms-chart-card__title">{title}</p>
+                    {subtitle && <p className="hms-chart-card__subtitle">{subtitle}</p>}
                 </div>
                 {action && (
                     <button
                         type="button"
                         onClick={() => navigate(action)}
-                        style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "var(--hms-gray-900)",
-                            background: "transparent",
-                            border: "none",
-                            cursor: "pointer",
-                            textDecoration: "underline",
-                            fontFamily: "var(--hms-font-family)",
-                        }}
+                        className="hms-chart-card__action"
                     >
                         {actionLabel} <ArrowRight size={12} />
                     </button>
@@ -187,11 +86,9 @@ function ChartCard({ title, subtitle, children, action, actionLabel }) {
 function PatientTooltip({ active, payload, label }) {
     if (!active || !payload?.length) return null;
     return (
-        <div style={TOOLTIP_STYLE}>
-            <p style={{ margin: 0, fontWeight: 700, color: "var(--hms-gray-700)", marginBottom: 4 }}>
-                {label}
-            </p>
-            <p style={{ margin: 0, color: "var(--hms-success)" }}>
+        <div className="hms-tooltip">
+            <p className="hms-tooltip__title">{label}</p>
+            <p className="hms-tooltip__line text-success">
                 {payload[0].value} new patients
             </p>
         </div>
@@ -201,12 +98,13 @@ function PatientTooltip({ active, payload, label }) {
 function RevenueTooltip({ active, payload, label }) {
     if (!active || !payload?.length) return null;
     return (
-        <div style={TOOLTIP_STYLE}>
-            <p style={{ margin: 0, fontWeight: 700, color: "var(--hms-gray-700)", marginBottom: 8 }}>
-                {label}
-            </p>
+        <div className="hms-tooltip">
+            <p className="hms-tooltip__title mb-2">{label}</p>
             {payload.map((p) => (
-                <p key={p.name} style={{ margin: 0, color: p.color }}>
+                <p
+                    key={p.name}
+                    className={`hms-tooltip__line ${p.name === "paid" ? "is-paid" : "is-outstanding"}`}
+                >
                     {p.name === "paid" ? "Paid" : "Outstanding"}: ₹
                     {Number(p.value).toLocaleString("en-IN")}
                 </p>
@@ -225,14 +123,7 @@ const ROLE_COLORS = ["#10b981", "#6366f1", "#f59e0b", "#f43f5e", "#3b82f6"];
 
 function DonutChart({ data, colors, centerLabel, centerValue }) {
     return (
-        <div
-            style={{
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-            }}
-        >
+        <div className="hms-donut-wrap">
             <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                     <Pie
@@ -252,21 +143,13 @@ function DonutChart({ data, colors, centerLabel, centerValue }) {
                     <Tooltip
                         content={({ active, payload }) =>
                             active && payload?.length ? (
-                                <div style={TOOLTIP_STYLE}>
-                                    <p
-                                        style={{
-                                            margin: 0,
-                                            fontWeight: 600,
-                                            color: "var(--hms-gray-700)",
-                                        }}
-                                    >
+                                <div className="hms-tooltip">
+                                    <p className="hms-tooltip__title">
                                         {payload[0].name}
                                     </p>
                                     <p
-                                        style={{
-                                            margin: 0,
-                                            color: payload[0].payload.fill ?? colors[0],
-                                        }}
+                                        className="hms-tooltip__line"
+                                        style={{ color: payload[0].payload.fill ?? colors[0] }}
                                     >
                                         {payload[0].value} (
                                         {(
@@ -283,35 +166,9 @@ function DonutChart({ data, colors, centerLabel, centerValue }) {
                 </PieChart>
             </ResponsiveContainer>
             {centerLabel && (
-                <div
-                    style={{
-                        position: "absolute",
-                        textAlign: "center",
-                        pointerEvents: "none",
-                    }}
-                >
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 22,
-                            fontWeight: 800,
-                            color: "var(--hms-gray-900)",
-                        }}
-                    >
-                        {centerValue}
-                    </p>
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            color: "var(--hms-gray-500)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.1em",
-                        }}
-                    >
-                        {centerLabel}
-                    </p>
+                <div className="hms-donut-center">
+                    <p className="hms-donut-center__value">{centerValue}</p>
+                    <p className="hms-donut-center__label">{centerLabel}</p>
                 </div>
             )}
         </div>
@@ -321,39 +178,14 @@ function DonutChart({ data, colors, centerLabel, centerValue }) {
 function LegendDot({ color, label, value, total }) {
     const pct = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
     return (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-            }}
-        >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span
-                    style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 999,
-                        background: color,
-                        flexShrink: 0,
-                    }}
-                />
-                <span style={{ fontSize: 11, color: "var(--hms-gray-600)" }}>{label}</span>
+        <div className="hms-legend-row">
+            <div className="hms-legend-row__left">
+                <span className="hms-legend-row__dot" style={{ background: color }} />
+                <span className="hms-legend-row__label">{label}</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--hms-gray-800)" }}>
-                    {value}
-                </span>
-                <span
-                    style={{
-                        fontSize: 10,
-                        color: "var(--hms-gray-500)",
-                        width: 32,
-                        textAlign: "right",
-                    }}
-                >
-                    {pct}%
-                </span>
+            <div className="hms-legend-row__right">
+                <span className="hms-legend-row__value">{value}</span>
+                <span className="hms-legend-row__pct">{pct}%</span>
             </div>
         </div>
     );
@@ -364,10 +196,10 @@ function LegendDot({ color, label, value, total }) {
  * Rendered conditionally by pages/Dashboard.jsx when the logged-in user
  * has role hospital_admin or super_admin.
  *
- * Phase 8e migration: data layer untouched (dashboardApi.getSummary).
- * Chart data shapes and recharts configuration kept exactly the same;
- * only the wrappers, tooltips, and KPI / quick-action tiles were moved
- * onto tokens.
+ * Data layer untouched (dashboardApi.getSummary). Chart data shapes and
+ * recharts configuration kept exactly the same; wrappers, tooltips, and
+ * KPI / quick-action tiles use admin.css patterns (.hms-kpi-* /
+ * .hms-chart-card* / .hms-tooltip* / .hms-donut-* / .hms-quick-*).
  */
 export default function AdminDashboard() {
     const { user } = useAuth();
@@ -399,19 +231,8 @@ export default function AdminDashboard() {
 
     if (loading || !summary) {
         return (
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: 256,
-                }}
-            >
-                <Loader2
-                    size={32}
-                    style={{ color: "var(--hms-gray-700)" }}
-                    className="animate-spin"
-                />
+            <div className="flex items-center justify-center h-64">
+                <Loader2 size={32} className="text-gray-700 animate-spin" />
             </div>
         );
     }
@@ -419,71 +240,22 @@ export default function AdminDashboard() {
     const apptTotal = summary.appointmentsBreakdown.reduce((sum, d) => sum + d.value, 0);
 
     const quickActions = [
-        {
-            label: "Add doctor",
-            sub: "Register a new doctor",
-            to: "/doctors",
-            icon: <Stethoscope size={16} />,
-            color: "var(--hms-success)",
-            bg: "var(--hms-success-bg)",
-        },
-        {
-            label: "Add staff",
-            sub: "Onboard a team member",
-            to: "/staffs/directory",
-            icon: <UserCheck size={16} />,
-            color: "var(--hms-gray-700)",
-            bg: "var(--hms-gray-100)",
-        },
-        {
-            label: "Register patient",
-            sub: "New patient registration",
-            to: "/patients",
-            icon: <Users size={16} />,
-            color: "var(--hms-info)",
-            bg: "var(--hms-info-bg)",
-        },
-        {
-            label: "Create invoice",
-            sub: "Bill a patient visit",
-            to: "/billing/opd",
-            icon: <ReceiptText size={16} />,
-            color: "#b45309",
-            bg: "var(--hms-warning-bg)",
-        },
-        {
-            label: "IPD admission",
-            sub: "Admit a patient",
-            to: "/admissions",
-            icon: <BedDouble size={16} />,
-            color: "#be123c",
-            bg: "#fff1f2",
-        },
+        { label: "Add doctor",       sub: "Register a new doctor",   to: "/doctors",           icon: <Stethoscope size={16} />, iconTone: "success" },
+        { label: "Add staff",        sub: "Onboard a team member",   to: "/staffs/directory",  icon: <UserCheck size={16} />,   iconTone: "neutral" },
+        { label: "Register patient", sub: "New patient registration", to: "/patients",         icon: <Users size={16} />,       iconTone: "info" },
+        { label: "Create invoice",   sub: "Bill a patient visit",    to: "/billing/opd",       icon: <ReceiptText size={16} />, iconTone: "warning" },
+        { label: "IPD admission",    sub: "Admit a patient",         to: "/admissions",        icon: <BedDouble size={16} />,   iconTone: "rose" },
     ];
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+        <div className="hms-dash">
             {/* Header */}
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                }}
-            >
+            <div className="hms-dash__header">
                 <div>
-                    <h1
-                        style={{
-                            margin: 0,
-                            fontSize: 22,
-                            fontWeight: 700,
-                            color: "var(--hms-gray-900)",
-                            letterSpacing: "-0.02em",
-                        }}
-                    >
+                    <h1 className="hms-dash__greeting">
                         Good {greeting}, {user?.firstName}
                     </h1>
-                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--hms-gray-500)" }}>
+                    <p className="hms-dash__subtitle">
                         {user?.hospitalName} · {dateStr}
                     </p>
                 </div>
@@ -493,20 +265,13 @@ export default function AdminDashboard() {
             </div>
 
             {/* KPI row */}
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                    gap: 16,
-                }}
-            >
+            <div className="hms-kpi-grid">
                 <KpiCard
                     label="Total patients"
                     value={summary.totalPatients.toLocaleString()}
                     sub={`${summary.todaysNewPatients} registered today`}
                     icon={<Users size={20} />}
-                    iconBg="var(--hms-info-bg)"
-                    iconColor="var(--hms-info)"
+                    iconTone="info"
                     trend={summary.patientMoMGrowthPercent >= 0 ? "up" : "down"}
                     trendLabel={
                         summary.patientMoMGrowthPercent !== 0.0
@@ -519,16 +284,14 @@ export default function AdminDashboard() {
                     value={summary.totalDoctors}
                     sub={`${summary.totalActiveStaff} active staff`}
                     icon={<Stethoscope size={20} />}
-                    iconBg="var(--hms-success-bg)"
-                    iconColor="var(--hms-success)"
+                    iconTone="success"
                 />
                 <KpiCard
                     label="Revenue collected"
                     value={`₹${(summary.totalRevenueCollected / 1000).toFixed(1)}k`}
                     sub={`₹${(summary.totalOutstandingRevenue / 1000).toFixed(1)}k outstanding`}
                     icon={<ReceiptText size={20} />}
-                    iconBg="var(--hms-gray-100)"
-                    iconColor="var(--hms-gray-700)"
+                    iconTone="neutral"
                     trend={
                         summary.totalOutstandingRevenue > summary.totalRevenueCollected
                             ? "down"
@@ -546,8 +309,7 @@ export default function AdminDashboard() {
                     value={summary.activeAdmissions}
                     sub="Currently admitted in wards"
                     icon={<BedDouble size={20} />}
-                    iconBg="var(--hms-warning-bg)"
-                    iconColor="#b45309"
+                    iconTone="warning"
                 />
             </div>
 
@@ -602,13 +364,7 @@ export default function AdminDashboard() {
             </ChartCard>
 
             {/* Row 3 — revenue + appointments */}
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "3fr 2fr",
-                    gap: 24,
-                }}
-            >
+            <div className="hms-dash-row is-3-2">
                 <ChartCard
                     title="Revenue overview"
                     subtitle="Paid vs outstanding — last 6 months"
@@ -653,44 +409,13 @@ export default function AdminDashboard() {
                             />
                         </BarChart>
                     </ResponsiveContainer>
-                    <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 4 }}>
-                        <span
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                                fontSize: 11,
-                                color: "var(--hms-gray-500)",
-                            }}
-                        >
-                            <span
-                                style={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: 2,
-                                    background: "#10b981",
-                                }}
-                            />
+                    <div className="hms-rev-legend">
+                        <span className="hms-rev-legend__item">
+                            <span className="hms-rev-legend__sq is-paid" />
                             Paid
                         </span>
-                        <span
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                                fontSize: 11,
-                                color: "var(--hms-gray-500)",
-                            }}
-                        >
-                            <span
-                                style={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: 2,
-                                    background: "#f43f5e",
-                                    opacity: 0.7,
-                                }}
-                            />
+                        <span className="hms-rev-legend__item">
+                            <span className="hms-rev-legend__sq is-outstanding" />
                             Outstanding
                         </span>
                     </div>
@@ -712,7 +437,7 @@ export default function AdminDashboard() {
                                 centerLabel="total"
                                 centerValue={apptTotal}
                             />
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                            <div className="hms-legend-list">
                                 {summary.appointmentsBreakdown.map((d) => (
                                     <LegendDot
                                         key={d.name}
@@ -725,32 +450,16 @@ export default function AdminDashboard() {
                             </div>
                         </>
                     ) : (
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                height: 160,
-                                gap: 8,
-                                color: "var(--hms-gray-400)",
-                            }}
-                        >
+                        <div className="hms-empty-chart">
                             <Calendar size={32} />
-                            <p style={{ margin: 0, fontSize: 11 }}>No appointment data yet</p>
+                            <p className="m-0 text-11">No appointment data yet</p>
                         </div>
                     )}
                 </ChartCard>
             </div>
 
             {/* Row 4 — age + roles + quick actions */}
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
-                    gap: 24,
-                }}
-            >
+            <div className="hms-dash-row is-3col">
                 <ChartCard title="Patient age groups" subtitle="Distribution across all patients">
                     <ResponsiveContainer width="100%" height={180}>
                         <BarChart
@@ -777,17 +486,11 @@ export default function AdminDashboard() {
                             <Tooltip
                                 content={({ active, payload }) =>
                                     active && payload?.length ? (
-                                        <div style={TOOLTIP_STYLE}>
-                                            <p
-                                                style={{
-                                                    margin: 0,
-                                                    fontWeight: 600,
-                                                    color: "var(--hms-gray-700)",
-                                                }}
-                                            >
+                                        <div className="hms-tooltip">
+                                            <p className="hms-tooltip__title">
                                                 Age {payload[0].payload.name}
                                             </p>
-                                            <p style={{ margin: 0, color: "var(--hms-info)" }}>
+                                            <p className="hms-tooltip__line text-info">
                                                 {payload[0].value} patients
                                             </p>
                                         </div>
@@ -808,7 +511,7 @@ export default function AdminDashboard() {
                                 centerLabel="staff"
                                 centerValue={summary.totalActiveStaff}
                             />
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            <div className="hms-legend-list">
                                 {summary.staffByRole.map((d, i) => (
                                     <LegendDot
                                         key={d.name}
@@ -821,114 +524,34 @@ export default function AdminDashboard() {
                             </div>
                         </>
                     ) : (
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                height: 160,
-                                gap: 8,
-                                color: "var(--hms-gray-400)",
-                            }}
-                        >
+                        <div className="hms-empty-chart">
                             <Users size={32} />
-                            <p style={{ margin: 0, fontSize: 11 }}>No staff data yet</p>
+                            <p className="m-0 text-11">No staff data yet</p>
                         </div>
                     )}
                 </ChartCard>
 
-                <Card style={{ padding: 24, gap: 16 }}>
-                    <div>
-                        <p
-                            style={{
-                                margin: 0,
-                                fontSize: 13,
-                                fontWeight: 700,
-                                color: "var(--hms-gray-900)",
-                            }}
-                        >
-                            Quick actions
-                        </p>
-                        <p
-                            style={{
-                                margin: "2px 0 0",
-                                fontSize: 11,
-                                color: "var(--hms-gray-500)",
-                            }}
-                        >
-                            Jump to common tasks
-                        </p>
+                <Card className="hms-chart-card">
+                    <div className="hms-card-head">
+                        <p className="hms-card-head__title">Quick actions</p>
+                        <p className="hms-card-head__sub">Jump to common tasks</p>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+                    <div className="hms-quick-actions">
                         {quickActions.map((item) => (
                             <button
                                 key={item.to}
                                 type="button"
                                 onClick={() => navigate(item.to)}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 12,
-                                    padding: 12,
-                                    borderRadius: 8,
-                                    background: "transparent",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    textAlign: "left",
-                                    transition: "background 0.15s",
-                                    fontFamily: "var(--hms-font-family)",
-                                }}
-                                onMouseEnter={(e) =>
-                                    (e.currentTarget.style.background = "var(--hms-gray-50)")
-                                }
-                                onMouseLeave={(e) =>
-                                    (e.currentTarget.style.background = "transparent")
-                                }
+                                className="hms-quick-action"
                             >
-                                <div
-                                    style={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: 8,
-                                        background: item.bg,
-                                        color: item.color,
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        flexShrink: 0,
-                                    }}
-                                >
+                                <span className={`hms-quick-action__icon is-${item.iconTone}`}>
                                     {item.icon}
+                                </span>
+                                <div className="hms-quick-action__body">
+                                    <p className="hms-quick-action__label">{item.label}</p>
+                                    <p className="hms-quick-action__sub">{item.sub}</p>
                                 </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p
-                                        style={{
-                                            margin: 0,
-                                            fontSize: 13,
-                                            fontWeight: 600,
-                                            color: "var(--hms-gray-800)",
-                                        }}
-                                    >
-                                        {item.label}
-                                    </p>
-                                    <p
-                                        style={{
-                                            margin: 0,
-                                            fontSize: 11,
-                                            color: "var(--hms-gray-500)",
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            whiteSpace: "nowrap",
-                                        }}
-                                    >
-                                        {item.sub}
-                                    </p>
-                                </div>
-                                <ArrowRight
-                                    size={14}
-                                    style={{ color: "var(--hms-gray-400)", flexShrink: 0 }}
-                                />
+                                <ArrowRight size={14} className="text-gray-400 shrink-0" />
                             </button>
                         ))}
                     </div>
