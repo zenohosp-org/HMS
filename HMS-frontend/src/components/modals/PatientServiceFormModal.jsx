@@ -1,246 +1,342 @@
 import { useState, useEffect } from "react";
-import { X, Loader2 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { patientServicesApi } from "@/utils/api";
-import SidePane from "@/components/SidePane";
+import {
+    Button,
+    Drawer,
+    FormGroup,
+    Input,
+    Modal,
+} from "@/components/ui";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 
-const MEAL_DEFAULTS = { BREAKFAST: "08:00", LUNCH: "13:00", DINNER: "20:00" }
+const MEAL_DEFAULTS = { BREAKFAST: "08:00", LUNCH: "13:00", DINNER: "20:00" };
 
 const EMPTY_FORM = {
-  name: "",
-  type: "FOOD",
-  mealTime: "BREAKFAST",
-  chargeTime: "08:00",
-  pricePerMeal: "",
-  pricePerDay: "",
-  isActive: true,
-  oneTimeCharge: false,
+    name: "",
+    type: "FOOD",
+    mealTime: "BREAKFAST",
+    chargeTime: "08:00",
+    pricePerMeal: "",
+    pricePerDay: "",
+    isActive: true,
+    oneTimeCharge: false,
 };
 
+/**
+ * Patient service add / edit form. Edit mode opens as a right-edge
+ * Drawer; create mode as a centred Modal — same asymmetric UX used
+ * across other Add/Edit pairs.
+ *
+ * The shape of the request payload (FOOD vs non-FOOD nullables,
+ * REGISTRATION oneTimeCharge gating) is preserved byte-for-byte.
+ */
 function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSuccess }) {
-  const { notify } = useNotification();
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
+    const { notify } = useNotification();
+    const [loading, setLoading] = useState(false);
+    const [form, setForm] = useState(EMPTY_FORM);
 
-  useEffect(() => {
-    if (service) {
-      setForm({
-        name: service.name,
-        type: service.type,
-        mealTime: service.mealTime || "BREAKFAST",
-        chargeTime: service.chargeTime || MEAL_DEFAULTS[service.mealTime] || "08:00",
-        pricePerMeal: service.pricePerMeal ?? "",
-        pricePerDay: service.pricePerDay ?? "",
-        isActive: service.isActive,
-        oneTimeCharge: service.oneTimeCharge ?? false,
-      });
-    } else {
-      setForm(EMPTY_FORM);
-    }
-  }, [service, isOpen]);
+    useEffect(() => {
+        if (service) {
+            setForm({
+                name: service.name,
+                type: service.type,
+                mealTime: service.mealTime || "BREAKFAST",
+                chargeTime:
+                    service.chargeTime ||
+                    MEAL_DEFAULTS[service.mealTime] ||
+                    "08:00",
+                pricePerMeal: service.pricePerMeal ?? "",
+                pricePerDay: service.pricePerDay ?? "",
+                isActive: service.isActive,
+                oneTimeCharge: service.oneTimeCharge ?? false,
+            });
+        } else {
+            setForm(EMPTY_FORM);
+        }
+    }, [service, isOpen]);
 
-  const set = (field, value) => setForm((p) => ({ ...p, [field]: value }));
+    const set = (field, value) => setForm((p) => ({ ...p, [field]: value }));
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const payload = {
-      hospitalId,
-      name: form.name.trim(),
-      type: form.type,
-      mealTime: form.type === "FOOD" ? form.mealTime : null,
-      chargeTime: form.type === "FOOD" ? form.chargeTime : null,
-      pricePerMeal: form.type === "FOOD" ? parseFloat(form.pricePerMeal) || 0 : null,
-      pricePerDay: form.type !== "FOOD" ? parseFloat(form.pricePerDay) || 0 : null,
-      isActive: form.isActive,
-      oneTimeCharge: form.type === "REGISTRATION" ? form.oneTimeCharge : false,
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const payload = {
+            hospitalId,
+            name: form.name.trim(),
+            type: form.type,
+            mealTime: form.type === "FOOD" ? form.mealTime : null,
+            chargeTime: form.type === "FOOD" ? form.chargeTime : null,
+            pricePerMeal:
+                form.type === "FOOD" ? parseFloat(form.pricePerMeal) || 0 : null,
+            pricePerDay:
+                form.type !== "FOOD" ? parseFloat(form.pricePerDay) || 0 : null,
+            isActive: form.isActive,
+            oneTimeCharge: form.type === "REGISTRATION" ? form.oneTimeCharge : false,
+        };
+        setLoading(true);
+        try {
+            if (service) {
+                await patientServicesApi.update(service.id, payload);
+                notify("Service updated", "success");
+            } else {
+                await patientServicesApi.create(payload);
+                notify("Service added", "success");
+            }
+            onSuccess();
+            onClose();
+        } catch {
+            notify(
+                service ? "Failed to update service" : "Failed to add service",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
     };
-    setLoading(true);
-    try {
-      if (service) {
-        await patientServicesApi.update(service.id, payload);
-        notify("Service updated", "success");
-      } else {
-        await patientServicesApi.create(payload);
-        notify("Service added", "success");
-      }
-      onSuccess();
-      onClose();
-    } catch {
-      notify(service ? "Failed to update service" : "Failed to add service", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const inputCls =
-    "w-full px-4 py-2.5 bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#222222] rounded-lg focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder-slate-400 dark:placeholder-[#444444] text-slate-700 dark:text-[#cccccc] text-sm";
-  const labelCls = "text-sm font-semibold text-slate-700 dark:text-[#aaaaaa]";
+    const formId = "patient-service-form";
+    const required = <span style={{ color: "var(--hms-danger)" }}>*</span>;
 
-  const formBody = (
-    <form id="psForm" onSubmit={handleSubmit} className="space-y-5">
-      <div className="space-y-1.5">
-        <label className={labelCls}>Service Name <span className="text-rose-500">*</span></label>
-        <input
-          type="text"
-          value={form.name}
-          onChange={(e) => set("name", e.target.value)}
-          placeholder="e.g. Breakfast Meal"
-          className={inputCls}
-          required
-        />
-      </div>
+    const formBody = (
+        <form
+            id={formId}
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: 16 }}
+        >
+            <FormGroup label={<>Service name {required}</>}>
+                <Input
+                    value={form.name}
+                    onChange={(e) => set("name", e.target.value)}
+                    placeholder="e.g. Breakfast meal"
+                    required
+                />
+            </FormGroup>
 
-      <div className="space-y-1.5">
-        <label className={labelCls}>Service Type <span className="text-rose-500">*</span></label>
-        <SearchableSelect
-          value={form.type}
-          onChange={(v) => set("type", v)}
-          options={[
-            { value: "FOOD", label: "Food" },
-            { value: "ROOM_SERVICE", label: "Room Service" },
-            { value: "CONVENIENCE", label: "Convenience" },
-            { value: "CUSTOM", label: "Custom" },
-            { value: "REGISTRATION", label: "Registration" },
-          ]}
-          className={inputCls}
-        />
-      </div>
+            <FormGroup label={<>Service type {required}</>}>
+                <SearchableSelect
+                    value={form.type}
+                    onChange={(v) => set("type", v)}
+                    options={[
+                        { value: "FOOD", label: "Food" },
+                        { value: "ROOM_SERVICE", label: "Room Service" },
+                        { value: "CONVENIENCE", label: "Convenience" },
+                        { value: "CUSTOM", label: "Custom" },
+                        { value: "REGISTRATION", label: "Registration" },
+                    ]}
+                />
+            </FormGroup>
 
-      {form.type === "FOOD" && (
-        <>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className={labelCls}>Meal Time <span className="text-rose-500">*</span></label>
-              <SearchableSelect
-                value={form.mealTime}
-                onChange={(v) => {
-                  set("mealTime", v);
-                  set("chargeTime", MEAL_DEFAULTS[v] || "08:00");
+            {form.type === "FOOD" && (
+                <>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                        <FormGroup label={<>Meal time {required}</>}>
+                            <SearchableSelect
+                                value={form.mealTime}
+                                onChange={(v) => {
+                                    set("mealTime", v);
+                                    set("chargeTime", MEAL_DEFAULTS[v] || "08:00");
+                                }}
+                                options={[
+                                    { value: "BREAKFAST", label: "Breakfast" },
+                                    { value: "LUNCH", label: "Lunch" },
+                                    { value: "DINNER", label: "Dinner" },
+                                ]}
+                            />
+                        </FormGroup>
+                        <FormGroup label={<>Charge time {required}</>}>
+                            <Input
+                                type="time"
+                                value={form.chargeTime}
+                                onChange={(e) => set("chargeTime", e.target.value)}
+                                required
+                            />
+                        </FormGroup>
+                    </div>
+                    <FormGroup label={<>Price per meal (₹) {required}</>}>
+                        <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={form.pricePerMeal}
+                            onChange={(e) => set("pricePerMeal", e.target.value)}
+                            placeholder="0"
+                            required
+                        />
+                    </FormGroup>
+                </>
+            )}
+
+            {form.type !== "FOOD" && (
+                <FormGroup
+                    label={
+                        <>
+                            {form.type === "REGISTRATION"
+                                ? "One-time fee (₹)"
+                                : "Price per day (₹)"}{" "}
+                            {required}
+                        </>
+                    }
+                >
+                    <Input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={form.pricePerDay}
+                        onChange={(e) => set("pricePerDay", e.target.value)}
+                        placeholder="0"
+                        required
+                    />
+                </FormGroup>
+            )}
+
+            {form.type === "REGISTRATION" && (
+                <label
+                    style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 12,
+                        padding: 14,
+                        background: "#eef2ff",
+                        border: "1px solid #c7d2fe",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                    }}
+                >
+                    <input
+                        type="checkbox"
+                        checked={form.oneTimeCharge}
+                        onChange={(e) => set("oneTimeCharge", e.target.checked)}
+                        style={{
+                            marginTop: 2,
+                            width: 16,
+                            height: 16,
+                            accentColor: "#4338ca",
+                            cursor: "pointer",
+                        }}
+                    />
+                    <div>
+                        <p
+                            style={{
+                                margin: 0,
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: "var(--hms-gray-700)",
+                            }}
+                        >
+                            Charge only once on registration
+                        </p>
+                        <p
+                            style={{
+                                margin: "2px 0 0",
+                                fontSize: 11,
+                                color: "var(--hms-gray-500)",
+                            }}
+                        >
+                            When enabled, this fee is billed once per new patient — not per day
+                            during admission.
+                        </p>
+                    </div>
+                </label>
+            )}
+
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: 14,
+                    background: "var(--hms-gray-50)",
+                    border: "1px solid var(--hms-gray-200)",
+                    borderRadius: 8,
                 }}
-                options={[
-                  { value: "BREAKFAST", label: "Breakfast" },
-                  { value: "LUNCH", label: "Lunch" },
-                  { value: "DINNER", label: "Dinner" },
-                ]}
-                className={inputCls}
-              />
+            >
+                <div>
+                    <p
+                        style={{
+                            margin: 0,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: "var(--hms-gray-700)",
+                        }}
+                    >
+                        Active
+                    </p>
+                    <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--hms-gray-500)" }}>
+                        Add to patient invoices automatically
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    role="switch"
+                    aria-checked={form.isActive}
+                    onClick={() => set("isActive", !form.isActive)}
+                    style={{
+                        position: "relative",
+                        width: 44,
+                        height: 24,
+                        borderRadius: 999,
+                        border: "2px solid transparent",
+                        background: form.isActive
+                            ? "var(--hms-success)"
+                            : "var(--hms-gray-300)",
+                        cursor: "pointer",
+                        transition: "background 0.2s",
+                        padding: 0,
+                        flexShrink: 0,
+                    }}
+                >
+                    <span
+                        style={{
+                            display: "inline-block",
+                            width: 20,
+                            height: 20,
+                            borderRadius: 999,
+                            background: "var(--hms-white)",
+                            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+                            transform: `translateX(${form.isActive ? 20 : 0}px)`,
+                            transition: "transform 0.2s",
+                        }}
+                    />
+                </button>
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Charge Time <span className="text-rose-500">*</span></label>
-              <input
-                type="time"
-                value={form.chargeTime}
-                onChange={(e) => set("chargeTime", e.target.value)}
-                className={inputCls}
-                required
-              />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label className={labelCls}>Price per Meal (₹) <span className="text-rose-500">*</span></label>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={form.pricePerMeal}
-              onChange={(e) => set("pricePerMeal", e.target.value)}
-              placeholder="0"
-              className={inputCls}
-              required
-            />
-          </div>
-        </>
-      )}
-
-      {form.type !== "FOOD" && (
-        <div className="space-y-1.5">
-          <label className={labelCls}>
-            {form.type === "REGISTRATION" ? "One-time Fee (₹)" : "Price per Day (₹)"}
-            {" "}<span className="text-rose-500">*</span>
-          </label>
-          <input
-            type="number"
-            min="0"
-            step="1"
-            value={form.pricePerDay}
-            onChange={(e) => set("pricePerDay", e.target.value)}
-            placeholder="0"
-            className={inputCls}
-            required
-          />
-        </div>
-      )}
-
-      {form.type === "REGISTRATION" && (
-        <label className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-lg cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.oneTimeCharge}
-            onChange={(e) => set("oneTimeCharge", e.target.checked)}
-            className="mt-0.5 w-4 h-4 rounded accent-indigo-600"
-          />
-          <div>
-            <p className="text-sm font-semibold text-slate-700 dark:text-[#cccccc]">Charge only once on registration</p>
-            <p className="text-xs text-slate-500 dark:text-[#888] mt-0.5">When enabled, this fee is billed once per new patient — not per day during admission.</p>
-          </div>
-        </label>
-      )}
-
-      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#222222] rounded-lg">
-        <div>
-          <p className="text-sm font-semibold text-slate-700 dark:text-[#cccccc]">Active</p>
-          <p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">Add to patient invoices automatically</p>
-        </div>
-        <label className="relative inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.isActive}
-            onChange={(e) => set("isActive", e.target.checked)}
-            className="sr-only peer"
-          />
-          <div className="w-11 h-6 bg-slate-300 dark:bg-[#333333] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 dark:peer-checked:bg-emerald-600" />
-        </label>
-      </div>
-    </form>
-  );
-
-  const footer = (
-    <div className="flex gap-3">
-      <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
-      <button type="submit" form="psForm" disabled={loading} className="btn-primary flex-1">
-        {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : service ? "Save Changes" : "Add Service"}
-      </button>
-    </div>
-  );
-
-  if (service) {
-    return (
-      <SidePane isOpen={isOpen} onClose={onClose} title="Edit Service" footer={footer}>
-        {formBody}
-      </SidePane>
+        </form>
     );
-  }
 
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1a1a1a]">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">New Patient Service</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-[#1e1e1e] rounded-lg text-slate-400 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-6 space-y-2">
-          {formBody}
-          <div className="pt-3">{footer}</div>
-        </div>
-      </div>
-    </div>
-  );
+    const actionRow = (
+        <>
+            <Button variant="cancel" onClick={onClose} type="button">
+                Cancel
+            </Button>
+            <Button variant="primary" type="submit" form={formId} loading={loading}>
+                {service ? "Save changes" : "Add service"}
+            </Button>
+        </>
+    );
+
+    if (service) {
+        return (
+            <Drawer
+                isOpen={isOpen}
+                onClose={onClose}
+                title="Edit service"
+                footer={actionRow}
+            >
+                {formBody}
+            </Drawer>
+        );
+    }
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="New patient service"
+            size="md"
+            footer={actionRow}
+        >
+            {formBody}
+        </Modal>
+    );
 }
 
 export default PatientServiceFormModal;

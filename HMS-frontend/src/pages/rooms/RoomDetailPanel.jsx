@@ -2,480 +2,991 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { assetApi, bedApi } from "@/utils/api";
 import {
-  X, User, Phone, Users, Package, CalendarClock, ScrollText,
-  Search, Plus, Loader2, ArrowUpRight, Tag, AlertCircle, BedDouble, Pencil,
+    X,
+    User,
+    Phone,
+    Users,
+    Package,
+    CalendarClock,
+    ScrollText,
+    Search,
+    Plus,
+    Loader2,
+    ArrowUpRight,
+    Tag,
+    BedDouble,
+    Pencil,
 } from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
 import AssignAttenderModal from "./AssignAttenderModal";
+import { Badge, Button } from "@/components/ui";
 
+/** Asset status → Badge tone. */
+const ASSET_TONE = {
+    ACTIVE: "success",
+    IN_USE: "info",
+    MAINTENANCE: "warning",
+    DISPOSED: "danger",
+};
 function AssetStatusBadge({ status }) {
-  const map = {
-    ACTIVE: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
-    IN_USE: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
-    MAINTENANCE: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
-    DISPOSED: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
-  };
-  return (
-    <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${map[status] ?? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222] dark:text-[#888] dark:border-[#333]"}`}>
-      {status ?? "—"}
-    </span>
-  );
-}
-
-function AssignAssetDropdown({ hospitalId, roomId, onAssigned }) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [assigning, setAssigning] = useState(null);
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const debounceRef = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const fetchAvailable = useCallback(async (q) => {
-    setLoading(true);
-    try {
-      const data = await assetApi.getAvailable(hospitalId, q || undefined);
-      setResults(data);
-    } catch { setResults([]); }
-    finally { setLoading(false); }
-  }, [hospitalId]);
-
-  const onFocus = () => { setOpen(true); fetchAvailable(query); };
-
-  const onChange = (val) => {
-    setQuery(val);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchAvailable(val), 300);
-  };
-
-  const assign = async (asset) => {
-    setAssigning(asset.assetId);
-    try {
-      await assetApi.assignToRoom(asset.assetId, roomId, hospitalId);
-      onAssigned();
-      setQuery("");
-      setOpen(false);
-    } finally { setAssigning(null); }
-  };
-
-  return (
-    <div ref={ref} className="relative">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-        <input
-          value={query}
-          onChange={e => onChange(e.target.value)}
-          onFocus={onFocus}
-          placeholder="Search available assets…"
-          className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] text-slate-800 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] placeholder:text-slate-400"
-        />
-      </div>
-
-      {open && (
-        <div className="absolute z-30 left-0 right-0 mt-1 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center gap-2 px-3 py-3 text-xs text-slate-400">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Searching…
-            </div>
-          ) : results.length === 0 ? (
-            <div className="px-3 py-3 text-xs text-slate-400">No available assets found</div>
-          ) : results.map(a => (
-            <button
-              key={a.assetId}
-              disabled={!!assigning}
-              onClick={() => assign(a)}
-              className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[#222] border-b border-slate-100 dark:border-[#2a2a2a] last:border-0 transition-colors disabled:opacity-50"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-slate-800 dark:text-white truncate">{a.assetName}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{a.assetCode}{a.make ? ` · ${a.make}` : ""}{a.model ? ` ${a.model}` : ""}</p>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <AssetStatusBadge status={a.status} />
-                  {assigning === a.assetId
-                    ? <Loader2 className="w-3 h-3 animate-spin text-slate-900 dark:text-white" />
-                    : <Plus className="w-3 h-3 text-emerald-500" />}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function BedsSection({ room, hospitalId }) {
-  const [beds, setBeds] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editingAttender, setEditingAttender] = useState(null); // bed object
-
-  const loadBeds = useCallback(async () => {
-    if (!room?.id || !hospitalId) return;
-    setLoading(true);
-    try {
-      const data = await bedApi.getByRoom(room.id, hospitalId);
-      setBeds(data);
-    } catch { setBeds([]); }
-    finally { setLoading(false); }
-  }, [room?.id, hospitalId]);
-
-  useEffect(() => { loadBeds(); }, [loadBeds]);
-
-  if (loading) {
     return (
-      <div className="flex items-center justify-center py-6 text-slate-400">
-        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        <span className="text-xs">Loading beds…</span>
-      </div>
+        <Badge tone={ASSET_TONE[status] || "neutral"} soft>
+            {status ?? "—"}
+        </Badge>
     );
-  }
-
-  if (beds.length === 0) return null;
-
-  const occupiedCount = beds.filter(b => b.status === "OCCUPIED").length;
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <BedDouble className="w-3.5 h-3.5 text-slate-400 dark:text-[#666666]" />
-          <p className="text-xs font-bold text-slate-500 dark:text-[#666666] uppercase tracking-wider">
-            Beds
-          </p>
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${occupiedCount === beds.length
-            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
-            : occupiedCount > 0
-              ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
-              : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
-            }`}>
-            {occupiedCount}/{beds.length} occupied
-          </span>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        {beds.map(bed => {
-          const occupied = bed.status === "OCCUPIED";
-          return (
-            <div
-              key={bed.id}
-              className={`rounded-lg border transition-colors ${occupied
-                ? "bg-blue-50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/20"
-                : "bg-emerald-50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/20"
-                }`}
-            >
-              <div className="flex items-center justify-between gap-3 p-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${occupied ? "bg-blue-500" : "bg-emerald-500"}`} />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-800 dark:text-[#dddddd]">{bed.bedNumber}</p>
-                    {bed.patientName ? (
-                      <p className="text-[11px] text-slate-500 dark:text-[#888888] truncate">{bed.patientName}</p>
-                    ) : (
-                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Available</p>
-                    )}
-                  </div>
-                </div>
-                {occupied && bed.admissionId && (
-                  <button
-                    onClick={() => setEditingAttender(bed)}
-                    className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold text-slate-600 dark:text-[#bbb] bg-white/60 dark:bg-[#1a1a1a] hover:bg-white dark:hover:bg-[#222] border border-slate-200 dark:border-[#333] transition-colors"
-                    title={bed.attenderName ? "Edit attender" : "Assign attender"}
-                  >
-                    <Pencil className="w-3 h-3" />
-                    {bed.attenderName ? "Edit attender" : "Add attender"}
-                  </button>
-                )}
-              </div>
-              {occupied && bed.attenderName && (
-                <div className="px-3 pb-3 pt-0 -mt-1 flex items-center gap-2 flex-wrap text-[11px]">
-                  <Users className="w-3 h-3 text-slate-400" />
-                  <span className="font-semibold text-slate-700 dark:text-[#ccc]">{bed.attenderName}</span>
-                  {bed.attenderRelationship && (
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/70 dark:bg-[#1a1a1a] text-slate-500 dark:text-[#888] border border-slate-200 dark:border-[#333]">
-                      {bed.attenderRelationship}
-                    </span>
-                  )}
-                  {bed.attenderPhone && (
-                    <span className="inline-flex items-center gap-1 text-slate-500 dark:text-[#888]">
-                      <Phone className="w-3 h-3" />{bed.attenderPhone}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {editingAttender && (
-        <AssignAttenderModal
-          admissionId={editingAttender.admissionId}
-          label={`Bed ${editingAttender.bedNumber} · Room ${room.roomNumber}`}
-          existing={{
-            name: editingAttender.attenderName,
-            phone: editingAttender.attenderPhone,
-            relationship: editingAttender.attenderRelationship,
-          }}
-          onClose={() => setEditingAttender(null)}
-          onSuccess={() => { setEditingAttender(null); loadBeds(); }}
-        />
-      )}
-    </div>
-  );
 }
 
-function RoomDetailPanel({ room, onClose, onViewLogs, onRoomUpdated }) {
-  const { user } = useAuth();
-  const hospitalId = user?.hospitalId;
+/**
+ * Inline searchable asset picker. Lists available assets at the hospital
+ * level (assetApi.getAvailable) and assigns one to the room on click.
+ * Closes on outside click and on successful assign.
+ */
+function AssignAssetDropdown({ hospitalId, roomId, onAssigned }) {
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [assigning, setAssigning] = useState(null);
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+    const debounceRef = useRef(null);
 
-  const [assets, setAssets] = useState([]);
-  const [assetsLoading, setAssetsLoading] = useState(false);
-  const [removingId, setRemovingId] = useState(null);
-  const [showAssign, setShowAssign] = useState(false);
+    useEffect(() => {
+        const handler = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
 
-  const loadAssets = useCallback(async () => {
-    if (!room?.id || !hospitalId) return;
-    setAssetsLoading(true);
-    try {
-      const data = await assetApi.getByRoom(hospitalId, room.id);
-      setAssets(data);
-    } catch { setAssets([]); }
-    finally { setAssetsLoading(false); }
-  }, [room?.id, hospitalId]);
+    const fetchAvailable = useCallback(
+        async (q) => {
+            setLoading(true);
+            try {
+                const data = await assetApi.getAvailable(hospitalId, q || undefined);
+                setResults(data);
+            } catch {
+                setResults([]);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [hospitalId]
+    );
 
-  useEffect(() => { loadAssets(); }, [loadAssets]);
+    const onFocus = () => {
+        setOpen(true);
+        fetchAvailable(query);
+    };
 
-  const handleUnassign = async (assetId) => {
-    setRemovingId(assetId);
-    try {
-      await assetApi.unassignFromRoom(assetId);
-      await loadAssets();
-    } finally { setRemovingId(null); }
-  };
+    const onChange = (val) => {
+        setQuery(val);
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => fetchAvailable(val), 300);
+    };
 
-  const isMultiBed = room.bedCount != null && room.bedCount > 1;
+    const assign = async (asset) => {
+        setAssigning(asset.assetId);
+        try {
+            await assetApi.assignToRoom(asset.assetId, roomId, hospitalId);
+            onAssigned();
+            setQuery("");
+            setOpen(false);
+        } finally {
+            setAssigning(null);
+        }
+    };
 
-  return (
-    <div className="w-[35rem] shrink-0 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg flex flex-col overflow-hidden self-start sticky top-0">
+    return (
+        <div ref={ref} style={{ position: "relative" }}>
+            <div style={{ position: "relative" }}>
+                <Search
+                    size={14}
+                    style={{
+                        position: "absolute",
+                        left: 10,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "var(--hms-gray-400)",
+                        pointerEvents: "none",
+                    }}
+                />
+                <input
+                    value={query}
+                    onChange={(e) => onChange(e.target.value)}
+                    onFocus={onFocus}
+                    placeholder="Search available assets…"
+                    style={{
+                        width: "100%",
+                        padding: "8px 12px 8px 32px",
+                        borderRadius: 8,
+                        border: "1px solid var(--hms-gray-200)",
+                        background: "var(--hms-gray-50)",
+                        color: "var(--hms-gray-800)",
+                        fontSize: 12,
+                        outline: "none",
+                        fontFamily: "var(--hms-font-family)",
+                    }}
+                />
+            </div>
 
-      {/* Header */}
-      <div className="flex items-start justify-between p-5 border-b border-slate-100 dark:border-[#1e1e1e]">
-        <div>
-          <p className="text-xs font-semibold text-slate-400 dark:text-[#666666] uppercase tracking-wider mb-1">{room.roomNumber}</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border
-              ${room.roomType === "ICU"
-                ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
-                : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#888888] dark:border-[#333333]"}`}>
-              {room.roomType}
-            </span>
-            <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border
-              ${room.status === "AVAILABLE"
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
-                : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20"}`}>
-              {room.status}
-            </span>
-            {isMultiBed && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]">
-                {room.bedCount} beds
-              </span>
+            {open && (
+                <div
+                    style={{
+                        position: "absolute",
+                        zIndex: 30,
+                        left: 0,
+                        right: 0,
+                        marginTop: 4,
+                        background: "var(--hms-white)",
+                        border: "1px solid var(--hms-gray-200)",
+                        borderRadius: 8,
+                        boxShadow: "var(--hms-shadow-lg)",
+                        overflow: "hidden",
+                        maxHeight: 208,
+                        overflowY: "auto",
+                    }}
+                >
+                    {loading ? (
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "12px",
+                                fontSize: 11,
+                                color: "var(--hms-gray-400)",
+                            }}
+                        >
+                            <Loader2 size={14} className="animate-spin" /> Searching…
+                        </div>
+                    ) : results.length === 0 ? (
+                        <div
+                            style={{
+                                padding: 12,
+                                fontSize: 11,
+                                color: "var(--hms-gray-400)",
+                            }}
+                        >
+                            No available assets found
+                        </div>
+                    ) : (
+                        results.map((a) => (
+                            <button
+                                key={a.assetId}
+                                disabled={!!assigning}
+                                onClick={() => assign(a)}
+                                style={{
+                                    width: "100%",
+                                    textAlign: "left",
+                                    padding: "10px 12px",
+                                    borderBottom: "1px solid var(--hms-gray-100)",
+                                    background: "transparent",
+                                    border: "none",
+                                    cursor: assigning ? "wait" : "pointer",
+                                    opacity: assigning ? 0.5 : 1,
+                                    fontFamily: "var(--hms-font-family)",
+                                }}
+                                onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background = "var(--hms-gray-50)")
+                                }
+                                onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background = "transparent")
+                                }
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        gap: 8,
+                                    }}
+                                >
+                                    <div style={{ minWidth: 0 }}>
+                                        <p
+                                            style={{
+                                                margin: 0,
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                color: "var(--hms-gray-800)",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
+                                            {a.assetName}
+                                        </p>
+                                        <p style={{ margin: "2px 0 0", fontSize: 10, color: "var(--hms-gray-400)" }}>
+                                            {a.assetCode}
+                                            {a.make ? ` · ${a.make}` : ""}
+                                            {a.model ? ` ${a.model}` : ""}
+                                        </p>
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                        <AssetStatusBadge status={a.status} />
+                                        {assigning === a.assetId ? (
+                                            <Loader2
+                                                size={12}
+                                                style={{ color: "var(--hms-gray-700)" }}
+                                                className="animate-spin"
+                                            />
+                                        ) : (
+                                            <Plus size={12} style={{ color: "var(--hms-success)" }} />
+                                        )}
+                                    </div>
+                                </div>
+                            </button>
+                        ))
+                    )}
+                </div>
             )}
-          </div>
         </div>
-        <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-[#cccccc] rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+    );
+}
 
-      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+/** Multi-bed rooms get an inline beds list with per-bed attender control. */
+function BedsSection({ room, hospitalId }) {
+    const [beds, setBeds] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [editingAttender, setEditingAttender] = useState(null);
 
-        {/* Allocation token (single-bed only) */}
-        {!isMultiBed && room.allocationToken && (
-          <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333]">
-            <p className="text-xs font-semibold text-slate-900 dark:text-white dark:text-slate-300">Allocation Token</p>
-            <span className="text-sm font-bold tracking-widest text-slate-900 dark:text-white dark:text-slate-300 font-mono">{room.allocationToken}</span>
-          </div>
-        )}
+    const loadBeds = useCallback(async () => {
+        if (!room?.id || !hospitalId) return;
+        setLoading(true);
+        try {
+            const data = await bedApi.getByRoom(room.id, hospitalId);
+            setBeds(data);
+        } catch {
+            setBeds([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [room?.id, hospitalId]);
 
-        {/* Est. discharge (single-bed only) */}
-        {!isMultiBed && room.approxDischargeTime && (
-          <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
-              <CalendarClock className="w-3.5 h-3.5" />Est. Discharge
-            </div>
-            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">{formatDateTime(room.approxDischargeTime)}</p>
-          </div>
-        )}
+    useEffect(() => {
+        loadBeds();
+    }, [loadBeds]);
 
-        {/* Beds section for multi-bed rooms (read-only) */}
-        {isMultiBed && (
-          <BedsSection
-            room={room}
-            hospitalId={hospitalId}
-          />
-        )}
-
-        {/* Patient (single-bed) */}
-        {!isMultiBed && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <User className="w-3.5 h-3.5 text-slate-400 dark:text-[#666666]" />
-              <p className="text-xs font-bold text-slate-500 dark:text-[#666666] uppercase tracking-wider">Patient</p>
-            </div>
-            {room.currentPatient ? (
-              <div className="space-y-1 pl-1">
-                <p className="text-sm font-bold text-slate-800 dark:text-[#dddddd]">{room.currentPatient.firstName} {room.currentPatient.lastName}</p>
-                <p className="text-xs text-slate-600 dark:text-[#999999]">{fmtId(room.currentPatient.uhid)}</p>
-              </div>
-            ) : <p className="text-sm text-slate-600 dark:text-[#999999] pl-1">No patient assigned</p>}
-          </div>
-        )}
-
-        <div className="border-t border-slate-100 dark:border-[#1e1e1e]" />
-
-        {/* Attender (single-bed) */}
-        {!isMultiBed && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="w-3.5 h-3.5 text-slate-400 dark:text-[#666666]" />
-              <p className="text-xs font-bold text-slate-500 dark:text-[#666666] uppercase tracking-wider">Attender</p>
-            </div>
-            {room.attenderName ? (
-              <div className="space-y-1.5 pl-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd]">{room.attenderName}</p>
-                  {room.attenderRelationship && (
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-[#222222] text-slate-500 dark:text-[#888888] border border-slate-200 dark:border-[#333333]">
-                      {room.attenderRelationship}
-                    </span>
-                  )}
-                </div>
-                {room.attenderPhone && (
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#666666]">
-                    <Phone className="w-3 h-3" />{room.attenderPhone}
-                  </div>
-                )}
-              </div>
-            ) : <p className="text-sm text-amber-500 dark:text-amber-400 pl-1">No attender assigned</p>}
-          </div>
-        )}
-
-        {isMultiBed && <div className="border-t border-slate-100 dark:border-[#1e1e1e]" />}
-
-        {/* Assets */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Package className="w-3.5 h-3.5 text-slate-400 dark:text-[#666666]" />
-              <p className="text-xs font-bold text-slate-500 dark:text-[#666666] uppercase tracking-wider">
-                Assets in Room
-                {assets.length > 0 && (
-                  <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                    {assets.length}
-                  </span>
-                )}
-              </p>
-            </div>
-            <button
-              onClick={() => setShowAssign(v => !v)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/20 transition-colors"
+    if (loading) {
+        return (
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "24px 0",
+                    color: "var(--hms-gray-400)",
+                }}
             >
-              <Plus className="w-3 h-3" /> Assign
-            </button>
-          </div>
+                <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} />
+                <span style={{ fontSize: 11 }}>Loading beds…</span>
+            </div>
+        );
+    }
 
-          {showAssign && (
-            <div className="mb-3">
-              <AssignAssetDropdown
-                hospitalId={hospitalId}
-                roomId={room.id}
-                onAssigned={() => { loadAssets(); setShowAssign(false); }}
-              />
-            </div>
-          )}
+    if (beds.length === 0) return null;
 
-          {assetsLoading ? (
-            <div className="flex items-center justify-center py-6 text-slate-400">
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              <span className="text-xs">Loading assets…</span>
-            </div>
-          ) : assets.length === 0 ? (
-            <div className="py-5 flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-[#2a2a2a]">
-              <Package className="w-6 h-6 text-slate-300 dark:text-[#333333] mb-1.5" />
-              <p className="text-xs text-slate-600 dark:text-[#999999]">No assets assigned yet</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {assets.map(a => (
-                <div key={a.assetId} className="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-100 dark:border-[#222] bg-slate-50 dark:bg-[#1a1a1a] group">
-                  <div className="w-7 h-7 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-[#333] flex items-center justify-center shrink-0 mt-0.5">
-                    <Package className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-1">
-                      <p className="text-xs font-semibold text-slate-800 dark:text-white leading-tight truncate">{a.assetName}</p>
-                      <button
-                        onClick={() => handleUnassign(a.assetId)}
-                        disabled={removingId === a.assetId}
-                        className="shrink-0 p-0.5 rounded text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
-                        title="Remove from room"
-                      >
-                        {removingId === a.assetId
-                          ? <Loader2 className="w-3 h-3 animate-spin" />
-                          : <X className="w-3 h-3" />}
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {a.assetCode && (
-                        <span className="flex items-center gap-0.5 text-[10px] text-slate-400">
-                          <Tag className="w-2.5 h-2.5" />{a.assetCode}
-                        </span>
-                      )}
-                      {(a.make || a.model) && (
-                        <span className="text-[10px] text-slate-400">{[a.make, a.model].filter(Boolean).join(" ")}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between mt-1.5">
-                      <AssetStatusBadge status={a.status} />
-                      <a
-                        href={`https://asset.zenohosp.com/assets/${a.assetId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-0.5 text-[10px] text-slate-400 hover:text-emerald-500 transition-colors"
-                        title="View in Assets app"
-                      >
-                        Details <ArrowUpRight className="w-2.5 h-2.5" />
-                      </a>
-                    </div>
-                  </div>
+    const occupiedCount = beds.filter((b) => b.status === "OCCUPIED").length;
+    const occupancyTone =
+        occupiedCount === beds.length ? "danger" : occupiedCount > 0 ? "warning" : "success";
+
+    return (
+        <div>
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 12,
+                }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <BedDouble size={14} style={{ color: "var(--hms-gray-400)" }} />
+                    <p
+                        style={{
+                            margin: 0,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "var(--hms-gray-500)",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                        }}
+                    >
+                        Beds
+                    </p>
+                    <Badge tone={occupancyTone} soft>
+                        {occupiedCount}/{beds.length} occupied
+                    </Badge>
                 </div>
-              ))}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-slate-100 dark:border-[#1e1e1e] shrink-0">
-        <button
-          onClick={onViewLogs}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-sm font-semibold text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] hover:text-slate-900 dark:hover:text-white transition-colors"
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {beds.map((bed) => {
+                    const occupied = bed.status === "OCCUPIED";
+                    return (
+                        <div
+                            key={bed.id}
+                            style={{
+                                borderRadius: 8,
+                                background: occupied
+                                    ? "var(--hms-info-bg)"
+                                    : "var(--hms-success-bg)",
+                                border: `1px solid ${occupied
+                                    ? "var(--hms-info-border)"
+                                    : "var(--hms-success-border)"
+                                    }`,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    gap: 12,
+                                    padding: 12,
+                                }}
+                            >
+                                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                                    <div
+                                        style={{
+                                            width: 8,
+                                            height: 8,
+                                            borderRadius: 999,
+                                            background: occupied
+                                                ? "var(--hms-info)"
+                                                : "var(--hms-success)",
+                                            flexShrink: 0,
+                                        }}
+                                    />
+                                    <div style={{ minWidth: 0 }}>
+                                        <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "var(--hms-gray-800)" }}>
+                                            {bed.bedNumber}
+                                        </p>
+                                        {bed.patientName ? (
+                                            <p
+                                                style={{
+                                                    margin: 0,
+                                                    fontSize: 11,
+                                                    color: "var(--hms-gray-500)",
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
+                                                {bed.patientName}
+                                            </p>
+                                        ) : (
+                                            <p style={{ margin: 0, fontSize: 11, color: "var(--hms-success)" }}>
+                                                Available
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                {occupied && bed.admissionId && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditingAttender(bed)}
+                                        style={{
+                                            flexShrink: 0,
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: 4,
+                                            padding: "4px 8px",
+                                            borderRadius: 6,
+                                            fontSize: 10,
+                                            fontWeight: 600,
+                                            color: "var(--hms-gray-600)",
+                                            background: "rgba(255, 255, 255, 0.6)",
+                                            border: "1px solid var(--hms-gray-200)",
+                                            cursor: "pointer",
+                                            fontFamily: "var(--hms-font-family)",
+                                        }}
+                                        title={bed.attenderName ? "Edit attender" : "Assign attender"}
+                                    >
+                                        <Pencil size={12} />
+                                        {bed.attenderName ? "Edit attender" : "Add attender"}
+                                    </button>
+                                )}
+                            </div>
+                            {occupied && bed.attenderName && (
+                                <div
+                                    style={{
+                                        padding: "0 12px 12px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        flexWrap: "wrap",
+                                        fontSize: 11,
+                                    }}
+                                >
+                                    <Users size={12} style={{ color: "var(--hms-gray-400)" }} />
+                                    <span style={{ fontWeight: 600, color: "var(--hms-gray-700)" }}>
+                                        {bed.attenderName}
+                                    </span>
+                                    {bed.attenderRelationship && (
+                                        <Badge tone="neutral" soft>
+                                            {bed.attenderRelationship}
+                                        </Badge>
+                                    )}
+                                    {bed.attenderPhone && (
+                                        <span
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: 4,
+                                                color: "var(--hms-gray-500)",
+                                            }}
+                                        >
+                                            <Phone size={12} />
+                                            {bed.attenderPhone}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {editingAttender && (
+                <AssignAttenderModal
+                    admissionId={editingAttender.admissionId}
+                    label={`Bed ${editingAttender.bedNumber} · Room ${room.roomNumber}`}
+                    existing={{
+                        name: editingAttender.attenderName,
+                        phone: editingAttender.attenderPhone,
+                        relationship: editingAttender.attenderRelationship,
+                    }}
+                    onClose={() => setEditingAttender(null)}
+                    onSuccess={() => {
+                        setEditingAttender(null);
+                        loadBeds();
+                    }}
+                />
+            )}
+        </div>
+    );
+}
+
+/**
+ * Right-edge detail panel for a single room. Used by /rooms/allocation —
+ * the parent owns the open state and passes the selected room object.
+ * Phase 9 migration: data layer untouched (assetApi.getByRoom/getAvailable/
+ * assignToRoom/unassignFromRoom, bedApi.getByRoom). Sticky positioning and
+ * scroll behaviour preserved.
+ */
+function RoomDetailPanel({ room, onClose, onViewLogs }) {
+    const { user } = useAuth();
+    const hospitalId = user?.hospitalId;
+
+    const [assets, setAssets] = useState([]);
+    const [assetsLoading, setAssetsLoading] = useState(false);
+    const [removingId, setRemovingId] = useState(null);
+    const [showAssign, setShowAssign] = useState(false);
+
+    const loadAssets = useCallback(async () => {
+        if (!room?.id || !hospitalId) return;
+        setAssetsLoading(true);
+        try {
+            const data = await assetApi.getByRoom(hospitalId, room.id);
+            setAssets(data);
+        } catch {
+            setAssets([]);
+        } finally {
+            setAssetsLoading(false);
+        }
+    }, [room?.id, hospitalId]);
+
+    useEffect(() => {
+        loadAssets();
+    }, [loadAssets]);
+
+    const handleUnassign = async (assetId) => {
+        setRemovingId(assetId);
+        try {
+            await assetApi.unassignFromRoom(assetId);
+            await loadAssets();
+        } finally {
+            setRemovingId(null);
+        }
+    };
+
+    const isMultiBed = room.bedCount != null && room.bedCount > 1;
+
+    const sectionLabel = (Icon, label, suffix) => (
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+            }}
         >
-          <ScrollText className="w-4 h-4" />View Room Logs
-        </button>
-      </div>
-    </div>
-  );
+            <Icon size={14} style={{ color: "var(--hms-gray-400)" }} />
+            <p
+                style={{
+                    margin: 0,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "var(--hms-gray-500)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                }}
+            >
+                {label}
+                {suffix}
+            </p>
+        </div>
+    );
+
+    return (
+        <div
+            style={{
+                width: 560,
+                flexShrink: 0,
+                background: "var(--hms-white)",
+                border: "1px solid var(--hms-gray-200)",
+                borderRadius: "var(--hms-radius)",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                alignSelf: "flex-start",
+                position: "sticky",
+                top: 0,
+                fontFamily: "var(--hms-font-family)",
+            }}
+        >
+            {/* Header */}
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    padding: 20,
+                    borderBottom: "1px solid var(--hms-gray-100)",
+                }}
+            >
+                <div>
+                    <p
+                        style={{
+                            margin: "0 0 6px",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "var(--hms-gray-400)",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                        }}
+                    >
+                        {room.roomNumber}
+                    </p>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <Badge tone={room.roomType === "ICU" ? "danger" : "neutral"} soft>
+                            {room.roomType}
+                        </Badge>
+                        <Badge tone={room.status === "AVAILABLE" ? "success" : "info"} soft>
+                            {room.status}
+                        </Badge>
+                        {isMultiBed && (
+                            <Badge tone="neutral" soft>
+                                {room.bedCount} beds
+                            </Badge>
+                        )}
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="hms-modal-close"
+                    aria-label="Close"
+                >
+                    <X size={16} />
+                </button>
+            </div>
+
+            <div
+                style={{
+                    flex: 1,
+                    overflowY: "auto",
+                    padding: 20,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 20,
+                }}
+            >
+                {!isMultiBed && room.allocationToken && (
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "10px 14px",
+                            borderRadius: 8,
+                            background: "var(--hms-gray-100)",
+                            border: "1px solid var(--hms-gray-200)",
+                        }}
+                    >
+                        <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: "var(--hms-gray-700)" }}>
+                            Allocation token
+                        </p>
+                        <span
+                            style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                letterSpacing: "0.1em",
+                                color: "var(--hms-gray-900)",
+                                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                            }}
+                        >
+                            {room.allocationToken}
+                        </span>
+                    </div>
+                )}
+
+                {!isMultiBed && room.approxDischargeTime && (
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "10px 14px",
+                            borderRadius: 8,
+                            background: "var(--hms-warning-bg)",
+                            border: "1px solid var(--hms-warning-border)",
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: "#b45309",
+                            }}
+                        >
+                            <CalendarClock size={14} /> Est. discharge
+                        </div>
+                        <p style={{ margin: 0, fontSize: 11, fontWeight: 500, color: "#b45309" }}>
+                            {formatDateTime(room.approxDischargeTime)}
+                        </p>
+                    </div>
+                )}
+
+                {isMultiBed && <BedsSection room={room} hospitalId={hospitalId} />}
+
+                {!isMultiBed && (
+                    <div>
+                        {sectionLabel(User, "Patient", "")}
+                        {room.currentPatient ? (
+                            <div style={{ paddingLeft: 4 }}>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--hms-gray-800)" }}>
+                                    {room.currentPatient.firstName} {room.currentPatient.lastName}
+                                </p>
+                                <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--hms-gray-500)" }}>
+                                    {fmtId(room.currentPatient.uhid)}
+                                </p>
+                            </div>
+                        ) : (
+                            <p style={{ margin: "0 0 0 4px", fontSize: 13, color: "var(--hms-gray-500)" }}>
+                                No patient assigned
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                {(!isMultiBed || isMultiBed) && (
+                    <div style={{ borderTop: "1px solid var(--hms-gray-100)" }} />
+                )}
+
+                {!isMultiBed && (
+                    <div>
+                        {sectionLabel(Users, "Attender", "")}
+                        {room.attenderName ? (
+                            <div style={{ paddingLeft: 4, display: "flex", flexDirection: "column", gap: 6 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--hms-gray-800)" }}>
+                                        {room.attenderName}
+                                    </p>
+                                    {room.attenderRelationship && (
+                                        <Badge tone="neutral" soft>
+                                            {room.attenderRelationship}
+                                        </Badge>
+                                    )}
+                                </div>
+                                {room.attenderPhone && (
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 6,
+                                            fontSize: 11,
+                                            color: "var(--hms-gray-500)",
+                                        }}
+                                    >
+                                        <Phone size={12} />
+                                        {room.attenderPhone}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <p style={{ margin: "0 0 0 4px", fontSize: 13, color: "var(--hms-warning)" }}>
+                                No attender assigned
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                <div style={{ borderTop: "1px solid var(--hms-gray-100)" }} />
+
+                {/* Assets */}
+                <div>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: 12,
+                        }}
+                    >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <Package size={14} style={{ color: "var(--hms-gray-400)" }} />
+                            <p
+                                style={{
+                                    margin: 0,
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    color: "var(--hms-gray-500)",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.06em",
+                                }}
+                            >
+                                Assets in room
+                            </p>
+                            {assets.length > 0 && (
+                                <Badge tone="success" soft>
+                                    {assets.length}
+                                </Badge>
+                            )}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowAssign((v) => !v)}
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                padding: "4px 10px",
+                                borderRadius: 8,
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: "var(--hms-success)",
+                                background: "var(--hms-success-bg)",
+                                border: "1px solid var(--hms-success-border)",
+                                cursor: "pointer",
+                                fontFamily: "var(--hms-font-family)",
+                            }}
+                        >
+                            <Plus size={12} /> Assign
+                        </button>
+                    </div>
+
+                    {showAssign && (
+                        <div style={{ marginBottom: 12 }}>
+                            <AssignAssetDropdown
+                                hospitalId={hospitalId}
+                                roomId={room.id}
+                                onAssigned={() => {
+                                    loadAssets();
+                                    setShowAssign(false);
+                                }}
+                            />
+                        </div>
+                    )}
+
+                    {assetsLoading ? (
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: "24px 0",
+                                color: "var(--hms-gray-400)",
+                            }}
+                        >
+                            <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} />
+                            <span style={{ fontSize: 11 }}>Loading assets…</span>
+                        </div>
+                    ) : assets.length === 0 ? (
+                        <div
+                            style={{
+                                padding: "20px 16px",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: 8,
+                                border: "1px dashed var(--hms-gray-200)",
+                            }}
+                        >
+                            <Package size={24} style={{ color: "var(--hms-gray-300)", marginBottom: 6 }} />
+                            <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>
+                                No assets assigned yet
+                            </p>
+                        </div>
+                    ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {assets.map((a) => (
+                                <div
+                                    key={a.assetId}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "flex-start",
+                                        gap: 10,
+                                        padding: 10,
+                                        borderRadius: 8,
+                                        border: "1px solid var(--hms-gray-100)",
+                                        background: "var(--hms-gray-50)",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            width: 28,
+                                            height: 28,
+                                            borderRadius: 8,
+                                            background: "var(--hms-white)",
+                                            border: "1px solid var(--hms-gray-200)",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            flexShrink: 0,
+                                            marginTop: 2,
+                                            color: "var(--hms-gray-400)",
+                                        }}
+                                    >
+                                        <Package size={14} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "flex-start",
+                                                justifyContent: "space-between",
+                                                gap: 4,
+                                            }}
+                                        >
+                                            <p
+                                                style={{
+                                                    margin: 0,
+                                                    fontSize: 12,
+                                                    fontWeight: 600,
+                                                    color: "var(--hms-gray-800)",
+                                                    lineHeight: 1.3,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
+                                                {a.assetName}
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleUnassign(a.assetId)}
+                                                disabled={removingId === a.assetId}
+                                                style={{
+                                                    flexShrink: 0,
+                                                    padding: 2,
+                                                    background: "transparent",
+                                                    border: "none",
+                                                    color: "var(--hms-gray-300)",
+                                                    cursor: "pointer",
+                                                    opacity: removingId === a.assetId ? 0.5 : 1,
+                                                }}
+                                                title="Remove from room"
+                                            >
+                                                {removingId === a.assetId ? (
+                                                    <Loader2 size={12} className="animate-spin" />
+                                                ) : (
+                                                    <X size={12} />
+                                                )}
+                                            </button>
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 8,
+                                                marginTop: 4,
+                                                flexWrap: "wrap",
+                                            }}
+                                        >
+                                            {a.assetCode && (
+                                                <span
+                                                    style={{
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        gap: 2,
+                                                        fontSize: 10,
+                                                        color: "var(--hms-gray-400)",
+                                                    }}
+                                                >
+                                                    <Tag size={10} />
+                                                    {a.assetCode}
+                                                </span>
+                                            )}
+                                            {(a.make || a.model) && (
+                                                <span style={{ fontSize: 10, color: "var(--hms-gray-400)" }}>
+                                                    {[a.make, a.model].filter(Boolean).join(" ")}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "space-between",
+                                                marginTop: 6,
+                                            }}
+                                        >
+                                            <AssetStatusBadge status={a.status} />
+                                            <a
+                                                href={`https://asset.zenohosp.com/assets/${a.assetId}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: 2,
+                                                    fontSize: 10,
+                                                    color: "var(--hms-gray-400)",
+                                                    textDecoration: "none",
+                                                }}
+                                                title="View in Assets app"
+                                            >
+                                                Details <ArrowUpRight size={10} />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div
+                style={{
+                    padding: 16,
+                    borderTop: "1px solid var(--hms-gray-100)",
+                    flexShrink: 0,
+                }}
+            >
+                <Button variant="secondary" full onClick={onViewLogs}>
+                    <ScrollText size={14} /> View room logs
+                </Button>
+            </div>
+        </div>
+    );
 }
 
 export default RoomDetailPanel;

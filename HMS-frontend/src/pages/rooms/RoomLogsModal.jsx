@@ -1,81 +1,340 @@
-﻿import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { roomLogsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
-import { X, Search, Loader2, Bed, User, Users, CalendarClock, PlusCircle, LogOut, UserCheck, UserCog } from "lucide-react";
-const EVENT_META = {
-  ROOM_CREATED: { label: "Room Created", cls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20", icon: PlusCircle },
-  ALLOCATED: { label: "Allocated", cls: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20", icon: Bed },
-  DEALLOCATED: { label: "Deallocated", cls: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#888888] dark:border-[#333333]", icon: LogOut },
-  ATTENDER_ASSIGNED: { label: "Attender Assigned", cls: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20", icon: UserCheck },
-  ATTENDER_UPDATED: { label: "Attender Updated", cls: "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]", icon: UserCog }
-};
+import {
+    Search,
+    Loader2,
+    Bed,
+    User,
+    Users,
+    CalendarClock,
+    PlusCircle,
+    LogOut,
+    UserCheck,
+    UserCog,
+} from "lucide-react";
 import { timeAgo, fmtDateTime } from "@/utils/date";
-const formatRelative = timeAgo
-const formatFull = fmtDateTime
-function RoomLogsModal({ onClose, roomId, roomNumber }) {
-  const { user } = useAuth();
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 300);
-    return () => clearTimeout(t);
-  }, [search]);
-  const fetchLogs = useCallback(async () => {
-    if (!user?.hospitalId) return;
-    setLoading(true);
-    try {
-      const data = roomId ? await roomLogsApi.getRoomLogs(roomId, user.hospitalId) : await roomLogsApi.getHospitalLogs(user.hospitalId, debouncedSearch || void 0);
-      setLogs(data);
-    } catch {
-      setLogs([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.hospitalId, roomId, debouncedSearch]);
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
-  const filteredLogs = roomId && debouncedSearch ? logs.filter((l) => {
-    const s = debouncedSearch.toLowerCase();
-    return l.roomNumber?.toLowerCase().includes(s) || l.patientName?.toLowerCase().includes(s) || l.patientUhid?.toLowerCase().includes(s) || l.attenderName?.toLowerCase().includes(s) || l.performedBy?.toLowerCase().includes(s);
-  }) : logs;
-  const title = roomId ? `Logs \xB7 Room ${roomNumber}` : "Room Logs";
-  return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"><div className="bg-white dark:bg-[#111111] rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#2a2a2a]">{
-    /* Header */
-  }<div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0"><div><h2 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h2><p className="text-xs text-slate-500 dark:text-[#666666] mt-0.5">{loading ? "Loading\u2026" : `${filteredLogs.length} event${filteredLogs.length !== 1 ? "s" : ""}`}</p></div><button
-    onClick={onClose}
-    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-[#cccccc] rounded-lg hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors"
-  ><X className="w-5 h-5" /></button></div>{
-    /* Search */
-  }<div className="px-6 py-3 border-b border-slate-100 dark:border-[#1e1e1e] shrink-0"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input
-    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a]
-                                bg-slate-50 dark:bg-[#1a1a1a] text-sm text-slate-900 dark:text-[#cccccc]
-                                focus:outline-none focus:ring-2 focus:ring-slate-300/50"
-    placeholder="Search by room, patient, UHID, attender or performed by…"
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-    autoFocus
-  /></div></div>{
-    /* Log list */
-  }<div className="flex-1 overflow-y-auto">{loading ? <div className="flex items-center justify-center h-48 text-slate-400"><Loader2 className="w-5 h-5 animate-spin" /></div> : filteredLogs.length === 0 ? <div className="flex flex-col items-center justify-center h-48 text-slate-600 dark:text-[#999999] gap-2"><CalendarClock className="w-8 h-8 opacity-40" /><p className="text-sm">No logs found</p></div> : <div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">{filteredLogs.map((log) => {
-    const meta = EVENT_META[log.event];
-    const Icon = meta.icon;
-    return <div key={log.id} className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors"><div className="flex items-start gap-4">{
-      /* Event icon */
-    }<div className="w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 bg-white dark:bg-[#1a1a1a] border-slate-200 dark:border-[#2a2a2a]"><Icon className="w-4 h-4 text-slate-500 dark:text-[#888888]" /></div><div className="flex-1 min-w-0"><div className="flex items-center gap-2 flex-wrap">{
-      /* Event badge */
-    }<span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${meta.cls}`}>{meta.label}</span>{
-      /* Room number */
-    }<span className="text-xs font-bold text-slate-700 dark:text-[#cccccc] bg-slate-100 dark:bg-[#222222] px-2 py-0.5 rounded-md">{log.roomNumber}</span>{
-      /* Token */
-    }{log.allocationToken && <span className="text-[10px] font-bold tracking-widest text-slate-900 dark:text-white dark:text-slate-300 bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-[#333333] px-2 py-0.5 rounded-md font-mono">{log.allocationToken}</span>}</div><div className="flex flex-wrap gap-x-5 gap-y-1 mt-2">{log.patientName && <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#aaaaaa]"><User className="w-3 h-3 text-slate-600 dark:text-[#999999] shrink-0" /><span className="font-medium">{log.patientName}</span>{log.patientUhid && <span className="text-slate-600 dark:text-[#999999]">· {fmtId(log.patientUhid)}</span>}</div>}{log.attenderName && <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#aaaaaa]"><Users className="w-3 h-3 text-slate-600 dark:text-[#999999] shrink-0" /><span>{log.attenderName}</span></div>}</div></div>{
-      /* Right: performed by + time */
-    }<div className="text-right shrink-0 space-y-1">{log.performedBy && <p className="text-xs font-medium text-slate-700 dark:text-[#cccccc]">{log.performedBy}</p>}<p className="text-[11px] text-slate-600 dark:text-[#999999]" title={formatFull(log.createdAt)}>{formatRelative(log.createdAt)}</p><p className="text-[10px] text-slate-300 dark:text-[#444444]">{formatFull(log.createdAt)}</p></div></div></div>;
-  })}</div>}</div></div></div>;
-}
-export {
-  RoomLogsModal as default
+import { Badge, Button, Modal, SearchBar } from "@/components/ui";
+
+const EVENT_META = {
+    ROOM_CREATED: { label: "Room created", tone: "warning", icon: PlusCircle },
+    ALLOCATED: { label: "Allocated", tone: "success", icon: Bed },
+    DEALLOCATED: { label: "Deallocated", tone: "neutral", icon: LogOut },
+    ATTENDER_ASSIGNED: { label: "Attender assigned", tone: "info", icon: UserCheck },
+    ATTENDER_UPDATED: { label: "Attender updated", tone: "neutral", icon: UserCog },
 };
+
+const formatRelative = timeAgo;
+const formatFull = fmtDateTime;
+
+/**
+ * Room logs modal — read-only event timeline for a single room (when
+ * roomId is provided) or hospital-wide (no roomId). Phase 9 migration:
+ * data layer untouched (roomLogsApi.getRoomLogs / getHospitalLogs),
+ * debounced search, same scoping rule that filters client-side when a
+ * roomId is provided.
+ */
+function RoomLogsModal({ onClose, roomId, roomNumber }) {
+    const { user } = useAuth();
+    const [logs, setLogs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(search), 300);
+        return () => clearTimeout(t);
+    }, [search]);
+
+    const fetchLogs = useCallback(async () => {
+        if (!user?.hospitalId) return;
+        setLoading(true);
+        try {
+            const data = roomId
+                ? await roomLogsApi.getRoomLogs(roomId, user.hospitalId)
+                : await roomLogsApi.getHospitalLogs(
+                    user.hospitalId,
+                    debouncedSearch || undefined
+                );
+            setLogs(data);
+        } catch {
+            setLogs([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [user?.hospitalId, roomId, debouncedSearch]);
+
+    useEffect(() => {
+        fetchLogs();
+    }, [fetchLogs]);
+
+    const filteredLogs =
+        roomId && debouncedSearch
+            ? logs.filter((l) => {
+                const s = debouncedSearch.toLowerCase();
+                return (
+                    l.roomNumber?.toLowerCase().includes(s) ||
+                    l.patientName?.toLowerCase().includes(s) ||
+                    l.patientUhid?.toLowerCase().includes(s) ||
+                    l.attenderName?.toLowerCase().includes(s) ||
+                    l.performedBy?.toLowerCase().includes(s)
+                );
+            })
+            : logs;
+
+    const title = roomId ? `Logs · Room ${roomNumber}` : "Room logs";
+
+    return (
+        <Modal
+            isOpen
+            onClose={onClose}
+            size="xl"
+            title={
+                <div>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--hms-gray-900)" }}>
+                        {title}
+                    </p>
+                    <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>
+                        {loading
+                            ? "Loading…"
+                            : `${filteredLogs.length} event${filteredLogs.length !== 1 ? "s" : ""}`}
+                    </p>
+                </div>
+            }
+            footer={
+                <Button variant="secondary" onClick={onClose}>
+                    Close
+                </Button>
+            }
+        >
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <SearchBar
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search by room, patient, UHID, attender or performed by…"
+                />
+
+                {loading ? (
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: 192,
+                            color: "var(--hms-gray-400)",
+                        }}
+                    >
+                        <Loader2 size={20} className="animate-spin" />
+                    </div>
+                ) : filteredLogs.length === 0 ? (
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: 192,
+                            gap: 8,
+                            color: "var(--hms-gray-500)",
+                        }}
+                    >
+                        <CalendarClock size={32} style={{ opacity: 0.4 }} />
+                        <p style={{ margin: 0, fontSize: 13 }}>No logs found</p>
+                    </div>
+                ) : (
+                    <div
+                        style={{
+                            border: "1px solid var(--hms-gray-100)",
+                            borderRadius: 8,
+                            overflow: "hidden",
+                        }}
+                    >
+                        {filteredLogs.map((log, idx) => {
+                            const meta = EVENT_META[log.event] || {
+                                label: log.event,
+                                tone: "neutral",
+                                icon: Bed,
+                            };
+                            const Icon = meta.icon;
+                            return (
+                                <div
+                                    key={log.id}
+                                    style={{
+                                        padding: "14px 20px",
+                                        display: "flex",
+                                        alignItems: "flex-start",
+                                        gap: 16,
+                                        borderTop:
+                                            idx === 0 ? "none" : "1px solid var(--hms-gray-50)",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: 8,
+                                            background: "var(--hms-white)",
+                                            border: "1px solid var(--hms-gray-200)",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            flexShrink: 0,
+                                            marginTop: 2,
+                                            color: "var(--hms-gray-500)",
+                                        }}
+                                    >
+                                        <Icon size={14} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 8,
+                                                flexWrap: "wrap",
+                                            }}
+                                        >
+                                            <Badge tone={meta.tone} soft>
+                                                {meta.label}
+                                            </Badge>
+                                            <span
+                                                style={{
+                                                    fontSize: 11,
+                                                    fontWeight: 700,
+                                                    color: "var(--hms-gray-700)",
+                                                    background: "var(--hms-gray-100)",
+                                                    padding: "2px 8px",
+                                                    borderRadius: 6,
+                                                }}
+                                            >
+                                                {log.roomNumber}
+                                            </span>
+                                            {log.allocationToken && (
+                                                <span
+                                                    style={{
+                                                        fontSize: 10,
+                                                        fontWeight: 700,
+                                                        letterSpacing: "0.06em",
+                                                        color: "var(--hms-gray-900)",
+                                                        background: "var(--hms-gray-100)",
+                                                        border: "1px solid var(--hms-gray-200)",
+                                                        padding: "2px 8px",
+                                                        borderRadius: 6,
+                                                        fontFamily:
+                                                            "ui-monospace, SFMono-Regular, Menlo, monospace",
+                                                    }}
+                                                >
+                                                    {log.allocationToken}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexWrap: "wrap",
+                                                gap: "4px 20px",
+                                                marginTop: 8,
+                                            }}
+                                        >
+                                            {log.patientName && (
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 6,
+                                                        fontSize: 11,
+                                                        color: "var(--hms-gray-600)",
+                                                    }}
+                                                >
+                                                    <User
+                                                        size={12}
+                                                        style={{
+                                                            color: "var(--hms-gray-500)",
+                                                            flexShrink: 0,
+                                                        }}
+                                                    />
+                                                    <span style={{ fontWeight: 500 }}>
+                                                        {log.patientName}
+                                                    </span>
+                                                    {log.patientUhid && (
+                                                        <span style={{ color: "var(--hms-gray-500)" }}>
+                                                            · {fmtId(log.patientUhid)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {log.attenderName && (
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 6,
+                                                        fontSize: 11,
+                                                        color: "var(--hms-gray-600)",
+                                                    }}
+                                                >
+                                                    <Users
+                                                        size={12}
+                                                        style={{
+                                                            color: "var(--hms-gray-500)",
+                                                            flexShrink: 0,
+                                                        }}
+                                                    />
+                                                    <span>{log.attenderName}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div
+                                        style={{
+                                            textAlign: "right",
+                                            flexShrink: 0,
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 2,
+                                        }}
+                                    >
+                                        {log.performedBy && (
+                                            <p
+                                                style={{
+                                                    margin: 0,
+                                                    fontSize: 11,
+                                                    fontWeight: 500,
+                                                    color: "var(--hms-gray-700)",
+                                                }}
+                                            >
+                                                {log.performedBy}
+                                            </p>
+                                        )}
+                                        <p
+                                            style={{
+                                                margin: 0,
+                                                fontSize: 10,
+                                                color: "var(--hms-gray-500)",
+                                            }}
+                                            title={formatFull(log.createdAt)}
+                                        >
+                                            {formatRelative(log.createdAt)}
+                                        </p>
+                                        <p
+                                            style={{
+                                                margin: 0,
+                                                fontSize: 10,
+                                                color: "var(--hms-gray-300)",
+                                            }}
+                                        >
+                                            {formatFull(log.createdAt)}
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        </Modal>
+    );
+}
+
+export { RoomLogsModal as default };
