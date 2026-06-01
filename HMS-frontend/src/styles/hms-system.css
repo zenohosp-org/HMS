@@ -1236,3 +1236,319 @@
         transform: translateY(0);
     }
 }
+
+
+/* ===================================================================
+   15. Reusable patterns
+   -------------------------------------------------------------------
+   Patterns that recur across many pages — extracted so each call-site
+   reduces to a single className. Naming follows the BEM-ish convention
+   used elsewhere: .hms-<pattern> for the block, .hms-<pattern>__<part>
+   for elements, .is-<modifier> for variants.
+   =================================================================== */
+
+
+/* ---------- Avatar (circle with initials or icon) ---------- */
+.hms-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-700);
+    border: 1px solid var(--hms-gray-200);
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.hms-avatar.is-sm { width: 28px; height: 28px; font-size: 11px; }
+.hms-avatar.is-md { width: 40px; height: 40px; font-size: 13px; }
+.hms-avatar.is-lg { width: 48px; height: 48px; font-size: 14px; }
+.hms-avatar.is-xl { width: 56px; height: 56px; font-size: 16px; }
+.hms-avatar.is-2xl { width: 64px; height: 64px; font-size: 22px; }
+
+.hms-avatar.is-info {
+    background: var(--hms-info-bg);
+    color: #0369a1;
+    border-color: var(--hms-info-border);
+}
+.hms-avatar.is-rose {
+    background: #fff1f2;
+    color: #be123c;
+    border-color: #fecdd3;
+}
+.hms-avatar.is-success {
+    background: var(--hms-success-bg);
+    color: #166534;
+    border-color: var(--hms-success-border);
+}
+.hms-avatar.is-amber {
+    background: var(--hms-warning-bg);
+    color: #b45309;
+    border-color: var(--hms-warning-border);
+}
+.hms-avatar.is-violet {
+    background: #f5f3ff;
+    color: #6d28d9;
+    border-color: #ddd6fe;
+}
+
+
+/* ---------- Icon tile (square rounded with icon) ---------- */
+.hms-icon-tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-500);
+    flex-shrink: 0;
+}
+
+.hms-icon-tile.is-sm { width: 28px; height: 28px; border-radius: 6px; }
+.hms-icon-tile.is-md { width: 36px; height: 36px; }
+.hms-icon-tile.is-lg { width: 44px; height: 44px; }
+.hms-icon-tile.is-xl { width: 56px; height: 56px; }
+
+.hms-icon-tile.is-info { background: var(--hms-info-bg); color: var(--hms-info); }
+.hms-icon-tile.is-success { background: var(--hms-success-bg); color: var(--hms-success); }
+.hms-icon-tile.is-warning { background: var(--hms-warning-bg); color: var(--hms-warning); }
+.hms-icon-tile.is-danger { background: var(--hms-danger-bg); color: var(--hms-danger); }
+.hms-icon-tile.is-violet { background: #f5f3ff; color: #6d28d9; }
+.hms-icon-tile.is-rose { background: #fff1f2; color: #be123c; }
+
+
+/* ---------- Section label (tiny uppercase header) ---------- */
+.hms-section-label {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-section-label.is-tiny {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--hms-gray-400);
+}
+
+.hms-section-label.is-on-dark {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+
+/* ---------- KV row (key-value display) ---------- */
+.hms-kv__label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-kv__value {
+    margin: 2px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+}
+
+.hms-kv__value.is-strong {
+    font-size: 15px;
+    color: var(--hms-gray-900);
+}
+
+
+/* ---------- Status chip (dot + uppercase label) ---------- */
+.hms-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--hms-gray-400);
+}
+
+.hms-status-chip::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+.hms-status-chip.is-success { color: var(--hms-success); }
+.hms-status-chip.is-info { color: var(--hms-info); }
+.hms-status-chip.is-warning { color: var(--hms-warning); }
+.hms-status-chip.is-danger { color: var(--hms-danger); }
+.hms-status-chip.is-neutral { color: var(--hms-gray-400); }
+
+
+/* ---------- Loader strip (centered spinner + caption) ---------- */
+.hms-loader-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 80px 0;
+    color: var(--hms-gray-400);
+    font-size: 13px;
+}
+
+.hms-loader-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 80px 0;
+    color: var(--hms-gray-500);
+}
+
+
+/* ---------- Empty cell (inside table body) ---------- */
+.hms-cell-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 0;
+}
+
+.hms-cell-empty__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-400);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hms-cell-empty__text {
+    color: var(--hms-gray-500);
+    font-size: 13px;
+    margin: 0;
+}
+
+
+/* ---------- Page content (default below PageHeader) ---------- */
+.hms-page-content {
+    padding: 0 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hms-page-content.is-flush {
+    padding: 0;
+}
+
+
+/* ---------- Toggle switch (used for feature flags, form toggles) ---------- */
+.hms-toggle {
+    position: relative;
+    display: inline-flex;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background: var(--hms-gray-300);
+    cursor: pointer;
+    transition: background 0.2s;
+    padding: 0;
+    font-family: var(--hms-font-family);
+}
+
+.hms-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.hms-toggle.is-on {
+    background: var(--hms-success);
+}
+
+.hms-toggle__handle {
+    pointer-events: none;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: var(--hms-white);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transform: translateX(0);
+    transition: transform 0.2s;
+}
+
+.hms-toggle.is-on .hms-toggle__handle {
+    transform: translateX(20px);
+}
+
+
+/* ---------- Settings list (feature-flag style row list) ---------- */
+.hms-settings-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.hms-settings-list__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px 24px;
+    border-top: 1px solid var(--hms-gray-100);
+}
+
+.hms-settings-list__item:first-child {
+    border-top: none;
+}
+
+.hms-settings-list__main {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    min-width: 0;
+}
+
+.hms-settings-list__body {
+    min-width: 0;
+}
+
+.hms-settings-list__title {
+    margin: 0;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--hms-gray-900);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hms-settings-list__description {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--hms-gray-500);
+}
+
+.hms-settings-list__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}

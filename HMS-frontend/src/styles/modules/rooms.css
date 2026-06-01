@@ -1,0 +1,7 @@
+/* ===================================================================
+   HMS — rooms module
+   -------------------------------------------------------------------
+   Page-specific compositions for the rooms area. Atomic helpers live in
+   utilities.css; reusable patterns (avatar, icon tile, kv row, etc.)
+   live in hms-system.css. This file contains only what's unique to rooms.
+   =================================================================== */
