@@ -103,10 +103,7 @@
     --hms-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 20px -5px rgba(0, 0, 0, 0.08);
     --hms-shadow-card-hover: 0 1px 3px rgba(0, 0, 0, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.10), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
-    /* Typography — Lexend is preloaded via <link> in index.html.
-       The token below is what hms-* primitives read; the document
-       body is still set to Inter in the legacy block of index.css
-       and will swap globally in the final cleanup phase. */
+    /* Typography — Lexend loaded via <link> in index.html; applied on body via var(--hms-font-family). */
     --hms-font-family: "Lexend", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 
     /* Stacking layers — single source of truth so nested modals,
