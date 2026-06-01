@@ -13,14 +13,14 @@ import Header from "./Header";
  * for switching back (typically an Exit button in its own footer bar).
  */
 export default function FocusLayout() {
-  return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
-      <div className="no-print">
-        <Header />
-      </div>
-      <main className="flex-1 overflow-hidden print:overflow-visible">
-        <Outlet />
-      </main>
-    </div>
-  );
+    return (
+        <div className="hms-app-shell is-focus">
+            <div className="no-print">
+                <Header />
+            </div>
+            <main className="hms-app-shell__content is-focus">
+                <Outlet />
+            </main>
+        </div>
+    );
 }

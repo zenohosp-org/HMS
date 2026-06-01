@@ -107,6 +107,12 @@
 .h-2\.5 { height: 10px; }
 .w-3 { width: 12px; }
 .h-3 { height: 12px; }
+.w-3\.5 { width: 14px; }
+.h-3\.5 { height: 14px; }
+.w-4 { width: 16px; }
+.h-4 { height: 16px; }
+.w-5 { width: 20px; }
+.h-5 { height: 20px; }
 
 
 /* ---------------------------------------------------------- Overflow */
