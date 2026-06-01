@@ -30,18 +30,8 @@ const PAGE_SIZE = 30;
 
 /**
  * Services — admin metadata list (catalogue + per-hospital pricing).
- *
- * Migrated to hms-* primitives in Phase 4. The data layer, RBAC gate,
- * filter behaviour, pagination math, status-toggle, and delete pipeline
- * are byte-for-byte the same as the pre-migration page; only the
- * presentation has changed.
- *
- * Components still on the legacy stack (out of scope for this phase):
- *   * <ServiceFilters>    — filter popover panel
- *   * <SearchableSelect>  — used inside <AddServiceModal>
- *   * <Pagination>        — page selector
- * These render fine alongside hms-* because Tailwind is still loaded
- * and their classes are namespace-distinct.
+ * Data layer, RBAC gate, filter behaviour, pagination math, status-
+ * toggle, and delete pipeline preserved byte-for-byte.
  */
 function Services() {
     const { user } = useAuth();
@@ -83,7 +73,8 @@ function Services() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.hospitalId]);
 
-    const getSpecName = (id) => specializations.find((s) => s.id === id)?.name || "—";
+    const getSpecName = (id) =>
+        specializations.find((s) => s.id === id)?.name || "—";
 
     const filteredServices = useMemo(() => {
         return services.filter((s) => {
@@ -151,9 +142,7 @@ function Services() {
             header: "Service name",
             width: "28%",
             render: (s) => (
-                <span style={{ fontWeight: 700, color: "var(--hms-gray-900)", fontSize: 14 }}>
-                    {s.name}
-                </span>
+                <span className="font-bold text-gray-900 text-14">{s.name}</span>
             ),
         },
         {
@@ -169,9 +158,7 @@ function Services() {
             header: "Price",
             width: "14%",
             render: (s) => (
-                <span style={{ fontWeight: 700, color: "var(--hms-gray-900)" }}>
-                    ₹{s.price}
-                </span>
+                <span className="font-bold text-gray-900">₹{s.price}</span>
             ),
         },
         {
@@ -183,7 +170,7 @@ function Services() {
                         {Number(s.gstRate)}%
                     </Badge>
                 ) : (
-                    <span style={{ color: "var(--hms-gray-300)" }}>—</span>
+                    <span className="text-gray-300">—</span>
                 ),
         },
         {
@@ -229,14 +216,14 @@ function Services() {
     ];
 
     const titleNode = (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+        <span className="inline-flex items-center gap-3">
             Services
             <Badge tone="info">{services.length} total</Badge>
         </span>
     );
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
             <PageHeader
                 title={titleNode}
                 actions={
@@ -249,9 +236,9 @@ function Services() {
                 }
             />
 
-            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ flex: 1 }}>
+            <div className="hms-page-content">
+                <div className="flex items-center gap-3">
+                    <div className="flex-1">
                         <SearchBar
                             value={search}
                             onChange={(v) => {
@@ -261,7 +248,7 @@ function Services() {
                             placeholder="Search by service name or department…"
                         />
                     </div>
-                    <div style={{ position: "relative" }}>
+                    <div className="relative">
                         <Button
                             variant="secondary"
                             onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -272,14 +259,7 @@ function Services() {
                             {hasActiveFilters && (
                                 <span
                                     aria-hidden="true"
-                                    style={{
-                                        display: "inline-block",
-                                        width: 6,
-                                        height: 6,
-                                        borderRadius: 999,
-                                        background: "var(--hms-info)",
-                                        marginLeft: 2,
-                                    }}
+                                    className="inline-block w-1.5 h-1.5 rounded-full bg-info ml-1"
                                 />
                             )}
                         </Button>
@@ -300,33 +280,14 @@ function Services() {
                     data={paginated}
                     loading={loading}
                     loadingMessage={
-                        <span style={{ color: "var(--hms-gray-500)" }}>Loading services…</span>
+                        <span className="text-gray-500">Loading services…</span>
                     }
                     emptyMessage={
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                gap: 10,
-                                padding: "16px 0",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: 999,
-                                    background: "var(--hms-gray-100)",
-                                    color: "var(--hms-gray-400)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
+                        <div className="hms-cell-empty">
+                            <span className="hms-cell-empty__icon">
                                 <Settings2 size={22} />
-                            </div>
-                            <div style={{ color: "var(--hms-gray-500)", fontSize: 13 }}>
+                            </span>
+                            <div className="hms-cell-empty__text">
                                 {search || hasActiveFilters
                                     ? "No services match your search."
                                     : "No services added yet."}
@@ -336,7 +297,7 @@ function Services() {
                 />
 
                 {!loading && filteredServices.length > 0 && totalPages > 1 && (
-                    <div style={{ paddingTop: 4 }}>
+                    <div className="pt-1">
                         <Pagination
                             currentPage={page}
                             totalPages={totalPages}
@@ -379,38 +340,15 @@ function Services() {
                     will not be affected.
                 </Alert>
                 {confirmDelete && (
-                    <div
-                        style={{
-                            marginTop: 16,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            padding: 12,
-                            background: "var(--hms-gray-50)",
-                            border: "1px solid var(--hms-gray-200)",
-                            borderRadius: "var(--hms-radius)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 6,
-                                background: "var(--hms-gray-100)",
-                                color: "var(--hms-gray-500)",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                            }}
-                        >
+                    <div className="hms-confirm-summary">
+                        <span className="hms-icon-tile is-sm">
                             <Settings2 size={16} />
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, color: "var(--hms-gray-900)", fontSize: 14 }}>
+                        </span>
+                        <div className="min-w-0">
+                            <div className="hms-confirm-summary__title">
                                 {confirmDelete.name}
                             </div>
-                            <div style={{ fontSize: 12, color: "var(--hms-gray-500)" }}>
+                            <div className="hms-confirm-summary__sub">
                                 ₹{confirmDelete.price}
                             </div>
                         </div>

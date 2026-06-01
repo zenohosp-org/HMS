@@ -70,12 +70,12 @@ function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
         <form
             id={formId}
             onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: 16 }}
+            className="flex flex-col gap-4"
         >
             <FormGroup
                 label={
                     <>
-                        Specialization <span style={{ color: "var(--hms-danger)" }}>*</span>
+                        Specialization <span className="text-danger">*</span>
                     </>
                 }
             >

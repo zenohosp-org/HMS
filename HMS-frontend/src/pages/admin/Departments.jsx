@@ -12,6 +12,7 @@ import {
 import {
     Badge,
     Button,
+    Card,
     FormGroup,
     Input,
     Modal,
@@ -24,7 +25,6 @@ import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const DEPT_TYPES = ["CLINICAL", "SUPPORT", "ADMINISTRATIVE"];
 
-/** Type → Badge tone — matches the original blue/green/gray palette. */
 const TYPE_TONE = {
     CLINICAL: "info",
     SUPPORT: "success",
@@ -79,12 +79,8 @@ const titleCase = (s) => s.charAt(0) + s.slice(1).toLowerCase();
 /**
  * Departments — hospital taxonomy: types (Clinical / Support /
  * Administrative), pill-tab navigation, preset quick-adds, inline
- * create+edit modal.
- *
- * Phase 5 migration: same data layer, same RBAC, same toggle / create
- * / update API calls. Presentation now driven entirely by hms-*
- * primitives. <SearchableSelect> stays in the modal as a legacy
- * combobox (one place to fix later).
+ * create+edit modal. Data layer, RBAC, toggle / create / update
+ * APIs preserved.
  */
 export default function Departments() {
     const { user } = useAuth();
@@ -169,18 +165,19 @@ export default function Departments() {
 
     const existing = new Set(departments.map((d) => d.name));
     const rows = grouped[activeTab] || [];
-    const presetsForTab = (PRESETS[activeTab] || []).filter((p) => !existing.has(p.name));
-    const allPresetsAdded =
-        (PRESETS[activeTab] || []).every((p) => existing.has(p.name));
+    const presetsForTab = (PRESETS[activeTab] || []).filter(
+        (p) => !existing.has(p.name)
+    );
+    const allPresetsAdded = (PRESETS[activeTab] || []).every((p) =>
+        existing.has(p.name)
+    );
 
     const columns = [
         {
             header: "Department",
             width: "30%",
             render: (d) => (
-                <span style={{ fontWeight: 600, color: "var(--hms-gray-900)", fontSize: 14 }}>
-                    {d.name}
-                </span>
+                <span className="font-semibold text-gray-900 text-14">{d.name}</span>
             ),
         },
         {
@@ -188,20 +185,9 @@ export default function Departments() {
             width: "14%",
             render: (d) =>
                 d.code ? (
-                    <span
-                        style={{
-                            padding: "2px 8px",
-                            background: "var(--hms-gray-100)",
-                            color: "var(--hms-gray-600)",
-                            borderRadius: 6,
-                            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                            fontSize: 12,
-                        }}
-                    >
-                        {d.code}
-                    </span>
+                    <span className="hms-entity-row__code">{d.code}</span>
                 ) : (
-                    <span style={{ color: "var(--hms-gray-300)" }}>—</span>
+                    <span className="text-gray-300">—</span>
                 ),
         },
         {
@@ -227,7 +213,7 @@ export default function Departments() {
             width: "16%",
             align: "right",
             render: (d) => (
-                <div style={{ display: "inline-flex", gap: 4 }}>
+                <div className="inline-flex gap-1">
                     <button
                         type="button"
                         className="hms-btn-icon"
@@ -243,7 +229,7 @@ export default function Departments() {
                         onClick={() => toggle(d)}
                     >
                         {d.isActive ? (
-                            <ToggleRight size={16} style={{ color: "var(--hms-success)" }} />
+                            <ToggleRight size={16} className="text-success" />
                         ) : (
                             <ToggleLeft size={16} />
                         )}
@@ -254,10 +240,10 @@ export default function Departments() {
     ];
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
             <PageHeader
                 title={
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                    <span className="inline-flex items-center gap-3">
                         <Building2 size={20} /> Departments
                     </span>
                 }
@@ -269,7 +255,7 @@ export default function Departments() {
                 }
             />
 
-            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="hms-page-content">
                 <Tabs
                     type="pill"
                     active={activeTab}
@@ -281,27 +267,12 @@ export default function Departments() {
                     }))}
                 />
 
-                <div
-                    style={{
-                        background: "var(--hms-white)",
-                        border: "1px solid var(--hms-gray-200)",
-                        borderRadius: "var(--hms-radius)",
-                        overflow: "hidden",
-                    }}
-                >
-                    <div
-                        style={{
-                            padding: "16px 20px",
-                            borderBottom: "1px solid var(--hms-gray-100)",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                        }}
-                    >
-                        <span style={{ fontWeight: 600, color: "var(--hms-gray-800)" }}>
+                <Card className="p-0">
+                    <div className="hms-group-header">
+                        <span className="hms-group-header__title">
                             {titleCase(activeTab)} departments
                         </span>
-                        <span style={{ fontSize: 12, color: "var(--hms-gray-400)" }}>
+                        <span className="hms-group-header__count">
                             {rows.length} {rows.length === 1 ? "department" : "departments"}
                         </span>
                     </div>
@@ -312,47 +283,31 @@ export default function Departments() {
                         loading={loading}
                         loadingMessage="Loading…"
                         emptyMessage="No departments yet. Add from presets below or create custom."
-                        className="hms-table-wrapper--inset"
                     />
 
-                    <div
-                        style={{
-                            borderTop: "1px solid var(--hms-gray-100)",
-                            padding: 20,
-                        }}
-                    >
-                        <p
-                            style={{
-                                margin: 0,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: "var(--hms-gray-400)",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.05em",
-                                marginBottom: 12,
-                            }}
-                        >
+                    <div className="hms-preset-strip">
+                        <p className="hms-section-label is-tiny mb-3">
                             Quick add from presets
                         </p>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        <div className="hms-preset-strip__list">
                             {presetsForTab.map((p) => (
                                 <button
                                     key={p.name}
                                     type="button"
                                     onClick={() => openCreate(p)}
-                                    style={presetChipStyle}
+                                    className="hms-preset-chip"
                                 >
                                     <Plus size={12} /> {p.name}
                                 </button>
                             ))}
                             {allPresetsAdded && (
-                                <span style={{ fontSize: 12, color: "var(--hms-gray-400)" }}>
+                                <span className="hms-preset-strip__none">
                                     All presets added
                                 </span>
                             )}
                         </div>
                     </div>
-                </div>
+                </Card>
             </div>
 
             <Modal
@@ -379,7 +334,7 @@ export default function Departments() {
                 <form
                     id="department-form"
                     onSubmit={handleSubmit}
-                    style={{ display: "flex", flexDirection: "column", gap: 16 }}
+                    className="flex flex-col gap-4"
                 >
                     <FormGroup label="Department name *">
                         <Input
@@ -390,7 +345,7 @@ export default function Departments() {
                         />
                     </FormGroup>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div className="grid grid-cols-2 gap-4">
                         <FormGroup label="Type *">
                             <SearchableSelect
                                 required
@@ -430,19 +385,3 @@ export default function Departments() {
         </div>
     );
 }
-
-const presetChipStyle = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    padding: "6px 12px",
-    borderRadius: 8,
-    border: "1px dashed var(--hms-gray-300)",
-    background: "transparent",
-    color: "var(--hms-gray-500)",
-    fontSize: 12,
-    fontWeight: 500,
-    cursor: "pointer",
-    fontFamily: "var(--hms-font-family)",
-    transition: "border-color 0.15s, color 0.15s",
-};

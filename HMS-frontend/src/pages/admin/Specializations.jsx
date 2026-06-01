@@ -15,12 +15,9 @@ import {
 import AddSpecializationModal from "@/components/modals/AddSpecializationModal";
 
 /**
- * Specializations — admin metadata list.
- *
- * Phase 3 migration: first page swapped end-to-end to the hms-* design
- * system. The data layer, RBAC contract, API surface and modal hand-off
- * are byte-for-byte identical to the pre-migration page; only the
- * presentation (markup + class names) has changed.
+ * Specializations — admin metadata list. Data layer, RBAC contract,
+ * API surface and modal hand-off are byte-for-byte identical to the
+ * pre-migration page; only the presentation has changed.
  */
 function Specializations() {
     const { user } = useAuth();
@@ -30,6 +27,7 @@ function Specializations() {
     const [searchQuery, setSearchQuery] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSpec, setEditingSpec] = useState(null);
+
     const loadData = async () => {
         if (!user?.hospitalId) return;
         setIsLoading(true);
@@ -83,39 +81,14 @@ function Specializations() {
             header: "Specialization",
             width: "40%",
             render: (spec) => (
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div
-                        style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 999,
-                            background: "var(--hms-gray-100)",
-                            color: "var(--hms-gray-500)",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                        }}
-                    >
+                <div className="hms-entity-row">
+                    <span className="hms-avatar is-md">
                         <Stethoscope size={18} strokeWidth={2} />
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, color: "var(--hms-gray-900)", fontSize: 14 }}>
-                            {spec.name}
-                        </div>
+                    </span>
+                    <div className="hms-entity-row__body">
+                        <div className="hms-entity-row__title">{spec.name}</div>
                         {spec.description && (
-                            <div
-                                style={{
-                                    fontSize: 12,
-                                    color: "var(--hms-gray-500)",
-                                    marginTop: 2,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                    maxWidth: 280,
-                                }}
-                                title={spec.description}
-                            >
+                            <div className="hms-entity-row__sub" title={spec.description}>
                                 {spec.description}
                             </div>
                         )}
@@ -133,9 +106,7 @@ function Specializations() {
             width: "20%",
             align: "right",
             render: (spec) => (
-                <span style={{ fontWeight: 700, color: "var(--hms-gray-700)" }}>
-                    {spec.noOfDoctor}
-                </span>
+                <span className="font-bold text-gray-700">{spec.noOfDoctor}</span>
             ),
         },
         {
@@ -167,14 +138,14 @@ function Specializations() {
     ];
 
     const titleNode = (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+        <span className="inline-flex items-center gap-3">
             Specializations
             <Badge tone="success">Total: {specializations.length}</Badge>
         </span>
     );
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
             <PageHeader
                 title={titleNode}
                 actions={
@@ -185,8 +156,8 @@ function Specializations() {
                 }
             />
 
-            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ maxWidth: 480 }}>
+            <div className="hms-page-content">
+                <div className="max-w-lg">
                     <SearchBar
                         value={searchQuery}
                         onChange={setSearchQuery}
@@ -199,33 +170,14 @@ function Specializations() {
                     data={filteredSpecs}
                     loading={isLoading}
                     loadingMessage={
-                        <span style={{ color: "var(--hms-gray-500)" }}>Loading specializations…</span>
+                        <span className="text-gray-500">Loading specializations…</span>
                     }
                     emptyMessage={
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                gap: 10,
-                                padding: "16px 0",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: 999,
-                                    background: "var(--hms-gray-100)",
-                                    color: "var(--hms-gray-400)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
+                        <div className="hms-cell-empty">
+                            <span className="hms-cell-empty__icon">
                                 <Stethoscope size={22} />
-                            </div>
-                            <div style={{ color: "var(--hms-gray-500)", fontSize: 13 }}>
+                            </span>
+                            <div className="hms-cell-empty__text">
                                 {searchQuery
                                     ? "No specializations match your search."
                                     : "No specializations yet. Add the first one to get started."}

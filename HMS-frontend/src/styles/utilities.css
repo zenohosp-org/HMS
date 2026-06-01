@@ -79,6 +79,11 @@
 .h-auto { height: auto; }
 .h-screen { height: 100vh; }
 .min-w-0 { min-width: 0; }
+.min-w-32 { min-width: 8rem; }
+.min-w-40 { min-width: 10rem; }
+.min-w-48 { min-width: 12rem; }
+.min-w-56 { min-width: 14rem; }
+.min-w-64 { min-width: 16rem; }
 .max-w-full { max-width: 100%; }
 .max-w-xs { max-width: 20rem; }
 .max-w-sm { max-width: 24rem; }
@@ -91,6 +96,16 @@
 .max-w-5xl { max-width: 64rem; }
 .max-w-6xl { max-width: 72rem; }
 .max-w-7xl { max-width: 80rem; }
+
+/* Small fixed sizes (for dots, indicators) */
+.w-1\.5 { width: 6px; }
+.h-1\.5 { height: 6px; }
+.w-2 { width: 8px; }
+.h-2 { height: 8px; }
+.w-2\.5 { width: 10px; }
+.h-2\.5 { height: 10px; }
+.w-3 { width: 12px; }
+.h-3 { height: 12px; }
 
 
 /* ---------------------------------------------------------- Overflow */
@@ -246,6 +261,13 @@
 .bg-warning-bg { background: var(--hms-warning-bg); }
 .bg-danger-bg { background: var(--hms-danger-bg); }
 .bg-transparent { background: transparent; }
+
+/* Solid colour backgrounds (using --hms-* tokens — for dots, badges, accent strips) */
+.bg-info { background: var(--hms-info); }
+.bg-success { background: var(--hms-success); }
+.bg-warning { background: var(--hms-warning); }
+.bg-danger { background: var(--hms-danger); }
+.bg-brand { background: var(--hms-brand-primary); }
 
 
 /* ---------------------------------------------------------- Borders */

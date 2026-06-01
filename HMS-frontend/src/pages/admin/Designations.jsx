@@ -6,6 +6,7 @@ import { Award, Plus, ToggleLeft, ToggleRight } from "lucide-react";
 import {
     Badge,
     Button,
+    Card,
     FormGroup,
     Input,
     Modal,
@@ -17,8 +18,6 @@ import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const CATEGORIES = ["MEDICAL", "NURSING", "TECHNICAL", "ADMINISTRATIVE", "SUPPORT"];
 
-/** Category → Badge tone. Rose / amber are extra tones added to hms-badge
- *  in this phase so the original colour mapping reads identically. */
 const CAT_TONE = {
     MEDICAL: "info",
     NURSING: "rose",
@@ -83,9 +82,8 @@ const titleCase = (s) => s.charAt(0) + s.slice(1).toLowerCase();
 
 /**
  * Designations — hospital job-titles taxonomy by category, optionally
- * scoped to a department. Toggle-only row actions (no edit). Phase 5
- * migration preserves the data layer, the department filter dropdown
- * and the preset quick-add behaviour byte-for-byte.
+ * scoped to a department. Toggle-only row actions (no edit). Data
+ * layer + department filter + preset quick-add behaviour preserved.
  */
 export default function Designations() {
     const { user } = useAuth();
@@ -169,17 +167,14 @@ export default function Designations() {
     const existing = new Set(designations.map((d) => d.name));
     const rows = grouped[activeTab] || [];
     const presetsForTab = (PRESETS[activeTab] || []).filter((p) => !existing.has(p));
-    const allPresetsAdded =
-        (PRESETS[activeTab] || []).every((p) => existing.has(p));
+    const allPresetsAdded = (PRESETS[activeTab] || []).every((p) => existing.has(p));
 
     const columns = [
         {
             header: "Title",
             width: "36%",
             render: (d) => (
-                <span style={{ fontWeight: 600, color: "var(--hms-gray-900)", fontSize: 14 }}>
-                    {d.name}
-                </span>
+                <span className="font-semibold text-gray-900 text-14">{d.name}</span>
             ),
         },
         {
@@ -196,13 +191,9 @@ export default function Designations() {
             width: "22%",
             render: (d) =>
                 d.departmentName ? (
-                    <span style={{ fontSize: 13, color: "var(--hms-gray-500)" }}>
-                        {d.departmentName}
-                    </span>
+                    <span className="text-13 text-gray-500">{d.departmentName}</span>
                 ) : (
-                    <span style={{ fontSize: 13, color: "var(--hms-gray-300)" }}>
-                        Cross-department
-                    </span>
+                    <span className="text-13 text-gray-300">Cross-department</span>
                 ),
         },
         {
@@ -226,7 +217,7 @@ export default function Designations() {
                     onClick={() => toggle(d)}
                 >
                     {d.isActive ? (
-                        <ToggleRight size={16} style={{ color: "var(--hms-success)" }} />
+                        <ToggleRight size={16} className="text-success" />
                     ) : (
                         <ToggleLeft size={16} />
                     )}
@@ -236,10 +227,10 @@ export default function Designations() {
     ];
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
             <PageHeader
                 title={
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                    <span className="inline-flex items-center gap-3">
                         <Award size={20} /> Designations
                     </span>
                 }
@@ -251,15 +242,8 @@ export default function Designations() {
                 }
             />
 
-            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        flexWrap: "wrap",
-                    }}
-                >
+            <div className="hms-page-content">
+                <div className="flex items-center gap-3 flex-wrap">
                     <Tabs
                         type="pill"
                         active={activeTab}
@@ -270,7 +254,7 @@ export default function Designations() {
                             count: grouped[c]?.length ?? 0,
                         }))}
                     />
-                    <div style={{ marginLeft: "auto", minWidth: 220 }}>
+                    <div className="ml-auto min-w-56">
                         <SearchableSelect
                             value={deptFilter}
                             onChange={(v) => setDeptFilter(v)}
@@ -283,27 +267,12 @@ export default function Designations() {
                     </div>
                 </div>
 
-                <div
-                    style={{
-                        background: "var(--hms-white)",
-                        border: "1px solid var(--hms-gray-200)",
-                        borderRadius: "var(--hms-radius)",
-                        overflow: "hidden",
-                    }}
-                >
-                    <div
-                        style={{
-                            padding: "16px 20px",
-                            borderBottom: "1px solid var(--hms-gray-100)",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                        }}
-                    >
-                        <span style={{ fontWeight: 600, color: "var(--hms-gray-800)" }}>
+                <Card className="p-0">
+                    <div className="hms-group-header">
+                        <span className="hms-group-header__title">
                             {titleCase(activeTab)} designations
                         </span>
-                        <span style={{ fontSize: 12, color: "var(--hms-gray-400)" }}>
+                        <span className="hms-group-header__count">
                             {rows.length} {rows.length === 1 ? "title" : "titles"}
                         </span>
                     </div>
@@ -316,44 +285,27 @@ export default function Designations() {
                         emptyMessage="No designations yet. Add from presets below."
                     />
 
-                    <div
-                        style={{
-                            borderTop: "1px solid var(--hms-gray-100)",
-                            padding: 20,
-                        }}
-                    >
-                        <p
-                            style={{
-                                margin: 0,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: "var(--hms-gray-400)",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.05em",
-                                marginBottom: 12,
-                            }}
-                        >
-                            Quick add presets
-                        </p>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    <div className="hms-preset-strip">
+                        <p className="hms-section-label is-tiny mb-3">Quick add presets</p>
+                        <div className="hms-preset-strip__list">
                             {presetsForTab.map((p) => (
                                 <button
                                     key={p}
                                     type="button"
                                     onClick={() => openCreate(p)}
-                                    style={presetChipStyle}
+                                    className="hms-preset-chip"
                                 >
                                     <Plus size={12} /> {p}
                                 </button>
                             ))}
                             {allPresetsAdded && (
-                                <span style={{ fontSize: 12, color: "var(--hms-gray-400)" }}>
+                                <span className="hms-preset-strip__none">
                                     All presets added
                                 </span>
                             )}
                         </div>
                     </div>
-                </div>
+                </Card>
             </div>
 
             <Modal
@@ -380,7 +332,7 @@ export default function Designations() {
                 <form
                     id="designation-form"
                     onSubmit={handleSubmit}
-                    style={{ display: "flex", flexDirection: "column", gap: 16 }}
+                    className="flex flex-col gap-4"
                 >
                     <FormGroup label="Title / designation *">
                         <Input
@@ -391,7 +343,7 @@ export default function Designations() {
                         />
                     </FormGroup>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div className="grid grid-cols-2 gap-4">
                         <FormGroup label="Category *">
                             <SearchableSelect
                                 required
@@ -422,19 +374,3 @@ export default function Designations() {
         </div>
     );
 }
-
-const presetChipStyle = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    padding: "6px 12px",
-    borderRadius: 8,
-    border: "1px dashed var(--hms-gray-300)",
-    background: "transparent",
-    color: "var(--hms-gray-500)",
-    fontSize: 12,
-    fontWeight: 500,
-    cursor: "pointer",
-    fontFamily: "var(--hms-font-family)",
-    transition: "border-color 0.15s, color 0.15s",
-};

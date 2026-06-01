@@ -81,13 +81,13 @@ function AddServiceModal({ isOpen, onClose, service, specializations, onSuccess 
     };
 
     const formId = "service-form";
-    const required = <span style={{ color: "var(--hms-danger)" }}>*</span>;
+    const required = <span className="text-danger">*</span>;
 
     const formBody = (
         <form
             id={formId}
             onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: 16 }}
+            className="flex flex-col gap-4"
         >
             <FormGroup label={<>Service name {required}</>}>
                 <Input

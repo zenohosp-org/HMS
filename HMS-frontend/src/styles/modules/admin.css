@@ -1,7 +1,250 @@
 /* ===================================================================
    HMS — admin module
    -------------------------------------------------------------------
-   Page-specific compositions for the admin area. Atomic helpers live in
-   utilities.css; reusable patterns (avatar, icon tile, kv row, etc.)
-   live in hms-system.css. This file contains only what's unique to admin.
+   Page-specific compositions for the admin area. Atomic helpers live
+   in utilities.css; reusable patterns (avatar, icon tile, kv row,
+   etc.) live in hms-system.css.
+
+   What lives here
+     * .hms-entity-row              — table-row composition of avatar +
+                                      title + caption + optional code.
+                                      Used by Specializations / Services
+                                      / Departments / DoctorsList /
+                                      StaffsList / PatientServices.
+     * .hms-dept-presets            — dashed quick-add chip strip used
+                                      below the Departments &
+                                      Designations table.
+     * .hms-shift-*                 — ShiftRoster grid pieces (mini nav
+                                      button, shift chip & remove).
+     * .hms-admit-* / .hms-discharge-* — narrow page-area helpers used
+                                      by Admit/Discharge/MoveToOT /
+                                      ViewBilling modals.
    =================================================================== */
+
+
+/* ─────────────────────────── Entity row (table cell) ─────────────────────────── */
+.hms-entity-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.hms-entity-row__body {
+    min-width: 0;
+}
+
+.hms-entity-row__title {
+    margin: 0;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--hms-gray-900);
+    line-height: 1.3;
+}
+
+.hms-entity-row__sub {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--hms-gray-500);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 280px;
+}
+
+.hms-entity-row__code {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-600);
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+}
+
+
+/* ─────────────────────────── Quick-add preset chips (Departments / Designations) ─────────────────────────── */
+.hms-preset-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px dashed var(--hms-gray-300);
+    background: transparent;
+    color: var(--hms-gray-500);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--hms-font-family);
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.hms-preset-chip:hover {
+    border-color: var(--hms-gray-400);
+    color: var(--hms-gray-700);
+}
+
+.hms-preset-strip {
+    padding: 20px;
+    border-top: 1px solid var(--hms-gray-100);
+}
+
+.hms-preset-strip__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.hms-preset-strip__none {
+    font-size: 12px;
+    color: var(--hms-gray-400);
+}
+
+
+/* ─────────────────────────── Group / section card header (taxonomy pages) ─────────────────────────── */
+.hms-group-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--hms-gray-100);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hms-group-header__title {
+    margin: 0;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+}
+
+.hms-group-header__count {
+    font-size: 12px;
+    color: var(--hms-gray-400);
+}
+
+
+/* ─────────────────────────── Shift roster (ShiftRoster.jsx) ─────────────────────────── */
+.hms-shift-nav-btn {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px solid var(--hms-gray-200);
+    background: transparent;
+    color: var(--hms-gray-400);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.hms-shift-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.hms-shift-add-btn {
+    width: 100%;
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px dashed var(--hms-gray-200);
+    background: transparent;
+    color: var(--hms-gray-300);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.hms-shift-add-btn.is-large {
+    flex: 1;
+    min-height: 52px;
+    border: 1px solid var(--hms-gray-200);
+    background: var(--hms-gray-50);
+    padding: 0;
+}
+
+
+/* ─────────────────────────── Doctor schedule day pill (DoctorFormModal) ─────────────────────────── */
+.hms-day-pill {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--hms-gray-200);
+    background: var(--hms-white);
+    color: var(--hms-gray-500);
+    font-family: var(--hms-font-family);
+}
+
+.hms-day-pill.is-on {
+    border-color: var(--hms-brand-primary);
+    background: var(--hms-brand-primary);
+    color: var(--hms-white);
+}
+
+
+/* ─────────────────────────── Section title with number circle (AdmitPatientModal) ─────────────────────────── */
+.hms-section-num {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--hms-gray-100);
+}
+
+.hms-section-num__circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--hms-brand-primary);
+    color: var(--hms-white);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.hms-section-num__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.hms-section-num__subtitle {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+
+/* ─────────────────────────── Delete-confirm summary card ─────────────────────────── */
+.hms-confirm-summary {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--hms-gray-50);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: var(--hms-radius);
+}
+
+.hms-confirm-summary__title {
+    margin: 0;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    font-size: 14px;
+}
+
+.hms-confirm-summary__sub {
+    margin: 0;
+    font-size: 12px;
+    color: var(--hms-gray-500);
+}
