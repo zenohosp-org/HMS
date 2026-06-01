@@ -16,6 +16,7 @@ import {
     Alert,
     Badge,
     Button,
+    Menu,
     Modal,
     PageHeader,
     Pagination,
@@ -52,7 +53,6 @@ function Services() {
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
     const [modal, setModal] = useState({ open: false, service: null });
-    const [openMenuId, setOpenMenuId] = useState(null);
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [activeFilters, setActiveFilters] = useState({
@@ -82,12 +82,6 @@ function Services() {
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.hospitalId]);
-
-    useEffect(() => {
-        const handler = () => setOpenMenuId(null);
-        document.addEventListener("click", handler);
-        return () => document.removeEventListener("click", handler);
-    }, []);
 
     const getSpecName = (id) => specializations.find((s) => s.id === id)?.name || "—";
 
@@ -206,80 +200,30 @@ function Services() {
             width: "12%",
             align: "right",
             render: (s) => (
-                <div style={{ position: "relative", display: "inline-block" }}>
-                    <button
-                        type="button"
-                        className="hms-btn-icon"
-                        aria-label="Row actions"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuId(openMenuId === s.id ? null : s.id);
-                        }}
-                    >
-                        <MoreHorizontal size={18} />
-                    </button>
-                    {openMenuId === s.id && (
-                        <>
-                            <div
-                                style={{ position: "fixed", inset: 0, zIndex: 10 }}
-                                onClick={() => setOpenMenuId(null)}
-                            />
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    right: 0,
-                                    top: "calc(100% + 6px)",
-                                    minWidth: 200,
-                                    background: "var(--hms-white)",
-                                    border: "1px solid var(--hms-gray-200)",
-                                    borderRadius: 8,
-                                    boxShadow: "var(--hms-shadow-lg)",
-                                    zIndex: 11,
-                                    padding: 6,
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 2,
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <button
-                                    type="button"
-                                    className="hms-btn-ghost"
-                                    style={{ justifyContent: "flex-start" }}
-                                    onClick={() => {
-                                        setModal({ open: true, service: s });
-                                        setOpenMenuId(null);
-                                    }}
-                                >
-                                    <Edit2 size={14} /> Edit service
-                                </button>
-                                <button
-                                    type="button"
-                                    className="hms-btn-ghost"
-                                    style={{ justifyContent: "flex-start" }}
-                                    onClick={() => {
-                                        handleToggleStatus(s.id);
-                                        setOpenMenuId(null);
-                                    }}
-                                >
-                                    <Power size={14} /> {s.isActive ? "Deactivate" : "Activate"}
-                                </button>
-                                <div style={{ height: 1, background: "var(--hms-gray-100)" }} />
-                                <button
-                                    type="button"
-                                    className="hms-btn-ghost"
-                                    style={{ justifyContent: "flex-start", color: "var(--hms-danger)" }}
-                                    onClick={() => {
-                                        setConfirmDelete(s);
-                                        setOpenMenuId(null);
-                                    }}
-                                >
-                                    <Trash2 size={14} /> Delete service
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </div>
+                <Menu
+                    triggerIcon={<MoreHorizontal size={18} />}
+                    triggerLabel="Row actions"
+                    align="right"
+                    items={[
+                        {
+                            label: "Edit service",
+                            icon: <Edit2 size={14} />,
+                            onClick: () => setModal({ open: true, service: s }),
+                        },
+                        {
+                            label: s.isActive ? "Deactivate" : "Activate",
+                            icon: <Power size={14} />,
+                            onClick: () => handleToggleStatus(s.id),
+                        },
+                        { divider: true },
+                        {
+                            label: "Delete service",
+                            icon: <Trash2 size={14} />,
+                            tone: "danger",
+                            onClick: () => setConfirmDelete(s),
+                        },
+                    ]}
+                />
             ),
         },
     ];

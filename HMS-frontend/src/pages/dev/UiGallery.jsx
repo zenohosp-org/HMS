@@ -4,9 +4,12 @@ import {
     Activity,
     AlertTriangle,
     CheckCircle2,
+    Edit2,
     FileSearch,
     Info,
+    MoreHorizontal,
     Plus,
+    Power,
     RefreshCcw,
     Trash2,
 } from "lucide-react";
@@ -19,6 +22,7 @@ import {
     EmptyState,
     FormGroup,
     Input,
+    Menu,
     Modal,
     PageHeader,
     SearchBar,
@@ -286,6 +290,49 @@ export default function UiGallery() {
                         <Button variant="secondary" onClick={() => setModalSize("xl")}>XL modal</Button>
                         <Button variant="primary" onClick={() => setDrawerOpen(true)}>Open drawer</Button>
                     </Row>
+                </Section>
+
+                {/* -------------------------------------------------- */}
+                <Section title="Menu (dropdown / kebab popover)">
+                    <Card>
+                        <p style={{ margin: 0, color: "var(--hms-gray-500)", fontSize: 13 }}>
+                            Portalled to <code>#modal-root</code> and positioned from the trigger's
+                            <code> getBoundingClientRect()</code> — never clips inside table overflow.
+                            Closes on outside click, ESC, and any ancestor scroll.
+                        </p>
+                        <div style={{ display: "flex", gap: 24, marginTop: 12, alignItems: "center" }}>
+                            <Menu
+                                triggerIcon={<MoreHorizontal size={18} />}
+                                triggerLabel="Row actions"
+                                align="right"
+                                items={[
+                                    { label: "Edit", icon: <Edit2 size={14} />, onClick: () => console.log("edit") },
+                                    { label: "Deactivate", icon: <Power size={14} />, onClick: () => console.log("toggle") },
+                                    { divider: true },
+                                    { label: "Delete", icon: <Trash2 size={14} />, tone: "danger", onClick: () => console.log("delete") },
+                                ]}
+                            />
+                            <span style={{ fontSize: 12, color: "var(--hms-gray-500)" }}>
+                                ← kebab trigger; right-anchored
+                            </span>
+                            <span style={{ flex: 1 }} />
+                            <Menu
+                                triggerIcon={<>Actions <MoreHorizontal size={14} style={{ marginLeft: 6 }} /></>}
+                                triggerClassName="hms-btn-secondary is-sm"
+                                triggerLabel="Bulk actions"
+                                align="left"
+                                items={[
+                                    { label: "Export selected", icon: <FileSearch size={14} /> },
+                                    { label: "Mark inactive", icon: <Power size={14} /> },
+                                    { divider: true },
+                                    { label: "Remove selected", icon: <Trash2 size={14} />, tone: "danger", disabled: true },
+                                ]}
+                            />
+                            <span style={{ fontSize: 12, color: "var(--hms-gray-500)" }}>
+                                button trigger; left-anchored
+                            </span>
+                        </div>
+                    </Card>
                 </Section>
 
                 {/* -------------------------------------------------- */}

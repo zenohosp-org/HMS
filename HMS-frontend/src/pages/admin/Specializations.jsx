@@ -7,6 +7,7 @@ import { useNotification } from "@/context/NotificationContext";
 import {
     Badge,
     Button,
+    Menu,
     PageHeader,
     SearchBar,
     Table,
@@ -29,8 +30,6 @@ function Specializations() {
     const [searchQuery, setSearchQuery] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSpec, setEditingSpec] = useState(null);
-    const [activeMenuId, setActiveMenuId] = useState(null);
-
     const loadData = async () => {
         if (!user?.hospitalId) return;
         setIsLoading(true);
@@ -77,7 +76,6 @@ function Specializations() {
     const openEdit = (spec) => {
         setEditingSpec(spec);
         setIsModalOpen(true);
-        setActiveMenuId(null);
     };
 
     const columns = [
@@ -145,67 +143,25 @@ function Specializations() {
             width: "18%",
             align: "right",
             render: (spec) => (
-                <div style={{ position: "relative", display: "inline-block" }}>
-                    <button
-                        type="button"
-                        className="hms-btn-icon"
-                        aria-label="Row actions"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveMenuId(activeMenuId === spec.id ? null : spec.id);
-                        }}
-                    >
-                        <MoreHorizontal size={18} />
-                    </button>
-                    {activeMenuId === spec.id && (
-                        <>
-                            {/* Outside-click catcher — covers the viewport so the
-                                next click on anything else closes the menu. */}
-                            <div
-                                style={{ position: "fixed", inset: 0, zIndex: 10 }}
-                                onClick={() => setActiveMenuId(null)}
-                            />
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    right: 0,
-                                    top: "calc(100% + 6px)",
-                                    minWidth: 180,
-                                    background: "var(--hms-white)",
-                                    border: "1px solid var(--hms-gray-200)",
-                                    borderRadius: 8,
-                                    boxShadow: "var(--hms-shadow-lg)",
-                                    zIndex: 11,
-                                    padding: 6,
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 2,
-                                }}
-                            >
-                                <button
-                                    type="button"
-                                    className="hms-btn-ghost"
-                                    style={{ justifyContent: "flex-start" }}
-                                    onClick={() => openEdit(spec)}
-                                >
-                                    <Edit size={14} /> Edit details
-                                </button>
-                                <div style={{ height: 1, background: "var(--hms-gray-100)" }} />
-                                <button
-                                    type="button"
-                                    className="hms-btn-ghost"
-                                    style={{ justifyContent: "flex-start", color: "var(--hms-danger)" }}
-                                    onClick={() => {
-                                        setActiveMenuId(null);
-                                        handleDelete(spec.id);
-                                    }}
-                                >
-                                    <Trash2 size={14} /> Delete
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </div>
+                <Menu
+                    triggerIcon={<MoreHorizontal size={18} />}
+                    triggerLabel="Row actions"
+                    align="right"
+                    items={[
+                        {
+                            label: "Edit details",
+                            icon: <Edit size={14} />,
+                            onClick: () => openEdit(spec),
+                        },
+                        { divider: true },
+                        {
+                            label: "Delete",
+                            icon: <Trash2 size={14} />,
+                            tone: "danger",
+                            onClick: () => handleDelete(spec.id),
+                        },
+                    ]}
+                />
             ),
         },
     ];

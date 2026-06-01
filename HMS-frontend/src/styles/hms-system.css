@@ -1132,3 +1132,89 @@
     border-color: var(--hms-success-border);
     color: #166534;
 }
+
+
+/* ===================================================================
+   14. Menu — portalled dropdown popover
+   -------------------------------------------------------------------
+   Class set consumed by <Menu> (src/components/ui/Menu.jsx). The
+   menu is portalled to #modal-root and the React shell sets the
+   top/left inline from a getBoundingClientRect() measurement of
+   the trigger, so the menu can never be clipped by an ancestor
+   with overflow:hidden (the bug that hid the kebab popover for the
+   last row of any table).
+   =================================================================== */
+.hms-menu {
+    position: fixed;
+    min-width: 200px;
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: var(--hms-radius);
+    box-shadow: var(--hms-shadow-lg);
+    z-index: var(--hms-z-popover);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: hms-slide-down-fade 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: var(--hms-font-family);
+}
+
+.hms-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--hms-gray-700);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s, color 0.15s;
+    font-family: inherit;
+    width: 100%;
+}
+
+.hms-menu-item:hover,
+.hms-menu-item:focus-visible {
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-900);
+    outline: none;
+}
+
+.hms-menu-item.is-danger {
+    color: var(--hms-danger);
+}
+
+.hms-menu-item.is-danger:hover,
+.hms-menu-item.is-danger:focus-visible {
+    background: var(--hms-danger-bg);
+    color: var(--hms-danger);
+}
+
+.hms-menu-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.hms-menu-divider {
+    height: 1px;
+    background: var(--hms-gray-100);
+    margin: 4px 0;
+}
+
+@keyframes hms-slide-down-fade {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
