@@ -1,33 +1,71 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+
 function Unauthorized() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const isUnregisteredStaff = user && ["DOCTOR", "STAFF"].includes(user.role) && !user.hospitalId;
-  return <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4"><div className="card p-10 max-w-md w-full text-center"><div className="text-6xl mb-4">{isUnregisteredStaff ? "\u{1F3E5}" : "\u{1F512}"}</div><h1 className="text-xl font-semibold text-slate-800 mb-3">{isUnregisteredStaff ? "Account Not Registered for This Hospital" : "Access Denied"}</h1><p className="text-slate-500 text-sm leading-relaxed mb-6">{isUnregisteredStaff ? <>
-                            Your account{" "}<span className="font-medium text-slate-700">
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+    const isUnregisteredStaff =
+        user && ["DOCTOR", "STAFF"].includes(user.role) && !user.hospitalId;
+
+    return (
+        <div className="hms-page-center">
+            <div className="hms-page-center__card">
+                <div className="hms-page-center__emoji">
+                    {isUnregisteredStaff ? "\u{1F3E5}" : "\u{1F512}"}
+                </div>
+                <h1 className="hms-page-center__title">
+                    {isUnregisteredStaff
+                        ? "Account Not Registered for This Hospital"
+                        : "Access Denied"}
+                </h1>
+                <p className="hms-page-center__desc">
+                    {isUnregisteredStaff ? (
+                        <>
+                            Your account{" "}
+                            <span className="font-medium text-gray-700">
                                 ({user?.email})
                             </span>{" "}
                             has not been added to any hospital yet.
-                            <br /><br />
+                            <br />
+                            <br />
                             Please contact your <strong>Hospital Administrator</strong> to add
                             your account before you can access the system.
-                        </> : <>
+                        </>
+                    ) : (
+                        <>
                             You don't have permission to access this page.
-                            {user && <>{" "}Logged in as{" "}<span className="font-medium text-slate-700">{user.email}</span>{" "}
+                            {user && (
+                                <>
+                                    {" "}
+                                    Logged in as{" "}
+                                    <span className="font-medium text-gray-700">
+                                        {user.email}
+                                    </span>{" "}
                                     ({user.roleDisplay}).
-                                </>}</>}</p><div className="flex flex-col gap-3"><button
-    className="btn-secondary"
-    onClick={() => navigate("/login")}
-  >
+                                </>
+                            )}
+                        </>
+                    )}
+                </p>
+                <div className="hms-page-center__actions">
+                    <button
+                        className="hms-page-center__action-secondary"
+                        onClick={() => navigate("/login")}
+                    >
                         ← Back to Login
-                    </button>{user && <button
-    className="text-sm text-red-500 hover:text-red-600 transition-colors"
-    onClick={logout}
-  >
+                    </button>
+                    {user && (
+                        <button
+                            className="hms-page-center__action-link"
+                            onClick={logout}
+                        >
                             Sign Out
-                        </button>}</div></div></div>;
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 }
-export {
-  Unauthorized as default
-};
+
+export { Unauthorized as default };

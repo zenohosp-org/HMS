@@ -403,3 +403,434 @@
     background: #fef2f2;
     color: #f43f5e;
 }
+
+
+/* ─────────────────────────── Login page (Login.jsx) ─────────────────────────── */
+.hms-login {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--hms-white);
+}
+
+@media (min-width: 1024px) {
+    .hms-login { flex-direction: row; }
+}
+
+.hms-login__form-pane {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+}
+
+@media (min-width: 1024px) {
+    .hms-login__form-pane {
+        width: 45%;
+        padding: 48px;
+    }
+}
+
+.hms-login__form-inner {
+    width: 100%;
+    max-width: 384px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.hms-login__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hms-login__brand-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--hms-gray-900);
+    color: var(--hms-white);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--hms-shadow-lg);
+}
+
+.hms-login__brand-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    line-height: 1;
+}
+
+.hms-login__brand-sub {
+    margin: 4px 0 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--hms-gray-600);
+}
+
+.hms-login__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hms-login__heading h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.hms-login__heading p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--hms-gray-500);
+}
+
+.hms-login__alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    border: 1px solid;
+}
+
+.hms-login__alert.is-info {
+    background: var(--hms-gray-50);
+    border-color: var(--hms-gray-200);
+    color: var(--hms-gray-600);
+}
+
+.hms-login__alert.is-danger {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #be123c;
+}
+
+.hms-login__sso-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--hms-gray-900);
+    color: var(--hms-white);
+    font-weight: 700;
+    font-size: 14px;
+    border: 0;
+    border-radius: 8px;
+    box-shadow: var(--hms-shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 200ms ease, transform 100ms ease;
+}
+
+.hms-login__sso-btn:hover {
+    background: var(--hms-gray-800);
+}
+
+.hms-login__sso-btn:active {
+    transform: scale(0.98);
+}
+
+.hms-login__terms {
+    margin: 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--hms-gray-600);
+}
+
+.hms-login__terms-link {
+    color: var(--hms-gray-900);
+    cursor: pointer;
+}
+
+.hms-login__terms-link:hover {
+    text-decoration: underline;
+}
+
+
+/* Right marketing pane — emerald healthcare gradient */
+.hms-login__visual {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .hms-login__visual {
+        display: flex;
+        width: 55%;
+        background: linear-gradient(to bottom right, #059669, #10b981, #0d9488);
+        position: relative;
+        overflow: hidden;
+        align-items: center;
+        justify-content: center;
+        padding: 64px;
+    }
+}
+
+.hms-login__visual-blur-1,
+.hms-login__visual-blur-2 {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(48px);
+    pointer-events: none;
+}
+
+.hms-login__visual-blur-1 {
+    top: -10%;
+    right: -10%;
+    width: 40%;
+    height: 40%;
+    background: rgba(255, 255, 255, 0.10);
+    animation: hms-login-pulse 3s ease-in-out infinite;
+}
+
+.hms-login__visual-blur-2 {
+    bottom: -10%;
+    left: -10%;
+    width: 30%;
+    height: 30%;
+    background: rgba(0, 0, 0, 0.10);
+}
+
+@keyframes hms-login-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.5; }
+}
+
+.hms-login__visual-content {
+    position: relative;
+    z-index: 1;
+    max-width: 32rem;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.hms-login__visual-headline {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hms-login__visual-headline h2 {
+    margin: 0;
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--hms-white);
+    line-height: 1.1;
+}
+
+.hms-login__visual-headline p {
+    margin: 0;
+    font-size: 18px;
+    color: rgba(236, 253, 245, 0.8);
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+.hms-login__visual-features {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.hms-login__visual-feature {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--hms-white);
+}
+
+.hms-login__visual-feature-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.20);
+    border: 1px solid rgba(255, 255, 255, 0.30);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hms-login__visual-feature-dot::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--hms-white);
+}
+
+.hms-login__visual-feature-text {
+    font-weight: 600;
+}
+
+
+/* ─────────────────────────── Unauthorized + SsoCallback (centered states) ─────────────────────────── */
+.hms-page-center {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--hms-gray-50);
+    padding: 24px;
+}
+
+.hms-page-center__card {
+    width: 100%;
+    max-width: 28rem;
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 12px;
+    box-shadow: var(--hms-shadow-md);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+}
+
+.hms-page-center__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 999px;
+    background: var(--hms-info-bg);
+    color: var(--hms-info);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hms-page-center__icon.is-danger {
+    background: #fff1f2;
+    color: #be123c;
+}
+
+.hms-page-center__icon.is-warning {
+    background: var(--hms-warning-bg);
+    color: var(--hms-warning);
+}
+
+.hms-page-center__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.hms-page-center__desc {
+    margin: 0;
+    font-size: 14px;
+    color: var(--hms-gray-600);
+}
+
+.hms-page-center__emoji {
+    font-size: 3.75rem;
+    margin-bottom: 4px;
+}
+
+.hms-page-center__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.hms-page-center__action-secondary {
+    background: var(--hms-white);
+    color: var(--hms-gray-600);
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-200);
+    cursor: pointer;
+    transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+    font-size: 14px;
+    font-family: var(--hms-font-family);
+}
+
+.hms-page-center__action-secondary:hover {
+    background: var(--hms-gray-50);
+    border-color: var(--hms-gray-300);
+    color: var(--hms-gray-800);
+}
+
+.hms-page-center__action-link {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    font-size: 14px;
+    color: #ef4444;
+    cursor: pointer;
+    transition: color 150ms ease;
+    font-family: var(--hms-font-family);
+}
+
+.hms-page-center__action-link:hover {
+    color: #dc2626;
+}
+
+
+/* ─────────────────────────── SSO callback spinner + error states ─────────────────────────── */
+.hms-sso {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--hms-white);
+}
+
+.hms-sso__card {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+}
+
+.hms-sso__spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #10b981;
+    border-top-color: transparent;
+    border-radius: 999px;
+    animation: hms-sso-spin 800ms linear infinite;
+}
+
+@keyframes hms-sso-spin {
+    to { transform: rotate(360deg); }
+}
+
+.hms-sso__error-icon {
+    width: 48px;
+    height: 48px;
+    background: #fee2e2;
+    color: #ef4444;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hms-sso__title {
+    margin: 0;
+    font-weight: 600;
+    color: var(--hms-gray-700);
+    font-size: 14px;
+}
+
+.hms-sso__title.is-danger { color: #ef4444; }
+
+.hms-sso__desc {
+    margin: 0;
+    font-size: 14px;
+    color: var(--hms-gray-400);
+}
