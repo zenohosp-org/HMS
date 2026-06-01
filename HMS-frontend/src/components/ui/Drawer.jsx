@@ -68,7 +68,7 @@ export default function Drawer({
                     <div>
                         {title && <h3>{title}</h3>}
                         {subtitle && (
-                            <div className="hms-page-subtitle" style={{ marginTop: 4 }}>
+                            <div className="hms-page-subtitle">
                                 {subtitle}
                             </div>
                         )}

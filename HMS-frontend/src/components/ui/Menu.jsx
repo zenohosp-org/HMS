@@ -167,7 +167,7 @@ export default function Menu({
                                     onClick={handleClick}
                                 >
                                     {item.icon && (
-                                        <span style={{ display: "inline-flex", flexShrink: 0 }}>
+                                        <span className="hms-menu-item__icon">
                                             {item.icon}
                                         </span>
                                     )}

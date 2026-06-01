@@ -70,7 +70,12 @@ const STATUS_META = {
   NO_SHOW: { icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10", label: "No Show" },
 };
 
-const PIE_COLORS = { SCHEDULED: "#0f172a", COMPLETED: "#10b981", CANCELLED: "#f43f5e", NO_SHOW: "#f59e0b" };
+const STATUS_BAR_CLS = {
+  SCHEDULED: "bg-slate-900",
+  COMPLETED: "bg-emerald-500",
+  CANCELLED: "bg-rose-500",
+  NO_SHOW: "bg-amber-500",
+};
 
 const TOOLTIP_CLS = "bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg shadow-xl px-4 py-3 text-xs";
 
@@ -128,8 +133,8 @@ function AppointmentStatusRow({ status, count, total }) {
         </div>
         <div className="h-1.5 bg-slate-100 dark:bg-[#222] rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${pct}%`, background: PIE_COLORS[status] ?? "#94a3b8" }}
+            className={`h-full rounded-full transition-all duration-700 ${STATUS_BAR_CLS[status] ?? "bg-slate-400"}`}
+            style={{ width: `${pct}%` }}
           />
         </div>
       </div>

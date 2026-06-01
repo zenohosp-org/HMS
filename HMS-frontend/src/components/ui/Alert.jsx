@@ -21,9 +21,9 @@ export default function Alert({ tone = "info", icon, title, className = "", chil
     const toneClass = TONE_TO_CLASS[tone] || TONE_TO_CLASS.info;
     return (
         <div className={`hms-alert ${toneClass} ${className}`.trim()} role="alert">
-            {icon && <div style={{ flexShrink: 0 }}>{icon}</div>}
+            {icon && <div className="hms-alert__icon">{icon}</div>}
             <div>
-                {title && <div style={{ fontWeight: 700, marginBottom: 2 }}>{title}</div>}
+                {title && <div className="hms-alert__title">{title}</div>}
                 {children}
             </div>
         </div>

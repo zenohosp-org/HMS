@@ -1151,6 +1151,17 @@
     color: #166534;
 }
 
+.hms-alert__icon  { flex-shrink: 0; display: inline-flex; }
+.hms-alert__title { font-weight: 700; margin-bottom: 2px; }
+
+
+/* ---------- Menu item icon slot ---------- */
+.hms-menu-item__icon { display: inline-flex; flex-shrink: 0; }
+
+
+/* ---------- Drawer subtitle spacing (under the h3) ---------- */
+.hms-drawer-header .hms-page-subtitle { margin-top: 4px; }
+
 
 /* ===================================================================
    14. Menu — portalled dropdown popover
