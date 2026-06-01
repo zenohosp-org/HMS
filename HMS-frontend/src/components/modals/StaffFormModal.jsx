@@ -36,23 +36,17 @@ function formatAadhaar(raw) {
 
 const titleCase = (s) => s.charAt(0) + s.slice(1).toLowerCase();
 
-/** Inline section heading (icon + bold label + bottom rule). */
-function SectionHead({ icon: Icon, color = "var(--hms-gray-700)", children }) {
+/** Inline section heading (icon + bold label + bottom rule). Uses the
+ *  shared .hms-section-head primitive; `iconTone` flips the icon colour
+ *  through .hms-section-head__icon.is-* modifiers. */
+function SectionHead({ icon: Icon, iconTone, children }) {
     return (
-        <h3
-            style={{
-                margin: 0,
-                fontSize: 13,
-                fontWeight: 700,
-                color: "var(--hms-gray-900)",
-                borderBottom: "1px solid var(--hms-gray-200)",
-                paddingBottom: 8,
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-            }}
-        >
-            {Icon && <Icon size={14} style={{ color }} />}
+        <h3 className="hms-section-head">
+            {Icon && (
+                <span className={`hms-section-head__icon ${iconTone ? `is-${iconTone}` : ""}`}>
+                    <Icon size={14} />
+                </span>
+            )}
             {children}
         </h3>
     );
@@ -127,7 +121,6 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
             .catch(() => { });
     }, [user?.hospitalId, form.departmentId]);
 
-    // Load existing doctor profile when editing a doctor-role user
     useEffect(() => {
         if (!editStaff?.id || editStaff?.role !== "doctor") return;
         doctorsApi
@@ -186,7 +179,6 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
                 notify("Staff access created successfully", "success");
             }
 
-            // Create or update Doctor profile when role is doctor
             if (form.role === "doctor") {
                 const doctorPayload = {
                     specialization: form.specialization || null,
@@ -222,15 +214,11 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
     const formId = "staff-form";
 
     const formBody = (
-        <form
-            id={formId}
-            onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: 28 }}
-        >
+        <form id={formId} onSubmit={handleSubmit} className="hms-form-section-list">
             {/* Personal Information */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="hms-form-section">
                 <SectionHead icon={UserIcon}>Personal information</SectionHead>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="hms-form-grid is-2col">
                     <FormGroup label="First name *">
                         <Input
                             required
@@ -266,7 +254,7 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
                             placeholder="Select gender"
                         />
                     </FormGroup>
-                    <div style={{ gridColumn: "1 / -1" }}>
+                    <div className="is-span-2">
                         <StateSelect
                             value={form.state}
                             onChange={(val) => set("state", val)}
@@ -278,11 +266,11 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
             </div>
 
             {/* Identity Documents */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <SectionHead icon={CreditCard} color="var(--hms-success)">
+            <div className="hms-form-section">
+                <SectionHead icon={CreditCard} iconTone="success">
                     Identity documents
                 </SectionHead>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="hms-form-grid is-2col">
                     <FormGroup
                         label="Aadhaar number"
                         hint="Required for NMC / MCI staff verification"
@@ -316,11 +304,11 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
             </div>
 
             {/* Account & Access */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <SectionHead icon={ShieldAlert} color="var(--hms-warning)">
+            <div className="hms-form-section">
+                <SectionHead icon={ShieldAlert} iconTone="warning">
                     Account & access
                 </SectionHead>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="hms-form-grid is-2col">
                     <FormGroup
                         label="Email address *"
                         className={editStaff ? "grid-col-full" : ""}
@@ -370,11 +358,11 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
 
             {/* Medical Profile — only when role is doctor */}
             {form.role === "doctor" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <SectionHead icon={Stethoscope} color="var(--hms-info)">
+                <div className="hms-form-section">
+                    <SectionHead icon={Stethoscope} iconTone="info">
                         Medical profile
                     </SectionHead>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div className="hms-form-grid is-2col">
                         <FormGroup label="Specialisation">
                             <SearchableSelect
                                 options={specializations.map((s) => ({
@@ -427,11 +415,11 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
             )}
 
             {/* Organisational Details */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <SectionHead icon={Building2} color="var(--hms-info)">
+            <div className="hms-form-section">
+                <SectionHead icon={Building2} iconTone="info">
                     Organisational details
                 </SectionHead>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="hms-form-grid is-2col">
                     <FormGroup label="Employee code">
                         <Input
                             value={form.employeeCode}
@@ -528,7 +516,7 @@ export default function StaffFormModal({ onClose, onSaved, editStaff }) {
             onClose={onClose}
             size="lg"
             title={
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <span className="inline-flex items-center gap-2">
                     <UserIcon size={16} /> Add new staff
                 </span>
             }

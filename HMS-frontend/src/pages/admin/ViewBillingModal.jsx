@@ -22,14 +22,15 @@ import {
 } from "lucide-react";
 import { Alert, Button, Modal } from "@/components/ui";
 
-/** Item-type → icon + tone palette. */
+/** Item-type → label, icon, and the .hms-bill-type modifier that flips
+ *  the chip's bg + colour in admin.css. */
 const TYPE_META = {
-    ROOM_CHARGE: { label: "Room", icon: BedDouble, color: "#c2410c", bg: "#fff7ed" },
-    CONSULTATION: { label: "Consultation", icon: Stethoscope, color: "#0369a1", bg: "var(--hms-info-bg)" },
-    RADIOLOGY: { label: "Radiology", icon: ScanLine, color: "#6d28d9", bg: "#f5f3ff" },
-    LAB_TEST: { label: "Lab test", icon: FlaskConical, color: "#0f766e", bg: "#f0fdfa" },
-    MEDICINE: { label: "Medicine", icon: Pill, color: "#166534", bg: "var(--hms-success-bg)" },
-    CUSTOM: { label: "Custom", icon: Wrench, color: "var(--hms-gray-600)", bg: "var(--hms-gray-100)" },
+    ROOM_CHARGE:  { label: "Room",         icon: BedDouble,    mod: "is-room" },
+    CONSULTATION: { label: "Consultation", icon: Stethoscope,  mod: "is-consultation" },
+    RADIOLOGY:    { label: "Radiology",    icon: ScanLine,     mod: "is-radiology" },
+    LAB_TEST:     { label: "Lab test",     icon: FlaskConical, mod: "is-lab" },
+    MEDICINE:     { label: "Medicine",     icon: Pill,         mod: "is-medicine" },
+    CUSTOM:       { label: "Custom",       icon: Wrench,       mod: "is-custom" },
 };
 
 const GST_RATE = 0.18;
@@ -65,9 +66,8 @@ function fmt(n) {
  * Read-only billing preview for an admission. Auto-detects pending
  * charges (room, consultations, radiology, patient-services) by
  * combining the smart-suggestions endpoint with the hospital service
- * catalogue and the patient-services config. Phase 8c migration —
- * same compute pipeline (countMealSlots / GST_RATE / TYPE_META), same
- * "₹0 price detected" warning, same final-amount disclaimer.
+ * catalogue and the patient-services config. Layout lives in admin.css
+ * under .hms-bill-* (table, type pills, totals block).
  */
 export default function ViewBillingModal({ admission, onClose }) {
     const { user } = useAuth();
@@ -94,7 +94,6 @@ export default function ViewBillingModal({ admission, onClose }) {
                 let key = 0;
                 const auto = [];
 
-                // Room charge — only after 24 hrs
                 const roomNumber = admission.roomNumber || fullAdmission?.roomNumber;
                 if (roomNumber && roomDays > 0) {
                     const pricePerDay =
@@ -118,7 +117,6 @@ export default function ViewBillingModal({ admission, onClose }) {
                     });
                 }
 
-                // Consultations
                 suggestions.appointments?.forEach((a) => {
                     auto.push({
                         key: key++,
@@ -130,7 +128,6 @@ export default function ViewBillingModal({ admission, onClose }) {
                     });
                 });
 
-                // Radiology — scoped to this admission only
                 const EXCLUDED_STATUSES = ["CANCELLED", "BILLED"];
                 const pending = Array.isArray(radiologyOrders)
                     ? radiologyOrders.filter((r) => !EXCLUDED_STATUSES.includes(r.status))
@@ -149,7 +146,6 @@ export default function ViewBillingModal({ admission, onClose }) {
                     });
                 });
 
-                // Patient services
                 const enabledServices = Array.isArray(patientServices)
                     ? patientServices.filter((s) => s.isActive)
                     : [];
@@ -224,20 +220,11 @@ export default function ViewBillingModal({ admission, onClose }) {
             onClose={onClose}
             size="lg"
             title={
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <Receipt size={16} style={{ color: "var(--hms-info)" }} />
-                    <div>
-                        <p
-                            style={{
-                                margin: 0,
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: "var(--hms-gray-900)",
-                            }}
-                        >
-                            Billing details
-                        </p>
-                        <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>
+                <div className="hms-modal-title-row">
+                    <Receipt size={16} className="text-info" />
+                    <div className="hms-modal-title-row__body">
+                        <p className="hms-modal-title-row__title text-14">Billing details</p>
+                        <p className="hms-modal-title-row__subtitle">
                             {admission.patientName} · {fmtId(admission.admissionNumber)}
                         </p>
                     </div>
@@ -250,188 +237,56 @@ export default function ViewBillingModal({ admission, onClose }) {
             }
         >
             {loading ? (
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 12,
-                        padding: "80px 0",
-                    }}
-                >
-                    <Loader2
-                        size={32}
-                        style={{ color: "var(--hms-gray-700)" }}
-                        className="animate-spin"
-                    />
-                    <p style={{ margin: 0, fontSize: 13, color: "var(--hms-gray-500)" }}>
-                        Detecting pending charges…
-                    </p>
+                <div className="hms-bill-loading">
+                    <Loader2 size={32} className="hms-bill-loading__icon animate-spin" />
+                    <p className="hms-bill-loading__text">Detecting pending charges…</p>
                 </div>
             ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <div className="flex flex-col gap-5">
                     <div>
-                        <p
-                            style={{
-                                margin: 0,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: "var(--hms-gray-500)",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.06em",
-                            }}
-                        >
-                            Pending charges
-                        </p>
-                        <p style={{ margin: "2px 0 12px", fontSize: 11, color: "var(--hms-gray-400)" }}>
+                        <p className="hms-section-label">Pending charges</p>
+                        <p className="text-11 text-gray-400 mb-3 mt-0.5">
                             All charges auto-detected based on services used during this admission
                         </p>
 
                         {items.length === 0 ? (
-                            <div
-                                style={{
-                                    padding: "48px 16px",
-                                    textAlign: "center",
-                                    border: "2px dashed var(--hms-gray-200)",
-                                    borderRadius: 8,
-                                }}
-                            >
-                                <p
-                                    style={{
-                                        margin: 0,
-                                        fontSize: 13,
-                                        fontWeight: 500,
-                                        color: "var(--hms-gray-500)",
-                                    }}
-                                >
-                                    No charges detected
-                                </p>
-                                <p
-                                    style={{
-                                        margin: "4px 0 0",
-                                        fontSize: 11,
-                                        color: "var(--hms-gray-400)",
-                                    }}
-                                >
+                            <div className="hms-bill-empty">
+                                <p className="hms-bill-empty__title">No charges detected</p>
+                                <p className="hms-bill-empty__sub">
                                     Charges will appear here once services are recorded
                                 </p>
                             </div>
                         ) : (
-                            <div
-                                style={{
-                                    background: "var(--hms-white)",
-                                    border: "1px solid var(--hms-gray-200)",
-                                    borderRadius: 8,
-                                    overflow: "hidden",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "1.4fr 2.4fr 1fr 1fr 1fr",
-                                        gap: 8,
-                                        padding: "10px 16px",
-                                        background: "var(--hms-gray-50)",
-                                        borderBottom: "1px solid var(--hms-gray-100)",
-                                    }}
-                                >
-                                    {[
-                                        { h: "Type", align: "left" },
-                                        { h: "Description", align: "left" },
-                                        { h: "Qty", align: "center" },
-                                        { h: "Unit ₹", align: "right" },
-                                        { h: "Total", align: "right" },
-                                    ].map(({ h, align }) => (
-                                        <div
-                                            key={h}
-                                            style={{
-                                                fontSize: 10,
-                                                fontWeight: 700,
-                                                color: "var(--hms-gray-500)",
-                                                textTransform: "uppercase",
-                                                letterSpacing: "0.06em",
-                                                textAlign: align,
-                                            }}
-                                        >
-                                            {h}
-                                        </div>
-                                    ))}
+                            <div className="hms-bill-table">
+                                <div className="hms-bill-table__head">
+                                    <div className="hms-bill-table__head-cell">Type</div>
+                                    <div className="hms-bill-table__head-cell">Description</div>
+                                    <div className="hms-bill-table__head-cell is-center">Qty</div>
+                                    <div className="hms-bill-table__head-cell is-right">Unit ₹</div>
+                                    <div className="hms-bill-table__head-cell is-right">Total</div>
                                 </div>
 
                                 {items.map((item) => {
                                     const meta = TYPE_META[item.itemType] ?? TYPE_META.CUSTOM;
                                     const Icon = meta.icon;
                                     return (
-                                        <div
-                                            key={item.key}
-                                            style={{
-                                                display: "grid",
-                                                gridTemplateColumns: "1.4fr 2.4fr 1fr 1fr 1fr",
-                                                gap: 8,
-                                                alignItems: "center",
-                                                padding: "10px 16px",
-                                                borderBottom: "1px solid var(--hms-gray-50)",
-                                            }}
-                                        >
+                                        <div key={item.key} className="hms-bill-table__row">
                                             <div>
-                                                <span
-                                                    style={{
-                                                        display: "inline-flex",
-                                                        alignItems: "center",
-                                                        gap: 4,
-                                                        padding: "2px 8px",
-                                                        borderRadius: 6,
-                                                        fontSize: 10,
-                                                        fontWeight: 600,
-                                                        background: meta.bg,
-                                                        color: meta.color,
-                                                    }}
-                                                >
+                                                <span className={`hms-bill-type ${meta.mod}`}>
                                                     <Icon size={11} />
                                                     {meta.label}
                                                 </span>
                                             </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 13,
-                                                    color: "var(--hms-gray-700)",
-                                                    overflow: "hidden",
-                                                    textOverflow: "ellipsis",
-                                                    whiteSpace: "nowrap",
-                                                }}
-                                                title={item.description}
-                                            >
+                                            <div className="hms-bill-table__desc" title={item.description}>
                                                 {item.description}
                                             </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 13,
-                                                    color: "var(--hms-gray-600)",
-                                                    textAlign: "center",
-                                                    fontVariantNumeric: "tabular-nums",
-                                                }}
-                                            >
+                                            <div className="hms-bill-table__cell is-center">
                                                 {item.quantity}
                                             </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 13,
-                                                    color: "var(--hms-gray-600)",
-                                                    textAlign: "right",
-                                                    fontVariantNumeric: "tabular-nums",
-                                                }}
-                                            >
+                                            <div className="hms-bill-table__cell is-right">
                                                 {fmt(item.unitPrice)}
                                             </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 13,
-                                                    fontWeight: 700,
-                                                    color: "var(--hms-gray-800)",
-                                                    textAlign: "right",
-                                                    fontVariantNumeric: "tabular-nums",
-                                                }}
-                                            >
+                                            <div className="hms-bill-table__total">
                                                 {fmt(item.totalPrice)}
                                             </div>
                                         </div>
@@ -439,73 +294,21 @@ export default function ViewBillingModal({ admission, onClose }) {
                                 })}
 
                                 {/* Totals */}
-                                <div
-                                    style={{
-                                        padding: 16,
-                                        borderTop: "1px solid var(--hms-gray-100)",
-                                        display: "flex",
-                                        justifyContent: "flex-end",
-                                        background: "var(--hms-gray-50)",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: 240,
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 8,
-                                            fontSize: 13,
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                color: "var(--hms-gray-500)",
-                                            }}
-                                        >
+                                <div className="hms-bill-totals">
+                                    <div className="hms-bill-totals__inner">
+                                        <div className="hms-bill-totals__row is-subtotal">
                                             <span>Subtotal</span>
-                                            <span
-                                                style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
-                                            >
-                                                {fmt(subtotal)}
-                                            </span>
+                                            <span>{fmt(subtotal)}</span>
                                         </div>
                                         {medicineSubtotal > 0 && (
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    justifyContent: "space-between",
-                                                    color: "var(--hms-gray-500)",
-                                                }}
-                                            >
+                                            <div className="hms-bill-totals__row">
                                                 <span>GST on medicines (18%)</span>
-                                                <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                                                    {fmt(gst)}
-                                                </span>
+                                                <span>{fmt(gst)}</span>
                                             </div>
                                         )}
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                fontWeight: 700,
-                                                color: "var(--hms-gray-900)",
-                                                fontSize: 15,
-                                                borderTop: "1px solid var(--hms-gray-100)",
-                                                paddingTop: 10,
-                                                marginTop: 4,
-                                            }}
-                                        >
+                                        <div className="hms-bill-totals__row is-grand">
                                             <span>Estimated total</span>
-                                            <span
-                                                style={{
-                                                    color: "var(--hms-info)",
-                                                    fontVariantNumeric: "tabular-nums",
-                                                }}
-                                            >
-                                                {fmt(grandTotal)}
-                                            </span>
+                                            <span>{fmt(grandTotal)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -520,14 +323,7 @@ export default function ViewBillingModal({ admission, onClose }) {
                         </Alert>
                     )}
 
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 11,
-                            color: "var(--hms-gray-400)",
-                            textAlign: "center",
-                        }}
-                    >
+                    <p className="hms-bill-disclaimer">
                         This is an estimated bill based on services used so far. Final amount may
                         vary at discharge.
                     </p>

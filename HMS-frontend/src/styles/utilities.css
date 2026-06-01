@@ -255,6 +255,8 @@
 .text-violet { color: #6d28d9; }
 .text-amber { color: #b45309; }
 .text-emerald { color: #059669; }
+.text-accent-external { color: var(--hms-accent-external); }
+.font-normal { font-weight: 400; }
 
 .bg-white { background: var(--hms-white); }
 .bg-gray-50 { background: var(--hms-gray-50); }

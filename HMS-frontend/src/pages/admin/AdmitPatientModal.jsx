@@ -42,58 +42,16 @@ const PAYMENT_METHOD_TO_ACCOUNT_TYPES = {
     "Bank Transfer": ["SAVINGS", "CURRENT"],
 };
 
-/** Numbered section header — bold number circle + title + optional
- *  subtitle, separated from content by a thin underline. */
+/** Numbered section header — uses the shared .hms-section-num primitive
+ *  from admin.css (number circle + title + optional subtitle, separated
+ *  by a thin underline). */
 function SectionHeader({ number, title, subtitle }) {
     return (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 12,
-                paddingBottom: 8,
-                borderBottom: "1px solid var(--hms-gray-100)",
-            }}
-        >
-            <div
-                style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 999,
-                    background: "var(--hms-brand-primary)",
-                    color: "var(--hms-white)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 11,
-                    fontWeight: 800,
-                    flexShrink: 0,
-                }}
-            >
-                {number}
-            </div>
+        <div className="hms-section-num">
+            <div className="hms-section-num__circle">{number}</div>
             <div>
-                <h3
-                    style={{
-                        margin: 0,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: "var(--hms-gray-900)",
-                    }}
-                >
-                    {title}
-                </h3>
-                {subtitle && (
-                    <p
-                        style={{
-                            margin: "2px 0 0",
-                            fontSize: 11,
-                            color: "var(--hms-gray-500)",
-                        }}
-                    >
-                        {subtitle}
-                    </p>
-                )}
+                <h3 className="hms-section-num__title">{title}</h3>
+                {subtitle && <p className="hms-section-num__subtitle">{subtitle}</p>}
             </div>
         </div>
     );
@@ -101,17 +59,11 @@ function SectionHeader({ number, title, subtitle }) {
 
 /**
  * Admit patient wizard. Single-page form with four numbered sections:
- * Patient & source · Clinical & room · Attender · Finance. Phase 8c
- * migration: data layer untouched (admissionApi.admit + admissionApi.
- * list, departmentApi/doctorsApi/patientApi/bedApi/patientAdvanceApi/
- * bankApi), chained-fetch effects unchanged (department → doctors;
- * room → beds; payment method → bank accounts), validation +
- * non-blocking failure cascades (advance + paymentCategory update on
- * patient profile) all preserved byte-for-byte.
- *
- * Wraps in <Modal size="xl"> — the pre-migration UX used max-w-8xl
- * (≈1408px) which xl can't reach, but the form content reads
- * comfortably at 1000px once the dense Tailwind padding is gone.
+ * Patient & source · Clinical & room · Attender · Finance. Layout
+ * pieces live in admin.css under .hms-patient-pick* (patient picker),
+ * .hms-patient-suggest* (search dropdown), .hms-bed-grid + .hms-bed-chip
+ * (bed selector), .hms-pay-card (payment category card),
+ * .hms-advance-block + .hms-admit-summary (advance + summary blocks).
  */
 export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     const { user } = useAuth();
@@ -138,7 +90,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
         attenderRelationship: "",
     });
 
-    // Finance
     const [paymentCategory, setPaymentCategory] = useState("CASH");
     const [advanceAmount, setAdvanceAmount] = useState("");
     const [advancePaymentMethod, setAdvancePaymentMethod] = useState("Cash");
@@ -310,26 +261,13 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
             onClose={onClose}
             size="xl"
             title={
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div
-                        style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 8,
-                            background: "var(--hms-gray-100)",
-                            color: "var(--hms-gray-700)",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
+                <div className="hms-modal-title-row">
+                    <span className="hms-icon-tile">
                         <BedDouble size={20} />
-                    </div>
-                    <div>
-                        <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--hms-gray-900)" }}>
-                            Admit patient to IPD
-                        </p>
-                        <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>
+                    </span>
+                    <div className="hms-modal-title-row__body">
+                        <p className="hms-modal-title-row__title">Admit patient to IPD</p>
+                        <p className="hms-modal-title-row__subtitle">
                             All sections in one place — scroll to fill, submit when ready.
                         </p>
                     </div>
@@ -351,57 +289,23 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                 </>
             }
         >
-            <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+            <div className="hms-form-section-list">
                 {/* Section 1: Patient & Source */}
-                <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <section className="hms-form-section">
                     <SectionHeader number={1} title="Patient & source" />
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: 16,
-                        }}
-                    >
+                    <div className="hms-form-grid is-2col">
                         <FormGroup label="Search patient *">
                             {selectedPatient ? (
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        padding: 12,
-                                        borderRadius: 8,
-                                        background: "var(--hms-gray-50)",
-                                        border: "1px solid var(--hms-gray-200)",
-                                    }}
-                                >
-                                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                        <div
-                                            style={{
-                                                width: 36,
-                                                height: 36,
-                                                borderRadius: 8,
-                                                background: "var(--hms-gray-200)",
-                                                color: "var(--hms-gray-600)",
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                        >
+                                <div className="hms-patient-pick">
+                                    <div className="hms-patient-pick__identity">
+                                        <span className="hms-patient-pick__icon">
                                             <User size={16} />
-                                        </div>
+                                        </span>
                                         <div>
-                                            <p
-                                                style={{
-                                                    margin: 0,
-                                                    fontSize: 13,
-                                                    fontWeight: 600,
-                                                    color: "var(--hms-gray-900)",
-                                                }}
-                                            >
+                                            <p className="hms-patient-pick__name">
                                                 {selectedPatient.firstName} {selectedPatient.lastName}
                                             </p>
-                                            <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>
+                                            <p className="hms-patient-pick__sub">
                                                 UHID: {fmtId(selectedPatient.uhid)} · {selectedPatient.gender}
                                             </p>
                                         </div>
@@ -409,55 +313,22 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                                     <button
                                         type="button"
                                         onClick={() => setSelectedPatient(null)}
-                                        style={{
-                                            background: "transparent",
-                                            border: "none",
-                                            fontSize: 11,
-                                            fontWeight: 600,
-                                            color: "var(--hms-gray-600)",
-                                            cursor: "pointer",
-                                            textDecoration: "underline",
-                                            fontFamily: "var(--hms-font-family)",
-                                        }}
+                                        className="hms-patient-pick__change"
                                     >
                                         Change
                                     </button>
                                 </div>
                             ) : (
-                                <div style={{ position: "relative" }}>
-                                    <Search
-                                        size={16}
-                                        style={{
-                                            position: "absolute",
-                                            left: 12,
-                                            top: "50%",
-                                            transform: "translateY(-50%)",
-                                            color: "var(--hms-gray-400)",
-                                            pointerEvents: "none",
-                                        }}
-                                    />
+                                <div className="hms-patient-search">
+                                    <Search size={16} className="hms-patient-search__icon" />
                                     <Input
                                         value={patientSearch}
                                         onChange={(e) => setPatientSearch(e.target.value)}
                                         placeholder="Search by name or UHID…"
-                                        style={{ paddingLeft: 36 }}
+                                        className="hms-patient-search__input"
                                     />
                                     {patients.length > 0 && (
-                                        <div
-                                            style={{
-                                                position: "absolute",
-                                                top: "100%",
-                                                left: 0,
-                                                right: 0,
-                                                marginTop: 4,
-                                                background: "var(--hms-white)",
-                                                border: "1px solid var(--hms-gray-200)",
-                                                borderRadius: 8,
-                                                boxShadow: "var(--hms-shadow-lg)",
-                                                zIndex: 10,
-                                                overflow: "hidden",
-                                            }}
-                                        >
+                                        <div className="hms-patient-suggest">
                                             {patients.map((p) => (
                                                 <button
                                                     key={p.id}
@@ -467,48 +338,14 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                                                         setPatients([]);
                                                         setPatientSearch("");
                                                     }}
-                                                    style={{
-                                                        width: "100%",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 12,
-                                                        padding: "10px 16px",
-                                                        background: "transparent",
-                                                        border: "none",
-                                                        cursor: "pointer",
-                                                        textAlign: "left",
-                                                        fontFamily: "var(--hms-font-family)",
-                                                    }}
-                                                    onMouseEnter={(e) =>
-                                                    (e.currentTarget.style.background =
-                                                        "var(--hms-gray-50)")
-                                                    }
-                                                    onMouseLeave={(e) =>
-                                                        (e.currentTarget.style.background = "transparent")
-                                                    }
+                                                    className="hms-patient-suggest__item"
                                                 >
-                                                    <User
-                                                        size={16}
-                                                        style={{ color: "var(--hms-gray-400)", flexShrink: 0 }}
-                                                    />
+                                                    <User size={16} className="text-gray-400 shrink-0" />
                                                     <div>
-                                                        <p
-                                                            style={{
-                                                                margin: 0,
-                                                                fontSize: 13,
-                                                                fontWeight: 500,
-                                                                color: "var(--hms-gray-900)",
-                                                            }}
-                                                        >
+                                                        <p className="hms-patient-suggest__name">
                                                             {p.firstName} {p.lastName}
                                                         </p>
-                                                        <p
-                                                            style={{
-                                                                margin: 0,
-                                                                fontSize: 11,
-                                                                color: "var(--hms-gray-500)",
-                                                            }}
-                                                        >
+                                                        <p className="hms-patient-suggest__sub">
                                                             UHID: {fmtId(p.uhid)}
                                                         </p>
                                                     </div>
@@ -533,9 +370,9 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                 </section>
 
                 {/* Section 2: Clinical & Room */}
-                <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <section className="hms-form-section">
                     <SectionHeader number={2} title="Clinical & room" />
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div className="hms-form-grid is-2col">
                         <FormGroup label="Department">
                             <SearchableSelect
                                 value={form.departmentId}
@@ -566,7 +403,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                             placeholder="Presenting complaint or reason for admission…"
                         />
                     </FormGroup>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div className="hms-form-grid is-2col">
                         <FormGroup label="Assign room (optional)">
                             <SearchableSelect
                                 value={form.roomId}
@@ -593,30 +430,14 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                     {form.roomId && isMultiBed && (
                         <FormGroup label="Select bed *">
                             {bedsLoading ? (
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8,
-                                        padding: "12px 0",
-                                        color: "var(--hms-gray-400)",
-                                    }}
-                                >
+                                <div className="hms-bed-loading">
                                     <Loader2 size={16} className="animate-spin" />
-                                    <span style={{ fontSize: 13 }}>Loading beds…</span>
+                                    <span>Loading beds…</span>
                                 </div>
                             ) : availableBeds.length === 0 ? (
-                                <p style={{ margin: 0, fontSize: 13, color: "var(--hms-danger)" }}>
-                                    No available beds in this room.
-                                </p>
+                                <p className="hms-bed-empty">No available beds in this room.</p>
                             ) : (
-                                <div
-                                    style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
-                                        gap: 8,
-                                    }}
-                                >
+                                <div className="hms-bed-grid">
                                     {availableBeds.map((bed) => {
                                         const selected = String(form.bedId) === String(bed.id);
                                         return (
@@ -626,24 +447,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                                                 onClick={() =>
                                                     setForm((f) => ({ ...f, bedId: String(bed.id) }))
                                                 }
-                                                style={{
-                                                    padding: "10px 12px",
-                                                    borderRadius: 8,
-                                                    fontSize: 13,
-                                                    fontWeight: 600,
-                                                    textAlign: "left",
-                                                    cursor: "pointer",
-                                                    transition: "all 0.15s",
-                                                    border: `1px solid ${selected
-                                                        ? "var(--hms-brand-primary)"
-                                                        : "var(--hms-success-border)"
-                                                        }`,
-                                                    background: selected
-                                                        ? "var(--hms-brand-primary)"
-                                                        : "var(--hms-success-bg)",
-                                                    color: selected ? "var(--hms-white)" : "#166534",
-                                                    fontFamily: "var(--hms-font-family)",
-                                                }}
+                                                className={`hms-bed-chip ${selected ? "is-on" : ""}`}
                                             >
                                                 {bed.bedNumber}
                                             </button>
@@ -656,19 +460,13 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                 </section>
 
                 {/* Section 3: Attender */}
-                <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <section className="hms-form-section">
                     <SectionHeader
                         number={3}
                         title="Attender / guardian"
                         subtitle="Optional but recommended — required for discharge handover."
                     />
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(3, 1fr)",
-                            gap: 16,
-                        }}
-                    >
+                    <div className="hms-form-grid is-3col">
                         <FormGroup label="Attender name">
                             <Input
                                 value={form.attenderName}
@@ -695,35 +493,16 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                 </section>
 
                 {/* Section 4: Finance */}
-                <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <section className="hms-form-section">
                     <SectionHeader number={4} title="Finance" />
 
                     {/* Payment Category */}
                     <div>
-                        <p
-                            style={{
-                                margin: "0 0 8px",
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: "var(--hms-gray-500)",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.06em",
-                            }}
-                        >
-                            Payment category
-                        </p>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <p className="hms-section-label mb-2">Payment category</p>
+                        <div className="hms-form-grid is-2col">
                             {[
-                                {
-                                    value: "CASH",
-                                    label: "Cash",
-                                    desc: "Periodic payments during stay",
-                                },
-                                {
-                                    value: "CREDIT",
-                                    label: "Credit",
-                                    desc: "Full bill settled at discharge",
-                                },
+                                { value: "CASH",   label: "Cash",   desc: "Periodic payments during stay" },
+                                { value: "CREDIT", label: "Credit", desc: "Full bill settled at discharge" },
                             ].map((opt) => {
                                 const selected = paymentCategory === opt.value;
                                 return (
@@ -731,43 +510,10 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                                         key={opt.value}
                                         type="button"
                                         onClick={() => setPaymentCategory(opt.value)}
-                                        style={{
-                                            textAlign: "left",
-                                            padding: 12,
-                                            borderRadius: 8,
-                                            cursor: "pointer",
-                                            transition: "all 0.15s",
-                                            border: `2px solid ${selected
-                                                ? "var(--hms-brand-primary)"
-                                                : "var(--hms-gray-200)"
-                                                }`,
-                                            background: selected
-                                                ? "var(--hms-gray-50)"
-                                                : "var(--hms-white)",
-                                            fontFamily: "var(--hms-font-family)",
-                                        }}
+                                        className={`hms-pay-card ${selected ? "is-on" : ""}`}
                                     >
-                                        <p
-                                            style={{
-                                                margin: 0,
-                                                fontSize: 13,
-                                                fontWeight: 700,
-                                                color: selected
-                                                    ? "var(--hms-gray-900)"
-                                                    : "var(--hms-gray-600)",
-                                            }}
-                                        >
-                                            {opt.label}
-                                        </p>
-                                        <p
-                                            style={{
-                                                margin: "2px 0 0",
-                                                fontSize: 11,
-                                                color: "var(--hms-gray-400)",
-                                            }}
-                                        >
-                                            {opt.desc}
-                                        </p>
+                                        <p className="hms-pay-card__label">{opt.label}</p>
+                                        <p className="hms-pay-card__desc">{opt.desc}</p>
                                     </button>
                                 );
                             })}
@@ -775,35 +521,18 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                     </div>
 
                     {/* Admission advance */}
-                    <div
-                        style={{
-                            paddingTop: 16,
-                            borderTop: "1px solid var(--hms-gray-100)",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 12,
-                        }}
-                    >
+                    <div className="hms-advance-block">
                         <div>
-                            <p
-                                style={{
-                                    margin: "0 0 4px",
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    color: "var(--hms-gray-500)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.06em",
-                                }}
-                            >
+                            <p className="hms-section-label mb-1">
                                 Admission advance / room deposit
                             </p>
-                            <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-400)" }}>
+                            <p className="hms-advance-hint">
                                 Optional. Collect a room security deposit or initial advance — it will
                                 be auto-deducted from the final IPD bill.
                             </p>
                         </div>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                        <div className="hms-form-grid is-2col">
                             <FormGroup label="Amount (₹)">
                                 <Input
                                     type="number"
@@ -829,14 +558,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                                 label={
                                     <span>
                                         Deposit account
-                                        <span
-                                            style={{
-                                                marginLeft: 6,
-                                                fontSize: 10,
-                                                fontWeight: 500,
-                                                color: "var(--hms-gray-400)",
-                                            }}
-                                        >
+                                        <span className="hms-advance-account-hint">
                                             (
                                             {advancePaymentMethod === "Cash"
                                                 ? "CASH only"
@@ -847,16 +569,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                                 }
                             >
                                 {bankAccountsLoading ? (
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 8,
-                                            fontSize: 12,
-                                            color: "var(--hms-gray-500)",
-                                            padding: "8px 0",
-                                        }}
-                                    >
+                                    <div className="hms-advance-loading">
                                         <Loader2 size={14} className="animate-spin" /> Loading accounts…
                                     </div>
                                 ) : bankAccounts.length === 0 ? (
@@ -902,42 +615,19 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
 
                 {/* Summary */}
                 {selectedPatient && (
-                    <div
-                        style={{
-                            padding: 16,
-                            borderRadius: 8,
-                            background: "var(--hms-gray-50)",
-                            border: "1px solid var(--hms-gray-200)",
-                            fontSize: 13,
-                        }}
-                    >
-                        <p
-                            style={{
-                                margin: "0 0 8px",
-                                fontWeight: 600,
-                                color: "var(--hms-gray-700)",
-                            }}
-                        >
-                            Admission summary
-                        </p>
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(4, 1fr)",
-                                gap: "0 16px",
-                                color: "var(--hms-gray-600)",
-                            }}
-                        >
+                    <div className="hms-admit-summary">
+                        <p className="hms-admit-summary__title">Admission summary</p>
+                        <div className="hms-admit-summary__grid">
                             <div>
-                                <span style={{ fontWeight: 500 }}>Patient: </span>
+                                <span className="font-medium">Patient: </span>
                                 {selectedPatient.firstName} {selectedPatient.lastName}
                             </div>
                             <div>
-                                <span style={{ fontWeight: 500 }}>Source: </span>
+                                <span className="font-medium">Source: </span>
                                 {form.admissionType.replace(/_/g, " ")}
                             </div>
                             <div>
-                                <span style={{ fontWeight: 500 }}>Room: </span>
+                                <span className="font-medium">Room: </span>
                                 {selectedRoom?.roomNumber || "To be assigned"}
                                 {form.bedId &&
                                     availableBeds.find((b) => String(b.id) === String(form.bedId))
@@ -947,7 +637,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                                     : ""}
                             </div>
                             <div>
-                                <span style={{ fontWeight: 500 }}>Payment: </span>
+                                <span className="font-medium">Payment: </span>
                                 {paymentCategory}
                                 {advanceAmt > 0
                                     ? ` (₹${advanceAmt.toLocaleString("en-IN")} advance)`

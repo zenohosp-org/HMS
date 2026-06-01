@@ -13,11 +13,9 @@ import SearchableSelect from "@/components/ui/SearchableSelect";
 /**
  * Move-to-OT modal. Lists OT rooms with status AVAILABLE and the
  * active doctor roster. Caller (Admissions list) owns the admission;
- * onMoved() runs after a successful admissionApi.moveToOT call.
- *
- * Phase 8c migration: same data layer, same validation (must pick a
- * room), same notify copy. The OT room picker stays as styled radio
- * buttons since the option count is small and visual previews matter.
+ * onMoved() runs after a successful admissionApi.moveToOT call. Room
+ * radio list lives in admin.css under .hms-room-radio* — it's also
+ * reusable by other "select room from a short list" modals.
  */
 export default function MoveToOTModal({ admission, onClose, onMoved }) {
     const { user } = useAuth();
@@ -75,29 +73,13 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
             onClose={onClose}
             size="md"
             title={
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div
-                        style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 8,
-                            background: "var(--hms-gray-100)",
-                            color: "var(--hms-gray-700)",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                        }}
-                    >
+                <div className="hms-modal-title-row">
+                    <span className="hms-icon-tile">
                         <Scissors size={16} />
-                    </div>
-                    <div>
-                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--hms-gray-900)" }}>
-                            Move to OT
-                        </p>
-                        <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>
-                            {admission.patientName}
-                        </p>
+                    </span>
+                    <div className="hms-modal-title-row__body">
+                        <p className="hms-modal-title-row__title">Move to OT</p>
+                        <p className="hms-modal-title-row__subtitle">{admission.patientName}</p>
                     </div>
                 </div>
             }
@@ -118,64 +100,31 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
             }
         >
             {loading ? (
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        padding: 32,
-                        color: "var(--hms-gray-400)",
-                    }}
-                >
+                <div className="hms-modal-loading">
                     <Loader2 size={16} className="animate-spin" />
-                    <span style={{ fontSize: 13 }}>Loading OT rooms…</span>
+                    <span>Loading OT rooms…</span>
                 </div>
             ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <div className="flex flex-col gap-5">
                     <FormGroup
                         label={
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <span className="inline-flex items-center gap-1.5">
                                 <BedDouble size={14} /> Select OT room
                             </span>
                         }
                     >
                         {otRooms.length === 0 ? (
-                            <div
-                                style={{
-                                    padding: "12px 16px",
-                                    borderRadius: 8,
-                                    border: "1px solid var(--hms-warning-border)",
-                                    background: "var(--hms-warning-bg)",
-                                    color: "#92400e",
-                                    fontSize: 13,
-                                }}
-                            >
+                            <div className="hms-room-empty">
                                 No OT rooms available. Add OT rooms in Settings → Infrastructure.
                             </div>
                         ) : (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            <div className="hms-room-radio-list">
                                 {otRooms.map((room) => {
                                     const selected = selectedRoomId === String(room.id);
                                     return (
                                         <label
                                             key={room.id}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 12,
-                                                padding: "12px 16px",
-                                                borderRadius: 8,
-                                                border: `1px solid ${selected
-                                                    ? "var(--hms-brand-primary)"
-                                                    : "var(--hms-gray-200)"
-                                                    }`,
-                                                background: selected
-                                                    ? "var(--hms-gray-50)"
-                                                    : "var(--hms-white)",
-                                                cursor: "pointer",
-                                                transition: "all 0.15s",
-                                            }}
+                                            className={`hms-room-radio ${selected ? "is-on" : ""}`}
                                         >
                                             <input
                                                 type="radio"
@@ -183,29 +132,13 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
                                                 value={room.id}
                                                 checked={selected}
                                                 onChange={(e) => setSelectedRoomId(e.target.value)}
-                                                style={{
-                                                    accentColor: "var(--hms-brand-primary)",
-                                                    cursor: "pointer",
-                                                }}
+                                                className="hms-room-radio__input"
                                             />
                                             <div>
-                                                <p
-                                                    style={{
-                                                        margin: 0,
-                                                        fontSize: 13,
-                                                        fontWeight: 600,
-                                                        color: "var(--hms-gray-800)",
-                                                    }}
-                                                >
+                                                <p className="hms-room-radio__name">
                                                     {room.roomNumber}
                                                 </p>
-                                                <p
-                                                    style={{
-                                                        margin: 0,
-                                                        fontSize: 11,
-                                                        color: "var(--hms-gray-500)",
-                                                    }}
-                                                >
+                                                <p className="hms-room-radio__sub">
                                                     OT · Available
                                                 </p>
                                             </div>
@@ -218,7 +151,7 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
 
                     <FormGroup
                         label={
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <span className="inline-flex items-center gap-1.5">
                                 <Stethoscope size={14} /> Performing doctor
                             </span>
                         }

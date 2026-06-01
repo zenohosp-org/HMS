@@ -26,25 +26,9 @@ const DAYS = [
 ];
 const MAX_SPECS = 6;
 
-/** Small section heading — 11px uppercase tracking, matches the
- *  pre-migration FieldLabel pattern. Used for section heads and as
- *  the label on sub-fields in the dense schedule grid. */
+/** Section heading (.hms-section-label) plus a 12px gap below it. */
 function SectionLabel({ children }) {
-    return (
-        <p
-            style={{
-                margin: 0,
-                fontSize: 11,
-                fontWeight: 700,
-                color: "var(--hms-gray-500)",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                marginBottom: 12,
-            }}
-        >
-            {children}
-        </p>
-    );
+    return <p className="hms-section-label mb-3">{children}</p>;
 }
 
 /** Specialisation chip picker.
@@ -60,40 +44,19 @@ function SpecPicker({ specializations, value, onChange, loading }) {
     const remove = (id) => onChange(value.filter((v) => v !== id));
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="flex flex-col gap-2">
             {value.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <div className="flex flex-wrap gap-1.5">
                     {value.map((id) => {
                         const spec = specializations.find((s) => s.id === id);
                         return (
-                            <span
-                                key={id}
-                                style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    padding: "5px 10px",
-                                    borderRadius: 999,
-                                    background: "var(--hms-info-bg)",
-                                    color: "#0369a1",
-                                    border: "1px solid var(--hms-info-border)",
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                }}
-                            >
+                            <span key={id} className="hms-spec-chip">
                                 {spec?.name || "Unknown"}
                                 <button
                                     type="button"
                                     onClick={() => remove(id)}
                                     aria-label={`Remove ${spec?.name || "specialisation"}`}
-                                    style={{
-                                        background: "transparent",
-                                        border: "none",
-                                        color: "#0369a1",
-                                        cursor: "pointer",
-                                        lineHeight: 0,
-                                        padding: 0,
-                                    }}
+                                    className="hms-spec-chip__remove"
                                 >
                                     <X size={12} />
                                 </button>
@@ -117,7 +80,7 @@ function SpecPicker({ specializations, value, onChange, loading }) {
                     disabled={loading || remaining.length === 0}
                 />
             ) : (
-                <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-400)" }}>
+                <p className="hms-spec-chip__max">
                     Maximum {MAX_SPECS} specialisations reached.
                 </p>
             )}
@@ -133,20 +96,6 @@ function fmtDuration(mins) {
     if (h) return `${h} hrs`;
     return `${m} min`;
 }
-
-/** Day-of-week pill button styling (matches hms-btn-primary / -secondary). */
-const dayBtnStyle = (active) => ({
-    padding: "6px 14px",
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 700,
-    cursor: "pointer",
-    transition: "all 0.15s",
-    border: active ? "1px solid var(--hms-brand-primary)" : "1px solid var(--hms-gray-200)",
-    background: active ? "var(--hms-brand-primary)" : "var(--hms-white)",
-    color: active ? "var(--hms-white)" : "var(--hms-gray-500)",
-    fontFamily: "var(--hms-font-family)",
-});
 
 /**
  * Add / Edit doctor profile.
@@ -321,6 +270,107 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
         }
     };
 
+    /* ───── Shared schedule + fees block (Schedule & fees + day pills + preview) ───── */
+    const scheduleFields = (
+        <>
+            <div className="hms-form-grid is-2col">
+                <FormGroup label="Consultation fee (₹) *">
+                    <Input
+                        type="number"
+                        step="0.01"
+                        min="1"
+                        value={doctorForm.consultationFee || ""}
+                        onChange={(e) =>
+                            setDoc({ consultationFee: parseFloat(e.target.value) || 0 })
+                        }
+                        placeholder="500"
+                    />
+                </FormGroup>
+                <FormGroup label="Follow-up fee (₹) *">
+                    <Input
+                        type="number"
+                        step="0.01"
+                        min="1"
+                        value={doctorForm.followUpFee || ""}
+                        onChange={(e) =>
+                            setDoc({ followUpFee: parseFloat(e.target.value) || 0 })
+                        }
+                        placeholder="300"
+                    />
+                </FormGroup>
+                <FormGroup label="Slot duration (min) *">
+                    <Input
+                        type="number"
+                        step="5"
+                        min="5"
+                        value={doctorForm.slotDurationMin || ""}
+                        onChange={(e) =>
+                            setDoc({ slotDurationMin: parseInt(e.target.value) || 0 })
+                        }
+                        placeholder="15"
+                    />
+                </FormGroup>
+                <FormGroup label="Max daily slots *">
+                    <Input
+                        type="number"
+                        min="1"
+                        value={doctorForm.maxDailySlots || ""}
+                        onChange={(e) =>
+                            setDoc({ maxDailySlots: parseInt(e.target.value) || 0 })
+                        }
+                        placeholder="40"
+                    />
+                </FormGroup>
+            </div>
+            <div className="mt-3">
+                <FormGroup label="Available days *">
+                    <div className="hms-day-pill-row">
+                        {DAYS.map(({ label, bit }) => {
+                            const active = !!(mask & bit);
+                            return (
+                                <button
+                                    key={bit}
+                                    type="button"
+                                    onClick={() => toggleDay(bit)}
+                                    className={`hms-day-pill ${active ? "is-on" : ""}`}
+                                >
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </FormGroup>
+            </div>
+        </>
+    );
+
+    const schedulePreview = (
+        <div className="hms-schedule-preview mt-3">
+            <SectionLabel>Weekly schedule preview</SectionLabel>
+            <div className="hms-schedule-preview__grid">
+                {[
+                    { label: "Slot", value: slotMin > 0 ? `${slotMin} min` : "—" },
+                    { label: "Per day", value: slotsPerDay > 0 ? slotsPerDay : "—" },
+                    { label: "Hrs / day", value: fmtDuration(totalMinPerDay) },
+                    { label: "Days / wk", value: activeDayCount > 0 ? activeDayCount : "—" },
+                ].map(({ label, value }) => (
+                    <div key={label} className="hms-schedule-preview__tile">
+                        <p className="hms-schedule-preview__label">{label}</p>
+                        <p className="hms-schedule-preview__value">{value}</p>
+                    </div>
+                ))}
+            </div>
+            <div className="hms-schedule-preview__total">
+                <span className="hms-schedule-preview__total-label">
+                    Total clinical hours / week
+                </span>
+                <span className="hms-schedule-preview__total-value">
+                    {fmtDuration(totalMinPerWeek)}
+                </span>
+            </div>
+        </div>
+    );
+
     /* ───────────────────────── Edit mode (Drawer) ──────────────────────── */
     if (editDoctor) {
         const initials = `${editDoctor.firstName?.[0] ?? ""}${editDoctor.lastName?.[0] ?? ""}`.toUpperCase();
@@ -348,49 +398,16 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                 <form
                     id="doctor-edit-form"
                     onSubmit={handleUpdate}
-                    style={{ display: "flex", flexDirection: "column", gap: 24 }}
+                    className="hms-doctor-form"
                 >
                     {/* Doctor identity card */}
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 16,
-                            padding: 16,
-                            background: "var(--hms-gray-50)",
-                            border: "1px solid var(--hms-gray-200)",
-                            borderRadius: "var(--hms-radius)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 56,
-                                height: 56,
-                                borderRadius: 999,
-                                background: "var(--hms-info-bg)",
-                                color: "#0369a1",
-                                border: "2px solid var(--hms-info-border)",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontWeight: 800,
-                                fontSize: 16,
-                                flexShrink: 0,
-                            }}
-                        >
-                            {initials}
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                            <div
-                                style={{
-                                    fontWeight: 700,
-                                    color: "var(--hms-gray-900)",
-                                    fontSize: 15,
-                                }}
-                            >
+                    <div className="hms-doctor-identity">
+                        <span className="hms-avatar is-xl is-info">{initials}</span>
+                        <div className="hms-doctor-identity__body">
+                            <div className="hms-doctor-identity__name">
                                 Dr. {editDoctor.firstName} {editDoctor.lastName}
                             </div>
-                            <div style={{ fontSize: 13, color: "var(--hms-gray-500)", marginTop: 2 }}>
+                            <div className="hms-doctor-identity__email">
                                 {editDoctor.email}
                             </div>
                         </div>
@@ -407,14 +424,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                                 loading={specsLoading}
                             />
                         </FormGroup>
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "1fr 1fr",
-                                gap: 12,
-                                marginTop: 12,
-                            }}
-                        >
+                        <div className="hms-form-grid is-2col mt-3">
                             <FormGroup label="Qualification *">
                                 <Input
                                     value={doctorForm.qualification}
@@ -446,13 +456,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                     {/* Contact */}
                     <div>
                         <SectionLabel>Personal contact</SectionLabel>
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "1fr 1fr",
-                                gap: 12,
-                            }}
-                        >
+                        <div className="hms-form-grid is-2col">
                             <FormGroup label="Phone">
                                 <Input
                                     type="tel"
@@ -481,14 +485,8 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                         <SectionLabel>Address</SectionLabel>
                         <FormGroup
                             label={
-                                <span
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                    }}
-                                >
-                                    <Home size={14} style={{ color: "var(--hms-accent-external)" }} />
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Home size={14} className="text-accent-external" />
                                     Residential
                                 </span>
                             }
@@ -507,84 +505,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                     {/* Schedule & Fees */}
                     <div>
                         <SectionLabel>Schedule & fees</SectionLabel>
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "1fr 1fr",
-                                gap: 12,
-                            }}
-                        >
-                            <FormGroup label="Consultation (₹) *">
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="1"
-                                    value={doctorForm.consultationFee || ""}
-                                    onChange={(e) =>
-                                        setDoc({
-                                            consultationFee: parseFloat(e.target.value) || 0,
-                                        })
-                                    }
-                                />
-                            </FormGroup>
-                            <FormGroup label="Follow-up (₹) *">
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="1"
-                                    value={doctorForm.followUpFee || ""}
-                                    onChange={(e) =>
-                                        setDoc({
-                                            followUpFee: parseFloat(e.target.value) || 0,
-                                        })
-                                    }
-                                />
-                            </FormGroup>
-                            <FormGroup label="Slot duration (min) *">
-                                <Input
-                                    type="number"
-                                    step="5"
-                                    min="1"
-                                    value={doctorForm.slotDurationMin || ""}
-                                    onChange={(e) =>
-                                        setDoc({
-                                            slotDurationMin: parseInt(e.target.value) || 0,
-                                        })
-                                    }
-                                />
-                            </FormGroup>
-                            <FormGroup label="Max daily slots *">
-                                <Input
-                                    type="number"
-                                    min="1"
-                                    value={doctorForm.maxDailySlots || ""}
-                                    onChange={(e) =>
-                                        setDoc({
-                                            maxDailySlots: parseInt(e.target.value) || 0,
-                                        })
-                                    }
-                                />
-                            </FormGroup>
-                        </div>
-                        <div style={{ marginTop: 12 }}>
-                            <FormGroup label="Available days *">
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                                    {DAYS.map(({ label, bit }) => {
-                                        const active = !!(mask & bit);
-                                        return (
-                                            <button
-                                                key={bit}
-                                                type="button"
-                                                onClick={() => toggleDay(bit)}
-                                                style={dayBtnStyle(active)}
-                                            >
-                                                {label}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </FormGroup>
-                        </div>
+                        {scheduleFields}
                     </div>
                 </form>
             </Drawer>
@@ -609,17 +530,11 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                 </>
             }
         >
-            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <div className="hms-doctor-form">
                 {/* Account setup */}
                 <div>
                     <SectionLabel>Account setup</SectionLabel>
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: 12,
-                        }}
-                    >
+                    <div className="hms-form-grid is-2col">
                         <FormGroup label="First name *">
                             <Input
                                 autoFocus
@@ -673,7 +588,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                         label={
                             <span>
                                 Specialisations *{" "}
-                                <span style={{ fontWeight: 400, color: "var(--hms-gray-400)" }}>
+                                <span className="font-normal text-gray-400">
                                     (up to {MAX_SPECS})
                                 </span>
                             </span>
@@ -686,14 +601,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                             loading={specsLoading}
                         />
                     </FormGroup>
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: 12,
-                            marginTop: 12,
-                        }}
-                    >
+                    <div className="hms-form-grid is-2col mt-3">
                         <FormGroup label="Qualification *">
                             <Input
                                 value={doctorForm.qualification}
@@ -728,13 +636,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                 {/* Personal contact */}
                 <div>
                     <SectionLabel>Personal contact</SectionLabel>
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: 12,
-                        }}
-                    >
+                    <div className="hms-form-grid is-2col">
                         <FormGroup label="Phone">
                             <Input
                                 type="tel"
@@ -767,7 +669,7 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                             placeholder="Home address, street, area, city, pincode"
                         />
                     </FormGroup>
-                    <div style={{ marginTop: 12 }}>
+                    <div className="mt-3">
                         <StateSelect
                             value={userForm.state}
                             onChange={(val) => setUser({ state: val })}
@@ -780,184 +682,8 @@ function DoctorFormModal({ onClose, onSaved, editDoctor }) {
                 {/* Schedule & fees */}
                 <div>
                     <SectionLabel>Schedule & fees</SectionLabel>
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: 12,
-                        }}
-                    >
-                        <FormGroup label="Consultation fee (₹) *">
-                            <Input
-                                type="number"
-                                step="0.01"
-                                min="1"
-                                value={doctorForm.consultationFee || ""}
-                                onChange={(e) =>
-                                    setDoc({
-                                        consultationFee: parseFloat(e.target.value) || 0,
-                                    })
-                                }
-                                placeholder="500"
-                            />
-                        </FormGroup>
-                        <FormGroup label="Follow-up fee (₹) *">
-                            <Input
-                                type="number"
-                                step="0.01"
-                                min="1"
-                                value={doctorForm.followUpFee || ""}
-                                onChange={(e) =>
-                                    setDoc({
-                                        followUpFee: parseFloat(e.target.value) || 0,
-                                    })
-                                }
-                                placeholder="300"
-                            />
-                        </FormGroup>
-                        <FormGroup label="Slot duration (min) *">
-                            <Input
-                                type="number"
-                                step="5"
-                                min="5"
-                                value={doctorForm.slotDurationMin || ""}
-                                onChange={(e) =>
-                                    setDoc({
-                                        slotDurationMin: parseInt(e.target.value) || 0,
-                                    })
-                                }
-                                placeholder="15"
-                            />
-                        </FormGroup>
-                        <FormGroup label="Max daily slots *">
-                            <Input
-                                type="number"
-                                min="1"
-                                value={doctorForm.maxDailySlots || ""}
-                                onChange={(e) =>
-                                    setDoc({
-                                        maxDailySlots: parseInt(e.target.value) || 0,
-                                    })
-                                }
-                                placeholder="40"
-                            />
-                        </FormGroup>
-                    </div>
-                    <div style={{ marginTop: 12 }}>
-                        <FormGroup label="Available days *">
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                                {DAYS.map(({ label, bit }) => {
-                                    const active = !!(mask & bit);
-                                    return (
-                                        <button
-                                            key={bit}
-                                            type="button"
-                                            onClick={() => toggleDay(bit)}
-                                            style={dayBtnStyle(active)}
-                                        >
-                                            {label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </FormGroup>
-                    </div>
-                    <div
-                        style={{
-                            marginTop: 12,
-                            padding: 16,
-                            background: "var(--hms-gray-50)",
-                            border: "1px solid var(--hms-gray-200)",
-                            borderRadius: "var(--hms-radius)",
-                        }}
-                    >
-                        <SectionLabel>Weekly schedule preview</SectionLabel>
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(4, 1fr)",
-                                gap: 12,
-                            }}
-                        >
-                            {[
-                                { label: "Slot", value: slotMin > 0 ? `${slotMin} min` : "—" },
-                                {
-                                    label: "Per day",
-                                    value: slotsPerDay > 0 ? slotsPerDay : "—",
-                                },
-                                {
-                                    label: "Hrs / day",
-                                    value: fmtDuration(totalMinPerDay),
-                                },
-                                {
-                                    label: "Days / wk",
-                                    value: activeDayCount > 0 ? activeDayCount : "—",
-                                },
-                            ].map(({ label, value }) => (
-                                <div
-                                    key={label}
-                                    style={{
-                                        background: "var(--hms-white)",
-                                        border: "1px solid var(--hms-gray-200)",
-                                        borderRadius: 8,
-                                        padding: 12,
-                                        textAlign: "center",
-                                    }}
-                                >
-                                    <p
-                                        style={{
-                                            margin: 0,
-                                            fontSize: 10,
-                                            color: "var(--hms-gray-400)",
-                                            textTransform: "uppercase",
-                                            letterSpacing: "0.06em",
-                                        }}
-                                    >
-                                        {label}
-                                    </p>
-                                    <p
-                                        style={{
-                                            margin: "4px 0 0",
-                                            fontSize: 16,
-                                            fontWeight: 700,
-                                            color: "var(--hms-gray-900)",
-                                        }}
-                                    >
-                                        {value}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                        <div
-                            style={{
-                                marginTop: 12,
-                                paddingTop: 12,
-                                borderTop: "1px solid var(--hms-gray-200)",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontSize: 12,
-                                    fontWeight: 500,
-                                    color: "var(--hms-gray-500)",
-                                }}
-                            >
-                                Total clinical hours / week
-                            </span>
-                            <span
-                                style={{
-                                    fontSize: 18,
-                                    fontWeight: 700,
-                                    color: "var(--hms-gray-900)",
-                                }}
-                            >
-                                {fmtDuration(totalMinPerWeek)}
-                            </span>
-                        </div>
-                    </div>
+                    {scheduleFields}
+                    {schedulePreview}
                 </div>
             </div>
         </Modal>

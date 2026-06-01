@@ -1111,3 +1111,851 @@
     font-size: 11px;
     color: var(--hms-gray-500);
 }
+
+
+/* ─────────────────────────── DoctorFormModal: identity header (Drawer edit mode) ─────────────────────────── */
+.hms-doctor-identity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--hms-gray-50);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: var(--hms-radius);
+}
+
+.hms-doctor-identity__body {
+    min-width: 0;
+}
+
+.hms-doctor-identity__name {
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    font-size: 15px;
+}
+
+.hms-doctor-identity__email {
+    font-size: 13px;
+    color: var(--hms-gray-500);
+    margin-top: 2px;
+}
+
+
+/* ─────────────────────────── DoctorFormModal: specialisation chip picker ─────────────────────────── */
+.hms-spec-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--hms-info-bg);
+    color: #0369a1;
+    border: 1px solid var(--hms-info-border);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.hms-spec-chip__remove {
+    background: transparent;
+    border: none;
+    color: #0369a1;
+    cursor: pointer;
+    line-height: 0;
+    padding: 0;
+}
+
+.hms-spec-chip__max {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+}
+
+
+/* ─────────────────────────── DoctorFormModal: weekly schedule preview ─────────────────────────── */
+.hms-schedule-preview {
+    padding: 16px;
+    background: var(--hms-gray-50);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: var(--hms-radius);
+}
+
+.hms-schedule-preview__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.hms-schedule-preview__tile {
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+}
+
+.hms-schedule-preview__label {
+    margin: 0;
+    font-size: 10px;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-schedule-preview__value {
+    margin: 4px 0 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.hms-schedule-preview__total {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--hms-gray-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hms-schedule-preview__total-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--hms-gray-500);
+}
+
+.hms-schedule-preview__total-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+
+/* ─────────────────────────── DoctorFormModal: section + day-pill row ─────────────────────────── */
+.hms-day-pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.hms-doctor-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+
+/* ─────────────────────────── AdmitPatientModal: patient picker (selected + search) ─────────────────────────── */
+.hms-patient-pick {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--hms-gray-50);
+    border: 1px solid var(--hms-gray-200);
+}
+
+.hms-patient-pick__identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hms-patient-pick__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--hms-gray-200);
+    color: var(--hms-gray-600);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hms-patient-pick__name {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-900);
+}
+
+.hms-patient-pick__sub {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-patient-pick__change {
+    background: transparent;
+    border: none;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--hms-gray-600);
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: var(--hms-font-family);
+}
+
+
+/* AdmitPatientModal: patient search input + suggest dropdown */
+.hms-patient-search {
+    position: relative;
+}
+
+.hms-patient-search__icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--hms-gray-400);
+    pointer-events: none;
+}
+
+.hms-patient-search__input {
+    padding-left: 36px;
+}
+
+.hms-patient-suggest {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 8px;
+    box-shadow: var(--hms-shadow-lg);
+    z-index: 10;
+    overflow: hidden;
+}
+
+.hms-patient-suggest__item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--hms-font-family);
+    transition: background 0.15s;
+}
+
+.hms-patient-suggest__item:hover {
+    background: var(--hms-gray-50);
+}
+
+.hms-patient-suggest__name {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--hms-gray-900);
+}
+
+.hms-patient-suggest__sub {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+
+/* ─────────────────────────── AdmitPatientModal: bed selector grid ─────────────────────────── */
+.hms-bed-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+}
+
+.hms-bed-chip {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--hms-success-border);
+    background: var(--hms-success-bg);
+    color: #166534;
+    font-family: var(--hms-font-family);
+}
+
+.hms-bed-chip.is-on {
+    border-color: var(--hms-brand-primary);
+    background: var(--hms-brand-primary);
+    color: var(--hms-white);
+}
+
+.hms-bed-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    color: var(--hms-gray-400);
+    font-size: 13px;
+}
+
+.hms-bed-empty {
+    margin: 0;
+    font-size: 13px;
+    color: var(--hms-danger);
+}
+
+
+/* ─────────────────────────── AdmitPatientModal: payment-category cards ─────────────────────────── */
+.hms-pay-card {
+    text-align: left;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 2px solid var(--hms-gray-200);
+    background: var(--hms-white);
+    font-family: var(--hms-font-family);
+}
+
+.hms-pay-card.is-on {
+    border-color: var(--hms-brand-primary);
+    background: var(--hms-gray-50);
+}
+
+.hms-pay-card__label {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-600);
+}
+
+.hms-pay-card.is-on .hms-pay-card__label {
+    color: var(--hms-gray-900);
+}
+
+.hms-pay-card__desc {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+}
+
+
+/* ─────────────────────────── AdmitPatientModal: advance block + summary ─────────────────────────── */
+.hms-advance-block {
+    padding-top: 16px;
+    border-top: 1px solid var(--hms-gray-100);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hms-advance-hint {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+}
+
+.hms-advance-account-hint {
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--hms-gray-400);
+}
+
+.hms-advance-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--hms-gray-500);
+    padding: 8px 0;
+}
+
+.hms-admit-summary {
+    padding: 16px;
+    border-radius: 8px;
+    background: var(--hms-gray-50);
+    border: 1px solid var(--hms-gray-200);
+    font-size: 13px;
+}
+
+.hms-admit-summary__title {
+    margin: 0 0 8px;
+    font-weight: 600;
+    color: var(--hms-gray-700);
+}
+
+.hms-admit-summary__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0 16px;
+    color: var(--hms-gray-600);
+}
+
+
+/* ─────────────────────────── DischargeModal: fullscreen split-pane shell ─────────────────────────── */
+.hms-discharge-shell {
+    position: fixed;
+    inset: 0;
+    background: var(--hms-white);
+    z-index: var(--hms-z-modal-overlay);
+    display: flex;
+    overflow: hidden;
+}
+
+.hms-discharge-left {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border-right: 1px solid var(--hms-gray-200);
+}
+
+.hms-discharge-right {
+    width: 340px;
+    flex-shrink: 0;
+    background: var(--hms-gray-50);
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.hms-discharge-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--hms-gray-100);
+    flex-shrink: 0;
+}
+
+.hms-discharge-header__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hms-discharge-header__sub {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-discharge-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hms-discharge-footer {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--hms-gray-100);
+    background: var(--hms-gray-50);
+}
+
+
+/* DischargeModal: follow-up checkbox card */
+.hms-discharge-followup {
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-200);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hms-discharge-followup__label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.hms-discharge-followup__checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--hms-brand-primary);
+    cursor: pointer;
+}
+
+.hms-discharge-followup__text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hms-discharge-followup__indent {
+    padding-left: 28px;
+}
+
+
+/* DischargeModal: patient summary block (right pane) */
+.hms-discharge-patient {
+    /* container — uses flex from parent */
+}
+
+.hms-discharge-patient__label {
+    margin: 0 0 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-discharge-patient__name {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    line-height: 1.2;
+}
+
+.hms-discharge-patient__uhid {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+
+/* DischargeModal: stacked key/value list */
+.hms-discharge-summary {
+    border-radius: 12px;
+    border: 1px solid var(--hms-gray-200);
+    background: var(--hms-white);
+    overflow: hidden;
+}
+
+.hms-discharge-summary__row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--hms-gray-100);
+}
+
+.hms-discharge-summary__row:first-child {
+    border-top: none;
+}
+
+.hms-discharge-summary__label {
+    font-size: 11px;
+    color: var(--hms-gray-500);
+    flex-shrink: 0;
+    padding-top: 2px;
+}
+
+.hms-discharge-summary__value {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+    text-align: right;
+}
+
+
+/* DischargeModal: billing status card (4 tones) */
+.hms-bill-card {
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-200);
+    background: var(--hms-gray-50);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.hms-bill-card.is-clear {
+    background: var(--hms-success-bg);
+    border-color: var(--hms-success-border);
+}
+
+.hms-bill-card.is-partial {
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.hms-bill-card.is-unpaid {
+    background: var(--hms-danger-bg);
+    border-color: var(--hms-danger-border);
+}
+
+.hms-bill-card__icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--hms-gray-400);
+}
+
+.hms-bill-card.is-clear   .hms-bill-card__icon { color: var(--hms-success); }
+.hms-bill-card.is-partial .hms-bill-card__icon { color: #c2410c; }
+.hms-bill-card.is-unpaid  .hms-bill-card__icon { color: var(--hms-danger); }
+
+.hms-bill-card__title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.hms-bill-card__sub {
+    margin: 2px 0 0;
+    font-size: 11px;
+}
+
+.hms-bill-card.is-clear   .hms-bill-card__title,
+.hms-bill-card.is-clear   .hms-bill-card__sub   { color: #166534; }
+.hms-bill-card.is-partial .hms-bill-card__title,
+.hms-bill-card.is-partial .hms-bill-card__sub   { color: #c2410c; }
+.hms-bill-card.is-unpaid  .hms-bill-card__title,
+.hms-bill-card.is-unpaid  .hms-bill-card__sub   { color: #dc2626; }
+
+.hms-bill-card .hms-bill-card__title.is-pending,
+.hms-bill-card .hms-bill-card__sub.is-pending   { color: var(--hms-gray-500); font-weight: 600; }
+
+
+/* ─────────────────────────── MoveToOTModal / DischargeModal: loading row + room radio rows ─────────────────────────── */
+.hms-modal-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px;
+    color: var(--hms-gray-400);
+    font-size: 13px;
+}
+
+.hms-room-radio-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hms-room-radio {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-200);
+    background: var(--hms-white);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.hms-room-radio.is-on {
+    border-color: var(--hms-brand-primary);
+    background: var(--hms-gray-50);
+}
+
+.hms-room-radio__input {
+    accent-color: var(--hms-brand-primary);
+    cursor: pointer;
+}
+
+.hms-room-radio__name {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+}
+
+.hms-room-radio__sub {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-room-empty {
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--hms-warning-border);
+    background: var(--hms-warning-bg);
+    color: #92400e;
+    font-size: 13px;
+}
+
+
+/* ─────────────────────────── ViewBillingModal: loading + empty + bill table ─────────────────────────── */
+.hms-bill-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 80px 0;
+}
+
+.hms-bill-loading__icon { color: var(--hms-gray-700); }
+
+.hms-bill-loading__text {
+    margin: 0;
+    font-size: 13px;
+    color: var(--hms-gray-500);
+}
+
+.hms-bill-empty {
+    padding: 48px 16px;
+    text-align: center;
+    border: 2px dashed var(--hms-gray-200);
+    border-radius: 8px;
+}
+
+.hms-bill-empty__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--hms-gray-500);
+}
+
+.hms-bill-empty__sub {
+    margin: 4px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+}
+
+.hms-bill-table {
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.hms-bill-table__head,
+.hms-bill-table__row {
+    display: grid;
+    grid-template-columns: 1.4fr 2.4fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 10px 16px;
+}
+
+.hms-bill-table__head {
+    background: var(--hms-gray-50);
+    border-bottom: 1px solid var(--hms-gray-100);
+}
+
+.hms-bill-table__row {
+    align-items: center;
+    border-bottom: 1px solid var(--hms-gray-50);
+}
+
+.hms-bill-table__head-cell {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-bill-table__head-cell.is-center { text-align: center; }
+.hms-bill-table__head-cell.is-right  { text-align: right; }
+
+.hms-bill-table__cell {
+    font-size: 13px;
+    color: var(--hms-gray-600);
+    font-variant-numeric: tabular-nums;
+}
+
+.hms-bill-table__cell.is-center { text-align: center; }
+.hms-bill-table__cell.is-right  { text-align: right; }
+
+.hms-bill-table__desc {
+    font-size: 13px;
+    color: var(--hms-gray-700);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-bill-table__total {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-800);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* Bill item type pill — TYPE_META modifiers */
+.hms-bill-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.hms-bill-type.is-room          { background: #fff7ed; color: #c2410c; }
+.hms-bill-type.is-consultation  { background: var(--hms-info-bg); color: #0369a1; }
+.hms-bill-type.is-radiology     { background: #f5f3ff; color: #6d28d9; }
+.hms-bill-type.is-lab           { background: #f0fdfa; color: #0f766e; }
+.hms-bill-type.is-medicine      { background: var(--hms-success-bg); color: #166534; }
+.hms-bill-type.is-custom        { background: var(--hms-gray-100); color: var(--hms-gray-600); }
+
+
+/* Bill totals block */
+.hms-bill-totals {
+    padding: 16px;
+    border-top: 1px solid var(--hms-gray-100);
+    display: flex;
+    justify-content: flex-end;
+    background: var(--hms-gray-50);
+}
+
+.hms-bill-totals__inner {
+    width: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.hms-bill-totals__row {
+    display: flex;
+    justify-content: space-between;
+    color: var(--hms-gray-500);
+}
+
+.hms-bill-totals__row span:last-child {
+    font-variant-numeric: tabular-nums;
+}
+
+.hms-bill-totals__row.is-subtotal span:last-child {
+    font-weight: 600;
+}
+
+.hms-bill-totals__row.is-grand {
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    font-size: 15px;
+    border-top: 1px solid var(--hms-gray-100);
+    padding-top: 10px;
+    margin-top: 4px;
+}
+
+.hms-bill-totals__row.is-grand span:last-child {
+    color: var(--hms-info);
+}
+
+.hms-bill-disclaimer {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+    text-align: center;
+}

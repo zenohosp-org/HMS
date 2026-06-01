@@ -1344,6 +1344,83 @@
 }
 
 
+/* ---------- Form grid (2/3/4-col responsive inputs) ---------- */
+.hms-form-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.hms-form-grid.is-2col { grid-template-columns: 1fr 1fr; }
+.hms-form-grid.is-3col { grid-template-columns: 1fr 1fr 1fr; }
+.hms-form-grid.is-4col { grid-template-columns: repeat(4, 1fr); }
+
+
+/* ---------- Form section + section head (icon + bold + bottom rule) ---------- */
+.hms-form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hms-form-section-list {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.hms-section-head {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    border-bottom: 1px solid var(--hms-gray-200);
+    padding-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hms-section-head__icon {
+    color: var(--hms-gray-700);
+    display: inline-flex;
+}
+
+/* Tone variants for the icon — match Badge tones */
+.hms-section-head__icon.is-success { color: var(--hms-success); }
+.hms-section-head__icon.is-warning { color: var(--hms-warning); }
+.hms-section-head__icon.is-info    { color: var(--hms-info); }
+.hms-section-head__icon.is-danger  { color: var(--hms-danger); }
+
+
+/* ---------- Form: span-2 helper (place a single input across both grid cols) ---------- */
+.hms-form-grid > .is-span-2 { grid-column: 1 / -1; }
+
+
+/* ---------- Modal title with icon tile (used in Modal `title` prop) ---------- */
+.hms-modal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hms-modal-title-row__body {
+    min-width: 0;
+}
+
+.hms-modal-title-row__title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.hms-modal-title-row__subtitle {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+
 /* ---------- KV row (key-value display) ---------- */
 .hms-kv__label {
     margin: 0;

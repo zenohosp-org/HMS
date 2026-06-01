@@ -8,7 +8,6 @@ import {
     LogOut,
     CheckCircle2,
     Calendar,
-    Loader2,
     AlertCircle,
     IndianRupee,
 } from "lucide-react";
@@ -26,15 +25,10 @@ function fmt(n) {
 
 /**
  * Discharge workflow modal. Fullscreen split-pane (clinical form on
- * the left, patient summary + bill status on the right) — the
- * pre-migration UX took the entire viewport because the discharge
- * checklist is read top-to-bottom and the summary needs to stay
- * pinned. Preserved as-is, only the styling is moved to hms-* tokens.
- *
- * Phase 8c migration: data layer untouched (admissionApi.discharge,
- * invoiceApi.getAdmissionInvoice), same bill-gate rejection handling
- * (INVOICE_UNPAID error), same submit-disabled rule when bill is not
- * cleared.
+ * the left, patient summary + bill status on the right). Layout pieces
+ * live in admin.css under .hms-discharge-* — left/right panes, headers,
+ * footers, follow-up checkbox card, stacked summary list, and the
+ * 4-tone .hms-bill-card (pending / clear / partial / unpaid).
  */
 export default function DischargeModal({ admission, onClose, onDischarged }) {
     const { notify } = useNotification();
@@ -111,55 +105,15 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
     if (!host) return null;
 
     return createPortal(
-        <div
-            style={{
-                position: "fixed",
-                inset: 0,
-                background: "var(--hms-white)",
-                zIndex: "var(--hms-z-modal-overlay)",
-                display: "flex",
-                overflow: "hidden",
-            }}
-            role="dialog"
-            aria-modal="true"
-        >
+        <div className="hms-discharge-shell" role="dialog" aria-modal="true">
             {/* Left panel — clinical form */}
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    flex: 1,
-                    minWidth: 0,
-                    height: "100%",
-                    borderRight: "1px solid var(--hms-gray-200)",
-                }}
-            >
-                {/* Header */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "16px 24px",
-                        borderBottom: "1px solid var(--hms-gray-100)",
-                        flexShrink: 0,
-                    }}
-                >
+            <div className="hms-discharge-left">
+                <div className="hms-discharge-header">
                     <div>
-                        <h2
-                            style={{
-                                margin: 0,
-                                fontSize: 15,
-                                fontWeight: 700,
-                                color: "var(--hms-gray-900)",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 8,
-                            }}
-                        >
-                            <LogOut size={16} style={{ color: "var(--hms-danger)" }} /> Discharge patient
+                        <h2 className="hms-discharge-header__title">
+                            <LogOut size={16} className="text-danger" /> Discharge patient
                         </h2>
-                        <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--hms-gray-500)" }}>
+                        <p className="hms-discharge-header__sub">
                             {admission.patientName} · {fmtId(admission.admissionNumber)}
                         </p>
                     </div>
@@ -173,17 +127,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
                     </button>
                 </div>
 
-                {/* Clinical fields */}
-                <div
-                    style={{
-                        flex: 1,
-                        overflowY: "auto",
-                        padding: 24,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 16,
-                    }}
-                >
+                <div className="hms-discharge-body">
                     {billStatus && !billClear && (
                         <Alert
                             tone="danger"
@@ -249,53 +193,23 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
                         />
                     </FormGroup>
 
-                    <div
-                        style={{
-                            borderRadius: 8,
-                            border: "1px solid var(--hms-gray-200)",
-                            padding: 16,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 12,
-                        }}
-                    >
-                        <label
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 12,
-                                cursor: "pointer",
-                            }}
-                        >
+                    <div className="hms-discharge-followup">
+                        <label className="hms-discharge-followup__label">
                             <input
                                 type="checkbox"
                                 checked={clinical.createFollowUp}
                                 onChange={(e) =>
                                     setClinical((c) => ({ ...c, createFollowUp: e.target.checked }))
                                 }
-                                style={{
-                                    width: 16,
-                                    height: 16,
-                                    accentColor: "var(--hms-brand-primary)",
-                                    cursor: "pointer",
-                                }}
+                                className="hms-discharge-followup__checkbox"
                             />
-                            <span
-                                style={{
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    color: "var(--hms-gray-800)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                }}
-                            >
-                                <Calendar size={14} style={{ color: "var(--hms-gray-400)" }} />
+                            <span className="hms-discharge-followup__text">
+                                <Calendar size={14} className="text-gray-400" />
                                 Schedule OPD follow-up
                             </span>
                         </label>
                         {clinical.createFollowUp && (
-                            <div style={{ paddingLeft: 28 }}>
+                            <div className="hms-discharge-followup__indent">
                                 <FormGroup label="Follow-up date *">
                                     <Input
                                         type="date"
@@ -310,19 +224,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div
-                    style={{
-                        flexShrink: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        gap: 12,
-                        padding: "16px 24px",
-                        borderTop: "1px solid var(--hms-gray-100)",
-                        background: "var(--hms-gray-50)",
-                    }}
-                >
+                <div className="hms-discharge-footer">
                     <Button variant="cancel" onClick={onClose}>
                         Cancel
                     </Button>
@@ -347,58 +249,18 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
             </div>
 
             {/* Right panel — patient summary */}
-            <div
-                style={{
-                    width: 340,
-                    flexShrink: 0,
-                    background: "var(--hms-gray-50)",
-                    overflowY: "auto",
-                    padding: 24,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 20,
-                }}
-            >
+            <div className="hms-discharge-right">
                 <div>
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: "var(--hms-gray-400)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.06em",
-                            marginBottom: 8,
-                        }}
-                    >
-                        Patient
-                    </p>
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 20,
-                            fontWeight: 700,
-                            color: "var(--hms-gray-900)",
-                            lineHeight: 1.2,
-                        }}
-                    >
-                        {admission.patientName}
-                    </p>
+                    <p className="hms-discharge-patient__label">Patient</p>
+                    <p className="hms-discharge-patient__name">{admission.patientName}</p>
                     {(admission.patientUhid || admission.uhid) && (
-                        <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--hms-gray-500)" }}>
+                        <p className="hms-discharge-patient__uhid">
                             UHID: {fmtId(admission.patientUhid || admission.uhid)}
                         </p>
                     )}
                 </div>
 
-                <div
-                    style={{
-                        borderRadius: 12,
-                        border: "1px solid var(--hms-gray-200)",
-                        background: "var(--hms-white)",
-                        overflow: "hidden",
-                    }}
-                >
+                <div className="hms-discharge-summary">
                     {[
                         ["Admission no.", fmtId(admission.admissionNumber)],
                         ["IPD no.", admission.ipdNumber || admission.ipd_number || null],
@@ -437,43 +299,14 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
                         ],
                     ]
                         .filter(([, v]) => v !== null)
-                        .map(([label, value], idx) => (
-                            <div
-                                key={label}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    justifyContent: "space-between",
-                                    gap: 12,
-                                    padding: "12px 16px",
-                                    borderTop: idx === 0 ? "none" : "1px solid var(--hms-gray-100)",
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontSize: 11,
-                                        color: "var(--hms-gray-500)",
-                                        flexShrink: 0,
-                                        paddingTop: 2,
-                                    }}
-                                >
-                                    {label}
-                                </span>
-                                <span
-                                    style={{
-                                        fontSize: 11,
-                                        fontWeight: 600,
-                                        color: "var(--hms-gray-800)",
-                                        textAlign: "right",
-                                    }}
-                                >
-                                    {value}
-                                </span>
+                        .map(([label, value]) => (
+                            <div key={label} className="hms-discharge-summary__row">
+                                <span className="hms-discharge-summary__label">{label}</span>
+                                <span className="hms-discharge-summary__value">{value}</span>
                             </div>
                         ))}
                 </div>
 
-                {/* Billing status card */}
                 <BillingStatusCard
                     billStatus={billStatus}
                     billClear={billClear}
@@ -491,58 +324,34 @@ function BillingStatusCard({ billStatus, billClear, billTotal, billPaid, balance
     const fmtLocal = (n) =>
         "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
-    const tone =
+    const mod =
         billStatus === null
-            ? { bg: "var(--hms-gray-50)", border: "var(--hms-gray-200)", iconColor: "var(--hms-gray-400)" }
+            ? ""
             : billClear
-                ? {
-                    bg: "var(--hms-success-bg)",
-                    border: "var(--hms-success-border)",
-                    iconColor: "var(--hms-success)",
-                }
+                ? "is-clear"
                 : billStatus === "PARTIAL"
-                    ? { bg: "#fff7ed", border: "#fed7aa", iconColor: "#c2410c" }
-                    : {
-                        bg: "var(--hms-danger-bg)",
-                        border: "var(--hms-danger-border)",
-                        iconColor: "var(--hms-danger)",
-                    };
+                    ? "is-partial"
+                    : "is-unpaid";
 
     return (
-        <div
-            style={{
-                padding: 14,
-                borderRadius: 8,
-                border: `1px solid ${tone.border}`,
-                background: tone.bg,
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 12,
-            }}
-        >
-            <IndianRupee size={16} style={{ color: tone.iconColor, flexShrink: 0, marginTop: 2 }} />
+        <div className={`hms-bill-card ${mod}`}>
+            <IndianRupee size={16} className="hms-bill-card__icon" />
             <div>
                 {billStatus === null && (
-                    <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "var(--hms-gray-500)" }}>
-                        Checking bill…
-                    </p>
+                    <p className="hms-bill-card__title is-pending">Checking bill…</p>
                 )}
                 {billClear && (
                     <>
-                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#166534" }}>
-                            Bill fully settled
-                        </p>
-                        <p style={{ margin: "2px 0 0", fontSize: 11, color: "#166534" }}>
+                        <p className="hms-bill-card__title">Bill fully settled</p>
+                        <p className="hms-bill-card__sub">
                             {fmtLocal(billTotal)} settled — patient can be discharged.
                         </p>
                     </>
                 )}
                 {billStatus === "PARTIAL" && (
                     <>
-                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#c2410c" }}>
-                            Partial payment received
-                        </p>
-                        <p style={{ margin: "2px 0 0", fontSize: 11, color: "#c2410c" }}>
+                        <p className="hms-bill-card__title">Partial payment received</p>
+                        <p className="hms-bill-card__sub">
                             {fmtLocal(billPaid)} paid · <strong>{fmtLocal(balanceDue)} still due</strong>.
                             Collect balance in Billing tab.
                         </p>
@@ -550,10 +359,8 @@ function BillingStatusCard({ billStatus, billClear, billTotal, billPaid, balance
                 )}
                 {(billStatus === "UNPAID" || billStatus === "UNSETTLED") && (
                     <>
-                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#dc2626" }}>
-                            Bill not settled
-                        </p>
-                        <p style={{ margin: "2px 0 0", fontSize: 11, color: "#dc2626" }}>
+                        <p className="hms-bill-card__title">Bill not settled</p>
+                        <p className="hms-bill-card__sub">
                             Finalize and settle{" "}
                             {billTotal > 0 ? fmtLocal(billTotal) : "the bill"} in the Billing tab before
                             discharging.
