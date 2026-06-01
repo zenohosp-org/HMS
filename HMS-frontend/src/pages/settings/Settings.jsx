@@ -7,7 +7,7 @@ import InfrastructureMapping from "@/pages/ipd/InfrastructureMapping";
  */
 export default function Settings() {
     return (
-        <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+        <div className="flex flex-col flex-1">
             <InfrastructureMapping />
         </div>
     );

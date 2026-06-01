@@ -1417,13 +1417,12 @@
 }
 
 
-/* ---------- Empty cell (inside table body) ---------- */
+/* ---------- Empty cell (inside table body — composes inside .hms-loading) ---------- */
 .hms-cell-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    padding: 16px 0;
 }
 
 .hms-cell-empty__icon {

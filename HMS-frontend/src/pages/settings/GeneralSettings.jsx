@@ -34,7 +34,7 @@ const FEATURE_META = {
     },
 };
 
-/** Switch — design-system styled toggle for feature flags. */
+/** Design-system styled toggle switch — backed by .hms-toggle. */
 function ToggleSwitch({ checked, onChange, disabled }) {
     return (
         <button
@@ -43,35 +43,9 @@ function ToggleSwitch({ checked, onChange, disabled }) {
             aria-checked={checked}
             disabled={disabled}
             onClick={() => !disabled && onChange(!checked)}
-            style={{
-                position: "relative",
-                display: "inline-flex",
-                width: 44,
-                height: 24,
-                flexShrink: 0,
-                cursor: disabled ? "not-allowed" : "pointer",
-                opacity: disabled ? 0.5 : 1,
-                borderRadius: 999,
-                border: "2px solid transparent",
-                background: checked ? "var(--hms-success)" : "var(--hms-gray-300)",
-                transition: "background 0.2s",
-                padding: 0,
-                fontFamily: "var(--hms-font-family)",
-            }}
+            className={`hms-toggle ${checked ? "is-on" : ""}`}
         >
-            <span
-                style={{
-                    pointerEvents: "none",
-                    display: "inline-block",
-                    width: 20,
-                    height: 20,
-                    borderRadius: 999,
-                    background: "var(--hms-white)",
-                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
-                    transform: `translateX(${checked ? 20 : 0}px)`,
-                    transition: "transform 0.2s",
-                }}
-            />
+            <span className="hms-toggle__handle" />
         </button>
     );
 }
@@ -80,9 +54,6 @@ function ToggleSwitch({ checked, onChange, disabled }) {
  * General settings — per-hospital feature flags. Toggling a row hides
  * the corresponding module from the sidebar; data and API endpoints
  * remain available even when disabled.
- *
- * Phase 9 migration: data layer unchanged (useFeatureFlags context),
- * same per-row spinner during in-flight setFlag, same notify copy.
  */
 export default function GeneralSettings() {
     const { flags, supported, loading, setFlag } = useFeatureFlags();
@@ -117,130 +88,48 @@ export default function GeneralSettings() {
     };
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
             <PageHeader
                 title="General settings"
                 subtitle="Enable or disable modules across the hospital. Disabling a module only hides it from the sidebar — existing data and API endpoints remain available."
             />
 
-            <div style={{ padding: "0 24px 24px" }}>
-                <Card style={{ padding: 0, overflow: "hidden" }}>
+            <div className="hms-page-content">
+                <Card className="p-0 overflow-hidden">
                     {loading ? (
-                        <div
-                            style={{
-                                padding: "80px 0",
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                gap: 12,
-                            }}
-                        >
-                            <Loader2
-                                size={32}
-                                style={{ color: "var(--hms-gray-700)" }}
-                                className="animate-spin"
-                            />
-                            <p style={{ margin: 0, fontSize: 13, color: "var(--hms-gray-500)" }}>
-                                Loading settings…
-                            </p>
+                        <div className="hms-loader-stack">
+                            <Loader2 size={32} className="animate-spin text-gray-700" />
+                            <p className="m-0 text-13 text-gray-500">Loading settings…</p>
                         </div>
                     ) : (
-                        <ul
-                            style={{
-                                margin: 0,
-                                padding: 0,
-                                listStyle: "none",
-                            }}
-                        >
-                            {rows.map(({ key, meta, enabled }, idx) => {
+                        <ul className="hms-settings-list">
+                            {rows.map(({ key, meta, enabled }) => {
                                 const Icon = meta.icon;
                                 const isSaving = savingKey === key;
                                 return (
-                                    <li
-                                        key={key}
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                            gap: 24,
-                                            padding: "20px 24px",
-                                            borderTop:
-                                                idx === 0 ? "none" : "1px solid var(--hms-gray-100)",
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 16,
-                                                minWidth: 0,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: 40,
-                                                    height: 40,
-                                                    borderRadius: 8,
-                                                    background: "var(--hms-gray-100)",
-                                                    color: "var(--hms-gray-600)",
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    flexShrink: 0,
-                                                }}
-                                            >
+                                    <li key={key} className="hms-settings-list__item">
+                                        <div className="hms-settings-list__main">
+                                            <span className="hms-icon-tile is-md">
                                                 <Icon size={20} />
-                                            </div>
-                                            <div style={{ minWidth: 0 }}>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 8,
-                                                    }}
-                                                >
-                                                    <p
-                                                        style={{
-                                                            margin: 0,
-                                                            fontWeight: 600,
-                                                            fontSize: 15,
-                                                            color: "var(--hms-gray-900)",
-                                                        }}
-                                                    >
-                                                        {meta.label}
-                                                    </p>
+                                            </span>
+                                            <div className="hms-settings-list__body">
+                                                <p className="hms-settings-list__title">
+                                                    {meta.label}
                                                     <Badge tone={enabled ? "success" : "neutral"} soft>
                                                         {enabled ? "Enabled" : "Disabled"}
                                                     </Badge>
-                                                </div>
+                                                </p>
                                                 {meta.description && (
-                                                    <p
-                                                        style={{
-                                                            margin: "4px 0 0",
-                                                            fontSize: 13,
-                                                            color: "var(--hms-gray-500)",
-                                                        }}
-                                                    >
+                                                    <p className="hms-settings-list__description">
                                                         {meta.description}
                                                     </p>
                                                 )}
                                             </div>
                                         </div>
 
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 12,
-                                                flexShrink: 0,
-                                            }}
-                                        >
+                                        <div className="hms-settings-list__actions">
                                             {isSaving && (
-                                                <Loader2
-                                                    size={16}
-                                                    style={{ color: "var(--hms-gray-400)" }}
-                                                    className="animate-spin"
-                                                />
+                                                <Loader2 size={16} className="animate-spin text-gray-400" />
                                             )}
                                             <ToggleSwitch
                                                 checked={enabled}

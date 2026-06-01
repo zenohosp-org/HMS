@@ -25,11 +25,9 @@ const EMPTY_FORM = {
 
 /**
  * Patient service add / edit form. Edit mode opens as a right-edge
- * Drawer; create mode as a centred Modal — same asymmetric UX used
- * across other Add/Edit pairs.
- *
- * The shape of the request payload (FOOD vs non-FOOD nullables,
- * REGISTRATION oneTimeCharge gating) is preserved byte-for-byte.
+ * Drawer; create mode as a centred Modal. The shape of the request
+ * payload (FOOD vs non-FOOD nullables, REGISTRATION oneTimeCharge
+ * gating) is preserved byte-for-byte.
  */
 function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSuccess }) {
     const { notify } = useNotification();
@@ -95,13 +93,13 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
     };
 
     const formId = "patient-service-form";
-    const required = <span style={{ color: "var(--hms-danger)" }}>*</span>;
+    const required = <span className="text-danger">*</span>;
 
     const formBody = (
         <form
             id={formId}
             onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: 16 }}
+            className="flex flex-col gap-4"
         >
             <FormGroup label={<>Service name {required}</>}>
                 <Input
@@ -128,7 +126,7 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
 
             {form.type === "FOOD" && (
                 <>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div className="grid grid-cols-2 gap-4">
                         <FormGroup label={<>Meal time {required}</>}>
                             <SearchableSelect
                                 value={form.mealTime}
@@ -190,48 +188,18 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
             )}
 
             {form.type === "REGISTRATION" && (
-                <label
-                    style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 12,
-                        padding: 14,
-                        background: "#eef2ff",
-                        border: "1px solid #c7d2fe",
-                        borderRadius: 8,
-                        cursor: "pointer",
-                    }}
-                >
+                <label className="hms-svc-info-card">
                     <input
                         type="checkbox"
                         checked={form.oneTimeCharge}
                         onChange={(e) => set("oneTimeCharge", e.target.checked)}
-                        style={{
-                            marginTop: 2,
-                            width: 16,
-                            height: 16,
-                            accentColor: "#4338ca",
-                            cursor: "pointer",
-                        }}
+                        className="hms-svc-info-card__checkbox"
                     />
                     <div>
-                        <p
-                            style={{
-                                margin: 0,
-                                fontSize: 13,
-                                fontWeight: 600,
-                                color: "var(--hms-gray-700)",
-                            }}
-                        >
+                        <p className="hms-svc-info-card__title">
                             Charge only once on registration
                         </p>
-                        <p
-                            style={{
-                                margin: "2px 0 0",
-                                fontSize: 11,
-                                color: "var(--hms-gray-500)",
-                            }}
-                        >
+                        <p className="hms-svc-info-card__description">
                             When enabled, this fee is billed once per new patient — not per day
                             during admission.
                         </p>
@@ -239,29 +207,10 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
                 </label>
             )}
 
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: 14,
-                    background: "var(--hms-gray-50)",
-                    border: "1px solid var(--hms-gray-200)",
-                    borderRadius: 8,
-                }}
-            >
+            <div className="hms-svc-active-row">
                 <div>
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: "var(--hms-gray-700)",
-                        }}
-                    >
-                        Active
-                    </p>
-                    <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--hms-gray-500)" }}>
+                    <p className="hms-svc-active-row__title">Active</p>
+                    <p className="hms-svc-active-row__description">
                         Add to patient invoices automatically
                     </p>
                 </div>
@@ -270,33 +219,9 @@ function PatientServiceFormModal({ isOpen, onClose, service, hospitalId, onSucce
                     role="switch"
                     aria-checked={form.isActive}
                     onClick={() => set("isActive", !form.isActive)}
-                    style={{
-                        position: "relative",
-                        width: 44,
-                        height: 24,
-                        borderRadius: 999,
-                        border: "2px solid transparent",
-                        background: form.isActive
-                            ? "var(--hms-success)"
-                            : "var(--hms-gray-300)",
-                        cursor: "pointer",
-                        transition: "background 0.2s",
-                        padding: 0,
-                        flexShrink: 0,
-                    }}
+                    className={`hms-toggle ${form.isActive ? "is-on" : ""}`}
                 >
-                    <span
-                        style={{
-                            display: "inline-block",
-                            width: 20,
-                            height: 20,
-                            borderRadius: 999,
-                            background: "var(--hms-white)",
-                            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
-                            transform: `translateX(${form.isActive ? 20 : 0}px)`,
-                            transition: "transform 0.2s",
-                        }}
-                    />
+                    <span className="hms-toggle__handle" />
                 </button>
             </div>
         </form>

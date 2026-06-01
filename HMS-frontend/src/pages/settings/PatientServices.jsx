@@ -55,9 +55,6 @@ function mealTimeLabel(mealTime) {
 /**
  * Patient services catalogue — food / room-service / convenience /
  * custom / registration fees that get auto-billed during admissions.
- * Phase 9 migration: data layer unchanged (patientServicesApi.list/
- * delete/toggleStatus), client-side search + 30-row pagination,
- * confirm-delete still goes through window.confirm.
  */
 export default function PatientServices() {
     const { user } = useAuth();
@@ -130,25 +127,11 @@ export default function PatientServices() {
             header: "Service",
             width: "32%",
             render: (s) => (
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div
-                        style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 8,
-                            background: "var(--hms-gray-100)",
-                            color: "var(--hms-gray-500)",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                        }}
-                    >
+                <div className="flex items-center gap-3">
+                    <span className="hms-icon-tile is-md">
                         <ConciergeBell size={16} />
-                    </div>
-                    <p style={{ margin: 0, fontWeight: 600, color: "var(--hms-gray-900)", fontSize: 14 }}>
-                        {s.name}
-                    </p>
+                    </span>
+                    <p className="m-0 font-semibold text-gray-900 text-14">{s.name}</p>
                 </div>
             ),
         },
@@ -165,18 +148,14 @@ export default function PatientServices() {
             header: "Meal time",
             width: "14%",
             render: (s) => (
-                <span style={{ fontSize: 13, color: "var(--hms-gray-600)" }}>
-                    {mealTimeLabel(s.mealTime)}
-                </span>
+                <span className="text-13 text-gray-600">{mealTimeLabel(s.mealTime)}</span>
             ),
         },
         {
             header: "Price",
             width: "16%",
             render: (s) => (
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hms-gray-700)" }}>
-                    {priceLabel(s)}
-                </span>
+                <span className="text-13 font-semibold text-gray-700">{priceLabel(s)}</span>
             ),
         },
         {
@@ -206,9 +185,9 @@ export default function PatientServices() {
                         {
                             label: s.isActive ? "Disable" : "Enable",
                             icon: s.isActive ? (
-                                <ToggleLeft size={14} style={{ color: "var(--hms-warning)" }} />
+                                <ToggleLeft size={14} className="text-warning" />
                             ) : (
-                                <ToggleRight size={14} style={{ color: "var(--hms-success)" }} />
+                                <ToggleRight size={14} className="text-success" />
                             ),
                             onClick: () => handleToggle(s),
                         },
@@ -226,14 +205,14 @@ export default function PatientServices() {
     ];
 
     const titleNode = (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+        <span className="inline-flex items-center gap-3">
             Patient services
             <Badge tone="success">{services.length} total</Badge>
         </span>
     );
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
             <PageHeader
                 title={titleNode}
                 actions={
@@ -249,8 +228,8 @@ export default function PatientServices() {
                 }
             />
 
-            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ maxWidth: 480 }}>
+            <div className="hms-page-content">
+                <div className="max-w-lg">
                     <SearchBar
                         value={search}
                         onChange={(v) => {
@@ -266,33 +245,14 @@ export default function PatientServices() {
                     data={paginated}
                     loading={loading}
                     loadingMessage={
-                        <span style={{ color: "var(--hms-gray-500)" }}>Loading services…</span>
+                        <span className="text-gray-500">Loading services…</span>
                     }
                     emptyMessage={
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                gap: 10,
-                                padding: "16px 0",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: 999,
-                                    background: "var(--hms-gray-100)",
-                                    color: "var(--hms-gray-400)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
+                        <div className="hms-cell-empty">
+                            <span className="hms-cell-empty__icon">
                                 <ConciergeBell size={22} />
-                            </div>
-                            <div style={{ color: "var(--hms-gray-500)", fontSize: 13 }}>
+                            </span>
+                            <div className="hms-cell-empty__text">
                                 {search
                                     ? "No services match your search."
                                     : "No patient services configured yet."}
