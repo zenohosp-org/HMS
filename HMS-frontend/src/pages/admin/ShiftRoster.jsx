@@ -4,302 +4,746 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { shiftsApi, staffApi, doctorsApi } from "@/utils/api";
 import { ChevronLeft, ChevronRight, Loader2, Plus, X, Users } from "lucide-react";
+import { Button, Card } from "@/components/ui";
+
+/** Members visible per group card. Not a table page-size; raising it
+ *  would let one group's roster monopolise the screen — keep at 5. */
 const GROUP_PAGE_SIZE = 5;
+
+/** Shift type palette — kept inline (page-specific, not a candidate
+ *  for the design-system tone set). Each entry drives the legend dot,
+ *  the day-cell badge, and the popover row. */
 const SHIFTS = [
-  {
-    type: "ON_CALL",
-    label: "On Call",
-    time: "00:00\u201323:59",
-    dot: "bg-slate-400",
-    textCls: "text-slate-600 dark:text-[#aaaaaa]",
-    badgeCls: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#aaaaaa] dark:border-[#333333]"
-  },
-  {
-    type: "MORNING",
-    label: "Morning",
-    time: "06:00\u201314:00",
-    dot: "bg-amber-400",
-    textCls: "text-amber-600 dark:text-amber-400",
-    badgeCls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
-  },
-  {
-    type: "GENERAL",
-    label: "General",
-    time: "09:00\u201317:00",
-    dot: "bg-blue-400",
-    textCls: "text-blue-600 dark:text-blue-400",
-    badgeCls: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20"
-  },
-  {
-    type: "AFTERNOON",
-    label: "Afternoon",
-    time: "14:00\u201322:00",
-    dot: "bg-orange-400",
-    textCls: "text-orange-600 dark:text-orange-400",
-    badgeCls: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20"
-  },
-  {
-    type: "NIGHT",
-    label: "Night",
-    time: "22:00\u201306:00",
-    dot: "bg-slate-600",
-    textCls: "text-slate-900 dark:text-white dark:text-slate-300",
-    badgeCls: "bg-slate-100 text-slate-900 dark:text-white border-slate-200 dark:bg-[#1e1e1e] dark:text-slate-300 dark:border-[#333333]"
-  }
+    {
+        type: "ON_CALL",
+        label: "On call",
+        time: "00:00–23:59",
+        dot: "var(--hms-gray-400)",
+        badge: { bg: "var(--hms-gray-100)", color: "var(--hms-gray-600)", border: "var(--hms-gray-200)" },
+    },
+    {
+        type: "MORNING",
+        label: "Morning",
+        time: "06:00–14:00",
+        dot: "#f59e0b",
+        badge: { bg: "var(--hms-warning-bg)", color: "#b45309", border: "var(--hms-warning-border)" },
+    },
+    {
+        type: "GENERAL",
+        label: "General",
+        time: "09:00–17:00",
+        dot: "var(--hms-info)",
+        badge: { bg: "var(--hms-info-bg)", color: "#0369a1", border: "var(--hms-info-border)" },
+    },
+    {
+        type: "AFTERNOON",
+        label: "Afternoon",
+        time: "14:00–22:00",
+        dot: "#fb923c",
+        badge: { bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" },
+    },
+    {
+        type: "NIGHT",
+        label: "Night",
+        time: "22:00–06:00",
+        dot: "#475569",
+        badge: { bg: "var(--hms-gray-100)", color: "var(--hms-gray-800)", border: "var(--hms-gray-300)" },
+    },
 ];
+
 const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 function getMondayOf(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
-  d.setHours(0, 0, 0, 0);
-  return d;
+    const d = new Date(date);
+    const day = d.getDay();
+    d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+    d.setHours(0, 0, 0, 0);
+    return d;
 }
 function addDays(date, n) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
+    const d = new Date(date);
+    d.setDate(d.getDate() + n);
+    return d;
 }
 function toISODate(d) {
-  return d.toISOString().split("T")[0];
+    return d.toISOString().split("T")[0];
 }
-function getAvatarCls(role) {
-  if (role === "doctor") return "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300";
-  if (role === "hospital_admin") return "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300";
-  if (role === "technician") return "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300";
-  return "bg-slate-100 text-slate-900 dark:text-white dark:bg-slate-200 dark:text-slate-300";
+function getAvatarTone(role) {
+    if (role === "doctor") return { bg: "var(--hms-info-bg)", color: "#0369a1" };
+    if (role === "hospital_admin") return { bg: "#fff1f2", color: "#be123c" };
+    if (role === "technician") return { bg: "var(--hms-warning-bg)", color: "#b45309" };
+    return { bg: "var(--hms-gray-100)", color: "var(--hms-gray-700)" };
 }
 function getInitials(name) {
-  const parts = name.trim().split(" ");
-  return (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "");
+    const parts = name.trim().split(" ");
+    return (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "");
 }
+
+/**
+ * ShiftRoster — weekly grid editor for staff shift assignments.
+ *
+ * Phase 8b migration: same data layer (shiftsApi.getWeek/assign/remove,
+ * staffApi.list, doctorsApi.list), same week-pagination math, same
+ * per-group secondary pagination (5 members visible at a time). Each
+ * day-cell still triggers a portalled popover; the popover now uses
+ * the .hms-menu / .hms-menu-item classes added in Phase 6 so it shares
+ * the design-system look used by every other kebab menu in the app.
+ *
+ * Shift colours stay inline — they're domain-specific (ON_CALL gray /
+ * MORNING amber / GENERAL blue / AFTERNOON orange / NIGHT dark) and
+ * don't belong in the global Badge tone set.
+ */
 function ShiftRoster() {
-  const { user } = useAuth();
-  const { notify } = useNotification();
-  const [weekStart, setWeekStart] = useState(() => getMondayOf(/* @__PURE__ */ new Date()));
-  const [shifts, setShifts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [staffOptions, setStaffOptions] = useState([]);
-  const [groupPages, setGroupPages] = useState({});
-  const [popover, setPopover] = useState(null);
-  const [assigningKey, setAssigningKey] = useState(null);
-  const popoverRef = useRef(null);
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const todayStr = toISODate(/* @__PURE__ */ new Date());
-  useEffect(() => {
-    const handler = (e) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
-        setPopover(null);
-      }
+    const { user } = useAuth();
+    const { notify } = useNotification();
+    const [weekStart, setWeekStart] = useState(() => getMondayOf(new Date()));
+    const [shifts, setShifts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [staffOptions, setStaffOptions] = useState([]);
+    const [groupPages, setGroupPages] = useState({});
+    const [popover, setPopover] = useState(null); // { staffId, date, x, y, flipUp }
+    const [assigningKey, setAssigningKey] = useState(null);
+    const popoverRef = useRef(null);
+
+    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const todayStr = toISODate(new Date());
+
+    // Close popover on outside click
+    useEffect(() => {
+        const handler = (e) => {
+            if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+                setPopover(null);
+            }
+        };
+        if (popover) document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [popover]);
+
+    // Close popover on any-ancestor scroll (matches Menu primitive UX)
+    useEffect(() => {
+        if (!popover) return;
+        const close = () => setPopover(null);
+        const onKey = (e) => { if (e.key === "Escape") setPopover(null); };
+        window.addEventListener("scroll", close, true);
+        window.addEventListener("keydown", onKey);
+        return () => {
+            window.removeEventListener("scroll", close, true);
+            window.removeEventListener("keydown", onKey);
+        };
+    }, [popover]);
+
+    const loadStaff = useCallback(async () => {
+        if (!user?.hospitalId) return;
+        const [allUsers, doctors] = await Promise.all([
+            staffApi.list(user.hospitalId),
+            doctorsApi.list(user.hospitalId),
+        ]);
+        const doctorMap = new Map(doctors.map((d) => [d.userId, d]));
+        const options = [];
+        allUsers.forEach((u) => {
+            if (u.role === "super_admin") return;
+            const doc = doctorMap.get(u.id);
+            const role = u.role?.toLowerCase() ?? "staff";
+            let group;
+            if (doc) group = doc.specialization ?? "General Physician";
+            else if (role === "hospital_admin") group = "Administration";
+            else if (role === "technician") group = "Technicians";
+            else group = u.designation ?? "Staff";
+            options.push({
+                id: u.id,
+                name: `${u.firstName} ${u.lastName ?? ""}`.trim(),
+                roleDisplay: doc ? "Doctor" : u.roleDisplay ?? u.role,
+                designation: doc ? doc.qualification ?? undefined : u.designation ?? undefined,
+                group,
+                avatarTone: getAvatarTone(role),
+            });
+        });
+        setStaffOptions(options);
+    }, [user?.hospitalId]);
+
+    const fetchShifts = useCallback(async () => {
+        if (!user?.hospitalId) return;
+        setLoading(true);
+        try {
+            const data = await shiftsApi.getWeek(user.hospitalId, toISODate(weekStart));
+            setShifts(data);
+        } catch {
+            setShifts([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [user?.hospitalId, weekStart]);
+
+    useEffect(() => { loadStaff(); }, [loadStaff]);
+    useEffect(() => { fetchShifts(); }, [fetchShifts]);
+
+    const groups = Array.from(
+        staffOptions.reduce((map, s) => {
+            const list = map.get(s.group) ?? [];
+            list.push(s);
+            map.set(s.group, list);
+            return map;
+        }, new Map())
+    );
+
+    const getShiftsFor = (staffId, date) =>
+        shifts.filter((s) => s.staffId === staffId && s.shiftDate === date);
+
+    const openPopover = (staffId, date, triggerEl) => {
+        const rect = triggerEl.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const flipUp = spaceBelow < 260;
+        setPopover({
+            staffId,
+            date,
+            x: rect.left,
+            y: flipUp ? rect.top : rect.bottom,
+            flipUp,
+        });
     };
-    if (popover) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [popover]);
-  const loadStaff = useCallback(async () => {
-    if (!user?.hospitalId) return;
-    const [allUsers, doctors] = await Promise.all([
-      staffApi.list(user.hospitalId),
-      doctorsApi.list(user.hospitalId)
-    ]);
-    const doctorMap = new Map(doctors.map((d) => [d.userId, d]));
-    const options = [];
-    allUsers.forEach((u) => {
-      if (u.role === "super_admin") return;
-      const doc = doctorMap.get(u.id);
-      const role = u.role?.toLowerCase() ?? "staff";
-      let group;
-      if (doc) {
-        group = doc.specialization ?? "General Physician";
-      } else if (role === "hospital_admin") {
-        group = "Administration";
-      } else if (role === "technician") {
-        group = "Technicians";
-      } else {
-        group = u.designation ?? "Staff";
-      }
-      options.push({
-        id: u.id,
-        name: `${u.firstName} ${u.lastName ?? ""}`.trim(),
-        roleDisplay: doc ? "Doctor" : u.roleDisplay ?? u.role,
-        designation: doc ? doc.qualification ?? void 0 : u.designation ?? void 0,
-        group,
-        avatarCls: getAvatarCls(role)
-      });
-    });
-    setStaffOptions(options);
-  }, [user?.hospitalId]);
-  const fetchShifts = useCallback(async () => {
-    if (!user?.hospitalId) return;
-    setLoading(true);
-    try {
-      const data = await shiftsApi.getWeek(user.hospitalId, toISODate(weekStart));
-      setShifts(data);
-    } catch {
-      setShifts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.hospitalId, weekStart]);
-  useEffect(() => {
-    loadStaff();
-  }, [loadStaff]);
-  useEffect(() => {
-    fetchShifts();
-  }, [fetchShifts]);
-  const groups = Array.from(
-    staffOptions.reduce((map, s) => {
-      const list = map.get(s.group) ?? [];
-      list.push(s);
-      map.set(s.group, list);
-      return map;
-    }, /* @__PURE__ */ new Map())
-  );
-  const getShiftsFor = (staffId, date) => shifts.filter((s) => s.staffId === staffId && s.shiftDate === date);
-  const openPopover = (staffId, date, triggerEl) => {
-    const rect = triggerEl.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const flipUp = spaceBelow < 260;
-    setPopover({
-      staffId,
-      date,
-      x: rect.left,
-      y: flipUp ? rect.top : rect.bottom,
-      flipUp
-    });
-  };
-  const handleAssign = async (shiftType) => {
-    if (!popover || !user?.hospitalId) return;
-    const key = `${popover.staffId}|${popover.date}`;
-    setAssigningKey(key);
-    setPopover(null);
-    try {
-      await shiftsApi.assign({
-        staffId: popover.staffId,
-        hospitalId: user.hospitalId,
-        shiftType,
-        shiftDate: popover.date
-      });
-      fetchShifts();
-    } catch (e) {
-      const msg = e?.response?.data?.message;
-      notify(msg ?? "Could not assign shift", "error");
-    } finally {
-      setAssigningKey(null);
-    }
-  };
-  const handleRemove = async (shiftId) => {
-    try {
-      await shiftsApi.remove(shiftId);
-      fetchShifts();
-    } catch {
-      notify("Could not remove shift", "error");
-    }
-  };
-  const weekLabel = `${weekDays[0].getDate()} ${weekDays[0].toLocaleString("en-IN", { month: "short" })} \u2013 ${weekDays[6].getDate()} ${weekDays[6].toLocaleString("en-IN", { month: "short" })}, ${weekDays[0].getFullYear()}`;
-  return <><div className="space-y-3">{
-    /* ── Top nav card ── */
-  }<div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg px-4 py-3 flex items-center gap-3">{
-    /* Week nav */
-  }<div className="flex items-center gap-1 shrink-0"><button
-    onClick={() => setWeekStart((w) => addDays(w, -7))}
-    className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
-  ><ChevronLeft className="w-3.5 h-3.5" /></button><button
-    onClick={() => setWeekStart(getMondayOf(/* @__PURE__ */ new Date()))}
-    className="px-3 h-7 text-xs font-semibold rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-[#aaaaaa] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
-  >
-                        Today
-                    </button><button
-    onClick={() => setWeekStart((w) => addDays(w, 7))}
-    className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors"
-  ><ChevronRight className="w-3.5 h-3.5" /></button></div>{
-    /* Date range */
-  }<p className="flex-1 text-center text-sm font-bold text-slate-800 dark:text-[#dddddd]">{weekLabel}</p>{
-    /* Compact shift legend */
-  }<div className="flex items-center gap-3 shrink-0">{SHIFTS.map((s) => <span key={s.type} className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-[#888888]"><span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />{s.label}</span>)}</div></div>{
-    /* ── Groups ── */
-  }{loading ? <div className="flex items-center justify-center py-24"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div> : staffOptions.length === 0 ? <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-600 dark:text-[#999999]"><Users className="w-10 h-10 opacity-30" /><p className="text-sm">No staff members found</p></div> : groups.map(([groupName, members]) => {
-    const gPage = groupPages[groupName] ?? 1;
-    const totalGroupPages = Math.ceil(members.length / GROUP_PAGE_SIZE);
-    const visibleMembers = members.slice((gPage - 1) * GROUP_PAGE_SIZE, gPage * GROUP_PAGE_SIZE);
-    const setGPage = (p) => setGroupPages((prev) => ({ ...prev, [groupName]: p }));
-    return <div key={groupName} className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#1e1e1e] rounded-lg overflow-visible">{
-      /* Group header */
-    }<div className="px-4 py-2.5 border-b border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between"><p className="text-xs font-bold text-slate-700 dark:text-[#cccccc] uppercase tracking-wide">{groupName}<span className="ml-2 font-normal text-slate-400 dark:text-[#666666] normal-case">{members.length} {members.length === 1 ? "member" : "members"}</span></p>{totalGroupPages > 1 && <div className="flex items-center gap-1"><button
-      onClick={() => setGPage(Math.max(1, gPage - 1))}
-      disabled={gPage === 1}
-      className="w-6 h-6 flex items-center justify-center rounded border border-slate-200 dark:border-[#2a2a2a] text-slate-400 dark:text-[#666666] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-    ><ChevronLeft className="w-3 h-3" /></button><span className="text-[11px] text-slate-400 dark:text-[#666666] px-1">{gPage}/{totalGroupPages}</span><button
-      onClick={() => setGPage(Math.min(totalGroupPages, gPage + 1))}
-      disabled={gPage === totalGroupPages}
-      className="w-6 h-6 flex items-center justify-center rounded border border-slate-200 dark:border-[#2a2a2a] text-slate-400 dark:text-[#666666] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-    ><ChevronRight className="w-3 h-3" /></button></div>}</div>{
-      /* Group table */
-    }<div className="overflow-x-auto"><table className="w-full min-w-[700px]"><thead><tr className="border-b border-slate-100 dark:border-[#1e1e1e]"><th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-[#999999] w-48">
-                                            Employee
-                                        </th>{weekDays.map((d) => {
-      const ds = toISODate(d);
-      const isToday = ds === todayStr;
-      return <th
-        key={ds}
-        className={`text-center px-2 py-2 text-[11px] font-semibold w-24
-                                                        ${isToday ? "bg-blue-50 dark:bg-blue-500/10" : ""}`}
-      ><div className={`text-[10px] uppercase tracking-wide ${isToday ? "text-blue-500" : "text-slate-400 dark:text-[#666666]"}`}>{DAY_SHORT[d.getDay()]}</div><div className={`text-sm font-bold mt-0.5 ${isToday ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-[#aaaaaa]"}`}>{d.getDate()}</div></th>;
-    })}</tr></thead><tbody className="divide-y divide-slate-50 dark:divide-[#1a1a1a]">{visibleMembers.map((staff) => <tr key={staff.id} className="hover:bg-slate-50/50 dark:hover:bg-[#0f0f0f] transition-colors">{
-      /* Staff info */
-    }<td className="px-4 py-2.5"><div className="flex items-center gap-2"><div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${staff.avatarCls}`}>{getInitials(staff.name)}</div><div className="min-w-0"><p className="text-sm font-semibold text-slate-800 dark:text-[#dddddd] leading-tight truncate">{staff.name}</p><p className="text-[10px] text-slate-600 dark:text-[#999999] truncate">{staff.designation ?? staff.roleDisplay}</p></div></div></td>{
-      /* Day cells */
-    }{weekDays.map((d) => {
-      const dateStr = toISODate(d);
-      const isToday = dateStr === todayStr;
-      const dayShifts = getShiftsFor(staff.id, dateStr);
-      const cellKey = `${staff.id}|${dateStr}`;
-      const isAssigning = assigningKey === cellKey;
-      const isOpen = popover?.staffId === staff.id && popover?.date === dateStr;
-      return <td
-        key={dateStr}
-        className={`px-1.5 py-2 align-top relative ${isToday ? "bg-blue-50/40 dark:bg-blue-500/5" : ""}`}
-      ><div className="min-h-[52px] flex flex-col gap-0.5">{isAssigning ? <div className="flex-1 flex items-center justify-center rounded-lg border border-slate-100 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#0f0f0f]"><Loader2 className="w-3 h-3 animate-spin text-slate-300" /></div> : dayShifts.length > 0 ? <>{dayShifts.map((s) => {
-        const meta = SHIFTS.find((x) => x.type === s.shiftType);
-        return <div
-          key={s.id}
-          className={`group flex items-center justify-between gap-1 text-[11px] font-semibold px-2 py-1.5 rounded-lg border ${meta.badgeCls}`}
-        ><span>{meta.label}</span><button
-          onClick={() => handleRemove(s.id)}
-          className="opacity-0 group-hover:opacity-60 hover:opacity-100 transition-opacity shrink-0"
-          title="Remove"
-        ><X className="w-2.5 h-2.5" /></button></div>;
-      })}<button
-        onClick={(e) => openPopover(staff.id, dateStr, e.currentTarget)}
-        className="w-full py-1 flex items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-[#2a2a2a] text-slate-300 dark:text-[#3a3a3a] hover:border-blue-300 dark:hover:border-blue-500/40 hover:text-blue-400 transition-colors"
-      ><Plus className="w-3 h-3" /></button></> : <button
-        onClick={(e) => openPopover(staff.id, dateStr, e.currentTarget)}
-        className="flex-1 flex items-center justify-center rounded-lg border border-slate-100 dark:border-[#1e1e1e] bg-slate-50/60 dark:bg-[#0d0d0d] text-slate-300 dark:text-[#333333] hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-blue-50/40 dark:hover:bg-blue-500/5 hover:text-blue-400 transition-colors"
-      ><Plus className="w-3.5 h-3.5" /></button>}</div></td>;
-    })}</tr>)}</tbody></table></div></div>;
-  })}</div>{
-    /* Shift popover — portal so it floats above overflow-clipped table */
-  }{popover && createPortal(
-    <div
-      ref={popoverRef}
-      style={{
-        position: "fixed",
-        left: popover.x,
-        ...popover.flipUp ? { bottom: window.innerHeight - popover.y + 4 } : { top: popover.y + 4 }
-      }}
-      className="z-[9999] bg-white dark:bg-[#1c1c1c] border border-slate-200 dark:border-[#333333] rounded-lg shadow-2xl w-52 overflow-hidden"
-      onMouseDown={(e) => e.stopPropagation()}
-    ><div className="px-3 py-2.5 border-b border-slate-100 dark:border-[#2a2a2a]"><p className="text-[11px] font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider">Assign Shift</p></div><div className="p-1">{SHIFTS.map((s) => <button
-      key={s.type}
-      type="button"
-      onMouseDown={(e) => {
-        e.stopPropagation();
-        handleAssign(s.type);
-      }}
-      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-[#252525] transition-colors"
-    ><span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} /><span className="text-sm font-medium text-slate-700 dark:text-[#cccccc] flex-1">{s.label}</span><span className="text-[10px] text-slate-600 dark:text-[#999999]">{s.time}</span></button>)}</div></div>,
-    document.body
-  )}</>;
+
+    const handleAssign = async (shiftType) => {
+        if (!popover || !user?.hospitalId) return;
+        const key = `${popover.staffId}|${popover.date}`;
+        setAssigningKey(key);
+        setPopover(null);
+        try {
+            await shiftsApi.assign({
+                staffId: popover.staffId,
+                hospitalId: user.hospitalId,
+                shiftType,
+                shiftDate: popover.date,
+            });
+            fetchShifts();
+        } catch (e) {
+            notify(e?.response?.data?.message ?? "Could not assign shift", "error");
+        } finally {
+            setAssigningKey(null);
+        }
+    };
+
+    const handleRemove = async (shiftId) => {
+        try {
+            await shiftsApi.remove(shiftId);
+            fetchShifts();
+        } catch {
+            notify("Could not remove shift", "error");
+        }
+    };
+
+    const weekLabel = `${weekDays[0].getDate()} ${weekDays[0].toLocaleString("en-IN", { month: "short" })} – ${weekDays[6].getDate()} ${weekDays[6].toLocaleString("en-IN", { month: "short" })}, ${weekDays[0].getFullYear()}`;
+
+    return (
+        <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Top nav card */}
+                <Card style={{ padding: "12px 16px", flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                        <button
+                            type="button"
+                            className="hms-btn-icon"
+                            onClick={() => setWeekStart((w) => addDays(w, -7))}
+                            aria-label="Previous week"
+                        >
+                            <ChevronLeft size={14} />
+                        </button>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setWeekStart(getMondayOf(new Date()))}
+                        >
+                            Today
+                        </Button>
+                        <button
+                            type="button"
+                            className="hms-btn-icon"
+                            onClick={() => setWeekStart((w) => addDays(w, 7))}
+                            aria-label="Next week"
+                        >
+                            <ChevronRight size={14} />
+                        </button>
+                    </div>
+                    <p
+                        style={{
+                            flex: 1,
+                            margin: 0,
+                            textAlign: "center",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "var(--hms-gray-800)",
+                        }}
+                    >
+                        {weekLabel}
+                    </p>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            flexShrink: 0,
+                        }}
+                    >
+                        {SHIFTS.map((s) => (
+                            <span
+                                key={s.type}
+                                style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    fontSize: 11,
+                                    color: "var(--hms-gray-500)",
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: 999,
+                                        background: s.dot,
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                {s.label}
+                            </span>
+                        ))}
+                    </div>
+                </Card>
+
+                {/* Groups */}
+                {loading ? (
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "96px 0",
+                        }}
+                    >
+                        <Loader2
+                            size={20}
+                            style={{ color: "var(--hms-gray-400)" }}
+                            className="animate-spin"
+                        />
+                    </div>
+                ) : staffOptions.length === 0 ? (
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "96px 0",
+                            gap: 12,
+                            color: "var(--hms-gray-500)",
+                        }}
+                    >
+                        <Users size={40} style={{ opacity: 0.3 }} />
+                        <p style={{ margin: 0, fontSize: 13 }}>No staff members found</p>
+                    </div>
+                ) : (
+                    groups.map(([groupName, members]) => {
+                        const gPage = groupPages[groupName] ?? 1;
+                        const totalGroupPages = Math.ceil(members.length / GROUP_PAGE_SIZE);
+                        const visibleMembers = members.slice(
+                            (gPage - 1) * GROUP_PAGE_SIZE,
+                            gPage * GROUP_PAGE_SIZE
+                        );
+                        const setGPage = (p) =>
+                            setGroupPages((prev) => ({ ...prev, [groupName]: p }));
+                        return (
+                            <Card key={groupName} style={{ padding: 0, overflow: "visible" }}>
+                                <div
+                                    style={{
+                                        padding: "10px 16px",
+                                        borderBottom: "1px solid var(--hms-gray-100)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                    }}
+                                >
+                                    <p
+                                        style={{
+                                            margin: 0,
+                                            fontSize: 11,
+                                            fontWeight: 700,
+                                            color: "var(--hms-gray-700)",
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.06em",
+                                        }}
+                                    >
+                                        {groupName}
+                                        <span
+                                            style={{
+                                                marginLeft: 8,
+                                                fontWeight: 400,
+                                                color: "var(--hms-gray-400)",
+                                                textTransform: "none",
+                                            }}
+                                        >
+                                            {members.length}{" "}
+                                            {members.length === 1 ? "member" : "members"}
+                                        </span>
+                                    </p>
+                                    {totalGroupPages > 1 && (
+                                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setGPage(Math.max(1, gPage - 1))}
+                                                disabled={gPage === 1}
+                                                style={miniNavBtn(gPage === 1)}
+                                                aria-label="Previous page"
+                                            >
+                                                <ChevronLeft size={12} />
+                                            </button>
+                                            <span
+                                                style={{
+                                                    fontSize: 11,
+                                                    color: "var(--hms-gray-400)",
+                                                    padding: "0 4px",
+                                                }}
+                                            >
+                                                {gPage}/{totalGroupPages}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setGPage(Math.min(totalGroupPages, gPage + 1))
+                                                }
+                                                disabled={gPage === totalGroupPages}
+                                                style={miniNavBtn(gPage === totalGroupPages)}
+                                                aria-label="Next page"
+                                            >
+                                                <ChevronRight size={12} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{ overflowX: "auto" }}>
+                                    <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse" }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: "1px solid var(--hms-gray-100)" }}>
+                                                <th
+                                                    style={{
+                                                        textAlign: "left",
+                                                        padding: "8px 16px",
+                                                        fontSize: 10,
+                                                        fontWeight: 700,
+                                                        textTransform: "uppercase",
+                                                        letterSpacing: "0.06em",
+                                                        color: "var(--hms-gray-500)",
+                                                        width: 192,
+                                                    }}
+                                                >
+                                                    Employee
+                                                </th>
+                                                {weekDays.map((d) => {
+                                                    const ds = toISODate(d);
+                                                    const isToday = ds === todayStr;
+                                                    return (
+                                                        <th
+                                                            key={ds}
+                                                            style={{
+                                                                textAlign: "center",
+                                                                padding: "8px",
+                                                                width: 96,
+                                                                background: isToday ? "var(--hms-info-bg)" : "transparent",
+                                                            }}
+                                                        >
+                                                            <div
+                                                                style={{
+                                                                    fontSize: 10,
+                                                                    textTransform: "uppercase",
+                                                                    letterSpacing: "0.05em",
+                                                                    color: isToday ? "var(--hms-info)" : "var(--hms-gray-400)",
+                                                                }}
+                                                            >
+                                                                {DAY_SHORT[d.getDay()]}
+                                                            </div>
+                                                            <div
+                                                                style={{
+                                                                    fontSize: 13,
+                                                                    fontWeight: 700,
+                                                                    marginTop: 2,
+                                                                    color: isToday ? "#0369a1" : "var(--hms-gray-700)",
+                                                                }}
+                                                            >
+                                                                {d.getDate()}
+                                                            </div>
+                                                        </th>
+                                                    );
+                                                })}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {visibleMembers.map((staff) => (
+                                                <tr
+                                                    key={staff.id}
+                                                    style={{
+                                                        borderBottom: "1px solid var(--hms-gray-50)",
+                                                    }}
+                                                >
+                                                    <td style={{ padding: "10px 16px" }}>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                            <div
+                                                                style={{
+                                                                    width: 28,
+                                                                    height: 28,
+                                                                    borderRadius: 999,
+                                                                    background: staff.avatarTone.bg,
+                                                                    color: staff.avatarTone.color,
+                                                                    display: "inline-flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    fontSize: 11,
+                                                                    fontWeight: 700,
+                                                                    flexShrink: 0,
+                                                                }}
+                                                            >
+                                                                {getInitials(staff.name)}
+                                                            </div>
+                                                            <div style={{ minWidth: 0 }}>
+                                                                <p
+                                                                    style={{
+                                                                        margin: 0,
+                                                                        fontSize: 13,
+                                                                        fontWeight: 600,
+                                                                        color: "var(--hms-gray-800)",
+                                                                        overflow: "hidden",
+                                                                        textOverflow: "ellipsis",
+                                                                        whiteSpace: "nowrap",
+                                                                    }}
+                                                                >
+                                                                    {staff.name}
+                                                                </p>
+                                                                <p
+                                                                    style={{
+                                                                        margin: 0,
+                                                                        fontSize: 10,
+                                                                        color: "var(--hms-gray-500)",
+                                                                        overflow: "hidden",
+                                                                        textOverflow: "ellipsis",
+                                                                        whiteSpace: "nowrap",
+                                                                    }}
+                                                                >
+                                                                    {staff.designation ?? staff.roleDisplay}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    {weekDays.map((d) => {
+                                                        const dateStr = toISODate(d);
+                                                        const isToday = dateStr === todayStr;
+                                                        const dayShifts = getShiftsFor(staff.id, dateStr);
+                                                        const cellKey = `${staff.id}|${dateStr}`;
+                                                        const isAssigning = assigningKey === cellKey;
+                                                        return (
+                                                            <td
+                                                                key={dateStr}
+                                                                style={{
+                                                                    padding: "8px 6px",
+                                                                    verticalAlign: "top",
+                                                                    background: isToday ? "rgba(239, 246, 255, 0.4)" : "transparent",
+                                                                    position: "relative",
+                                                                }}
+                                                            >
+                                                                <div
+                                                                    style={{
+                                                                        minHeight: 52,
+                                                                        display: "flex",
+                                                                        flexDirection: "column",
+                                                                        gap: 2,
+                                                                    }}
+                                                                >
+                                                                    {isAssigning ? (
+                                                                        <div
+                                                                            style={{
+                                                                                flex: 1,
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                                justifyContent: "center",
+                                                                                borderRadius: 8,
+                                                                                border: "1px solid var(--hms-gray-100)",
+                                                                                background: "var(--hms-gray-50)",
+                                                                            }}
+                                                                        >
+                                                                            <Loader2
+                                                                                size={12}
+                                                                                style={{ color: "var(--hms-gray-300)" }}
+                                                                                className="animate-spin"
+                                                                            />
+                                                                        </div>
+                                                                    ) : dayShifts.length > 0 ? (
+                                                                        <>
+                                                                            {dayShifts.map((s) => {
+                                                                                const meta = SHIFTS.find((x) => x.type === s.shiftType);
+                                                                                if (!meta) return null;
+                                                                                return (
+                                                                                    <div
+                                                                                        key={s.id}
+                                                                                        style={{
+                                                                                            display: "flex",
+                                                                                            alignItems: "center",
+                                                                                            justifyContent: "space-between",
+                                                                                            gap: 4,
+                                                                                            padding: "6px 8px",
+                                                                                            borderRadius: 8,
+                                                                                            border: `1px solid ${meta.badge.border}`,
+                                                                                            background: meta.badge.bg,
+                                                                                            color: meta.badge.color,
+                                                                                            fontSize: 11,
+                                                                                            fontWeight: 600,
+                                                                                        }}
+                                                                                        className="hms-roster-chip"
+                                                                                    >
+                                                                                        <span>{meta.label}</span>
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => handleRemove(s.id)}
+                                                                                            className="hms-roster-chip__x"
+                                                                                            aria-label="Remove shift"
+                                                                                        >
+                                                                                            <X size={10} />
+                                                                                        </button>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={(e) =>
+                                                                                    openPopover(staff.id, dateStr, e.currentTarget)
+                                                                                }
+                                                                                style={addBtnStyle(false)}
+                                                                            >
+                                                                                <Plus size={12} />
+                                                                            </button>
+                                                                        </>
+                                                                    ) : (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) =>
+                                                                                openPopover(staff.id, dateStr, e.currentTarget)
+                                                                            }
+                                                                            style={addBtnStyle(true)}
+                                                                        >
+                                                                            <Plus size={14} />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card>
+                        );
+                    })
+                )}
+            </div>
+
+            {/* Portalled shift-assign popover. Uses .hms-menu styling from
+                hms-system.css so it shares the look of every other kebab
+                menu in the app, but keeps a custom open mechanism since
+                the trigger is one of 7 day-cells per row. */}
+            {popover &&
+                createPortal(
+                    <div
+                        ref={popoverRef}
+                        className="hms-menu"
+                        style={{
+                            left: popover.x,
+                            top: popover.flipUp ? undefined : popover.y + 4,
+                            bottom: popover.flipUp ? window.innerHeight - popover.y + 4 : undefined,
+                            minWidth: 220,
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        role="menu"
+                    >
+                        <div
+                            style={{
+                                padding: "6px 10px 4px",
+                                borderBottom: "1px solid var(--hms-gray-100)",
+                                marginBottom: 4,
+                            }}
+                        >
+                            <p
+                                style={{
+                                    margin: 0,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    color: "var(--hms-gray-500)",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.06em",
+                                }}
+                            >
+                                Assign shift
+                            </p>
+                        </div>
+                        {SHIFTS.map((s) => (
+                            <button
+                                key={s.type}
+                                type="button"
+                                role="menuitem"
+                                className="hms-menu-item"
+                                onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    handleAssign(s.type);
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: 999,
+                                        background: s.dot,
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <span style={{ flex: 1 }}>{s.label}</span>
+                                <span style={{ fontSize: 10, color: "var(--hms-gray-500)" }}>
+                                    {s.time}
+                                </span>
+                            </button>
+                        ))}
+                    </div>,
+                    document.body
+                )}
+        </>
+    );
 }
-export {
-  ShiftRoster as default
-};
+
+const miniNavBtn = (disabled) => ({
+    width: 24,
+    height: 24,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 4,
+    border: "1px solid var(--hms-gray-200)",
+    background: "transparent",
+    color: "var(--hms-gray-400)",
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.3 : 1,
+    transition: "background 0.15s",
+});
+
+const addBtnStyle = (large) => ({
+    width: "100%",
+    flex: large ? 1 : undefined,
+    padding: large ? 0 : "4px 0",
+    minHeight: large ? 52 : undefined,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    border: `1px ${large ? "solid" : "dashed"} var(--hms-gray-200)`,
+    background: large ? "var(--hms-gray-50)" : "transparent",
+    color: "var(--hms-gray-300)",
+    cursor: "pointer",
+    transition: "all 0.15s",
+});
+
+export { ShiftRoster as default };

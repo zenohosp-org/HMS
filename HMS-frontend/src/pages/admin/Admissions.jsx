@@ -1,370 +1,799 @@
-import { useEffect, useState, useMemo } from 'react'
-import { useAuth } from '@/context/AuthContext'
-import { useNotification } from '@/context/NotificationContext'
-import { admissionApi } from '@/utils/api'
-import AdmitPatientModal from './AdmitPatientModal'
-import DischargeModal from './DischargeModal'
-import MoveToOTModal from './MoveToOTModal'
-import ViewBillingModal from './ViewBillingModal'
-import IPDDetailPane from './IPDDetailPane'
-import Pagination from '@/components/ui/Pagination'
+import { useEffect, useState, useMemo } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useNotification } from "@/context/NotificationContext";
+import { admissionApi } from "@/utils/api";
+import AdmitPatientModal from "./AdmitPatientModal";
+import DischargeModal from "./DischargeModal";
+import MoveToOTModal from "./MoveToOTModal";
+import ViewBillingModal from "./ViewBillingModal";
+import IPDDetailPane from "./IPDDetailPane";
 import {
-  BedDouble, Plus, Search, LogOut, User, Building2,
-  Stethoscope, Clock, CheckCircle2, List, LayoutGrid,
-  Calendar, AlertCircle, Receipt, Scissors, RotateCcw, Loader2
-} from 'lucide-react'
-import { timeAgo, fmtDateTime } from '@/utils/date'
-import { fmtId } from '@/utils/idFormat'
+    BedDouble,
+    Plus,
+    User,
+    Building2,
+    Stethoscope,
+    Clock,
+    CheckCircle2,
+    List,
+    LayoutGrid,
+    AlertCircle,
+    Scissors,
+} from "lucide-react";
+import { timeAgo, fmtDateTime } from "@/utils/date";
+import { fmtId } from "@/utils/idFormat";
+import {
+    Badge,
+    Button,
+    Card,
+    PageHeader,
+    Pagination,
+    SearchBar,
+    Tabs,
+} from "@/components/ui";
 
-const STATUS_COLORS = {
-  ADMITTED: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
-  DISCHARGED: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20',
-  TRANSFERRED: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
-  ABSCONDED: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
+/** Status → Badge tone. ADMITTED green, DISCHARGED neutral,
+ *  TRANSFERRED warning, ABSCONDED danger. */
+const STATUS_TONE = {
+    ADMITTED: "success",
+    DISCHARGED: "neutral",
+    TRANSFERRED: "warning",
+    ABSCONDED: "danger",
+};
+
+/** Admission type pill — rendered above the status badge. */
+function TypePill({ type }) {
+    if (type === "EMERGENCY") {
+        return (
+            <span
+                style={{
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    background: "var(--hms-danger)",
+                    color: "var(--hms-white)",
+                    fontSize: 10,
+                    fontWeight: 700,
+                }}
+            >
+                EMERGENCY
+            </span>
+        );
+    }
+    if (type === "OPD_REFERRAL") {
+        return <Badge tone="info" soft>OPD referral</Badge>;
+    }
+    return <Badge tone="neutral" soft>Direct</Badge>;
 }
 
-const TYPE_COLORS = {
-  EMERGENCY: 'bg-rose-500 text-white',
-  OPD_REFERRAL: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
-  DIRECT: 'bg-slate-200 text-slate-700 dark:bg-[#222] dark:text-slate-300',
-}
-
+/**
+ * IPD Admissions — paginated, filterable list of in-patient admissions
+ * with grid/list view toggle, four stat cards, and a modal cascade
+ * (admit → discharge / move-to-OT / view-billing / detail pane).
+ *
+ * Phase 8c migration: data layer untouched (admissionApi.listPaginated/
+ * returnToWard), same status filter trio (ADMITTED / DISCHARGED / ALL),
+ * debounced search, server-driven counts. Modal opening/closing logic
+ * preserved byte-for-byte.
+ */
 export default function Admissions() {
-  const { user } = useAuth()
-  const { notify } = useNotification()
-  const [admissions, setAdmissions] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('ADMITTED')
-  const [viewMode, setViewMode] = useState('grid')
-  const [showAdmitModal, setShowAdmitModal] = useState(false)
-  const [dischargeTarget, setDischargeTarget] = useState(null)
-  const [otTarget, setOtTarget] = useState(null)
-  const [billingTarget, setBillingTarget] = useState(null)
-  const [returningToWard, setReturningToWard] = useState(null)
-  const [selectedAdmission, setSelectedAdmission] = useState(null)
+    const { user } = useAuth();
+    const { notify } = useNotification();
+    const [admissions, setAdmissions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState("ADMITTED");
+    const [viewMode, setViewMode] = useState("grid");
+    const [showAdmitModal, setShowAdmitModal] = useState(false);
+    const [dischargeTarget, setDischargeTarget] = useState(null);
+    const [otTarget, setOtTarget] = useState(null);
+    const [billingTarget, setBillingTarget] = useState(null);
+    // eslint-disable-next-line no-unused-vars
+    const [returningToWard, setReturningToWard] = useState(null);
+    const [selectedAdmission, setSelectedAdmission] = useState(null);
 
-  // Pagination states
-  const [page, setPage] = useState(0)
-  const [size, setSize] = useState(30)
-  const [totalPages, setTotalPages] = useState(0)
-  const [totalElements, setTotalElements] = useState(0)
+    // Pagination
+    const [page, setPage] = useState(0);
+    const [size, setSize] = useState(30);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
 
-  // Stats counts
-  const [serverCounts, setServerCounts] = useState({
-    ADMITTED: 0,
-    inOt: 0,
-    dischargedToday: 0,
-    overdueDischarge: 0,
-  })
+    // Stats counts (server-side)
+    const [serverCounts, setServerCounts] = useState({
+        ADMITTED: 0,
+        inOt: 0,
+        dischargedToday: 0,
+        overdueDischarge: 0,
+    });
 
-  // Debounce search input
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search)
-      setPage(0)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [search])
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setPage(0);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
 
-  const load = async () => {
-    if (!user?.hospitalId) return
-    try {
-      setLoading(true)
-      const res = await admissionApi.listPaginated(
-        user.hospitalId,
-        statusFilter,
-        debouncedSearch,
-        page,
-        size
-      )
-      if (res) {
-        setAdmissions(res.page?.content || [])
-        setTotalPages(res.page?.totalPages || 0)
-        setTotalElements(res.page?.totalElements || 0)
-        setServerCounts({
-          ADMITTED: res.totalAdmitted || 0,
-          inOt: res.totalInOt || 0,
-          dischargedToday: res.dischargedToday || 0,
-          overdueDischarge: res.overdueDischarge || 0,
-        })
-      }
-    } catch (err) {
-      notify(err?.response?.data?.message || 'Failed to load admissions', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    load()
-  }, [user?.hospitalId, statusFilter, debouncedSearch, page, size])
-
-  const filtered = admissions
-
-  const counts = useMemo(() => ({
-    ADMITTED: serverCounts.ADMITTED,
-    inOt: serverCounts.inOt,
-    dischargedToday: serverCounts.dischargedToday,
-    overdueDischarge: serverCounts.overdueDischarge,
-  }), [serverCounts])
-
-  const formatAdmissionDate = (dateStr) => timeAgo(dateStr)
-  const formatDate = (dateStr) => fmtDateTime(dateStr)
-
-  const isOverdue = (a) => {
-    if (!a.approxDischargeDate || a.status !== 'ADMITTED') return false
-    return new Date(a.approxDischargeDate) < new Date()
-  }
-
-  const handleReturnToWard = async (a, e) => {
-    e.stopPropagation()
-    setReturningToWard(a.id)
-    try {
-      await admissionApi.returnToWard(a.id)
-      notify(`${a.patientName} returned to ward`, 'success')
-      load()
-    } catch (err) {
-      notify(err?.response?.data?.message || 'Failed to return patient to ward', 'error')
-    } finally {
-      setReturningToWard(null)
-    }
-  }
-
-  const roomLabel = (a) => {
-    if (!a.roomNumber) return 'Room not assigned'
-    return `Room ${a.roomNumber} · ${a.roomType}`
-  }
-
-  return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d0d0d] gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <BedDouble className="w-6 h-6 text-slate-700 dark:text-[#cccccc]" /> IPD Admissions
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">In-patient department — active admissions and discharge management</p>
-        </div>
-        <button onClick={() => setShowAdmitModal(true)} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Admit Patient
-        </button>
-      </div>
-
-      <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: 'Active Admissions', value: counts.ADMITTED, icon: BedDouble, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
-          { label: 'In OT Now', value: counts.inOt, icon: Scissors, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-500/10' },
-          { label: 'Discharged Today', value: counts.dischargedToday, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-500/10' },
-          { label: 'Overdue Discharge', value: counts.overdueDischarge, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10' },
-        ].map(stat => (
-          <div key={stat.label} className="rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] p-4 flex items-center gap-4">
-            <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${stat.bg}`}>
-              <stat.icon className={`w-5 h-5 ${stat.color}`} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
-              <p className="text-xs text-slate-500">{stat.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/50 transition-all"
-            placeholder="Search by patient, admission no., department, room…" />
-        </div>
-        {['ADMITTED', 'DISCHARGED', 'ALL'].map(s => (
-          <button key={s} onClick={() => { setStatusFilter(s); setPage(0); }}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${statusFilter === s ? 'bg-slate-900 text-white border-slate-900' : 'bg-white dark:bg-[#111] border-slate-200 dark:border-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:border-slate-300'}`}>
-            {s.charAt(0) + s.slice(1).toLowerCase()}
-            {s === 'ADMITTED' && counts.ADMITTED > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-white dark:bg-[#111] text-black dark:text-white text-xs">{counts.ADMITTED}</span>}
-          </button>
-        ))}
-        <div className="flex border border-slate-200 dark:border-[#2a2a2a] rounded-lg overflow-hidden ml-auto">
-          {[['grid', LayoutGrid], ['list', List]].map(([mode, Icon]) => (
-            <button key={mode} onClick={() => setViewMode(mode)}
-              className={`p-2.5 transition-colors ${viewMode === mode ? 'bg-slate-900 text-white' : 'bg-white dark:bg-[#111] text-slate-500 hover:bg-slate-50 dark:hover:bg-[#1a1a1a]'}`}>
-              <Icon className="w-4 h-4" />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center text-slate-400">Loading admissions…</div>
-      ) : filtered.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-400">
-          <BedDouble className="w-12 h-12 opacity-30" />
-          <p className="text-sm">No admissions found</p>
-          <button onClick={() => setShowAdmitModal(true)} className="text-slate-900 dark:text-white text-sm font-semibold hover:underline">Admit a patient →</button>
-        </div>
-      ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-2">
-          {filtered.map(a => (
-            <div key={a.id} onClick={() => setSelectedAdmission(a)}
-              className={`rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] hover:border-slate-300 hover:shadow-md transition-all cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''} ${a.inOt ? 'border-l-4 border-l-violet-500' : ''}`}>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] flex items-center justify-center shrink-0">
-                      <User className="w-5 h-5 text-slate-900 dark:text-slate-300" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm text-slate-900 dark:text-white">{a.patientName}</p>
-                      <p className="text-xs text-slate-500">UHID: {fmtId(a.patientUhid)}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${TYPE_COLORS[a.admissionType]}`}>
-                      {a.admissionType}
-                    </span>
-                    {a.inOt && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400 border border-violet-200 dark:border-violet-500/20 flex items-center gap-1">
-                        <Scissors className="w-3 h-3" /> In OT
-                      </span>
-                    )}
-                    {a.roomType === 'POST_OT' && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
-                        Recovery
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-3.5 h-3.5 shrink-0" />
-                    <span>{a.departmentName || 'No department'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <BedDouble className="w-3.5 h-3.5 shrink-0" />
-                    <span>{a.roomNumber ? roomLabel(a) : 'Room not assigned'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Stethoscope className="w-3.5 h-3.5 shrink-0" />
-                    <span>{a.admittingDoctorName ? `Dr. ${a.admittingDoctorName}` : 'No doctor assigned'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 shrink-0" />
-                    <span>{formatAdmissionDate(a.admissionDate)}</span>
-                    {isOverdue(a) && <span className="text-rose-500 font-semibold">· Overdue</span>}
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#1e1e1e] flex items-center justify-between">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
-                  <div className="text-right">
-                    {a.ipdId && <p className="text-xs font-mono font-bold text-slate-900 dark:text-slate-300">{fmtId(a.ipdId)}</p>}
-                    <p className="text-[10px] font-mono text-slate-400">{fmtId(a.admissionNumber)}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-lg bg-white dark:bg-[#111] border border-slate-200 dark:border-[#1e1e1e] overflow-hidden flex-1">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-[#1e1e1e]">
-                {['Adm. No.', 'Patient', 'Department', 'Room', 'Doctor', 'Admitted', 'Status'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e1e]">
-              {filtered.map(a => (
-                <tr key={a.id} onClick={() => setSelectedAdmission(a)} className={`hover:bg-slate-50 dark:hover:bg-[#161616] transition-colors cursor-pointer ${isOverdue(a) ? 'border-l-4 border-l-rose-400' : ''} ${a.inOt ? 'border-l-4 border-l-violet-500' : ''}`}>
-                  <td className="px-4 py-3">
-                    {a.ipdId && <p className="font-mono text-xs font-bold text-slate-900 dark:text-slate-300">{fmtId(a.ipdId)}</p>}
-                    <p className="font-mono text-[10px] text-slate-400">{fmtId(a.admissionNumber)}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-sm text-slate-900 dark:text-white">{a.patientName}</p>
-                    <p className="text-xs text-slate-500">{fmtId(a.patientUhid)}</p>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{a.departmentName || '—'}</td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm text-slate-600 dark:text-slate-400">{a.roomNumber || <span className="text-amber-500 text-xs">Not assigned</span>}</p>
-                    {a.inOt && (
-                      <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 flex items-center gap-1">
-                        <Scissors className="w-3 h-3" /> In OT
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{a.admittingDoctorName ? `Dr. ${a.admittingDoctorName}` : '—'}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">{formatAdmissionDate(a.admissionDate)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {!loading && totalElements > 0 && (
-        <Pagination
-          currentPage={page + 1}
-          totalPages={totalPages}
-          totalItems={totalElements}
-          pageSize={size}
-          onPageChange={(p) => setPage(p - 1)}
-        />
-      )}
-
-      {showAdmitModal && (
-        <AdmitPatientModal
-          onClose={() => setShowAdmitModal(false)}
-          onAdmitted={() => { setShowAdmitModal(false); notify('Patient admitted successfully', 'success'); load() }}
-        />
-      )}
-      {dischargeTarget && (
-        <DischargeModal
-          admission={dischargeTarget}
-          onClose={() => setDischargeTarget(null)}
-          onDischarged={() => { setDischargeTarget(null); notify('Patient discharged', 'success'); load() }}
-        />
-      )}
-      {otTarget && (
-        <MoveToOTModal
-          admission={otTarget}
-          onClose={() => setOtTarget(null)}
-          onMoved={() => { setOtTarget(null); notify(`${otTarget.patientName} moved to OT`, 'success'); load() }}
-        />
-      )}
-      {billingTarget && (
-        <ViewBillingModal
-          admission={billingTarget}
-          onClose={() => setBillingTarget(null)}
-        />
-      )}
-
-      {selectedAdmission && (
-        <IPDDetailPane
-          admission={selectedAdmission}
-          onClose={() => setSelectedAdmission(null)}
-          onDischarge={() => { setDischargeTarget(selectedAdmission); setSelectedAdmission(null) }}
-          onMoveToOT={() => { setOtTarget(selectedAdmission); setSelectedAdmission(null) }}
-          onReturnToWard={async () => {
-            const a = selectedAdmission
-            setSelectedAdmission(null)
-            setReturningToWard(a.id)
-            try {
-              await admissionApi.returnToWard(a.id)
-              notify(`${a.patientName} returned to ward`, 'success')
-              load()
-            } catch (err) {
-              notify(err?.response?.data?.message || 'Failed to return to ward', 'error')
-            } finally {
-              setReturningToWard(null)
+    const load = async () => {
+        if (!user?.hospitalId) return;
+        try {
+            setLoading(true);
+            const res = await admissionApi.listPaginated(
+                user.hospitalId,
+                statusFilter,
+                debouncedSearch,
+                page,
+                size
+            );
+            if (res) {
+                setAdmissions(res.page?.content || []);
+                setTotalPages(res.page?.totalPages || 0);
+                setTotalElements(res.page?.totalElements || 0);
+                setServerCounts({
+                    ADMITTED: res.totalAdmitted || 0,
+                    inOt: res.totalInOt || 0,
+                    dischargedToday: res.dischargedToday || 0,
+                    overdueDischarge: res.overdueDischarge || 0,
+                });
             }
-          }}
-        />
-      )}
-    </div>
-  )
+        } catch (err) {
+            notify(err?.response?.data?.message || "Failed to load admissions", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.hospitalId, statusFilter, debouncedSearch, page, size]);
+
+    const counts = useMemo(
+        () => ({
+            ADMITTED: serverCounts.ADMITTED,
+            inOt: serverCounts.inOt,
+            dischargedToday: serverCounts.dischargedToday,
+            overdueDischarge: serverCounts.overdueDischarge,
+        }),
+        [serverCounts]
+    );
+
+    const isOverdue = (a) => {
+        if (!a.approxDischargeDate || a.status !== "ADMITTED") return false;
+        return new Date(a.approxDischargeDate) < new Date();
+    };
+
+    const roomLabel = (a) => {
+        if (!a.roomNumber) return "Room not assigned";
+        return `Room ${a.roomNumber} · ${a.roomType}`;
+    };
+
+    const statCards = [
+        {
+            label: "Active admissions",
+            value: counts.ADMITTED,
+            icon: BedDouble,
+            color: "var(--hms-success)",
+            bg: "var(--hms-success-bg)",
+        },
+        {
+            label: "In OT now",
+            value: counts.inOt,
+            icon: Scissors,
+            color: "#7c3aed",
+            bg: "#f5f3ff",
+        },
+        {
+            label: "Discharged today",
+            value: counts.dischargedToday,
+            icon: CheckCircle2,
+            color: "var(--hms-info)",
+            bg: "var(--hms-info-bg)",
+        },
+        {
+            label: "Overdue discharge",
+            value: counts.overdueDischarge,
+            icon: AlertCircle,
+            color: "#be123c",
+            bg: "#fff1f2",
+        },
+    ];
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <PageHeader
+                title={
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                        <BedDouble size={20} /> IPD Admissions
+                    </span>
+                }
+                subtitle="In-patient department — active admissions and discharge management"
+                actions={
+                    <Button variant="primary" onClick={() => setShowAdmitModal(true)}>
+                        <Plus size={14} strokeWidth={2.4} /> Admit patient
+                    </Button>
+                }
+            />
+
+            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* Stat cards */}
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                        gap: 12,
+                    }}
+                >
+                    {statCards.map(({ label, value, icon: Icon, color, bg }) => (
+                        <Card
+                            key={label}
+                            style={{ flexDirection: "row", alignItems: "center", gap: 16 }}
+                        >
+                            <div
+                                style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 8,
+                                    background: bg,
+                                    color,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <Icon size={20} />
+                            </div>
+                            <div>
+                                <p
+                                    style={{
+                                        margin: 0,
+                                        fontSize: 22,
+                                        fontWeight: 800,
+                                        color: "var(--hms-gray-900)",
+                                    }}
+                                >
+                                    {value}
+                                </p>
+                                <p
+                                    style={{
+                                        margin: 0,
+                                        fontSize: 11,
+                                        color: "var(--hms-gray-500)",
+                                    }}
+                                >
+                                    {label}
+                                </p>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+
+                {/* Filter row */}
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <div style={{ flex: 1, minWidth: 260 }}>
+                        <SearchBar
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="Search by patient, admission no., department, room…"
+                        />
+                    </div>
+                    <Tabs
+                        type="pill"
+                        active={statusFilter}
+                        onChange={(id) => {
+                            setStatusFilter(id);
+                            setPage(0);
+                        }}
+                        tabs={[
+                            {
+                                id: "ADMITTED",
+                                label: "Admitted",
+                                count: counts.ADMITTED > 0 ? counts.ADMITTED : undefined,
+                            },
+                            { id: "DISCHARGED", label: "Discharged" },
+                            { id: "ALL", label: "All" },
+                        ]}
+                    />
+                    <div
+                        style={{
+                            display: "flex",
+                            border: "1px solid var(--hms-gray-200)",
+                            borderRadius: 8,
+                            overflow: "hidden",
+                        }}
+                    >
+                        {[
+                            ["grid", LayoutGrid],
+                            ["list", List],
+                        ].map(([mode, Icon]) => (
+                            <button
+                                key={mode}
+                                type="button"
+                                onClick={() => setViewMode(mode)}
+                                style={{
+                                    padding: 10,
+                                    border: "none",
+                                    cursor: "pointer",
+                                    background:
+                                        viewMode === mode
+                                            ? "var(--hms-brand-primary)"
+                                            : "var(--hms-white)",
+                                    color:
+                                        viewMode === mode
+                                            ? "var(--hms-white)"
+                                            : "var(--hms-gray-500)",
+                                    transition: "background 0.15s",
+                                }}
+                                aria-pressed={viewMode === mode}
+                                aria-label={`${mode} view`}
+                            >
+                                <Icon size={16} />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {loading ? (
+                    <div
+                        style={{
+                            flex: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "var(--hms-gray-400)",
+                            padding: "64px 0",
+                        }}
+                    >
+                        Loading admissions…
+                    </div>
+                ) : admissions.length === 0 ? (
+                    <div
+                        style={{
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 12,
+                            color: "var(--hms-gray-400)",
+                            padding: "64px 0",
+                        }}
+                    >
+                        <BedDouble size={48} style={{ opacity: 0.3 }} />
+                        <p style={{ margin: 0, fontSize: 13 }}>No admissions found</p>
+                        <button
+                            type="button"
+                            onClick={() => setShowAdmitModal(true)}
+                            style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "var(--hms-gray-900)",
+                                fontSize: 13,
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                                fontFamily: "var(--hms-font-family)",
+                            }}
+                        >
+                            Admit a patient →
+                        </button>
+                    </div>
+                ) : viewMode === "grid" ? (
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+                            gap: 16,
+                        }}
+                    >
+                        {admissions.map((a) => {
+                            const overdue = isOverdue(a);
+                            return (
+                                <Card
+                                    key={a.id}
+                                    interactive
+                                    onClick={() => setSelectedAdmission(a)}
+                                    style={{
+                                        padding: 16,
+                                        position: "relative",
+                                        gap: 12,
+                                        borderLeft: overdue
+                                            ? "4px solid #fb7185"
+                                            : a.inOt
+                                                ? "4px solid #7c3aed"
+                                                : undefined,
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                            <div
+                                                style={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    borderRadius: 8,
+                                                    background: "var(--hms-gray-100)",
+                                                    color: "var(--hms-gray-700)",
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                <User size={18} />
+                                            </div>
+                                            <div>
+                                                <p
+                                                    style={{
+                                                        margin: 0,
+                                                        fontSize: 14,
+                                                        fontWeight: 600,
+                                                        color: "var(--hms-gray-900)",
+                                                    }}
+                                                >
+                                                    {a.patientName}
+                                                </p>
+                                                <p
+                                                    style={{
+                                                        margin: 0,
+                                                        fontSize: 11,
+                                                        color: "var(--hms-gray-500)",
+                                                    }}
+                                                >
+                                                    UHID: {fmtId(a.patientUhid)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "flex-end",
+                                                gap: 4,
+                                            }}
+                                        >
+                                            <TypePill type={a.admissionType} />
+                                            {a.inOt && (
+                                                <Badge tone="violet" soft>
+                                                    <Scissors size={10} /> In OT
+                                                </Badge>
+                                            )}
+                                            {a.roomType === "POST_OT" && (
+                                                <Badge tone="amber" soft>Recovery</Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 6,
+                                            fontSize: 12,
+                                            color: "var(--hms-gray-500)",
+                                        }}
+                                    >
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                            <Building2 size={14} style={{ flexShrink: 0 }} />
+                                            <span>{a.departmentName || "No department"}</span>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                            <BedDouble size={14} style={{ flexShrink: 0 }} />
+                                            <span>{a.roomNumber ? roomLabel(a) : "Room not assigned"}</span>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                            <Stethoscope size={14} style={{ flexShrink: 0 }} />
+                                            <span>
+                                                {a.admittingDoctorName
+                                                    ? `Dr. ${a.admittingDoctorName}`
+                                                    : "No doctor assigned"}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                            <Clock size={14} style={{ flexShrink: 0 }} />
+                                            <span>{timeAgo(a.admissionDate)}</span>
+                                            {overdue && (
+                                                <span style={{ color: "#e11d48", fontWeight: 600 }}>· Overdue</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div
+                                        style={{
+                                            paddingTop: 12,
+                                            borderTop: "1px solid var(--hms-gray-100)",
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
+                                        }}
+                                    >
+                                        <Badge tone={STATUS_TONE[a.status] || "neutral"} soft>
+                                            {a.status}
+                                        </Badge>
+                                        <div style={{ textAlign: "right" }}>
+                                            {a.ipdId && (
+                                                <p
+                                                    style={{
+                                                        margin: 0,
+                                                        fontSize: 11,
+                                                        fontFamily:
+                                                            "ui-monospace, SFMono-Regular, Menlo, monospace",
+                                                        fontWeight: 700,
+                                                        color: "var(--hms-gray-900)",
+                                                    }}
+                                                >
+                                                    {fmtId(a.ipdId)}
+                                                </p>
+                                            )}
+                                            <p
+                                                style={{
+                                                    margin: 0,
+                                                    fontSize: 10,
+                                                    fontFamily:
+                                                        "ui-monospace, SFMono-Regular, Menlo, monospace",
+                                                    color: "var(--hms-gray-400)",
+                                                }}
+                                            >
+                                                {fmtId(a.admissionNumber)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <Card style={{ padding: 0, overflow: "hidden" }}>
+                        <div style={{ overflowX: "auto" }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                <thead>
+                                    <tr
+                                        style={{
+                                            borderBottom: "1px solid var(--hms-gray-100)",
+                                            background: "var(--hms-gray-50)",
+                                        }}
+                                    >
+                                        {[
+                                            "Adm. no.",
+                                            "Patient",
+                                            "Department",
+                                            "Room",
+                                            "Doctor",
+                                            "Admitted",
+                                            "Status",
+                                        ].map((h) => (
+                                            <th
+                                                key={h}
+                                                style={{
+                                                    padding: "10px 16px",
+                                                    textAlign: "left",
+                                                    fontSize: 11,
+                                                    fontWeight: 700,
+                                                    color: "var(--hms-gray-500)",
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: "0.06em",
+                                                }}
+                                            >
+                                                {h}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {admissions.map((a) => {
+                                        const overdue = isOverdue(a);
+                                        return (
+                                            <tr
+                                                key={a.id}
+                                                onClick={() => setSelectedAdmission(a)}
+                                                style={{
+                                                    borderBottom: "1px solid var(--hms-gray-100)",
+                                                    cursor: "pointer",
+                                                    borderLeft: overdue
+                                                        ? "4px solid #fb7185"
+                                                        : a.inOt
+                                                            ? "4px solid #7c3aed"
+                                                            : undefined,
+                                                }}
+                                            >
+                                                <td style={{ padding: "10px 16px" }}>
+                                                    {a.ipdId && (
+                                                        <p
+                                                            style={{
+                                                                margin: 0,
+                                                                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                                                                fontSize: 11,
+                                                                fontWeight: 700,
+                                                                color: "var(--hms-gray-900)",
+                                                            }}
+                                                        >
+                                                            {fmtId(a.ipdId)}
+                                                        </p>
+                                                    )}
+                                                    <p
+                                                        style={{
+                                                            margin: 0,
+                                                            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                                                            fontSize: 10,
+                                                            color: "var(--hms-gray-400)",
+                                                        }}
+                                                    >
+                                                        {fmtId(a.admissionNumber)}
+                                                    </p>
+                                                </td>
+                                                <td style={{ padding: "10px 16px" }}>
+                                                    <p
+                                                        style={{
+                                                            margin: 0,
+                                                            fontSize: 13,
+                                                            fontWeight: 500,
+                                                            color: "var(--hms-gray-900)",
+                                                        }}
+                                                    >
+                                                        {a.patientName}
+                                                    </p>
+                                                    <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>
+                                                        {fmtId(a.patientUhid)}
+                                                    </p>
+                                                </td>
+                                                <td
+                                                    style={{
+                                                        padding: "10px 16px",
+                                                        fontSize: 13,
+                                                        color: "var(--hms-gray-600)",
+                                                    }}
+                                                >
+                                                    {a.departmentName || "—"}
+                                                </td>
+                                                <td style={{ padding: "10px 16px" }}>
+                                                    <p style={{ margin: 0, fontSize: 13, color: "var(--hms-gray-600)" }}>
+                                                        {a.roomNumber || (
+                                                            <span style={{ color: "var(--hms-warning)", fontSize: 11 }}>
+                                                                Not assigned
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                    {a.inOt && (
+                                                        <span
+                                                            style={{
+                                                                fontSize: 11,
+                                                                fontWeight: 600,
+                                                                color: "#7c3aed",
+                                                                display: "inline-flex",
+                                                                alignItems: "center",
+                                                                gap: 4,
+                                                            }}
+                                                        >
+                                                            <Scissors size={12} /> In OT
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td
+                                                    style={{
+                                                        padding: "10px 16px",
+                                                        fontSize: 13,
+                                                        color: "var(--hms-gray-600)",
+                                                    }}
+                                                >
+                                                    {a.admittingDoctorName ? `Dr. ${a.admittingDoctorName}` : "—"}
+                                                </td>
+                                                <td
+                                                    style={{
+                                                        padding: "10px 16px",
+                                                        fontSize: 11,
+                                                        color: "var(--hms-gray-500)",
+                                                    }}
+                                                    title={fmtDateTime(a.admissionDate)}
+                                                >
+                                                    {timeAgo(a.admissionDate)}
+                                                </td>
+                                                <td style={{ padding: "10px 16px" }}>
+                                                    <Badge tone={STATUS_TONE[a.status] || "neutral"} soft>
+                                                        {a.status}
+                                                    </Badge>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                )}
+
+                {!loading && totalElements > 0 && totalPages > 1 && (
+                    <Pagination
+                        currentPage={page + 1}
+                        totalPages={totalPages}
+                        totalItems={totalElements}
+                        pageSize={size}
+                        onPageChange={(p) => setPage(p - 1)}
+                    />
+                )}
+            </div>
+
+            {showAdmitModal && (
+                <AdmitPatientModal
+                    onClose={() => setShowAdmitModal(false)}
+                    onAdmitted={() => {
+                        setShowAdmitModal(false);
+                        notify("Patient admitted successfully", "success");
+                        load();
+                    }}
+                />
+            )}
+            {dischargeTarget && (
+                <DischargeModal
+                    admission={dischargeTarget}
+                    onClose={() => setDischargeTarget(null)}
+                    onDischarged={() => {
+                        setDischargeTarget(null);
+                        notify("Patient discharged", "success");
+                        load();
+                    }}
+                />
+            )}
+            {otTarget && (
+                <MoveToOTModal
+                    admission={otTarget}
+                    onClose={() => setOtTarget(null)}
+                    onMoved={() => {
+                        setOtTarget(null);
+                        notify(`${otTarget.patientName} moved to OT`, "success");
+                        load();
+                    }}
+                />
+            )}
+            {billingTarget && (
+                <ViewBillingModal
+                    admission={billingTarget}
+                    onClose={() => setBillingTarget(null)}
+                />
+            )}
+
+            {selectedAdmission && (
+                <IPDDetailPane
+                    admission={selectedAdmission}
+                    onClose={() => setSelectedAdmission(null)}
+                    onDischarge={() => {
+                        setDischargeTarget(selectedAdmission);
+                        setSelectedAdmission(null);
+                    }}
+                    onMoveToOT={() => {
+                        setOtTarget(selectedAdmission);
+                        setSelectedAdmission(null);
+                    }}
+                    onReturnToWard={async () => {
+                        const a = selectedAdmission;
+                        setSelectedAdmission(null);
+                        setReturningToWard(a.id);
+                        try {
+                            await admissionApi.returnToWard(a.id);
+                            notify(`${a.patientName} returned to ward`, "success");
+                            load();
+                        } catch (err) {
+                            notify(
+                                err?.response?.data?.message || "Failed to return to ward",
+                                "error"
+                            );
+                        } finally {
+                            setReturningToWard(null);
+                        }
+                    }}
+                />
+            )}
+        </div>
+    );
 }
