@@ -1,137 +1,174 @@
 import { useState, useEffect } from "react";
-import { X, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { hospitalServiceApi } from "@/utils/api";
-import SidePane from "@/components/SidePane";
+import {
+    Button,
+    Drawer,
+    FormGroup,
+    Input,
+    Modal,
+} from "@/components/ui";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 
+/**
+ * Add / Edit Service.
+ *
+ * UX contract preserved from the pre-migration file:
+ *   * `service` truthy  → edit, opens a right-edge Drawer.
+ *   * `service` falsey  → create, opens a centred Modal.
+ * Both shells share the same form id so a single submit pipeline is the
+ * source of truth.
+ *
+ * <SearchableSelect> is kept on the legacy stack for now — replacing the
+ * searchable combobox is a separate concern from the design-system
+ * migration and will happen later. Lives inside an <FormGroup> so the
+ * label and surrounding rhythm match the rest of the form.
+ */
 function AddServiceModal({ isOpen, onClose, service, specializations, onSuccess }) {
-  const { user } = useAuth();
-  const { notify } = useNotification();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: "", specializationId: "", price: "", gstRate: "" });
+    const { user } = useAuth();
+    const { notify } = useNotification();
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        name: "",
+        specializationId: "",
+        price: "",
+        gstRate: "",
+    });
 
-  useEffect(() => {
-    if (service) {
-      setFormData({
-        name: service.name,
-        specializationId: service.specializationId,
-        price: service.price.toString(),
-        gstRate: service.gstRate != null && service.gstRate !== 0 ? service.gstRate.toString() : "",
-      });
-    } else {
-      setFormData({ name: "", specializationId: "", price: "", gstRate: "" });
-    }
-  }, [service, isOpen]);
+    useEffect(() => {
+        if (service) {
+            setFormData({
+                name: service.name,
+                specializationId: service.specializationId,
+                price: service.price.toString(),
+                gstRate:
+                    service.gstRate != null && service.gstRate !== 0
+                        ? service.gstRate.toString()
+                        : "",
+            });
+        } else {
+            setFormData({ name: "", specializationId: "", price: "", gstRate: "" });
+        }
+    }, [service, isOpen]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const payload = {
-      ...formData,
-      hospitalId: user.hospitalId,
-      price: parseFloat(formData.price),
-      gstRate: Number(formData.gstRate),
-      isActive: service ? service.isActive : true,
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!user?.hospitalId) return;
+        const payload = {
+            ...formData,
+            hospitalId: user.hospitalId,
+            price: parseFloat(formData.price),
+            gstRate: Number(formData.gstRate),
+            isActive: service ? service.isActive : true,
+        };
+        setLoading(true);
+        try {
+            if (service) {
+                await hospitalServiceApi.update(service.id, payload);
+                notify("Service updated successfully", "success");
+            } else {
+                await hospitalServiceApi.create(payload);
+                notify("Service created successfully", "success");
+            }
+            onSuccess?.();
+            onClose?.();
+        } catch {
+            notify(service ? "Failed to update service" : "Failed to create service", "error");
+        } finally {
+            setLoading(false);
+        }
     };
-    setLoading(true);
-    try {
-      if (service) {
-        await hospitalServiceApi.update(service.id, payload);
-        notify("Service updated successfully", "success");
-      } else {
-        await hospitalServiceApi.create(payload);
-        notify("Service created successfully", "success");
-      }
-      onSuccess();
-      onClose();
-    } catch (err) {
-      notify(service ? "Failed to update service" : "Failed to create service", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const inputCls = "w-full px-4 py-2.5 bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#222222] rounded-lg focus:ring-2 focus:ring-slate-300/20 outline-none transition-all placeholder-slate-400 dark:placeholder-[#444444] text-slate-700 dark:text-[#cccccc]";
-  const labelCls = "text-sm font-semibold text-slate-700 dark:text-[#aaaaaa] ml-1";
+    const formId = "service-form";
+    const required = <span style={{ color: "var(--hms-danger)" }}>*</span>;
 
-  const formFields = (
-    <form id="serviceForm" onSubmit={handleSubmit} className="space-y-5">
-      <div className="space-y-1.5">
-        <label className={labelCls}>Service Name <span className="text-rose-500">*</span></label>
-        <input type="text" value={formData.name} onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-          placeholder="e.g. General Consultation" className={inputCls} required />
-      </div>
-      <div className="space-y-1.5">
-        <label className={labelCls}>Department <span className="text-rose-500">*</span></label>
-        <SearchableSelect
-          value={formData.specializationId}
-          onChange={(v) => setFormData((p) => ({ ...p, specializationId: v }))}
-          options={specializations.map((s) => ({ value: s.id, label: s.name }))}
-          placeholder="Select Department"
-          className={inputCls}
-        />
-      </div>
-      <div className="space-y-1.5">
-        <label className={labelCls}>Price (₹) <span className="text-rose-500">*</span></label>
-        <input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData((p) => ({ ...p, price: e.target.value }))}
-          placeholder="0.00" className={inputCls} required />
-      </div>
-      <div className="space-y-1.5">
-        <label className={labelCls}>GST Rate (%)</label>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            min="0"
-            max="28"
-            step="0.5"
-            value={formData.gstRate}
-            onChange={(e) => setFormData((p) => ({ ...p, gstRate: e.target.value }))}
-            placeholder="e.g. 18"
-            className={inputCls + " w-32"}
-          />
-          <span className="text-sm text-slate-500 dark:text-[#888]">%</span>
-          <p className="text-xs text-slate-400 dark:text-[#666] flex-1">Leave blank if exempt</p>
-        </div>
-      </div>
-    </form>
-  );
+    const formBody = (
+        <form
+            id={formId}
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: 16 }}
+        >
+            <FormGroup label={<>Service name {required}</>}>
+                <Input
+                    required
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="e.g. General consultation"
+                />
+            </FormGroup>
 
-  const actionButtons = (isAdd) => (
-    <div className="flex gap-3">
-      <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
-      <button type="submit" form="serviceForm" disabled={loading} className="btn-primary flex-1">
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isAdd ? "Add New Service" : "Update Service"}
-      </button>
-    </div>
-  );
+            <FormGroup label={<>Department {required}</>}>
+                <SearchableSelect
+                    value={formData.specializationId}
+                    onChange={(v) => setFormData((p) => ({ ...p, specializationId: v }))}
+                    options={specializations.map((s) => ({ value: s.id, label: s.name }))}
+                    placeholder="Select department"
+                />
+            </FormGroup>
 
-  if (service) {
-    return (
-      <SidePane isOpen={isOpen} onClose={onClose} title="Edit Service" footer={actionButtons(false)}>
-        {formFields}
-      </SidePane>
+            <FormGroup label={<>Price (₹) {required}</>}>
+                <Input
+                    required
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.price}
+                    onChange={(e) => setFormData((p) => ({ ...p, price: e.target.value }))}
+                    placeholder="0.00"
+                />
+            </FormGroup>
+
+            <FormGroup label="GST rate (%)" hint="Leave blank if exempt">
+                <Input
+                    type="number"
+                    min="0"
+                    max="28"
+                    step="0.5"
+                    value={formData.gstRate}
+                    onChange={(e) => setFormData((p) => ({ ...p, gstRate: e.target.value }))}
+                    placeholder="e.g. 18"
+                />
+            </FormGroup>
+        </form>
     );
-  }
 
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1a1a1a]">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">New Service</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-[#1e1e1e] rounded-lg text-slate-400 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-6 space-y-5">
-          {formFields}
-          <div className="pt-2">{actionButtons(true)}</div>
-        </div>
-      </div>
-    </div>
-  );
+    const actionRow = (
+        <>
+            <Button variant="cancel" onClick={onClose} type="button">
+                Cancel
+            </Button>
+            <Button variant="primary" type="submit" form={formId} loading={loading}>
+                {service ? "Update service" : "Add new service"}
+            </Button>
+        </>
+    );
+
+    if (service) {
+        return (
+            <Drawer
+                isOpen={isOpen}
+                onClose={onClose}
+                title="Edit service"
+                footer={actionRow}
+            >
+                {formBody}
+            </Drawer>
+        );
+    }
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="New service"
+            size="md"
+            footer={actionRow}
+        >
+            {formBody}
+        </Modal>
+    );
 }
 
 export { AddServiceModal as default };
