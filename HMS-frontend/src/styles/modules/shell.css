@@ -136,31 +136,35 @@
 }
 
 
-/* Nav items (link + accordion trigger) */
+/* Nav items (link + accordion trigger) — matches Ziranly visual */
 .hms-sidebar__link {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     padding: 10px 12px;
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 7px;
+    font-size: 13px;
     font-weight: 500;
     text-decoration: none;
-    color: var(--hms-gray-700);
+    color: var(--hms-gray-600);
     transition: background 150ms ease, color 150ms ease;
 }
 
 .hms-sidebar__link:hover {
-    background: var(--hms-gray-50);
-    color: var(--hms-gray-900);
-}
-
-.hms-sidebar__link.is-active {
     background: var(--hms-gray-100);
     color: var(--hms-gray-900);
 }
 
-.hms-sidebar__link.is-indent { padding-left: 32px; }
+.hms-sidebar__link.is-active {
+    background: #eaecf0;
+    color: var(--hms-gray-900);
+    font-weight: 700;
+}
+
+.hms-sidebar__link.is-indent {
+    padding: 8px 10px;
+    border-radius: 5px;
+}
 
 /* Icon-only mode for the collapsed sidebar */
 .hms-sidebar__link.is-icon-only {
@@ -183,32 +187,33 @@
 }
 
 
-/* Accordion section (collapsible group) */
+/* Accordion section (collapsible group) — matches Ziranly visual */
 .hms-sidebar__acc-btn {
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     padding: 10px 12px;
     border: none;
     background: transparent;
-    border-radius: 8px;
+    border-radius: 7px;
     font-family: var(--hms-font-family);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     text-align: left;
     cursor: pointer;
-    color: var(--hms-gray-700);
+    color: var(--hms-gray-600);
     transition: background 150ms ease, color 150ms ease;
 }
 
 .hms-sidebar__acc-btn:hover {
-    background: var(--hms-gray-50);
+    background: var(--hms-gray-100);
     color: var(--hms-gray-900);
 }
 
 .hms-sidebar__acc-btn.is-active {
     color: var(--hms-gray-900);
+    font-weight: 700;
 }
 
 .hms-sidebar__acc-chevron {
@@ -216,22 +221,27 @@
     height: 14px;
     transition: transform 200ms ease;
     opacity: 0.5;
+    color: var(--hms-gray-400);
 }
 
 .hms-sidebar__acc-chevron.is-open { transform: rotate(180deg); }
 
+/* Submenu with the vertical left-line accent from Ziranly */
 .hms-sidebar__acc-body {
-    margin-top: 2px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
+    padding: 4px 0 6px 12px;
+    margin: 2px 0 2px 22px;
+    border-left: 2px solid var(--hms-gray-200);
 }
 
 
-/* Footer (external apps) */
+/* Footer (external apps) — matches Ziranly's subtle gray bg */
 .hms-sidebar__footer {
     border-top: 1px solid var(--hms-gray-200);
-    padding: 8px;
+    background: var(--hms-gray-50);
+    padding: 10px;
     display: flex;
     flex-direction: column;
     gap: 2px;
