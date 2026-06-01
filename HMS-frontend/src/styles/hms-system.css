@@ -1,0 +1,1134 @@
+/* ===================================================================
+   HMS DESIGN SYSTEM — Component primitives (hms-system.css)
+   -------------------------------------------------------------------
+   Self-contained set of low-level component classes. Every selector
+   starts with .hms- so there is no overlap with legacy HMS classes
+   (.btn-primary, .card, .input, .consult-input, …) or with Tailwind
+   utility classes. The two systems coexist during the migration; we
+   delete legacy classes only after grep confirms zero remaining
+   call-sites.
+
+   Imports
+     Reads design tokens from base.css. Do not redefine tokens here.
+
+   Public class surface
+     Card             .hms-card  .hms-card.is-interactive  .hms-card.is-glass
+     Stat card        .hms-stat-card  .hms-stat-grid  .hms-stat-label  .hms-stat-value
+     Table            .hms-table-wrapper  .hms-table  .hms-loading  .hms-pagination
+     Badge            .hms-badge[ .is-success | .is-warning | .is-danger | .is-info | .is-neutral | .is-soft ]
+     Form             .hms-form-group  .hms-label  .hms-input  .hms-select  .hms-textarea  .hms-form-hint  .hms-form-error
+     Tabs             .hms-tabs-pill  .hms-tabs-underline  .hms-tab-btn  .tab-count
+     Button           .hms-btn  .hms-btn-primary  .hms-btn-secondary  .hms-btn-cancel  .hms-btn-danger  .hms-btn-ghost  .hms-btn-icon  .hms-btn-circle
+                      modifiers: .is-sm  .is-full  .is-loading  .is-blue  .is-orange  .is-green  .is-outline
+     Modal            .hms-modal-overlay  .hms-modal[ .hms-modal-sm | -md | -lg | -xl ]  .hms-modal-header  .hms-modal-body  .hms-modal-footer  .hms-modal-close
+     Drawer           .hms-drawer-overlay  .hms-drawer  .hms-drawer-header  .hms-drawer-body  .hms-drawer-footer  .hms-drawer-close
+     Page header      .hms-page-header  .hms-page-title  .hms-page-subtitle  .hms-page-actions  .hms-page-back-btn
+     Empty state      .hms-empty-state  .hms-empty-state-card  .hms-empty-state-title  .hms-empty-state-description  .hms-empty-state-btn
+     Search bar       .hms-search-bar  .hms-search-icon  .hms-search-clear
+     Alerts           .hms-alert[ .is-amber | .is-blue | .is-red | .is-green ]
+   =================================================================== */
+
+
+/* ===================================================================
+   1. Cards
+   =================================================================== */
+.hms-card {
+    background: var(--hms-white);
+    border-radius: var(--hms-radius);
+    border: 1px solid var(--hms-gray-200);
+    box-shadow: var(--hms-shadow-card);
+    padding: var(--hms-space-lg);
+    transition: var(--hms-transition-normal);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hms-space-sm);
+}
+
+.hms-card.is-interactive {
+    cursor: pointer;
+}
+
+.hms-card.is-interactive:hover {
+    box-shadow: var(--hms-shadow-card-hover);
+    transform: translateY(-4px);
+    border-color: var(--hms-gray-300);
+}
+
+.hms-card.is-glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+
+/* ===================================================================
+   2. Stat cards
+   =================================================================== */
+.hms-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--hms-space-md);
+    margin-bottom: var(--hms-space-lg);
+}
+
+.hms-stat-card {
+    background: var(--hms-white);
+    border-radius: var(--hms-radius);
+    border: 1px solid var(--hms-gray-200);
+    box-shadow: var(--hms-shadow-card);
+    padding: var(--hms-space-lg);
+    position: relative;
+    overflow: hidden;
+    transition: var(--hms-transition-normal);
+}
+
+.hms-stat-card:hover {
+    box-shadow: var(--hms-shadow-card-hover);
+    transform: translateY(-4px);
+    border-color: var(--hms-gray-300);
+}
+
+.hms-stat-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.hms-stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.hms-stat-icon {
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    font-size: 64px;
+    opacity: 0.05;
+    transform: rotate(-10deg);
+    pointer-events: none;
+}
+
+
+/* ===================================================================
+   3. Tables
+   =================================================================== */
+.hms-table-wrapper {
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: var(--hms-radius);
+    overflow: hidden;
+}
+
+.hms-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    text-align: left;
+    font-family: var(--hms-font-family);
+}
+
+.hms-table thead th {
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-600);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--hms-gray-200);
+    white-space: nowrap;
+}
+
+.hms-table tbody td {
+    padding: 8px 16px;
+    color: var(--hms-gray-700);
+    border-bottom: 1px solid var(--hms-gray-100);
+    vertical-align: middle;
+    transition: var(--hms-transition-fast);
+}
+
+.hms-table tbody tr:hover td {
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-900);
+}
+
+.hms-pagination {
+    padding: 16px;
+    border-top: 1px solid var(--hms-gray-100);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
+.hms-pagination span {
+    font-size: 13px;
+    color: var(--hms-gray-600);
+}
+
+.hms-loading {
+    padding: 48px;
+    text-align: center;
+    color: var(--hms-gray-400);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+
+/* ===================================================================
+   4. Badges
+   =================================================================== */
+.hms-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: var(--hms-radius-full);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.hms-badge.is-soft {
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.hms-badge.is-success {
+    background: var(--hms-success-bg);
+    color: #166534;
+    border: 1px solid var(--hms-success-border);
+}
+
+.hms-badge.is-warning {
+    background: var(--hms-warning-bg);
+    color: #92400e;
+    border: 1px solid var(--hms-warning-border);
+}
+
+.hms-badge.is-danger {
+    background: var(--hms-danger-bg);
+    color: #dc2626;
+    border: 1px solid var(--hms-danger-border);
+}
+
+.hms-badge.is-info {
+    background: var(--hms-info-bg);
+    color: #0369a1;
+    border: 1px solid var(--hms-info-border);
+}
+
+.hms-badge.is-neutral {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-600);
+    border: 1px solid var(--hms-gray-200);
+}
+
+
+/* ===================================================================
+   5. Form fields (input, select, textarea, label, group, error)
+   =================================================================== */
+.hms-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hms-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-700);
+}
+
+.hms-input,
+.hms-select,
+.hms-textarea {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: var(--hms-radius-sm);
+    border: 1.5px solid var(--hms-gray-200);
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--hms-white);
+    color: var(--hms-gray-800);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    line-height: 1.4;
+    font-family: var(--hms-font-family);
+}
+
+.hms-input,
+.hms-select {
+    height: 40px;
+}
+
+.hms-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.hms-input:hover,
+.hms-select:hover,
+.hms-textarea:hover {
+    border-color: var(--hms-gray-300);
+}
+
+.hms-input:focus,
+.hms-select:focus,
+.hms-textarea:focus {
+    border-color: var(--hms-brand-primary);
+    box-shadow: 0 0 0 3px var(--hms-brand-primary-glow);
+}
+
+.hms-input:disabled,
+.hms-select:disabled,
+.hms-textarea:disabled {
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-400);
+    cursor: not-allowed;
+    border-color: var(--hms-gray-200);
+    box-shadow: none;
+}
+
+.hms-input::placeholder,
+.hms-textarea::placeholder {
+    color: var(--hms-gray-400);
+    font-weight: 400;
+}
+
+.hms-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 14px;
+    padding-right: 44px;
+    cursor: pointer;
+}
+
+.hms-form-hint {
+    color: var(--hms-gray-400);
+    font-size: 11px;
+    margin-top: 2px;
+    display: block;
+}
+
+.hms-form-error {
+    color: var(--hms-danger);
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+
+/* ===================================================================
+   6. Tabs
+   =================================================================== */
+/* 6.1 Pill (segmented control) */
+.hms-tabs-pill {
+    display: inline-flex;
+    background: var(--hms-gray-100);
+    padding: 4px;
+    border-radius: 8px;
+    gap: 4px;
+    border: 1px solid var(--hms-gray-200);
+    width: fit-content;
+}
+
+.hms-tabs-pill .hms-tab-btn {
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-500);
+    background: transparent;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0;
+    cursor: pointer;
+    outline: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    font-family: var(--hms-font-family);
+}
+
+.hms-tabs-pill .hms-tab-btn:hover {
+    background: var(--hms-gray-200);
+}
+
+.hms-tabs-pill .hms-tab-btn.active {
+    background: var(--hms-brand-primary);
+    color: var(--hms-white);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.hms-tabs-pill .hms-tab-btn .tab-count {
+    background: var(--hms-gray-200);
+    color: var(--hms-gray-600);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 800;
+}
+
+.hms-tabs-pill .hms-tab-btn.active .tab-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--hms-white);
+}
+
+/* 6.2 Underline (navigation) */
+.hms-tabs-underline {
+    display: flex;
+    gap: 24px;
+    border-bottom: 1px solid var(--hms-gray-200);
+    margin-bottom: 24px;
+}
+
+.hms-tabs-underline .hms-tab-btn {
+    padding: 12px 0;
+    border: none;
+    background: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--hms-gray-400);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    border-radius: 0;
+    font-family: var(--hms-font-family);
+}
+
+.hms-tabs-underline .hms-tab-btn:hover {
+    color: var(--hms-gray-600);
+}
+
+.hms-tabs-underline .hms-tab-btn.active {
+    color: var(--hms-brand-primary);
+    border-bottom-color: var(--hms-brand-primary);
+    font-weight: 800;
+}
+
+.hms-tabs-underline .hms-tab-btn .tab-count {
+    font-weight: 800;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+    background: var(--hms-gray-50);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.hms-tabs-underline .hms-tab-btn.active .tab-count {
+    color: var(--hms-brand-primary);
+    background: var(--hms-gray-100);
+}
+
+
+/* ===================================================================
+   7. Buttons
+   -------------------------------------------------------------------
+   7 base types: primary · secondary · cancel · danger · ghost · icon · circle
+   Modifiers:    .is-sm · .is-full · .is-loading · .is-blue · .is-orange · .is-green · .is-outline
+   =================================================================== */
+.hms-btn,
+.hms-btn-primary,
+.hms-btn-secondary,
+.hms-btn-cancel,
+.hms-btn-danger,
+.hms-btn-ghost,
+.hms-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 7px;
+    font-size: 12.6px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    white-space: nowrap;
+    outline: none;
+    border: 1.5px solid transparent;
+    transition: background 0.18s ease, border-color 0.18s ease,
+        box-shadow 0.18s ease, transform 0.12s ease, color 0.18s ease;
+    text-decoration: none;
+    position: relative;
+    font-family: var(--hms-font-family);
+}
+
+.hms-btn:active,
+.hms-btn-primary:active,
+.hms-btn-secondary:active,
+.hms-btn-cancel:active,
+.hms-btn-danger:active,
+.hms-btn-ghost:active {
+    transform: scale(0.97);
+}
+
+.hms-btn:disabled,
+.hms-btn-primary:disabled,
+.hms-btn-secondary:disabled,
+.hms-btn-cancel:disabled,
+.hms-btn-danger:disabled,
+.hms-btn-ghost:disabled,
+.hms-btn-icon:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* 7.1 Primary (Save / Add / Submit) */
+.hms-btn-primary {
+    background: #0f172a;
+    color: var(--hms-white);
+    border-color: #0f172a;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+}
+
+.hms-btn-primary:hover {
+    background: #1e293b;
+    border-color: #1e293b;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.22);
+    transform: translateY(-1px);
+}
+
+/* 7.2 Secondary (Filter / Export / View) */
+.hms-btn-secondary {
+    background: var(--hms-white);
+    color: var(--hms-gray-600);
+    border-color: var(--hms-gray-200);
+}
+
+.hms-btn-secondary:hover {
+    background: var(--hms-gray-50);
+    border-color: #0f172a;
+    color: #0f172a;
+}
+
+.hms-btn-secondary.active,
+.hms-btn-secondary[aria-pressed="true"] {
+    background: var(--hms-gray-100);
+    border-color: var(--hms-gray-400);
+    color: #0f172a;
+}
+
+/* 7.3 Cancel (Dismiss / Go Back / Close) */
+.hms-btn-cancel {
+    background: var(--hms-white);
+    color: var(--hms-gray-500);
+    border-color: var(--hms-gray-200);
+}
+
+.hms-btn-cancel:hover {
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-700);
+    border-color: var(--hms-gray-300);
+}
+
+/* 7.4 Danger (Delete / Remove / Revoke) */
+.hms-btn-danger {
+    background: var(--hms-danger);
+    color: var(--hms-white);
+    border-color: var(--hms-danger);
+    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.25);
+}
+
+.hms-btn-danger:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    transform: translateY(-1px);
+}
+
+.hms-btn-danger.is-outline {
+    background: transparent;
+    color: var(--hms-danger);
+    border-color: #fca5a5;
+}
+
+.hms-btn-danger.is-outline:hover {
+    background: var(--hms-danger-bg);
+    border-color: var(--hms-danger);
+}
+
+/* 7.5 Ghost (subtle inline text-link) */
+.hms-btn-ghost {
+    background: transparent;
+    color: var(--hms-gray-500);
+    border-color: transparent;
+    padding: 7px 12px;
+}
+
+.hms-btn-ghost:hover {
+    background: var(--hms-gray-100);
+    color: #0f172a;
+}
+
+/* 7.6 Icon (toolbar square) */
+.hms-btn-icon {
+    background: transparent;
+    color: var(--hms-gray-500);
+    border-color: transparent;
+    padding: 7px;
+    border-radius: 7px;
+    width: 34px;
+    height: 34px;
+}
+
+.hms-btn-icon:hover {
+    background: var(--hms-gray-100);
+    color: #0f172a;
+}
+
+.hms-btn-icon.is-active {
+    background: var(--hms-gray-200);
+    color: #0f172a;
+}
+
+/* 7.7 Circle (refresh / floating tool) */
+.hms-btn-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--hms-gray-100);
+    color: #0f172a;
+    border: 1px solid var(--hms-gray-200);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--hms-font-family);
+}
+
+.hms-btn-circle:hover {
+    background: var(--hms-gray-50);
+    border-color: #0f172a;
+    transform: translateY(-1px);
+}
+
+.hms-btn-circle:active {
+    transform: scale(0.97);
+}
+
+/* Colour variants */
+.hms-btn-primary.is-blue,
+.hms-btn-secondary.is-blue {
+    background: #2563eb;
+    color: var(--hms-white);
+    border-color: #2563eb;
+}
+
+.hms-btn-primary.is-blue:hover,
+.hms-btn-secondary.is-blue:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.hms-btn-primary.is-orange,
+.hms-btn-secondary.is-orange {
+    background: #ea580c;
+    color: var(--hms-white);
+    border-color: #ea580c;
+}
+
+.hms-btn-primary.is-orange:hover,
+.hms-btn-secondary.is-orange:hover {
+    background: #c2410c;
+    border-color: #c2410c;
+}
+
+.hms-btn-primary.is-green,
+.hms-btn-secondary.is-green {
+    background: #16a34a;
+    color: var(--hms-white);
+    border-color: #16a34a;
+}
+
+.hms-btn-primary.is-green:hover,
+.hms-btn-secondary.is-green:hover {
+    background: #15803d;
+    border-color: #15803d;
+}
+
+/* Size + width modifiers */
+.hms-btn-primary.is-sm,
+.hms-btn-secondary.is-sm,
+.hms-btn-cancel.is-sm,
+.hms-btn-danger.is-sm,
+.hms-btn-ghost.is-sm {
+    padding: 5px 12px;
+    font-size: 11.5px;
+    border-radius: 5px;
+}
+
+.hms-btn-primary.is-full,
+.hms-btn-secondary.is-full,
+.hms-btn-cancel.is-full,
+.hms-btn-danger.is-full,
+.hms-btn-ghost.is-full {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Loading spinner */
+.hms-btn-primary.is-loading,
+.hms-btn-secondary.is-loading,
+.hms-btn-cancel.is-loading,
+.hms-btn-danger.is-loading {
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.hms-btn-primary.is-loading::after,
+.hms-btn-secondary.is-loading::after,
+.hms-btn-cancel.is-loading::after,
+.hms-btn-danger.is-loading::after {
+    content: "";
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    top: 50%;
+    left: 50%;
+    margin: -7.5px 0 0 -7.5px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: hms-btn-spin 0.7s linear infinite;
+}
+
+.hms-btn-secondary.is-loading::after,
+.hms-btn-cancel.is-loading::after {
+    border: 2px solid var(--hms-gray-200);
+    border-top-color: var(--hms-gray-500);
+}
+
+@keyframes hms-btn-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* ===================================================================
+   8. Modal
+   -------------------------------------------------------------------
+   Designed to be portalled into #modal-root (see index.html).
+   Stacking layers driven by tokens — no more z-50 / z-[60] / z-[9999].
+   =================================================================== */
+.hms-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--hms-z-modal-overlay);
+    padding: 20px;
+    animation: hms-fade-in 0.18s ease-out;
+}
+
+.hms-modal {
+    background: var(--hms-white);
+    border-radius: var(--hms-radius);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    overflow: hidden;
+    width: 100%;
+    max-width: 560px;
+    z-index: var(--hms-z-modal);
+    font-family: var(--hms-font-family);
+}
+
+.hms-modal-sm {
+    max-width: 400px;
+}
+
+.hms-modal-md {
+    max-width: 560px;
+}
+
+.hms-modal-lg {
+    max-width: 760px;
+}
+
+.hms-modal-xl {
+    max-width: 1000px;
+}
+
+.hms-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--hms-gray-100);
+    flex-shrink: 0;
+}
+
+.hms-modal-header h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.hms-modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--hms-gray-400);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.hms-modal-close:hover {
+    color: #0f172a;
+    background: var(--hms-gray-100);
+}
+
+.hms-modal-body {
+    padding: 16px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.hms-modal-footer {
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    border-top: 1px solid var(--hms-gray-100);
+    flex-shrink: 0;
+}
+
+@keyframes hms-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+
+/* ===================================================================
+   9. Drawer (right-slide overlay — replacement for SidePane)
+   =================================================================== */
+.hms-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    z-index: var(--hms-z-drawer);
+    animation: hms-fade-in 0.18s ease-out;
+}
+
+.hms-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 500px;
+    max-width: 95vw;
+    background: var(--hms-white);
+    z-index: calc(var(--hms-z-drawer) + 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.12);
+    animation: hms-slide-in-right 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+    font-family: var(--hms-font-family);
+}
+
+.hms-drawer-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--hms-gray-100);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.hms-drawer-header h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.hms-drawer-body {
+    padding: 20px 24px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.hms-drawer-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--hms-gray-100);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+.hms-drawer-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--hms-gray-400);
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.hms-drawer-close:hover {
+    color: #0f172a;
+    background: var(--hms-gray-100);
+}
+
+@keyframes hms-slide-in-right {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+
+/* ===================================================================
+   10. Page header
+   =================================================================== */
+.hms-page-header {
+    padding: 24px 32px;
+    background: var(--hms-white);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+    position: sticky;
+    top: 0;
+    z-index: var(--hms-z-sticky);
+}
+
+.hms-page-header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1600px;
+    margin: 0 auto;
+    gap: 16px;
+}
+
+.hms-page-header-titles {
+    flex: 1;
+    min-width: 0;
+}
+
+.hms-page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.8px;
+    margin: 0 0 4px 0;
+    font-family: var(--hms-font-family);
+}
+
+.hms-page-subtitle {
+    font-size: 13px;
+    color: var(--hms-gray-500);
+    margin: 0;
+}
+
+.hms-page-back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-500);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.hms-page-back-btn:hover {
+    background: var(--hms-gray-200);
+    color: #0f172a;
+    transform: translateX(-2px);
+}
+
+.hms-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+
+/* ===================================================================
+   11. Empty state
+   =================================================================== */
+.hms-empty-state {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--hms-gray-400);
+    background: var(--hms-gray-50);
+    border-radius: var(--hms-radius);
+    font-size: 13px;
+}
+
+.hms-empty-state-card {
+    background: var(--hms-white);
+    border: 1px dashed var(--hms-gray-200);
+    border-radius: var(--hms-radius);
+    padding: 48px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.hms-empty-state-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--hms-radius-full);
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-500);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hms-empty-state-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--hms-gray-800);
+    margin: 0;
+}
+
+.hms-empty-state-description {
+    font-size: 13px;
+    color: var(--hms-gray-500);
+    margin: 0;
+    max-width: 360px;
+}
+
+
+/* ===================================================================
+   12. Search bar
+   =================================================================== */
+.hms-search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.hms-search-bar input {
+    padding-left: 44px !important;
+}
+
+.hms-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    stroke: var(--hms-gray-400);
+    pointer-events: none;
+    transition: stroke 0.2s;
+    z-index: 1;
+}
+
+.hms-search-bar:focus-within .hms-search-icon {
+    stroke: var(--hms-brand-primary);
+}
+
+.hms-search-clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--hms-gray-400);
+    cursor: pointer;
+    outline: none;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.hms-search-clear:hover {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-600);
+}
+
+
+/* ===================================================================
+   13. Alerts (banner-style, used in confirmation modals etc.)
+   =================================================================== */
+.hms-alert {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    border-radius: var(--hms-radius);
+    border: 1px solid transparent;
+    align-items: flex-start;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.hms-alert.is-amber {
+    background: var(--hms-warning-bg);
+    border-color: var(--hms-warning-border);
+    color: #92400e;
+}
+
+.hms-alert.is-blue {
+    background: var(--hms-info-bg);
+    border-color: var(--hms-info-border);
+    color: #0369a1;
+}
+
+.hms-alert.is-red {
+    background: var(--hms-danger-bg);
+    border-color: var(--hms-danger-border);
+    color: #dc2626;
+}
+
+.hms-alert.is-green {
+    background: var(--hms-success-bg);
+    border-color: var(--hms-success-border);
+    color: #166534;
+}

@@ -1,3 +1,15 @@
+/* -------------------------------------------------------------------
+   HMS design system — Phase 1 foundation
+   -------------------------------------------------------------------
+   Loaded BEFORE Tailwind and the legacy class blocks below so that:
+     1. Tokens in base.css are available globally to every later rule.
+     2. hms-* primitives sit at lower cascade priority than legacy
+        .btn-primary / .card / .input etc., guaranteeing zero visual
+        change to pages that still use the legacy classes.
+   ------------------------------------------------------------------- */
+@import './styles/base.css';
+@import './styles/hms-system.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
