@@ -26,7 +26,7 @@ import {
     Table,
 } from "@/components/ui";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 30;
 
 /**
  * Doctors — hospital staff roster scoped to role=DOCTOR. Phase 6a

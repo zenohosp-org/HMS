@@ -30,7 +30,7 @@ import { useAuth } from "@/context/AuthContext";
 import { appointmentsApi, doctorsApi, consultationDraftsApi, vitalsApi } from "@/utils/api";
 import { format, addDays, startOfWeek, endOfWeek, addWeeks, startOfMonth, endOfMonth, addMonths, isSameDay, isSameMonth, parseISO, isToday } from "date-fns";
 import { useNotification } from "@/context/NotificationContext";
-const APPT_PAGE_SIZE = 10;
+const APPT_PAGE_SIZE = 30;
 const TYPE_LABEL = {
   OPD: "Fresh Walk-in",
   FOLLOWUP: "Follow-up",

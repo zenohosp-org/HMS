@@ -13,7 +13,7 @@ import {
   Wrench, Trash2, Loader2, Edit2, ChevronRight, UserPlus,
 } from "lucide-react";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 30;
 
 const STATUS_CONFIG = {
   PENDING: { label: "Pending", color: "text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400", icon: Clock3 },

@@ -6,7 +6,7 @@ import PatientServiceFormModal from "@/components/modals/PatientServiceFormModal
 import Pagination from "@/components/ui/Pagination";
 import { MoreHorizontal, Loader2, Trash2, Pencil, ToggleLeft, ToggleRight, ConciergeBell, Search } from "lucide-react";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 30;
 
 const TYPE_LABEL = {
   FOOD: "Food",

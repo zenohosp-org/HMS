@@ -6,7 +6,7 @@ import { radiologyApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import Pagination from "@/components/ui/Pagination";
 import { FileText, Search, Loader2, CheckCircle2, User, Clock, ExternalLink } from "lucide-react";
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 30;
 const PRIORITY_CLS = {
   ROUTINE: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-[#222222] dark:text-[#888888] dark:border-[#333333]",
   URGENT: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",

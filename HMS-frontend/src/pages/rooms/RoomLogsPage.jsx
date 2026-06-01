@@ -18,7 +18,7 @@ import {
   CalendarClock
 } from "lucide-react";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 30;
 
 const EVENT_META = {
   ROOM_CREATED:      { label: "Room Created",      cls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",       icon: PlusCircle },

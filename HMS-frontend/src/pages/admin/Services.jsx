@@ -26,7 +26,7 @@ import {
 import AddServiceModal from "@/components/modals/AddServiceModal";
 import ServiceFilters from "@/components/specializations/ServiceFilters";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 30;
 
 /**
  * Services — admin metadata list (catalogue + per-hospital pricing).
