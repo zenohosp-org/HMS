@@ -2999,3 +2999,852 @@
     font-size: 11px;
     color: var(--hms-gray-500);
 }
+
+
+/* ===================================================================
+   IPDDetailPane.jsx — right-edge slide-in drawer for an inpatient
+   admission. Pane-local patterns; all keys prefixed .hms-ipd-*.
+   =================================================================== */
+
+/* Drawer shell: fixed full-viewport flex row, scrim + panel right-aligned */
+.hms-ipd-pane {
+    position: fixed;
+    inset: 0;
+    z-index: var(--hms-z-drawer);
+    display: flex;
+    justify-content: flex-end;
+    pointer-events: none;
+}
+
+.hms-ipd-pane__scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    pointer-events: auto;
+}
+
+.hms-ipd-pane__panel {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    height: 100%;
+    background: var(--hms-white);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    border-left: 1px solid var(--hms-gray-200);
+    font-family: var(--hms-font-family);
+}
+
+
+/* Drawer header */
+.hms-ipd-header {
+    flex-shrink: 0;
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--hms-gray-100);
+}
+
+.hms-ipd-header__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.hms-ipd-header__identity {
+    flex: 1;
+    min-width: 0;
+}
+
+.hms-ipd-header__badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.hms-ipd-header__name {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    line-height: 1.2;
+}
+
+.hms-ipd-header__uhid {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+}
+
+.hms-ipd-header__meta {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hms-ipd-header__meta-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-ipd-header__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hms-ipd-header__meta-item > svg {
+    color: var(--hms-gray-300);
+}
+
+.hms-ipd-header__id-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+}
+
+.hms-ipd-header__id-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hms-ipd-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+
+/* Monospace ID pills (primary brand-coloured + outlined secondary) */
+.hms-ipd-id-pill {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700;
+    background: var(--hms-brand-primary);
+    color: var(--hms-white);
+}
+
+.hms-ipd-id-pill.is-outline {
+    background: transparent;
+    color: var(--hms-gray-400);
+    border: 1px solid var(--hms-gray-200);
+    font-weight: 400;
+}
+
+
+/* Header chip button — tone modifiers replace the inline tone={} prop */
+.hms-ipd-chip-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-600);
+    border: 1px solid var(--hms-gray-200);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--hms-font-family);
+}
+
+.hms-ipd-chip-btn:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
+.hms-ipd-chip-btn.is-danger {
+    background: var(--hms-danger-bg);
+    color: var(--hms-danger);
+    border-color: var(--hms-danger-border);
+}
+
+.hms-ipd-chip-btn.is-violet {
+    background: #f5f3ff;
+    color: #6d28d9;
+    border-color: #ddd6fe;
+}
+
+.hms-ipd-chip-btn.is-success {
+    background: var(--hms-success-bg);
+    color: var(--hms-success);
+    border-color: var(--hms-success-border);
+}
+
+.hms-ipd-chip-btn.is-success-solid {
+    background: var(--hms-success);
+    color: var(--hms-white);
+    border-color: transparent;
+}
+
+.hms-ipd-chip-btn.is-ghost {
+    background: transparent;
+    color: var(--hms-gray-400);
+    border-color: transparent;
+}
+
+
+/* Discharge guard banner */
+.hms-ipd-discharge-block {
+    margin-top: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--hms-danger-border);
+    background: var(--hms-danger-bg);
+}
+
+.hms-ipd-discharge-block__icon {
+    color: var(--hms-danger);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.hms-ipd-discharge-block__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.hms-ipd-discharge-block__title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #dc2626;
+}
+
+.hms-ipd-discharge-block__sub {
+    margin: 2px 0 0;
+    font-size: 10px;
+    color: #dc2626;
+}
+
+.hms-ipd-discharge-block__dismiss {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--hms-danger);
+    flex-shrink: 0;
+}
+
+
+/* Tab bar + body shell */
+.hms-ipd-tabs-bar {
+    flex-shrink: 0;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--hms-gray-100);
+    overflow-x: auto;
+}
+
+.hms-ipd-tabs-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.hms-ipd-tab-body {
+    padding: 20px;
+}
+
+.hms-ipd-tab-body.is-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+
+/* Log tab head + add-record toolbar */
+.hms-ipd-log-head {
+    margin-bottom: 16px;
+}
+
+.hms-ipd-log-head__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.hms-ipd-log-head__label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-ipd-log-head__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+/* Inline add-record form */
+.hms-ipd-record-form {
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-200);
+    background: var(--hms-white);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.hms-ipd-record-form__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hms-ipd-record-form__head-icon {
+    color: var(--hms-gray-400);
+}
+
+.hms-ipd-record-form__head-text {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hms-gray-700);
+}
+
+.hms-ipd-record-form__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.hms-ipd-record-form__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+
+/* Timeline list — entry = dot column + card body */
+.hms-ipd-timeline {
+    display: flex;
+    flex-direction: column;
+}
+
+.hms-ipd-timeline__entry {
+    display: flex;
+    gap: 12px;
+}
+
+.hms-ipd-timeline__rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    padding-top: 4px;
+}
+
+.hms-ipd-timeline__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--hms-brand-primary);
+}
+
+.hms-ipd-timeline__line {
+    width: 1px;
+    flex: 1;
+    background: var(--hms-gray-100);
+    margin-top: 4px;
+}
+
+.hms-ipd-timeline__card {
+    flex: 1;
+    min-width: 0;
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-100);
+    background: var(--hms-white);
+    padding: 10px 14px;
+    margin-bottom: 12px;
+}
+
+.hms-ipd-timeline__entry:last-child .hms-ipd-timeline__card {
+    margin-bottom: 0;
+}
+
+.hms-ipd-timeline__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.hms-ipd-timeline__stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--hms-gray-400);
+    flex-shrink: 0;
+}
+
+.hms-ipd-timeline__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+    line-height: 1.4;
+}
+
+.hms-ipd-timeline__sub {
+    margin: 4px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+    line-height: 1.4;
+}
+
+.hms-ipd-timeline__desc {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-600);
+    line-height: 1.4;
+}
+
+.hms-ipd-timeline__badge {
+    margin: 4px 0 0;
+    font-size: 10px;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+
+/* Event tone tag (EVENT_TONE migration — pill above the timeline card) */
+.hms-ipd-event-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-600);
+    border: 1px solid var(--hms-gray-200);
+}
+
+.hms-ipd-event-tag.is-admitted {
+    background: var(--hms-success-bg);
+    color: #166534;
+    border-color: var(--hms-success-border);
+}
+
+.hms-ipd-event-tag.is-allocated {
+    background: var(--hms-info-bg);
+    color: #0369a1;
+    border-color: var(--hms-info-border);
+}
+
+.hms-ipd-event-tag.is-deallocated {
+    background: var(--hms-warning-bg);
+    color: #b45309;
+    border-color: var(--hms-warning-border);
+}
+
+.hms-ipd-event-tag.is-radiology {
+    background: #f5f3ff;
+    color: #6d28d9;
+    border-color: #ddd6fe;
+}
+
+.hms-ipd-event-tag.is-ambulance {
+    background: #fff1f2;
+    color: #be123c;
+    border-color: #fecdd3;
+}
+
+.hms-ipd-event-tag.is-ot {
+    background: #f5f3ff;
+    color: #7c3aed;
+    border-color: #ddd6fe;
+}
+
+.hms-ipd-event-tag.is-discharged {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-600);
+    border-color: var(--hms-gray-200);
+}
+
+.hms-ipd-event-tag.is-record {
+    background: #eef2ff;
+    color: #4338ca;
+    border-color: #c7d2fe;
+}
+
+
+/* Bordered list (Attender card + Assets list) */
+.hms-ipd-list {
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-100);
+    overflow: hidden;
+}
+
+.hms-ipd-list__head {
+    padding: 10px 16px;
+    background: var(--hms-gray-50);
+    border-bottom: 1px solid var(--hms-gray-100);
+}
+
+.hms-ipd-list__head-label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-ipd-list-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--hms-gray-50);
+    background: var(--hms-white);
+}
+
+.hms-ipd-list-row:first-child {
+    border-top: none;
+}
+
+.hms-ipd-list-row__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--hms-gray-50);
+    border: 1px solid var(--hms-gray-100);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--hms-gray-400);
+    flex-shrink: 0;
+}
+
+.hms-ipd-list-row__label {
+    margin: 0;
+    font-size: 10px;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-ipd-list-row__value {
+    margin: 2px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+}
+
+.hms-ipd-list-row__value a {
+    color: var(--hms-gray-800);
+    text-decoration: none;
+}
+
+.hms-ipd-list-row__value.is-capitalize {
+    text-transform: capitalize;
+}
+
+/* Asset row variant — icon left, label/sub centre, status badge right */
+.hms-ipd-list-row.is-asset {
+    padding: 12px 16px;
+}
+
+.hms-ipd-list-row__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.hms-ipd-list-row__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-ipd-list-row__sub {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* Billing tab — small refresh row + section blocks */
+.hms-ipd-bill-refresh {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.hms-ipd-bill-section {
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-100);
+    overflow: hidden;
+}
+
+.hms-ipd-bill-head {
+    display: grid;
+    grid-template-columns: 3fr 5fr 1fr 3fr;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--hms-gray-50);
+    border-bottom: 1px solid var(--hms-gray-100);
+}
+
+.hms-ipd-bill-head__cell {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hms-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-ipd-bill-head__cell.is-center { text-align: center; }
+.hms-ipd-bill-head__cell.is-right  { text-align: right; }
+
+.hms-ipd-bill-row {
+    display: grid;
+    grid-template-columns: 3fr 5fr 1fr 3fr;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--hms-white);
+    border-top: 1px solid var(--hms-gray-50);
+}
+
+.hms-ipd-bill-row__type {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.hms-ipd-bill-row__type.is-room          { background: #fff7ed; color: #c2410c; }
+.hms-ipd-bill-row__type.is-consultation  { background: var(--hms-info-bg); color: #0369a1; }
+.hms-ipd-bill-row__type.is-radiology     { background: #f5f3ff; color: #6d28d9; }
+.hms-ipd-bill-row__type.is-lab           { background: #f0fdfa; color: #0f766e; }
+.hms-ipd-bill-row__type.is-medicine      { background: var(--hms-success-bg); color: #166534; }
+.hms-ipd-bill-row__type.is-ot            { background: #f5f3ff; color: #7c3aed; }
+.hms-ipd-bill-row__type.is-custom        { background: var(--hms-gray-100); color: var(--hms-gray-600); }
+
+.hms-ipd-bill-row__desc {
+    font-size: 11px;
+    color: var(--hms-gray-600);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-ipd-bill-row__qty {
+    font-size: 11px;
+    color: var(--hms-gray-400);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.hms-ipd-bill-row__total {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hms-gray-800);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* Bill totals — compact stacked block */
+.hms-ipd-bill-totals {
+    padding: 12px 16px;
+    border-top: 1px solid var(--hms-gray-100);
+    background: var(--hms-gray-50);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hms-ipd-bill-totals__row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-ipd-bill-totals__row.is-success { color: var(--hms-success); }
+
+.hms-ipd-bill-totals__row > span:last-child {
+    font-variant-numeric: tabular-nums;
+}
+
+.hms-ipd-bill-totals__grand {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    border-top: 1px solid var(--hms-gray-100);
+    padding-top: 8px;
+    margin-top: 4px;
+}
+
+.hms-ipd-bill-totals__grand > span:last-child {
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* Final invoice header strip (label + invoice number + settled badge) */
+.hms-ipd-bill-fi-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.hms-ipd-bill-fi-head__label {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-ipd-bill-fi-head__sub {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+
+/* Estimated bill heading */
+.hms-ipd-bill-est-head__title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hms-ipd-bill-est-head__sub {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+}
+
+.hms-ipd-bill-est-foot {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+    text-align: center;
+}
+
+
+/* Retry row (OT/pharmacy failure rescue UI) */
+.hms-ipd-retry-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-100);
+    background: var(--hms-white);
+}
+
+.hms-ipd-retry-row__body {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hms-ipd-retry-row__icon {
+    color: var(--hms-warning);
+}
+
+.hms-ipd-retry-row__text {
+    margin: 0;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.hms-ipd-retry-row__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--hms-font-family);
+}
+
+.hms-ipd-retry-row__btn.is-violet  { color: #7c3aed; }
+.hms-ipd-retry-row__btn.is-success { color: var(--hms-success); }
+
+
+/* Centered loader + empty state (pane-local — sized to 64px padding) */
+.hms-ipd-center-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 0;
+    gap: 8px;
+    color: var(--hms-gray-400);
+}
+
+.hms-ipd-center-loader__text {
+    font-size: 13px;
+}
+
+.hms-ipd-center-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 0;
+    color: var(--hms-gray-400);
+    gap: 8px;
+}
+
+.hms-ipd-center-empty__icon {
+    opacity: 0.5;
+}
+
+.hms-ipd-center-empty__text {
+    margin: 0;
+    font-size: 13px;
+}
+
+.hms-ipd-center-empty__sub {
+    margin: 0;
+    font-size: 11px;
+    opacity: 0.7;
+}

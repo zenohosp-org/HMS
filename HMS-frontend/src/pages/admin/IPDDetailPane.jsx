@@ -84,26 +84,18 @@ const TABS = [
 
 const GST_RATE = 0.18;
 
-/** Timeline event tone — drives the small left-strip + status badge. */
-const EVENT_TONE = {
-    ADMITTED: { color: "#166534", bg: "var(--hms-success-bg)", border: "var(--hms-success-border)" },
-    ALLOCATED: { color: "#0369a1", bg: "var(--hms-info-bg)", border: "var(--hms-info-border)" },
-    DEALLOCATED: { color: "#b45309", bg: "var(--hms-warning-bg)", border: "var(--hms-warning-border)" },
-    ATTENDER_ASSIGNED: {
-        color: "var(--hms-gray-600)",
-        bg: "var(--hms-gray-50)",
-        border: "var(--hms-gray-200)",
-    },
-    ATTENDER_UPDATED: {
-        color: "var(--hms-gray-600)",
-        bg: "var(--hms-gray-50)",
-        border: "var(--hms-gray-200)",
-    },
-    RADIOLOGY: { color: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe" },
-    AMBULANCE: { color: "#be123c", bg: "#fff1f2", border: "#fecdd3" },
-    OT: { color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe" },
-    DISCHARGED: { color: "var(--hms-gray-600)", bg: "var(--hms-gray-100)", border: "var(--hms-gray-200)" },
-    RECORD: { color: "#4338ca", bg: "#eef2ff", border: "#c7d2fe" },
+/** Timeline event tone — modifier class for .hms-ipd-event-tag */
+const EVENT_TONE_CLASS = {
+    ADMITTED: "is-admitted",
+    ALLOCATED: "is-allocated",
+    DEALLOCATED: "is-deallocated",
+    ATTENDER_ASSIGNED: "",
+    ATTENDER_UPDATED: "",
+    RADIOLOGY: "is-radiology",
+    AMBULANCE: "is-ambulance",
+    OT: "is-ot",
+    DISCHARGED: "is-discharged",
+    RECORD: "is-record",
 };
 const EVENT_LABEL = {
     ADMITTED: "ADMITTED",
@@ -118,20 +110,15 @@ const EVENT_LABEL = {
     RECORD: "MEDICAL RECORD",
 };
 
-/** Billing item-type → icon + colour pair. Used by both billing views. */
+/** Billing item-type → icon + tone-modifier-class pair. */
 const BILL_TYPE_META = {
-    ROOM_CHARGE: { label: "Room", Icon: BedDouble, color: "#c2410c", bg: "#fff7ed" },
-    CONSULTATION: { label: "Consult", Icon: Stethoscope, color: "#0369a1", bg: "var(--hms-info-bg)" },
-    RADIOLOGY: { label: "Radiology", Icon: ScanLine, color: "#6d28d9", bg: "#f5f3ff" },
-    LAB_TEST: { label: "Lab", Icon: FlaskConical, color: "#0f766e", bg: "#f0fdfa" },
-    MEDICINE: { label: "Medicine", Icon: Pill, color: "#166534", bg: "var(--hms-success-bg)" },
-    OT: { label: "OT", Icon: Scissors, color: "#7c3aed", bg: "#f5f3ff" },
-    CUSTOM: {
-        label: "Custom",
-        Icon: Wrench,
-        color: "var(--hms-gray-600)",
-        bg: "var(--hms-gray-100)",
-    },
+    ROOM_CHARGE:  { label: "Room",     Icon: BedDouble,    cls: "is-room" },
+    CONSULTATION: { label: "Consult",  Icon: Stethoscope,  cls: "is-consultation" },
+    RADIOLOGY:    { label: "Radiology", Icon: ScanLine,    cls: "is-radiology" },
+    LAB_TEST:     { label: "Lab",      Icon: FlaskConical, cls: "is-lab" },
+    MEDICINE:     { label: "Medicine", Icon: Pill,         cls: "is-medicine" },
+    OT:           { label: "OT",       Icon: Scissors,     cls: "is-ot" },
+    CUSTOM:       { label: "Custom",   Icon: Wrench,       cls: "is-custom" },
 };
 
 const fmt = fmtDateTime;
@@ -900,59 +887,15 @@ export default function IPDDetailPane({
     const canReturnWard = isAdmitted && !!admission.previousRoomId;
 
     return (
-        <div
-            style={{
-                position: "fixed",
-                inset: 0,
-                zIndex: "var(--hms-z-drawer)",
-                display: "flex",
-                justifyContent: "flex-end",
-                pointerEvents: "none",
-            }}
-        >
-            <div
-                style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "rgba(0, 0, 0, 0.25)",
-                    pointerEvents: "auto",
-                }}
-                onClick={onClose}
-            />
+        <div className="hms-ipd-pane">
+            <div className="hms-ipd-pane__scrim" onClick={onClose} />
 
-            <div
-                style={{
-                    position: "relative",
-                    width: "100%",
-                    maxWidth: 520,
-                    height: "100%",
-                    background: "var(--hms-white)",
-                    boxShadow: "-10px 0 30px rgba(0, 0, 0, 0.12)",
-                    display: "flex",
-                    flexDirection: "column",
-                    pointerEvents: "auto",
-                    borderLeft: "1px solid var(--hms-gray-200)",
-                    fontFamily: "var(--hms-font-family)",
-                }}
-            >
+            <div className="hms-ipd-pane__panel">
                 {/* Header */}
-                <div
-                    style={{
-                        flexShrink: 0,
-                        padding: "20px 20px 16px",
-                        borderBottom: "1px solid var(--hms-gray-100)",
-                    }}
-                >
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            justifyContent: "space-between",
-                            gap: 12,
-                        }}
-                    >
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <div className="hms-ipd-header">
+                    <div className="hms-ipd-header__top">
+                        <div className="hms-ipd-header__identity">
+                            <div className="hms-ipd-header__badges">
                                 <Badge tone={admission.status === "ADMITTED" ? "success" : "neutral"} soft>
                                     {admission.status}
                                 </Badge>
@@ -962,72 +905,47 @@ export default function IPDDetailPane({
                                     </Badge>
                                 )}
                             </div>
-                            <h2
-                                style={{
-                                    margin: 0,
-                                    fontSize: 16,
-                                    fontWeight: 700,
-                                    color: "var(--hms-gray-900)",
-                                    lineHeight: 1.2,
-                                }}
-                            >
+                            <h2 className="hms-ipd-header__name">
                                 {admission.patientName}
                             </h2>
-                            <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--hms-gray-400)" }}>
+                            <p className="hms-ipd-header__uhid">
                                 UHID: {fmtId(admission.patientUhid)}
                             </p>
                         </div>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="hms-modal-close"
-                            style={{ flexShrink: 0 }}
+                            className="hms-modal-close shrink-0"
                             aria-label="Close"
                         >
                             <X size={16} />
                         </button>
                     </div>
 
-                    <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 20,
-                                fontSize: 11,
-                                color: "var(--hms-gray-500)",
-                            }}
-                        >
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                                <BedDouble size={12} style={{ color: "var(--hms-gray-300)" }} />
+                    <div className="hms-ipd-header__meta">
+                        <div className="hms-ipd-header__meta-row">
+                            <span className="hms-ipd-header__meta-item">
+                                <BedDouble size={12} />
                                 {admission.roomNumber
                                     ? `Room ${admission.roomNumber} · ${admission.roomType}`
                                     : "No room assigned"}
                             </span>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                                <Clock size={12} style={{ color: "var(--hms-gray-300)" }} />
+                            <span className="hms-ipd-header__meta-item">
+                                <Clock size={12} />
                                 {fmtDate(admission.admissionDate)}
                             </span>
                         </div>
                         {(admission.admittingDoctorName || admission.approxDischargeDate) && (
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 20,
-                                    fontSize: 11,
-                                    color: "var(--hms-gray-500)",
-                                }}
-                            >
+                            <div className="hms-ipd-header__meta-row">
                                 {admission.admittingDoctorName && (
-                                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                                        <Stethoscope size={12} style={{ color: "var(--hms-gray-300)" }} />
+                                    <span className="hms-ipd-header__meta-item">
+                                        <Stethoscope size={12} />
                                         Dr. {admission.admittingDoctorName}
                                     </span>
                                 )}
                                 {admission.approxDischargeDate && (
-                                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                                        <Calendar size={12} style={{ color: "var(--hms-gray-300)" }} />
+                                    <span className="hms-ipd-header__meta-item">
+                                        <Calendar size={12} />
                                         Est. {fmtDate(admission.approxDischargeDate)}
                                     </span>
                                 )}
@@ -1036,56 +954,32 @@ export default function IPDDetailPane({
                     </div>
 
                     {/* ID + action row */}
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginTop: 14,
-                        }}
-                    >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className="hms-ipd-header__id-row">
+                        <div className="hms-ipd-header__id-group">
                             {admission.ipdId && (
-                                <span
-                                    style={{
-                                        padding: "2px 8px",
-                                        borderRadius: 4,
-                                        fontSize: 10,
-                                        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                        fontWeight: 700,
-                                        background: "var(--hms-brand-primary)",
-                                        color: "var(--hms-white)",
-                                    }}
-                                >
+                                <span className="hms-ipd-id-pill">
                                     {fmtId(admission.ipdId)}
                                 </span>
                             )}
-                            <span
-                                style={{
-                                    padding: "2px 8px",
-                                    borderRadius: 4,
-                                    fontSize: 10,
-                                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                    color: "var(--hms-gray-400)",
-                                    border: "1px solid var(--hms-gray-200)",
-                                }}
-                            >
+                            <span className="hms-ipd-id-pill is-outline">
                                 {fmtId(admission.admissionNumber)}
                             </span>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <ChipButton
+                        <div className="hms-ipd-header__actions">
+                            <button
+                                type="button"
+                                className="hms-ipd-chip-btn"
                                 onClick={() => navigate(`/patients/${admission.patientId}`)}
-                                tone={{ bg: "var(--hms-gray-50)", color: "var(--hms-gray-600)", border: "var(--hms-gray-200)" }}
                             >
                                 <User size={11} /> Patient
-                                <ExternalLink size={9} style={{ opacity: 0.4 }} />
-                            </ChipButton>
+                                <ExternalLink size={9} className="opacity-40" />
+                            </button>
                             {isAdmitted && (
-                                <ChipButton
+                                <button
+                                    type="button"
+                                    className="hms-ipd-chip-btn is-danger"
                                     onClick={handleDischargeClick}
                                     disabled={checkingDischarge}
-                                    tone={{ bg: "var(--hms-danger-bg)", color: "var(--hms-danger)", border: "var(--hms-danger-border)" }}
                                 >
                                     {checkingDischarge ? (
                                         <Loader2 size={11} className="animate-spin" />
@@ -1093,48 +987,39 @@ export default function IPDDetailPane({
                                         <LogOut size={11} />
                                     )}
                                     Discharge
-                                </ChipButton>
+                                </button>
                             )}
                             {canMoveOT && (
-                                <ChipButton
+                                <button
+                                    type="button"
+                                    className="hms-ipd-chip-btn is-violet"
                                     onClick={onMoveToOT}
-                                    tone={{ bg: "#f5f3ff", color: "#6d28d9", border: "#ddd6fe" }}
                                 >
                                     <Scissors size={11} /> OT
-                                </ChipButton>
+                                </button>
                             )}
                             {canReturnWard && (
-                                <ChipButton
+                                <button
+                                    type="button"
+                                    className="hms-ipd-chip-btn is-success"
                                     onClick={onReturnToWard}
-                                    tone={{ bg: "var(--hms-success-bg)", color: "var(--hms-success)", border: "var(--hms-success-border)" }}
                                 >
                                     <RotateCcw size={11} /> Ward
-                                </ChipButton>
+                                </button>
                             )}
                         </div>
                     </div>
 
                     {dischargeBlock && (
-                        <div
-                            style={{
-                                marginTop: 12,
-                                display: "flex",
-                                alignItems: "flex-start",
-                                gap: 8,
-                                padding: "10px 12px",
-                                borderRadius: 8,
-                                border: "1px solid var(--hms-danger-border)",
-                                background: "var(--hms-danger-bg)",
-                            }}
-                        >
-                            <ShieldAlert size={14} style={{ color: "var(--hms-danger)", flexShrink: 0, marginTop: 2 }} />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: "#dc2626" }}>
+                        <div className="hms-ipd-discharge-block">
+                            <ShieldAlert size={14} className="hms-ipd-discharge-block__icon" />
+                            <div className="hms-ipd-discharge-block__body">
+                                <p className="hms-ipd-discharge-block__title">
                                     {dischargeBlock.reason === "no_invoice"
                                         ? "No invoice generated for this admission"
                                         : `Pending payment of ${fmtMoney(dischargeBlock.amount)}`}
                                 </p>
-                                <p style={{ margin: "2px 0 0", fontSize: 10, color: "#dc2626" }}>
+                                <p className="hms-ipd-discharge-block__sub">
                                     {dischargeBlock.reason === "no_invoice"
                                         ? "Generate and clear the invoice in IPD Billing before discharging."
                                         : "Clear the outstanding invoice in IPD Billing before discharging."}
@@ -1143,13 +1028,7 @@ export default function IPDDetailPane({
                             <button
                                 type="button"
                                 onClick={() => setDischargeBlock(null)}
-                                style={{
-                                    background: "transparent",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    color: "var(--hms-danger)",
-                                    flexShrink: 0,
-                                }}
+                                className="hms-ipd-discharge-block__dismiss"
                                 aria-label="Dismiss"
                             >
                                 <X size={11} />
@@ -1159,14 +1038,7 @@ export default function IPDDetailPane({
                 </div>
 
                 {/* Tabs */}
-                <div
-                    style={{
-                        flexShrink: 0,
-                        padding: "0 20px",
-                        borderBottom: "1px solid var(--hms-gray-100)",
-                        overflowX: "auto",
-                    }}
-                >
+                <div className="hms-ipd-tabs-bar">
                     <Tabs
                         type="underline"
                         active={activeTab}
@@ -1176,7 +1048,7 @@ export default function IPDDetailPane({
                 </div>
 
                 {/* Tab content */}
-                <div style={{ flex: 1, overflowY: "auto" }}>
+                <div className="hms-ipd-tabs-content">
                     {activeTab === "IPD Log" && (
                         <LogTab
                             loadingLogs={loadingLogs}
@@ -1246,34 +1118,6 @@ export default function IPDDetailPane({
     );
 }
 
-/* ───────────────── Header chip button ───────────────── */
-function ChipButton({ children, tone, ...props }) {
-    return (
-        <button
-            type="button"
-            {...props}
-            style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                padding: "4px 10px",
-                borderRadius: 8,
-                fontSize: 11,
-                fontWeight: 600,
-                background: tone.bg,
-                color: tone.color,
-                border: `1px solid ${tone.border}`,
-                cursor: props.disabled ? "wait" : "pointer",
-                opacity: props.disabled ? 0.6 : 1,
-                transition: "all 0.15s",
-                fontFamily: "var(--hms-font-family)",
-            }}
-        >
-            {children}
-        </button>
-    );
-}
-
 /* ───────────────── IPD Log tab ───────────────── */
 function LogTab({
     loadingLogs,
@@ -1287,66 +1131,22 @@ function LogTab({
     setShowPrescriptionModal,
 }) {
     return (
-        <div style={{ padding: 20 }}>
-            <div style={{ marginBottom: 16 }}>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 12,
-                    }}
-                >
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: "var(--hms-gray-500)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.06em",
-                        }}
-                    >
-                        Timeline
-                    </p>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="hms-ipd-tab-body">
+            <div className="hms-ipd-log-head">
+                <div className="hms-ipd-log-head__row">
+                    <p className="hms-ipd-log-head__label">Timeline</p>
+                    <div className="hms-ipd-log-head__actions">
                         <button
                             type="button"
                             onClick={() => setShowPrescriptionModal(true)}
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4,
-                                padding: "4px 10px",
-                                borderRadius: 8,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                background: "var(--hms-success)",
-                                color: "var(--hms-white)",
-                                border: "none",
-                                cursor: "pointer",
-                                fontFamily: "var(--hms-font-family)",
-                            }}
+                            className="hms-ipd-chip-btn is-success-solid"
                         >
                             <Pill size={11} /> Write prescription
                         </button>
                         <button
                             type="button"
                             onClick={() => setShowAddRecord((v) => !v)}
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4,
-                                padding: "4px 10px",
-                                borderRadius: 8,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                background: "var(--hms-gray-50)",
-                                color: "var(--hms-gray-600)",
-                                border: "1px solid var(--hms-gray-200)",
-                                cursor: "pointer",
-                                fontFamily: "var(--hms-font-family)",
-                            }}
+                            className="hms-ipd-chip-btn"
                         >
                             {showAddRecord ? <X size={11} /> : <Plus size={11} />}
                             {showAddRecord ? "Cancel" : "Add record"}
@@ -1356,31 +1156,15 @@ function LogTab({
                 {showAddRecord && (
                     <form
                         onSubmit={handleSaveRecord}
-                        style={{
-                            borderRadius: 8,
-                            border: "1px solid var(--hms-gray-200)",
-                            background: "var(--hms-white)",
-                            padding: 14,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 12,
-                            marginBottom: 16,
-                        }}
+                        className="hms-ipd-record-form"
                     >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <FileText size={14} style={{ color: "var(--hms-gray-400)" }} />
-                            <p
-                                style={{
-                                    margin: 0,
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                    color: "var(--hms-gray-700)",
-                                }}
-                            >
+                        <div className="hms-ipd-record-form__head">
+                            <FileText size={14} className="hms-ipd-record-form__head-icon" />
+                            <p className="hms-ipd-record-form__head-text">
                                 New medical record
                             </p>
                         </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div className="hms-ipd-record-form__grid">
                             <FormGroup label="Type">
                                 <SearchableSelect
                                     value={recordForm.historyType}
@@ -1416,7 +1200,7 @@ function LogTab({
                             label={
                                 <span>
                                     Notes / description{" "}
-                                    <span style={{ color: "var(--hms-danger)" }}>*</span>
+                                    <span className="text-danger">*</span>
                                 </span>
                             }
                         >
@@ -1430,7 +1214,7 @@ function LogTab({
                                 required
                             />
                         </FormGroup>
-                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                        <div className="hms-ipd-record-form__footer">
                             <Button
                                 variant="secondary"
                                 size="sm"
@@ -1457,141 +1241,35 @@ function LogTab({
             ) : logs.length === 0 ? (
                 <CenterEmpty icon={<Activity size={32} />} text="No log entries" />
             ) : (
-                <div>
+                <div className="hms-ipd-timeline">
                     {logs.map((ev, idx) => {
-                        const tone = EVENT_TONE[ev.type] || {
-                            color: "var(--hms-gray-600)",
-                            bg: "var(--hms-gray-50)",
-                            border: "var(--hms-gray-200)",
-                        };
+                        const toneClass = EVENT_TONE_CLASS[ev.type] || "";
                         const isLast = idx === logs.length - 1;
                         return (
-                            <div key={ev.id} style={{ display: "flex", gap: 12 }}>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        flexShrink: 0,
-                                        paddingTop: 4,
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: 8,
-                                            height: 8,
-                                            borderRadius: 999,
-                                            background: "var(--hms-brand-primary)",
-                                        }}
-                                    />
-                                    {!isLast && (
-                                        <div
-                                            style={{
-                                                width: 1,
-                                                flex: 1,
-                                                background: "var(--hms-gray-100)",
-                                                marginTop: 4,
-                                            }}
-                                        />
-                                    )}
+                            <div key={ev.id} className="hms-ipd-timeline__entry">
+                                <div className="hms-ipd-timeline__rail">
+                                    <div className="hms-ipd-timeline__dot" />
+                                    {!isLast && <div className="hms-ipd-timeline__line" />}
                                 </div>
-                                <div
-                                    style={{
-                                        flex: 1,
-                                        minWidth: 0,
-                                        borderRadius: 8,
-                                        border: "1px solid var(--hms-gray-100)",
-                                        background: "var(--hms-white)",
-                                        padding: "10px 14px",
-                                        marginBottom: isLast ? 0 : 12,
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                            gap: 8,
-                                            marginBottom: 8,
-                                        }}
-                                    >
-                                        <span
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                padding: "2px 8px",
-                                                borderRadius: 999,
-                                                fontSize: 9,
-                                                fontWeight: 700,
-                                                letterSpacing: "0.06em",
-                                                background: tone.bg,
-                                                color: tone.color,
-                                                border: `1px solid ${tone.border}`,
-                                            }}
-                                        >
+                                <div className="hms-ipd-timeline__card">
+                                    <div className="hms-ipd-timeline__head">
+                                        <span className={`hms-ipd-event-tag ${toneClass}`}>
                                             {EVENT_LABEL[ev.type] || ev.type}
                                         </span>
-                                        <div
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: 4,
-                                                fontSize: 10,
-                                                color: "var(--hms-gray-400)",
-                                                flexShrink: 0,
-                                            }}
-                                        >
+                                        <div className="hms-ipd-timeline__stamp">
                                             <Clock size={11} />
                                             {fmt(ev.timestamp)}
                                         </div>
                                     </div>
-                                    <p
-                                        style={{
-                                            margin: 0,
-                                            fontSize: 13,
-                                            fontWeight: 600,
-                                            color: "var(--hms-gray-800)",
-                                            lineHeight: 1.4,
-                                        }}
-                                    >
-                                        {ev.title}
-                                    </p>
+                                    <p className="hms-ipd-timeline__title">{ev.title}</p>
                                     {ev.subtitle && (
-                                        <p
-                                            style={{
-                                                margin: "4px 0 0",
-                                                fontSize: 11,
-                                                color: "var(--hms-gray-500)",
-                                                lineHeight: 1.4,
-                                            }}
-                                        >
-                                            {ev.subtitle}
-                                        </p>
+                                        <p className="hms-ipd-timeline__sub">{ev.subtitle}</p>
                                     )}
                                     {ev.description && (
-                                        <p
-                                            style={{
-                                                margin: "6px 0 0",
-                                                fontSize: 11,
-                                                color: "var(--hms-gray-600)",
-                                                lineHeight: 1.4,
-                                            }}
-                                        >
-                                            {ev.description}
-                                        </p>
+                                        <p className="hms-ipd-timeline__desc">{ev.description}</p>
                                     )}
                                     {ev.badge && ev.badge !== ev.subtitle && (
-                                        <p
-                                            style={{
-                                                margin: "4px 0 0",
-                                                fontSize: 10,
-                                                color: "var(--hms-gray-400)",
-                                                textTransform: "uppercase",
-                                                letterSpacing: "0.06em",
-                                            }}
-                                        >
-                                            {ev.badge}
-                                        </p>
+                                        <p className="hms-ipd-timeline__badge">{ev.badge}</p>
                                     )}
                                 </div>
                             </div>
@@ -1620,13 +1298,7 @@ function AttenderTab({ admission }) {
             icon: Phone,
             label: "Phone",
             value: (
-                <a
-                    href={`tel:${admission.attenderPhone}`}
-                    style={{
-                        color: "var(--hms-gray-800)",
-                        textDecoration: "none",
-                    }}
-                >
+                <a href={`tel:${admission.attenderPhone}`}>
                     {admission.attenderPhone}
                 </a>
             ),
@@ -1634,89 +1306,29 @@ function AttenderTab({ admission }) {
         admission.attenderRelationship && {
             icon: User,
             label: "Relationship",
-            value: (
-                <span style={{ textTransform: "capitalize" }}>
-                    {admission.attenderRelationship}
-                </span>
-            ),
+            value: admission.attenderRelationship,
+            capitalize: true,
         },
     ].filter(Boolean);
 
     return (
-        <div style={{ padding: 20 }}>
-            <div
-                style={{
-                    borderRadius: 8,
-                    border: "1px solid var(--hms-gray-100)",
-                    overflow: "hidden",
-                }}
-            >
-                <div
-                    style={{
-                        padding: "10px 16px",
-                        background: "var(--hms-gray-50)",
-                        borderBottom: "1px solid var(--hms-gray-100)",
-                    }}
-                >
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: "var(--hms-gray-400)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.06em",
-                        }}
-                    >
-                        Attendor on record
-                    </p>
+        <div className="hms-ipd-tab-body">
+            <div className="hms-ipd-list">
+                <div className="hms-ipd-list__head">
+                    <p className="hms-ipd-list__head-label">Attendor on record</p>
                 </div>
                 {rows.map((r, idx) => (
-                    <div
-                        key={idx}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            padding: "14px 16px",
-                            borderTop: idx === 0 ? "none" : "1px solid var(--hms-gray-50)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: 8,
-                                background: "var(--hms-gray-50)",
-                                border: "1px solid var(--hms-gray-100)",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "var(--hms-gray-400)",
-                                flexShrink: 0,
-                            }}
-                        >
+                    <div key={idx} className="hms-ipd-list-row">
+                        <div className="hms-ipd-list-row__icon">
                             <r.icon size={14} />
                         </div>
                         <div>
+                            <p className="hms-ipd-list-row__label">{r.label}</p>
                             <p
-                                style={{
-                                    margin: 0,
-                                    fontSize: 10,
-                                    color: "var(--hms-gray-400)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.06em",
-                                }}
-                            >
-                                {r.label}
-                            </p>
-                            <p
-                                style={{
-                                    margin: "2px 0 0",
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    color: "var(--hms-gray-800)",
-                                }}
+                                className={
+                                    "hms-ipd-list-row__value" +
+                                    (r.capitalize ? " is-capitalize" : "")
+                                }
                             >
                                 {r.value}
                             </p>
@@ -1736,69 +1348,21 @@ function AssetsTab({ loadingAssets, assets, hasRoom }) {
         return <CenterEmpty icon={<Package size={32} />} text="No assets mapped to this room" />;
 
     return (
-        <div style={{ padding: 20 }}>
-            <div
-                style={{
-                    borderRadius: 8,
-                    border: "1px solid var(--hms-gray-100)",
-                    overflow: "hidden",
-                }}
-            >
-                {assets.map((asset, idx) => {
+        <div className="hms-ipd-tab-body">
+            <div className="hms-ipd-list">
+                {assets.map((asset) => {
                     const active =
                         asset.status === "AVAILABLE" || asset.status === "IN_USE";
                     return (
-                        <div
-                            key={asset.id}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 12,
-                                padding: "12px 16px",
-                                background: "var(--hms-white)",
-                                borderTop: idx === 0 ? "none" : "1px solid var(--hms-gray-50)",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: 8,
-                                    background: "var(--hms-gray-50)",
-                                    border: "1px solid var(--hms-gray-100)",
-                                    color: "var(--hms-gray-400)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    flexShrink: 0,
-                                }}
-                            >
+                        <div key={asset.id} className="hms-ipd-list-row is-asset">
+                            <div className="hms-ipd-list-row__icon">
                                 <Package size={14} />
                             </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <p
-                                    style={{
-                                        margin: 0,
-                                        fontSize: 13,
-                                        fontWeight: 600,
-                                        color: "var(--hms-gray-800)",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                    }}
-                                >
+                            <div className="hms-ipd-list-row__body">
+                                <p className="hms-ipd-list-row__title">
                                     {asset.name || asset.assetName}
                                 </p>
-                                <p
-                                    style={{
-                                        margin: 0,
-                                        fontSize: 11,
-                                        color: "var(--hms-gray-400)",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                    }}
-                                >
+                                <p className="hms-ipd-list-row__sub">
                                     {asset.category || asset.assetCategory || "—"}
                                 </p>
                             </div>
@@ -1832,26 +1396,13 @@ function BillingTab({
     refreshBilling,
 }) {
     return (
-        <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="hms-ipd-tab-body is-col">
             {!loadingBilling && (
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <div className="hms-ipd-bill-refresh">
                     <button
                         type="button"
                         onClick={refreshBilling}
-                        style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                            padding: "4px 10px",
-                            borderRadius: 8,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "var(--hms-gray-400)",
-                            background: "transparent",
-                            border: "1px solid transparent",
-                            cursor: "pointer",
-                            fontFamily: "var(--hms-font-family)",
-                        }}
+                        className="hms-ipd-chip-btn is-ghost"
                     >
                         <RotateCcw size={11} /> Refresh
                     </button>
@@ -1887,54 +1438,31 @@ function BillingTab({
                 <RetryRow
                     text="Could not load OT charges"
                     onRetry={retryOtInvoices}
-                    color="#7c3aed"
+                    toneClass="is-violet"
                 />
             )}
             {pharmacyBillsError && (
                 <RetryRow
                     text="Could not load pharmacy bills"
                     onRetry={retryPharmacyBills}
-                    color="var(--hms-success)"
+                    toneClass="is-success"
                 />
             )}
         </div>
     );
 }
 
-function RetryRow({ text, onRetry, color }) {
+function RetryRow({ text, onRetry, toneClass }) {
     return (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "10px 14px",
-                borderRadius: 8,
-                border: "1px solid var(--hms-gray-100)",
-                background: "var(--hms-white)",
-            }}
-        >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <AlertTriangle size={14} style={{ color: "var(--hms-warning)" }} />
-                <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-500)" }}>{text}</p>
+        <div className="hms-ipd-retry-row">
+            <div className="hms-ipd-retry-row__body">
+                <AlertTriangle size={14} className="hms-ipd-retry-row__icon" />
+                <p className="hms-ipd-retry-row__text">{text}</p>
             </div>
             <button
                 type="button"
                 onClick={onRetry}
-                style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    padding: "4px 8px",
-                    borderRadius: 4,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color,
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    fontFamily: "var(--hms-font-family)",
-                }}
+                className={`hms-ipd-retry-row__btn ${toneClass}`}
             >
                 <RotateCcw size={11} /> Retry
             </button>
@@ -1944,103 +1472,28 @@ function RetryRow({ text, onRetry, color }) {
 
 function BillingItemRow({ meta, description, quantity, total }) {
     return (
-        <div
-            style={{
-                display: "grid",
-                gridTemplateColumns: "3fr 5fr 1fr 3fr",
-                gap: 8,
-                alignItems: "center",
-                padding: "10px 16px",
-                background: "var(--hms-white)",
-                borderTop: "1px solid var(--hms-gray-50)",
-            }}
-        >
+        <div className="hms-ipd-bill-row">
             <div>
-                <span
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        fontSize: 9,
-                        fontWeight: 600,
-                        background: meta.bg,
-                        color: meta.color,
-                    }}
-                >
+                <span className={`hms-ipd-bill-row__type ${meta.cls}`}>
                     <meta.Icon size={11} /> {meta.label}
                 </span>
             </div>
-            <div
-                style={{
-                    fontSize: 11,
-                    color: "var(--hms-gray-600)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                }}
-                title={description}
-            >
+            <div className="hms-ipd-bill-row__desc" title={description}>
                 {description}
             </div>
-            <div
-                style={{
-                    fontSize: 11,
-                    color: "var(--hms-gray-400)",
-                    textAlign: "center",
-                    fontVariantNumeric: "tabular-nums",
-                }}
-            >
-                {quantity}
-            </div>
-            <div
-                style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "var(--hms-gray-800)",
-                    textAlign: "right",
-                    fontVariantNumeric: "tabular-nums",
-                }}
-            >
-                {fmtMoney(total)}
-            </div>
+            <div className="hms-ipd-bill-row__qty">{quantity}</div>
+            <div className="hms-ipd-bill-row__total">{fmtMoney(total)}</div>
         </div>
     );
 }
 
 function BillingHeaderRow() {
     return (
-        <div
-            style={{
-                display: "grid",
-                gridTemplateColumns: "3fr 5fr 1fr 3fr",
-                gap: 8,
-                padding: "8px 16px",
-                background: "var(--hms-gray-50)",
-                borderBottom: "1px solid var(--hms-gray-100)",
-            }}
-        >
-            {[
-                { h: "Type", align: "left" },
-                { h: "Description", align: "left" },
-                { h: "Qty", align: "center" },
-                { h: "Total", align: "right" },
-            ].map(({ h, align }) => (
-                <div
-                    key={h}
-                    style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: "var(--hms-gray-400)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                        textAlign: align,
-                    }}
-                >
-                    {h}
-                </div>
-            ))}
+        <div className="hms-ipd-bill-head">
+            <div className="hms-ipd-bill-head__cell">Type</div>
+            <div className="hms-ipd-bill-head__cell">Description</div>
+            <div className="hms-ipd-bill-head__cell is-center">Qty</div>
+            <div className="hms-ipd-bill-head__cell is-right">Total</div>
         </div>
     );
 }
@@ -2050,28 +1503,10 @@ function FinalInvoiceView({ finalInvoice, otInvoices, pharmacyBills }) {
         finalInvoice.status === "PAID" || finalInvoice.status === "SETTLED";
     return (
         <>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <div className="hms-ipd-bill-fi-head">
                 <div>
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: "var(--hms-gray-500)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.06em",
-                        }}
-                    >
-                        Final invoice
-                    </p>
-                    <p
-                        style={{
-                            margin: "2px 0 0",
-                            fontSize: 11,
-                            color: "var(--hms-gray-400)",
-                            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                        }}
-                    >
+                    <p className="hms-ipd-bill-fi-head__label">Final invoice</p>
+                    <p className="hms-ipd-bill-fi-head__sub">
                         {fmtId(finalInvoice.invoiceNumber)} · {fmtDate(finalInvoice.createdAt)}
                     </p>
                 </div>
@@ -2081,13 +1516,7 @@ function FinalInvoiceView({ finalInvoice, otInvoices, pharmacyBills }) {
                 </Badge>
             </div>
 
-            <div
-                style={{
-                    borderRadius: 8,
-                    border: "1px solid var(--hms-gray-100)",
-                    overflow: "hidden",
-                }}
-            >
+            <div className="hms-ipd-bill-section">
                 <BillingHeaderRow />
 
                 {(finalInvoice.items || []).map((item, i) => {
@@ -2164,16 +1593,7 @@ function FinalInvoiceTotals({ finalInvoice, otInvoices, pharmacyBills }) {
         0
     );
     return (
-        <div
-            style={{
-                padding: "12px 16px",
-                borderTop: "1px solid var(--hms-gray-100)",
-                background: "var(--hms-gray-50)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-            }}
-        >
+        <div className="hms-ipd-bill-totals">
             <TotalRow label="Admission subtotal" value={fmtMoney(finalInvoice.subtotal)} />
             {Number(finalInvoice.tax) > 0 && (
                 <TotalRow label="Tax" value={fmtMoney(finalInvoice.tax)} />
@@ -2182,7 +1602,7 @@ function FinalInvoiceTotals({ finalInvoice, otInvoices, pharmacyBills }) {
                 <TotalRow
                     label="Discount"
                     value={`−${fmtMoney(finalInvoice.discount)}`}
-                    color="var(--hms-success)"
+                    isSuccess
                 />
             )}
             {otInvoices.length > 0 && (
@@ -2191,20 +1611,9 @@ function FinalInvoiceTotals({ finalInvoice, otInvoices, pharmacyBills }) {
             {pharmacyBills.length > 0 && (
                 <TotalRow label="Pharmacy charges" value={fmtMoney(rxSum)} />
             )}
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: "var(--hms-gray-900)",
-                    borderTop: "1px solid var(--hms-gray-100)",
-                    paddingTop: 8,
-                    marginTop: 4,
-                }}
-            >
+            <div className="hms-ipd-bill-totals__grand">
                 <span>Grand total</span>
-                <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                <span>
                     {fmtMoney(Number(finalInvoice.total || 0) + otSum + rxSum)}
                 </span>
             </div>
@@ -2212,18 +1621,11 @@ function FinalInvoiceTotals({ finalInvoice, otInvoices, pharmacyBills }) {
     );
 }
 
-function TotalRow({ label, value, color }) {
+function TotalRow({ label, value, isSuccess }) {
     return (
-        <div
-            style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: 11,
-                color: color || "var(--hms-gray-500)",
-            }}
-        >
+        <div className={"hms-ipd-bill-totals__row" + (isSuccess ? " is-success" : "")}>
             <span>{label}</span>
-            <span style={{ fontVariantNumeric: "tabular-nums" }}>{value}</span>
+            <span>{value}</span>
         </div>
     );
 }
@@ -2239,38 +1641,17 @@ function EstimatedBillView({
     return (
         <>
             <div>
-                <p
-                    style={{
-                        margin: 0,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "var(--hms-gray-500)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                    }}
-                >
+                <p className="hms-ipd-bill-est-head__title">
                     {isDischarged ? "Admission summary" : "Pending charges"}
                 </p>
-                <p
-                    style={{
-                        margin: "2px 0 0",
-                        fontSize: 11,
-                        color: "var(--hms-gray-400)",
-                    }}
-                >
+                <p className="hms-ipd-bill-est-head__sub">
                     {isDischarged
                         ? "Estimated charges for this admission — no invoice generated yet"
                         : "Auto-detected from services used during this admission"}
                 </p>
             </div>
 
-            <div
-                style={{
-                    borderRadius: 8,
-                    border: "1px solid var(--hms-gray-100)",
-                    overflow: "hidden",
-                }}
-            >
+            <div className="hms-ipd-bill-section">
                 <BillingHeaderRow />
                 {billingItems.map((item) => {
                     const meta = BILL_TYPE_META[item.itemType] ?? BILL_TYPE_META.CUSTOM;
@@ -2284,36 +1665,14 @@ function EstimatedBillView({
                         />
                     );
                 })}
-                <div
-                    style={{
-                        padding: "12px 16px",
-                        borderTop: "1px solid var(--hms-gray-100)",
-                        background: "var(--hms-gray-50)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 6,
-                    }}
-                >
+                <div className="hms-ipd-bill-totals">
                     <TotalRow label="Subtotal" value={fmtMoney(subtotal)} />
                     {gst > 0 && (
                         <TotalRow label="GST on medicines (18%)" value={fmtMoney(gst)} />
                     )}
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: "var(--hms-gray-900)",
-                            borderTop: "1px solid var(--hms-gray-100)",
-                            paddingTop: 8,
-                            marginTop: 4,
-                        }}
-                    >
+                    <div className="hms-ipd-bill-totals__grand">
                         <span>Estimated total</span>
-                        <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                            {fmtMoney(grandTotal)}
-                        </span>
+                        <span>{fmtMoney(grandTotal)}</span>
                     </div>
                 </div>
             </div>
@@ -2324,14 +1683,7 @@ function EstimatedBillView({
                 </Alert>
             )}
 
-            <p
-                style={{
-                    margin: 0,
-                    fontSize: 11,
-                    color: "var(--hms-gray-400)",
-                    textAlign: "center",
-                }}
-            >
+            <p className="hms-ipd-bill-est-foot">
                 Estimated bill based on services used so far. Final amount may vary.
             </p>
         </>
@@ -2341,40 +1693,19 @@ function EstimatedBillView({
 /* ───────────────── Shared empty / loader ───────────────── */
 function CenterLoader({ text }) {
     return (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "64px 0",
-                gap: 8,
-                color: "var(--hms-gray-400)",
-            }}
-        >
+        <div className="hms-ipd-center-loader">
             <Loader2 size={16} className="animate-spin" />
-            <span style={{ fontSize: 13 }}>{text}</span>
+            <span className="hms-ipd-center-loader__text">{text}</span>
         </div>
     );
 }
 
 function CenterEmpty({ icon, text, sub }) {
     return (
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "64px 0",
-                color: "var(--hms-gray-400)",
-                gap: 8,
-            }}
-        >
-            <div style={{ opacity: 0.5 }}>{icon}</div>
-            <p style={{ margin: 0, fontSize: 13 }}>{text}</p>
-            {sub && (
-                <p style={{ margin: 0, fontSize: 11, opacity: 0.7 }}>{sub}</p>
-            )}
+        <div className="hms-ipd-center-empty">
+            <div className="hms-ipd-center-empty__icon">{icon}</div>
+            <p className="hms-ipd-center-empty__text">{text}</p>
+            {sub && <p className="hms-ipd-center-empty__sub">{sub}</p>}
         </div>
     );
 }
