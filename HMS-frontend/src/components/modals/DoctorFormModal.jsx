@@ -3,550 +3,965 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { doctorsApi, staffApi, specializationApi } from "@/utils/api";
 import StateSelect from "@/components/StateSelect";
-import SidePane from "@/components/SidePane";
 import { Home, X } from "lucide-react";
+import {
+    Button,
+    Drawer,
+    FormGroup,
+    Input,
+    Modal,
+    Textarea,
+} from "@/components/ui";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 
-// MON=bit0=1, TUE=bit1=2, WED=bit2=4, THU=bit3=8, FRI=bit4=16, SAT=bit5=32, SUN=bit6=64
+// MON=bit0=1 … SUN=bit6=64
 const DAYS = [
-  { label: "MON", bit: 1 },
-  { label: "TUE", bit: 2 },
-  { label: "WED", bit: 4 },
-  { label: "THU", bit: 8 },
-  { label: "FRI", bit: 16 },
-  { label: "SAT", bit: 32 },
-  { label: "SUN", bit: 64 },
+    { label: "MON", bit: 1 },
+    { label: "TUE", bit: 2 },
+    { label: "WED", bit: 4 },
+    { label: "THU", bit: 8 },
+    { label: "FRI", bit: 16 },
+    { label: "SAT", bit: 32 },
+    { label: "SUN", bit: 64 },
 ];
 const MAX_SPECS = 6;
 
-const inputBase =
-  "w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-400 dark:focus:border-blue-500 transition-all";
-
-const textareaBase =
-  "w-full rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-400 dark:focus:border-blue-500 transition-all resize-none";
-
-function FieldLabel({ children, required }) {
-  return (
-    <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-      {children}
-      {required && <span className="text-rose-400 ml-0.5">*</span>}
-    </label>
-  );
+/** Small section heading — 11px uppercase tracking, matches the
+ *  pre-migration FieldLabel pattern. Used for section heads and as
+ *  the label on sub-fields in the dense schedule grid. */
+function SectionLabel({ children }) {
+    return (
+        <p
+            style={{
+                margin: 0,
+                fontSize: 11,
+                fontWeight: 700,
+                color: "var(--hms-gray-500)",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                marginBottom: 12,
+            }}
+        >
+            {children}
+        </p>
+    );
 }
 
+/** Specialisation chip picker.
+ *  Renders selected specs as removable Info-tone chips, then a
+ *  SearchableSelect that adds new ones until MAX_SPECS is reached. */
 function SpecPicker({ specializations, value, onChange, loading }) {
-  const remaining = specializations.filter((s) => !value.includes(s.id));
+    const remaining = specializations.filter((s) => !value.includes(s.id));
 
-  const add = (id) => {
-    if (!id || value.length >= MAX_SPECS || value.includes(id)) return;
-    onChange([...value, id]);
-  };
+    const add = (id) => {
+        if (!id || value.length >= MAX_SPECS || value.includes(id)) return;
+        onChange([...value, id]);
+    };
+    const remove = (id) => onChange(value.filter((v) => v !== id));
 
-  const remove = (id) => onChange(value.filter((v) => v !== id));
-
-  return (
-    <div className="space-y-2">
-      {value.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {value.map((id) => {
-            const spec = specializations.find((s) => s.id === id);
-            return (
-              <span
-                key={id}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-semibold border border-blue-100 dark:border-blue-800/30"
-              >
-                {spec?.name || "Unknown"}
-                <button
-                  type="button"
-                  onClick={() => remove(id)}
-                  className="rounded-full text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 leading-none"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            );
-          })}
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {value.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {value.map((id) => {
+                        const spec = specializations.find((s) => s.id === id);
+                        return (
+                            <span
+                                key={id}
+                                style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "5px 10px",
+                                    borderRadius: 999,
+                                    background: "var(--hms-info-bg)",
+                                    color: "#0369a1",
+                                    border: "1px solid var(--hms-info-border)",
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {spec?.name || "Unknown"}
+                                <button
+                                    type="button"
+                                    onClick={() => remove(id)}
+                                    aria-label={`Remove ${spec?.name || "specialisation"}`}
+                                    style={{
+                                        background: "transparent",
+                                        border: "none",
+                                        color: "#0369a1",
+                                        cursor: "pointer",
+                                        lineHeight: 0,
+                                        padding: 0,
+                                    }}
+                                >
+                                    <X size={12} />
+                                </button>
+                            </span>
+                        );
+                    })}
+                </div>
+            )}
+            {value.length < MAX_SPECS ? (
+                <SearchableSelect
+                    options={remaining.map((s) => ({ value: s.id, label: s.name }))}
+                    value=""
+                    onChange={(v) => add(v)}
+                    placeholder={
+                        loading
+                            ? "Loading…"
+                            : remaining.length === 0
+                                ? "All specialisations added"
+                                : "Add specialisation…"
+                    }
+                    disabled={loading || remaining.length === 0}
+                />
+            ) : (
+                <p style={{ margin: 0, fontSize: 11, color: "var(--hms-gray-400)" }}>
+                    Maximum {MAX_SPECS} specialisations reached.
+                </p>
+            )}
         </div>
-      )}
-      {value.length < MAX_SPECS ? (
-        <SearchableSelect
-          options={remaining.map((s) => ({ value: s.id, label: s.name }))}
-          value=""
-          onChange={(v) => add(v)}
-          placeholder={loading ? "Loading…" : remaining.length === 0 ? "All specializations added" : "Add specialization…"}
-          disabled={loading || remaining.length === 0}
-          className={inputBase}
-        />
-      ) : (
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-          Maximum {MAX_SPECS} specializations reached.
-        </p>
-      )}
-    </div>
-  );
+    );
 }
 
 function fmtDuration(mins) {
-  if (!mins) return "—";
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  if (h && m) return `${h}h ${m}m`;
-  if (h) return `${h} hrs`;
-  return `${m} min`;
+    if (!mins) return "—";
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h && m) return `${h}h ${m}m`;
+    if (h) return `${h} hrs`;
+    return `${m} min`;
 }
 
+/** Day-of-week pill button styling (matches hms-btn-primary / -secondary). */
+const dayBtnStyle = (active) => ({
+    padding: "6px 14px",
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
+    transition: "all 0.15s",
+    border: active ? "1px solid var(--hms-brand-primary)" : "1px solid var(--hms-gray-200)",
+    background: active ? "var(--hms-brand-primary)" : "var(--hms-white)",
+    color: active ? "var(--hms-white)" : "var(--hms-gray-500)",
+    fontFamily: "var(--hms-font-family)",
+});
+
+/**
+ * Add / Edit doctor profile.
+ *
+ * Asymmetric UX preserved exactly:
+ *   * editDoctor truthy → right-edge Drawer with the professional-only
+ *     subset (no account credentials — those exist already).
+ *   * editDoctor falsey → centred extra-wide Modal with a full account-
+ *     setup + professional + schedule form.
+ *
+ * Data layer, validators, and API surfaces are unchanged byte-for-byte.
+ * SearchableSelect and StateSelect remain on the legacy stack.
+ */
 function DoctorFormModal({ onClose, onSaved, editDoctor }) {
-  const { user } = useAuth();
-  const { notify } = useNotification();
+    const { user } = useAuth();
+    const { notify } = useNotification();
 
-  const [submitting, setSubmitting] = useState(false);
-  const [paneOpen, setPaneOpen] = useState(true);
-  const [specializations, setSpecializations] = useState([]);
-  const [specsLoading, setSpecsLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [specializations, setSpecializations] = useState([]);
+    const [specsLoading, setSpecsLoading] = useState(false);
 
-  const [userForm, setUserForm] = useState({
-    firstName: "", lastName: "", email: "", phone: "", password: "", state: "",
-  });
+    const [userForm, setUserForm] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        password: "",
+        state: "",
+    });
 
-  const [doctorForm, setDoctorForm] = useState({
-    specializationIds:         editDoctor?.specializationIds || [],
-    qualification:             editDoctor?.qualification || "",
-    medicalRegistrationNumber: editDoctor?.medicalRegistrationNumber || "",
-    registrationCouncil:       editDoctor?.registrationCouncil || "",
-    personalPhone:             editDoctor?.personalPhone || "",
-    personalEmail:             editDoctor?.personalEmail || "",
-    residentialAddress:        editDoctor?.residentialAddress || "",
-    consultationFee:           editDoctor?.consultationFee || 500,
-    followUpFee:               editDoctor?.followUpFee || 300,
-    availableDaysMask:         editDoctor?.availableDaysMask ?? 31,
-    slotDurationMin:           editDoctor?.slotDurationMin || 15,
-    maxDailySlots:             editDoctor?.maxDailySlots || 40,
-  });
+    const [doctorForm, setDoctorForm] = useState({
+        specializationIds: editDoctor?.specializationIds || [],
+        qualification: editDoctor?.qualification || "",
+        medicalRegistrationNumber: editDoctor?.medicalRegistrationNumber || "",
+        registrationCouncil: editDoctor?.registrationCouncil || "",
+        personalPhone: editDoctor?.personalPhone || "",
+        personalEmail: editDoctor?.personalEmail || "",
+        residentialAddress: editDoctor?.residentialAddress || "",
+        consultationFee: editDoctor?.consultationFee || 500,
+        followUpFee: editDoctor?.followUpFee || 300,
+        availableDaysMask: editDoctor?.availableDaysMask ?? 31,
+        slotDurationMin: editDoctor?.slotDurationMin || 15,
+        maxDailySlots: editDoctor?.maxDailySlots || 40,
+    });
 
-  useEffect(() => {
-    if (!user?.hospitalId) return;
-    setSpecsLoading(true);
-    specializationApi.list(user.hospitalId)
-      .then((data) => setSpecializations(data))
-      .catch(() => setSpecializations([]))
-      .finally(() => setSpecsLoading(false));
-  }, [user?.hospitalId]);
+    useEffect(() => {
+        if (!user?.hospitalId) return;
+        setSpecsLoading(true);
+        specializationApi
+            .list(user.hospitalId)
+            .then((data) => setSpecializations(data))
+            .catch(() => setSpecializations([]))
+            .finally(() => setSpecsLoading(false));
+    }, [user?.hospitalId]);
 
-  const setDoc = (patch) => setDoctorForm((p) => ({ ...p, ...patch }));
-  const setUser = (patch) => setUserForm((p) => ({ ...p, ...patch }));
+    const setDoc = (patch) => setDoctorForm((p) => ({ ...p, ...patch }));
+    const setUser = (patch) => setUserForm((p) => ({ ...p, ...patch }));
 
-  const mask = doctorForm.availableDaysMask || 0;
-  const activeDayCount = DAYS.filter((d) => mask & d.bit).length;
-  const slotMin = doctorForm.slotDurationMin || 0;
-  const slotsPerDay = doctorForm.maxDailySlots || 0;
-  const totalMinPerDay = slotMin * slotsPerDay;
-  const totalMinPerWeek = totalMinPerDay * activeDayCount;
+    const mask = doctorForm.availableDaysMask || 0;
+    const activeDayCount = DAYS.filter((d) => mask & d.bit).length;
+    const slotMin = doctorForm.slotDurationMin || 0;
+    const slotsPerDay = doctorForm.maxDailySlots || 0;
+    const totalMinPerDay = slotMin * slotsPerDay;
+    const totalMinPerWeek = totalMinPerDay * activeDayCount;
 
-  const toggleDay = (bit) => setDoc({ availableDaysMask: mask ^ bit });
+    const toggleDay = (bit) => setDoc({ availableDaysMask: mask ^ bit });
 
-  const handleClose = () => {
-    if (editDoctor) { setPaneOpen(false); setTimeout(onClose, 290); }
-    else onClose();
-  };
-
-  const validateCreate = () => {
-    if (!userForm.firstName.trim() || !userForm.email.trim() || !userForm.phone.trim() || !userForm.password.trim()) {
-      notify("Please fill in all required account fields", "error"); return false;
-    }
-    const pwdRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
-    if (!pwdRegex.test(userForm.password)) {
-      notify("Password must be at least 6 characters with 1 uppercase, 1 number and 1 special character", "error"); return false;
-    }
-    if (doctorForm.specializationIds.length === 0) {
-      notify("Please select at least one specialization", "error"); return false;
-    }
-    if (!doctorForm.qualification.trim() || !doctorForm.medicalRegistrationNumber.trim() || !doctorForm.registrationCouncil.trim()) {
-      notify("Please fill in all professional details", "error"); return false;
-    }
-    if (!doctorForm.consultationFee || !doctorForm.slotDurationMin || !doctorForm.maxDailySlots || activeDayCount === 0) {
-      notify("Please complete scheduling & fee details", "error"); return false;
-    }
-    return true;
-  };
-
-  const handleCreate = async () => {
-    if (!validateCreate() || !user?.hospitalId) return;
-    setSubmitting(true);
-    try {
-      const newUser = await staffApi.create({ ...userForm, role: "DOCTOR", hospitalId: user.hospitalId });
-      const { specializationIds, qualification, medicalRegistrationNumber, registrationCouncil,
-              personalPhone, personalEmail, residentialAddress,
-              consultationFee, followUpFee, availableDaysMask, slotDurationMin, maxDailySlots } = doctorForm;
-      await doctorsApi.create({
-        specializationIds, qualification, medicalRegistrationNumber, registrationCouncil,
-        personalPhone, personalEmail, residentialAddress,
-        consultationFee, followUpFee, availableDaysMask, slotDurationMin, maxDailySlots,
-        userId: newUser.id, hospitalId: user.hospitalId,
-      });
-      notify("Doctor profile created", "success");
-      onSaved();
-      onClose();
-    } catch (error) {
-      notify(error.response?.data?.error || "Operation failed", "error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleUpdate = async (e) => {
-    e?.preventDefault();
-    if (!user?.hospitalId) return;
-    setSubmitting(true);
-    try {
-      await doctorsApi.update(editDoctor.id, doctorForm);
-      notify("Doctor profile updated", "success");
-      onSaved();
-      setPaneOpen(false);
-      setTimeout(onClose, 290);
-    } catch (error) {
-      notify(error.response?.data?.error || "Operation failed", "error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // ── Edit mode: SidePane ───────────────────────────────────────────────────
-  if (editDoctor) {
-    const initials = `${editDoctor.firstName?.[0] ?? ""}${editDoctor.lastName?.[0] ?? ""}`.toUpperCase();
-    return (
-      <SidePane
-        isOpen={paneOpen}
-        onClose={handleClose}
-        title="Edit Doctor Profile"
-        footer={
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={handleClose} className="btn-secondary">Cancel</button>
-            <button type="button" onClick={handleUpdate} disabled={submitting} className="btn-primary min-w-[120px]">
-              {submitting ? "Saving…" : "Save Changes"}
-            </button>
-          </div>
+    const validateCreate = () => {
+        if (
+            !userForm.firstName.trim() ||
+            !userForm.email.trim() ||
+            !userForm.phone.trim() ||
+            !userForm.password.trim()
+        ) {
+            notify("Please fill in all required account fields", "error");
+            return false;
         }
-      >
-        <form onSubmit={handleUpdate} className="space-y-8">
-          {/* Doctor card */}
-          <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-[#0f0f0f] border border-slate-100 dark:border-[#1e1e1e]">
-            <div className="w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-100 dark:border-blue-800/30 flex items-center justify-center text-lg font-bold text-blue-700 dark:text-blue-400 shrink-0">
-              {initials}
-            </div>
-            <div>
-              <p className="font-bold text-slate-900 dark:text-white text-base leading-tight">
-                Dr. {editDoctor.firstName} {editDoctor.lastName}
-              </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{editDoctor.email}</p>
-              <span className={`inline-flex items-center mt-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold border ${
-                editDoctor.userIsActive
-                  ? "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30"
-                  : "bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800/30"
-              }`}>
-                {editDoctor.userIsActive ? "Active" : "Inactive"}
-              </span>
-            </div>
-          </div>
+        const pwdRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
+        if (!pwdRegex.test(userForm.password)) {
+            notify(
+                "Password must be at least 6 characters with 1 uppercase, 1 number and 1 special character",
+                "error"
+            );
+            return false;
+        }
+        if (doctorForm.specializationIds.length === 0) {
+            notify("Please select at least one specialization", "error");
+            return false;
+        }
+        if (
+            !doctorForm.qualification.trim() ||
+            !doctorForm.medicalRegistrationNumber.trim() ||
+            !doctorForm.registrationCouncil.trim()
+        ) {
+            notify("Please fill in all professional details", "error");
+            return false;
+        }
+        if (
+            !doctorForm.consultationFee ||
+            !doctorForm.slotDurationMin ||
+            !doctorForm.maxDailySlots ||
+            activeDayCount === 0
+        ) {
+            notify("Please complete scheduling & fee details", "error");
+            return false;
+        }
+        return true;
+    };
 
-          {/* Professional */}
-          <div className="space-y-3">
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Professional</p>
-            <div>
-              <FieldLabel required>Specializations</FieldLabel>
-              <SpecPicker
-                specializations={specializations}
-                value={doctorForm.specializationIds}
-                onChange={(ids) => setDoc({ specializationIds: ids })}
-                loading={specsLoading}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Qualification", key: "qualification", placeholder: "e.g. MBBS, MD", req: true },
-                { label: "Registration No.", key: "medicalRegistrationNumber", placeholder: "MRC-XXXXXX", req: true },
-                { label: "Council", key: "registrationCouncil", placeholder: "Tamil Nadu MC", req: true },
-              ].map(({ label, key, placeholder, req }) => (
-                <div key={key}>
-                  <FieldLabel required={req}>{label}</FieldLabel>
-                  <input type="text" value={doctorForm[key]}
-                    onChange={(e) => setDoc({ [key]: e.target.value })}
-                    className={inputBase} placeholder={placeholder} />
+    const handleCreate = async () => {
+        if (!validateCreate() || !user?.hospitalId) return;
+        setSubmitting(true);
+        try {
+            const newUser = await staffApi.create({
+                ...userForm,
+                role: "DOCTOR",
+                hospitalId: user.hospitalId,
+            });
+            const {
+                specializationIds,
+                qualification,
+                medicalRegistrationNumber,
+                registrationCouncil,
+                personalPhone,
+                personalEmail,
+                residentialAddress,
+                consultationFee,
+                followUpFee,
+                availableDaysMask,
+                slotDurationMin,
+                maxDailySlots,
+            } = doctorForm;
+            await doctorsApi.create({
+                specializationIds,
+                qualification,
+                medicalRegistrationNumber,
+                registrationCouncil,
+                personalPhone,
+                personalEmail,
+                residentialAddress,
+                consultationFee,
+                followUpFee,
+                availableDaysMask,
+                slotDurationMin,
+                maxDailySlots,
+                userId: newUser.id,
+                hospitalId: user.hospitalId,
+            });
+            notify("Doctor profile created", "success");
+            onSaved();
+            onClose();
+        } catch (error) {
+            notify(error.response?.data?.error || "Operation failed", "error");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleUpdate = async (e) => {
+        e?.preventDefault();
+        if (!user?.hospitalId) return;
+        setSubmitting(true);
+        try {
+            await doctorsApi.update(editDoctor.id, doctorForm);
+            notify("Doctor profile updated", "success");
+            onSaved();
+            onClose();
+        } catch (error) {
+            notify(error.response?.data?.error || "Operation failed", "error");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    /* ───────────────────────── Edit mode (Drawer) ──────────────────────── */
+    if (editDoctor) {
+        const initials = `${editDoctor.firstName?.[0] ?? ""}${editDoctor.lastName?.[0] ?? ""}`.toUpperCase();
+        return (
+            <Drawer
+                isOpen
+                onClose={onClose}
+                title="Edit doctor profile"
+                footer={
+                    <>
+                        <Button variant="cancel" onClick={onClose}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            type="submit"
+                            form="doctor-edit-form"
+                            loading={submitting}
+                        >
+                            Save changes
+                        </Button>
+                    </>
+                }
+            >
+                <form
+                    id="doctor-edit-form"
+                    onSubmit={handleUpdate}
+                    style={{ display: "flex", flexDirection: "column", gap: 24 }}
+                >
+                    {/* Doctor identity card */}
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 16,
+                            padding: 16,
+                            background: "var(--hms-gray-50)",
+                            border: "1px solid var(--hms-gray-200)",
+                            borderRadius: "var(--hms-radius)",
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: 56,
+                                height: 56,
+                                borderRadius: 999,
+                                background: "var(--hms-info-bg)",
+                                color: "#0369a1",
+                                border: "2px solid var(--hms-info-border)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: 800,
+                                fontSize: 16,
+                                flexShrink: 0,
+                            }}
+                        >
+                            {initials}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                            <div
+                                style={{
+                                    fontWeight: 700,
+                                    color: "var(--hms-gray-900)",
+                                    fontSize: 15,
+                                }}
+                            >
+                                Dr. {editDoctor.firstName} {editDoctor.lastName}
+                            </div>
+                            <div style={{ fontSize: 13, color: "var(--hms-gray-500)", marginTop: 2 }}>
+                                {editDoctor.email}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Professional */}
+                    <div>
+                        <SectionLabel>Professional</SectionLabel>
+                        <FormGroup label="Specialisations *">
+                            <SpecPicker
+                                specializations={specializations}
+                                value={doctorForm.specializationIds}
+                                onChange={(ids) => setDoc({ specializationIds: ids })}
+                                loading={specsLoading}
+                            />
+                        </FormGroup>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr",
+                                gap: 12,
+                                marginTop: 12,
+                            }}
+                        >
+                            <FormGroup label="Qualification *">
+                                <Input
+                                    value={doctorForm.qualification}
+                                    onChange={(e) => setDoc({ qualification: e.target.value })}
+                                    placeholder="e.g. MBBS, MD"
+                                />
+                            </FormGroup>
+                            <FormGroup label="Registration no. *">
+                                <Input
+                                    value={doctorForm.medicalRegistrationNumber}
+                                    onChange={(e) =>
+                                        setDoc({ medicalRegistrationNumber: e.target.value })
+                                    }
+                                    placeholder="MRC-XXXXXX"
+                                />
+                            </FormGroup>
+                            <FormGroup label="Council *">
+                                <Input
+                                    value={doctorForm.registrationCouncil}
+                                    onChange={(e) =>
+                                        setDoc({ registrationCouncil: e.target.value })
+                                    }
+                                    placeholder="Tamil Nadu MC"
+                                />
+                            </FormGroup>
+                        </div>
+                    </div>
+
+                    {/* Contact */}
+                    <div>
+                        <SectionLabel>Personal contact</SectionLabel>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr",
+                                gap: 12,
+                            }}
+                        >
+                            <FormGroup label="Phone">
+                                <Input
+                                    type="tel"
+                                    value={doctorForm.personalPhone}
+                                    onChange={(e) =>
+                                        setDoc({ personalPhone: e.target.value })
+                                    }
+                                    placeholder="+91 99999 00000"
+                                />
+                            </FormGroup>
+                            <FormGroup label="Email">
+                                <Input
+                                    type="email"
+                                    value={doctorForm.personalEmail}
+                                    onChange={(e) =>
+                                        setDoc({ personalEmail: e.target.value })
+                                    }
+                                    placeholder="name@personal.com"
+                                />
+                            </FormGroup>
+                        </div>
+                    </div>
+
+                    {/* Address */}
+                    <div>
+                        <SectionLabel>Address</SectionLabel>
+                        <FormGroup
+                            label={
+                                <span
+                                    style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                    }}
+                                >
+                                    <Home size={14} style={{ color: "var(--hms-accent-external)" }} />
+                                    Residential
+                                </span>
+                            }
+                        >
+                            <Textarea
+                                rows={3}
+                                value={doctorForm.residentialAddress}
+                                onChange={(e) =>
+                                    setDoc({ residentialAddress: e.target.value })
+                                }
+                                placeholder="Home, street, city, pincode"
+                            />
+                        </FormGroup>
+                    </div>
+
+                    {/* Schedule & Fees */}
+                    <div>
+                        <SectionLabel>Schedule & fees</SectionLabel>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr",
+                                gap: 12,
+                            }}
+                        >
+                            <FormGroup label="Consultation (₹) *">
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="1"
+                                    value={doctorForm.consultationFee || ""}
+                                    onChange={(e) =>
+                                        setDoc({
+                                            consultationFee: parseFloat(e.target.value) || 0,
+                                        })
+                                    }
+                                />
+                            </FormGroup>
+                            <FormGroup label="Follow-up (₹) *">
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="1"
+                                    value={doctorForm.followUpFee || ""}
+                                    onChange={(e) =>
+                                        setDoc({
+                                            followUpFee: parseFloat(e.target.value) || 0,
+                                        })
+                                    }
+                                />
+                            </FormGroup>
+                            <FormGroup label="Slot duration (min) *">
+                                <Input
+                                    type="number"
+                                    step="5"
+                                    min="1"
+                                    value={doctorForm.slotDurationMin || ""}
+                                    onChange={(e) =>
+                                        setDoc({
+                                            slotDurationMin: parseInt(e.target.value) || 0,
+                                        })
+                                    }
+                                />
+                            </FormGroup>
+                            <FormGroup label="Max daily slots *">
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    value={doctorForm.maxDailySlots || ""}
+                                    onChange={(e) =>
+                                        setDoc({
+                                            maxDailySlots: parseInt(e.target.value) || 0,
+                                        })
+                                    }
+                                />
+                            </FormGroup>
+                        </div>
+                        <div style={{ marginTop: 12 }}>
+                            <FormGroup label="Available days *">
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                    {DAYS.map(({ label, bit }) => {
+                                        const active = !!(mask & bit);
+                                        return (
+                                            <button
+                                                key={bit}
+                                                type="button"
+                                                onClick={() => toggleDay(bit)}
+                                                style={dayBtnStyle(active)}
+                                            >
+                                                {label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </FormGroup>
+                        </div>
+                    </div>
+                </form>
+            </Drawer>
+        );
+    }
+
+    /* ───────────────────────── Create mode (Modal) ─────────────────────── */
+    return (
+        <Modal
+            isOpen
+            onClose={onClose}
+            size="xl"
+            title="Add new doctor"
+            footer={
+                <>
+                    <Button variant="cancel" onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <Button variant="primary" onClick={handleCreate} loading={submitting}>
+                        Create profile
+                    </Button>
+                </>
+            }
+        >
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                {/* Account setup */}
+                <div>
+                    <SectionLabel>Account setup</SectionLabel>
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 12,
+                        }}
+                    >
+                        <FormGroup label="First name *">
+                            <Input
+                                autoFocus
+                                value={userForm.firstName}
+                                onChange={(e) => setUser({ firstName: e.target.value })}
+                                placeholder="Arjun"
+                            />
+                        </FormGroup>
+                        <FormGroup label="Last name">
+                            <Input
+                                value={userForm.lastName}
+                                onChange={(e) => setUser({ lastName: e.target.value })}
+                                placeholder="Sharma"
+                            />
+                        </FormGroup>
+                        <FormGroup label="Email address *">
+                            <Input
+                                type="email"
+                                value={userForm.email}
+                                onChange={(e) => setUser({ email: e.target.value })}
+                                placeholder="doctor@hospital.com"
+                            />
+                        </FormGroup>
+                        <FormGroup label="Phone number *">
+                            <Input
+                                type="tel"
+                                value={userForm.phone}
+                                onChange={(e) => setUser({ phone: e.target.value })}
+                                placeholder="+91 98765 43210"
+                            />
+                        </FormGroup>
+                        <FormGroup
+                            label="Temporary password *"
+                            hint="Min. 6 chars, 1 uppercase, 1 number, 1 special"
+                            className="grid-col-full"
+                        >
+                            <Input
+                                type="password"
+                                value={userForm.password}
+                                onChange={(e) => setUser({ password: e.target.value })}
+                                placeholder="Minimum 6 characters"
+                            />
+                        </FormGroup>
+                    </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Contact */}
-          <div className="space-y-3">
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Personal Contact</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <FieldLabel>Phone</FieldLabel>
-                <input type="tel" value={doctorForm.personalPhone} onChange={(e) => setDoc({ personalPhone: e.target.value })} className={inputBase} placeholder="+91 99999 00000" />
-              </div>
-              <div>
-                <FieldLabel>Email</FieldLabel>
-                <input type="email" value={doctorForm.personalEmail} onChange={(e) => setDoc({ personalEmail: e.target.value })} className={inputBase} placeholder="name@personal.com" />
-              </div>
-            </div>
-          </div>
-
-          {/* Address */}
-          <div className="space-y-3">
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Address</p>
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Home className="w-3.5 h-3.5 text-violet-500" />
-                <FieldLabel>Residential</FieldLabel>
-              </div>
-              <textarea rows={3} value={doctorForm.residentialAddress}
-                onChange={(e) => setDoc({ residentialAddress: e.target.value })}
-                className={textareaBase}
-                placeholder="Home, street, city, pincode" />
-            </div>
-          </div>
-
-          {/* Schedule & Fees */}
-          <div className="space-y-3">
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Schedule & Fees</p>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Consultation (₹)", key: "consultationFee", type: "number", step: "0.01" },
-                { label: "Follow-up (₹)", key: "followUpFee", type: "number", step: "0.01" },
-                { label: "Slot Duration (min)", key: "slotDurationMin", type: "number", step: "5" },
-                { label: "Max Daily Slots", key: "maxDailySlots", type: "number" },
-              ].map(({ label, key, type, step: st }) => (
-                <div key={key}>
-                  <FieldLabel required>{label}</FieldLabel>
-                  <input type={type} step={st} min="1" value={doctorForm[key] || ""}
-                    onChange={(e) => setDoc({ [key]: st === "0.01" ? parseFloat(e.target.value) || 0 : parseInt(e.target.value) || 0 })}
-                    className={inputBase} />
+                {/* Professional identity */}
+                <div>
+                    <SectionLabel>Professional identity</SectionLabel>
+                    <FormGroup
+                        label={
+                            <span>
+                                Specialisations *{" "}
+                                <span style={{ fontWeight: 400, color: "var(--hms-gray-400)" }}>
+                                    (up to {MAX_SPECS})
+                                </span>
+                            </span>
+                        }
+                    >
+                        <SpecPicker
+                            specializations={specializations}
+                            value={doctorForm.specializationIds}
+                            onChange={(ids) => setDoc({ specializationIds: ids })}
+                            loading={specsLoading}
+                        />
+                    </FormGroup>
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 12,
+                            marginTop: 12,
+                        }}
+                    >
+                        <FormGroup label="Qualification *">
+                            <Input
+                                value={doctorForm.qualification}
+                                onChange={(e) => setDoc({ qualification: e.target.value })}
+                                placeholder="e.g. MBBS, MD"
+                            />
+                        </FormGroup>
+                        <FormGroup label="Registration number *">
+                            <Input
+                                value={doctorForm.medicalRegistrationNumber}
+                                onChange={(e) =>
+                                    setDoc({ medicalRegistrationNumber: e.target.value })
+                                }
+                                placeholder="MRC-XXXXXX"
+                            />
+                        </FormGroup>
+                        <FormGroup
+                            label="Registration council *"
+                            className="grid-col-full"
+                        >
+                            <Input
+                                value={doctorForm.registrationCouncil}
+                                onChange={(e) =>
+                                    setDoc({ registrationCouncil: e.target.value })
+                                }
+                                placeholder="e.g. Tamil Nadu Medical Council"
+                            />
+                        </FormGroup>
+                    </div>
                 </div>
-              ))}
+
+                {/* Personal contact */}
+                <div>
+                    <SectionLabel>Personal contact</SectionLabel>
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 12,
+                        }}
+                    >
+                        <FormGroup label="Phone">
+                            <Input
+                                type="tel"
+                                value={doctorForm.personalPhone}
+                                onChange={(e) => setDoc({ personalPhone: e.target.value })}
+                                placeholder="+91 99999 00000"
+                            />
+                        </FormGroup>
+                        <FormGroup label="Email">
+                            <Input
+                                type="email"
+                                value={doctorForm.personalEmail}
+                                onChange={(e) => setDoc({ personalEmail: e.target.value })}
+                                placeholder="name@personal.com"
+                            />
+                        </FormGroup>
+                    </div>
+                </div>
+
+                {/* Address */}
+                <div>
+                    <SectionLabel>Address</SectionLabel>
+                    <FormGroup label="Residential address">
+                        <Textarea
+                            rows={2}
+                            value={doctorForm.residentialAddress}
+                            onChange={(e) =>
+                                setDoc({ residentialAddress: e.target.value })
+                            }
+                            placeholder="Home address, street, area, city, pincode"
+                        />
+                    </FormGroup>
+                    <div style={{ marginTop: 12 }}>
+                        <StateSelect
+                            value={userForm.state}
+                            onChange={(val) => setUser({ state: val })}
+                            inputClassName="hms-input"
+                            labelClassName="hms-label"
+                        />
+                    </div>
+                </div>
+
+                {/* Schedule & fees */}
+                <div>
+                    <SectionLabel>Schedule & fees</SectionLabel>
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 12,
+                        }}
+                    >
+                        <FormGroup label="Consultation fee (₹) *">
+                            <Input
+                                type="number"
+                                step="0.01"
+                                min="1"
+                                value={doctorForm.consultationFee || ""}
+                                onChange={(e) =>
+                                    setDoc({
+                                        consultationFee: parseFloat(e.target.value) || 0,
+                                    })
+                                }
+                                placeholder="500"
+                            />
+                        </FormGroup>
+                        <FormGroup label="Follow-up fee (₹) *">
+                            <Input
+                                type="number"
+                                step="0.01"
+                                min="1"
+                                value={doctorForm.followUpFee || ""}
+                                onChange={(e) =>
+                                    setDoc({
+                                        followUpFee: parseFloat(e.target.value) || 0,
+                                    })
+                                }
+                                placeholder="300"
+                            />
+                        </FormGroup>
+                        <FormGroup label="Slot duration (min) *">
+                            <Input
+                                type="number"
+                                step="5"
+                                min="5"
+                                value={doctorForm.slotDurationMin || ""}
+                                onChange={(e) =>
+                                    setDoc({
+                                        slotDurationMin: parseInt(e.target.value) || 0,
+                                    })
+                                }
+                                placeholder="15"
+                            />
+                        </FormGroup>
+                        <FormGroup label="Max daily slots *">
+                            <Input
+                                type="number"
+                                min="1"
+                                value={doctorForm.maxDailySlots || ""}
+                                onChange={(e) =>
+                                    setDoc({
+                                        maxDailySlots: parseInt(e.target.value) || 0,
+                                    })
+                                }
+                                placeholder="40"
+                            />
+                        </FormGroup>
+                    </div>
+                    <div style={{ marginTop: 12 }}>
+                        <FormGroup label="Available days *">
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {DAYS.map(({ label, bit }) => {
+                                    const active = !!(mask & bit);
+                                    return (
+                                        <button
+                                            key={bit}
+                                            type="button"
+                                            onClick={() => toggleDay(bit)}
+                                            style={dayBtnStyle(active)}
+                                        >
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </FormGroup>
+                    </div>
+                    <div
+                        style={{
+                            marginTop: 12,
+                            padding: 16,
+                            background: "var(--hms-gray-50)",
+                            border: "1px solid var(--hms-gray-200)",
+                            borderRadius: "var(--hms-radius)",
+                        }}
+                    >
+                        <SectionLabel>Weekly schedule preview</SectionLabel>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(4, 1fr)",
+                                gap: 12,
+                            }}
+                        >
+                            {[
+                                { label: "Slot", value: slotMin > 0 ? `${slotMin} min` : "—" },
+                                {
+                                    label: "Per day",
+                                    value: slotsPerDay > 0 ? slotsPerDay : "—",
+                                },
+                                {
+                                    label: "Hrs / day",
+                                    value: fmtDuration(totalMinPerDay),
+                                },
+                                {
+                                    label: "Days / wk",
+                                    value: activeDayCount > 0 ? activeDayCount : "—",
+                                },
+                            ].map(({ label, value }) => (
+                                <div
+                                    key={label}
+                                    style={{
+                                        background: "var(--hms-white)",
+                                        border: "1px solid var(--hms-gray-200)",
+                                        borderRadius: 8,
+                                        padding: 12,
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    <p
+                                        style={{
+                                            margin: 0,
+                                            fontSize: 10,
+                                            color: "var(--hms-gray-400)",
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.06em",
+                                        }}
+                                    >
+                                        {label}
+                                    </p>
+                                    <p
+                                        style={{
+                                            margin: "4px 0 0",
+                                            fontSize: 16,
+                                            fontWeight: 700,
+                                            color: "var(--hms-gray-900)",
+                                        }}
+                                    >
+                                        {value}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                        <div
+                            style={{
+                                marginTop: 12,
+                                paddingTop: 12,
+                                borderTop: "1px solid var(--hms-gray-200)",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                            }}
+                        >
+                            <span
+                                style={{
+                                    fontSize: 12,
+                                    fontWeight: 500,
+                                    color: "var(--hms-gray-500)",
+                                }}
+                            >
+                                Total clinical hours / week
+                            </span>
+                            <span
+                                style={{
+                                    fontSize: 18,
+                                    fontWeight: 700,
+                                    color: "var(--hms-gray-900)",
+                                }}
+                            >
+                                {fmtDuration(totalMinPerWeek)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div>
-              <FieldLabel required>Available Days</FieldLabel>
-              <div className="flex flex-wrap gap-2 mt-1.5">
-                {DAYS.map(({ label, bit }) => {
-                  const active = !!(mask & bit);
-                  return (
-                    <button key={bit} type="button" onClick={() => toggleDay(bit)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                        active ? "bg-blue-500 text-white border-blue-500" : "bg-white dark:bg-[#161616] text-slate-400 border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300"
-                      }`}>
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </form>
-      </SidePane>
+        </Modal>
     );
-  }
-
-  // ── Create mode: single-view modal ───────────────────────────────────────
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="card w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
-
-        {/* Header */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Add New Doctor</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
-        </div>
-
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-6">
-
-            {/* ── Account Setup ── */}
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Account Setup</p>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">First Name *</label>
-                    <input autoFocus type="text" className="input" value={userForm.firstName}
-                      onChange={(e) => setUser({ firstName: e.target.value })} placeholder="Arjun" />
-                  </div>
-                  <div>
-                    <label className="label">Last Name</label>
-                    <input type="text" className="input" value={userForm.lastName}
-                      onChange={(e) => setUser({ lastName: e.target.value })} placeholder="Sharma" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Email Address *</label>
-                    <input type="email" className="input" value={userForm.email}
-                      onChange={(e) => setUser({ email: e.target.value })} placeholder="doctor@hospital.com" />
-                  </div>
-                  <div>
-                    <label className="label">Phone Number *</label>
-                    <input type="tel" className="input" value={userForm.phone}
-                      onChange={(e) => setUser({ phone: e.target.value })} placeholder="+91 98765 43210" />
-                  </div>
-                </div>
-                <div>
-                  <label className="label">Temporary Password *</label>
-                  <input type="password" className="input" value={userForm.password}
-                    onChange={(e) => setUser({ password: e.target.value })} placeholder="Min. 6 chars, 1 uppercase, 1 number, 1 special" />
-                </div>
-              </div>
-            </div>
-
-            {/* ── Professional Identity ── */}
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Professional Identity</p>
-              <div className="space-y-4">
-                <div>
-                  <label className="label">Specializations * <span className="normal-case font-normal text-slate-400">(up to {MAX_SPECS})</span></label>
-                  <SpecPicker
-                    specializations={specializations}
-                    value={doctorForm.specializationIds}
-                    onChange={(ids) => setDoc({ specializationIds: ids })}
-                    loading={specsLoading}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Qualification *</label>
-                    <input type="text" className="input" value={doctorForm.qualification}
-                      onChange={(e) => setDoc({ qualification: e.target.value })} placeholder="e.g. MBBS, MD" />
-                  </div>
-                  <div>
-                    <label className="label">Registration Number *</label>
-                    <input type="text" className="input" value={doctorForm.medicalRegistrationNumber}
-                      onChange={(e) => setDoc({ medicalRegistrationNumber: e.target.value })} placeholder="MRC-XXXXXX" />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="label">Registration Council *</label>
-                    <input type="text" className="input" value={doctorForm.registrationCouncil}
-                      onChange={(e) => setDoc({ registrationCouncil: e.target.value })} placeholder="e.g. Tamil Nadu Medical Council" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Contact Information ── */}
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Personal Contact</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Phone</label>
-                  <input type="tel" className="input" value={doctorForm.personalPhone}
-                    onChange={(e) => setDoc({ personalPhone: e.target.value })} placeholder="+91 99999 00000" />
-                </div>
-                <div>
-                  <label className="label">Email</label>
-                  <input type="email" className="input" value={doctorForm.personalEmail}
-                    onChange={(e) => setDoc({ personalEmail: e.target.value })} placeholder="name@personal.com" />
-                </div>
-              </div>
-            </div>
-
-            {/* ── Address ── */}
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Address</p>
-              <div className="space-y-4">
-                <div>
-                  <label className="label">Residential Address</label>
-                  <textarea rows={2} className="input resize-none"
-                    value={doctorForm.residentialAddress}
-                    onChange={(e) => setDoc({ residentialAddress: e.target.value })}
-                    placeholder="Home address, street, area, city, pincode" />
-                </div>
-                <StateSelect
-                  value={userForm.state}
-                  onChange={(val) => setUser({ state: val })}
-                  inputClassName="input w-full flex items-center justify-between text-left"
-                  labelClassName="label"
-                />
-              </div>
-            </div>
-
-            {/* ── Schedule & Fees ── */}
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Schedule & Fees</p>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Consultation Fee (₹) *</label>
-                    <input type="number" min="1" step="0.01" className="input" value={doctorForm.consultationFee || ""}
-                      onChange={(e) => setDoc({ consultationFee: parseFloat(e.target.value) || 0 })} placeholder="500" />
-                  </div>
-                  <div>
-                    <label className="label">Follow-up Fee (₹) *</label>
-                    <input type="number" min="1" step="0.01" className="input" value={doctorForm.followUpFee || ""}
-                      onChange={(e) => setDoc({ followUpFee: parseFloat(e.target.value) || 0 })} placeholder="300" />
-                  </div>
-                  <div>
-                    <label className="label">Slot Duration (min) *</label>
-                    <input type="number" min="5" step="5" className="input" value={doctorForm.slotDurationMin || ""}
-                      onChange={(e) => setDoc({ slotDurationMin: parseInt(e.target.value) || 0 })} placeholder="15" />
-                  </div>
-                  <div>
-                    <label className="label">Max Daily Slots *</label>
-                    <input type="number" min="1" className="input" value={doctorForm.maxDailySlots || ""}
-                      onChange={(e) => setDoc({ maxDailySlots: parseInt(e.target.value) || 0 })} placeholder="40" />
-                  </div>
-                </div>
-                <div>
-                  <label className="label">Available Days *</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {DAYS.map(({ label, bit }) => {
-                      const active = !!(mask & bit);
-                      return (
-                        <button key={bit} type="button" onClick={() => toggleDay(bit)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                            active
-                              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white"
-                              : "bg-white dark:bg-[#1e1e1e] text-slate-400 border-slate-200 dark:border-[#333] hover:border-slate-400 dark:hover:border-[#555]"
-                          }`}>
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="rounded-lg border-2 border-slate-200 dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1a1a1a] p-4">
-                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Weekly Schedule Preview</p>
-                  <div className="grid grid-cols-4 gap-3">
-                    {[
-                      { label: "Slot",      value: slotMin > 0 ? `${slotMin} min` : "—" },
-                      { label: "Per Day",   value: slotsPerDay > 0 ? slotsPerDay : "—" },
-                      { label: "Hrs / Day", value: fmtDuration(totalMinPerDay) },
-                      { label: "Days / Wk", value: activeDayCount > 0 ? activeDayCount : "—" },
-                    ].map(({ label, value }) => (
-                      <div key={label} className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#2a2a2a] p-3 text-center">
-                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">{label}</p>
-                        <p className="text-base font-bold text-slate-900 dark:text-white mt-1">{value}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-[#2a2a2a] flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total clinical hours / week</span>
-                    <span className="text-lg font-bold text-slate-900 dark:text-white">{fmtDuration(totalMinPerWeek)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0">
-          <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn-primary" onClick={handleCreate} disabled={submitting}>
-            {submitting ? "Creating…" : "Create Profile"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export { DoctorFormModal as default };
