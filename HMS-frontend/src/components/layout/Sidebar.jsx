@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useFeatureFlag } from "@/context/FeatureFlagsContext";
 import {
   Home,
   Users,
@@ -39,6 +40,7 @@ const ADMIN_LINKS = [
   { label: "Services", to: "/services", icon: ClipboardList },
 ];
 const SETTINGS_LINKS = [
+  { label: "General Settings", to: "/settings/general", icon: Settings },
   { label: "Infrastructure", to: "/settings/infrastructure", icon: Building2 },
   { label: "Patient Services", to: "/settings/patient-services", icon: ConciergeBell },
   { label: "Packages", to: "/checkups/packages", icon: ClipboardList },
@@ -77,6 +79,10 @@ const EXTERNAL_APPS = [
 function Sidebar({ isOpen }) {
   const { user } = useAuth();
   const location = useLocation();
+  const ambulanceEnabled = useFeatureFlag("AMBULANCE");
+  const radiologyEnabled = useFeatureFlag("RADIOLOGY");
+  const checkupsEnabled = useFeatureFlag("HEALTH_CHECKUPS");
+  const ipdEnabled = useFeatureFlag("IPD");
   const [hrOpen, setHrOpen] = useState(() => location.pathname.startsWith("/staffs"));
   const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
   const [roomsOpen, setRoomsOpen] = useState(() => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions"));
@@ -146,7 +152,8 @@ function Sidebar({ isOpen }) {
   const settingsActive = location.pathname.startsWith("/settings") || location.pathname.startsWith("/checkups/packages") || location.pathname.startsWith("/settings/patient-services");
   const renderSettingsAccordion = () => renderAccordionSection(SETTINGS_LINKS, "Settings", Settings, settingsOpen, setSettingsOpen, settingsActive);
   const billingActive = location.pathname.startsWith("/billing");
-  const renderBillingAccordion = () => renderAccordionSection(BILLING_LINKS, "Billing", ReceiptText, billingOpen, setBillingOpen, billingActive);
+  const visibleBillingLinks = BILLING_LINKS.filter((link) => ambulanceEnabled || link.to !== "/billing/ambulance");
+  const renderBillingAccordion = () => renderAccordionSection(visibleBillingLinks, "Billing", ReceiptText, billingOpen, setBillingOpen, billingActive);
   return <aside
     className={`flex flex-col h-full transition-all duration-300 ease-in-out shrink-0
                 bg-white dark:bg-[#111111] border-r border-slate-200 dark:border-[#222222]
@@ -155,7 +162,7 @@ function Sidebar({ isOpen }) {
     /* Logo */
   }<div className={`flex items-center border-b border-slate-200 dark:border-[#222222] h-14 ${isOpen ? "gap-3 px-4" : "justify-center"}`}><div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0"><Activity className="w-4 h-4 text-white dark:text-slate-900" /></div>{isOpen && <div className="overflow-hidden"><p className="font-bold text-sm leading-tight tracking-wider text-slate-900 dark:text-white">ZenoHosp</p><p className="text-xs text-slate-600 dark:text-[#888888] truncate mt-0.5">{user?.hospitalName}</p></div>}</div>{
     /* Navigation */
-  }<nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Main Menu</div>}{renderLink(DASHBOARD_LINK)}{isOpen && <div className="px-3 mb-2 mt-10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Hospital</div>}{filteredClinicalLinks.map((link) => renderLink(link))}{renderRoomsAccordion()}{renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{renderAmbulanceAccordion()}{renderLink(CHECKUP_LINK)}{renderBillingAccordion()}{filteredAdminLinks.map((link) => renderLink(link))}{isHrAdmin && renderHrAccordion()}{isHrAdmin && renderSettingsAccordion()}</nav>{
+  }<nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Main Menu</div>}{renderLink(DASHBOARD_LINK)}{isOpen && <div className="px-3 mb-2 mt-10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Hospital</div>}{filteredClinicalLinks.map((link) => renderLink(link))}{ipdEnabled && renderRoomsAccordion()}{radiologyEnabled && renderAccordionSection(RADIOLOGY_LINKS, "Radiology", ScanLine, radOpen, setRadOpen, radActive)}{ambulanceEnabled && renderAmbulanceAccordion()}{checkupsEnabled && renderLink(CHECKUP_LINK)}{renderBillingAccordion()}{filteredAdminLinks.map((link) => renderLink(link))}{isHrAdmin && renderHrAccordion()}{isHrAdmin && renderSettingsAccordion()}</nav>{
     /* Other Apps at bottom */
   }<div className="border-t border-slate-200 dark:border-[#222222] p-2 space-y-0.5 shrink-0">{isOpen && <div className="px-3 mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[#777777]">Other Apps</div>}{EXTERNAL_APPS.map((app) => renderExternalApp(app))}</div></aside>;
 }

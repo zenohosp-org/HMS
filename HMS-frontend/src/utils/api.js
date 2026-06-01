@@ -642,6 +642,17 @@ const ambulanceApi = {
   },
 };
 
+const featureFlagsApi = {
+  list: async (hospitalId) => {
+    const { data } = await api.get("/settings/features", { params: { hospitalId } });
+    return data;
+  },
+  set: async (hospitalId, key, enabled) => {
+    const { data } = await api.put("/settings/features", { key, enabled }, { params: { hospitalId } });
+    return data;
+  },
+};
+
 const checkupApi = {
   getPackages: async (hospitalId, activeOnly = false) => {
     const { data } = await api.get("/health-checkups/packages", { params: { hospitalId, activeOnly } });
@@ -812,6 +823,7 @@ export {
   designationApi,
   directoryLogout,
   doctorsApi,
+  featureFlagsApi,
   hospitalServiceApi,
   patientServicesApi,
   invoiceApi,

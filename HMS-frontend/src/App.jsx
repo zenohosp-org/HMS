@@ -4,6 +4,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { ReferenceDataProvider } from "@/context/ReferenceDataContext";
+import { FeatureFlagsProvider } from "@/context/FeatureFlagsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/layout/Layout";
 import FocusLayout from "@/components/layout/FocusLayout";
@@ -35,6 +36,7 @@ import RadiologyReports from "@/pages/radiology/RadiologyReports";
 import RadiologyReportView from "@/pages/radiology/RadiologyReportView";
 import InfrastructureMapping from "@/pages/ipd/InfrastructureMapping"
 import Settings from "@/pages/settings/Settings"
+import GeneralSettings from "@/pages/settings/GeneralSettings"
 import PatientServices from "@/pages/settings/PatientServices"
 import AmbulanceBook from "@/pages/ambulance/AmbulanceBook"
 import AmbulanceStatus from "@/pages/ambulance/AmbulanceStatus";
@@ -42,7 +44,7 @@ import PackageManager from "@/pages/checkups/PackageManager";
 import CheckupBookings from "@/pages/checkups/CheckupBookings";
 import CheckupBookingDetail from "@/pages/checkups/CheckupBookingDetail";
 function App() {
-  return <ErrorBoundary><ThemeProvider><AuthProvider><NotificationProvider><ReferenceDataProvider><BrowserRouter><Routes>{
+  return <ErrorBoundary><ThemeProvider><AuthProvider><FeatureFlagsProvider><NotificationProvider><ReferenceDataProvider><BrowserRouter><Routes>{
     /* Public */
   }<Route path="/login" element={<Login />} /><Route path="/unauthorized" element={<Unauthorized />} /><Route path="/sso/callback" element={<SsoCallback />} />{
     /* Protected — authenticated + hospital assigned */
@@ -55,7 +57,8 @@ function App() {
           <Route path="patients/:id" element={<PatientDetails />} />
           
           {/* Settings */}
-          <Route path="settings" element={<Navigate to="/settings/infrastructure" replace />} />
+          <Route path="settings" element={<Navigate to="/settings/general" replace />} />
+          <Route path="settings/general" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><GeneralSettings /></ProtectedRoute>} />
           <Route path="settings/infrastructure" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Settings /></ProtectedRoute>} />
           <Route path="settings/patient-services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><PatientServices /></ProtectedRoute>} />
           <Route path="ipd/infrastructure" element={<Navigate to="/settings/infrastructure" replace />} />
@@ -132,7 +135,7 @@ function App() {
         />
         {
     /* Fallback */
-  }<Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></BrowserRouter></ReferenceDataProvider></NotificationProvider></AuthProvider></ThemeProvider></ErrorBoundary>;
+  }<Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></BrowserRouter></ReferenceDataProvider></NotificationProvider></FeatureFlagsProvider></AuthProvider></ThemeProvider></ErrorBoundary>;
 }
 export {
   App as default
