@@ -1,108 +1,144 @@
 import { useState, useEffect } from "react";
-import { X, Loader2 } from "lucide-react";
 import { specializationApi } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import SidePane from "@/components/SidePane";
+import {
+    Button,
+    Drawer,
+    FormGroup,
+    Input,
+    Modal,
+    Textarea,
+} from "@/components/ui";
 
+/**
+ * Add / Edit Specialization.
+ *
+ * UX contract preserved from the pre-migration file:
+ *   * `initialData` truthy  → edit, opens a right-edge Drawer.
+ *   * `initialData` falsey  → create, opens a centred Modal.
+ * Both share the same form, the same submit handler, and surface
+ * identical toast messages on success/failure.
+ *
+ * The form is rendered as a shared subtree so the two presentation
+ * shells stay in sync at the single source of truth.
+ */
 function AddSpecializationModal({ isOpen, onClose, onSuccess, initialData }) {
-  const { user } = useAuth();
-  const { notify } = useNotification();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: "", description: "" });
+    const { user } = useAuth();
+    const { notify } = useNotification();
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({ name: "", description: "" });
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({ name: initialData.name, description: initialData.description || "" });
-    } else {
-      setFormData({ name: "", description: "" });
-    }
-  }, [initialData, isOpen]);
+    useEffect(() => {
+        if (initialData) {
+            setFormData({ name: initialData.name, description: initialData.description || "" });
+        } else {
+            setFormData({ name: "", description: "" });
+        }
+    }, [initialData, isOpen]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user?.hospitalId) return;
-    setLoading(true);
-    try {
-      if (initialData) {
-        await specializationApi.update(initialData.id, { ...formData, hospitalId: user.hospitalId });
-        notify("Specialization updated successfully", "success");
-      } else {
-        await specializationApi.create({ ...formData, hospitalId: user.hospitalId });
-        notify("Specialization added successfully", "success");
-      }
-      onSuccess();
-      onClose();
-    } catch (err) {
-      notify(err.response?.data?.message || "Failed to save specialization", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!user?.hospitalId) return;
+        setLoading(true);
+        try {
+            if (initialData) {
+                await specializationApi.update(initialData.id, {
+                    ...formData,
+                    hospitalId: user.hospitalId,
+                });
+                notify("Specialization updated successfully", "success");
+            } else {
+                await specializationApi.create({
+                    ...formData,
+                    hospitalId: user.hospitalId,
+                });
+                notify("Specialization added successfully", "success");
+            }
+            onSuccess?.();
+            onClose?.();
+        } catch (err) {
+            notify(err.response?.data?.message || "Failed to save specialization", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const formFields = (
-    <form id="specForm" onSubmit={handleSubmit} className="space-y-5">
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-700 dark:text-[#cccccc]">
-          Specialization <span className="text-rose-500">*</span>
-        </label>
-        <input
-          required
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="e.g. Cardiology"
-          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all"
-        />
-      </div>
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-700 dark:text-[#cccccc]">Description</label>
-        <textarea
-          rows={4}
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Enter detail description..."
-          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#222222] bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-slate-300/50 dark:focus:ring-[#444444]/50 focus:border-slate-400 dark:focus:border-[#444444] transition-all resize-none"
-        />
-      </div>
-    </form>
-  );
+    const formId = "specialization-form";
 
-  const actionButtons = (add) => (
-    <div className="flex items-center gap-3">
-      <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
-      <button type="submit" form="specForm" disabled={loading} className="btn-primary flex-1">
-        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : add ? "Add Specialization" : "Update Specialization"}
-      </button>
-    </div>
-  );
+    const formBody = (
+        <form
+            id={formId}
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: 16 }}
+        >
+            <FormGroup
+                label={
+                    <>
+                        Specialization <span style={{ color: "var(--hms-danger)" }}>*</span>
+                    </>
+                }
+            >
+                <Input
+                    required
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g. Cardiology"
+                />
+            </FormGroup>
 
-  if (initialData) {
-    return (
-      <SidePane isOpen={isOpen} onClose={onClose} title="Edit Specialization" footer={actionButtons(false)}>
-        {formFields}
-      </SidePane>
+            <FormGroup label="Description">
+                <Textarea
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Enter detailed description…"
+                />
+            </FormGroup>
+        </form>
     );
-  }
 
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-[#111111] rounded-lg shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-[#222222] animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1a1a1a]">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Add New Specialization</h2>
-          <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-all">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-6 space-y-5">
-          {formFields}
-          <div className="pt-2">{actionButtons(true)}</div>
-        </div>
-      </div>
-    </div>
-  );
+    const actionRow = (
+        <>
+            <Button variant="cancel" onClick={onClose} type="button">
+                Cancel
+            </Button>
+            <Button
+                variant="primary"
+                type="submit"
+                form={formId}
+                loading={loading}
+            >
+                {initialData ? "Update specialization" : "Add specialization"}
+            </Button>
+        </>
+    );
+
+    if (initialData) {
+        return (
+            <Drawer
+                isOpen={isOpen}
+                onClose={onClose}
+                title="Edit specialization"
+                footer={actionRow}
+            >
+                {formBody}
+            </Drawer>
+        );
+    }
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Add new specialization"
+            size="md"
+            footer={actionRow}
+        >
+            {formBody}
+        </Modal>
+    );
 }
 
 export { AddSpecializationModal as default };
