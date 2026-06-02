@@ -37,14 +37,14 @@
 
 .hms-svc-info-card__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-700);
 }
 
 .hms-svc-info-card__description {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -61,13 +61,13 @@
 
 .hms-svc-active-row__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-700);
 }
 
 .hms-svc-active-row__description {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }

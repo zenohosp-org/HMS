@@ -53,7 +53,7 @@
 .hms-billing-header__count {
     padding: 2px 10px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     border: 1px solid var(--hms-info-border);
     background: var(--hms-info-bg);
@@ -123,7 +123,7 @@
 
 .hms-billing-stat__label {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -142,7 +142,7 @@
 
 .hms-billing-stat__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -192,7 +192,7 @@
     border: none;
     background: transparent;
     color: var(--hms-gray-500);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -232,7 +232,7 @@
     border-radius: 8px;
     background: var(--hms-white);
     color: var(--hms-gray-900);
-    font-size: 12px;
+    font-size: 13px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     font-family: var(--hms-font-family);
@@ -276,7 +276,7 @@
 
 .hms-billing-table th {
     padding: 14px 20px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -300,13 +300,13 @@
 .hms-billing-table td {
     padding: 14px 20px;
     vertical-align: middle;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 /* Cell helpers */
 .hms-billing-cell__primary {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
@@ -315,13 +315,13 @@
 
 .hms-billing-cell__secondary {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
 .hms-billing-cell__strong {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-900);
 }
@@ -332,24 +332,24 @@
 
 .hms-billing-cell__paid {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-success);
 }
 
 .hms-billing-cell__discount {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-danger);
 }
 
 .hms-billing-cell__estimated {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
 .hms-billing-cell__pending {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
     font-style: italic;
 }
@@ -380,7 +380,7 @@
 
 .hms-billing-pips__count {
     margin-left: 2px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -392,7 +392,7 @@
     border-radius: 8px;
     background: var(--hms-gray-100);
     color: var(--hms-gray-600);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
 }
 
@@ -403,7 +403,7 @@
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     border: 1px solid transparent;
     white-space: nowrap;
@@ -469,7 +469,7 @@
 
 .hms-billing-walkin__label {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: #b45309;
 }
@@ -491,7 +491,7 @@
 
 .hms-billing-route__text {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -555,7 +555,7 @@
 
 .hms-billing-cell-state__text {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--hms-gray-400);
 }
@@ -598,7 +598,7 @@
     padding: 8px 12px;
     background: transparent;
     border: none;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-700);
     text-align: left;
@@ -653,14 +653,14 @@
 
 .hms-create-inv-card__title {
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-create-inv-card__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -676,14 +676,14 @@
 
 .hms-create-inv-pat-tile__name {
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: #065f46;
 }
 
 .hms-create-inv-pat-tile__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: #047857;
 }
 
@@ -728,7 +728,7 @@
     width: 100%;
     border: none;
     background: transparent;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-900);
     padding: 6px 4px;
     outline: none;
@@ -740,7 +740,7 @@
 
 .hms-create-inv-row__total {
     text-align: right;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
     font-variant-numeric: tabular-nums;
@@ -807,14 +807,14 @@
 
 .hms-inv-list-detail__title {
     margin: 0;
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-inv-list-detail__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -844,7 +844,7 @@
     justify-content: center;
     gap: 8px;
     color: var(--hms-gray-500);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-inv-list-meta {
@@ -863,7 +863,7 @@
 
 .hms-inv-list-meta__label {
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -872,7 +872,7 @@
 
 .hms-inv-list-meta__value {
     margin: 2px 0 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
@@ -890,13 +890,13 @@
     gap: 8px;
     padding: 10px 14px;
     border-top: 1px solid var(--hms-gray-100);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-inv-list-items__row.is-head {
     background: var(--hms-gray-50);
     border-top: none;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -924,7 +924,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-inv-list-totals__row {
@@ -941,7 +941,7 @@
 .hms-inv-list-totals__row.is-grand {
     font-weight: 800;
     color: var(--hms-gray-900);
-    font-size: 15px;
+    font-size: 16px;
     border-top: 1px solid var(--hms-gray-200);
     padding-top: 8px;
     margin-top: 4px;
@@ -966,7 +966,7 @@
 
 .hms-inv-list-pay-history__title {
     margin: 0 0 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -979,14 +979,14 @@
     justify-content: space-between;
     padding: 6px 0;
     border-bottom: 1px solid var(--hms-gray-50);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .hms-inv-list-pay-history__row:last-child { border-bottom: none; }
 
 .hms-inv-list-pay-history__date {
     color: var(--hms-gray-500);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .hms-inv-list-pay-history__amt {
@@ -1007,7 +1007,7 @@
 
 .hms-inv-list-collect__title {
     margin: 0;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: #0369a1;
     text-transform: uppercase;
@@ -1023,7 +1023,7 @@
 .hms-inv-list-collect__field { display: flex; flex-direction: column; gap: 4px; }
 
 .hms-inv-list-collect__label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: #0369a1;
     text-transform: uppercase;
@@ -1036,7 +1036,7 @@
     border: 1px solid var(--hms-info-border);
     border-radius: 6px;
     background: var(--hms-white);
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-900);
     outline: none;
     font-family: var(--hms-font-family);
@@ -1076,7 +1076,7 @@
 
 .hms-checkup-header__sub {
     margin: 2px 0 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-500);
 }
 
@@ -1121,7 +1121,7 @@
 
 .hms-checkup-table th {
     padding: 12px 16px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -1134,7 +1134,7 @@
 
 .hms-checkup-table td {
     padding: 12px 16px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-700);
     border-top: 1px solid var(--hms-gray-100);
     vertical-align: middle;
@@ -1144,14 +1144,14 @@
 
 .hms-checkup-cell__primary {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-checkup-cell__secondary {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -1175,14 +1175,14 @@
 
 .hms-checkup-empty__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-500);
 }
 
 .hms-checkup-empty__sub {
     margin: 4px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -1213,14 +1213,14 @@
 
 .hms-checkup-section__title {
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-checkup-section__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -1232,7 +1232,7 @@
 
 .hms-checkup-meta__label {
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -1241,7 +1241,7 @@
 
 .hms-checkup-meta__value {
     margin: 2px 0 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-900);
 }
@@ -1259,7 +1259,7 @@
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     border: 1px solid transparent;
 }
@@ -1312,19 +1312,19 @@
 
 .hms-checkup-test__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
 
 .hms-checkup-test__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
 .hms-checkup-test__amt {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
     font-variant-numeric: tabular-nums;
@@ -1362,19 +1362,19 @@
 
 .hms-checkup-pkg-card__name {
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-checkup-pkg-card__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
 .hms-checkup-pkg-card__price {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 800;
     color: var(--hms-info);
     font-variant-numeric: tabular-nums;
@@ -1387,7 +1387,7 @@
     padding: 8px 10px;
     background: var(--hms-gray-50);
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-700);
     max-height: 132px;
     overflow-y: auto;
@@ -1397,7 +1397,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-700);
 }
 
@@ -1444,7 +1444,7 @@
 
 .hms-amb-header__sub {
     margin: 2px 0 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-500);
 }
 
@@ -1467,7 +1467,7 @@
 
 .hms-amb-card__title {
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--hms-gray-900);
     display: flex;
@@ -1477,7 +1477,7 @@
 
 .hms-amb-card__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -1485,7 +1485,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
     padding-bottom: 8px;
@@ -1498,7 +1498,7 @@
     border-radius: 999px;
     background: var(--hms-gray-100);
     color: var(--hms-gray-700);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
@@ -1536,20 +1536,20 @@
 
 .hms-amb-type-card__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-amb-type-card__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
 .hms-amb-type-card__price {
     margin-top: 6px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
     color: #c2410c;
     font-variant-numeric: tabular-nums;
@@ -1585,7 +1585,7 @@
 
 .hms-amb-vehicle-card__num {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1593,13 +1593,13 @@
 
 .hms-amb-vehicle-card__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
 .hms-amb-vehicle-card__avail {
     margin-top: 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--hms-success);
 }
@@ -1630,14 +1630,14 @@
 
 .hms-amb-driver-row__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-900);
 }
 
 .hms-amb-driver-row__phone {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -1655,12 +1655,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-600);
 }
 
 .hms-amb-summary__row.is-total {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
     color: var(--hms-gray-900);
     padding-top: 8px;
@@ -1710,7 +1710,7 @@
 
 .hms-amb-status-card__ref {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1718,13 +1718,13 @@
 
 .hms-amb-status-card__time {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
 .hms-amb-status-card__pat {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
@@ -1742,7 +1742,7 @@
     display: flex;
     align-items: flex-start;
     gap: 6px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-700);
 }
 
@@ -1782,7 +1782,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-700);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
@@ -1797,7 +1797,7 @@
     width: 20px;
     height: 20px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     background: var(--hms-gray-100);
     color: var(--hms-gray-700);
@@ -1818,7 +1818,7 @@
     border: none;
     background: transparent;
     color: var(--hms-gray-400);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: color 0.15s;
@@ -1854,7 +1854,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
     font-family: inherit;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -1868,7 +1868,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-700);
-    font-size: 13px;
+    font-size: 14px;
     font-family: inherit;
     outline: none;
     transition: border-color 0.15s;
@@ -1881,7 +1881,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-400);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: color 0.15s;
@@ -1916,8 +1916,8 @@
     color: var(--hms-gray-400);
 }
 .hms-amb-dispatch-empty__icon { margin-bottom: 12px; opacity: 0.3; }
-.hms-amb-dispatch-empty__title { font-size: 13px; font-weight: 600; }
-.hms-amb-dispatch-empty__sub { font-size: 12px; margin-top: 4px; }
+.hms-amb-dispatch-empty__title { font-size: 14px; font-weight: 600; }
+.hms-amb-dispatch-empty__sub { font-size: 13px; margin-top: 4px; }
 
 .hms-amb-status-card__pat-block {
     display: flex;
@@ -1936,25 +1936,25 @@
     color: var(--hms-gray-500);
 }
 .hms-amb-status-card__charge {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-success);
 }
 .hms-amb-status-card__type {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-500);
 }
 .hms-amb-status-card__meta-row {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 .hms-amb-status-card__driver-row {
     display: flex;
     gap: 16px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-500);
 }
 .hms-amb-status-card__driver-item {
@@ -2006,7 +2006,7 @@
 
 .hms-infra-header__sub {
     margin: 2px 0 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-500);
 }
 
@@ -2030,7 +2030,7 @@
     padding: 12px 16px;
     border-bottom: 1px solid var(--hms-gray-100);
     background: var(--hms-gray-50);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--hms-gray-700);
     text-transform: uppercase;
@@ -2056,22 +2056,22 @@
     transition: background 0.15s;
     font-family: var(--hms-font-family);
     text-align: left;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-700);
 }
 
 .hms-infra-tree__row:hover { background: var(--hms-gray-50); }
 .hms-infra-tree__row.is-on { background: var(--hms-info-bg); color: #0369a1; font-weight: 700; }
 
-.hms-infra-tree__row.is-indent { padding-left: 32px; font-size: 12px; }
-.hms-infra-tree__row.is-indent-2 { padding-left: 48px; font-size: 12px; color: var(--hms-gray-600); }
+.hms-infra-tree__row.is-indent { padding-left: 32px; font-size: 13px; }
+.hms-infra-tree__row.is-indent-2 { padding-left: 48px; font-size: 13px; color: var(--hms-gray-600); }
 
 .hms-infra-tree__icon { color: var(--hms-gray-400); display: inline-flex; flex-shrink: 0; }
 .hms-infra-tree__row.is-on .hms-infra-tree__icon { color: var(--hms-info); }
 
 .hms-infra-tree__count {
     margin-left: auto;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-500);
     background: var(--hms-gray-100);
@@ -2102,14 +2102,14 @@
 
 .hms-infra-main__title {
     margin: 0;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-infra-main__sub {
     margin: 2px 0 0;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-500);
 }
 
@@ -2144,14 +2144,14 @@
 
 .hms-infra-card__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-infra-card__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -2159,7 +2159,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -2194,14 +2194,14 @@
 
 .hms-infra-empty__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-500);
 }
 
 .hms-infra-empty__sub {
     margin: 4px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -2222,7 +2222,7 @@
     border: 1.5px solid var(--hms-gray-200);
     background: var(--hms-white);
     font-family: var(--hms-font-family);
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-700);
 }
 
@@ -2245,12 +2245,12 @@
 }
 
 .hms-infra-bed__num {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
 }
 
 .hms-infra-bed__status {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -2293,7 +2293,7 @@
 
 .hms-infra-stat__label {
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -2302,7 +2302,7 @@
 
 .hms-infra-stat__value {
     margin: 2px 0 0;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 800;
     color: var(--hms-gray-900);
 }
@@ -2318,7 +2318,7 @@
 }
 
 .hms-finance-field__label {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--hms-gray-700);
 }
@@ -2332,7 +2332,7 @@
     border-radius: 6px;
     background: var(--hms-white);
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     font-family: var(--hms-font-family);
@@ -2391,7 +2391,7 @@
 
 .hms-create-inv-headrow__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -2430,7 +2430,7 @@
 }
 
 .hms-create-inv-banner__body {
-    font-size: 11px;
+    font-size: 12px;
     color: #0369a1;
     display: flex;
     flex-direction: column;
@@ -2439,7 +2439,7 @@
 
 .hms-create-inv-banner__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
 }
 
@@ -2451,7 +2451,7 @@
     border-radius: 999px;
     background: var(--hms-gray-100);
     color: var(--hms-gray-600);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
@@ -2463,7 +2463,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -2494,7 +2494,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     font-family: var(--hms-font-family);
@@ -2559,14 +2559,14 @@
 
 .hms-create-inv-suggest__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
 
 .hms-create-inv-suggest__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -2600,14 +2600,14 @@
 
 .hms-create-inv-picked__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: #065f46;
 }
 
 .hms-create-inv-picked__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: #047857;
 }
 
@@ -2667,14 +2667,14 @@
 
 .hms-create-inv-sug-row__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
 
 .hms-create-inv-sug-row__sub {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -2686,7 +2686,7 @@
     border: none;
     padding: 5px 10px;
     border-radius: 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
@@ -2710,7 +2710,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
     margin-bottom: 6px;
 }
@@ -2724,7 +2724,7 @@
     border: 1px dashed var(--hms-success-border);
     background: transparent;
     color: var(--hms-success);
-    font-size: 13px;
+    font-size: 14px;
     text-align: left;
     cursor: pointer;
     transition: background 0.15s;
@@ -2742,7 +2742,7 @@
     border: 1px solid var(--hms-gray-200);
     color: var(--hms-gray-600);
     background: var(--hms-white);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s;
@@ -2754,7 +2754,7 @@
 .hms-create-inv-empty-block {
     padding: 32px 16px;
     text-align: center;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-600);
     border: 2px dashed var(--hms-gray-100);
     border-radius: 8px;
@@ -2766,7 +2766,7 @@
     gap: 8px;
     padding: 0 4px 8px;
     border-bottom: 1px solid var(--hms-gray-100);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-600);
     text-transform: uppercase;
@@ -2813,7 +2813,7 @@
     border: 1px solid var(--hms-gray-100);
     background: var(--hms-white);
     color: var(--hms-gray-800);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     font-family: var(--hms-font-family);
 }
@@ -2826,7 +2826,7 @@
 }
 
 .hms-create-inv-item-total {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-800);
 }
@@ -2864,7 +2864,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-500);
 }
 
@@ -2883,7 +2883,7 @@
     border-radius: 8px;
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     font-family: var(--hms-font-family);
 }
@@ -2895,7 +2895,7 @@
     justify-content: space-between;
     padding-top: 8px;
     border-top: 1px solid var(--hms-gray-100);
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
@@ -2918,7 +2918,7 @@
     background: var(--hms-warning-bg);
     border: 1px solid var(--hms-warning-border);
     margin-bottom: 12px;
-    font-size: 11px;
+    font-size: 12px;
     color: #92400e;
 }
 
@@ -2926,14 +2926,14 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
     margin-bottom: 8px;
 }
 
 .hms-create-inv-pay-method-hint__detail {
     margin-left: 4px;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-300);
 }
 
@@ -2968,7 +2968,7 @@
 }
 
 .hms-create-inv-bank-card__name {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-700);
     overflow: hidden;
@@ -2981,7 +2981,7 @@
 .hms-create-inv-bank-card__check { color: var(--hms-success); flex-shrink: 0; }
 
 .hms-create-inv-bank-card__sub {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2990,7 +2990,7 @@
 
 .hms-create-inv-bank-card__bal {
     margin-top: 6px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-600);
 }
@@ -3001,7 +3001,7 @@
 .hms-create-inv-bank-card.is-none .hms-create-inv-bank-card__sub { color: var(--hms-gray-300); }
 
 .hms-create-inv-bank-after {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
     margin-top: 8px;
 }
@@ -3016,7 +3016,7 @@
     color: var(--hms-white);
     border: none;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3063,7 +3063,7 @@
 
 .hms-create-inv-pane__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-800);
     line-height: 1.2;
@@ -3071,7 +3071,7 @@
 
 .hms-create-inv-pane__sub {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
 }
 
@@ -3103,7 +3103,7 @@
     border-radius: 8px;
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-gray-50);
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-800);
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -3151,7 +3151,7 @@
     background: var(--hms-gray-100);
     color: var(--hms-gray-500);
     border: none;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -3178,7 +3178,7 @@
 
 .hms-create-inv-pane__empty-text {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-600);
 }
 
@@ -3207,7 +3207,7 @@
 
 .hms-create-inv-log__id {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-800);
     overflow: hidden;
@@ -3226,7 +3226,7 @@
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     padding: 2px 6px;
     border-radius: 4px;
@@ -3253,7 +3253,7 @@
 
 .hms-create-inv-log__date {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
 }
 
@@ -3265,7 +3265,7 @@
 }
 
 .hms-create-inv-log__amt {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-800);
 }
@@ -3307,7 +3307,7 @@
 
 .hms-create-inv-log__item-desc {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3316,7 +3316,7 @@
 
 .hms-create-inv-log__item-amt {
     flex-shrink: 0;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--hms-gray-700);
 }
@@ -3330,12 +3330,12 @@
 }
 
 .hms-create-inv-log__total-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
 .hms-create-inv-log__total-val {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-info);
 }
@@ -3348,7 +3348,7 @@
     background: var(--hms-success);
     color: var(--hms-white);
     border: none;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
@@ -3367,7 +3367,7 @@
     gap: 4px;
     padding: 2px 6px;
     border-radius: 4px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
 }
 
@@ -3407,7 +3407,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     background: transparent;
@@ -3431,7 +3431,7 @@
 
 .hms-inv-list-sub {
     margin: 4px 0 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-500);
     font-weight: 500;
     letter-spacing: -0.01em;
@@ -3459,7 +3459,7 @@
     border: 1px solid var(--hms-gray-200);
     border-radius: 8px;
     background: var(--hms-white);
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-900);
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -3493,7 +3493,7 @@
 
 .hms-inv-list-table th {
     padding: 14px 24px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -3512,19 +3512,19 @@
 
 .hms-inv-list-table td {
     padding: 14px 24px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-700);
     vertical-align: middle;
 }
 
 .hms-inv-list-table__primary {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-inv-list-table__sub {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-500);
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -3533,19 +3533,19 @@
 }
 
 .hms-inv-list-table__patient-sub {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
 .hms-inv-list-table__amt {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
     font-variant-numeric: tabular-nums;
 }
 
 .hms-inv-list-table__waived {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-danger);
     display: inline-flex;
     align-items: center;
@@ -3567,7 +3567,7 @@
     padding: 48px 24px;
     text-align: center;
     color: var(--hms-gray-500);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-inv-list-table__empty svg {
@@ -3582,7 +3582,7 @@
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -3680,14 +3680,14 @@
 
 .hms-inv-detail__title {
     margin: 0;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-inv-detail__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -3703,7 +3703,7 @@
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -3781,7 +3781,7 @@
     flex-shrink: 0;
     font-weight: 700;
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-inv-detail__waiver-hint {
@@ -3793,7 +3793,7 @@
     background: var(--hms-warning-bg);
     border: 1px solid var(--hms-warning-border);
     border-radius: 8px;
-    font-size: 11px;
+    font-size: 12px;
     color: #92400e;
     font-weight: 500;
     flex-shrink: 0;
@@ -3807,7 +3807,7 @@
 .hms-inv-detail__items {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-inv-detail__items thead {
@@ -3823,7 +3823,7 @@
 
 .hms-inv-detail__items th {
     padding: 10px 16px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -3850,19 +3850,19 @@
 .hms-inv-detail__items td {
     padding: 14px 16px;
     vertical-align: middle;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-700);
 }
 
 .hms-inv-detail__items td.is-no {
     padding-left: 24px;
     color: var(--hms-gray-400);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .hms-inv-detail__items td.is-date {
     color: var(--hms-gray-500);
-    font-size: 11px;
+    font-size: 12px;
     white-space: nowrap;
 }
 
@@ -3875,7 +3875,7 @@
 .hms-inv-detail__items td.is-gst {
     text-align: center;
     color: var(--hms-gray-400);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .hms-inv-detail__items td.is-total {
@@ -3887,7 +3887,7 @@
 .hms-inv-detail__items td.is-empty {
     padding: 48px 24px;
     text-align: center;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-400);
 }
 
@@ -3902,7 +3902,7 @@
     display: inline-block;
     padding: 2px 6px;
     border-radius: 4px;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -3918,17 +3918,17 @@
 .hms-inv-detail__type-chip.is-custom { background: var(--hms-gray-100); color: var(--hms-gray-600); }
 
 .hms-inv-detail__item-desc {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-800);
 }
 
 .hms-inv-detail__item-qty {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
 .hms-inv-detail__item-reason {
-    font-size: 11px;
+    font-size: 12px;
     color: #f43f5e;
     display: inline-flex;
     align-items: center;
@@ -3946,7 +3946,7 @@
 .hms-inv-detail__total-strike {
     text-decoration: line-through;
     color: var(--hms-gray-300);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .hms-inv-detail__total-eff {
@@ -3991,7 +3991,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-600);
 }
 
@@ -4008,7 +4008,7 @@
 .hms-inv-detail__total-row.is-grand {
     padding-top: 8px;
     border-top: 1px solid var(--hms-gray-200);
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
@@ -4027,7 +4027,7 @@
     flex-shrink: 0;
     font-weight: 700;
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-inv-detail__right-body {
@@ -4044,7 +4044,7 @@
     border-radius: 8px;
     padding: 8px 14px;
     text-align: center;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -4058,7 +4058,7 @@
     margin: 0;
     font-weight: 600;
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-inv-detail__pay-toggle {
@@ -4068,7 +4068,7 @@
     background: transparent;
     border: none;
     color: var(--hms-info);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: color 0.15s;
@@ -4098,7 +4098,7 @@
     border-radius: 8px;
     border: 1px solid var(--hms-warning-border);
     background: var(--hms-warning-bg);
-    font-size: 11px;
+    font-size: 12px;
     color: #92400e;
 }
 
@@ -4118,7 +4118,7 @@
     border: 2px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-500);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s, color 0.15s;
@@ -4141,7 +4141,7 @@
 
 .hms-inv-detail__pay-bank-label-detail {
     margin-left: 4px;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-300);
 }
 
@@ -4160,7 +4160,7 @@
     justify-content: space-between;
     padding-top: 8px;
     border-top: 1px solid var(--hms-gray-200);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .hms-inv-detail__balance-row__label {
@@ -4189,7 +4189,7 @@
 .hms-inv-detail__history-date {
     flex-shrink: 0;
     white-space: nowrap;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-600);
     font-variant-numeric: tabular-nums;
 }
@@ -4201,7 +4201,7 @@
 
 .hms-inv-detail__history-ref {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-500);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4210,13 +4210,13 @@
 
 .hms-inv-detail__history-method {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
 .hms-inv-detail__history-amt {
     flex-shrink: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-900);
     font-variant-numeric: tabular-nums;
@@ -4224,7 +4224,7 @@
 
 .hms-inv-detail__history-empty {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-400);
 }
 
@@ -4273,7 +4273,7 @@
 
 .hms-inv-waiver__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4308,7 +4308,7 @@
 }
 
 .hms-inv-waiver__label {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-700);
     display: block;
@@ -4335,7 +4335,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-gray-50);
     color: var(--hms-gray-600);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s;
@@ -4355,7 +4355,7 @@
     top: 50%;
     transform: translateY(-50%);
     color: var(--hms-gray-400);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
 }
 
@@ -4367,7 +4367,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-700);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     font-family: var(--hms-font-family);
@@ -4404,7 +4404,7 @@
     border-radius: 8px;
     background: #f43f5e;
     color: var(--hms-white);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     border: none;
     cursor: pointer;
@@ -4460,7 +4460,7 @@
 
 .hms-mark-paid__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -4517,7 +4517,7 @@
 }
 
 .hms-mark-paid__bank-card-name {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-800);
     overflow: hidden;
@@ -4531,12 +4531,12 @@
 }
 
 .hms-mark-paid__bank-card-sub {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
 .hms-mark-paid__bank-card-bal {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--hms-gray-600);
     margin-top: 4px;
@@ -4602,7 +4602,7 @@
 
 .hms-checkup-stat__label {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
     font-weight: 500;
 }
@@ -4635,7 +4635,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     font-family: var(--hms-font-family);
@@ -4654,7 +4654,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-700);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     font-family: var(--hms-font-family);
@@ -4671,7 +4671,7 @@
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -4699,7 +4699,7 @@
     align-items: center;
     padding: 2px 10px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -4714,7 +4714,7 @@
 
 .hms-checkup-table__pkg-name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-700);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4723,7 +4723,7 @@
 
 .hms-checkup-table__pkg-price {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-success);
     font-weight: 600;
 }
@@ -4732,7 +4732,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--hms-success);
     background: transparent;
@@ -4750,7 +4750,7 @@
     gap: 6px;
     background: transparent;
     border: none;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-700);
     cursor: pointer;
     transition: color 0.15s;
@@ -4794,20 +4794,20 @@
 
 .hms-checkup-assign-pop__row.is-clear {
     padding: 8px 12px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
 .hms-checkup-assign-pop__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--hms-gray-800);
 }
 
 .hms-checkup-assign-pop__spec {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -4856,7 +4856,7 @@
 
 .hms-checkup-modal__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -4888,12 +4888,12 @@
     border: 1px solid #fecdd3;
     color: #be123c;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-checkup-modal__label {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -4908,7 +4908,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-gray-50);
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     font-family: var(--hms-font-family);
@@ -4964,14 +4964,14 @@
 
 .hms-checkup-modal__suggest-name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
 
 .hms-checkup-modal__suggest-sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -4984,14 +4984,14 @@
 
 .hms-checkup-modal__pkg-tile-title {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: #047857;
 }
 
 .hms-checkup-modal__pkg-tile-tests {
     margin: 4px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: #047857;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -5007,12 +5007,12 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-checkup-modal__summary-title {
     margin: 0 0 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-700);
     text-transform: uppercase;
@@ -5047,7 +5047,7 @@
     background: var(--hms-success);
     color: var(--hms-white);
     border: none;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
@@ -5063,7 +5063,7 @@
     background: transparent;
     color: var(--hms-gray-600);
     border: none;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: background 0.15s;
@@ -5092,7 +5092,7 @@
 
 .hms-checkup-cell-state__text {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
 }
 
@@ -5104,7 +5104,7 @@
     justify-content: center;
     padding: 64px 0;
     color: var(--hms-gray-400);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 
@@ -5176,7 +5176,7 @@
 
 .hms-checkup-detail-card__title {
     margin: 0;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--hms-gray-900);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -5184,13 +5184,13 @@
 
 .hms-checkup-detail-card__pkg {
     margin: 4px 0 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-500);
 }
 
 .hms-checkup-detail-card__by {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
 }
 
@@ -5202,7 +5202,7 @@
 }
 
 .hms-checkup-detail-progress__label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-600);
     text-transform: uppercase;
@@ -5231,7 +5231,7 @@
 }
 
 .hms-checkup-detail-progress__val {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-600);
 }
@@ -5270,7 +5270,7 @@
 
 .hms-checkup-detail-info__label {
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-600);
     text-transform: uppercase;
@@ -5279,7 +5279,7 @@
 
 .hms-checkup-detail-info__value {
     margin: 2px 0 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
@@ -5302,7 +5302,7 @@
 }
 
 .hms-checkup-detail-pay__label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -5322,7 +5322,7 @@
     align-items: center;
     padding: 2px 8px;
     border-radius: 999px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     border: 1px solid transparent;
 }
@@ -5333,7 +5333,7 @@
 .hms-checkup-detail-pay__badge.is-neutral { background: var(--hms-gray-100); color: var(--hms-gray-600); border-color: var(--hms-gray-200); }
 
 .hms-checkup-detail-pay__amt {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
     font-variant-numeric: tabular-nums;
 }
@@ -5346,7 +5346,7 @@
     background: transparent;
     border: none;
     color: var(--hms-info);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
@@ -5364,7 +5364,7 @@
 
 .hms-checkup-detail-card__notes-label {
     margin: 0 0 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -5373,7 +5373,7 @@
 
 .hms-checkup-detail-card__notes-text {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-600);
 }
 
@@ -5401,7 +5401,7 @@
 
 .hms-checkup-results__count {
     margin-left: auto;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
 }
 
@@ -5412,7 +5412,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -5428,7 +5428,7 @@
 
 .hms-checkup-results__table th {
     padding: 12px 16px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-600);
     text-transform: uppercase;
@@ -5440,7 +5440,7 @@
     padding: 12px 16px;
     border-bottom: 1px solid var(--hms-gray-50);
     vertical-align: top;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-checkup-results__row-name {
@@ -5451,14 +5451,14 @@
 
 .hms-checkup-results__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
 
 .hms-checkup-results__cat {
     margin: 2px 0 0;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 500;
     color: var(--hms-gray-600);
     text-transform: uppercase;
@@ -5466,7 +5466,7 @@
 }
 
 .hms-checkup-results__range {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -5477,7 +5477,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     font-family: var(--hms-font-family);
@@ -5499,7 +5499,7 @@
     gap: 4px;
     padding: 6px 12px;
     border-radius: 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     background: var(--hms-gray-100);
     color: var(--hms-gray-500);
@@ -5548,7 +5548,7 @@
 
 .hms-checkup-notes__label {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -5563,7 +5563,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-gray-50);
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     resize: none;
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -5580,7 +5580,7 @@
 
 .hms-checkup-notes__readonly {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-700);
     white-space: pre-wrap;
     min-height: 40px;
@@ -5596,7 +5596,7 @@
     gap: 8px;
     padding: 10px 20px;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     border: none;
     background: var(--hms-gray-100);
@@ -5630,7 +5630,7 @@
     border: 1px solid #fecdd3;
     background: var(--hms-white);
     color: #f43f5e;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
@@ -5646,7 +5646,7 @@
     padding: 8px 20px;
     border-radius: 8px;
     color: var(--hms-white);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     border: none;
     cursor: pointer;
@@ -5673,7 +5673,7 @@
     background: var(--hms-gray-700);
     color: var(--hms-white);
     border: none;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
@@ -5691,7 +5691,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-600);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s;
@@ -5711,7 +5711,7 @@
 
 .hms-checkup-detail-notfound__text {
     color: var(--hms-gray-500);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     margin: 0;
 }
@@ -5730,7 +5730,7 @@
     padding-top: 16px;
     border-top: 1px solid var(--hms-gray-300);
     text-align: center;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -5782,7 +5782,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     font-family: var(--hms-font-family);
 }
@@ -5849,7 +5849,7 @@
     border: 1px solid var(--hms-gray-200);
     border-radius: 6px;
     background: var(--hms-white);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     font-family: var(--hms-font-family);
 }
@@ -5899,13 +5899,13 @@
 
 .hms-checkup-pkg-empty__title {
     margin: 12px 0 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
 }
 
 .hms-checkup-pkg-empty__sub {
     margin: 4px 0 0;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .hms-checkup-pkg-cat-row {
@@ -5920,7 +5920,7 @@
     background: var(--hms-white);
     border: 1px solid var(--hms-gray-200);
     color: var(--hms-gray-500);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -5967,7 +5967,7 @@
 
 .hms-checkup-pkg-tile__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
@@ -5976,7 +5976,7 @@
     display: inline-block;
     padding: 2px 8px;
     border-radius: 999px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -5995,7 +5995,7 @@
 
 .hms-checkup-pkg-tile__desc {
     margin: 4px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -6010,7 +6010,7 @@
 
 .hms-checkup-pkg-tile__price {
     margin: 0;
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--hms-success);
     font-variant-numeric: tabular-nums;
@@ -6018,7 +6018,7 @@
 
 .hms-checkup-pkg-tile__validity {
     margin: 2px 0 0;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
 }
 
@@ -6036,7 +6036,7 @@
     background: transparent;
     border: none;
     color: var(--hms-gray-500);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: color 0.15s;
@@ -6079,7 +6079,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .hms-checkup-pkg-tile__test-num {
@@ -6092,7 +6092,7 @@
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 10px;
+    font-size: 11px;
     flex-shrink: 0;
 }
 
@@ -6105,7 +6105,7 @@
 .hms-checkup-pkg-tile__test-cat,
 .hms-checkup-pkg-tile__test-range {
     color: var(--hms-gray-600);
-    font-size: 10px;
+    font-size: 11px;
 }
 
 /* Package form modal */
@@ -6174,7 +6174,7 @@
     background: #fff1f2;
     border: 1px solid #fecdd3;
     color: #be123c;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-pkg-modal__grid {
@@ -6191,7 +6191,7 @@
 
 .hms-pkg-modal__label {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -6206,7 +6206,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-gray-50);
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     font-family: var(--hms-font-family);
@@ -6229,7 +6229,7 @@
     background: var(--hms-success-bg);
     color: var(--hms-success);
     border: 1px solid var(--hms-success-border);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
@@ -6257,7 +6257,7 @@
 
 .hms-pkg-modal__tests-empty-text {
     margin: 8px 0 0;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .hms-pkg-modal__test-row {
@@ -6293,7 +6293,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-white);
     color: var(--hms-gray-800);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     font-family: var(--hms-font-family);
 }
@@ -6311,7 +6311,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
     cursor: pointer;
 }
@@ -6341,7 +6341,7 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-600);
     font-weight: 500;
 }
@@ -6382,7 +6382,7 @@
 }
 
 .hms-amb-header__body h1 { margin: 0; font-size: 22px; font-weight: 700; color: var(--hms-gray-900); letter-spacing: -0.02em; }
-.hms-amb-header__body p { margin: 2px 0 0; font-size: 13px; color: var(--hms-gray-600); }
+.hms-amb-header__body p { margin: 2px 0 0; font-size: 14px; color: var(--hms-gray-600); }
 
 .hms-amb-tabs {
     display: inline-flex;
@@ -6396,7 +6396,7 @@
 .hms-amb-tab {
     padding: 8px 20px;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-500);
     border: none;
@@ -6440,7 +6440,7 @@
 .hms-amb-section-head__count {
     padding: 2px 10px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     border: 1px solid transparent;
 }
@@ -6474,7 +6474,7 @@
     border: 1px solid var(--hms-gray-300);
     background: var(--hms-white);
     color: var(--hms-gray-900);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     box-shadow: var(--hms-shadow-xs);
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -6512,7 +6512,7 @@
 
 .hms-amb-table th {
     padding: 14px 24px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -6529,7 +6529,7 @@
 .hms-amb-table td {
     padding: 14px 24px;
     vertical-align: middle;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .hms-amb-state {
@@ -6557,7 +6557,7 @@
 
 .hms-amb-state__text {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-600);
     font-weight: 500;
 }
@@ -6589,7 +6589,7 @@
 
 .hms-amb-veh-num {
     margin: 0;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--hms-gray-900);
     line-height: 1.2;
@@ -6597,7 +6597,7 @@
 
 .hms-amb-veh-name {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
 }
 
@@ -6606,7 +6606,7 @@
     align-items: center;
     padding: 4px 10px;
     border-radius: 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     border: 1px solid transparent;
 }
@@ -6616,19 +6616,19 @@
 .hms-amb-veh-status.is-maintenance { background: var(--hms-warning-bg); color: #b45309; border-color: var(--hms-warning-border); }
 
 .hms-amb-row-cell__strong {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
 
 .hms-amb-row-cell__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
 }
 
 .hms-amb-row-cell__muted {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -6687,7 +6687,7 @@
     padding: 8px 12px;
     background: transparent;
     border: none;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-700);
     text-align: left;
@@ -6722,7 +6722,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     flex-shrink: 0;
     border: 1px solid transparent;
@@ -6742,7 +6742,7 @@
 
 .hms-amb-booking-name {
     margin: 0;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--hms-gray-900);
     line-height: 1.2;
@@ -6750,7 +6750,7 @@
 
 .hms-amb-booking-when {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
     display: flex;
     align-items: center;
@@ -6765,7 +6765,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-700);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -6787,7 +6787,7 @@
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     width: fit-content;
 }
@@ -6806,7 +6806,7 @@
     color: #047857;
     padding: 2px 6px;
     border-radius: 999px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     width: fit-content;
 }
@@ -6821,7 +6821,7 @@
     padding: 4px 10px;
     border-radius: 8px;
     border: none;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s;
@@ -6902,7 +6902,7 @@
 
 .hms-amb-modal__head-title {
     margin: 0;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
@@ -6926,7 +6926,7 @@
 
 .hms-amb-modal__section-label {
     margin: 0 0 12px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -6948,7 +6948,7 @@
     background: #fff1f2;
     border: 1px solid #fecdd3;
     color: #be123c;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
 }
 
@@ -6967,7 +6967,7 @@
     background: transparent;
     border: none;
     color: #b45309;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: color 0.15s;
@@ -6990,7 +6990,7 @@
 
 .hms-amb-emergency-panel__hint {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: #b45309;
     font-weight: 500;
 }
@@ -7024,20 +7024,20 @@
 
 .hms-amb-search-result__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
 
 .hms-amb-search-result__sub {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
 }
 
 .hms-amb-search-result__state {
     padding: 12px 16px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-600);
 }
 
@@ -7080,7 +7080,7 @@
 }
 
 .hms-amb-dest-toggle__lbl {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: #be123c;
 }
@@ -7129,7 +7129,7 @@
 }
 
 .hms-infra-loading__text {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-500);
 }
@@ -7154,14 +7154,14 @@
 }
 
 .hms-infra-banner__title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--hms-gray-900);
 }
 
 .hms-infra-banner__sub {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-500);
 }
 
@@ -7188,7 +7188,7 @@
 }
 
 .hms-infra-stats-strip__label {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -7197,7 +7197,7 @@
 
 /* Stat value colour modifiers */
 .hms-infra-stat-val {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
 }
 .hms-infra-stat-val.is-default { color: var(--hms-gray-600); }
@@ -7246,7 +7246,7 @@
     border: 1px solid var(--hms-gray-200);
     border-radius: 8px;
     padding: 6px 12px 6px 30px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-700);
     outline: none;
     transition: border-color 0.15s;
@@ -7258,7 +7258,7 @@
 .hms-infra-nav__add-btn {
     width: 100%;
     padding: 6px 0;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     background: var(--hms-gray-900);
     color: var(--hms-white);
@@ -7285,7 +7285,7 @@
 
 .hms-infra-nav__empty {
     text-align: center;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-400);
     padding: 32px 0;
 }
@@ -7316,12 +7316,12 @@
 
 .hms-infra-nav__building-icon { color: var(--hms-gray-400); }
 .hms-infra-nav__building-name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--hms-gray-800);
 }
 .hms-infra-nav__floor-count {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
     font-weight: 600;
 }
@@ -7343,7 +7343,7 @@
     padding: 6px 10px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-500);
     transition: background 0.15s, color 0.15s;
 }
@@ -7356,7 +7356,7 @@
 }
 
 .hms-infra-nav__ward-count {
-    font-size: 9px;
+    font-size: 10px;
     padding: 1px 4px;
     border-radius: 4px;
     background: var(--hms-gray-100);
@@ -7367,7 +7367,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: #10b981;
     background: transparent;
@@ -7418,7 +7418,7 @@
 }
 
 .hms-infra-canvas__building-name {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     margin: 0;
     color: var(--hms-gray-900);
@@ -7429,7 +7429,7 @@
 }
 
 .hms-infra-canvas__floor-input {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
     background: transparent;
@@ -7445,13 +7445,13 @@
 .hms-infra-canvas__floor-input:focus { border-bottom-color: #10b981; }
 
 .hms-infra-canvas__head-sub {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
     margin: 2px 0 0;
 }
 
 .hms-infra-canvas__floors-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -7471,7 +7471,7 @@
     padding: 6px 12px;
     border: 1px solid var(--hms-gray-200);
     border-radius: 8px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--hms-gray-500);
     background: transparent;
@@ -7508,7 +7508,7 @@
 }
 
 .hms-infra-canvas__block-label {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -7516,7 +7516,7 @@
 }
 
 .hms-infra-canvas__block-input {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     background: var(--hms-white);
     border: 1px solid var(--hms-gray-200);
@@ -7530,7 +7530,7 @@
 .hms-infra-canvas__block-input:focus { border-color: var(--hms-gray-300); }
 
 .hms-infra-canvas__block-index {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
     font-weight: 600;
     text-transform: uppercase;
@@ -7550,12 +7550,12 @@
 
 .hms-infra-canvas__no-floor-icon { color: var(--hms-gray-300); }
 .hms-infra-canvas__no-floor-title {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--hms-gray-500);
 }
 .hms-infra-canvas__no-floor-sub {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
 }
 
@@ -7584,12 +7584,12 @@
 
 .hms-infra-canvas__no-building-icon { color: var(--hms-gray-300); }
 .hms-infra-canvas__no-building-title {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-700);
 }
 .hms-infra-canvas__no-building-sub {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-400);
     max-width: 320px;
     text-align: center;
@@ -7621,7 +7621,7 @@
 .hms-infra-floor-section__header:hover { background: var(--hms-gray-100); }
 
 .hms-infra-floor-section__floor-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-700);
     text-transform: uppercase;
@@ -7630,7 +7630,7 @@
 
 .hms-infra-floor-section__name-input {
     width: 100%;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-800);
     background: var(--hms-white);
     border: 1px solid var(--hms-gray-200);
@@ -7645,7 +7645,7 @@
 .hms-infra-floor-section__name-input::placeholder { color: var(--hms-gray-300); }
 
 .hms-infra-floor-section__wards-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -7670,7 +7670,7 @@
 .hms-infra-floor-section__empty {
     padding: 24px 16px;
     text-align: center;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-400);
     border: 2px dashed var(--hms-gray-100);
     border-radius: 12px;
@@ -7706,7 +7706,7 @@
 
 .hms-infra-ward-card__name-input {
     flex: 1;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
     background: transparent;
@@ -7727,7 +7727,7 @@
 
 .hms-infra-ward-card__type-select {
     width: 100%;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-600);
     background: transparent;
     outline: none;
@@ -7745,7 +7745,7 @@
 }
 
 .hms-infra-ward-card__charge-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -7756,7 +7756,7 @@
 .hms-infra-ward-card__charge-input {
     width: 96px;
     padding: 4px 8px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     text-align: right;
     color: var(--hms-gray-800);
@@ -7781,7 +7781,7 @@
 }
 
 .hms-infra-ward-card__rooms-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -7810,7 +7810,7 @@
 /* Ward type badge */
 .hms-infra-ward-badge {
     padding: 2px 8px;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -7896,14 +7896,14 @@
 }
 
 .hms-infra-special-card__currency {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--hms-gray-400);
 }
 
 .hms-infra-special-card__charge-input {
     flex: 1;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-700);
     background: transparent;
     border: none;
@@ -7915,7 +7915,7 @@
 .hms-infra-special-card__charge-input::placeholder { color: var(--hms-gray-300); }
 
 .hms-infra-special-card__per-day {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
 }
 
@@ -7942,7 +7942,7 @@
 }
 
 .hms-infra-room-grid__label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -8003,7 +8003,7 @@
 
 .hms-infra-room-card__input {
     flex: 1;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-700);
     background: transparent;
     border: none;
@@ -8054,7 +8054,7 @@
 .hms-infra-stepper__num {
     width: 28px;
     text-align: center;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-700);
     font-variant-numeric: tabular-nums;
@@ -8083,13 +8083,13 @@
 .hms-infra-save-bar__icon { color: #f59e0b; }
 
 .hms-infra-save-bar__title {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--hms-gray-700);
 }
 
 .hms-infra-save-bar__sub {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
 }
 
@@ -8098,7 +8098,7 @@
     align-items: center;
     gap: 6px;
     padding: 10px 20px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--hms-white);
     background: #059669;
@@ -8150,14 +8150,14 @@
 }
 
 .hms-infra-modal__title {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--hms-gray-900);
     margin: 0;
 }
 
 .hms-infra-modal__body {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-600);
     line-height: 1.6;
 }
@@ -8172,7 +8172,7 @@
 
 .hms-infra-modal__cancel-btn {
     padding: 8px 16px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--hms-gray-500);
     background: transparent;
@@ -8186,7 +8186,7 @@
 
 .hms-infra-modal__confirm-btn {
     padding: 8px 16px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--hms-white);
     background: #f43f5e;

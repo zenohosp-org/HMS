@@ -63,7 +63,7 @@
 }
 
 .hms-rooms-banner__eyebrow {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -72,7 +72,7 @@
 
 .hms-rooms-banner__meta {
     margin: 4px 0 0;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-500);
     display: flex;
     align-items: center;
@@ -123,7 +123,7 @@
 
 .hms-rooms-stats__label {
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -141,7 +141,7 @@
 
 .hms-rooms-stats__sub {
     margin: 8px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
     font-variant-numeric: tabular-nums;
 }
@@ -167,7 +167,7 @@
 .hms-rooms-filter-pill {
     padding: 6px 12px;
     border-radius: 6px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -236,7 +236,7 @@
 }
 
 .hms-rooms-loading-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -283,7 +283,7 @@
 
 .hms-room-building__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-white);
     letter-spacing: -0.02em;
@@ -291,7 +291,7 @@
 
 .hms-room-building__code {
     margin: 2px 0 0;
-    font-size: 10px;
+    font-size: 11px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -339,7 +339,7 @@
 }
 
 .hms-room-floor__name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--hms-gray-700);
 }
@@ -373,13 +373,13 @@
 }
 
 .hms-room-ward__name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--hms-gray-600);
 }
 
 .hms-room-ward__count {
-    font-size: 10px;
+    font-size: 11px;
     font-variant-numeric: tabular-nums;
     color: var(--hms-gray-400);
 }
@@ -470,7 +470,7 @@
 
 .hms-room-cell__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
     overflow: hidden;
@@ -479,7 +479,7 @@
 }
 
 .hms-room-cell__code {
-    font-size: 10px;
+    font-size: 11px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     color: var(--hms-gray-400);
 }
@@ -509,7 +509,7 @@
 }
 
 .hms-room-cell__patient-name {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--hms-gray-800);
     overflow: hidden;
@@ -518,7 +518,7 @@
 }
 
 .hms-room-cell__patient-uhid {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
     flex-shrink: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -533,7 +533,7 @@
 }
 
 .hms-room-cell__attender-label {
-    font-size: 9px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--hms-gray-400);
@@ -541,7 +541,7 @@
 }
 
 .hms-room-cell__attender-name {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--hms-gray-600);
     overflow: hidden;
@@ -550,7 +550,7 @@
 }
 
 .hms-room-cell__attender-rel {
-    font-size: 9px;
+    font-size: 10px;
     color: var(--hms-gray-400);
     margin-left: 4px;
 }
@@ -560,7 +560,7 @@
 }
 
 .hms-room-cell__no-attender-text {
-    font-size: 9px;
+    font-size: 10px;
     color: var(--hms-warning);
     font-weight: 600;
     text-transform: uppercase;
@@ -569,7 +569,7 @@
 
 .hms-room-cell__footer-hint {
     margin: 8px 0 0;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -589,14 +589,14 @@
 }
 
 .hms-room-section-label__text {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
 }
 
 .hms-room-section-label__count {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
@@ -632,7 +632,7 @@
 .hms-room-occ__fill.is-high    { background: var(--hms-danger); }
 
 .hms-room-occ__text {
-    font-size: 10px;
+    font-size: 11px;
     font-variant-numeric: tabular-nums;
     color: var(--hms-gray-500);
     flex-shrink: 0;
@@ -690,14 +690,14 @@
 
 .hms-rooms-unmapped__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-rooms-unmapped__desc {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -705,7 +705,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--hms-gray-400);
@@ -734,14 +734,14 @@
 
 .hms-rooms-empty__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-700);
 }
 
 .hms-rooms-empty__desc {
     margin: 4px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -794,13 +794,13 @@
 
 .hms-room-row__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-900);
 }
 
 .hms-room-row__code {
-    font-size: 10px;
+    font-size: 11px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     color: var(--hms-gray-400);
 }
@@ -820,7 +820,7 @@
 
 .hms-room-row__hint {
     margin: 0;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-500);
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -854,34 +854,34 @@
 
 .hms-room-row__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-800);
 }
 
 .hms-room-row__uhid {
     margin: 2px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .hms-room-row__att-name {
     margin: 2px 0 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--hms-gray-700);
 }
 
 .hms-room-row__att-rel {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--hms-gray-400);
     margin-left: 4px;
 }
 
 .hms-room-row__no-att {
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-warning);
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -901,7 +901,7 @@
     border-radius: 6px;
     background: var(--hms-gray-100);
     border: 1px solid var(--hms-gray-200);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     color: var(--hms-gray-900);
@@ -911,7 +911,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
     margin-bottom: 2px;
     justify-content: flex-end;
@@ -922,7 +922,7 @@
 
 .hms-room-row__discharge-time {
     margin: 0;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--hms-gray-600);
 }
@@ -931,7 +931,7 @@
 /* ─── KV label small (room row + cell) ─── */
 .hms-room-kv-label {
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -965,7 +965,7 @@
 
 .hms-room-panel__eyebrow {
     margin: 0 0 6px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--hms-gray-400);
     text-transform: uppercase;
@@ -1015,7 +1015,7 @@
 
 .hms-room-panel-chip__label {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--hms-gray-700);
 }
@@ -1029,7 +1029,7 @@
 
 .hms-room-panel-chip__value {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.1em;
     color: var(--hms-gray-900);
@@ -1054,7 +1054,7 @@
 
 .hms-room-panel-section-head__label {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-500);
     text-transform: uppercase;
@@ -1069,20 +1069,20 @@
 
 .hms-room-panel-patient__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--hms-gray-800);
 }
 
 .hms-room-panel-patient__uhid {
     margin: 4px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
 .hms-room-panel-empty {
     margin: 0 0 0 4px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-500);
 }
 
@@ -1105,7 +1105,7 @@
 
 .hms-room-panel-attender__name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
 }
@@ -1114,7 +1114,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -1168,7 +1168,7 @@
 
 .hms-room-asset__title {
     margin: 0;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--hms-gray-800);
     line-height: 1.3;
@@ -1200,7 +1200,7 @@
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
 }
 
@@ -1215,7 +1215,7 @@
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
     text-decoration: none;
 }
@@ -1228,7 +1228,7 @@
     gap: 4px;
     padding: 4px 10px;
     border-radius: 8px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--hms-success);
     background: var(--hms-success-bg);
@@ -1257,7 +1257,7 @@
     border: 1px solid var(--hms-gray-200);
     background: var(--hms-gray-50);
     color: var(--hms-gray-800);
-    font-size: 12px;
+    font-size: 13px;
     outline: none;
     font-family: var(--hms-font-family);
 }
@@ -1280,7 +1280,7 @@
 .hms-room-asset-dropdown__loading,
 .hms-room-asset-dropdown__empty {
     padding: 12px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-400);
 }
 
@@ -1321,7 +1321,7 @@
 
 .hms-room-asset-dropdown__name {
     margin: 0;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--hms-gray-800);
     overflow: hidden;
@@ -1331,7 +1331,7 @@
 
 .hms-room-asset-dropdown__sub {
     margin: 2px 0 0;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-400);
 }
 
@@ -1356,7 +1356,7 @@
 
 .hms-room-asset-empty__text {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
@@ -1371,7 +1371,7 @@
 }
 
 .hms-room-inline-loader__text {
-    font-size: 11px;
+    font-size: 12px;
     margin-left: 8px;
 }
 
@@ -1421,14 +1421,14 @@
 
 .hms-room-bed__number {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-800);
 }
 
 .hms-room-bed__name {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1444,7 +1444,7 @@
     gap: 4px;
     padding: 4px 8px;
     border-radius: 6px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--hms-gray-600);
     background: rgba(255, 255, 255, 0.6);
@@ -1459,7 +1459,7 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .hms-room-bed__attender-name {
@@ -1489,7 +1489,7 @@
 
 .hms-rooms-log-table__head-cell {
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -1531,7 +1531,7 @@
 
 .hms-rooms-log-row__room {
     margin: 4px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-700);
 }
@@ -1545,7 +1545,7 @@
 
 .hms-rooms-log-row__pat-name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--hms-gray-800);
     line-height: 1.3;
@@ -1553,26 +1553,26 @@
 
 .hms-rooms-log-row__pat-uhid {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-500);
 }
 
 .hms-rooms-log-row__att-name {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--hms-gray-700);
 }
 
 .hms-rooms-log-row__performer {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--hms-gray-700);
 }
 
 .hms-rooms-log-row__dash {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-300);
 }
 
@@ -1580,14 +1580,14 @@
 
 .hms-rooms-log-row__time-ago {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--hms-gray-500);
 }
 
 .hms-rooms-log-row__time-full {
     margin: 2px 0 0;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-500);
 }
 
@@ -1617,8 +1617,8 @@
     color: var(--hms-gray-500);
 }
 
-.hms-rooms-log-empty__text { margin: 0; font-size: 13px; }
-.hms-rooms-log-empty__hint { margin: 0; font-size: 11px; }
+.hms-rooms-log-empty__text { margin: 0; font-size: 14px; }
+.hms-rooms-log-empty__hint { margin: 0; font-size: 12px; }
 
 .hms-rooms-log-pagination {
     padding: 12px 24px;
@@ -1670,7 +1670,7 @@
 }
 
 .hms-rooms-log-modal-row__room {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--hms-gray-700);
     background: var(--hms-gray-100);
@@ -1679,7 +1679,7 @@
 }
 
 .hms-rooms-log-modal-row__token {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
     color: var(--hms-gray-900);
@@ -1701,7 +1701,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hms-gray-600);
 }
 
@@ -1715,20 +1715,20 @@
 
 .hms-rooms-log-modal-row__performer {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--hms-gray-700);
 }
 
 .hms-rooms-log-modal-row__time-ago {
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-500);
 }
 
 .hms-rooms-log-modal-row__time-full {
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--hms-gray-300);
 }
 
@@ -1752,8 +1752,8 @@
 
 
 /* ─── Modal subtitle (used in log modal title slot) ─── */
-.hms-rooms-modal-title { margin: 0; font-size: 15px; font-weight: 700; color: var(--hms-gray-900); }
-.hms-rooms-modal-sub { margin: 0; font-size: 11px; color: var(--hms-gray-500); }
+.hms-rooms-modal-title { margin: 0; font-size: 16px; font-weight: 700; color: var(--hms-gray-900); }
+.hms-rooms-modal-sub { margin: 0; font-size: 12px; color: var(--hms-gray-500); }
 
 
 /* ─── AssignAttender modal ─── */
