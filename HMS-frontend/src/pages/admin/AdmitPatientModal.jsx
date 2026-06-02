@@ -546,7 +546,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                             <FormGroup label="Payment method">
                                 <SearchableSelect
                                     value={advancePaymentMethod}
-                                    disabled={advanceAmt === 0}
                                     onChange={(v) => setAdvancePaymentMethod(v)}
                                     options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
                                 />

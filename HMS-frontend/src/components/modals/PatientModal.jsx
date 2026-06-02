@@ -133,7 +133,6 @@ function PatientModal({ patient, onClose, onSave }) {
             <div className="hms-form-group">
               <label className="hms-label">Gender *</label>
               <SearchableSelect
-                className="hms-input"
                 options={[
                   { value: "Male", label: "Male" },
                   { value: "Female", label: "Female" },
@@ -150,7 +149,6 @@ function PatientModal({ patient, onClose, onSave }) {
             <div className="hms-form-group">
               <label className="hms-label">Marital Status</label>
               <SearchableSelect
-                className="hms-input"
                 options={[
                   { value: "Single", label: "Single" },
                   { value: "Married", label: "Married" },
@@ -212,7 +210,6 @@ function PatientModal({ patient, onClose, onSave }) {
           <div className="hms-form-group">
             <label className="hms-label">Relation</label>
             <SearchableSelect
-              className="hms-input"
               options={EMERGENCY_RELATIONS.map((r) => ({ value: r, label: r }))}
               value={form.emergencyContactRelation}
               onChange={(v) => set("emergencyContactRelation", v)}
@@ -229,7 +226,6 @@ function PatientModal({ patient, onClose, onSave }) {
           <div className="hms-form-group">
             <label className="hms-label">Blood Group</label>
             <SearchableSelect
-              className="hms-input"
               options={BLOOD_GROUPS.map((g) => ({ value: g, label: g }))}
               value={form.bloodGroup}
               onChange={(v) => set("bloodGroup", v)}
@@ -260,7 +256,6 @@ function PatientModal({ patient, onClose, onSave }) {
           <div className="hms-form-group">
             <label className="hms-label">Scheme</label>
             <SearchableSelect
-              className="hms-input"
               options={INSURANCE_SCHEMES.map((s) => ({ value: s, label: s }))}
               value={form.insuranceScheme}
               onChange={(v) => set("insuranceScheme", v)}
