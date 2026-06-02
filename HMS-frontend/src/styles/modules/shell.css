@@ -52,7 +52,7 @@
     flex-shrink: 0;
     background: var(--hms-white);
     border-right: 1px solid var(--hms-gray-200);
-    width: 260px;
+    width: 280px;
 }
 
 .hms-sidebar.is-collapsed {
