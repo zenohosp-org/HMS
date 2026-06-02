@@ -192,6 +192,7 @@ function Sidebar({ isOpen }) {
                     <AccIcon className="hms-sidebar__link-icon" />
                     <span className="hms-sidebar__link-label">{label}</span>
                     <ChevronDown
+                        size={15}
                         className={`hms-sidebar__acc-chevron${open ? " is-open" : ""}`}
                     />
                 </button>
@@ -290,6 +291,11 @@ function Sidebar({ isOpen }) {
                     <div className="hms-sidebar__section-label">Other Apps</div>
                 )}
                 {EXTERNAL_APPS.map((app) => renderExternalApp(app))}
+                {isOpen && (
+                    <p style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', fontWeight: 400 }}>
+                        © 2026 ZenoHosp
+                    </p>
+                )}
             </div>
         </aside>
     );
