@@ -135,7 +135,7 @@ function Sidebar({ isOpen }) {
                 end
                 className={({ isActive }) => `${baseCls}${isActive ? " is-active" : ""}`}
             >
-                <Icon className="hms-sidebar__link-icon" />
+                {!indent && <Icon className="hms-sidebar__link-icon" />}
                 <span className="hms-sidebar__link-label">{link.label}</span>
             </NavLink>
         ) : (
