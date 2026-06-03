@@ -252,29 +252,27 @@
 }
 
 
-/* Footer (external apps) — matches Ziranly's subtle gray bg */
+/* Footer (external apps) */
 .hms-sidebar__footer {
-    border-top: 1px solid #e5e7eb;
-    background: #ffffff;
-    padding: 1rem;
+    border-top: 1px solid var(--hms-gray-200);
+    background: var(--hms-gray-50);
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 2px;
     flex-shrink: 0;
 }
 
 .hms-sidebar__ext {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 9px 1rem;
-    margin: 0 0 0 12px;
-    width: calc(100% - 1.5rem);
-    border-radius: 0.5rem;
+    gap: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 15px;
     font-weight: 500;
     text-decoration: none;
-    color: #020617;
+    color: var(--hms-gray-700);
     transition: background 150ms ease, color 150ms ease;
 }
 
@@ -282,12 +280,11 @@
     justify-content: center;
     padding: 12px 0;
     width: 100%;
-    margin: 0;
 }
 
 .hms-sidebar__ext:hover {
-    background: #f3f4f6;
-    color: #000000;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-900);
 }
 
 .hms-sidebar__ext-arrow {

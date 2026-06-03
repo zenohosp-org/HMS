@@ -13,7 +13,6 @@ import {
     BedDouble,
     Calendar,
     Stethoscope,
-    ArrowUpRight,
     BookOpen,
     Boxes,
     BarChart2,
@@ -165,7 +164,6 @@ function Sidebar({ isOpen }) {
             >
                 <Icon className="hms-sidebar__link-icon" />
                 <span className="hms-sidebar__link-label">{app.label}</span>
-                <ArrowUpRight className="hms-sidebar__ext-arrow" />
             </a>
         ) : (
             <a
@@ -291,11 +289,6 @@ function Sidebar({ isOpen }) {
                     <div className="hms-sidebar__section-label">Other Apps</div>
                 )}
                 {EXTERNAL_APPS.map((app) => renderExternalApp(app))}
-                {isOpen && (
-                    <p style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', fontWeight: 400 }}>
-                        © 2026 ZenoHosp
-                    </p>
-                )}
             </div>
         </aside>
     );
