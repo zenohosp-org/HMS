@@ -651,7 +651,8 @@ public class DataSeeder implements CommandLineRunner {
             {"LABOUR",       "Labour & Delivery",   "WARD",  "heart",       "#ec4899",  "9"},
             {"OT",           "Operating Theatre",   "OT",    "scissors",    "#10b981", "10"},
             {"POST_OT",      "Post-Op Recovery",    "OT",    "activity",    "#14b8a6", "11"},
-            {"STORE",        "Inventory Store",     "STORE", "package",     "#f59e0b", "12"},
+            {"CATH_LAB",     "Cath Lab",            "OT",    "heart-pulse", "#06b6d4", "12"},
+            {"STORE",        "Inventory Store",     "STORE", "package",     "#f59e0b", "13"},
         };
 
         for (String[] d : defaults) {
@@ -666,7 +667,7 @@ public class DataSeeder implements CommandLineRunner {
                 log.warn("Could not seed room type " + d[0] + ": " + e.getMessage());
             }
         }
-        log.info("✅ Room type configs seeded (13 system defaults).");
+        log.info("✅ Room type configs seeded (14 system defaults).");
     }
 
     private void seedRoles() {

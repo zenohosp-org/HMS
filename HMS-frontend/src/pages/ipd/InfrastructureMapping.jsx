@@ -13,6 +13,7 @@ import {
   Network,
   Bed,
   Scissors,
+  HeartPulse,
   X,
   ChevronDown,
   ChevronRight,
@@ -28,6 +29,7 @@ const FALLBACK_ROOM_TYPES = [
   { value: "GENERAL", label: "General Ward", category: "WARD" },
   { value: "ICU", label: "ICU", category: "WARD" },
   { value: "OT", label: "Operating Theatre", category: "OT" },
+  { value: "CATH_LAB", label: "Cath Lab", category: "OT" },
   { value: "STORE", label: "Inventory Store", category: "STORE" },
 ];
 
@@ -67,10 +69,12 @@ function RoomGrid({ rooms, bIdx, fIdx, wIdx, updateRoom, roomType }) {
 
   let themeClass = "hms-infra-room-card";
   if (roomType === "OT") themeClass = "hms-infra-room-card is-ot";
+  else if (roomType === "CATH_LAB") themeClass = "hms-infra-room-card is-ot";
   else if (roomType === "STORE") themeClass = "hms-infra-room-card is-store";
 
   let CardIcon = Bed;
   if (roomType === "OT") CardIcon = Scissors;
+  else if (roomType === "CATH_LAB") CardIcon = HeartPulse;
   else if (roomType === "STORE") CardIcon = Package;
 
   return (
@@ -110,6 +114,9 @@ function WardCard({ ward, bIdx, fIdx, wIdx, updateWard, setRoomCount, updateRoom
   } else if (ward.roomType === "OT") {
     badgeClass = "hms-infra-ward-badge is-ot";
     themeName = "OT";
+  } else if (ward.roomType === "CATH_LAB") {
+    badgeClass = "hms-infra-ward-badge is-ot";
+    themeName = "CATH LAB";
   } else if (ward.roomType === "STORE") {
     badgeClass = "hms-infra-ward-badge is-store";
     themeName = "STORE";
@@ -185,6 +192,8 @@ function SpecialRoomCard({ room, onUpdate, onRemove, roomTypes }) {
   if (room.roomType === "STORE") {
     badgeClass = "hms-infra-ward-badge is-store";
     CardIcon = Package;
+  } else if (room.roomType === "CATH_LAB") {
+    CardIcon = HeartPulse;
   }
 
   return (
@@ -373,6 +382,7 @@ export default function InfrastructureMapping() {
         (f.wards || []).forEach(w => {
           rooms += (w.rooms?.length || 0);
           if (w.roomType === "OT") ots += 1;
+          if (w.roomType === "CATH_LAB") ots += 1;
           if (w.roomType === "STORE") stores += 1;
         });
       });
