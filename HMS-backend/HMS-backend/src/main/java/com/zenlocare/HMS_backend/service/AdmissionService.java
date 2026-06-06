@@ -39,6 +39,7 @@ public class AdmissionService {
     private final InvoiceService invoiceService;
     private final InvoiceRepository invoiceRepository;
     private final PatientAdvanceService patientAdvanceService;
+    private final RoomTypeConfigRepository roomTypeConfigRepository;
 
     // Tenant boundary guard — every entity touched by an admission flow must
     // belong to the same hospital as the admission/request. Without this,
@@ -345,7 +346,21 @@ public class AdmissionService {
         Room otRoom = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("OT room not found"));
         assertSameHospital(admission.getHospital().getId(), otRoom.getHospital().getId(), "OT room");
-        if (!"OT".equals(otRoom.getRoomType()))
+        // Accept any room whose RoomTypeConfig has category="OT" — e.g. OT,
+        // CATH_LAB, and any hospital-specific OT-category code. Hardcoding
+        // the literal "OT" string used to reject Cath Lab rooms even though
+        // they're seeded with category="OT". POST_OT is explicitly excluded
+        // because it's recovery, not surgery. Hospital-specific overrides
+        // win over the system default for the same code.
+        String roomCode = otRoom.getRoomType();
+        RoomTypeConfig cfg = roomTypeConfigRepository
+                .findByHospitalIdAndCode(admission.getHospital().getId(), roomCode)
+                .or(() -> roomTypeConfigRepository.findSystemByCode(roomCode))
+                .orElse(null);
+        boolean isOtCategory = cfg != null
+                && "OT".equalsIgnoreCase(cfg.getCategory())
+                && !"POST_OT".equalsIgnoreCase(cfg.getCode());
+        if (!isOtCategory)
             throw new RuntimeException("Selected room is not an OT room");
         if (otRoom.getStatus() != RoomStatus.AVAILABLE)
             throw new RuntimeException("OT room is not available");
