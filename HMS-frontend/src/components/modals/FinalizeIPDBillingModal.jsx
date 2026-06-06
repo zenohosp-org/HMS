@@ -210,6 +210,10 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
       const savedAppointmentIds = new Set()
       const savedRadiologyIds = new Set()
       const savedOTDescriptions = new Set()
+      // Stable per-line UUID from OTM (preferred over description for
+      // dedup so editing the description doesn't re-pull a fresh copy).
+      const savedOTInvoiceItemIds = new Set()
+      const savedOTBookingIds = new Set()
       const savedAmbulanceIds = new Set()
       // Pharmacy bills carry a real UUID — dedupe by id, not description, so
       // repeated drug names across visits don't collide. Server persists
@@ -231,6 +235,11 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
             radiologyOrderId: item.radiologyOrderId ?? undefined,
             ambulanceBookingId: item.ambulanceBookingId ?? undefined,
             pharmacyBillId: item.pharmacyBillId ?? undefined,
+            // Carry the OT identifiers through so re-saves don't lose them.
+            // Without this, the second save after a reload would drop the
+            // stable UUID and fall back to description-keyed dedup.
+            otInvoiceItemId: item.otInvoiceItemId ?? undefined,
+            otBookingId: item.otBookingId ?? undefined,
             // Pharmacy-sourced MEDICINE rows are stored with GST already
             // baked in (see the pharmacy-pull section below). Re-flag them
             // on reload so the HMS GST calc continues to skip them.
@@ -272,6 +281,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           }
           if (item.itemType === 'OT') {
             savedOTDescriptions.add(item.description)
+            if (item.otInvoiceItemId) savedOTInvoiceItemIds.add(String(item.otInvoiceItemId))
+            if (item.otBookingId)     savedOTBookingIds.add(String(item.otBookingId))
           }
           if (item.ambulanceBookingId) {
             savedAmbulanceIds.add(String(item.ambulanceBookingId))
@@ -392,16 +403,29 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
           })
         })
 
-      // OT charges — skip already saved descriptions
+      // OT charges — prefer the stable per-line UUID for dedup; fall back
+      // to description only for legacy rows saved before OTM started
+      // sending otInvoiceItemId. Compute unitPrice as totalPrice / quantity
+      // so an edit to qty doesn't double the line (the old code stored
+      // totalPrice into unitPrice, which then re-multiplied by quantity).
       ;(Array.isArray(otRes?.data) ? otRes.data : []).forEach(inv => {
         ;(Array.isArray(inv.items) ? inv.items : []).forEach(item => {
+          const id   = item.otInvoiceItemId ? String(item.otInvoiceItemId) : null
           const desc = item.description || item.name || 'OT Procedure'
-          if (savedOTDescriptions.has(desc)) return
+
+          // ID match wins. Description only for legacy rows (no id).
+          if (id && savedOTInvoiceItemIds.has(id)) return
+          if (!id && savedOTDescriptions.has(desc)) return
+
+          const qty   = Number(item.quantity ?? 1) || 1
+          const total = Number(item.totalPrice ?? item.amount ?? 0) || 0
+          const unit  = qty > 0 ? total / qty : total
+
           auto.push({
             key: key++, itemType: 'OT', description: desc,
-            quantity: item.quantity ?? 1,
-            unitPrice: item.totalPrice ?? item.amount ?? 0,
-            totalPrice: item.totalPrice ?? item.amount ?? 0,
+            quantity: qty, unitPrice: unit, totalPrice: total,
+            otBookingId:     inv.bookingId        ?? null,
+            otInvoiceItemId: item.otInvoiceItemId ?? null,
           })
         })
       })
@@ -536,6 +560,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         appointmentId: i.appointmentId ?? undefined,
         ambulanceBookingId: i.ambulanceBookingId ?? undefined,
         pharmacyBillId: i.pharmacyBillId ?? undefined,
+        otBookingId: i.otBookingId ?? undefined,
+        otInvoiceItemId: i.otInvoiceItemId ?? undefined,
       })),
   })
 
