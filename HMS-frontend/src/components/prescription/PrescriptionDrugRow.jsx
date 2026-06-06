@@ -34,29 +34,24 @@ export const DOSES_PER_DAY = {
 };
 
 /**
- * Pull the leading numeric portion off the free-text dose field
- * ("1 tab" → 1, "2 caps" → 2, "5 ml" → 5). Defaults to 1 so an empty
- * dose still gives a sensible quantity for the common single-unit case.
+ * Suggested dispense quantity = doses-per-day × duration in days.
+ * Dose strength ("500mg", "5ml") is irrelevant to how many dispensable
+ * units pharmacy hands out — it just describes how strong each dose is.
+ * Multi-tablet-per-dose prescriptions ("2 tab BD x 5d") are a manual
+ * override; staff just type the real number into the editable Quantity
+ * field. Returns null for SOS (no fixed daily count) or missing duration
+ * so the field stays empty until the doctor fills both inputs.
  */
-function parseDoseUnits(dose) {
-  if (!dose) return 1;
-  const m = String(dose).trim().match(/^(\d+(?:\.\d+)?)/);
-  const n = m ? Number(m[1]) : NaN;
-  return Number.isFinite(n) && n > 0 ? n : 1;
-}
-
-/**
- * Suggested dispense quantity from dose × doses-per-day × days.
- * Returns null when any input is missing or the frequency has no
- * fixed daily count (SOS) — the field stays empty in that case.
- */
-export function computeQuantity({ dose, frequency, durationDays }) {
+export function computeQuantity({ frequency, durationDays }) {
   const perDay = DOSES_PER_DAY[frequency];
   if (!perDay) return null;
+  // STAT means a single dose, immediately — duration is irrelevant and
+  // multi-day STAT is a clinical-input error. Hard-clamp to 1 so the
+  // auto-fill can't silently propagate "STAT × 5 days = 5 tablets".
+  if (frequency === "STAT") return 1;
   const days = Number(durationDays);
   if (!Number.isFinite(days) || days <= 0) return null;
-  const units = parseDoseUnits(dose);
-  const q = Math.ceil(units * perDay * days);
+  const q = perDay * days;
   return q > 0 ? q : null;
 }
 
@@ -126,14 +121,13 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
 
   useEffect(() => { setQuery(item.drugName); }, [item.drugName]);
 
-  // Auto-fill quantity from dose × frequency × duration. Stops the
-  // moment the doctor types a number into the quantity box (signalled
-  // by quantityTouched). Clearing the box brings auto-fill back so a
+  // Auto-fill quantity from frequency × duration. Stops the moment the
+  // doctor types a number into the quantity box (signalled by
+  // quantityTouched). Clearing the box brings auto-fill back so a
   // mis-typed override can be undone without retyping the formula.
   useEffect(() => {
     if (item.quantityTouched) return;
     const computed = computeQuantity({
-      dose: item.dose,
       frequency: item.frequency,
       durationDays: item.durationDays,
     });
@@ -143,7 +137,7 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
     }
     // onChange is a fresh closure each render; including it would loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.dose, item.frequency, item.durationDays, item.quantityTouched]);
+  }, [item.frequency, item.durationDays, item.quantityTouched]);
 
   const doSearch = useCallback(async (q) => {
     if (!q || q.trim().length < 2) { setResults([]); return; }
