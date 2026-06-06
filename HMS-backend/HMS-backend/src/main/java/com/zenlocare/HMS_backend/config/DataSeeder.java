@@ -655,14 +655,39 @@ public class DataSeeder implements CommandLineRunner {
             {"STORE",        "Inventory Store",     "STORE", "package",     "#f59e0b", "13"},
         };
 
+        // Explicit check-then-insert/update. The previous ON CONFLICT
+        // (hospital_id, code) clause didn't fire for system rows because
+        // Postgres treats NULL ≠ NULL in unique constraints, so every boot
+        // appended a fresh copy and the table grew unbounded. A NULL-safe
+        // SELECT works regardless. RoomTypeConfigDedupeRunner already
+        // installed a partial unique index for (code) WHERE hospital_id
+        // IS NULL by the time we get here, so a concurrent double-boot
+        // would fail the second INSERT cleanly instead of duplicating.
         for (String[] d : defaults) {
             try {
-                jdbcTemplate.update("""
-                    INSERT INTO room_type_configs (hospital_id, code, label, category, icon, color, is_system, is_active, display_order)
-                    VALUES (NULL, ?, ?, ?, ?, ?, true, true, ?)
-                    ON CONFLICT (hospital_id, code) DO UPDATE SET label = EXCLUDED.label, category = EXCLUDED.category,
-                        icon = EXCLUDED.icon, color = EXCLUDED.color, is_system = true, display_order = EXCLUDED.display_order
-                """, d[0], d[1], d[2], d[3], d[4], Integer.parseInt(d[5]));
+                Integer existing = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM room_type_configs " +
+                    "WHERE hospital_id IS NULL AND code = ?",
+                    Integer.class, d[0]);
+
+                if (existing != null && existing > 0) {
+                    // Keep system rows fresh — label / category / icon /
+                    // color / display_order may have been edited in the
+                    // seed defaults since the last boot.
+                    jdbcTemplate.update(
+                        "UPDATE room_type_configs " +
+                        "   SET label = ?, category = ?, icon = ?, color = ?, " +
+                        "       is_system = true, display_order = ? " +
+                        " WHERE hospital_id IS NULL AND code = ?",
+                        d[1], d[2], d[3], d[4], Integer.parseInt(d[5]), d[0]);
+                } else {
+                    jdbcTemplate.update(
+                        "INSERT INTO room_type_configs " +
+                        "  (hospital_id, code, label, category, icon, color, " +
+                        "   is_system, is_active, display_order) " +
+                        "VALUES (NULL, ?, ?, ?, ?, ?, true, true, ?)",
+                        d[0], d[1], d[2], d[3], d[4], Integer.parseInt(d[5]));
+                }
             } catch (Exception e) {
                 log.warn("Could not seed room type " + d[0] + ": " + e.getMessage());
             }
