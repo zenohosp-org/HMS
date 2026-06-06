@@ -44,6 +44,19 @@ public class InvoiceItem {
     @Column(name = "pharmacy_bill_id")
     private UUID pharmacyBillId;
 
+    // FK back to the OTM ot_bookings.id this charge originated from. Lets the
+    // IPD finalize flow dedupe OT lines by booking when the per-item UUID is
+    // absent (e.g. legacy OTM rows). Nullable.
+    @Column(name = "ot_booking_id")
+    private UUID otBookingId;
+
+    // FK back to the OTM ot_invoice_items.id this charge originated from. The
+    // stable per-line identifier the finalize modal uses to dedupe across
+    // reloads even when staff edit the description. Nullable for non-OT rows
+    // and for legacy OT rows persisted before this field existed.
+    @Column(name = "ot_invoice_item_id")
+    private UUID otInvoiceItemId;
+
     @Column(name = "item_type", length = 30)
     private String itemType; // MEDICINE, LAB_TEST, CONSULTATION, ROOM_CHARGE, RADIOLOGY, CUSTOM
 

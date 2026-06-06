@@ -35,6 +35,12 @@ public class InvoiceRequest {
         // pulled from the pharmacy service; HMS persists it so subsequent
         // reloads of the finalize modal can skip already-invoiced bills.
         private UUID pharmacyBillId;
+        // OTM ot_bookings.id this charge originated from. Optional.
+        private UUID otBookingId;
+        // OTM ot_invoice_items.id — stable per-line UUID used by the
+        // finalize modal to dedupe across reloads even when staff edit
+        // the description. Optional / null for non-OT rows.
+        private UUID otInvoiceItemId;
         private String itemType;
         private String description;
         private Integer quantity;

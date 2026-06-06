@@ -70,5 +70,12 @@ public class InvoiceDTO {
         // from the pharmacy service; null for everything else. Lets the
         // finalize modal dedupe across reloads without comparing drug names.
         private UUID pharmacyBillId;
+        // FK to OTM ot_bookings.id this charge originated from. Null for non-OT rows.
+        private UUID otBookingId;
+        // FK to OTM ot_invoice_items.id. Stable per-line UUID used by the
+        // finalize modal to dedupe across reloads even when descriptions are
+        // edited. Null for non-OT rows and for legacy OT rows persisted before
+        // this field existed.
+        private UUID otInvoiceItemId;
     }
 }

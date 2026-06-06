@@ -85,6 +85,8 @@ public class InvoiceService {
                         .serviceId(itemRequest.getServiceId())
                         .radiologyOrderId(itemRequest.getRadiologyOrderId())
                         .appointmentId(itemRequest.getAppointmentId())
+                        .otBookingId(itemRequest.getOtBookingId())
+                        .otInvoiceItemId(itemRequest.getOtInvoiceItemId())
                         .itemType(itemRequest.getItemType())
                         .description(itemRequest.getDescription())
                         .quantity(itemRequest.getQuantity())
@@ -555,6 +557,8 @@ public class InvoiceService {
                     .appointmentId(ir.getAppointmentId())
                     .ambulanceBookingId(ir.getAmbulanceBookingId())
                     .pharmacyBillId(ir.getPharmacyBillId())
+                    .otBookingId(ir.getOtBookingId())
+                    .otInvoiceItemId(ir.getOtInvoiceItemId())
                     .itemType(ir.getItemType())
                     .description(ir.getDescription())
                     .quantity(ir.getQuantity())
@@ -615,6 +619,8 @@ public class InvoiceService {
                     .appointmentId(ir.getAppointmentId())
                     .ambulanceBookingId(ir.getAmbulanceBookingId())
                     .pharmacyBillId(ir.getPharmacyBillId())
+                    .otBookingId(ir.getOtBookingId())
+                    .otInvoiceItemId(ir.getOtInvoiceItemId())
                     .itemType(ir.getItemType())
                     .description(ir.getDescription())
                     .quantity(ir.getQuantity())
@@ -772,7 +778,9 @@ public class InvoiceService {
                                 item.getRadiologyOrderId(),
                                 item.getAppointmentId(),
                                 item.getAmbulanceBookingId(),
-                                item.getPharmacyBillId()
+                                item.getPharmacyBillId(),
+                                item.getOtBookingId(),
+                                item.getOtInvoiceItemId()
                         )
                 ).collect(Collectors.toList()) : java.util.Collections.emptyList())
                 .payments(invoicePaymentRepository.findByInvoice_IdOrderByPaidAtAsc(inv.getId())
