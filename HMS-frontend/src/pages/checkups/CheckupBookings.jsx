@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { checkupApi, patientApi, doctorsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import PageHeader from "@/components/ui/PageHeader";
 import {
   ClipboardList, Plus, Search, X, Calendar, Clock, User,
   AlertCircle, CheckCircle2, Loader2, ChevronRight,
@@ -346,15 +347,15 @@ export default function CheckupBookings() {
 
   return (
     <div className="hms-checkup-page">
-      <div className="hms-checkup-header">
-        <div>
-          <h1 className="hms-checkup-header__title">Checkup Bookings</h1>
-          <p className="hms-checkup-header__sub">Schedule and track health checkup appointments</p>
-        </div>
-        <button onClick={() => setShowModal(true)} className="hms-btn-primary">
-          <Plus className="w-4 h-4" /> New Booking
-        </button>
-      </div>
+      <PageHeader
+        title="Checkup Bookings"
+        subtitle="Schedule and track health checkup appointments"
+        actions={
+          <button onClick={() => setShowModal(true)} className="hms-btn-primary">
+            <Plus className="w-4 h-4" /> New Booking
+          </button>
+        }
+      />
 
       {/* Stats */}
       <div className="hms-checkup-stat-grid">

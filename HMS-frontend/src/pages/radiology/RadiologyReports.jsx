@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import PageHeader from "@/components/ui/PageHeader";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
@@ -52,21 +53,17 @@ function RadiologyReports() {
   });
   return (
     <div className="hms-rad-page">
-      <div className="hms-rad-page__head">
-        <div>
-          <h1 className="hms-rad-page__title">
-            <FileText className="w-5 h-5 hms-rad-page__title-icon" /> Radiology Reports
-          </h1>
-          <p className="hms-rad-page__sub">
-            View and manage completed radiology reports
-          </p>
-        </div>
-        <div className="hms-rad-chip-row">
-          <span className="hms-rad-chip is-emerald">
-            <CheckCircle2 className="w-3 h-3" /> {stats.reportGenerated} total reports
-          </span>
-        </div>
-      </div>
+      <PageHeader
+        title={<><FileText className="w-5 h-5 hms-rad-page__title-icon" /> Radiology Reports</>}
+        subtitle="View and manage completed radiology reports"
+        actions={
+          <div className="hms-rad-chip-row">
+            <span className="hms-rad-chip is-emerald">
+              <CheckCircle2 className="w-3 h-3" /> {stats.reportGenerated} total reports
+            </span>
+          </div>
+        }
+      />
       {/* Search */}
       <div className="hms-rad-rep-search">
         <Search className="w-4 h-4 hms-rad-rep-search__icon" />

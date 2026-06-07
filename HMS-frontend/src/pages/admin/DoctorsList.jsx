@@ -24,6 +24,7 @@ import {
     Pagination,
     SearchBar,
     Table,
+    TableSkeleton,
 } from "@/components/ui";
 
 const PAGE_SIZE = 30;
@@ -223,7 +224,7 @@ function DoctorsList() {
                     data={paginated}
                     loading={loading}
                     loadingMessage={
-                        <span className="text-gray-500">Loading doctors…</span>
+                        <TableSkeleton rows={10} />
                     }
                     emptyMessage={
                         <div className="hms-cell-empty">

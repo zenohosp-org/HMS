@@ -25,8 +25,8 @@ const SearchBar = forwardRef(function SearchBar(
         else onChange?.("");
     };
     return (
-        <div className={`hms-search-bar ${className}`.trim()}>
-            <Search size={16} className="hms-search-icon" />
+        <div className={`zu-search ${className}`.trim()}>
+            <Search size={16} className="zu-search-icon" />
             <input
                 ref={ref}
                 type="search"
@@ -39,7 +39,7 @@ const SearchBar = forwardRef(function SearchBar(
             {value && (
                 <button
                     type="button"
-                    className="hms-search-clear"
+                    className="zu-search-clear"
                     onClick={handleClear}
                     aria-label="Clear search"
                 >

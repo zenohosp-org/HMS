@@ -32,7 +32,7 @@ const Button = forwardRef(function Button(
     },
     ref
 ) {
-    const base = `hms-btn-${variant}`;
+    const base = `zu-btn-${variant}`;
     const modifiers = [
         size === "sm" && "is-sm",
         full && "is-full",

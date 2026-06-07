@@ -4,6 +4,7 @@ import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi } from '@/utils/api'
 import { fmtId } from '@/utils/idFormat'
 import Pagination from '@/components/ui/Pagination'
+import PageHeader from '@/components/ui/PageHeader'
 import CreateInvoiceModal from '@/components/modals/CreateInvoiceModal'
 import { InvoiceDetailModal } from '@/pages/billing/InvoiceList'
 import {
@@ -220,16 +221,15 @@ export default function OPDBilling() {
   return (
     <div className="hms-billing-page">
 
-      {/* Header */}
-      <div className="hms-billing-header">
-        <div className="hms-billing-header__title-row">
-          <h1 className="hms-billing-header__title">OPD Billing</h1>
-          <span className="hms-billing-header__count">{totalElements} invoices</span>
-        </div>
-        <button onClick={() => setShowCreate(true)} className="hms-btn-primary">
-          <ReceiptText className="w-4 h-4" /> New Invoice
-        </button>
-      </div>
+      <PageHeader
+        title="OPD Billing"
+        subtitle={`${totalElements} invoices`}
+        actions={
+          <button onClick={() => setShowCreate(true)} className="hms-btn-primary">
+            <ReceiptText className="w-4 h-4" /> New Invoice
+          </button>
+        }
+      />
 
       {/* Stats */}
       <div className="hms-billing-stats">

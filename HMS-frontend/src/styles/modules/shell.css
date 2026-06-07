@@ -39,7 +39,10 @@
 }
 
 @media print {
-    .hms-app-shell__content { padding: 0; overflow: visible; }
+    .hms-app-shell__content {
+        padding: 0;
+        overflow: visible;
+    }
 }
 
 
@@ -66,9 +69,9 @@
     align-items: center;
     border-bottom: 1px solid var(--hms-gray-200);
     height: auto;
-    min-height: 64px;
+    min-height: 56px;
     gap: 8px;
-    padding: 20px 20px;
+    padding: 0px 20px;
 }
 
 .hms-sidebar.is-collapsed .hms-sidebar__logo {
@@ -137,8 +140,19 @@
 }
 
 
-/* Nav items (link + accordion trigger) — matches Ziranly visual */
-.hms-sidebar__link {
+/* Nav items (link + accordion trigger) — Zenlocare semantic structure */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sidebar-nav-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-nav-item {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -146,44 +160,35 @@
     margin: 0 0 0 12px;
     width: calc(100% - 1.5rem);
     border-radius: 0.5rem;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 500;
     text-decoration: none;
     color: #020617;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--hms-font-family);
     transition: background 150ms ease, color 150ms ease;
+    text-align: left;
 }
 
-.hms-sidebar__link:hover {
+.sidebar-nav-item:hover {
     background: #f3f4f6;
     color: #000000;
 }
 
-.hms-sidebar__link.is-active {
-    background: #e4e4e4;
-    color: #020617;
-    font-weight: 500;
-}
-
-.hms-sidebar__link.is-indent {
-    font-size: 14px;
-    font-weight: 400;
-    padding: 7px 0.75rem;
-    border-radius: 0.5rem;
-    margin: 0;
-    width: 100%;
-}
-
-.hms-sidebar__link.is-indent.is-active {
+.sidebar-nav-item.active {
     background: #e4e4e4;
     color: #020617;
     font-weight: 500;
 }
 
 /* Icon-only mode for the collapsed sidebar */
-.hms-sidebar__link.is-icon-only {
+.sidebar-nav-item.is-icon-only {
     justify-content: center;
     padding: 12px 0;
     width: 100%;
+    margin: 0;
 }
 
 .hms-sidebar__link-icon {
@@ -193,42 +198,11 @@
     flex-shrink: 0;
 }
 
-.hms-sidebar__link-label {
+.sidebar-nav-label {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-
-/* Accordion section (collapsible group) — matches Ziranly visual */
-.hms-sidebar__acc-btn {
-    width: calc(100% - 1.5rem);
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 9px 1rem;
-    margin: 0 0 0 12px;
-    border: none;
-    background: transparent;
-    border-radius: 0.625rem;
-    font-family: var(--hms-font-family);
-    font-size: 15px;
-    font-weight: 500;
-    text-align: left;
-    cursor: pointer;
-    color: #020617;
-    transition: background 150ms ease, color 150ms ease;
-}
-
-.hms-sidebar__acc-btn:hover {
-    background: #f3f4f6;
-    color: #000000;
-}
-
-.hms-sidebar__acc-btn.is-active {
-    color: #020617;
-    font-weight: 500;
 }
 
 .hms-sidebar__acc-chevron {
@@ -239,16 +213,47 @@
     color: var(--hms-gray-400);
 }
 
-.hms-sidebar__acc-chevron.is-open { transform: rotate(180deg); }
+.hms-sidebar__acc-chevron.is-open {
+    transform: rotate(180deg);
+}
 
-/* Submenu with the vertical left-line accent from Ziranly */
-.hms-sidebar__acc-body {
+/* Submenu with the vertical left-line accent from Ziranly/Zenlocare */
+.sidebar-submenu {
+    list-style: none;
     display: flex;
     flex-direction: column;
     gap: 1px;
     padding: 0 0 0 0.75rem;
-    margin: 2px 0.75rem 2px 22px;
+    margin: 2px 0.75rem 2px 34px;
     border-left: 1px solid #e5e7eb;
+}
+
+.sidebar-submenu li {
+    margin: 0;
+    padding: 0;
+}
+
+.sidebar-submenu a {
+    display: block;
+    font-size: 14px;
+    font-weight: 400;
+    padding: 7px 0.75rem;
+    border-radius: 0.5rem;
+    width: 100%;
+    text-decoration: none;
+    color: #020617;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.sidebar-submenu a:hover {
+    background: #f3f4f6;
+    color: #000000;
+}
+
+.sidebar-submenu a.active {
+    background: #e4e4e4;
+    color: #020617;
+    font-weight: 500;
 }
 
 
@@ -287,15 +292,6 @@
     color: var(--hms-gray-900);
 }
 
-.hms-sidebar__ext-arrow {
-    width: 12px;
-    height: 12px;
-    opacity: 0;
-    transition: opacity 150ms ease;
-}
-
-.hms-sidebar__ext:hover .hms-sidebar__ext-arrow { opacity: 0.6; }
-
 
 /* ─────────────────────────── Header (Header.jsx) ─────────────────────────── */
 .hms-header {
@@ -327,7 +323,9 @@
     color: var(--hms-gray-800);
 }
 
-.hms-header__bell { padding: 8px; }
+.hms-header__bell {
+    padding: 8px;
+}
 
 .hms-header__bell-dot {
     position: absolute;
@@ -388,7 +386,9 @@
 }
 
 @media (min-width: 640px) {
-    .hms-header__user-text { display: flex; }
+    .hms-header__user-text {
+        display: flex;
+    }
 }
 
 .hms-header__user-name {
@@ -429,7 +429,9 @@
 }
 
 @media (min-width: 1024px) {
-    .hms-login { flex-direction: row; }
+    .hms-login {
+        flex-direction: row;
+    }
 }
 
 .hms-login__form-pane {
@@ -614,8 +616,15 @@
 }
 
 @keyframes hms-login-pulse {
-    0%, 100% { opacity: 1; }
-    50%      { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .hms-login__visual-content {
@@ -712,27 +721,6 @@
     text-align: center;
 }
 
-.hms-page-center__icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 999px;
-    background: var(--hms-info-bg);
-    color: var(--hms-info);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.hms-page-center__icon.is-danger {
-    background: #fff1f2;
-    color: #be123c;
-}
-
-.hms-page-center__icon.is-warning {
-    background: var(--hms-warning-bg);
-    color: var(--hms-warning);
-}
-
 .hms-page-center__title {
     margin: 0;
     font-size: 20px;
@@ -821,7 +809,9 @@
 }
 
 @keyframes hms-sso-spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .hms-sso__error-icon {
@@ -842,7 +832,9 @@
     font-size: 15px;
 }
 
-.hms-sso__title.is-danger { color: #ef4444; }
+.hms-sso__title.is-danger {
+    color: #ef4444;
+}
 
 .hms-sso__desc {
     margin: 0;

@@ -62,25 +62,25 @@ export default function Modal({
 
     return createPortal(
         <div
-            className="hms-modal-overlay"
+            className="zu-modal-overlay"
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) onClose?.();
             }}
             role="presentation"
         >
             <div
-                className={`hms-modal hms-modal-${size} ${className}`.trim()}
+                className={`zu-modal zu-modal-${size} ${className}`.trim()}
                 role="dialog"
                 aria-modal="true"
                 onMouseDown={(e) => e.stopPropagation()}
             >
                 {title !== undefined && (
-                    <div className="hms-modal-header">
+                    <div className="zu-modal-header">
                         <h3>{title}</h3>
                         {showClose && (
                             <button
                                 type="button"
-                                className="hms-modal-close"
+                                className="zu-modal-close"
                                 aria-label="Close"
                                 onClick={onClose}
                             >
@@ -89,8 +89,8 @@ export default function Modal({
                         )}
                     </div>
                 )}
-                <div className="hms-modal-body">{children}</div>
-                {footer && <div className="hms-modal-footer">{footer}</div>}
+                <div className="zu-modal-body">{children}</div>
+                {footer && <div className="zu-modal-footer">{footer}</div>}
             </div>
         </div>,
         host

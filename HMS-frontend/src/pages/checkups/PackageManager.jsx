@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { checkupApi } from "@/utils/api";
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import PageHeader from "@/components/ui/PageHeader";
 import {
   Package, Plus, Edit2, Trash2, ToggleLeft, ToggleRight,
   ChevronDown, ChevronUp, GripVertical, X, Check, AlertCircle,
@@ -289,18 +290,15 @@ export default function PackageManager() {
 
   return (
     <div className="hms-checkup-page">
-      <div className="hms-checkup-header">
-        <div>
-          <h1 className="hms-checkup-header__title">Health Packages</h1>
-          <p className="hms-checkup-header__sub">Define checkup packages your hospital offers</p>
-        </div>
-        <button
-          onClick={() => { setEditing(null); setShowForm(true); }}
-          className="hms-btn-primary"
-        >
-          <Plus className="w-4 h-4" /> New Package
-        </button>
-      </div>
+      <PageHeader
+        title="Health Packages"
+        subtitle="Define checkup packages your hospital offers"
+        actions={
+          <button onClick={() => { setEditing(null); setShowForm(true); }} className="hms-btn-primary">
+            <Plus className="w-4 h-4" /> New Package
+          </button>
+        }
+      />
 
       {/* Category filter */}
       <div className="hms-checkup-pkg-cat-row">

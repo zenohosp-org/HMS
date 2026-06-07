@@ -14,23 +14,23 @@ import { ChevronLeft } from "lucide-react";
  */
 export default function PageHeader({ title, subtitle, onBack, actions, className = "" }) {
     return (
-        <div className={`hms-page-header ${className}`.trim()}>
-            <div className="hms-page-header-inner">
+        <div className={`zu-page-header ${className}`.trim()}>
+            <div className="zu-page-header-inner">
                 {onBack && (
                     <button
                         type="button"
-                        className="hms-page-back-btn"
+                        className="zu-page-back-btn"
                         onClick={onBack}
                         aria-label="Back"
                     >
                         <ChevronLeft size={18} strokeWidth={2.2} />
                     </button>
                 )}
-                <div className="hms-page-header-titles">
-                    {title && <h1 className="hms-page-title">{title}</h1>}
-                    {subtitle && <p className="hms-page-subtitle">{subtitle}</p>}
+                <div className="zu-page-header-titles">
+                    {title && <h1 className="zu-page-title">{title}</h1>}
+                    {subtitle && <p className="zu-page-subtitle">{subtitle}</p>}
                 </div>
-                {actions && <div className="hms-page-actions">{actions}</div>}
+                {actions && <div className="zu-page-actions">{actions}</div>}
             </div>
         </div>
     );

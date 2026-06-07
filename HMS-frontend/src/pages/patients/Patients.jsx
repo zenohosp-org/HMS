@@ -5,6 +5,8 @@ import { useNotification } from "@/context/NotificationContext";
 import { patientApi } from "@/utils/api";
 import PatientModal from "@/components/modals/PatientModal";
 import Pagination from "@/components/ui/Pagination";
+import PageHeader from "@/components/ui/PageHeader";
+import { TableSkeleton } from "@/components/ui";
 import { calcAge, formatDate } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
 import { Search, Loader2, Users, MoreHorizontal, Pencil, ExternalLink } from "lucide-react";
@@ -87,18 +89,14 @@ function Patients() {
   return (
     <div className="hms-pat-page">
 
-      {/* Header */}
-      <div className="hms-pat-page__header">
-        <div className="hms-pat-page__title-row">
-          <h1 className="hms-pat-page__title">Patients</h1>
-          <span className="hms-pat-page__count">
-            {totalElements}
-          </span>
-        </div>
-        <button className="hms-btn-primary" onClick={() => setModal({ open: true, patient: null })}>
-          + Register Patient
-        </button>
-      </div>
+      <PageHeader
+        title={<>Patients <span className="hms-pat-page__count">{totalElements}</span></>}
+        actions={
+          <button className="hms-btn-primary" onClick={() => setModal({ open: true, patient: null })}>
+            + Register Patient
+          </button>
+        }
+      />
 
       {/* Search */}
       <div className="hms-pat-search">
@@ -130,10 +128,7 @@ function Patients() {
               {loading ? (
                 <tr>
                   <td colSpan={6}>
-                    <div className="hms-pat-table-loading">
-                      <Loader2 className="w-5 h-5 animate-spin text-gray-900 mx-auto mb-3" />
-                      <p className="hms-pat-table-loading__text">Loading patients…</p>
-                    </div>
+                    <TableSkeleton rows={10} columns={6} />
                   </td>
                 </tr>
               ) : patients.length === 0 ? (

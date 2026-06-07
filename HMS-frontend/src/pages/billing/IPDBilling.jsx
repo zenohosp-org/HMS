@@ -4,6 +4,7 @@ import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi, admissionApi } from '@/utils/api'
 import { fmtId } from '@/utils/idFormat'
 import Pagination from '@/components/ui/Pagination'
+import PageHeader from '@/components/ui/PageHeader'
 import FinalizeIPDBillingModal from '@/components/modals/FinalizeIPDBillingModal'
 import { InvoiceDetailModal } from '@/pages/billing/InvoiceList'
 import {
@@ -228,13 +229,10 @@ export default function IPDBilling() {
   return (
     <div className="hms-billing-page">
 
-      {/* Header */}
-      <div className="hms-billing-header">
-        <div className="hms-billing-header__title-row">
-          <h1 className="hms-billing-header__title">IPD Billing</h1>
-          <span className="hms-billing-header__count">{totalElements} active/past records</span>
-        </div>
-      </div>
+      <PageHeader
+        title="IPD Billing"
+        subtitle={`${totalElements} active/past records`}
+      />
 
       {/* Stats */}
       <div className="hms-billing-stats">

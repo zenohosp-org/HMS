@@ -8,7 +8,7 @@
 
    Conventions
      * Token-driven where applicable. Spacing/colour scales mirror the
-       --hms-* token set; raw px values appear only when there is no
+       --zu-* token set; raw px values appear only when there is no
        matching token (e.g. fine-grained 2px/4px increments).
      * Single-property, single-purpose. No compound utilities — those
        belong in hms-system.css or modules/<area>.css.
@@ -161,35 +161,35 @@
 
 
 /* ---------------------------------------------------------- Colours */
-.text-gray-300 { color: var(--hms-gray-300); }
-.text-gray-400 { color: var(--hms-gray-400); }
-.text-gray-500 { color: var(--hms-gray-500); }
-.text-gray-600 { color: var(--hms-gray-600); }
-.text-gray-700 { color: var(--hms-gray-700); }
-.text-gray-900 { color: var(--hms-gray-900); }
-.text-info { color: var(--hms-info); }
-.text-success { color: var(--hms-success); }
-.text-warning { color: var(--hms-warning); }
-.text-danger { color: var(--hms-danger); }
+.text-gray-300 { color: var(--zu-gray-300); }
+.text-gray-400 { color: var(--zu-gray-400); }
+.text-gray-500 { color: var(--zu-gray-500); }
+.text-gray-600 { color: var(--zu-gray-600); }
+.text-gray-700 { color: var(--zu-gray-700); }
+.text-gray-900 { color: var(--zu-gray-900); }
+.text-info { color: var(--zu-info); }
+.text-success { color: var(--zu-success); }
+.text-warning { color: var(--zu-warning); }
+.text-danger { color: var(--zu-danger); }
 .text-rose { color: #be123c; }
 .text-amber { color: #b45309; }
 .text-emerald { color: #059669; }
-.text-accent-external { color: var(--hms-accent-external); }
+.text-accent-external { color: var(--zu-accent-external); }
 .font-normal { font-weight: 400; }
-.bg-gray-50 { background: var(--hms-gray-50); }
+.bg-gray-50 { background: var(--zu-gray-50); }
 
-/* Solid colour backgrounds (using --hms-* tokens — for dots, badges, accent strips) */
-.bg-info { background: var(--hms-info); }
+/* Solid colour backgrounds (using --zu-* tokens — for dots, badges, accent strips) */
+.bg-info { background: var(--zu-info); }
 
 
 /* ---------------------------------------------------------- Borders */
-.border-t { border-top-width: 1px; border-top-style: solid; border-top-color: var(--hms-gray-200); }
-.border-b { border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: var(--hms-gray-200); }
+.border-t { border-top-width: 1px; border-top-style: solid; border-top-color: var(--zu-gray-200); }
+.border-b { border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: var(--zu-gray-200); }
 
 
 /* ---------------------------------------------------------- Radius */
-.rounded { border-radius: var(--hms-radius-sm); }
-.rounded-full { border-radius: var(--hms-radius-full); }
+.rounded { border-radius: var(--zu-radius-sm); }
+.rounded-full { border-radius: var(--zu-radius-full); }
 
 
 /* ---------------------------------------------------------- Shadow */

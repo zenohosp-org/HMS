@@ -18,7 +18,7 @@ const Card = forwardRef(function Card(
     ref
 ) {
     const classes = [
-        "hms-card",
+        "zu-card",
         interactive && "is-interactive",
         glass && "is-glass",
         className,

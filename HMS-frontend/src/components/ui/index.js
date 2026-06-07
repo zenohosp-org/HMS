@@ -15,6 +15,7 @@ export { default as Card } from "./Card";
 export { default as Drawer } from "./Drawer";
 export { default as EmptyState } from "./EmptyState";
 export { default as FormGroup } from "./FormGroup";
+export { default as GlobalLoader } from "./GlobalLoader";
 export { default as Input } from "./Input";
 export { default as Menu } from "./Menu";
 export { default as Modal } from "./Modal";
@@ -22,6 +23,7 @@ export { default as PageHeader } from "./PageHeader";
 export { default as SearchBar } from "./SearchBar";
 export { default as Select } from "./Select";
 export { default as Table } from "./Table";
+export { default as TableSkeleton } from "./TableSkeleton";
 export { default as Tabs } from "./Tabs";
 export { default as Textarea } from "./Textarea";
 

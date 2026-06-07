@@ -73,47 +73,6 @@
     margin-bottom: var(--hms-space-lg);
 }
 
-.hms-stat-card {
-    background: var(--hms-white);
-    border-radius: var(--hms-radius);
-    border: 1px solid var(--hms-gray-200);
-    box-shadow: var(--hms-shadow-card);
-    padding: var(--hms-space-lg);
-    position: relative;
-    overflow: hidden;
-    transition: var(--hms-transition-normal);
-}
-
-.hms-stat-card:hover {
-    box-shadow: var(--hms-shadow-card-hover);
-    transform: translateY(-4px);
-    border-color: var(--hms-gray-300);
-}
-
-.hms-stat-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--hms-gray-500);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.hms-stat-value {
-    font-size: 28px;
-    font-weight: 800;
-    line-height: 1.2;
-}
-
-.hms-stat-icon {
-    position: absolute;
-    right: -10px;
-    top: -10px;
-    font-size: 64px;
-    opacity: 0.05;
-    transform: rotate(-10deg);
-    pointer-events: none;
-}
-
 
 /* ===================================================================
    3. Tables
@@ -158,20 +117,6 @@
 .hms-table tbody tr:hover td {
     background: var(--hms-gray-50);
     color: var(--hms-gray-900);
-}
-
-.hms-pagination {
-    padding: 16px;
-    border-top: 1px solid var(--hms-gray-100);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-}
-
-.hms-pagination span {
-    font-size: 14px;
-    color: var(--hms-gray-600);
 }
 
 .hms-loading {
@@ -465,12 +410,11 @@
    7 base types: primary · secondary · cancel · danger · ghost · icon · circle
    Modifiers:    .is-sm · .is-full · .is-loading · .is-blue · .is-orange · .is-green · .is-outline
    =================================================================== */
-.hms-btn,
+
 .hms-btn-primary,
 .hms-btn-secondary,
 .hms-btn-cancel,
 .hms-btn-danger,
-.hms-btn-ghost,
 .hms-btn-icon {
     display: inline-flex;
     align-items: center;
@@ -492,21 +436,19 @@
     font-family: var(--hms-font-family);
 }
 
-.hms-btn:active,
+
 .hms-btn-primary:active,
 .hms-btn-secondary:active,
 .hms-btn-cancel:active,
-.hms-btn-danger:active,
-.hms-btn-ghost:active {
+.hms-btn-danger:active {
     transform: scale(0.97);
 }
 
-.hms-btn:disabled,
+
 .hms-btn-primary:disabled,
 .hms-btn-secondary:disabled,
 .hms-btn-cancel:disabled,
 .hms-btn-danger:disabled,
-.hms-btn-ghost:disabled,
 .hms-btn-icon:disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -588,17 +530,6 @@
 }
 
 /* 7.5 Ghost (subtle inline text-link) */
-.hms-btn-ghost {
-    background: transparent;
-    color: var(--hms-gray-500);
-    border-color: transparent;
-    padding: 7px 12px;
-}
-
-.hms-btn-ghost:hover {
-    background: var(--hms-gray-100);
-    color: #0f172a;
-}
 
 /* 7.6 Icon (toolbar square) */
 .hms-btn-icon {
@@ -622,31 +553,6 @@
 }
 
 /* 7.7 Circle (refresh / floating tool) */
-.hms-btn-circle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    border-radius: 50%;
-    background: var(--hms-gray-100);
-    color: #0f172a;
-    border: 1px solid var(--hms-gray-200);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: var(--hms-font-family);
-}
-
-.hms-btn-circle:hover {
-    background: var(--hms-gray-50);
-    border-color: #0f172a;
-    transform: translateY(-1px);
-}
-
-.hms-btn-circle:active {
-    transform: scale(0.97);
-}
 
 /* Colour variants */
 .hms-btn-primary.is-blue,
@@ -692,8 +598,7 @@
 .hms-btn-primary.is-sm,
 .hms-btn-secondary.is-sm,
 .hms-btn-cancel.is-sm,
-.hms-btn-danger.is-sm,
-.hms-btn-ghost.is-sm {
+.hms-btn-danger.is-sm {
     padding: 5px 12px;
     font-size: 11.5px;
     border-radius: 5px;
@@ -702,8 +607,7 @@
 .hms-btn-primary.is-full,
 .hms-btn-secondary.is-full,
 .hms-btn-cancel.is-full,
-.hms-btn-danger.is-full,
-.hms-btn-ghost.is-full {
+.hms-btn-danger.is-full {
     width: 100%;
     justify-content: center;
 }
@@ -777,22 +681,6 @@
     max-width: 560px;
     z-index: var(--hms-z-modal);
     font-family: var(--hms-font-family);
-}
-
-.hms-modal-sm {
-    max-width: 400px;
-}
-
-.hms-modal-md {
-    max-width: 560px;
-}
-
-.hms-modal-lg {
-    max-width: 760px;
-}
-
-.hms-modal-xl {
-    max-width: 1000px;
 }
 
 .hms-modal-header {
@@ -944,11 +832,12 @@
    10. Page header
    =================================================================== */
 .hms-page-header {
-    padding: 24px 32px;
+    padding: 32px 32px 24px;
     background: var(--hms-white);
-    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+    border-bottom: 1px solid var(--hms-gray-200);
     position: sticky;
-    top: 0;
+    top: -24px;
+    margin: -24px -24px 24px -24px;
     z-index: var(--hms-z-sticky);
 }
 
@@ -967,17 +856,18 @@
 }
 
 .hms-page-title {
-    font-size: 20px;
-    font-weight: 700;
+    font-size: 24px;
+    font-weight: 800;
     color: #0f172a;
-    letter-spacing: -0.8px;
-    margin: 0 0 4px 0;
+    letter-spacing: -0.5px;
+    margin: 0 0 6px 0;
     font-family: var(--hms-font-family);
 }
 
 .hms-page-subtitle {
     font-size: 14px;
-    color: var(--hms-gray-500);
+    color: #64748b;
+    font-weight: 400;
     margin: 0;
 }
 
@@ -1012,14 +902,6 @@
 /* ===================================================================
    11. Empty state
    =================================================================== */
-.hms-empty-state {
-    padding: 48px 24px;
-    text-align: center;
-    color: var(--hms-gray-400);
-    background: var(--hms-gray-50);
-    border-radius: var(--hms-radius);
-    font-size: 14px;
-}
 
 .hms-empty-state-card {
     background: var(--hms-white);
@@ -1172,16 +1054,6 @@
     border: 1px solid var(--hms-gray-200);
     flex-shrink: 0;
 }
-
-.hms-color-swatch--brand-primary { background: var(--hms-brand-primary); }
-.hms-color-swatch--gray-50       { background: var(--hms-gray-50); }
-.hms-color-swatch--gray-200      { background: var(--hms-gray-200); }
-.hms-color-swatch--gray-500      { background: var(--hms-gray-500); }
-.hms-color-swatch--gray-800      { background: var(--hms-gray-800); }
-.hms-color-swatch--success       { background: var(--hms-success); }
-.hms-color-swatch--warning       { background: var(--hms-warning); }
-.hms-color-swatch--danger        { background: var(--hms-danger); }
-.hms-color-swatch--info          { background: var(--hms-info); }
 
 .hms-token-grid {
     display: grid;

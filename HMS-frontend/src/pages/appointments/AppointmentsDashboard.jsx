@@ -23,6 +23,7 @@ const VITALS_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS"]);
 // consultation page lands with everything pre-filled.
 const EXTERNAL_RESULTS_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS"]);
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import PageHeader from "@/components/ui/PageHeader";
 import BookAppointmentModal from "@/components/modals/BookAppointmentModal";
 import AdmitPatientModal from "@/pages/admin/AdmitPatientModal";
 import Pagination from "@/components/ui/Pagination";
@@ -664,13 +665,10 @@ function AppointmentsDashboard() {
   };
   return (
     <div className="hms-appt-page">
-      {/* Header */}
-      <header className="hms-appt-page__header">
-        <div className="hms-appt-page__header-top">
-          <div>
-            <h1 className="hms-appt-page__title">{viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}</h1>
-            <p className="hms-appt-page__subtitle">{viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}</p>
-          </div>
+      <PageHeader
+        title={viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}
+        subtitle={viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}
+        actions={
           <div className="hms-appt-page__actions">
             <button
               onClick={() => setViewMode(viewMode === "list" ? "calendar" : "list")}
@@ -693,8 +691,9 @@ function AppointmentsDashboard() {
               New Appointment
             </button>
           </div>
-        </div>
-        {viewMode === "list" && (
+        }
+      />
+      {viewMode === "list" && (
           <div className="hms-appt-filters">
             <div className="hms-appt-filters__pills">
               {["all", "upcoming", "today", "completed", "cancelled"].map((f) => (
@@ -720,7 +719,6 @@ function AppointmentsDashboard() {
             )}
           </div>
         )}
-      </header>
       {/* Content Area */}
       <div className="hms-appt-body">
         {viewMode === "calendar" && (

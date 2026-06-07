@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import PageHeader from "@/components/ui/PageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { radiologyApi } from "@/utils/api";
@@ -83,17 +84,10 @@ function RadiologyQueue() {
   const filteredAwaiting = applyFilters(awaiting);
   return (
     <div className="hms-rad-page" onClick={() => setActionMenu(null)}>
-      {/* Page header */}
-      <div className="hms-rad-page__head">
-        <div>
-          <h1 className="hms-rad-page__title">
-            <ScanLine className="w-5 h-5 hms-rad-page__title-icon" /> Radiology Queue
-          </h1>
-          <p className="hms-rad-page__sub">
-            X-Ray, CT Scan, MRI, Ultrasound, and other imaging investigations
-          </p>
-        </div>
-        <div className="hms-rad-page__chips">
+      <PageHeader
+        title={<><ScanLine className="w-5 h-5 hms-rad-page__title-icon" /> Radiology Queue</>}
+        subtitle="X-Ray, CT Scan, MRI, Ultrasound, and other imaging investigations"
+        actions={<div className="hms-rad-page__chips">
           <div className="hms-rad-chip-row">
             <span className="hms-rad-chip is-amber">
               <ScanLine className="w-3 h-3" /> {stats.pendingScan} awaiting scan
@@ -108,8 +102,8 @@ function RadiologyQueue() {
           <button onClick={() => setShowNewModal(true)} className="hms-btn-primary">
             <Plus className="w-4 h-4" /> New Order
           </button>
-        </div>
-      </div>
+        </div>}
+      />
       {/* Stat cards */}
       <div className="hms-rad-stat-grid">
         <div className="hms-rad-stat is-amber">

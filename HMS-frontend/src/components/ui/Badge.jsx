@@ -8,7 +8,7 @@
  *   ...rest forwarded to the span
  */
 export default function Badge({ tone = "neutral", soft = false, className = "", children, ...rest }) {
-    const classes = ["hms-badge", `is-${tone}`, soft && "is-soft", className]
+    const classes = ["zu-badge", `zu-badge-${tone}`, soft && "is-soft", className]
         .filter(Boolean)
         .join(" ");
     return (

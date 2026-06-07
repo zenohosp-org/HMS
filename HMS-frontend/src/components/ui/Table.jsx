@@ -42,8 +42,8 @@ export default function Table({
     };
 
     return (
-        <div className={`hms-table-wrapper ${className}`.trim()}>
-            <table className="hms-table">
+        <div className={`zu-table-wrapper ${className}`.trim()}>
+            <table className="zu-table">
                 {columns.some((c) => c.width) && (
                     <colgroup>
                         {columns.map((c, i) => (
@@ -68,13 +68,13 @@ export default function Table({
                     {loading ? (
                         <tr>
                             <td colSpan={columns.length}>
-                                <div className="hms-loading">{loadingMessage}</div>
+                                <div className="zu-table-loading">{loadingMessage}</div>
                             </td>
                         </tr>
                     ) : data.length === 0 ? (
                         <tr>
                             <td colSpan={columns.length}>
-                                <div className="hms-loading">{emptyMessage}</div>
+                                <div className="zu-table-loading">{emptyMessage}</div>
                             </td>
                         </tr>
                     ) : (

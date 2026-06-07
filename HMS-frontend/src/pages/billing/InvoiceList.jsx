@@ -5,6 +5,7 @@ import { invoiceApi, bankApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import { useNotification } from "@/context/NotificationContext";
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import PageHeader from "@/components/ui/PageHeader";
 import {
   Search, ChevronLeft, Printer, Eye, FileText,
   CheckCircle2, Clock, XCircle, CreditCard, X, Landmark, Loader2,
@@ -817,17 +818,12 @@ function InvoiceList() {
 
   return (
     <div className="hms-inv-list-page">
+      <PageHeader
+        title="Invoice History"
+        subtitle="Track all hospital billing and payments"
+        onBack={() => navigate("/billing/opd")}
+      />
       <div className="hms-inv-list-headrow">
-        <div>
-          <button
-            onClick={() => navigate("/billing/opd")}
-            className="hms-inv-list-back"
-          >
-            <ChevronLeft className="w-3 h-3" /> Back to Billing
-          </button>
-          <h1 className="hms-inv-list-title">Invoice History</h1>
-          <p className="hms-inv-list-sub">Track all hospital billing and payments</p>
-        </div>
         <div className="hms-inv-list-search">
           <Search className="hms-inv-list-search__icon w-4 h-4" />
           <input

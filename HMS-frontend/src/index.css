@@ -8,6 +8,7 @@
      4. modules/*.css      — page-area-specific compositions
      5. legacy block below — original .btn-primary / .card / .input etc.
    ------------------------------------------------------------------- */
+@import './styles/ui/index.css'; /* NEW SHARED UI LAYER */
 @import './styles/base.css';
 @import './styles/hms-system.css';
 @import './styles/utilities.css';
@@ -135,42 +136,6 @@ body {
 
 /* Consultation modal form fields — shared by chief-complaint, notes,
    instructions, next-visit so the form has one visual style end-to-end. */
-.consult-input,
-.consult-textarea {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  border-radius: 0.625rem;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #0f172a;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
-}
-
-.consult-textarea {
-  resize: vertical;
-  min-height: 5rem;
-}
-
-.consult-input:hover,
-.consult-textarea:hover {
-  border-color: #cbd5e1;
-}
-
-.consult-input:focus,
-.consult-textarea:focus {
-  border-color: #0f172a;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
-}
-
-.consult-input::placeholder,
-.consult-textarea::placeholder {
-  color: #94a3b8;
-}
 
 /* Consultation View page form fields — bigger sibling of .consult-input
    for the doctor's full-page queue-walked workspace. Larger type, more
@@ -215,73 +180,10 @@ body {
 
 /* Vitals modal numeric input — wider, bigger digits, monospace for
    nurse-station scannability. Shared across BP / SpO2 / HR / weight. */
-.vital-input {
-  padding: 0.625rem 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #0f172a;
-  font-size: 1.125rem;
-  line-height: 1.25;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.vital-input:hover {
-  border-color: #cbd5e1;
-}
-
-.vital-input:focus {
-  border-color: #0f172a;
-  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
-}
-
-.vital-input::placeholder {
-  color: #cbd5e1;
-  font-weight: 400;
-}
 
 /* External-results modal — front-desk capture form for outside-clinic
    lab / radiology / pathology reports. Violet focus tone matches the
    modal's accent (distinct from blue=consult, emerald=rx, amber=vitals). */
-.external-input,
-.external-textarea {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  border-radius: 0.625rem;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #0f172a;
-  font-size: 0.875rem;
-  line-height: 1.45;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
-}
-
-.external-textarea {
-  resize: vertical;
-  min-height: 3.25rem;
-}
-
-.external-input:hover,
-.external-textarea:hover {
-  border-color: #cbd5e1;
-}
-
-.external-input:focus,
-.external-textarea:focus {
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
-}
-
-.external-input::placeholder,
-.external-textarea::placeholder {
-  color: #94a3b8;
-}
 
 /* Scrollbar */
 ::-webkit-scrollbar {

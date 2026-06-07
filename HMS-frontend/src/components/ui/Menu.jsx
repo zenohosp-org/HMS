@@ -46,7 +46,7 @@ export default function Menu({
     minWidth = 200,
     triggerLabel = "Open menu",
     triggerIcon,
-    triggerClassName = "hms-btn-icon",
+    triggerClassName = "zu-btn-icon",
     onOpenChange,
 }) {
     const [open, setOpen] = useState(false);
@@ -144,14 +144,14 @@ export default function Menu({
                     <div
                         ref={menuRef}
                         role="menu"
-                        className="hms-menu"
+                        className="zu-menu"
                         style={{ top: coords.top, left: coords.left, minWidth }}
                     >
                         {items.map((item, i) => {
                             if (item.divider) {
-                                return <div key={`d-${i}`} className="hms-menu-divider" />;
+                                return <div key={`d-${i}`} className="zu-menu-divider" />;
                             }
-                            const cls = `hms-menu-item${item.tone === "danger" ? " is-danger" : ""}`;
+                            const cls = `zu-menu-item${item.tone === "danger" ? " is-danger" : ""}`;
                             const handleClick = (e) => {
                                 e.stopPropagation();
                                 if (item.closeOnClick !== false) close();
@@ -167,7 +167,7 @@ export default function Menu({
                                     onClick={handleClick}
                                 >
                                     {item.icon && (
-                                        <span className="hms-menu-item__icon">
+                                        <span className="zu-menu-item-icon">
                                             {item.icon}
                                         </span>
                                     )}

@@ -214,11 +214,6 @@
 }
 
 /* Domain-specific shift palette — page-local, not in tone set */
-.hms-shift-dot--oncall    { background: var(--hms-gray-400); }
-.hms-shift-dot--morning   { background: #f59e0b; }
-.hms-shift-dot--general   { background: var(--hms-info); }
-.hms-shift-dot--afternoon { background: #fb923c; }
-.hms-shift-dot--night     { background: #475569; }
 
 
 /* ─────────────────────────── Shift roster group card ─────────────────────────── */
@@ -400,32 +395,6 @@
     border: 1px solid transparent;
     font-size: 12px;
     font-weight: 600;
-}
-
-.hms-shift-chip--oncall {
-    background: var(--hms-gray-100);
-    color: var(--hms-gray-600);
-    border-color: var(--hms-gray-200);
-}
-.hms-shift-chip--morning {
-    background: var(--hms-warning-bg);
-    color: #b45309;
-    border-color: var(--hms-warning-border);
-}
-.hms-shift-chip--general {
-    background: var(--hms-info-bg);
-    color: #0369a1;
-    border-color: var(--hms-info-border);
-}
-.hms-shift-chip--afternoon {
-    background: #fff7ed;
-    color: #c2410c;
-    border-color: #fed7aa;
-}
-.hms-shift-chip--night {
-    background: var(--hms-gray-100);
-    color: var(--hms-gray-800);
-    border-color: var(--hms-gray-300);
 }
 
 .hms-shift-chip__remove {
@@ -757,11 +726,6 @@
 
 
 /* ─────────────────────────── Admissions stat tile (large icon left, value right) ─────────────────────────── */
-.hms-admit-stat {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
 
 .hms-admit-stat__icon {
     width: 44px;
@@ -1607,9 +1571,6 @@
 
 
 /* DischargeModal: patient summary block (right pane) */
-.hms-discharge-patient {
-    /* container — uses flex from parent */
-}
 
 .hms-discharge-patient__label {
     margin: 0 0 8px;

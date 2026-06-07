@@ -4,6 +4,7 @@ import { useNotification } from '@/context/NotificationContext'
 import { ambulanceApi } from '@/utils/api'
 import { fmtId } from '@/utils/idFormat'
 import Pagination from '@/components/ui/Pagination'
+import PageHeader from '@/components/ui/PageHeader'
 import {
   Ambulance, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
@@ -211,11 +212,10 @@ export default function AmbulanceBilling() {
   return (
     <div className="hms-billing-page">
 
-      {/* Header */}
-      <div className="hms-billing-header__title-row">
-        <h1 className="hms-billing-header__title">Ambulance Billing</h1>
-        <span className="hms-billing-header__count is-orange">{bookings.length} bookings</span>
-      </div>
+      <PageHeader
+        title="Ambulance Billing"
+        subtitle={`${bookings.length} bookings`}
+      />
 
       {/* Stats */}
       <div className="hms-billing-stats">
