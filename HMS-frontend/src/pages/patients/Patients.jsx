@@ -146,14 +146,10 @@ function Patients() {
                 </tr>
               ) : (
                 patients.map((p) => {
-                  const initials = `${p.firstName[0]}${p.lastName?.[0] ?? ""}`.toUpperCase();
                   return (
                     <tr key={p.id}>
                       <td>
                         <div className="hms-pat-id-cell">
-                          <div className="hms-pat-id-cell__avatar">
-                            {initials}
-                          </div>
                           <div>
                             <p className="hms-pat-id-cell__name">
                               {p.firstName} {p.lastName}
