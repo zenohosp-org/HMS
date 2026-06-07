@@ -3,8 +3,10 @@ package com.zenlocare.HMS_backend.converter;
 import com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import lombok.extern.slf4j.Slf4j;
 
 @Converter
+@Slf4j
 public class AppointmentStatusConverter implements AttributeConverter<AppointmentStatus, Integer> {
 
     @Override
@@ -14,6 +16,20 @@ public class AppointmentStatusConverter implements AttributeConverter<Appointmen
 
     @Override
     public AppointmentStatus convertToEntityAttribute(Integer id) {
-        return id == null ? null : AppointmentStatus.fromId(id);
+        if (id == null) return null;
+        try {
+            return AppointmentStatus.fromId(id);
+        } catch (IllegalArgumentException e) {
+            // Some appointments table row carries a status_id outside the
+            // enum's known range (legacy migration, manual SQL insert,
+            // truncated mapping after an enum rename, etc.). Throwing here
+            // surfaces as a 500 from the dashboard / appointments list and
+            // takes the whole hospital offline for any user logged into it.
+            // Degrade to null + a log line instead — the row stays visible,
+            // breakdown queries silently drop the unknown bucket, and the
+            // bad data is surfaced in logs so it can be cleaned up.
+            log.warn("Unknown AppointmentStatus id={} in DB; returning null", id);
+            return null;
+        }
     }
 }
