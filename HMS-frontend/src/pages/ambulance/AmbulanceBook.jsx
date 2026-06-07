@@ -625,9 +625,6 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
                   <tr key={v.id}>
                     <td>
                       <div className="hms-amb-veh-cell">
-                        <div className="hms-amb-veh-icon">
-                          <Car className="w-4 h-4" />
-                        </div>
                         <div>
                           <p className="hms-amb-veh-num">{v.vehicleNumber}</p>
                           {v.vehicleName && <p className="hms-amb-veh-name">{v.vehicleName}</p>}
@@ -816,15 +813,17 @@ function BookingsTab({ hospitalId }) {
               ) : paginated.map(b => {
                 const initials = b.patient
                   ? `${b.patient.firstName?.[0] ?? ""}${b.patient.lastName?.[0] ?? ""}`.toUpperCase()
-                  : "WI";
+                  : null;
                 return (
                   <tr key={b.id}>
                     {/* Booking col — patient + date/time */}
                     <td>
                       <div className="hms-amb-booking-cell">
-                        <div className={`hms-amb-initials ${b.patient ? "is-patient" : "is-walkin"}`}>
-                          {initials}
-                        </div>
+                        {initials && (
+                          <div className="hms-amb-initials is-patient">
+                            {initials}
+                          </div>
+                        )}
                         <div>
                           <p className="hms-amb-booking-name">
                             {b.patient ? `${b.patient.firstName} ${b.patient.lastName}` : "Walk-in"}
@@ -857,8 +856,8 @@ function BookingsTab({ hospitalId }) {
                     <td>
                       {b.vehicle ? (
                         <div>
-                          <p className="hms-amb-row-cell__strong flex items-center gap-1.5">
-                            <Car className="w-3.5 h-3.5 text-gray-400 shrink-0" />{b.vehicle.vehicleNumber}
+                          <p className="hms-amb-row-cell__strong">
+                            {b.vehicle.vehicleNumber}
                           </p>
                           {b.vehicle.ambulanceType && (
                             <p className="hms-amb-row-cell__sub">{b.vehicle.ambulanceType.name}</p>

@@ -52,14 +52,14 @@ export default function PastRecordDetailModal({ record, onClose }) {
 
   return (
     <div
-      className="hms-cmodal-overlay"
+      className="zu-modal-overlay"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
     >
-      <div className="hms-cmodal is-xl">
+      <div className="zu-modal is-xl">
 
         {/* ── Header ───────────────────────────────────────────── */}
-        <div className="hms-cmodal__header">
-          <div className="hms-cmodal__header-row">
+        <div className="zu-modal-header">
+          <div className="zu-modal-header-row">
             <div className="hms-cmodal__title-block">
               <div className={`hms-icon-tile ${meta.iconCls}`}>
                 <Icon className="w-5 h-5" />
@@ -83,7 +83,7 @@ export default function PastRecordDetailModal({ record, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="hms-cmodal__close"
+              className="zu-modal-close"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -105,7 +105,7 @@ export default function PastRecordDetailModal({ record, onClose }) {
         </div>
 
         {/* ── Body ────────────────────────────────────────────── */}
-        <div className="hms-cmodal__body">
+        <div className="zu-modal-body">
           <div className="hms-form-stack">
 
             {chiefComplaint && (
@@ -179,7 +179,7 @@ export default function PastRecordDetailModal({ record, onClose }) {
         </div>
 
         {/* ── Footer ──────────────────────────────────────────── */}
-        <div className="hms-cmodal__footer is-split">
+        <div className="zu-modal-footer is-split">
           <div className="hms-past-footer-meta">
             <UserIcon className="w-3 h-3 shrink-0" />
             {creator ? (

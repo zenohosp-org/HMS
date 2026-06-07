@@ -52,7 +52,7 @@ function RadiologyReports() {
     return o.patientName.toLowerCase().includes(q) || o.patientUhid.toLowerCase().includes(q) || o.serviceName.toLowerCase().includes(q) || o.reportId?.toLowerCase().includes(q);
   });
   return (
-    <div className="hms-rad-page">
+    <div className="zu-page">
       <PageHeader
         title={<><FileText className="w-5 h-5 hms-rad-page__title-icon" /> Radiology Reports</>}
         subtitle="View and manage completed radiology reports"

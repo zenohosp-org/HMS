@@ -44,12 +44,12 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
   const uhidDisplay = fmtId(appointment?.patientUhid) || appointment?.patientUhid || "—";
 
   return (
-    <div className="hms-cmodal-overlay">
-      <div className="hms-cmodal is-full">
+    <div className="zu-modal-overlay">
+      <div className="zu-modal is-full">
 
         {/* ── Header: title row + 4-column meta strip + vitals strip ─── */}
-        <div className="hms-cmodal__header">
-          <div className="hms-cmodal__header-row">
+        <div className="zu-modal-header">
+          <div className="zu-modal-header-row">
             <div className="hms-cmodal__title-block">
               <div className="hms-icon-tile is-info">
                 <Stethoscope className="w-5 h-5" />
@@ -79,7 +79,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
         </div>
 
         {/* ── Body: clinical (left, wider) + prescription (right) ─────── */}
-        <div className="hms-cmodal__body is-flush">
+        <div className="zu-modal-body is-flush">
           <div className="hms-consult-body">
 
             <div className="hms-consult-body__main">

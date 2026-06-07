@@ -242,7 +242,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
 
   return (
     <>
-      <div className="hms-cmodal-overlay">
+      <div className="zu-modal-overlay">
         <div className="hms-inv-modal">
 
           <div className="hms-inv-modal__head">
@@ -252,7 +252,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                 Invoice #{invoiceNo} · Smart billing with auto-detection
               </p>
             </div>
-            <button onClick={onClose} className="hms-cmodal__close">
+            <button onClick={onClose} className="zu-modal-close">
               <X className="w-5 h-5" />
             </button>
           </div>

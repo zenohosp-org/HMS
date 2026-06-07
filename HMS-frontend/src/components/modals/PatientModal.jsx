@@ -312,11 +312,11 @@ function PatientModal({ patient, onClose, onSave }) {
   }
 
   return (
-    <div className="hms-cmodal-overlay">
+    <div className="zu-modal-overlay">
       <div className="hms-patient-modal">
         <div className="hms-patient-modal__head">
           <h2 className="hms-patient-modal__title">Register New Patient</h2>
-          <button onClick={onClose} className="hms-cmodal__close">✕</button>
+          <button onClick={onClose} className="zu-modal-close">✕</button>
         </div>
         <div className="hms-patient-modal__body">
           {formContent}

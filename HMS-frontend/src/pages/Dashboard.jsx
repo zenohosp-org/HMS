@@ -81,13 +81,13 @@ const STATUS_BAR_CLS = {
 
 function StatPill({ label, value, icon, accent }) {
   return (
-    <div className="hms-dash-stat">
-      <div className={`hms-dash-stat__icon ${accent}`}>
+    <div className="zu-stat-card">
+      <div className={`zu-stat-card-icon ${accent}`}>
         {icon}
       </div>
       <div>
-        <p className="hms-dash-stat__value">{value}</p>
-        <p className="hms-dash-stat__label">{label}</p>
+        <p className="zu-stat-card-value">{value}</p>
+        <p className="zu-stat-card-label">{label}</p>
       </div>
     </div>
   );

@@ -664,7 +664,7 @@ function AppointmentsDashboard() {
     );
   };
   return (
-    <div className="hms-appt-page">
+    <div className="zu-page">
       <PageHeader
         title={viewMode === "calendar" ? "Appointment Calendar" : "Appointments"}
         subtitle={viewMode === "calendar" ? "View and manage appointments in calendar view." : "Manage your clinic's appointments and schedules."}

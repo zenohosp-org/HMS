@@ -246,12 +246,12 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   const timeSlots = generateTimeSlots();
 
   return (
-    <div className="hms-cmodal-overlay">
-      <div className="hms-cmodal is-xl">
+    <div className="zu-modal-overlay">
+      <div className="zu-modal is-xl">
 
         {/* Header */}
-        <div className="hms-cmodal__header">
-          <div className="hms-cmodal__header-row">
+        <div className="zu-modal-header">
+          <div className="zu-modal-header-row">
             <div>
               <h2 className="hms-cmodal__title flex items-center gap-2">
                 {isEmergency && <AlertTriangle className="w-5 h-5 text-rose" />}
@@ -261,14 +261,14 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 {isEmergency ? "Quick entry — complete details can be updated after." : "Schedule a new appointment for a patient."}
               </p>
             </div>
-            <button onClick={() => { resetForm(); onClose(); }} className="hms-cmodal__close">
+            <button onClick={() => { resetForm(); onClose(); }} className="zu-modal-close">
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
         {/* Scrollable body */}
-        <div className="hms-cmodal__body">
+        <div className="zu-modal-body">
           <form id="book-form" onSubmit={handleSubmit} className="hms-form-stack">
 
             {/* ── Step 1: Patient ── */}
@@ -531,7 +531,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
         </div>
 
         {/* Footer */}
-        <div className="hms-cmodal__footer">
+        <div className="zu-modal-footer">
           <button type="button" onClick={() => { resetForm(); onClose(); }} className="zu-btn-cancel">Cancel</button>
           <button type="submit" form="book-form" disabled={isLoading}
             className={isEmergency ? "hms-book-emergency-btn" : "zu-btn-primary"}>

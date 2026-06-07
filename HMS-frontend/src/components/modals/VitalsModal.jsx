@@ -114,12 +114,12 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
   const bloodGroup = appointment?.patientBloodGroup || "—";
 
   return (
-    <div className="hms-cmodal-overlay">
-      <div className="hms-cmodal is-lg">
+    <div className="zu-modal-overlay">
+      <div className="zu-modal is-lg">
 
         {/* Header */}
-        <div className="hms-cmodal__header">
-          <div className="hms-cmodal__header-row">
+        <div className="zu-modal-header">
+          <div className="zu-modal-header-row">
             <div className="hms-cmodal__title-block">
               <div className="hms-icon-tile is-rose">
                 <Activity className="w-5 h-5" />
@@ -148,7 +148,7 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
         </div>
 
         {/* Body */}
-        <div className="hms-cmodal__body">
+        <div className="zu-modal-body">
           {loading ? (
             <div className="hms-modal-loading">
               <Loader2 className="w-4 h-4 animate-spin" /> Loading vitals…
@@ -257,7 +257,7 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
         </div>
 
         {/* Footer */}
-        <div className="hms-cmodal__footer">
+        <div className="zu-modal-footer">
           <button type="button" onClick={onClose} disabled={saving} className="zu-btn-cancel">
             Cancel
           </button>

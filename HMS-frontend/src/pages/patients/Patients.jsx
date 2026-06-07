@@ -87,7 +87,7 @@ function Patients() {
   // Client-side filtering and slicing deleted: handled on backend
 
   return (
-    <div className="hms-pat-page">
+    <div className="zu-page">
 
       <PageHeader
         title={<>Patients <span className="hms-pat-page__count">{totalElements}</span></>}

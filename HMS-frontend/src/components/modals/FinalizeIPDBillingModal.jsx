@@ -751,11 +751,11 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
   )
 
   return (
-    <div className="hms-cmodal-overlay">
-      <div className="hms-cmodal is-full">
+    <div className="zu-modal-overlay">
+      <div className="zu-modal is-full">
 
         {/* ── Header ── */}
-        <div className="hms-cmodal__header-row">
+        <div className="zu-modal-header-row">
           <div>
             <h2 className="hms-cmodal__title flex items-center gap-2">
               <Receipt className="w-4 h-4 text-info" /> IPD Bill
@@ -775,7 +775,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                 Not Settled
               </span>
             )}
-            <button onClick={() => onClose(dirty)} className="hms-cmodal__close">
+            <button onClick={() => onClose(dirty)} className="zu-modal-close">
               <X className="w-5 h-5" />
             </button>
           </div>

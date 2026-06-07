@@ -185,12 +185,12 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
   };
 
   return (
-    <div className="hms-cmodal-overlay">
-      <div className="hms-cmodal is-xl">
+    <div className="zu-modal-overlay">
+      <div className="zu-modal is-xl">
 
         {/* Header */}
-        <div className="hms-cmodal__header">
-          <div className="hms-cmodal__header-row">
+        <div className="zu-modal-header">
+          <div className="zu-modal-header-row">
             <div className="hms-cmodal__title-block">
               <div className="hms-icon-tile is-violet">
                 <FlaskConical className="w-5 h-5" />
@@ -206,7 +206,7 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="hms-cmodal__close"
+              className="zu-modal-close"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -222,7 +222,7 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
         </div>
 
         {/* Body */}
-        <div className="hms-cmodal__body">
+        <div className="zu-modal-body">
           <div className="hms-form-stack">
 
             {/* Quick picks */}
@@ -361,7 +361,7 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
         </div>
 
         {/* Footer */}
-        <div className="hms-cmodal__footer is-split">
+        <div className="zu-modal-footer is-split">
           <p className="hms-ext-footer-hint">
             <FileText className="inline w-3 h-3 mr-1" />
             Reports stay on the patient chart forever — corrections add a new row, never overwrite.

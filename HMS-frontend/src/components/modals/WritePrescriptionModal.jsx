@@ -79,12 +79,12 @@ export default function WritePrescriptionModal({
   };
 
   return (
-    <div className="hms-cmodal-overlay">
-      <div className="hms-cmodal is-xl">
+    <div className="zu-modal-overlay">
+      <div className="zu-modal is-xl">
 
         {/* Header */}
-        <div className="hms-cmodal__header">
-          <div className="hms-cmodal__header-row">
+        <div className="zu-modal-header">
+          <div className="zu-modal-header-row">
             <div className="hms-cmodal__title-block">
               <div className="hms-icon-tile is-success">
                 <Pill className="w-5 h-5" />
@@ -101,7 +101,7 @@ export default function WritePrescriptionModal({
           </div>
         </div>
 
-        <form onSubmit={handleSave} className="hms-cmodal__body">
+        <form onSubmit={handleSave} className="zu-modal-body">
           <div className="hms-form-stack">
 
             <div className="hms-clinical-section">
@@ -162,7 +162,7 @@ export default function WritePrescriptionModal({
           </div>
         </form>
 
-        <div className="hms-cmodal__footer">
+        <div className="zu-modal-footer">
           <button type="button" onClick={onClose} className="zu-btn-cancel">Cancel</button>
           <button type="button" onClick={handleSave} disabled={saving} className="zu-btn-primary">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}

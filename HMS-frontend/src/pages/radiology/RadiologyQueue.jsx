@@ -83,7 +83,7 @@ function RadiologyQueue() {
   const filteredPending = applyFilters(pending);
   const filteredAwaiting = applyFilters(awaiting);
   return (
-    <div className="hms-rad-page" onClick={() => setActionMenu(null)}>
+    <div className="zu-page" onClick={() => setActionMenu(null)}>
       <PageHeader
         title={<><ScanLine className="w-5 h-5 hms-rad-page__title-icon" /> Radiology Queue</>}
         subtitle="X-Ray, CT Scan, MRI, Ultrasound, and other imaging investigations"
@@ -105,27 +105,27 @@ function RadiologyQueue() {
         </div>}
       />
       {/* Stat cards */}
-      <div className="hms-rad-stat-grid">
-        <div className="hms-rad-stat is-amber">
+      <div className="zu-stat-card-grid">
+        <div className="zu-stat-card is-amber">
           <div>
-            <p className="hms-rad-stat__label">Pending Scans</p>
-            <p className="hms-rad-stat__value">{stats.pendingScan}</p>
+            <p className="zu-stat-card-label">Pending Scans</p>
+            <p className="zu-stat-card-value">{stats.pendingScan}</p>
           </div>
-          <ScanLine className="hms-rad-stat__icon" />
+          <ScanLine className="zu-stat-card-icon" />
         </div>
-        <div className="hms-rad-stat is-slate">
+        <div className="zu-stat-card is-slate">
           <div>
-            <p className="hms-rad-stat__label">Awaiting Reports</p>
-            <p className="hms-rad-stat__value">{stats.awaitingReport}</p>
+            <p className="zu-stat-card-label">Awaiting Reports</p>
+            <p className="zu-stat-card-value">{stats.awaitingReport}</p>
           </div>
-          <Clock className="hms-rad-stat__icon" />
+          <Clock className="zu-stat-card-icon" />
         </div>
-        <div className="hms-rad-stat is-emerald">
+        <div className="zu-stat-card is-emerald">
           <div>
-            <p className="hms-rad-stat__label">Completed Today</p>
-            <p className="hms-rad-stat__value">{stats.reportGenerated}</p>
+            <p className="zu-stat-card-label">Completed Today</p>
+            <p className="zu-stat-card-value">{stats.reportGenerated}</p>
           </div>
-          <CheckCircle2 className="hms-rad-stat__icon" />
+          <CheckCircle2 className="zu-stat-card-icon" />
         </div>
       </div>
       {/* Search + filters */}
