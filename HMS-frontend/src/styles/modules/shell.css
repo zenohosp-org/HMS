@@ -572,7 +572,11 @@
 }
 
 
-/* Right marketing pane — emerald healthcare gradient */
+/* Right pane — auto-rotating feature carousel (Zoho-style clean).
+   Hidden on small screens; takes 55% on desktop. White surface with a
+   centered "stage" (hero icon + 3 floating orbs) and a caption block
+   that rotates every 4.5s. All visuals are inline lucide icons + CSS,
+   no images and no network round-trips, so the panel paints instantly. */
 .hms-login__visual {
     display: none;
 }
@@ -581,118 +585,141 @@
     .hms-login__visual {
         display: flex;
         width: 55%;
-        background: linear-gradient(to bottom right, #059669, #10b981, #0d9488);
+        background: var(--hms-white);
+        border-left: 1px solid var(--hms-gray-200);
         position: relative;
         overflow: hidden;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 64px;
+        padding: 48px;
     }
 }
 
-.hms-login__visual-blur-1,
-.hms-login__visual-blur-2 {
-    position: absolute;
-    border-radius: 999px;
-    filter: blur(48px);
-    pointer-events: none;
-}
-
-.hms-login__visual-blur-1 {
-    top: -10%;
-    right: -10%;
-    width: 40%;
-    height: 40%;
-    background: rgba(255, 255, 255, 0.10);
-    animation: hms-login-pulse 3s ease-in-out infinite;
-}
-
-.hms-login__visual-blur-2 {
-    bottom: -10%;
-    left: -10%;
-    width: 30%;
-    height: 30%;
-    background: rgba(0, 0, 0, 0.10);
-}
-
-@keyframes hms-login-pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.5;
-    }
-}
-
-.hms-login__visual-content {
+.hms-login__carousel {
     position: relative;
-    z-index: 1;
-    max-width: 32rem;
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-}
-
-.hms-login__visual-headline {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.hms-login__visual-headline h2 {
-    margin: 0;
-    font-size: 3rem;
-    font-weight: 800;
-    color: var(--hms-white);
-    line-height: 1.1;
-}
-
-.hms-login__visual-headline p {
-    margin: 0;
-    font-size: 20px;
-    color: rgba(236, 253, 245, 0.8);
-    font-weight: 500;
-    line-height: 1.6;
-}
-
-.hms-login__visual-features {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
-.hms-login__visual-feature {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    color: var(--hms-white);
-}
-
-.hms-login__visual-feature-dot {
-    width: 24px;
-    height: 24px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.20);
-    border: 1px solid rgba(255, 255, 255, 0.30);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 100%;
+    max-width: 480px;
+    height: 380px;
     flex-shrink: 0;
 }
 
-.hms-login__visual-feature-dot::after {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: var(--hms-white);
+.hms-login__slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 500ms ease, transform 500ms ease;
+    pointer-events: none;
+    will-change: opacity, transform;
 }
 
-.hms-login__visual-feature-text {
-    font-weight: 600;
+.hms-login__slide.is-active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.hms-login__slide-stage {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hms-login__slide-hero {
+    width: 112px;
+    height: 112px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 14px 36px -10px rgba(15, 23, 42, 0.18);
+    animation: hms-login-pulse-hero 3.2s ease-in-out infinite;
+}
+
+.hms-login__slide.is-blue   .hms-login__slide-hero { background: #dbeafe; color: #2563eb; }
+.hms-login__slide.is-violet .hms-login__slide-hero { background: #ede9fe; color: #7c3aed; }
+.hms-login__slide.is-amber  .hms-login__slide-hero { background: #fef3c7; color: #d97706; }
+.hms-login__slide.is-green  .hms-login__slide-hero { background: #d1fae5; color: #059669; }
+
+@keyframes hms-login-pulse-hero {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.04); }
+}
+
+.hms-login__slide-orb {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    color: var(--hms-gray-700);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.12);
+    animation: hms-login-orb-float 4s ease-in-out infinite;
+}
+
+.hms-login__slide-orb.is-orb-1 { top: 6%;    right: 4%;  animation-delay: 0s;    }
+.hms-login__slide-orb.is-orb-2 { bottom: 14%; right: 0%;  animation-delay: 0.7s; }
+.hms-login__slide-orb.is-orb-3 { bottom: 6%;  left: 10%;  animation-delay: 1.4s; }
+
+@keyframes hms-login-orb-float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+}
+
+.hms-login__slide-caption {
+    text-align: center;
+    max-width: 380px;
+}
+
+.hms-login__slide-caption h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+}
+
+.hms-login__slide-caption p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--hms-gray-600);
+    line-height: 1.55;
+}
+
+.hms-login__dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 36px;
+}
+
+.hms-login__dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: var(--hms-gray-300);
+    cursor: pointer;
+    transition: width 220ms ease, background-color 220ms ease;
+}
+
+.hms-login__dot.is-active {
+    width: 26px;
+    background: var(--hms-gray-900);
 }
 
 

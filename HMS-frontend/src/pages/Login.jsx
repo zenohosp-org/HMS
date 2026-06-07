@@ -1,26 +1,69 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Activity } from "lucide-react";
-
-const FEATURES = [
-    "Multi-hospital support with data isolation",
-    "Role-based access: Admin, Doctor, Staff",
-    "Single sign-on via ZenoHosp Directory",
-    "Real-time patient records & audit trail",
-];
+import {
+    Activity,
+    BarChart2,
+    Bed,
+    Calendar,
+    FileText,
+    HeartPulse,
+    ReceiptText,
+    Scissors,
+    Stethoscope,
+    Users,
+} from "lucide-react";
 
 const ERROR_MESSAGES = {
     session_validation_failed: "Session validation failed. Please sign in again.",
-    sso_failed: "SSO login failed. Please try again.",
+    sso_failed: "Wrong email or password. Please try again.",
     user_not_found: "Your account is not registered in HMS. Contact your admin.",
     account_inactive: "Your account is inactive. Contact your admin.",
     no_hms_access: "HMS access is not enabled for your account.",
     role_missing: "Your account has no role assigned. Contact your admin.",
+    internal_server_error: "Something went wrong on our side. Please try again.",
 };
+
+// Auto-rotating feature carousel. Inline icons + CSS transitions only —
+// no external images, no network round-trips, so the panel renders
+// instantly. All icons here are already used elsewhere in the app and
+// therefore travel in the existing bundle (zero size impact).
+const SLIDES = [
+    {
+        title: "Hospital-wide visibility, in real time",
+        sub: "Admissions, OT cases, billing — every metric on one dashboard.",
+        Hero: BarChart2,
+        side: [Calendar, Users, Activity],
+        tone: "is-blue",
+    },
+    {
+        title: "Patient records that follow the patient",
+        sub: "Vitals, prescriptions and history available across every visit.",
+        Hero: Users,
+        side: [FileText, Stethoscope, HeartPulse],
+        tone: "is-violet",
+    },
+    {
+        title: "Finalize bills without back-and-forth",
+        sub: "Pharmacy, radiology, OT and ward charges roll up automatically.",
+        Hero: ReceiptText,
+        side: [FileText, Calendar, Activity],
+        tone: "is-amber",
+    },
+    {
+        title: "Surgery planning, synced end-to-end",
+        sub: "Schedule, staff and bill OT cases — live with the OTM app.",
+        Hero: Scissors,
+        side: [Bed, HeartPulse, Stethoscope],
+        tone: "is-green",
+    },
+];
+
+const SLIDE_INTERVAL_MS = 4500;
 
 export default function Login() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const [slide, setSlide] = useState(0);
 
     useEffect(() => {
         if (import.meta.env.VITE_DEV_MOCK_AUTH === "true") {
@@ -28,9 +71,19 @@ export default function Login() {
         }
     }, [navigate]);
 
+    useEffect(() => {
+        const id = setInterval(
+            () => setSlide((s) => (s + 1) % SLIDES.length),
+            SLIDE_INTERVAL_MS
+        );
+        return () => clearInterval(id);
+    }, []);
+
     const loggedOut = searchParams.get("logged_out");
     const error = searchParams.get("error");
-    const errorMessage = error ? ERROR_MESSAGES[error] ?? "Login failed. Please try again." : null;
+    const errorMessage = error
+        ? ERROR_MESSAGES[error] ?? "Login failed. Please try again."
+        : null;
 
     return (
         <div className="hms-login">
@@ -43,13 +96,12 @@ export default function Login() {
                         </div>
                         <div>
                             <h1 className="hms-login__brand-title">ZenoHosp</h1>
-                            <p className="hms-login__brand-sub">Hospital Management System</p>
                         </div>
                     </div>
 
                     <div className="hms-login__heading">
-                        <h2>Welcome back</h2>
-                        <p>Sign in with your ZenoHosp account to continue.</p>
+                        <h2>Sign in</h2>
+                        <p>to access Hospital Management System</p>
                     </div>
 
                     {loggedOut && (
@@ -73,32 +125,56 @@ export default function Login() {
                     </button>
 
                     <p className="hms-login__terms">
-                        By continuing, you agree to our{" "}
-                        <span className="hms-login__terms-link">Terms of Service</span>
+                        Don&apos;t have a ZenoHosp account?{" "}
+                        <span className="hms-login__terms-link">Contact your admin</span>
                     </p>
                 </div>
             </div>
 
-            {/* Right — Visual */}
+            {/* Right — Auto-rotating feature panel */}
             <div className="hms-login__visual">
-                <div className="hms-login__visual-blur-1" />
-                <div className="hms-login__visual-blur-2" />
-                <div className="hms-login__visual-content">
-                    <div className="hms-login__visual-headline">
-                        <h2>Modern Healthcare Management</h2>
-                        <p>
-                            Manage your hospital, patients, and team — all from one secure,
-                            multi-tenant platform.
-                        </p>
-                    </div>
-                    <div className="hms-login__visual-features">
-                        {FEATURES.map((feature, i) => (
-                            <div key={i} className="hms-login__visual-feature">
-                                <div className="hms-login__visual-feature-dot" />
-                                <span className="hms-login__visual-feature-text">{feature}</span>
+                <div className="hms-login__carousel">
+                    {SLIDES.map((s, i) => {
+                        const Hero = s.Hero;
+                        return (
+                            <div
+                                key={i}
+                                className={`hms-login__slide ${s.tone}${
+                                    i === slide ? " is-active" : ""
+                                }`}
+                                aria-hidden={i !== slide}
+                            >
+                                <div className="hms-login__slide-stage">
+                                    <div className="hms-login__slide-hero">
+                                        <Hero size={56} strokeWidth={1.6} />
+                                    </div>
+                                    {s.side.map((Icon, idx) => (
+                                        <div
+                                            key={idx}
+                                            className={`hms-login__slide-orb is-orb-${idx + 1}`}
+                                        >
+                                            <Icon size={18} strokeWidth={1.8} />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="hms-login__slide-caption">
+                                    <h3>{s.title}</h3>
+                                    <p>{s.sub}</p>
+                                </div>
                             </div>
-                        ))}
-                    </div>
+                        );
+                    })}
+                </div>
+                <div className="hms-login__dots">
+                    {SLIDES.map((_, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            onClick={() => setSlide(i)}
+                            className={`hms-login__dot${i === slide ? " is-active" : ""}`}
+                            aria-label={`Slide ${i + 1}`}
+                        />
+                    ))}
                 </div>
             </div>
         </div>
