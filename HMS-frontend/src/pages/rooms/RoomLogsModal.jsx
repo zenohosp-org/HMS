@@ -1,18 +1,9 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { roomLogsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
-import {
-    Loader2,
-    Bed,
-    User,
-    Users,
-    CalendarClock,
-    PlusCircle,
-    LogOut,
-    UserCheck,
-    UserCog,
-} from "lucide-react";
+import { Bed, User, Users, CalendarClock, PlusCircle, LogOut, UserCheck, UserCog,  } from "lucide-react";
 import { timeAgo, fmtDateTime } from "@/utils/date";
 import { Badge, Button, Modal, SearchBar } from "@/components/ui";
 
@@ -116,7 +107,7 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
 
                 {loading ? (
                     <div className="hms-rooms-log-modal-loader">
-                        <Loader2 size={20} className="animate-spin" />
+                        <Spinner size={20} className="animate-spin" />
                     </div>
                 ) : filteredLogs.length === 0 ? (
                     <div className="hms-rooms-log-modal-empty">

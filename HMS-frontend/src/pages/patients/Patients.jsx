@@ -20,6 +20,7 @@ function Patients() {
   const location = useLocation();
 
   const [patients, setPatients] = useState([]);
+  const [lastVisitDates, setLastVisitDates] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -40,6 +41,7 @@ function Patients() {
     )
       .then((data) => {
         setPatients(data.patients);
+        setLastVisitDates(data.lastVisitDates || {});
         setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
       })
@@ -98,6 +100,8 @@ function Patients() {
         }
       />
 
+            <div className="zu-page-content">
+
       {/* Search */}
       <div className="hms-pat-search">
         <Search className="w-4 h-4 hms-pat-search__icon" />
@@ -120,6 +124,7 @@ function Patients() {
                 <th>Age / Gender</th>
                 <th>Phone</th>
                 <th>Registered</th>
+                <th>Last Visit</th>
                 <th>Blood</th>
                 <th />
               </tr>
@@ -127,13 +132,13 @@ function Patients() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6}>
-                    <TableSkeleton rows={10} columns={6} />
+                  <td colSpan={7}>
+                    <TableSkeleton rows={10} columns={7} />
                   </td>
                 </tr>
               ) : patients.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={7}>
                     <div className="hms-pat-table-empty">
                       <div className="hms-pat-table-empty__icon">
                         <Users className="w-5 h-5" />
@@ -166,6 +171,12 @@ function Patients() {
                       </td>
                       <td>
                         {formatDate(p.createdAt)}
+                      </td>
+                      <td>
+                        {lastVisitDates[p.id]
+                          ? formatDate(lastVisitDates[p.id])
+                          : <span className="hms-pat-mute">—</span>
+                        }
                       </td>
                       <td>
                         {p.bloodGroup
@@ -234,7 +245,8 @@ function Patients() {
           onSave={handleSave}
         />
       )}
-    </div>
+                </div>
+        </div>
   );
 }
 

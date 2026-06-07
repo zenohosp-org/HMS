@@ -43,7 +43,7 @@
 }
 
 /* ─────────────────────────── Sidebar ─────────────────────────── */
-.zu-sidebar {
+.sidebar {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -54,11 +54,11 @@
     width: 260px;
 }
 
-.zu-sidebar.is-collapsed {
+.sidebar.is-collapsed {
     width: 64px;
 }
 
-.zu-sidebar-logo {
+.sidebar-logo {
     display: flex;
     align-items: center;
     border-bottom: 1px solid var(--zu-gray-200);
@@ -68,13 +68,13 @@
     padding: 0px 20px;
 }
 
-.zu-sidebar.is-collapsed .zu-sidebar-logo {
+.sidebar.is-collapsed .sidebar-logo {
     justify-content: center;
     gap: 0;
     padding: 0;
 }
 
-.zu-sidebar-logo-icon {
+.sidebar-logo-icon {
     width: var(--zu-space-xl);
     height: var(--zu-space-xl);
     border-radius: var(--zu-radius);
@@ -86,11 +86,11 @@
     flex-shrink: 0;
 }
 
-.zu-sidebar-brand {
+.sidebar-brand {
     overflow: hidden;
 }
 
-.zu-sidebar-brand-name {
+.sidebar-brand-name {
     margin: 0;
     font-weight: 800;
     font-size: 18px;
@@ -99,7 +99,7 @@
     color: var(--zu-gray-950);
 }
 
-.zu-sidebar-brand-sub {
+.sidebar-brand-sub {
     margin: 2px 0 0;
     font-size: 13px;
     color: var(--zu-gray-600);
@@ -108,7 +108,7 @@
     white-space: nowrap;
 }
 
-.zu-sidebar-nav-container {
+.sidebar-nav-container {
     flex: 1;
     padding: 1rem 0;
     overflow-y: auto;
@@ -117,7 +117,7 @@
     gap: 0;
 }
 
-.zu-sidebar-section-label {
+.sidebar-section-label {
     padding: 1rem 1.25rem 0.5rem;
     margin: 0;
     font-size: 11px;
@@ -127,25 +127,25 @@
     color: var(--zu-slate-500);
 }
 
-.zu-sidebar-section-label.is-spaced {
+.sidebar-section-label.is-spaced {
     margin-top: 0;
 }
 
-.zu-sidebar-nav {
+.sidebar-nav {
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-.zu-sidebar-nav-group {
+.sidebar-nav-group {
     display: flex;
     flex-direction: column;
 }
 
-.zu-sidebar-nav-item {
+.sidebar-nav-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    justify-content: space-between;
     padding: var(--zu-space-9) var(--zu-space-md);
     margin: 0 0 0 var(--zu-space-12);
     width: calc(100% - 1.5rem);
@@ -162,39 +162,45 @@
     text-align: left;
 }
 
-.zu-sidebar-nav-item:hover {
+.sidebar-nav-item:hover {
     background: var(--zu-gray-100);
     color: var(--zu-brand-primary);
 }
 
-.zu-sidebar-nav-item.active {
+.sidebar-nav-item.active {
     background: var(--zu-gray-250);
     color: var(--zu-gray-950);
     font-weight: 500;
 }
 
-.zu-sidebar-nav-item.is-icon-only {
+.sidebar-nav-item.is-icon-only {
     justify-content: center;
     padding: var(--zu-space-12) 0;
     width: 100%;
     margin: 0;
 }
 
-.zu-sidebar-nav-icon {
+.sidebar-nav-icon {
     width: 18px;
     height: 18px;
     color: var(--zu-gray-950);
     flex-shrink: 0;
 }
 
-.zu-sidebar-nav-label {
+.sidebar-nav-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     flex: 1;
+    overflow: hidden;
+}
+.sidebar-nav-label span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.zu-sidebar-nav-chevron {
+.sidebar-nav-chevron {
     width: 14px;
     height: 14px;
     transition: transform var(--zu-transition-normal);
@@ -202,49 +208,54 @@
     color: var(--zu-gray-400);
 }
 
-.zu-sidebar-nav-chevron.is-open {
+.sidebar-nav-chevron.is-open {
     transform: rotate(180deg);
 }
 
-.zu-sidebar-submenu {
+.sidebar-submenu {
     list-style: none;
     display: flex;
     flex-direction: column;
     gap: 1px;
     padding: 0 0 0 0.75rem;
-    margin: 2px 0.75rem 2px 34px;
+    margin: 2px 0.75rem 2px 18px;
     border-left: 1px solid var(--zu-gray-200);
 }
 
-.zu-sidebar-submenu li {
+.sidebar-submenu li {
     margin: 0;
     padding: 0;
 }
 
-.zu-sidebar-submenu a {
+.sidebar-submenu button {
     display: block;
     font-size: 14px;
-    font-weight: 400;
-    padding: 7px 0.75rem;
+    font-weight: 500;
+    padding: 8px 1rem;
     border-radius: 0.5rem;
     width: 100%;
+    text-align: left;
     text-decoration: none;
-    color: var(--zu-gray-950);
+    color: var(--zu-gray-600);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--zu-font-family);
     transition: background var(--zu-transition-fast), color var(--zu-transition-fast);
 }
 
-.zu-sidebar-submenu a:hover {
+.sidebar-submenu button:hover {
     background: var(--zu-gray-100);
-    color: var(--zu-brand-primary);
+    color: var(--zu-slate-900);
 }
 
-.zu-sidebar-submenu a.active {
-    background: var(--zu-gray-250);
-    color: var(--zu-gray-950);
-    font-weight: 500;
+.sidebar-submenu button.active {
+    background: var(--zu-gray-100);
+    color: var(--zu-slate-900);
+    font-weight: 600;
 }
 
-.zu-sidebar-footer {
+.sidebar-footer {
     border-top: 1px solid var(--zu-gray-200);
     background: var(--zu-gray-50);
     padding: 10px;
@@ -254,7 +265,7 @@
     flex-shrink: 0;
 }
 
-.zu-sidebar-ext {
+.sidebar-ext {
     display: flex;
     align-items: center;
     gap: var(--zu-space-12);
@@ -267,13 +278,13 @@
     transition: background var(--zu-transition-fast), color var(--zu-transition-fast);
 }
 
-.zu-sidebar-ext.is-icon-only {
+.sidebar-ext.is-icon-only {
     justify-content: center;
     padding: var(--zu-space-12) 0;
     width: 100%;
 }
 
-.zu-sidebar-ext:hover {
+.sidebar-ext:hover {
     background: var(--zu-gray-100);
     color: var(--zu-gray-900);
 }
@@ -470,4 +481,35 @@
     display: flex;
     align-items: center;
     gap: var(--zu-space-12);
+}
+
+.zu-page-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--zu-space-12);
+}
+
+.zu-page-actions-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--zu-space-12);
+}
+
+.zu-page-refresh-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--zu-gray-200);
+    background: var(--zu-gray-50);
+    color: var(--zu-gray-600);
+    cursor: pointer;
+    transition: background var(--zu-transition-fast), color var(--zu-transition-fast);
+}
+
+.zu-page-refresh-btn:hover {
+    background: var(--zu-gray-100);
+    color: var(--zu-gray-900);
 }

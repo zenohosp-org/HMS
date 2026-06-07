@@ -1,3 +1,4 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -13,33 +14,7 @@ import {
 } from "@/utils/api";
 import { generateInvoiceNumber } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
-import {
-  Info,
-  Search,
-  Plus,
-  Trash2,
-  Printer,
-  X,
-  BedDouble,
-  ScanLine,
-  Stethoscope,
-  FlaskConical,
-  Pill,
-  Wrench,
-  Loader2,
-  Sparkles,
-  Receipt,
-  ChevronRight,
-  CheckCircle2,
-  Clock,
-  Ban,
-  PanelRightClose,
-  PanelRightOpen,
-  Landmark,
-  RefreshCw,
-  User,
-  AlertTriangle
-} from "lucide-react";
+import { Info, Search, Plus, Trash2, Printer, X, BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench, Sparkles, Receipt, ChevronRight, CheckCircle2, Clock, Ban, PanelRightClose, PanelRightOpen, Landmark, RefreshCw, User, AlertTriangle } from "lucide-react";
 
 const PAYMENT_METHODS = ["Cash", "UPI", "Card", "Bank Transfer", "Insurance"];
 
@@ -354,7 +329,7 @@ function CreateInvoice() {
                   value={patientSearch}
                   onChange={(e) => setPatientSearch(e.target.value)}
                 />
-                {searching && <Loader2 className="hms-create-inv-search__spinner w-3.5 h-3.5 hms-billing-spin" />}
+                {searching && <Spinner className="hms-create-inv-search__spinner w-3.5 h-3.5 hms-billing-spin" />}
                 {patientResults.length > 0 && (
                   <div className="hms-create-inv-suggest">
                     {patientResults.map((p) => (
@@ -379,7 +354,7 @@ function CreateInvoice() {
             <div className="hms-create-inv-card">
               <p className="hms-create-inv-section-label">
                 <Sparkles className="w-3.5 h-3.5 text-warning" /> Detected Items
-                {loadingSuggestions && <Loader2 className="w-3 h-3 hms-billing-spin text-gray-400" />}
+                {loadingSuggestions && <Spinner className="w-3 h-3 hms-billing-spin text-gray-400" />}
               </p>
               {!loadingSuggestions && suggestions && (
                 <div className="hms-create-inv-sug-list">
@@ -728,7 +703,7 @@ function CreateInvoice() {
             disabled={saving || !patient || items.length === 0}
             className="hms-create-inv-gen-btn"
           >
-            {saving ? <Loader2 className="w-4 h-4 hms-billing-spin" /> : <Printer className="w-4 h-4" />}
+            {saving ? <Spinner className="w-4 h-4 hms-billing-spin" /> : <Printer className="w-4 h-4" />}
             {saving ? "Generating…" : "Generate Invoice & Print"}
           </button>
           <div className="h-4" />
@@ -786,9 +761,7 @@ function CreateInvoice() {
             {/* Log list */}
             <div className="hms-create-inv-pane__body">
               {logsLoading ? (
-                <div className="hms-create-inv-pane__loading">
-                  <Loader2 className="w-5 h-5 hms-billing-spin text-gray-300" />
-                </div>
+                <CenterLoader />
               ) : filteredLogs.length === 0 ? (
                 <div className="hms-create-inv-pane__empty">
                   <Receipt className="w-8 h-8 text-gray-300" />
@@ -844,7 +817,7 @@ function CreateInvoice() {
                                   disabled={markingPaidId === inv.id}
                                   className="hms-create-inv-log__pay-btn"
                                 >
-                                  {markingPaidId === inv.id ? <Loader2 className="w-3 h-3 hms-billing-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                  {markingPaidId === inv.id ? <Spinner className="w-3 h-3 hms-billing-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                                   Mark as Paid{selectedAccount ? ` → ${selectedAccount.accountName}` : ""}
                                 </button>
                               )}

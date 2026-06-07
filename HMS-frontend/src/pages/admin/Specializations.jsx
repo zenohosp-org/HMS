@@ -145,7 +145,7 @@ function Specializations() {
     );
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="zu-page">
             <PageHeader
                 title={titleNode}
                 actions={
@@ -156,7 +156,7 @@ function Specializations() {
                 }
             />
 
-            <div className="hms-page-content">
+            <div className="zu-page-content">
                 <SearchBar
                     value={searchQuery}
                     onChange={setSearchQuery}
@@ -183,7 +183,7 @@ function Specializations() {
                         </div>
                     }
                 />
-            </div>
+            
 
             <AddSpecializationModal
                 isOpen={isModalOpen}
@@ -194,6 +194,7 @@ function Specializations() {
                 onSuccess={loadData}
                 initialData={editingSpec}
             />
+                    </div>
         </div>
     );
 }

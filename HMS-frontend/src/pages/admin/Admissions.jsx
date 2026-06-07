@@ -171,7 +171,7 @@ export default function Admissions() {
     ];
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="zu-page">
             <PageHeader
                 title={
                     <span className="inline-flex items-center gap-2.5">
@@ -186,17 +186,17 @@ export default function Admissions() {
                 }
             />
 
-            <div className="hms-page-content">
+            <div className="zu-page-content">
                 {/* Stat cards */}
                 <div className="zu-stat-card-grid">
                     {statCards.map(({ label, value, icon: Icon, mod }) => (
-                        <Card key={label} className="zu-stat-card-card">
+                        <Card key={label} className="is-stat">
                             <div className={`zu-stat-card-icon ${mod}`}>
                                 <Icon size={20} />
                             </div>
-                            <div>
-                                <p className="zu-stat-card-value">{value}</p>
+                            <div className="zu-stat-card-body">
                                 <p className="zu-stat-card-label">{label}</p>
+                                <p className="zu-stat-card-value">{value}</p>
                             </div>
                         </Card>
                     ))}
@@ -433,7 +433,7 @@ export default function Admissions() {
                         onPageChange={(p) => setPage(p - 1)}
                     />
                 )}
-            </div>
+            
 
             {showAdmitModal && (
                 <AdmitPatientModal
@@ -505,6 +505,7 @@ export default function Admissions() {
                     }}
                 />
             )}
+                    </div>
         </div>
     );
 }

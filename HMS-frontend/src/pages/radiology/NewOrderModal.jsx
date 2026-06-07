@@ -1,10 +1,11 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { patientApi, staffApi, hospitalServiceApi, radiologyApi, admissionApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
-import { X, Search, Loader2, UserPlus, ChevronLeft, CheckCircle2, BedDouble } from "lucide-react";
+import { X, Search, UserPlus, ChevronLeft, CheckCircle2, BedDouble } from "lucide-react";
 
 const PRIORITIES = ["ROUTINE", "URGENT", "STAT"];
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
@@ -226,7 +227,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
               <button type="button" onClick={() => setShowRegister(false)} className="zu-btn-secondary">Back</button>
               <button type="submit" disabled={registering} className="zu-btn-primary">
                 {registering
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Registering…</>
+                  ? <><Spinner className="w-4 h-4 animate-spin" /> Registering…</>
                   : <><UserPlus className="w-4 h-4" /> Register &amp; Continue</>}
               </button>
             </div>
@@ -264,7 +265,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                   {/* Active admission banner */}
                   {checkingAdmission && (
                     <div className="hms-rad-admit-check">
-                      <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
+                      <Spinner className="w-3 h-3 animate-spin text-gray-400" />
                       <span className="hms-rad-admit-check__text">Checking admission status…</span>
                     </div>
                   )}
@@ -293,7 +294,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
                   <input className="hms-rad-input has-icon" placeholder="Search by name or UHID…"
                     value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} autoFocus />
                   {patientSearching && (
-                    <Loader2 className="w-4 h-4 animate-spin hms-rad-pat-search__spinner" />
+                    <Spinner className="w-4 h-4 animate-spin hms-rad-pat-search__spinner" />
                   )}
 
                   {patients.length > 0 && (
@@ -409,7 +410,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
             <button type="button" onClick={onClose} className="zu-btn-secondary">Cancel</button>
             <button onClick={handleSubmit} disabled={saving || !selectedPatient || checkingAdmission} className="zu-btn-primary">
               {saving
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</>
+                ? <><Spinner className="w-4 h-4 animate-spin" /> Creating…</>
                 : <><CheckCircle2 className="w-4 h-4" /> Create Order</>}
             </button>
           </div>

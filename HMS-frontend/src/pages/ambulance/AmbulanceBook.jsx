@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
@@ -5,13 +6,8 @@ import { ambulanceApi, patientApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import Pagination from "@/components/ui/Pagination";
 import SearchableSelect from "@/components/ui/SearchableSelect";
-import {
-  Ambulance, Plus, X, Search, Calendar, Clock, MapPin,
-  Car,
-  CheckCircle2, AlertCircle, Clock3, XCircle, Truck,
-  Activity, MoreHorizontal,
-  Wrench, Trash2, Loader2, Edit2, ChevronRight, UserPlus,
-} from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
+import { Ambulance, Plus, X, Search, Calendar, Clock, MapPin, Car, CheckCircle2, AlertCircle, Clock3, XCircle, Truck, Activity, MoreHorizontal, Wrench, Trash2, Edit2, ChevronRight, UserPlus,  } from "lucide-react";
 
 const PAGE_SIZE = 30;
 
@@ -518,14 +514,13 @@ function AddTypeModal({ hospitalId, onClose, onCreated }) {
 
 // ── Vehicles Tab ─────────────────────────────────────────────────────────────
 
-function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
+function VehiclesTab({ hospitalId, types, onRefreshTypes, isAddTypeOpen, onCloseAddType, isAddVehicleOpen, onCloseAddVehicle }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [internalShowModal, setInternalShowModal] = useState(false);
   const [editVehicle, setEditVehicle] = useState(null);
-  const [showTypeModal, setShowTypeModal] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -573,10 +568,6 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
             {vehicles.length} vehicles
           </span>
         </div>
-        <div className="hms-amb-section-head__actions">
-          <button onClick={() => setShowTypeModal(true)} className="btn-secondary text-13">+ Add Type</button>
-          <button onClick={() => { setEditVehicle(null); setShowModal(true); }} className="btn-primary text-13">+ Add Vehicle</button>
-        </div>
       </div>
 
       <div className="hms-amb-search-bar">
@@ -604,7 +595,7 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
               {loading ? (
                 <tr><td colSpan={6} className="hms-amb-state">
                   <div className="hms-amb-state__stack">
-                    <Loader2 className="w-8 h-8 hms-billing-spin text-gray-900" />
+                    <Spinner className="w-8 h-8 hms-billing-spin text-gray-900" />
                     <p className="hms-amb-state__text">Loading vehicles…</p>
                   </div>
                 </td></tr>
@@ -650,7 +641,7 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
                         <>
                           <div className="hms-amb-menu-overlay" onClick={() => setOpenMenuId(null)} />
                           <div className="hms-amb-menu" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => { setOpenMenuId(null); setEditVehicle(v); setShowModal(true); }} className="hms-amb-menu__item">
+                            <button onClick={() => { setOpenMenuId(null); setEditVehicle(v); setInternalShowModal(true); }} className="hms-amb-menu__item">
                               <Edit2 className="w-4 h-4" /> Edit Details
                             </button>
                             {v.status !== "IN_USE" && (
@@ -675,11 +666,11 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
         </div>
       </div>
 
-      {showModal && (
-        <VehicleModal hospitalId={hospitalId} types={types} vehicle={editVehicle} onClose={() => { setShowModal(false); setEditVehicle(null); }} onSaved={load} />
+      {(isAddVehicleOpen || internalShowModal) && (
+        <VehicleModal hospitalId={hospitalId} types={types} vehicle={isAddVehicleOpen ? null : editVehicle} onClose={() => { onCloseAddVehicle?.(); setInternalShowModal(false); setEditVehicle(null); }} onSaved={load} />
       )}
-      {showTypeModal && (
-        <AddTypeModal hospitalId={hospitalId} onClose={() => setShowTypeModal(false)} onCreated={() => { onRefreshTypes(); setShowTypeModal(false); }} />
+      {isAddTypeOpen && (
+        <AddTypeModal hospitalId={hospitalId} onClose={onCloseAddType} onCreated={() => { onRefreshTypes(); onCloseAddType?.(); }} />
       )}
     </div>
   );
@@ -687,7 +678,7 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes }) {
 
 // ── Bookings Tab ─────────────────────────────────────────────────────────────
 
-function BookingsTab({ hospitalId }) {
+function BookingsTab({ hospitalId, isNewBookingOpen, onCloseNewBooking }) {
   const { notify } = useNotification();
   const [bookings, setBookings] = useState([]);
   const [availableVehicles, setAvailableVehicles] = useState([]);
@@ -695,7 +686,6 @@ function BookingsTab({ hospitalId }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [showModal, setShowModal] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -758,9 +748,6 @@ function BookingsTab({ hospitalId }) {
             {bookings.length} total
           </span>
         </div>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>
-          <Plus className="w-4 h-4" /> New Booking
-        </button>
       </div>
 
       {/* Search */}
@@ -790,7 +777,7 @@ function BookingsTab({ hospitalId }) {
               {loading ? (
                 <tr><td colSpan={6} className="hms-amb-state">
                   <div className="hms-amb-state__stack">
-                    <Loader2 className="w-8 h-8 hms-billing-spin text-gray-900" />
+                    <Spinner className="w-8 h-8 hms-billing-spin text-gray-900" />
                     <p className="hms-amb-state__text">Loading bookings…</p>
                   </div>
                 </td></tr>
@@ -930,12 +917,12 @@ function BookingsTab({ hospitalId }) {
         )}
       </div>
 
-      {showModal && (
+      {isNewBookingOpen && (
         <BookingModal
           hospitalId={hospitalId}
           availableVehicles={availableVehicles}
           hospitalInfo={hospitalInfo}
-          onClose={() => setShowModal(false)}
+          onClose={onCloseNewBooking}
           onSaved={() => { load(); notify("Ambulance booked successfully", "success"); }}
         />
       )}
@@ -950,8 +937,12 @@ export default function AmbulanceBook() {
   const hospitalId = user?.hospitalId;
   const isAdmin = user?.role === "hospital_admin" || user?.role === "super_admin";
 
-  const [tab, setTab] = useState(isAdmin ? "vehicles" : "bookings");
+  const [tab, setTab] = useState("bookings");
   const [types, setTypes] = useState([]);
+
+  const [isAddTypeOpen, setIsAddTypeOpen] = useState(false);
+  const [isAddVehicleOpen, setIsAddVehicleOpen] = useState(false);
+  const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
 
   const loadTypes = async () => {
     if (!hospitalId) return;
@@ -961,23 +952,30 @@ export default function AmbulanceBook() {
   useEffect(() => { loadTypes(); }, [hospitalId]);
 
   const TABS = [
-    ...(isAdmin ? [{ key: "vehicles", label: "Fleet" }] : []),
     { key: "bookings", label: "Bookings" },
+    ...(isAdmin ? [{ key: "vehicles", label: "Fleet" }] : []),
   ];
 
-  return (
-    <div className="hms-amb-shell">
-      {/* Header */}
-      <div className="hms-amb-header-row">
-        <div className="hms-amb-header__icon">
-          <Ambulance className="w-5 h-5" />
-        </div>
-        <div className="hms-amb-header__body">
-          <h1>Ambulance</h1>
-          <p>Manage fleet and dispatch bookings</p>
-        </div>
-      </div>
+  const headerActions = tab === "vehicles" && isAdmin ? (
+    <div className="flex gap-2">
+      <button onClick={() => setIsAddTypeOpen(true)} className="zu-btn-secondary text-13">+ Add Type</button>
+      <button onClick={() => setIsAddVehicleOpen(true)} className="zu-btn-primary text-13">+ Add Vehicle</button>
+    </div>
+  ) : (
+    <button onClick={() => setIsNewBookingOpen(true)} className="zu-btn-primary text-13">
+      <Plus className="w-4 h-4 mr-2" /> New Booking
+    </button>
+  );
 
+  return (
+    <div className="zu-page">
+      <PageHeader 
+        title={<div className="flex items-center gap-2"><Ambulance className="w-5 h-5" /> Ambulance</div>}
+        subtitle="Manage fleet and dispatch bookings"
+        actions={headerActions}
+      />
+
+      <div className="zu-page-content">
       {/* Tabs */}
       {TABS.length > 1 && (
         <div className="hms-amb-tabs">
@@ -994,11 +992,24 @@ export default function AmbulanceBook() {
       )}
 
       {tab === "vehicles" && isAdmin && (
-        <VehiclesTab hospitalId={hospitalId} types={types} onRefreshTypes={loadTypes} />
+        <VehiclesTab 
+          hospitalId={hospitalId} 
+          types={types} 
+          onRefreshTypes={loadTypes} 
+          isAddTypeOpen={isAddTypeOpen}
+          onCloseAddType={() => setIsAddTypeOpen(false)}
+          isAddVehicleOpen={isAddVehicleOpen}
+          onCloseAddVehicle={() => setIsAddVehicleOpen(false)}
+        />
       )}
       {tab === "bookings" && (
-        <BookingsTab hospitalId={hospitalId} />
+        <BookingsTab 
+          hospitalId={hospitalId} 
+          isNewBookingOpen={isNewBookingOpen}
+          onCloseNewBooking={() => setIsNewBookingOpen(false)}
+        />
       )}
+      </div>
     </div>
   );
 }

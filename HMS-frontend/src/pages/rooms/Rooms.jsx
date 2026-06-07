@@ -1,3 +1,4 @@
+import { CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -486,6 +487,7 @@ function Rooms() {
                 </div>
             </Card>
 
+            <div className="zu-page-content">
             {/* Stats strip */}
             <Card className="hms-rooms-stats">
                 <div className="hms-rooms-stats__grid">
@@ -542,15 +544,7 @@ function Rooms() {
             <div className="hms-rooms-body">
                 <div className="hms-rooms-body__list">
                     {loading ? (
-                        <Card className="hms-rooms-loading-card">
-                            <span className="hms-rooms-ping">
-                                <span className="hms-rooms-ping__ring" />
-                                <span className="hms-rooms-ping__dot" />
-                            </span>
-                            <span className="hms-rooms-loading-label">
-                                Loading infrastructure
-                            </span>
-                        </Card>
+                        <CenterLoader text="Loading infrastructure" />
                     ) : showInfrastructureView ? (
                         <div className="hms-rooms-tree">
                             {filteredInfrastructure.map((building, bIdx) => {
@@ -830,6 +824,7 @@ function Rooms() {
                         }
                     />
                 )}
+            </div>
             </div>
 
             {showAttenderModal.open && showAttenderModal.room && (

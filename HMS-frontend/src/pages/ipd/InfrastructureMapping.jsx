@@ -1,3 +1,4 @@
+import { CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
@@ -604,12 +605,7 @@ export default function InfrastructureMapping() {
 
   if (loading) {
     return (
-      <div className="hms-infra-loading">
-        <div className="hms-infra-loading__inner">
-          <div className="hms-infra-loading__spinner"></div>
-          <p className="hms-infra-loading__text">Loading master structure…</p>
-        </div>
-      </div>
+      <CenterLoader text="Loading master structure…" />
     );
   }
 

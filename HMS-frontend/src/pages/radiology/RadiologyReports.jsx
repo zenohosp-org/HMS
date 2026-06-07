@@ -64,6 +64,7 @@ function RadiologyReports() {
           </div>
         }
       />
+      <div className="zu-page-content">
       {/* Search */}
       <div className="hms-rad-rep-search">
         <Search className="w-4 h-4 hms-rad-rep-search__icon" />
@@ -154,6 +155,7 @@ function RadiologyReports() {
             </div>
           </>
         )}
+      </div>
       </div>
     </div>
   );

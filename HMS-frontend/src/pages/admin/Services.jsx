@@ -223,7 +223,7 @@ function Services() {
     );
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="zu-page">
             <PageHeader
                 title={titleNode}
                 actions={
@@ -236,7 +236,7 @@ function Services() {
                 }
             />
 
-            <div className="hms-page-content">
+            <div className="zu-page-content">
                 <div className="flex items-center gap-3">
                     <div className="flex-1">
                         <SearchBar
@@ -307,7 +307,7 @@ function Services() {
                         />
                     </div>
                 )}
-            </div>
+            
 
             {modal.open && (
                 <AddServiceModal
@@ -355,6 +355,7 @@ function Services() {
                     </div>
                 )}
             </Modal>
+                    </div>
         </div>
     );
 }

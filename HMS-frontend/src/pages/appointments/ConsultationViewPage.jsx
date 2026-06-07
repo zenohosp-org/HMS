@@ -1,3 +1,4 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -9,13 +10,7 @@ import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import { fmtId } from "@/utils/idFormat";
 import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
 import PastRecordDetailModal from "@/components/modals/PastRecordDetailModal";
-import {
-  Stethoscope, Pill, FlaskConical, ChevronLeft, ChevronRight, LogOut,
-  CalendarClock, Loader2, CheckCircle2, Save, AlertCircle, ClipboardList,
-  FileText, ListChecks, Plus, IdCard, Droplet, HeartPulse, Scale, Wind,
-  Activity, FileBarChart, Clock, User as UserIcon,
-  PlayCircle,
-} from "lucide-react";
+import { Stethoscope, Pill, FlaskConical, ChevronLeft, ChevronRight, LogOut, CalendarClock, CheckCircle2, Save, AlertCircle, ClipboardList, FileText, ListChecks, Plus, IdCard, Droplet, HeartPulse, Scale, Wind, Activity, FileBarChart, Clock, User as UserIcon, PlayCircle,  } from "lucide-react";
 
 /**
  * Full-page, queue-walked consultation workspace. Replaces the modal
@@ -255,9 +250,7 @@ export default function ConsultationViewPage() {
   // ── Render gates ─────────────────────────────────────────────────────
   if (loadingQueue) {
     return (
-      <div className="hms-cv-loading">
-        <Loader2 className="w-5 h-5 animate-spin" /> Loading today's queue…
-      </div>
+      <CenterLoader text="Loading today's queue…" />
     );
   }
   if (queue.length === 0) {
@@ -423,9 +416,7 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
         {/* Previous records */}
         <SidebarSection title="Previous Records">
           {loadingPast ? (
-            <p className="hms-cv-past-loading">
-              <Loader2 className="w-3 h-3 animate-spin" /> Loading…
-            </p>
+            <CenterLoader text="Loading…" />
           ) : pastRecords.length === 0 ? (
             <p className="hms-cv-past-empty">No prior records for this patient.</p>
           ) : (
@@ -561,7 +552,7 @@ function VitalsStateHint({ status, vitals, recordedByName, recordedAt }) {
   if (status === "loading") {
     return (
       <span className="hms-cv-vital-state is-loading">
-        <Loader2 className="w-3 h-3 animate-spin" /> Loading
+        <Spinner className="w-3 h-3 animate-spin" /> Loading
       </span>
     );
   }
@@ -744,9 +735,7 @@ function LabTab({ orders, loading, externalResults, loadingExternal }) {
 
   if (loading && loadingExternal) {
     return (
-      <div className="hms-cv-loading-row">
-        <Loader2 className="w-4 h-4 animate-spin" /> Loading lab results…
-      </div>
+      <CenterLoader text="Loading lab results…" />
     );
   }
 
@@ -793,9 +782,7 @@ function ExternalResultsSection({ rows, loading }) {
           title="External Results"
           hint="Captured from outside labs / clinics"
         />
-        <div className="hms-cv-loading-row">
-          <Loader2 className="w-4 h-4 animate-spin" /> Loading external results…
-        </div>
+        <CenterLoader text="Loading external results…" />
       </div>
     );
   }
@@ -887,9 +874,7 @@ function InternalRadiologySection({ orders, loading }) {
           title="Internal Radiology"
           hint="Orders raised inside HMS"
         />
-        <div className="hms-cv-loading-row">
-          <Loader2 className="w-4 h-4 animate-spin" /> Loading…
-        </div>
+        <CenterLoader text="Loading…" />
       </div>
     );
   }
@@ -1014,7 +999,7 @@ function TopActionBar({ autosaveStatus, hydrating, saving, onMarkComplete }) {
         disabled={saving}
         className="hms-cv-complete-btn"
       >
-        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+        {saving ? <Spinner className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
         Mark Complete
       </button>
       <AutosaveIndicator status={autosaveStatus} hydrating={hydrating} />
@@ -1068,14 +1053,14 @@ function AutosaveIndicator({ status, hydrating }) {
   if (hydrating) {
     return (
       <span className="hms-cv-autosave is-hydrating">
-        <Loader2 className="w-3 h-3 animate-spin" /> Loading draft…
+        <Spinner className="w-3 h-3 animate-spin" /> Loading draft…
       </span>
     );
   }
   if (status === "saving") {
     return (
       <span className="hms-cv-autosave is-saving">
-        <Loader2 className="w-3 h-3 animate-spin" /> Saving draft…
+        <Spinner className="w-3 h-3 animate-spin" /> Saving draft…
       </span>
     );
   }

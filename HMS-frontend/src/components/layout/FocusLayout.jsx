@@ -14,11 +14,11 @@ import Header from "./Header";
  */
 export default function FocusLayout() {
     return (
-        <div className="hms-app-shell is-focus">
+        <div className="zu-app-shell is-focus">
             <div className="no-print">
                 <Header />
             </div>
-            <main className="hms-app-shell__content is-focus">
+            <main className="zu-app-shell-content is-focus">
                 <Outlet />
             </main>
         </div>

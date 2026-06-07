@@ -68,4 +68,12 @@ public interface PatientRecordRepository extends JpaRepository<PatientRecord, In
      */
     @Query("SELECT pr.mrn FROM PatientRecord pr WHERE pr.hospital.id = :hospitalId AND pr.mrn LIKE CONCAT('%MRN-', :year, '-%')")
     List<String> findMrnsForHospitalAndYear(@Param("hospitalId") UUID hospitalId, @Param("year") String year);
+
+    /**
+     * Latest record timestamp per patient — powers the "Last Visit" column on
+     * the patient list. One grouped query for the whole page instead of N+1.
+     */
+    @Query("SELECT pr.patient.id, MAX(pr.createdAt) FROM PatientRecord pr " +
+           "WHERE pr.patient.id IN :patientIds GROUP BY pr.patient.id")
+    List<Object[]> findLastVisitDatesByPatientIds(@Param("patientIds") List<Integer> patientIds);
 }

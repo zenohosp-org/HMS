@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -17,19 +18,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-import {
-    Users,
-    Stethoscope,
-    BedDouble,
-    TrendingUp,
-    TrendingDown,
-    ArrowRight,
-    Calendar,
-    ReceiptText,
-    Loader2,
-    Plus,
-    UserCheck,
-} from "lucide-react";
+import { Users, Stethoscope, BedDouble, TrendingUp, TrendingDown, ArrowRight, Calendar, ReceiptText, Plus, UserCheck,  } from "lucide-react";
 import { Button, Card } from "@/components/ui";
 
 /** KPI tile — icon avatar + bold number + label + optional MoM trend.
@@ -232,7 +221,7 @@ export default function AdminDashboard() {
     if (loading || !summary) {
         return (
             <div className="flex items-center justify-center h-64">
-                <Loader2 size={32} className="text-gray-700 animate-spin" />
+                <Spinner size={32} className="text-gray-700 animate-spin" />
             </div>
         );
     }

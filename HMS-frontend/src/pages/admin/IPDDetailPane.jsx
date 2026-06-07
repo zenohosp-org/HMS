@@ -1,33 +1,9 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import SearchableSelect from "@/components/ui/SearchableSelect";
-import {
-    X,
-    BedDouble,
-    Stethoscope,
-    Clock,
-    Calendar,
-    LogOut,
-    Scissors,
-    Activity,
-    Package,
-    Receipt,
-    Phone,
-    User,
-    Loader2,
-    ExternalLink,
-    RotateCcw,
-    ScanLine,
-    Pill,
-    FlaskConical,
-    Wrench,
-    AlertTriangle,
-    CheckCircle2,
-    ShieldAlert,
-    Plus,
-    FileText,
-} from "lucide-react";
+import { X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors, Activity, Package, Receipt, Phone, User, ExternalLink, RotateCcw, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, Plus, FileText,  } from "lucide-react";
 import { fmtDateTime, fmtDateMed } from "@/utils/date";
 import {
     roomLogsApi,
@@ -982,7 +958,7 @@ export default function IPDDetailPane({
                                     disabled={checkingDischarge}
                                 >
                                     {checkingDischarge ? (
-                                        <Loader2 size={11} className="animate-spin" />
+                                        <Spinner size={11} className="animate-spin" />
                                     ) : (
                                         <LogOut size={11} />
                                     )}
@@ -1691,14 +1667,7 @@ function EstimatedBillView({
 }
 
 /* ───────────────── Shared empty / loader ───────────────── */
-function CenterLoader({ text }) {
-    return (
-        <div className="hms-ipd-center-loader">
-            <Loader2 size={16} className="animate-spin" />
-            <span className="hms-ipd-center-loader__text">{text}</span>
-        </div>
-    );
-}
+
 
 function CenterEmpty({ icon, text, sub }) {
     return (

@@ -11,7 +11,7 @@
 @import './styles/ui/index.css'; /* NEW SHARED UI LAYER */
 @import './styles/base.css';
 @import './styles/hms-system.css';
-@import './styles/utilities.css';
+
 @import './styles/modules/shell.css';
 @import './styles/modules/settings.css';
 @import './styles/modules/admin.css';
@@ -26,6 +26,8 @@
 }
 
 body {
+  margin: 0;
+  padding: 0;
   font-family: var(--hms-font-family);
   background-color: #f8fafc;
   color: #0f172a;

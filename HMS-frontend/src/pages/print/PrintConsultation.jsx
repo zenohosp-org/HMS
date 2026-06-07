@@ -1,3 +1,4 @@
+import { CenterLoader } from "@/components/ui/Loader";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
@@ -91,9 +92,7 @@ export default function PrintConsultation() {
 
   if (loading) {
     return (
-      <div className="hms-print-loading">
-        Loading print preview…
-      </div>
+      <CenterLoader text="Loading print preview…" />
     );
   }
   if (!appointment) {

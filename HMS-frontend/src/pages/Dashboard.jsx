@@ -1,3 +1,4 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -7,11 +8,7 @@ import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
-import {
-  Users, Calendar, ReceiptText, ChevronRight, Phone,
-  Droplets, Activity, Clock, UserPlus, Loader2,
-  CheckCircle2, XCircle, AlertCircle, ArrowRight
-} from "lucide-react";
+import { Users, Calendar, ReceiptText, ChevronRight, Phone, Droplets, Activity, Clock, UserPlus, CheckCircle2, XCircle, AlertCircle, ArrowRight } from "lucide-react";
 import { format, subDays, parseISO, isToday as fnsIsToday, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -81,13 +78,13 @@ const STATUS_BAR_CLS = {
 
 function StatPill({ label, value, icon, accent }) {
   return (
-    <div className="zu-stat-card">
+    <div className="zu-card is-stat">
       <div className={`zu-stat-card-icon ${accent}`}>
         {icon}
       </div>
-      <div>
-        <p className="zu-stat-card-value">{value}</p>
+      <div className="zu-stat-card-body">
         <p className="zu-stat-card-label">{label}</p>
+        <p className="zu-stat-card-value">{value}</p>
       </div>
     </div>
   );
@@ -245,9 +242,7 @@ function DoctorStaffDashboard() {
 
   if (loading) {
     return (
-      <div className="hms-dash-loading">
-        <Loader2 className="w-5 h-5 animate-spin text-gray-900" />
-      </div>
+      <CenterLoader />
     );
   }
 

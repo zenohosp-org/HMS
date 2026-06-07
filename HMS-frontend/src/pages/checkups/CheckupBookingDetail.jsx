@@ -1,15 +1,11 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { checkupApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import SearchableSelect from "@/components/ui/SearchableSelect";
-import {
-  ArrowLeft, Printer, Loader2, AlertCircle, ClipboardList,
-  User, Package, Calendar, Clock, Stethoscope, Banknote,
-  CheckCircle2, Circle, Save, FileText,
-  Activity, XCircle, AlertTriangle, Receipt, ExternalLink,
-} from "lucide-react";
+import { ArrowLeft, Printer, AlertCircle, ClipboardList, User, Package, Calendar, Clock, Stethoscope, Banknote, CheckCircle2, Circle, Save, FileText, Activity, XCircle, AlertTriangle, Receipt, ExternalLink,  } from "lucide-react";
 
 // Payment status badge — keeps the UI in sync with the lifecycle the backend
 // drives (PENDING → BILLED after auto-bill on COMPLETED → PAID after the
@@ -149,7 +145,7 @@ function ResultRow({ result, onSave, disabled }) {
             disabled={!isDirty || saving}
             className={`hms-checkup-results__save ${saved ? 'is-saved' : isDirty ? 'is-dirty' : ''}`}
           >
-            {saving ? <Loader2 className="w-3 h-3 hms-billing-spin" /> : saved ? <CheckCircle2 className="w-3 h-3" /> : <Save className="w-3 h-3" />}
+            {saving ? <Spinner className="w-3 h-3 hms-billing-spin" /> : saved ? <CheckCircle2 className="w-3 h-3" /> : <Save className="w-3 h-3" />}
             {saved ? "Saved" : "Save"}
           </button>
         )}
@@ -211,7 +207,7 @@ function DoctorNotesPanel({ booking, onSaved, readonly }) {
           disabled={!isDirty || saving}
           className={`hms-checkup-notes__save ${saved ? 'is-saved' : isDirty ? 'is-dirty' : ''}`}
         >
-          {saving ? <Loader2 className="w-4 h-4 hms-billing-spin" /> : saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+          {saving ? <Spinner className="w-4 h-4 hms-billing-spin" /> : saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
           {saved ? "Saved" : "Save Assessment"}
         </button>
       )}
@@ -278,7 +274,7 @@ export default function CheckupBookingDetail() {
 
   if (loading) return (
     <div className="hms-loader-center">
-      <Loader2 className="w-5 h-5 hms-billing-spin" /> Loading…
+      <Spinner className="w-5 h-5 hms-billing-spin" /> Loading…
     </div>
   );
 
@@ -316,7 +312,7 @@ export default function CheckupBookingDetail() {
               disabled={cancelling}
               className="hms-checkup-detail-cancel"
             >
-              {cancelling ? <Loader2 className="w-4 h-4 hms-billing-spin" /> : <XCircle className="w-4 h-4" />}
+              {cancelling ? <Spinner className="w-4 h-4 hms-billing-spin" /> : <XCircle className="w-4 h-4" />}
               Cancel Booking
             </button>
           )}
@@ -327,7 +323,7 @@ export default function CheckupBookingDetail() {
               disabled={advancing}
               className={`hms-checkup-detail-advance ${flow.cls}`}
             >
-              {advancing ? <Loader2 className="w-4 h-4 hms-billing-spin" /> : FlowIcon && <FlowIcon className="w-4 h-4" />}
+              {advancing ? <Spinner className="w-4 h-4 hms-billing-spin" /> : FlowIcon && <FlowIcon className="w-4 h-4" />}
               {flow.label}
             </button>
           )}

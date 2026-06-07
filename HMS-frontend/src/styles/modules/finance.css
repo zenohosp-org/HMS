@@ -59,12 +59,6 @@
     border-color: #fed7aa;
 }
 
-/* 4-up stat grid identical across the three pages */
-.hms-billing-stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
-}
 
 /* Stat tile (white surface, left accent square, label + value + sub) */
 

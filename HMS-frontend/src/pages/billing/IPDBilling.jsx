@@ -54,7 +54,7 @@ function ItemTypePips({ items }) {
 
 function StatCard({ label, value, sub, Icon, accent }) {
   return (
-    <div className="zu-stat-card">
+    <div className="zu-card is-stat">
       <div className={`zu-stat-card-icon is-${accent}`}>
         <Icon className="w-5 h-5" />
       </div>
@@ -157,7 +157,7 @@ export default function IPDBilling() {
       </tr>`).join('')
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
       <title>Invoice ${fmtId(inv.invoiceNumber)}</title>
-      <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:36px}table{width:100%;border-collapse:collapse}@media print{body{padding:24px}}</style>
+      <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Lexend', sans-serif;font-size:13px;color:#1a1a1a;padding:36px}table{width:100%;border-collapse:collapse}@media print{body{padding:24px}}</style>
     </head><body>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #10b981">
         <div>
@@ -235,7 +235,8 @@ export default function IPDBilling() {
       />
 
       {/* Stats */}
-      <div className="hms-billing-stats">
+      <div className="zu-page-content">
+      <div className="zu-stat-card-grid">
         <StatCard label="Total IPD Cases" value={stats.total} sub="matching filters" Icon={ReceiptText} accent="blue" />
         <StatCard label="Total Settled" value={fmt(stats.settled)} sub="fully cleared bills" Icon={TrendingUp} accent="emerald" />
         <StatCard label="Outstanding Due" value={fmt(stats.unsettled)} sub="balance outstanding" Icon={AlertCircle} accent="amber" />
@@ -458,6 +459,7 @@ export default function IPDBilling() {
           onInvoiceUpdated={loadData}
         />
       )}
+      </div>
     </div>
   )
 }

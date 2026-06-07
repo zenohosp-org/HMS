@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import SSOCookieManager from '@/utils/ssoManager'
@@ -7,12 +8,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { generateInvoiceNumber } from '@/utils/validators'
 import { fmtId } from '@/utils/idFormat'
-import {
-  X, Receipt, CheckCircle2, Loader2, AlertCircle, Plus, Trash2,
-  BedDouble, ScanLine, Stethoscope, Pill, FlaskConical, Wrench,
-  Scissors, Landmark, Wallet, IndianRupee, Clock, UserCheck,
-  Ambulance,
-} from 'lucide-react'
+import { X, Receipt, CheckCircle2, AlertCircle, Plus, Trash2, BedDouble, ScanLine, Stethoscope, Pill, FlaskConical, Wrench, Scissors, Landmark, Wallet, IndianRupee, Clock, UserCheck, Ambulance,  } from "lucide-react";
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
 const GST_RATE = 0.18
@@ -784,7 +780,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         {/* ── Body ── */}
         {loadingBill ? (
           <div className="hms-loader-stack">
-            <Loader2 className="w-8 h-8 animate-spin text-info" />
+            <Spinner className="w-8 h-8 animate-spin text-info" />
             <p className="text-13 font-medium text-gray-600">Loading bill and pending charges…</p>
           </div>
         ) : (
@@ -1113,7 +1109,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   disabled={savingBill || items.length === 0}
                   className="zu-btn-secondary flex items-center gap-2"
                 >
-                  {savingBill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
+                  {savingBill ? <Spinner className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
                   {savingBill ? 'Saving…' : 'Save Bill'}
                 </button>
                 {(isCash || showEarlyCollect) && (
@@ -1123,7 +1119,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                     className="zu-btn-primary flex items-center gap-2"
                   >
                     {collectingPayment
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Recording…</>
+                      ? <><Spinner className="w-4 h-4 animate-spin" /> Recording…</>
                       : <><IndianRupee className="w-4 h-4" /> Amount Paid</>
 
                     }

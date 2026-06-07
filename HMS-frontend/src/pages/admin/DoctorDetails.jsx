@@ -1,29 +1,11 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { appointmentsApi, doctorsApi } from "@/utils/api";
 import { useNotification } from "@/context/NotificationContext";
 import { useAuth } from "@/context/AuthContext";
 import DoctorFormModal from "@/components/modals/DoctorFormModal";
-import {
-    Loader2,
-    ChevronLeft,
-    Mail,
-    Phone,
-    BookOpen,
-    Stethoscope,
-    User,
-    CheckCircle,
-    Edit2,
-    Calendar,
-    Clock,
-    Banknote,
-    Building2,
-    CalendarIcon,
-    AlertCircle,
-    Users,
-    Save,
-    CalendarDays,
-} from "lucide-react";
+import { ChevronLeft, Mail, Phone, BookOpen, Stethoscope, User, CheckCircle, Edit2, Calendar, Clock, Banknote, Building2, CalendarIcon, AlertCircle, Users, Save, CalendarDays,  } from "lucide-react";
 import {
     Badge,
     Button,
@@ -258,9 +240,7 @@ function DoctorDetails() {
 
     if (loading) {
         return (
-            <div className="hms-detail-loading">
-                <Loader2 size={32} className="text-info animate-spin" />
-            </div>
+            <CenterLoader />
         );
     }
     if (!doctor) {
@@ -637,7 +617,7 @@ function AppointmentsTab({ doctor, loading, appointments }) {
             </div>
             {loading ? (
                 <div className="flex justify-center py-16">
-                    <Loader2 size={28} className="text-info animate-spin" />
+                    <Spinner size={28} className="text-info animate-spin" />
                 </div>
             ) : appointments.length === 0 ? (
                 <CenterEmpty
@@ -703,7 +683,7 @@ function PatientsTab({ loading, patients, navigate }) {
             </div>
             {loading ? (
                 <div className="flex justify-center py-16">
-                    <Loader2 size={28} className="animate-spin" />
+                    <Spinner size={28} className="animate-spin" />
                 </div>
             ) : patients.length === 0 ? (
                 <CenterEmpty
@@ -771,7 +751,7 @@ function ScheduleTab({
 
             {scheduleLoading ? (
                 <div className="flex justify-center py-16">
-                    <Loader2 size={28} className="text-info animate-spin" />
+                    <Spinner size={28} className="text-info animate-spin" />
                 </div>
             ) : (
                 <div className="flex flex-col gap-3">

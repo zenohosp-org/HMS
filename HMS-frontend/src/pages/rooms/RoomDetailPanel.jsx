@@ -1,22 +1,8 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { assetApi, bedApi } from "@/utils/api";
-import {
-    X,
-    User,
-    Phone,
-    Users,
-    Package,
-    CalendarClock,
-    ScrollText,
-    Search,
-    Plus,
-    Loader2,
-    ArrowUpRight,
-    Tag,
-    BedDouble,
-    Pencil,
-} from "lucide-react";
+import { X, User, Phone, Users, Package, CalendarClock, ScrollText, Search, Plus, ArrowUpRight, Tag, BedDouble, Pencil,  } from "lucide-react";
 import { formatDateTime } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
 import AssignAttenderModal from "./AssignAttenderModal";
@@ -114,7 +100,7 @@ function AssignAssetDropdown({ hospitalId, roomId, onAssigned }) {
                 <div className="hms-room-asset-dropdown">
                     {loading ? (
                         <div className="hms-room-asset-dropdown__loading">
-                            <Loader2 size={14} className="animate-spin" /> Searching…
+                            <Spinner size={14} className="animate-spin" /> Searching…
                         </div>
                     ) : results.length === 0 ? (
                         <div className="hms-room-asset-dropdown__empty">
@@ -142,7 +128,7 @@ function AssignAssetDropdown({ hospitalId, roomId, onAssigned }) {
                                     <div className="hms-room-asset-dropdown__tail">
                                         <AssetStatusBadge status={a.status} />
                                         {assigning === a.assetId ? (
-                                            <Loader2
+                                            <Spinner
                                                 size={12}
                                                 className="animate-spin text-gray-700"
                                             />
@@ -186,7 +172,7 @@ function BedsSection({ room, hospitalId }) {
     if (loading) {
         return (
             <div className="hms-room-inline-loader">
-                <Loader2 size={16} className="animate-spin" />
+                <Spinner size={16} className="animate-spin" />
                 <span className="hms-room-inline-loader__text">Loading beds…</span>
             </div>
         );
@@ -500,7 +486,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
 
                     {assetsLoading ? (
                         <div className="hms-room-inline-loader">
-                            <Loader2 size={16} className="animate-spin" />
+                            <Spinner size={16} className="animate-spin" />
                             <span className="hms-room-inline-loader__text">Loading assets…</span>
                         </div>
                     ) : assets.length === 0 ? (
@@ -530,7 +516,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
                                                 title="Remove from room"
                                             >
                                                 {removingId === a.assetId ? (
-                                                    <Loader2 size={12} className="animate-spin" />
+                                                    <Spinner size={12} className="animate-spin" />
                                                 ) : (
                                                     <X size={12} />
                                                 )}

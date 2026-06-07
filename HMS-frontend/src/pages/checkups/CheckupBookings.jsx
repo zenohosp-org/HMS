@@ -365,13 +365,13 @@ export default function CheckupBookings() {
           { label: "In Progress", value: stats.inProgress, icon: Activity, accent: "slate" },
           { label: "Completed", value: stats.completed, icon: CheckCircle2, accent: "emerald" },
         ].map(s => (
-          <div key={s.label} className="zu-stat-card">
+          <div key={s.label} className="zu-card is-stat">
             <div className={`zu-stat-card-icon is-${s.accent}`}>
               <s.icon className="w-5 h-5" />
             </div>
-            <div>
-              <p className="zu-stat-card-value">{s.value}</p>
+            <div className="zu-stat-card-body">
               <p className="zu-stat-card-label">{s.label}</p>
+              <p className="zu-stat-card-value">{s.value}</p>
             </div>
           </div>
         ))}

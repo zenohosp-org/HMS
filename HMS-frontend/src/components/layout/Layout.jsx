@@ -6,15 +6,15 @@ import Header from "./Header";
 function Layout() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     return (
-        <div className="hms-app-shell">
+        <div className="zu-app-shell">
             <div className="no-print">
                 <Sidebar isOpen={sidebarOpen} />
             </div>
-            <div className="hms-app-shell__main">
+            <div className="zu-app-shell-main">
                 <div className="no-print">
                     <Header onMenuClick={() => setSidebarOpen((p) => !p)} />
                 </div>
-                <main className="hms-app-shell__content">
+                <main className="zu-app-shell-content">
                     <Outlet />
                 </main>
             </div>

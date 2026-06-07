@@ -44,13 +44,16 @@
 }
 
 /* ─────────────────────────── Canonical Stat Card ─────────────────────────── */
-.zu-stat-card {
-    background: var(--zu-white);
-    border-radius: var(--zu-radius);
-    border: 1px solid var(--zu-gray-200);
-    padding: 20px;
-    display: flex;
+.zu-stat-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--zu-space-lg);
+    margin-bottom: var(--zu-space-lg);
+}
+.zu-card.is-stat {
+    flex-direction: row;
     align-items: center;
+    padding: 20px;
     gap: var(--zu-space-md);
 }
 

@@ -1,3 +1,4 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useMemo } from "react";
 import {
     invoiceApi,
@@ -9,17 +10,7 @@ import {
 import { fmtId } from "@/utils/idFormat";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import {
-    Receipt,
-    BedDouble,
-    ScanLine,
-    Stethoscope,
-    Pill,
-    FlaskConical,
-    Wrench,
-    Loader2,
-    AlertCircle,
-} from "lucide-react";
+import { Receipt, BedDouble, ScanLine, Stethoscope, Pill, FlaskConical, Wrench, AlertCircle,  } from "lucide-react";
 import { Alert, Button, Modal } from "@/components/ui";
 
 /** Item-type → label, icon, and the .hms-bill-type modifier that flips
@@ -237,10 +228,7 @@ export default function ViewBillingModal({ admission, onClose }) {
             }
         >
             {loading ? (
-                <div className="hms-bill-loading">
-                    <Loader2 size={32} className="hms-bill-loading__icon animate-spin" />
-                    <p className="hms-bill-loading__text">Detecting pending charges…</p>
-                </div>
+                <CenterLoader />
             ) : (
                 <div className="flex flex-col gap-5">
                     <div>

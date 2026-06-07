@@ -1,3 +1,4 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
@@ -12,13 +13,7 @@ import {
 } from "@/utils/api";
 import api from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
-import {
-    Search,
-    BedDouble,
-    User,
-    CheckCircle2,
-    Loader2,
-} from "lucide-react";
+import { Search, BedDouble, User, CheckCircle2,  } from "lucide-react";
 import {
     Alert,
     Button,
@@ -430,10 +425,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                     {form.roomId && isMultiBed && (
                         <FormGroup label="Select bed *">
                             {bedsLoading ? (
-                                <div className="hms-bed-loading">
-                                    <Loader2 size={16} className="animate-spin" />
-                                    <span>Loading beds…</span>
-                                </div>
+                                <CenterLoader text="Loading beds…" />
                             ) : availableBeds.length === 0 ? (
                                 <p className="hms-bed-empty">No available beds in this room.</p>
                             ) : (
@@ -568,9 +560,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                                 }
                             >
                                 {bankAccountsLoading ? (
-                                    <div className="hms-advance-loading">
-                                        <Loader2 size={14} className="animate-spin" /> Loading accounts…
-                                    </div>
+                                    <CenterLoader text="Loading accounts…" />
                                 ) : bankAccounts.length === 0 ? (
                                     <Alert tone="warning">
                                         No {advancePaymentMethod === "Cash" ? "CASH" : "SAVINGS / CURRENT"}{" "}

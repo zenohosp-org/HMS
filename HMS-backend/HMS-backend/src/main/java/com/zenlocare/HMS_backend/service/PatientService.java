@@ -29,6 +29,7 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final HospitalRepository hospitalRepository;
     private final PatientAdvanceService patientAdvanceService;
+    private final com.zenlocare.HMS_backend.repository.PatientRecordRepository patientRecordRepository;
 
     public List<Patient> getPatientsByHospital(UUID hospitalId) {
         return patientRepository.findByHospitalId(hospitalId);
@@ -145,8 +146,17 @@ public class PatientService {
             hospitalId, safeSearch, pageable
         );
 
+        List<Integer> patientIds = result.getContent().stream().map(Patient::getId).toList();
+        Map<Integer, java.time.LocalDateTime> lastVisitDates = new HashMap<>();
+        if (!patientIds.isEmpty()) {
+            for (Object[] row : patientRecordRepository.findLastVisitDatesByPatientIds(patientIds)) {
+                lastVisitDates.put((Integer) row[0], (java.time.LocalDateTime) row[1]);
+            }
+        }
+
         Map<String, Object> response = new HashMap<>();
         response.put("patients", result.getContent());
+        response.put("lastVisitDates", lastVisitDates);
         response.put("totalElements", result.getTotalElements());
         response.put("totalPages", result.getTotalPages());
         response.put("currentPage", result.getNumber());

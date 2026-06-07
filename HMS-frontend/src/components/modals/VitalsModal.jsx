@@ -1,12 +1,10 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { vitalsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
-import {
-  Activity, HeartPulse, Wind, Scale, Droplet, CheckCircle2, Loader2,
-  User as UserIcon, IdCard, CalendarClock, Stethoscope,
-} from "lucide-react";
+import { Activity, HeartPulse, Wind, Scale, Droplet, CheckCircle2, User as UserIcon, IdCard, CalendarClock, Stethoscope,  } from "lucide-react";
 
 /**
  * Nurse-facing form to record per-visit vitals (BP, SpO2, HR, weight) on
@@ -150,9 +148,7 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
         {/* Body */}
         <div className="zu-modal-body">
           {loading ? (
-            <div className="hms-modal-loading">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading vitals…
-            </div>
+            <CenterLoader text="Loading vitals…" />
           ) : (
             <div className="hms-form-stack">
 
@@ -262,7 +258,7 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
             Cancel
           </button>
           <button type="button" onClick={handleSave} disabled={saving || loading} className="zu-btn-primary">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            {saving ? <Spinner className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             {existing ? "Update Vitals" : "Save Vitals"}
           </button>
         </div>

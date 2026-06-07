@@ -300,6 +300,7 @@ export default function PackageManager() {
         }
       />
 
+      <div className="zu-page-content">
       {/* Category filter */}
       <div className="hms-checkup-pkg-cat-row">
         <button onClick={() => setFilterCat("ALL")} className={`hms-checkup-pkg-cat-pill ${filterCat === "ALL" ? "is-on" : ""}`}>
@@ -335,6 +336,7 @@ export default function PackageManager() {
           ))}
         </div>
       )}
+      </div>
 
       {showForm && (
         <PackageFormModal

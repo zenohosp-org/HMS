@@ -1,9 +1,10 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { shiftsApi, staffApi, doctorsApi } from "@/utils/api";
-import { ChevronLeft, ChevronRight, Loader2, Plus, X, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, Users } from "lucide-react";
 import { Button, Card } from "@/components/ui";
 
 /** Members visible per group card. Not a table page-size; raising it
@@ -247,7 +248,7 @@ function ShiftRoster() {
                 {/* Groups */}
                 {loading ? (
                     <div className="hms-shift-state">
-                        <Loader2 size={20} className="text-gray-400 animate-spin" />
+                        <Spinner size={20} className="text-gray-400 animate-spin" />
                     </div>
                 ) : staffOptions.length === 0 ? (
                     <div className="hms-shift-state is-empty">
@@ -360,12 +361,7 @@ function ShiftRoster() {
                                                             >
                                                                 <div className="hms-shift-table__cell-body">
                                                                     {isAssigning ? (
-                                                                        <div className="hms-shift-table__loading">
-                                                                            <Loader2
-                                                                                size={12}
-                                                                                className="hms-shift-state__icon-mid animate-spin"
-                                                                            />
-                                                                        </div>
+                                                                        <CenterLoader />
                                                                     ) : dayShifts.length > 0 ? (
                                                                         <>
                                                                             {dayShifts.map((s) => {

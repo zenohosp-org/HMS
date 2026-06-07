@@ -1,3 +1,4 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api, { patientApi, recordApi, appointmentsApi, radiologyApi, invoiceApi } from "@/utils/api";
@@ -6,28 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { calcAge, formatDate, formatDateTime } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
 import PatientModal from "@/components/modals/PatientModal";
-import {
-  Loader2,
-  ArrowLeft,
-  User,
-  FileText,
-  Phone,
-  Mail,
-  MapPin,
-  Droplets,
-  Calendar,
-  Clock,
-  Edit2,
-  ClipboardList,
-  ChevronRight,
-  Activity,
-  AlertCircle,
-  Stethoscope,
-  MoreHorizontal,
-  Bed,
-  CalendarClock,
-  ScanLine
-} from "lucide-react";
+import { ArrowLeft, User, FileText, Phone, Mail, MapPin, Droplets, Calendar, Clock, Edit2, ClipboardList, ChevronRight, Activity, AlertCircle, Stethoscope, MoreHorizontal, Bed, CalendarClock, ScanLine } from "lucide-react";
 
 const TYPE_META = {
   CONSULTATION: { label: "Consultation", dotMod: "is-consultation", chipMod: "is-consultation" },
@@ -247,9 +227,7 @@ function PatientDetails() {
   }, [records]);
   const blood = patient?.bloodGroup ?? null;
   if (loading) return (
-    <div className="hms-pat-detail__loading">
-      <Loader2 className="w-5 h-5 animate-spin text-gray-700" />
-    </div>
+    <CenterLoader />
   );
   if (!patient) return (
     <div className="hms-pat-detail__notfound">
@@ -450,9 +428,7 @@ function PatientDetails() {
                   </button>
                 </div>
                 {recordsLoading ? (
-                  <div className="hms-pat-section-card__loading">
-                    <Loader2 className="w-3 h-3 animate-spin text-gray-700" />
-                  </div>
+                  <CenterLoader />
                 ) : records.length === 0 ? (
                   <div className="hms-pat-section-card__empty">
                     <ClipboardList className="hms-pat-section-card__empty-icon" />
@@ -509,9 +485,7 @@ function PatientDetails() {
                  View / consultation modal flow now; this page is read-only. */}
               {/* Timeline */}
               {recordsLoading ? (
-                <div className="hms-pat-tab-loading">
-                  <Loader2 className="w-5 h-5 animate-spin text-gray-700" />
-                </div>
+                <CenterLoader />
               ) : records.length === 0 ? (
                 <div className="hms-pat-tab-empty">
                   <ClipboardList className="hms-pat-tab-empty__icon" />
@@ -555,9 +529,7 @@ function PatientDetails() {
                 </div>
               </div>
               {appointmentsLoading ? (
-                <div className="hms-pat-tab-loading">
-                  <Loader2 className="w-5 h-5 animate-spin text-gray-700" />
-                </div>
+                <CenterLoader />
               ) : appointments.length === 0 ? (
                 <div className="hms-pat-tab-empty">
                   <Calendar className="hms-pat-tab-empty__icon" />
@@ -644,9 +616,7 @@ function PatientDetails() {
                 </div>
               </div>
               {radiologyLoading ? (
-                <div className="hms-pat-tab-loading">
-                  <Loader2 className="w-5 h-5 animate-spin text-gray-700" />
-                </div>
+                <CenterLoader />
               ) : radiologyOrders.length === 0 ? (
                 <div className="hms-pat-tab-empty">
                   <ScanLine className="hms-pat-tab-empty__icon" />
@@ -708,9 +678,7 @@ function PatientDetails() {
                 </button>
               </div>
               {invoicesLoading ? (
-                <div className="hms-pat-tab-loading">
-                  <Loader2 className="w-3 h-3 animate-spin text-gray-300" />
-                </div>
+                <CenterLoader />
               ) : invoices.length === 0 ? (
                 <div className="hms-pat-bill-empty">
                   <p className="hms-pat-bill-empty__text">No invoices yet</p>

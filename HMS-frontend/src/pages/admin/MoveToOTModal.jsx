@@ -1,8 +1,9 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { admissionApi, roomApi, doctorsApi } from "@/utils/api";
-import { Scissors, BedDouble, Stethoscope, Loader2 } from "lucide-react";
+import { Scissors, BedDouble, Stethoscope } from "lucide-react";
 import {
     Button,
     FormGroup,
@@ -100,10 +101,7 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
             }
         >
             {loading ? (
-                <div className="hms-modal-loading">
-                    <Loader2 size={16} className="animate-spin" />
-                    <span>Loading OT rooms…</span>
-                </div>
+                <CenterLoader text="Loading OT rooms…" />
             ) : (
                 <div className="flex flex-col gap-5">
                     <FormGroup

@@ -40,7 +40,7 @@ function fmtDate(dateStr, timeStr) {
 
 function StatCard({ label, value, sub, Icon, accent }) {
   return (
-    <div className="zu-stat-card">
+    <div className="zu-card is-stat">
       <div className={`zu-stat-card-icon is-${accent}`}>
         <Icon className="w-5 h-5" />
       </div>
@@ -159,7 +159,7 @@ export default function AmbulanceBilling() {
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
       <title>Ambulance Receipt ${ref}</title>
-      <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:36px}@media print{body{padding:24px}}.row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f3f4f6;font-size:13px}.label{color:#6b7280;font-weight:500}.val{font-weight:600;color:#111}</style>
+      <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Lexend', sans-serif;font-size:13px;color:#1a1a1a;padding:36px}@media print{body{padding:24px}}.row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f3f4f6;font-size:13px}.label{color:#6b7280;font-weight:500}.val{font-weight:600;color:#111}</style>
     </head><body>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #f97316">
         <div>
@@ -218,7 +218,8 @@ export default function AmbulanceBilling() {
       />
 
       {/* Stats */}
-      <div className="hms-billing-stats">
+      <div className="zu-page-content">
+      <div className="zu-stat-card-grid">
         <StatCard label="Total Bookings"  value={stats.total}              sub="all time"                Icon={Ambulance}   accent="blue"    />
         <StatCard label="Collected"       value={fmt(stats.collected)}     sub="from paid bookings"      Icon={TrendingUp}  accent="emerald" />
         <StatCard label="Outstanding"     value={fmt(stats.outstanding)}   sub="completed but unpaid"    Icon={AlertCircle} accent="amber"   />
@@ -462,6 +463,7 @@ export default function AmbulanceBilling() {
           </>
         )
       })()}
+      </div>
     </div>
   )
 }

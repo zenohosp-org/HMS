@@ -1,7 +1,8 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { drugsApi } from "@/utils/api";
-import { Search, Loader2, Trash2, AlertCircle } from "lucide-react";
+import { Search, Trash2, AlertCircle } from "lucide-react";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 
 // Standard schedule shorthand used in Indian clinical practice. Surfaced as a
@@ -189,7 +190,7 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
                 placeholder="Drug name (e.g. Amoxicillin, Crocin)"
                 className="hms-drug-row__search-input"
               />
-              {searching && <Loader2 className="hms-drug-row__search-spinner w-3 h-3" />}
+              {searching && <Spinner className="hms-drug-row__search-spinner w-3 h-3" />}
             </div>
 
             {open && results.length > 0 && (

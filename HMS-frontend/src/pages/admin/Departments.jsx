@@ -240,7 +240,7 @@ export default function Departments() {
     ];
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="zu-page">
             <PageHeader
                 title={
                     <span className="inline-flex items-center gap-3">
@@ -255,7 +255,7 @@ export default function Departments() {
                 }
             />
 
-            <div className="hms-page-content">
+            <div className="zu-page-content">
                 <Tabs
                     type="pill"
                     active={activeTab}
@@ -308,7 +308,7 @@ export default function Departments() {
                         </div>
                     </div>
                 </Card>
-            </div>
+            
 
             <Modal
                 isOpen={showModal}
@@ -382,6 +382,7 @@ export default function Departments() {
                     </FormGroup>
                 </form>
             </Modal>
+                    </div>
         </div>
     );
 }

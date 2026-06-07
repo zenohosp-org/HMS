@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useFeatureFlag } from "@/context/FeatureFlagsContext";
 import {
@@ -80,6 +80,7 @@ const EXTERNAL_APPS = [
 function Sidebar({ isOpen }) {
     const { user } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
     const ambulanceEnabled = useFeatureFlag("AMBULANCE");
     const radiologyEnabled = useFeatureFlag("RADIOLOGY");
     const checkupsEnabled = useFeatureFlag("HEALTH_CHECKUPS");
@@ -125,40 +126,41 @@ function Sidebar({ isOpen }) {
 
     const renderLink = (link, isSubmenu = false) => {
         const Icon = link.icon;
+        const isActiveLink = location.pathname.startsWith(link.to);
         
         if (isSubmenu) {
             return (
                 <li key={link.to}>
-                    <NavLink
-                        to={link.to}
-                        end
+                    <button
+                        onClick={() => navigate(link.to)}
                         title={!isOpen ? link.label : undefined}
-                        className={({ isActive }) => isActive ? "active" : ""}
+                        className={isActiveLink ? "active" : ""}
                     >
                         {link.label}
-                    </NavLink>
+                    </button>
                 </li>
             );
         }
 
         return (
-            <div className="zu-sidebar-nav-group" key={link.to}>
-                <NavLink
-                    to={link.to}
-                    end
+            <div className="sidebar-nav-group" key={link.to}>
+                <button
+                    onClick={() => navigate(link.to)}
                     title={!isOpen ? link.label : undefined}
-                    className={({ isActive }) => `zu-sidebar-nav-item${!isOpen ? " is-icon-only" : ""}${isActive ? " active" : ""}`}
+                    className={`sidebar-nav-item${!isOpen ? " is-icon-only" : ""}${isActiveLink ? " active" : ""}`}
                 >
-                    <Icon className="zu-sidebar-nav-icon" />
-                    {isOpen && <div className="zu-sidebar-nav-label">{link.label}</div>}
-                </NavLink>
+                    <div className="sidebar-nav-label">
+                        <Icon className="sidebar-nav-icon" />
+                        {isOpen && <span>{link.label}</span>}
+                    </div>
+                </button>
             </div>
         );
     };
 
     const renderExternalApp = (app) => {
         const Icon = app.icon;
-        const baseCls = `zu-sidebar-ext${isOpen ? "" : " is-icon-only"}`;
+        const baseCls = `sidebar-ext${isOpen ? "" : " is-icon-only"}`;
         return isOpen ? (
             <a
                 key={app.href}
@@ -167,8 +169,10 @@ function Sidebar({ isOpen }) {
                 rel="noopener noreferrer"
                 className={baseCls}
             >
-                <Icon className="zu-sidebar-nav-icon" />
-                <span className="zu-sidebar-nav-label">{app.label}</span>
+                <div className="sidebar-nav-label">
+                    <Icon className="sidebar-nav-icon" />
+                    <span>{app.label}</span>
+                </div>
             </a>
         ) : (
             <a
@@ -179,7 +183,7 @@ function Sidebar({ isOpen }) {
                 title={app.label}
                 className={baseCls}
             >
-                <Icon className="zu-sidebar-nav-icon" />
+                <Icon className="sidebar-nav-icon" />
             </a>
         );
     };
@@ -187,20 +191,22 @@ function Sidebar({ isOpen }) {
     const renderAccordionSection = (links, label, AccIcon, open, setOpen, active) => {
         if (!isOpen) return links.map((link) => renderLink(link));
         return (
-            <div className="zu-sidebar-nav-group" key={label}>
+            <div className="sidebar-nav-group" key={label}>
                 <button
                     onClick={() => setOpen((o) => !o)}
-                    className={`zu-sidebar-nav-item has-submenu${active ? " active" : ""}`}
+                    className={`sidebar-nav-item has-submenu${active ? " active" : ""}`}
                 >
-                    <AccIcon className="zu-sidebar-nav-icon" />
-                    <div className="zu-sidebar-nav-label">{label}</div>
+                    <div className="sidebar-nav-label">
+                        <AccIcon className="sidebar-nav-icon" />
+                        <span>{label}</span>
+                    </div>
                     <ChevronDown
                         size={15}
-                        className={`zu-sidebar-nav-chevron${open ? " is-open" : ""}`}
+                        className={`sidebar-nav-chevron${open ? " is-open" : ""}`}
                     />
                 </button>
                 {open && (
-                    <ul className="zu-sidebar-submenu">
+                    <ul className="sidebar-submenu">
                         {links.map((link) => renderLink(link, true))}
                     </ul>
                 )}
@@ -209,28 +215,23 @@ function Sidebar({ isOpen }) {
     };
 
     return (
-        <aside className={`zu-sidebar${isOpen ? "" : " is-collapsed"}`}>
-            <div className="zu-sidebar-logo">
-                <div className="zu-sidebar-logo-icon">
+        <aside className={`sidebar${isOpen ? "" : " is-collapsed"}`}>
+            <div className="sidebar-logo">
+                <div className="sidebar-logo-icon">
                     <Activity className="w-4 h-4" />
                 </div>
                 {isOpen && (
-                    <div className="zu-sidebar-brand">
-                        <p className="zu-sidebar-brand-name">ZenoHosp</p>
-                        <p className="zu-sidebar-brand-sub">{user?.hospitalName}</p>
+                    <div className="sidebar-brand">
+                        <p className="sidebar-brand-name">ZenoHosp</p>
+                        <p className="sidebar-brand-sub">{user?.hospitalName}</p>
                     </div>
                 )}
             </div>
 
-            <nav className="zu-sidebar-nav-container">
-                {isOpen && (
-                    <div className="zu-sidebar-section-label">Main Menu</div>
-                )}
+            <nav className="sidebar-nav-container">
                 {renderLink(DASHBOARD_LINK)}
 
-                {isOpen && (
-                    <div className="zu-sidebar-section-label is-spaced">Hospital</div>
-                )}
+
                 {filteredClinicalLinks.map((link) => renderLink(link))}
                 {ipdEnabled &&
                     renderAccordionSection(
@@ -289,9 +290,9 @@ function Sidebar({ isOpen }) {
                     )}
             </nav>
 
-            <div className="zu-sidebar-footer">
+            <div className="sidebar-footer">
                 {isOpen && (
-                    <div className="zu-sidebar-section-label">Other Apps</div>
+                    <div className="sidebar-section-label">Other Apps</div>
                 )}
                 {EXTERNAL_APPS.map((app) => renderExternalApp(app))}
             </div>

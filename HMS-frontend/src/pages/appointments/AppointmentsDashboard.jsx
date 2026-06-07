@@ -693,6 +693,7 @@ function AppointmentsDashboard() {
           </div>
         }
       />
+      <div className="zu-page-content">
       {viewMode === "list" && (
           <div className="hms-appt-filters">
             <div className="hms-appt-filters__pills">
@@ -832,6 +833,7 @@ function AppointmentsDashboard() {
           onSaved={() => setExternalResultsAppointment(null)}
         />
       )}
+      </div>
     </div>
   );
 }

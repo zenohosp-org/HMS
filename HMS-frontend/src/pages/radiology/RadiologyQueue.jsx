@@ -104,28 +104,36 @@ function RadiologyQueue() {
           </button>
         </div>}
       />
+      
+      <div className="zu-page-content">
       {/* Stat cards */}
       <div className="zu-stat-card-grid">
-        <div className="zu-stat-card is-amber">
-          <div>
+        <div className="zu-card is-stat">
+          <div className="zu-stat-card-icon is-amber">
+            <ScanLine className="w-5 h-5" />
+          </div>
+          <div className="zu-stat-card-body">
             <p className="zu-stat-card-label">Pending Scans</p>
             <p className="zu-stat-card-value">{stats.pendingScan}</p>
           </div>
-          <ScanLine className="zu-stat-card-icon" />
         </div>
-        <div className="zu-stat-card is-slate">
-          <div>
+        <div className="zu-card is-stat">
+          <div className="zu-stat-card-icon is-slate">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div className="zu-stat-card-body">
             <p className="zu-stat-card-label">Awaiting Reports</p>
             <p className="zu-stat-card-value">{stats.awaitingReport}</p>
           </div>
-          <Clock className="zu-stat-card-icon" />
         </div>
-        <div className="zu-stat-card is-emerald">
-          <div>
+        <div className="zu-card is-stat">
+          <div className="zu-stat-card-icon is-emerald">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div className="zu-stat-card-body">
             <p className="zu-stat-card-label">Completed Today</p>
             <p className="zu-stat-card-value">{stats.reportGenerated}</p>
           </div>
-          <CheckCircle2 className="zu-stat-card-icon" />
         </div>
       </div>
       {/* Search + filters */}
@@ -199,6 +207,7 @@ function RadiologyQueue() {
         setWriteReport(null);
         load();
       }} />}
+      </div>
     </div>
   );
 }

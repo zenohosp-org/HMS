@@ -212,7 +212,7 @@ export default function PatientServices() {
     );
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="zu-page">
             <PageHeader
                 title={titleNode}
                 actions={
@@ -228,7 +228,7 @@ export default function PatientServices() {
                 }
             />
 
-            <div className="hms-page-content">
+            <div className="zu-page-content">
                 <SearchBar
                     value={search}
                     onChange={(v) => {
@@ -281,7 +281,7 @@ export default function PatientServices() {
                         onPageChange={setPage}
                     />
                 )}
-            </div>
+            
 
             <PatientServiceFormModal
                 isOpen={showModal}
@@ -293,6 +293,7 @@ export default function PatientServices() {
                 hospitalId={user?.hospitalId}
                 onSuccess={load}
             />
+                    </div>
         </div>
     );
 }

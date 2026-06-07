@@ -1,19 +1,10 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { roomLogsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
-import {
-    Loader2,
-    Bed,
-    User,
-    Users,
-    PlusCircle,
-    LogOut,
-    UserCheck,
-    UserCog,
-    CalendarClock,
-} from "lucide-react";
+import { Bed, User, Users, PlusCircle, LogOut, UserCheck, UserCog, CalendarClock,  } from "lucide-react";
 import { timeAgo, fmtDateTime } from "@/utils/date";
 import {
     Badge,
@@ -144,9 +135,7 @@ function RoomLogsPage() {
                     </div>
 
                     {loading ? (
-                        <div className="hms-rooms-log-loader">
-                            <Loader2 size={20} className="animate-spin" />
-                        </div>
+                        <CenterLoader />
                     ) : filteredLogs.length === 0 ? (
                         <div className="hms-rooms-log-empty">
                             <CalendarClock size={40} className="opacity-30" />
@@ -169,9 +158,6 @@ function RoomLogsPage() {
                                 return (
                                     <div key={log.id} className="hms-rooms-log-row">
                                         <div className="hms-rooms-log-row__event">
-                                            <div className="hms-rooms-log-row__icon">
-                                                <Icon size={14} />
-                                            </div>
                                             <div>
                                                 <Badge tone={meta.tone} soft>
                                                     {meta.label}
@@ -190,10 +176,6 @@ function RoomLogsPage() {
                                         <div>
                                             {log.patientName ? (
                                                 <div className="flex items-start gap-1.5">
-                                                    <User
-                                                        size={14}
-                                                        className="hms-rooms-log-row__pat-icon"
-                                                    />
                                                     <div>
                                                         <p className="hms-rooms-log-row__pat-name">
                                                             {log.patientName}
@@ -213,10 +195,6 @@ function RoomLogsPage() {
                                         <div>
                                             {log.attenderName ? (
                                                 <div className="flex items-center gap-1.5">
-                                                    <Users
-                                                        size={14}
-                                                        className="text-gray-500 shrink-0"
-                                                    />
                                                     <p className="hms-rooms-log-row__att-name">
                                                         {log.attenderName}
                                                     </p>
@@ -265,7 +243,8 @@ function RoomLogsPage() {
                         </div>
                     )}
                 </Card>
-            </div>
+            
+                    </div>
         </div>
     );
 }

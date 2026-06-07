@@ -227,7 +227,7 @@ export default function Designations() {
     ];
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="zu-page">
             <PageHeader
                 title={
                     <span className="inline-flex items-center gap-3">
@@ -242,7 +242,7 @@ export default function Designations() {
                 }
             />
 
-            <div className="hms-page-content">
+            <div className="zu-page-content">
                 <div className="flex items-center gap-3 flex-wrap">
                     <Tabs
                         type="pill"
@@ -306,7 +306,7 @@ export default function Designations() {
                         </div>
                     </div>
                 </Card>
-            </div>
+            
 
             <Modal
                 isOpen={showModal}
@@ -371,6 +371,7 @@ export default function Designations() {
                     </div>
                 </form>
             </Modal>
+                    </div>
         </div>
     );
 }

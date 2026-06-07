@@ -202,7 +202,7 @@ function StaffsList() {
     ];
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="zu-page">
             <PageHeader
                 title="Staff directory"
                 subtitle={`${stats.total} members · ${stats.active} active`}
@@ -219,7 +219,7 @@ function StaffsList() {
                 }
             />
 
-            <div className="hms-page-content">
+            <div className="zu-page-content">
                 {/* Stat cards */}
                 <div className="hms-stat-grid">
                     {statCards.map(({ label, value, icon: Icon, valueClass, iconClass }) => (
@@ -384,7 +384,7 @@ function StaffsList() {
                         })}
                     </div>
                 )}
-            </div>
+            
 
             {showModal && (
                 <StaffFormModal
@@ -396,6 +396,7 @@ function StaffsList() {
                     }}
                 />
             )}
+                    </div>
         </div>
     );
 }

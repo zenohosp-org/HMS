@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
@@ -7,11 +8,7 @@ import {
 } from '@/utils/api'
 import { generateInvoiceNumber } from '@/utils/validators'
 import { fmtId } from '@/utils/idFormat'
-import {
-  X, Info, Search, Plus, Trash2, Printer, BedDouble, ScanLine,
-  Stethoscope, FlaskConical, Pill, Wrench, Loader2, Sparkles,
-  CheckCircle2, Landmark, User
-} from 'lucide-react'
+import { X, Info, Search, Plus, Trash2, Printer, BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench, Sparkles, CheckCircle2, Landmark, User } from "lucide-react";
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
 
@@ -293,7 +290,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                   <Search className="hms-inv-search__icon w-3.5 h-3.5" />
                   <input className="hms-inv-input has-icon" placeholder="Search by name or UHID…"
                     value={patientSearch} onChange={e => setPatientSearch(e.target.value)} />
-                  {searching && <Loader2 className="hms-inv-search__spinner w-3.5 h-3.5 animate-spin" />}
+                  {searching && <Spinner className="hms-inv-search__spinner w-3.5 h-3.5 animate-spin" />}
                   {patientResults.length > 0 && (
                     <div className="hms-inv-suggest">
                       {patientResults.map(p => (
@@ -315,7 +312,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
                 <div className="hms-inv-section-head">
                   <p className="hms-inv-section-label">
                     <Sparkles className="w-3.5 h-3.5 text-warning" /> Detected Pending Items
-                    {loadingSuggestions && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
+                    {loadingSuggestions && <Spinner className="w-3 h-3 animate-spin text-gray-400" />}
                   </p>
                   {!loadingSuggestions && hasSuggestions && (
                     <button
@@ -632,7 +629,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
           <div className="hms-inv-modal__footer">
             <button onClick={handleSubmit} disabled={saving || !patient || items.length === 0}
               className="zu-btn-primary is-full">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+              {saving ? <Spinner className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
               {saving ? 'Generating…' : 'Generate Invoice & Print'}
             </button>
           </div>

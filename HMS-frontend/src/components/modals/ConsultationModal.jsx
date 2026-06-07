@@ -1,11 +1,8 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { fmtId } from "@/utils/idFormat";
-import {
-  Stethoscope, Pill, Plus, Loader2, CheckCircle2, ClipboardList,
-  CalendarClock, FileText, ListChecks, Save, AlertCircle,
-  User as UserIcon, IdCard, Activity, HeartPulse, Wind, Scale, Droplet,
-} from "lucide-react";
+import { Stethoscope, Pill, Plus, CheckCircle2, ClipboardList, CalendarClock, FileText, ListChecks, Save, AlertCircle, User as UserIcon, IdCard, Activity, HeartPulse, Wind, Scale, Droplet,  } from "lucide-react";
 import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 
@@ -172,7 +169,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
               Cancel
             </button>
             <button type="button" onClick={saveConsultation} disabled={saving} className="zu-btn-primary">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              {saving ? <Spinner className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               Save Consultation
             </button>
           </div>
@@ -270,7 +267,7 @@ function AutosaveIndicator({ status, hydrating }) {
   if (hydrating) {
     return (
       <span className="hms-autosave is-hydrating">
-        <Loader2 className="w-3 h-3 animate-spin" />
+        <Spinner className="w-3 h-3 animate-spin" />
         Loading draft…
       </span>
     );
@@ -278,7 +275,7 @@ function AutosaveIndicator({ status, hydrating }) {
   if (status === "saving") {
     return (
       <span className="hms-autosave is-saving">
-        <Loader2 className="w-3 h-3 animate-spin" />
+        <Spinner className="w-3 h-3 animate-spin" />
         Saving draft…
       </span>
     );

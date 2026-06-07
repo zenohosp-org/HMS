@@ -194,7 +194,7 @@ function DoctorsList() {
     ];
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="zu-page">
             <PageHeader
                 title={
                     <span className="inline-flex items-center gap-3">
@@ -209,7 +209,7 @@ function DoctorsList() {
                 }
             />
 
-            <div className="hms-page-content">
+            <div className="zu-page-content">
                 <SearchBar
                     value={search}
                     onChange={(v) => {
@@ -251,7 +251,7 @@ function DoctorsList() {
                         />
                     </div>
                 )}
-            </div>
+            
 
             {showModal && (
                 <DoctorFormModal
@@ -308,6 +308,7 @@ function DoctorsList() {
                     </div>
                 )}
             </Modal>
+                    </div>
         </div>
     );
 }

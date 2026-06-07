@@ -6,6 +6,7 @@ import {
   Ambulance, Search, CheckCircle2, Clock3, XCircle,
   Truck, Activity, MapPin, Car, Phone, User
 } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
 
 const STATUS_CONFIG = {
   PENDING:    { label: "Pending",    cls: "is-pending",    icon: Clock3 },
@@ -106,18 +107,12 @@ export default function AmbulanceStatus() {
 
   return (
     <div className="zu-page">
+      <PageHeader 
+        title={<div className="flex items-center gap-2"><Activity className="w-5 h-5" /> Ambulance Status</div>}
+        subtitle="Live dispatch tracking and status updates"
+      />
 
-      {/* Header */}
-      <div className="hms-amb-header-row">
-        <div className="hms-amb-header__icon">
-          <Activity className="w-5 h-5" />
-        </div>
-        <div className="hms-amb-header__body">
-          <h1>Ambulance Status</h1>
-          <p>Live dispatch tracking and status updates</p>
-        </div>
-      </div>
-
+      <div className="zu-page-content">
       {/* Status filter pills */}
       <div className="hms-amb-filter-tabs">
         {Object.entries(STATUS_CONFIG).map(([s, cfg]) => (
@@ -270,6 +265,7 @@ export default function AmbulanceStatus() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

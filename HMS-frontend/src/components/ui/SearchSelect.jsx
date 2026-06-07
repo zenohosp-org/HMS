@@ -1,5 +1,6 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect, useRef } from "react";
-import { Search, X, Loader2 } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useDebounce } from "../../utils/hooks";
 
 function SearchSelect({
@@ -76,7 +77,7 @@ function SearchSelect({
           />
         )}
         <div className="hms-async-select__icons">
-          {loading && isOpen && <Loader2 className="w-4 h-4 animate-spin" />}
+          {loading && isOpen && <Spinner className="w-4 h-4 animate-spin" />}
           {value && !disabled && (
             <button type="button" className="hms-async-select__clear" onClick={handleClear}>
               <X className="w-4 h-4" />

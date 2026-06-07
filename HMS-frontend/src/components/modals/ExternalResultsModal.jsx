@@ -1,13 +1,10 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { externalResultsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
-import {
-  FlaskConical, Plus, CheckCircle2, Loader2, X, AlertTriangle, Trash2,
-  Beaker, ScanLine, Microscope, FileText, Calendar,
-  User as UserIcon, IdCard, CalendarClock,
-} from "lucide-react";
+import { FlaskConical, Plus, CheckCircle2, X, AlertTriangle, Trash2, Beaker, ScanLine, Microscope, FileText, Calendar, User as UserIcon, IdCard, CalendarClock,  } from "lucide-react";
 
 /**
  * Front-desk / nursing-staff modal for capturing external lab,
@@ -376,7 +373,7 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
               disabled={saving}
               className="zu-btn-primary"
             >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              {saving ? <Spinner className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               {saving ? "Saving…" : `Save All${staged.length > 0 ? ` (${staged.length}${form.testName.trim() && form.sourceName.trim() ? "+1" : ""})` : ""}`}
             </button>
           </div>

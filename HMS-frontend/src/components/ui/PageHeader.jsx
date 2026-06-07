@@ -1,4 +1,4 @@
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, RefreshCw } from "lucide-react";
 
 /**
  * Sticky page header — title, subtitle, optional back button, optional
@@ -30,7 +30,12 @@ export default function PageHeader({ title, subtitle, onBack, actions, className
                     {title && <h1 className="zu-page-title">{title}</h1>}
                     {subtitle && <p className="zu-page-subtitle">{subtitle}</p>}
                 </div>
-                {actions && <div className="zu-page-actions">{actions}</div>}
+                <div className="zu-page-actions-wrap">
+                    {actions && <div className="zu-page-actions">{actions}</div>}
+                    <button type="button" className="zu-page-refresh-btn" onClick={() => window.location.reload()} title="Refresh page">
+                        <RefreshCw size={16} />
+                    </button>
+                </div>
             </div>
         </div>
     );

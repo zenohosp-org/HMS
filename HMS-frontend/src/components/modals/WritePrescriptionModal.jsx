@@ -1,8 +1,9 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { recordApi } from "@/utils/api";
-import { Plus, Loader2, Pill, CheckCircle2 } from "lucide-react";
+import { Plus, Pill, CheckCircle2 } from "lucide-react";
 import {
   PrescriptionDrugRow,
   newBlankDrugItem,
@@ -165,7 +166,7 @@ export default function WritePrescriptionModal({
         <div className="zu-modal-footer">
           <button type="button" onClick={onClose} className="zu-btn-cancel">Cancel</button>
           <button type="button" onClick={handleSave} disabled={saving} className="zu-btn-primary">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            {saving ? <Spinner className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             Save Prescription
           </button>
         </div>

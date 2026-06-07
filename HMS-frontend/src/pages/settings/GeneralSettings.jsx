@@ -1,14 +1,8 @@
+import { Spinner } from "@/components/ui/Loader";
 import { useMemo, useState } from "react";
 import { useFeatureFlags } from "@/context/FeatureFlagsContext";
 import { useNotification } from "@/context/NotificationContext";
-import {
-    Ambulance,
-    ScanLine,
-    HeartPulse,
-    BedDouble,
-    Loader2,
-    Settings as SettingsIcon,
-} from "lucide-react";
+import { Ambulance, ScanLine, HeartPulse, BedDouble, Settings as SettingsIcon,  } from "lucide-react";
 import { Badge, Card, PageHeader } from "@/components/ui";
 
 const FEATURE_META = {
@@ -94,11 +88,11 @@ export default function GeneralSettings() {
                 subtitle="Enable or disable modules across the hospital. Disabling a module only hides it from the sidebar — existing data and API endpoints remain available."
             />
 
-            <div className="hms-page-content">
+            <div className="zu-page-content">
                 <Card className="p-0 overflow-hidden">
                     {loading ? (
                         <div className="hms-loader-stack">
-                            <Loader2 size={32} className="animate-spin text-gray-700" />
+                            <Spinner size={32} className="animate-spin text-gray-700" />
                             <p className="m-0 text-13 text-gray-500">Loading settings…</p>
                         </div>
                     ) : (
@@ -129,7 +123,7 @@ export default function GeneralSettings() {
 
                                         <div className="hms-settings-list__actions">
                                             {isSaving && (
-                                                <Loader2 size={16} className="animate-spin text-gray-400" />
+                                                <Spinner size={16} className="animate-spin text-gray-400" />
                                             )}
                                             <ToggleSwitch
                                                 checked={enabled}
@@ -143,7 +137,8 @@ export default function GeneralSettings() {
                         </ul>
                     )}
                 </Card>
-            </div>
+            
+                    </div>
         </div>
     );
 }

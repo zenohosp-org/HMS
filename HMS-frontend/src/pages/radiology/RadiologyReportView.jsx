@@ -1,9 +1,10 @@
+import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { radiologyApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
-import { ArrowLeft, Printer, Loader2, ScanLine, AlertCircle } from "lucide-react";
+import { ArrowLeft, Printer, ScanLine, AlertCircle } from "lucide-react";
 const PRIORITY_CLS = {
   ROUTINE: "is-routine",
   URGENT: "is-urgent",
@@ -22,9 +23,7 @@ function RadiologyReportView() {
     radiologyApi.get(Number(id)).then(setOrder).catch(() => setOrder(null)).finally(() => setLoading(false));
   }, [id]);
   if (loading) return (
-    <div className="hms-rad-rep-loading">
-      <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
-    </div>
+    <CenterLoader />
   );
   if (!order) return (
     <div className="hms-rad-rep-notfound">
