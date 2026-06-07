@@ -756,9 +756,14 @@ public class InvoiceService {
         String cancelledReason = null;
 
         if (inv.getAppointment() != null) {
+            log.debug("toDTO invoice={} appointment={} createdBy={}",
+                inv.getInvoiceNumber(),
+                inv.getAppointment().getId(),
+                inv.getAppointment().getCreatedBy());
             if (inv.getAppointment().getCreatedBy() != null) {
                 String fName = inv.getAppointment().getCreatedBy().getFirstName();
                 String lName = inv.getAppointment().getCreatedBy().getLastName();
+                log.debug("toDTO createdBy firstName={} lastName={}", fName, lName);
                 bookedBy = (fName + " " + (lName != null ? lName : "")).trim();
             }
             if (inv.getAppointment().getDoctor() != null && inv.getAppointment().getDoctor().getUser() != null) {
@@ -772,7 +777,10 @@ public class InvoiceService {
             apptStatus = inv.getAppointment().getStatus() != null ? String.valueOf(inv.getAppointment().getStatus()) : null;
             chiefComplaint = inv.getAppointment().getChiefComplaint();
             cancelledReason = inv.getAppointment().getCancelledReason();
+        } else {
+            log.debug("toDTO invoice={} has NO appointment", inv.getInvoiceNumber());
         }
+        log.debug("toDTO final bookedBy={}", bookedBy);
 
         List<InvoiceDTO.ItemDTO> itemsList = new ArrayList<>();
         if (inv.getItems() != null) {

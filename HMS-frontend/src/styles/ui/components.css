@@ -575,6 +575,9 @@
     padding: 20px 24px 16px;
     border-bottom: 1px solid var(--zu-gray-100);
     flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+    background: var(--zu-white);
 }
 
 .zu-modal-header-row {
@@ -612,6 +615,9 @@
     padding: 16px 24px;
     overflow-y: auto;
     flex: 1;
+    min-height: 0;
+    position: relative;
+    z-index: 1;
 }
 
 .zu-modal-footer {
@@ -622,6 +628,9 @@
     gap: 8px;
     border-top: 1px solid var(--zu-gray-100);
     flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+    background: var(--zu-white);
 }
 
 .zu-modal-footer--between {
