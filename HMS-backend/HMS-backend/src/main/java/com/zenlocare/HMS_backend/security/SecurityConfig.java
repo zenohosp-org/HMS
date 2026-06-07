@@ -63,6 +63,14 @@ public class SecurityConfig {
                         // All authenticated users
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
+                        // Suppress Spring's DefaultLoginPageGeneratingFilter, which
+                        // otherwise serves a built-in HTML form whenever anonymous
+                        // traffic hits a protected route or an OAuth2 attempt fails.
+                        // Both flows now bounce back to the SPA login at /login,
+                        // with a query-string error code the frontend maps to a
+                        // friendly message.
+                        .loginPage(frontendUrl + "/login")
+                        .failureUrl(frontendUrl + "/login?error=sso_failed")
                         .authorizationEndpoint(auth -> auth.authorizationRequestRepository(new HttpSessionOAuth2AuthorizationRequestRepository()))
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(delegatingOAuth2SuccessHandler()))
