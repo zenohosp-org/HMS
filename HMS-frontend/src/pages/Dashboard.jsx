@@ -266,7 +266,7 @@ function DoctorStaffDashboard() {
             {user?.hospitalName} · {dateStr}
           </p>
         </div>
-        <button onClick={() => navigate("/patients")} className="hms-btn-primary">
+        <button onClick={() => navigate("/patients")} className="zu-btn-primary">
           <UserPlus className="w-4 h-4" /> Register Patient
         </button>
       </div>
@@ -446,7 +446,7 @@ function DoctorStaffDashboard() {
                 <p className="hms-dash-today__empty-title">No new patients today</p>
                 <p className="hms-dash-today__empty-sub">New registrations will appear here</p>
               </div>
-              <button onClick={() => navigate("/patients")} className="hms-btn-primary is-sm">
+              <button onClick={() => navigate("/patients")} className="zu-btn-primary is-sm">
                 Register Patient
               </button>
             </div>

@@ -295,7 +295,7 @@ function DoctorDetails() {
     ];
 
     return (
-        <div className="hms-detail-page">
+        <div className="zu-page">
             {/* LEFT PANE */}
             <aside className="hms-detail-page__aside">
                 <div className="hms-detail-aside__topbar">
@@ -310,7 +310,7 @@ function DoctorDetails() {
                         <button
                             type="button"
                             onClick={() => setEditing(true)}
-                            className="hms-btn-icon"
+                            className="zu-btn-icon"
                             aria-label="Edit doctor"
                         >
                             <Edit2 size={14} />
@@ -479,14 +479,14 @@ function OverviewTab({
                         <p className="m-0 text-13 text-gray-500">Loading…</p>
                     ) : nextAppointment ? (
                         <>
-                            <p className="hms-doctor-stat__value">
+                            <p className="zu-stat-card-value">
                                 {nextAppointment.apptDate.substring(0, 10)},{" "}
                                 {nextAppointment.apptTime.substring(0, 5)}
                             </p>
-                            <p className="hms-doctor-stat__sub font-semibold">
+                            <p className="zu-stat-card-sub font-semibold">
                                 {nextAppointment.type}
                             </p>
-                            <p className="hms-doctor-stat__sub mt-0.5">
+                            <p className="zu-stat-card-sub mt-0.5">
                                 {nextAppointment.patientName}
                             </p>
                         </>
@@ -498,23 +498,23 @@ function OverviewTab({
                     <div className="hms-doctor-stat__head">
                         <CheckCircle size={14} /> Completed
                     </div>
-                    <p className="hms-doctor-stat__value">
+                    <p className="zu-stat-card-value">
                         {loadingAppointments ? "…" : completedCount} appointments
                     </p>
                     {!loadingAppointments && scheduledCount > 0 && (
-                        <p className="hms-doctor-stat__sub">
+                        <p className="zu-stat-card-sub">
                             {scheduledCount} upcoming scheduled
                         </p>
                     )}
                     {!loadingAppointments && completedCount === 0 && (
-                        <p className="hms-doctor-stat__sub">None yet</p>
+                        <p className="zu-stat-card-sub">None yet</p>
                     )}
                 </Card>
                 <Card>
                     <div className="hms-doctor-stat__head">
                         <Users size={14} /> Patients
                     </div>
-                    <p className="hms-doctor-stat__value">
+                    <p className="zu-stat-card-value">
                         {loadingAppointments ? "…" : doctorPatients.length} unique patients
                     </p>
                     {!loadingAppointments && doctorPatients.length > 0 && (
@@ -527,7 +527,7 @@ function OverviewTab({
                         </button>
                     )}
                     {!loadingAppointments && doctorPatients.length === 0 && (
-                        <p className="hms-doctor-stat__sub">None yet</p>
+                        <p className="zu-stat-card-sub">None yet</p>
                     )}
                 </Card>
             </div>

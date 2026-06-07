@@ -191,7 +191,7 @@ export default function PastRecordDetailModal({ record, onClose }) {
               <span>Recorded</span>
             )}
           </div>
-          <button type="button" onClick={onClose} className="hms-btn-cancel">
+          <button type="button" onClick={onClose} className="zu-btn-cancel">
             Close
           </button>
         </div>

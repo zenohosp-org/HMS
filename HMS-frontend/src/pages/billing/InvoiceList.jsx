@@ -138,7 +138,7 @@ function WaiverModal({ item, invoiceId, onClose, onWaived }) {
           </div>
 
           <div className="hms-inv-waiver__actions">
-            <button type="button" onClick={onClose} className="hms-btn-secondary">Cancel</button>
+            <button type="button" onClick={onClose} className="zu-btn-secondary">Cancel</button>
             <button
               type="submit"
               disabled={submitting}
@@ -574,14 +574,14 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                       <button
                         onClick={handleCollect}
                         disabled={paying}
-                        className="hms-btn-primary"
+                        className="zu-btn-primary"
                       >
                         {paying
                           ? <><Loader2 className="w-3.5 h-3.5 hms-billing-spin" /> Processing…</>
                           : 'Payment Received'
                         }
                       </button>
-                      <button onClick={printInvoice} className="hms-btn-secondary">
+                      <button onClick={printInvoice} className="zu-btn-secondary">
                         <Printer className="w-3.5 h-3.5" /> Print Invoice
                       </button>
                     </div>
@@ -624,7 +624,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
 
                 {/* PAID invoices: just show print */}
                 {!canPay && (
-                  <button onClick={printInvoice} className="hms-btn-secondary is-full">
+                  <button onClick={printInvoice} className="zu-btn-secondary is-full">
                     <Printer className="w-4 h-4" /> Print Invoice
                   </button>
                 )}
@@ -753,11 +753,11 @@ function MarkAsPaidModal({ invoice, onClose, onPaid }) {
         </div>
 
         <div className="hms-mark-paid__footer">
-          <button onClick={onClose} className="hms-btn-secondary">Cancel</button>
+          <button onClick={onClose} className="zu-btn-secondary">Cancel</button>
           <button
             onClick={handlePay}
             disabled={submitting}
-            className="hms-btn-primary"
+            className="zu-btn-primary"
           >
             {submitting
               ? <><Loader2 className="w-4 h-4 hms-billing-spin" /> Processing…</>
@@ -817,7 +817,7 @@ function InvoiceList() {
   };
 
   return (
-    <div className="hms-inv-list-page">
+    <div className="zu-page">
       <PageHeader
         title="Invoice History"
         subtitle="Track all hospital billing and payments"

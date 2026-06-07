@@ -631,7 +631,7 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
 
           <div className="hms-inv-modal__footer">
             <button onClick={handleSubmit} disabled={saving || !patient || items.length === 0}
-              className="hms-btn-primary is-full">
+              className="zu-btn-primary is-full">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
               {saving ? 'Generating…' : 'Generate Invoice & Print'}
             </button>

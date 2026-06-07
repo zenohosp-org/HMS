@@ -274,7 +274,7 @@ export default function ConsultationViewPage() {
               : "There are no checked-in or in-progress patients in the hospital queue right now."}
           </p>
         </div>
-        <button onClick={handleExit} className="hms-btn-secondary mt-2">
+        <button onClick={handleExit} className="zu-btn-secondary mt-2">
           <LogOut className="w-4 h-4" /> Back to Appointments
         </button>
       </div>

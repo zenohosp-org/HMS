@@ -54,14 +54,14 @@ function ItemTypePips({ items }) {
 
 function StatCard({ label, value, sub, Icon, accent }) {
   return (
-    <div className="hms-billing-stat">
-      <div className={`hms-billing-stat__icon is-${accent}`}>
+    <div className="zu-stat-card">
+      <div className={`zu-stat-card-icon is-${accent}`}>
         <Icon className="w-5 h-5" />
       </div>
-      <div className="hms-billing-stat__body">
-        <p className="hms-billing-stat__label">{label}</p>
-        <p className="hms-billing-stat__value">{value}</p>
-        {sub && <p className="hms-billing-stat__sub">{sub}</p>}
+      <div className="zu-stat-card-body">
+        <p className="zu-stat-card-label">{label}</p>
+        <p className="zu-stat-card-value">{value}</p>
+        {sub && <p className="zu-stat-card-sub">{sub}</p>}
       </div>
     </div>
   )
@@ -227,7 +227,7 @@ export default function IPDBilling() {
   }
 
   return (
-    <div className="hms-billing-page">
+    <div className="zu-page">
 
       <PageHeader
         title="IPD Billing"

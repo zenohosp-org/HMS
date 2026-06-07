@@ -223,8 +223,8 @@ export default function NewOrderModal({ onClose, onCreated }) {
               </div>
             </div>
             <div className="hms-rad-modal__foot">
-              <button type="button" onClick={() => setShowRegister(false)} className="hms-btn-secondary">Back</button>
-              <button type="submit" disabled={registering} className="hms-btn-primary">
+              <button type="button" onClick={() => setShowRegister(false)} className="zu-btn-secondary">Back</button>
+              <button type="submit" disabled={registering} className="zu-btn-primary">
                 {registering
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Registering…</>
                   : <><UserPlus className="w-4 h-4" /> Register &amp; Continue</>}
@@ -406,8 +406,8 @@ export default function NewOrderModal({ onClose, onCreated }) {
         {/* Footer */}
         {!showRegister && (
           <div className="hms-rad-modal__foot">
-            <button type="button" onClick={onClose} className="hms-btn-secondary">Cancel</button>
-            <button onClick={handleSubmit} disabled={saving || !selectedPatient || checkingAdmission} className="hms-btn-primary">
+            <button type="button" onClick={onClose} className="zu-btn-secondary">Cancel</button>
+            <button onClick={handleSubmit} disabled={saving || !selectedPatient || checkingAdmission} className="zu-btn-primary">
               {saving
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</>
                 : <><CheckCircle2 className="w-4 h-4" /> Create Order</>}

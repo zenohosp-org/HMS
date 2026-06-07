@@ -346,32 +346,32 @@ export default function CheckupBookings() {
   });
 
   return (
-    <div className="hms-checkup-page">
+    <div className="zu-page">
       <PageHeader
         title="Checkup Bookings"
         subtitle="Schedule and track health checkup appointments"
         actions={
-          <button onClick={() => setShowModal(true)} className="hms-btn-primary">
+          <button onClick={() => setShowModal(true)} className="zu-btn-primary">
             <Plus className="w-4 h-4" /> New Booking
           </button>
         }
       />
 
       {/* Stats */}
-      <div className="hms-checkup-stat-grid">
+      <div className="zu-stat-card-grid">
         {[
           { label: "Today's Checkups", value: stats.today, icon: Calendar, accent: "blue" },
           { label: "Scheduled", value: stats.scheduled, icon: Clock3, accent: "amber" },
           { label: "In Progress", value: stats.inProgress, icon: Activity, accent: "slate" },
           { label: "Completed", value: stats.completed, icon: CheckCircle2, accent: "emerald" },
         ].map(s => (
-          <div key={s.label} className="hms-checkup-stat">
-            <div className={`hms-checkup-stat__icon is-${s.accent}`}>
+          <div key={s.label} className="zu-stat-card">
+            <div className={`zu-stat-card-icon is-${s.accent}`}>
               <s.icon className="w-5 h-5" />
             </div>
             <div>
-              <p className="hms-checkup-stat__value">{s.value}</p>
-              <p className="hms-checkup-stat__label">{s.label}</p>
+              <p className="zu-stat-card-value">{s.value}</p>
+              <p className="zu-stat-card-label">{s.label}</p>
             </div>
           </div>
         ))}

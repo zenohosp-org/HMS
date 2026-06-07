@@ -3,7 +3,7 @@ import { forwardRef } from "react";
 /**
  * HMS design-system button.
  *
- * Renders the shared base class .hms-btn-{variant} plus modifier flags.
+ * Renders the shared base class .zu-btn-{variant} plus modifier flags.
  * All styling lives in src/styles/hms-system.css — this file is a thin
  * shell so the markup at every callsite stays identical.
  *

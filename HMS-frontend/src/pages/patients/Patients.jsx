@@ -92,7 +92,7 @@ function Patients() {
       <PageHeader
         title={<>Patients <span className="hms-pat-page__count">{totalElements}</span></>}
         actions={
-          <button className="hms-btn-primary" onClick={() => setModal({ open: true, patient: null })}>
+          <button className="zu-btn-primary" onClick={() => setModal({ open: true, patient: null })}>
             + Register Patient
           </button>
         }

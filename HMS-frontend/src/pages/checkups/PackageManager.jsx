@@ -174,8 +174,8 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
               <span>Active (visible for booking)</span>
             </label>
             <div className="hms-pkg-modal__foot-actions">
-              <button type="button" onClick={onClose} className="hms-btn-cancel">Cancel</button>
-              <button type="submit" disabled={saving} className="hms-btn-primary is-green">
+              <button type="button" onClick={onClose} className="zu-btn-cancel">Cancel</button>
+              <button type="submit" disabled={saving} className="zu-btn-primary is-green">
                 {saving ? "Saving…" : "Save Package"}
               </button>
             </div>
@@ -289,12 +289,12 @@ export default function PackageManager() {
   const filtered = filterCat === "ALL" ? packages : packages.filter(p => p.category === filterCat);
 
   return (
-    <div className="hms-checkup-page">
+    <div className="zu-page">
       <PageHeader
         title="Health Packages"
         subtitle="Define checkup packages your hospital offers"
         actions={
-          <button onClick={() => { setEditing(null); setShowForm(true); }} className="hms-btn-primary">
+          <button onClick={() => { setEditing(null); setShowForm(true); }} className="zu-btn-primary">
             <Plus className="w-4 h-4" /> New Package
           </button>
         }

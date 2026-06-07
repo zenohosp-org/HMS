@@ -532,9 +532,9 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
 
         {/* Footer */}
         <div className="hms-cmodal__footer">
-          <button type="button" onClick={() => { resetForm(); onClose(); }} className="hms-btn-cancel">Cancel</button>
+          <button type="button" onClick={() => { resetForm(); onClose(); }} className="zu-btn-cancel">Cancel</button>
           <button type="submit" form="book-form" disabled={isLoading}
-            className={isEmergency ? "hms-book-emergency-btn" : "hms-btn-primary"}>
+            className={isEmergency ? "hms-book-emergency-btn" : "zu-btn-primary"}>
             {isLoading ? "Saving…" : isEmergency ? "Create Emergency Appointment" : "Schedule Appointment"}
           </button>
         </div>

@@ -99,7 +99,7 @@ function RadiologyQueue() {
               <CheckCircle2 className="w-3 h-3" /> {stats.reportGenerated} done
             </span>
           </div>
-          <button onClick={() => setShowNewModal(true)} className="hms-btn-primary">
+          <button onClick={() => setShowNewModal(true)} className="zu-btn-primary">
             <Plus className="w-4 h-4" /> New Order
           </button>
         </div>}

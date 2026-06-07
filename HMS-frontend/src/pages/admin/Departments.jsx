@@ -216,7 +216,7 @@ export default function Departments() {
                 <div className="inline-flex gap-1">
                     <button
                         type="button"
-                        className="hms-btn-icon"
+                        className="zu-btn-icon"
                         aria-label="Edit department"
                         onClick={() => openEdit(d)}
                     >
@@ -224,7 +224,7 @@ export default function Departments() {
                     </button>
                     <button
                         type="button"
-                        className="hms-btn-icon"
+                        className="zu-btn-icon"
                         aria-label={d.isActive ? "Deactivate" : "Activate"}
                         onClick={() => toggle(d)}
                     >

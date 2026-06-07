@@ -43,7 +43,7 @@ const STATUS_TONE = {
 
 /** Stat card icon palette — page-local; not part of the design-system
  *  tone set. Each entry sets a background, an icon color, and the value
- *  color through a single .is-* modifier on .hms-admit-stat__icon. */
+ *  color through a single .is-* modifier on .zu-stat-card-icon. */
 const STAT_ICON_MOD = {
     admitted: "is-admitted",
     ot:       "is-ot",
@@ -188,15 +188,15 @@ export default function Admissions() {
 
             <div className="hms-page-content">
                 {/* Stat cards */}
-                <div className="hms-admit-stat-grid">
+                <div className="zu-stat-card-grid">
                     {statCards.map(({ label, value, icon: Icon, mod }) => (
-                        <Card key={label} className="hms-admit-stat-card">
-                            <div className={`hms-admit-stat__icon ${mod}`}>
+                        <Card key={label} className="zu-stat-card-card">
+                            <div className={`zu-stat-card-icon ${mod}`}>
                                 <Icon size={20} />
                             </div>
                             <div>
-                                <p className="hms-admit-stat__value">{value}</p>
-                                <p className="hms-admit-stat__label">{label}</p>
+                                <p className="zu-stat-card-value">{value}</p>
+                                <p className="zu-stat-card-label">{label}</p>
                             </div>
                         </Card>
                     ))}

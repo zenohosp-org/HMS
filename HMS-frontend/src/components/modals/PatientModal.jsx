@@ -299,8 +299,8 @@ function PatientModal({ patient, onClose, onSave }) {
         title="Edit Patient"
         footer={
           <div className="flex justify-end gap-3">
-            <button type="button" className="hms-btn-cancel" onClick={handleClose}>Cancel</button>
-            <button type="submit" form="patientForm" className="hms-btn-primary" disabled={saving}>
+            <button type="button" className="zu-btn-cancel" onClick={handleClose}>Cancel</button>
+            <button type="submit" form="patientForm" className="zu-btn-primary" disabled={saving}>
               {saving ? "Saving…" : "Update Patient"}
             </button>
           </div>
@@ -321,8 +321,8 @@ function PatientModal({ patient, onClose, onSave }) {
         <div className="hms-patient-modal__body">
           {formContent}
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" className="hms-btn-cancel" onClick={onClose}>Cancel</button>
-            <button type="submit" form="patientForm" className="hms-btn-primary" disabled={saving}>
+            <button type="button" className="zu-btn-cancel" onClick={onClose}>Cancel</button>
+            <button type="submit" form="patientForm" className="zu-btn-primary" disabled={saving}>
               {saving ? "Saving…" : "Register Patient"}
             </button>
           </div>

@@ -22,13 +22,6 @@
    The three billing pages share a header → 4-up stats → table card
    with filters + search + sticky head + row-context menu.
    =================================================================== */
-.hms-billing-page {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: var(--hms-gray-50);
-    gap: 24px;
-}
 
 .hms-billing-header {
     display: flex;
@@ -74,77 +67,15 @@
 }
 
 /* Stat tile (white surface, left accent square, label + value + sub) */
-.hms-billing-stat {
-    background: var(--hms-white);
-    border-radius: 8px;
-    border: 1px solid var(--hms-gray-200);
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
 
-.hms-billing-stat__icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    border: 1px solid transparent;
-}
 
-.hms-billing-stat__icon.is-blue {
-    background: var(--hms-info-bg);
-    border-color: var(--hms-info-border);
-    color: var(--hms-info);
-}
 
-.hms-billing-stat__icon.is-emerald {
-    background: var(--hms-success-bg);
-    border-color: var(--hms-success-border);
-    color: var(--hms-success);
-}
 
-.hms-billing-stat__icon.is-amber {
-    background: var(--hms-warning-bg);
-    border-color: var(--hms-warning-border);
-    color: #b45309;
-}
 
-.hms-billing-stat__icon.is-rose {
-    background: #fff1f2;
-    border-color: #fecdd3;
-    color: #be123c;
-}
 
-.hms-billing-stat__body { min-width: 0; }
 
-.hms-billing-stat__label {
-    margin: 0;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--hms-gray-500);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
 
-.hms-billing-stat__value {
-    margin: 2px 0 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--hms-gray-900);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
-.hms-billing-stat__sub {
-    margin: 2px 0 0;
-    font-size: 12px;
-    color: var(--hms-gray-400);
-}
 
 /* Table card wrapper */
 .hms-billing-tablecard {
@@ -627,12 +558,6 @@
 /* ===================================================================
    2. CreateInvoice page (different from CreateInvoiceModal)
    =================================================================== */
-.hms-create-inv-page {
-    padding: 16px 24px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
 
 .hms-create-inv-grid {
     display: grid;
@@ -764,12 +689,6 @@
 /* ===================================================================
    3. InvoiceList page
    =================================================================== */
-.hms-inv-list-page {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 16px 24px 24px;
-}
 
 .hms-inv-list-detail-overlay {
     position: fixed;
@@ -1051,12 +970,6 @@
 /* ===================================================================
    4. Checkup pages (CheckupBookings / CheckupBookingDetail / PackageManager)
    =================================================================== */
-.hms-checkup-page {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px 24px 24px;
-}
 
 .hms-checkup-header {
     display: flex;
@@ -1419,12 +1332,6 @@
 /* ===================================================================
    5. Ambulance pages (AmbulanceBook + AmbulanceStatus)
    =================================================================== */
-.hms-amb-page {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px 24px 24px;
-}
 
 .hms-amb-header {
     display: flex;
@@ -1759,13 +1666,6 @@
 /* ===================================================================
    5b. Ambulance Dispatch / Status page
    =================================================================== */
-.hms-amb-dispatch-page {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    min-height: 100%;
-    background: var(--hms-gray-50);
-}
 
 .hms-amb-filter-tabs {
     display: flex;
@@ -1981,12 +1881,6 @@
 /* ===================================================================
    6. Infrastructure mapping (IPD)
    =================================================================== */
-.hms-infra-page {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px 24px 24px;
-}
 
 .hms-infra-header {
     display: flex;
@@ -2256,56 +2150,12 @@
     letter-spacing: 0.06em;
 }
 
-.hms-infra-stat-strip {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
-}
 
-.hms-infra-stat {
-    background: var(--hms-white);
-    border: 1px solid var(--hms-gray-200);
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
 
-.hms-infra-stat__icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: var(--hms-gray-100);
-    color: var(--hms-gray-600);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
 
-.hms-infra-stat__icon.is-success { background: var(--hms-success-bg); color: var(--hms-success); }
-.hms-infra-stat__icon.is-info { background: var(--hms-info-bg); color: var(--hms-info); }
-.hms-infra-stat__icon.is-warning { background: var(--hms-warning-bg); color: #b45309; }
-.hms-infra-stat__icon.is-danger { background: var(--hms-danger-bg); color: var(--hms-danger); }
 
-.hms-infra-stat__body { min-width: 0; }
 
-.hms-infra-stat__label {
-    margin: 0;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--hms-gray-500);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-}
 
-.hms-infra-stat__value {
-    margin: 2px 0 0;
-    font-size: 17px;
-    font-weight: 800;
-    color: var(--hms-gray-900);
-}
 
 
 /* ===================================================================
@@ -3389,11 +3239,6 @@
 /* ===================================================================
    9. InvoiceList page
    =================================================================== */
-.hms-inv-list-page {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
 
 .hms-inv-list-headrow {
     display: flex;
@@ -4558,54 +4403,14 @@
 /* ===================================================================
    11. Checkup Bookings page (specifics)
    =================================================================== */
-.hms-checkup-stat-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-}
 
 @media (min-width: 1024px) {
-    .hms-checkup-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
-.hms-checkup-stat {
-    background: var(--hms-white);
-    border: 1px solid var(--hms-gray-200);
-    border-radius: 8px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
 
-.hms-checkup-stat__icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
 
-.hms-checkup-stat__icon.is-blue { background: var(--hms-info-bg); color: var(--hms-info); }
-.hms-checkup-stat__icon.is-amber { background: var(--hms-warning-bg); color: var(--hms-warning); }
-.hms-checkup-stat__icon.is-slate { background: var(--hms-gray-100); color: var(--hms-gray-700); }
-.hms-checkup-stat__icon.is-emerald { background: var(--hms-success-bg); color: var(--hms-success); }
 
-.hms-checkup-stat__value {
-    margin: 0;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--hms-gray-900);
-}
 
-.hms-checkup-stat__label {
-    margin: 2px 0 0;
-    font-size: 12px;
-    color: var(--hms-gray-500);
-    font-weight: 500;
-}
 
 .hms-checkup-filters {
     display: flex;
@@ -5111,14 +4916,6 @@
 /* ===================================================================
    12. Checkup Booking Detail page
    =================================================================== */
-.hms-checkup-detail-page {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 24px;
-    max-width: 1152px;
-    margin: 0 auto;
-}
 
 .hms-checkup-detail-toolbar {
     display: flex;
@@ -5737,19 +5534,12 @@
 @media print {
     .hms-checkup-print-header,
     .hms-checkup-print-footer { display: block; }
-    .hms-checkup-detail-page { padding: 16px; }
 }
 
 
 /* ===================================================================
    13. Package Manager
    =================================================================== */
-.hms-checkup-pkg-page {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px 24px 24px;
-}
 
 .hms-checkup-pkg-toolbar {
     display: flex;
@@ -7196,15 +6986,6 @@
 }
 
 /* Stat value colour modifiers */
-.hms-infra-stat-val {
-    font-size: 14px;
-    font-weight: 800;
-}
-.hms-infra-stat-val.is-default { color: var(--hms-gray-600); }
-.hms-infra-stat-val.is-info    { color: #3b82f6; }
-.hms-infra-stat-val.is-violet  { color: #8b5cf6; }
-.hms-infra-stat-val.is-success { color: #10b981; }
-.hms-infra-stat-val.is-warning { color: #f59e0b; }
 
 /* ── Workspace (nav + canvas) ─────────────────────────────────────── */
 .hms-infra-workspace {

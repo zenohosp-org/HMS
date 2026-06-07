@@ -727,46 +727,10 @@
 
 /* ─────────────────────────── Admissions stat tile (large icon left, value right) ─────────────────────────── */
 
-.hms-admit-stat__icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
 
 /* Per-stat colors — page-local; not part of the design-system tone set. */
-.hms-admit-stat__icon.is-admitted {
-    background: var(--hms-success-bg);
-    color: var(--hms-success);
-}
-.hms-admit-stat__icon.is-ot {
-    background: #f5f3ff;
-    color: #7c3aed;
-}
-.hms-admit-stat__icon.is-today {
-    background: var(--hms-info-bg);
-    color: var(--hms-info);
-}
-.hms-admit-stat__icon.is-overdue {
-    background: #fff1f2;
-    color: #be123c;
-}
 
-.hms-admit-stat__value {
-    margin: 0;
-    font-size: 22px;
-    font-weight: 800;
-    color: var(--hms-gray-900);
-}
 
-.hms-admit-stat__label {
-    margin: 0;
-    font-size: 12px;
-    color: var(--hms-gray-500);
-}
 
 
 /* ─────────────────────────── Admissions grid view toggle ─────────────────────────── */
@@ -894,11 +858,6 @@
 
 
 /* ─────────────────────────── Admissions auto-fit grids ─────────────────────────── */
-.hms-admit-stat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
-}
 
 .hms-admit-card-grid {
     display: grid;
@@ -908,11 +867,6 @@
 
 
 /* ─────────────────────────── Admissions stat card needs row layout ─────────────────────────── */
-.hms-admit-stat-card {
-    flex-direction: row !important;
-    align-items: center;
-    gap: 16px;
-}
 
 
 /* ─────────────────────────── Generic 40x40 patient/icon tile (Admissions card) ─────────────────────────── */
@@ -1924,15 +1878,6 @@
 
 
 /* ─────────────────────────── DoctorDetails: fullscreen split-pane page ─────────────────────────── */
-.hms-detail-page {
-    display: flex;
-    gap: 0;
-    height: calc(100vh - 3.5rem);
-    width: calc(100% + 3rem);
-    margin: -1.5rem -1.5rem 0;
-    overflow: hidden;
-    background: var(--hms-white);
-}
 
 .hms-detail-page__aside {
     width: 288px;
@@ -2159,18 +2104,7 @@
     margin-bottom: 8px;
 }
 
-.hms-doctor-stat__value {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--hms-gray-900);
-}
 
-.hms-doctor-stat__sub {
-    margin: 4px 0 0;
-    font-size: 12px;
-    color: var(--hms-gray-500);
-}
 
 
 /* DoctorDetails: fee tile grid + tile */

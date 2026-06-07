@@ -255,7 +255,7 @@ function PatientDetails() {
     <div className="hms-pat-detail__notfound">
       <AlertCircle className="w-5 h-5 text-gray-300" />
       <p className="text-13 text-gray-500">Patient not found.</p>
-      <button className="hms-btn-secondary is-sm" onClick={() => navigate(-1)}>← Go Back</button>
+      <button className="zu-btn-secondary is-sm" onClick={() => navigate(-1)}>← Go Back</button>
     </div>
   );
   const age = patient.dob ? calcAge(patient.dob) : null;

@@ -105,7 +105,7 @@ export default function AmbulanceStatus() {
   }, {});
 
   return (
-    <div className="hms-amb-dispatch-page">
+    <div className="zu-page">
 
       {/* Header */}
       <div className="hms-amb-header-row">

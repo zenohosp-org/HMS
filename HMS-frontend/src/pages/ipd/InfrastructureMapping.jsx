@@ -630,11 +630,11 @@ export default function InfrastructureMapping() {
         {/* Stats Panel */}
         <div className="hms-infra-stats-strip">
           {[
-            { label: "Bldgs", value: buildings.length, colorClass: "hms-infra-stat-val is-default" },
-            { label: "Floors", value: stats.floors, colorClass: "hms-infra-stat-val is-info" },
-            { label: "Rooms", value: stats.rooms, colorClass: "hms-infra-stat-val is-violet" },
-            { label: "OTs", value: stats.ots, colorClass: "hms-infra-stat-val is-success" },
-            { label: "Stores", value: stats.stores, colorClass: "hms-infra-stat-val is-warning" }
+            { label: "Bldgs", value: buildings.length, colorClass: "zu-stat-card-val is-default" },
+            { label: "Floors", value: stats.floors, colorClass: "zu-stat-card-val is-info" },
+            { label: "Rooms", value: stats.rooms, colorClass: "zu-stat-card-val is-violet" },
+            { label: "OTs", value: stats.ots, colorClass: "zu-stat-card-val is-success" },
+            { label: "Stores", value: stats.stores, colorClass: "zu-stat-card-val is-warning" }
           ].map(({ label, value, colorClass }) => (
             <div key={label} className="hms-infra-stats-strip__item">
               <p className={`${colorClass} tabular-nums`}>{value}</p>

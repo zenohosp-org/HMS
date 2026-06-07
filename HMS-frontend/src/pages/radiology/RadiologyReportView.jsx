@@ -30,7 +30,7 @@ function RadiologyReportView() {
     <div className="hms-rad-rep-notfound">
       <AlertCircle className="w-5 h-5 text-gray-300" />
       <p className="hms-rad-rep-notfound__text">Report not found.</p>
-      <button onClick={() => navigate("/radiology/reports")} className="hms-btn-secondary is-sm">← Back to Reports</button>
+      <button onClick={() => navigate("/radiology/reports")} className="zu-btn-secondary is-sm">← Back to Reports</button>
     </div>
   );
   return (

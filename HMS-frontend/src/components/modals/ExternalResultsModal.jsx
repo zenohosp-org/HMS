@@ -367,14 +367,14 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
             Reports stay on the patient chart forever — corrections add a new row, never overwrite.
           </p>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={onClose} disabled={saving} className="hms-btn-cancel">
+            <button type="button" onClick={onClose} disabled={saving} className="zu-btn-cancel">
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSaveAll}
               disabled={saving}
-              className="hms-btn-primary"
+              className="zu-btn-primary"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               {saving ? "Saving…" : `Save All${staged.length > 0 ? ` (${staged.length}${form.testName.trim() && form.sourceName.trim() ? "+1" : ""})` : ""}`}

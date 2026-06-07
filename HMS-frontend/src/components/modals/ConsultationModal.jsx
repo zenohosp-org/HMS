@@ -168,10 +168,10 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
         <div className="hms-consult-footer">
           <AutosaveIndicator status={autosaveStatus} hydrating={hydrating} />
           <div className="hms-consult-footer__actions">
-            <button type="button" onClick={onClose} disabled={saving} className="hms-btn-cancel">
+            <button type="button" onClick={onClose} disabled={saving} className="zu-btn-cancel">
               Cancel
             </button>
-            <button type="button" onClick={saveConsultation} disabled={saving} className="hms-btn-primary">
+            <button type="button" onClick={saveConsultation} disabled={saving} className="zu-btn-primary">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               Save Consultation
             </button>

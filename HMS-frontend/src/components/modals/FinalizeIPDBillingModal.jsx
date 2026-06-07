@@ -797,7 +797,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
               {/* Left sub-header */}
               <div className="hms-finalize-subhead">
                 <p className="hms-finalize-subhead__title">Bill Items</p>
-                <button onClick={addBlankItem} className="hms-btn-secondary is-sm">
+                <button onClick={addBlankItem} className="zu-btn-secondary is-sm">
                   <Plus className="w-3.5 h-3.5" /> Add Item
                 </button>
               </div>
@@ -1105,13 +1105,13 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         {/* ── Footer ── */}
         {!loadingBill && (
           <div className="hms-finalize-footer">
-            <button type="button" onClick={() => onClose(dirty)} className="hms-btn-cancel">Close</button>
+            <button type="button" onClick={() => onClose(dirty)} className="zu-btn-cancel">Close</button>
             {!isPaid && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleSaveBill}
                   disabled={savingBill || items.length === 0}
-                  className="hms-btn-secondary flex items-center gap-2"
+                  className="zu-btn-secondary flex items-center gap-2"
                 >
                   {savingBill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
                   {savingBill ? 'Saving…' : 'Save Bill'}
@@ -1120,7 +1120,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   <button
                     onClick={handleCollectPayment}
                     disabled={collectingPayment || !Number(payAmount)}
-                    className="hms-btn-primary flex items-center gap-2"
+                    className="zu-btn-primary flex items-center gap-2"
                   >
                     {collectingPayment
                       ? <><Loader2 className="w-4 h-4 animate-spin" /> Recording…</>

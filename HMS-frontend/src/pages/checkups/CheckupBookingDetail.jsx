@@ -299,7 +299,7 @@ export default function CheckupBookingDetail() {
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-    <div className="hms-checkup-detail-page">
+    <div className="zu-page">
       {/* Toolbar */}
       <div className="hms-checkup-detail-toolbar no-print">
         <button

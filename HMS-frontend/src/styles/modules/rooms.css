@@ -8,13 +8,7 @@
 
 
 /* ─── Page shell ─── */
-.hms-rooms-page { display: flex; flex-direction: column; gap: 16px; }
 
-.hms-rooms-page-content {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
 
 
 /* ─── Header banner (top card with title + meta) ─── */

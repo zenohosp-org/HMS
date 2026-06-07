@@ -212,7 +212,7 @@ export default function Designations() {
             render: (d) => (
                 <button
                     type="button"
-                    className="hms-btn-icon"
+                    className="zu-btn-icon"
                     aria-label={d.isActive ? "Deactivate" : "Activate"}
                     onClick={() => toggle(d)}
                 >

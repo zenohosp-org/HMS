@@ -106,7 +106,7 @@ function RoomLogsPage() {
     const totalPages = Math.ceil(filteredLogs.length / PAGE_SIZE);
 
     return (
-        <div className="hms-rooms-page">
+        <div className="zu-page">
             <PageHeader
                 title={
                     roomNumber
@@ -121,7 +121,7 @@ function RoomLogsPage() {
                 onBack={() => navigate("/rooms/allocation")}
             />
 
-            <div className="hms-rooms-page-content">
+            <div className="zu-page-content">
                 <SearchBar
                     value={search}
                     onChange={setSearch}

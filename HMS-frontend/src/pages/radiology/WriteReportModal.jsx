@@ -63,8 +63,8 @@ function WriteReportModal({ order, onClose, onSaved }) {
             />
           </div>
           <div className="hms-rad-modal__foot">
-            <button type="button" onClick={onClose} className="hms-btn-secondary">Cancel</button>
-            <button type="submit" disabled={saving} className="hms-btn-primary">{saving ? "Generating…" : "Generate Report"}</button>
+            <button type="button" onClick={onClose} className="zu-btn-secondary">Cancel</button>
+            <button type="submit" disabled={saving} className="zu-btn-primary">{saving ? "Generating…" : "Generate Report"}</button>
           </div>
         </form>
       </div>

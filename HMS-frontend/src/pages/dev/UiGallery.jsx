@@ -317,7 +317,7 @@ export default function UiGallery() {
                             <span className="flex-1" />
                             <Menu
                                 triggerIcon={<>Actions <MoreHorizontal size={14} className="ml-1" /></>}
-                                triggerClassName="hms-btn-secondary is-sm"
+                                triggerClassName="zu-btn-secondary is-sm"
                                 triggerLabel="Bulk actions"
                                 align="left"
                                 items={[

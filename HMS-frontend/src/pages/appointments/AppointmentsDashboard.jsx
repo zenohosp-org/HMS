@@ -224,11 +224,11 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
                     setShowCancelReason(false);
                     setCancelReason("");
                   }}
-                  className="hms-btn-secondary is-sm flex-1"
+                  className="zu-btn-secondary is-sm flex-1"
                 >Back</button>
                 <button
                   onClick={submitCancel}
-                  className="hms-btn-danger is-sm flex-1"
+                  className="zu-btn-danger is-sm flex-1"
                 >Confirm Cancel</button>
               </div>
             </div>
@@ -672,20 +672,20 @@ function AppointmentsDashboard() {
           <div className="hms-appt-page__actions">
             <button
               onClick={() => setViewMode(viewMode === "list" ? "calendar" : "list")}
-              className="hms-btn-secondary"
+              className="zu-btn-secondary"
             >
               <CalendarIcon className="w-4 h-4" />{viewMode === "list" ? "Calendar View" : "List View"}
             </button>
             <button
               onClick={() => navigate("/consultation-view")}
-              className="hms-btn-secondary"
+              className="zu-btn-secondary"
               title="Walk through today's queue patient-by-patient"
             >
               <Stethoscope className="w-4 h-4" />Consultation View
             </button>
             <button
               onClick={() => setIsBookingModalOpen(true)}
-              className="hms-btn-primary"
+              className="zu-btn-primary"
             >
               <Plus className="w-4 h-4" />
               New Appointment
@@ -742,7 +742,7 @@ function AppointmentsDashboard() {
                 className="hms-appt-list__doctor-select"
               />
               <div className="hms-appt-cal-bar__nav">
-                <button onClick={goToday} className="hms-btn-secondary">Today</button>
+                <button onClick={goToday} className="zu-btn-secondary">Today</button>
                 <div className="hms-appt-cal-bar__pager">
                   <button onClick={prevPeriod} className="hms-appt-cal-pager-btn"><ChevronLeft className="w-5 h-5" /></button>
                   <button onClick={nextPeriod} className="hms-appt-cal-pager-btn"><ChevronRight className="w-5 h-5" /></button>

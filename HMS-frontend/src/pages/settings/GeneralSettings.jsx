@@ -88,7 +88,7 @@ export default function GeneralSettings() {
     };
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="zu-page">
             <PageHeader
                 title="General settings"
                 subtitle="Enable or disable modules across the hospital. Disabling a module only hides it from the sidebar — existing data and API endpoints remain available."

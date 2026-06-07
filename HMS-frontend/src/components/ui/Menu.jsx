@@ -36,7 +36,7 @@ import { createPortal } from "react-dom";
  *   minWidth            number (px)          default 200
  *   triggerLabel        a11y label on the trigger button (defaults to "Open menu")
  *   triggerIcon         icon node inside the trigger
- *   triggerClassName    className applied to the trigger — default "hms-btn-icon"
+ *   triggerClassName    className applied to the trigger — default "zu-btn-icon"
  *   onOpenChange        (open: boolean) => void   optional observer
  */
 export default function Menu({

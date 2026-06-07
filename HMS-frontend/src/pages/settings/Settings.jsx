@@ -7,7 +7,7 @@ import InfrastructureMapping from "@/pages/ipd/InfrastructureMapping";
  */
 export default function Settings() {
     return (
-        <div className="flex flex-col flex-1">
+        <div className="zu-page flex-1">
             <InfrastructureMapping />
         </div>
     );

@@ -439,7 +439,7 @@ function Rooms() {
     });
 
     return (
-        <div className="hms-rooms-page">
+        <div className="zu-page">
             {/* Header — banner card */}
             <Card className="hms-rooms-banner">
                 <div className="hms-rooms-banner__inner">

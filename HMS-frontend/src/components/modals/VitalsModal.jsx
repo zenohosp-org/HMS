@@ -258,10 +258,10 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
 
         {/* Footer */}
         <div className="hms-cmodal__footer">
-          <button type="button" onClick={onClose} disabled={saving} className="hms-btn-cancel">
+          <button type="button" onClick={onClose} disabled={saving} className="zu-btn-cancel">
             Cancel
           </button>
-          <button type="button" onClick={handleSave} disabled={saving || loading} className="hms-btn-primary">
+          <button type="button" onClick={handleSave} disabled={saving || loading} className="zu-btn-primary">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             {existing ? "Update Vitals" : "Save Vitals"}
           </button>
