@@ -229,11 +229,7 @@ export default function Designations() {
     return (
         <div className="zu-page">
             <PageHeader
-                title={
-                    <span className="inline-flex items-center gap-3">
-                        <Award size={20} /> Designations
-                    </span>
-                }
+                title="Designations"
                 subtitle="Job titles and roles across departments"
                 actions={
                     <Button variant="primary" onClick={() => openCreate()}>
@@ -281,7 +277,6 @@ export default function Designations() {
                         columns={columns}
                         data={rows}
                         loading={loading}
-                        loadingMessage="Loading…"
                         emptyMessage="No designations yet. Add from presets below."
                     />
 

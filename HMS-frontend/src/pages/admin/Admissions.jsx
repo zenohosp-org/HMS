@@ -19,6 +19,7 @@ import {
     LayoutGrid,
     AlertCircle,
     Scissors,
+    Search,
 } from "lucide-react";
 import { timeAgo, fmtDateTime } from "@/utils/date";
 import { fmtId } from "@/utils/idFormat";
@@ -31,6 +32,7 @@ import {
     SearchBar,
     Tabs,
 } from "@/components/ui";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 /** Status → Badge tone. ADMITTED green, DISCHARGED neutral,
  *  TRANSFERRED warning, ABSCONDED danger. */
@@ -173,11 +175,7 @@ export default function Admissions() {
     return (
         <div className="zu-page">
             <PageHeader
-                title={
-                    <span className="inline-flex items-center gap-2.5">
-                        <BedDouble size={20} /> IPD Admissions
-                    </span>
-                }
+                title="IPD Admissions"
                 subtitle="In-patient department — active admissions and discharge management"
                 actions={
                     <Button variant="primary" onClick={() => setShowAdmitModal(true)}>
@@ -203,52 +201,59 @@ export default function Admissions() {
                 </div>
 
                 {/* Filter row */}
-                <div className="hms-admit-filter">
-                    <div className="hms-admit-filter__search">
-                        <SearchBar
+                <div className="zu-filter-bar">
+                    <div className="zu-filter-bar__search">
+                        <Search className="zu-filter-bar__search-icon" />
+                        <input
+                            type="text"
+                            className="zu-filter-bar__search-input"
                             value={search}
-                            onChange={setSearch}
+                            onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search by patient, admission no., department, room…"
                         />
                     </div>
-                    <Tabs
-                        type="pill"
-                        active={statusFilter}
-                        onChange={(id) => {
-                            setStatusFilter(id);
-                            setPage(0);
-                        }}
-                        tabs={[
-                            {
-                                id: "ADMITTED",
-                                label: "Admitted",
-                                count: counts.ADMITTED > 0 ? counts.ADMITTED : undefined,
-                            },
-                            { id: "DISCHARGED", label: "Discharged" },
-                            { id: "ALL", label: "All" },
-                        ]}
-                    />
-                    <div className="hms-view-toggle">
-                        {[
-                            ["grid", LayoutGrid],
-                            ["list", List],
-                        ].map(([mode, Icon]) => (
-                            <button
-                                key={mode}
-                                type="button"
-                                onClick={() => setViewMode(mode)}
-                                className={`hms-view-toggle__btn ${viewMode === mode ? "is-active" : ""}`}
-                                aria-pressed={viewMode === mode}
-                                aria-label={`${mode} view`}
-                            >
-                                <Icon size={16} />
-                            </button>
-                        ))}
+                    <div className="zu-filter-bar__controls">
+                        <Tabs
+                            type="pill"
+                            active={statusFilter}
+                            onChange={(id) => {
+                                setStatusFilter(id);
+                                setPage(0);
+                            }}
+                            tabs={[
+                                {
+                                    id: "ADMITTED",
+                                    label: "Admitted",
+                                    count: counts.ADMITTED > 0 ? counts.ADMITTED : undefined,
+                                },
+                                { id: "DISCHARGED", label: "Discharged" },
+                                { id: "ALL", label: "All" },
+                            ]}
+                        />
+                        <div className="hms-view-toggle">
+                            {[
+                                ["grid", LayoutGrid],
+                                ["list", List],
+                            ].map(([mode, Icon]) => (
+                                <button
+                                    key={mode}
+                                    type="button"
+                                    onClick={() => setViewMode(mode)}
+                                    className={`hms-view-toggle__btn ${viewMode === mode ? "is-active" : ""}`}
+                                    aria-pressed={viewMode === mode}
+                                    aria-label={`${mode} view`}
+                                >
+                                    <Icon size={16} />
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
                 {loading ? (
-                    <div className="hms-admit-state">Loading admissions…</div>
+                    <div className="hms-admit-state">
+                      <TableSkeleton rows={6} columns={5} />
+                    </div>
                 ) : admissions.length === 0 ? (
                     <div className="hms-admit-state is-empty">
                         <BedDouble size={48} className="opacity-30" />

@@ -167,9 +167,6 @@ function Specializations() {
                     columns={columns}
                     data={filteredSpecs}
                     loading={isLoading}
-                    loadingMessage={
-                        <span className="text-gray-500">Loading specializations…</span>
-                    }
                     emptyMessage={
                         <div className="hms-cell-empty">
                             <span className="hms-cell-empty__icon">

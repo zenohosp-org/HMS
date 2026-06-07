@@ -223,9 +223,6 @@ function DoctorsList() {
                     columns={columns}
                     data={paginated}
                     loading={loading}
-                    loadingMessage={
-                        <TableSkeleton rows={10} />
-                    }
                     emptyMessage={
                         <div className="hms-cell-empty">
                             <span className="hms-cell-empty__icon">

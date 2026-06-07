@@ -221,7 +221,7 @@ export default function AdminDashboard() {
     if (loading || !summary) {
         return (
             <div className="flex items-center justify-center h-64">
-                <Spinner size={32} className="text-gray-700 animate-spin" />
+                <Spinner size={32} className="text-gray-700 zu-spinner" />
             </div>
         );
     }

@@ -6,6 +6,7 @@ import { useNotification } from "@/context/NotificationContext";
 import { radiologyApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import Pagination from "@/components/ui/Pagination";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import { FileText, Search, Loader2, CheckCircle2, User, Clock, ExternalLink } from "lucide-react";
 const PAGE_SIZE = 30;
 const PRIORITY_CLS = {
@@ -54,7 +55,7 @@ function RadiologyReports() {
   return (
     <div className="zu-page">
       <PageHeader
-        title={<><FileText className="w-5 h-5 hms-rad-page__title-icon" /> Radiology Reports</>}
+        title="Radiology Reports"
         subtitle="View and manage completed radiology reports"
         actions={
           <div className="hms-rad-chip-row">
@@ -86,7 +87,7 @@ function RadiologyReports() {
         </div>
         {loading ? (
           <div className="hms-rad-section__loading">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+            <TableSkeleton rows={6} columns={6} />
           </div>
         ) : filtered.length === 0 ? (
           <div className="hms-rad-rep-empty">

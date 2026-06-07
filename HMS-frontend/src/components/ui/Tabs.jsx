@@ -14,7 +14,34 @@
  *   className extra classes appended to the wrapper
  */
 export default function Tabs({ tabs = [], active, onChange, type = "underline", panels, className = "" }) {
-    const stripClass = type === "pill" ? "hms-tabs-pill" : "hms-tabs-underline";
+    if (type === "pill") {
+        return (
+            <div className={className}>
+                <div className="zu-pill-group" role="tablist">
+                    {tabs.map((t) => {
+                        const isActive = t.id === active;
+                        return (
+                            <button
+                                key={t.id}
+                                type="button"
+                                role="tab"
+                                aria-selected={isActive}
+                                disabled={t.disabled}
+                                className={`zu-pill-group__btn ${isActive ? "is-active" : ""}`}
+                                onClick={() => !t.disabled && onChange?.(t.id)}
+                            >
+                                <span>{t.label}</span>
+                                {typeof t.count === "number" && <span className="zu-pill-group__btn-count">{t.count}</span>}
+                            </button>
+                        );
+                    })}
+                </div>
+                {panels && <div role="tabpanel">{panels[active]}</div>}
+            </div>
+        );
+    }
+
+    const stripClass = "hms-tabs-underline";
 
     return (
         <div className={className}>

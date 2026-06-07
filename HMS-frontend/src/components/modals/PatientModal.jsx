@@ -195,29 +195,6 @@ function PatientModal({ patient, onClose, onSave }) {
         </div>
       </div>
 
-      {/* ── Emergency Contact ── */}
-      <div>
-        <p className="hms-form-section-label">Emergency Contact</p>
-        <div className="hms-form-grid is-3col">
-          <div className="hms-form-group">
-            <label className="hms-label">Name</label>
-            <input className="hms-input" value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} placeholder="Full name" />
-          </div>
-          <div className="hms-form-group">
-            <label className="hms-label">Phone</label>
-            <input className="hms-input" value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} placeholder="+91 XXXXX XXXXX" />
-          </div>
-          <div className="hms-form-group">
-            <label className="hms-label">Relation</label>
-            <SearchableSelect
-              options={EMERGENCY_RELATIONS.map((r) => ({ value: r, label: r }))}
-              value={form.emergencyContactRelation}
-              onChange={(v) => set("emergencyContactRelation", v)}
-              placeholder="Select"
-            />
-          </div>
-        </div>
-      </div>
 
       {/* ── Medical Identifiers ── */}
       <div>
@@ -284,6 +261,30 @@ function PatientModal({ patient, onClose, onSave }) {
           <div className="hms-form-group">
             <label className="hms-label">Referred By</label>
             <input className="hms-input" value={form.referredBy} onChange={(e) => set("referredBy", e.target.value)} placeholder="Doctor name or clinic" />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Emergency Contact ── */}
+      <div>
+        <p className="hms-form-section-label">Emergency Contact</p>
+        <div className="hms-form-grid is-3col">
+          <div className="hms-form-group">
+            <label className="hms-label">Name</label>
+            <input className="hms-input" value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} placeholder="Full name" />
+          </div>
+          <div className="hms-form-group">
+            <label className="hms-label">Phone</label>
+            <input className="hms-input" value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} placeholder="+91 XXXXX XXXXX" />
+          </div>
+          <div className="hms-form-group">
+            <label className="hms-label">Relation</label>
+            <SearchableSelect
+              options={EMERGENCY_RELATIONS.map((r) => ({ value: r, label: r }))}
+              value={form.emergencyContactRelation}
+              onChange={(v) => set("emergencyContactRelation", v)}
+              placeholder="Select"
+            />
           </div>
         </div>
       </div>

@@ -108,54 +108,61 @@ export default function AmbulanceStatus() {
   return (
     <div className="zu-page">
       <PageHeader 
-        title={<div className="flex items-center gap-2"><Activity className="w-5 h-5" /> Ambulance Status</div>}
+        title="Ambulance Status"
         subtitle="Live dispatch tracking and status updates"
       />
 
       <div className="zu-page-content">
       {/* Status filter pills */}
-      <div className="hms-amb-filter-tabs">
-        {Object.entries(STATUS_CONFIG).map(([s, cfg]) => (
-          <button
-            key={s}
-            onClick={() => setFilterStatus(filterStatus === s ? "ALL" : s)}
-            className={`hms-amb-filter-tab ${cfg.cls} ${filterStatus === s ? "is-on" : ""}`}
-          >
-            {counts[s] > 0 && (
-              <span className="hms-amb-filter-tab__count">{counts[s]}</span>
-            )}
-            {cfg.label}
-          </button>
-        ))}
-        {filterStatus !== "ALL" && (
-          <button onClick={() => setFilterStatus("ALL")} className="hms-amb-filter-clear">
-            Clear
-          </button>
-        )}
+      <div className="zu-filter-bar">
+        <div className="zu-filter-bar__controls">
+          <div className="zu-pill-group">
+            <button 
+              onClick={() => setFilterStatus("ALL")}
+              className={`zu-pill-group__btn ${filterStatus === "ALL" ? "is-active" : ""}`}
+            >
+              All
+            </button>
+            {Object.entries(STATUS_CONFIG).map(([s, cfg]) => (
+              <button
+                key={s}
+                onClick={() => setFilterStatus(s)}
+                className={`zu-pill-group__btn ${filterStatus === s ? "is-active" : ""}`}
+              >
+                {counts[s] > 0 && (
+                  <span className="zu-pill-group__btn-count">{counts[s]}</span>
+                )}
+                {cfg.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="hms-amb-filter-bar">
-        <div className="hms-amb-filter-search">
-          <Search className="hms-amb-filter-search__icon w-4 h-4" />
+      <div className="zu-filter-bar">
+        <div className="zu-filter-bar__search">
+          <Search className="zu-filter-bar__search-icon" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search patient, driver, vehicle…"
-            className="hms-amb-filter-search__input"
+            className="zu-filter-bar__search-input"
           />
         </div>
-        <input
-          type="date"
-          value={filterDate}
-          onChange={e => setFilterDate(e.target.value)}
-          className="hms-amb-filter-date"
-        />
-        {filterDate && (
-          <button onClick={() => setFilterDate("")} className="hms-amb-filter-date-clear">
-            Clear date
-          </button>
-        )}
+        <div className="zu-filter-bar__controls">
+          <input
+            type="date"
+            value={filterDate}
+            onChange={e => setFilterDate(e.target.value)}
+            className="zu-filter-date"
+          />
+          {filterDate && (
+            <button onClick={() => setFilterDate("")} className="hms-amb-filter-date-clear">
+              Clear date
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Cards */}

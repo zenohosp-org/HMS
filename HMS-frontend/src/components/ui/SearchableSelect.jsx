@@ -78,9 +78,17 @@ export default function SearchableSelect({
         </span>
         <span className="hms-select__icons">
           {value && !disabled && (
-            <button type="button" className="hms-select__clear" onClick={clear}>
+            <span
+              role="button"
+              className="hms-select__clear inline-flex items-center justify-center cursor-pointer"
+              onClick={clear}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") clear(e);
+              }}
+              tabIndex={0}
+            >
               <X className="w-3 h-3" />
-            </button>
+            </span>
           )}
           <ChevronDown className={`hms-select__chevron w-4 h-4 ${open ? "is-open" : ""}`} />
         </span>

@@ -242,11 +242,7 @@ export default function Departments() {
     return (
         <div className="zu-page">
             <PageHeader
-                title={
-                    <span className="inline-flex items-center gap-3">
-                        <Building2 size={20} /> Departments
-                    </span>
-                }
+                title="Departments"
                 subtitle="Manage hospital departments and wings"
                 actions={
                     <Button variant="primary" onClick={() => openCreate()}>
@@ -281,7 +277,6 @@ export default function Departments() {
                         columns={columns}
                         data={rows}
                         loading={loading}
-                        loadingMessage="Loading…"
                         emptyMessage="No departments yet. Add from presets below or create custom."
                     />
 

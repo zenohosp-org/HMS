@@ -617,7 +617,7 @@ function AppointmentsTab({ doctor, loading, appointments }) {
             </div>
             {loading ? (
                 <div className="flex justify-center py-16">
-                    <Spinner size={28} className="text-info animate-spin" />
+                    <Spinner size={28} className="text-info zu-spinner" />
                 </div>
             ) : appointments.length === 0 ? (
                 <CenterEmpty
@@ -646,9 +646,6 @@ function AppointmentsTab({ doctor, loading, appointments }) {
                                     </Badge>
                                 </div>
                                 <div className="hms-appt-card__patient">
-                                    <span className="hms-appt-card__avatar">
-                                        {appt.patientName.charAt(0)}
-                                    </span>
                                     <div>
                                         <p className="hms-appt-card__name">{appt.patientName}</p>
                                         <p className="hms-appt-card__type">{appt.type}</p>
@@ -683,7 +680,7 @@ function PatientsTab({ loading, patients, navigate }) {
             </div>
             {loading ? (
                 <div className="flex justify-center py-16">
-                    <Spinner size={28} className="animate-spin" />
+                    <Spinner size={28} className="zu-spinner" />
                 </div>
             ) : patients.length === 0 ? (
                 <CenterEmpty
@@ -700,9 +697,6 @@ function PatientsTab({ loading, patients, navigate }) {
                             onClick={() => navigate(`/patients/${patient.id}`)}
                             className="hms-patient-card"
                         >
-                            <span className="hms-patient-card__avatar">
-                                {patient.name.charAt(0)}
-                            </span>
                             <div className="min-w-0">
                                 <p className="hms-patient-card__name">{patient.name}</p>
                                 <p className="hms-patient-card__sub">
@@ -751,7 +745,7 @@ function ScheduleTab({
 
             {scheduleLoading ? (
                 <div className="flex justify-center py-16">
-                    <Spinner size={28} className="text-info animate-spin" />
+                    <Spinner size={28} className="text-info zu-spinner" />
                 </div>
             ) : (
                 <div className="flex flex-col gap-3">

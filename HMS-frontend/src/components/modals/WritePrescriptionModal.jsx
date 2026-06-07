@@ -166,7 +166,7 @@ export default function WritePrescriptionModal({
         <div className="zu-modal-footer">
           <button type="button" onClick={onClose} className="zu-btn-cancel">Cancel</button>
           <button type="button" onClick={handleSave} disabled={saving} className="zu-btn-primary">
-            {saving ? <Spinner className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            {saving ? <Spinner className="w-4 h-4 zu-spinner" /> : <CheckCircle2 className="w-4 h-4" />}
             Save Prescription
           </button>
         </div>

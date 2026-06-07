@@ -145,7 +145,7 @@ function ResultRow({ result, onSave, disabled }) {
             disabled={!isDirty || saving}
             className={`hms-checkup-results__save ${saved ? 'is-saved' : isDirty ? 'is-dirty' : ''}`}
           >
-            {saving ? <Spinner className="w-3 h-3 hms-billing-spin" /> : saved ? <CheckCircle2 className="w-3 h-3" /> : <Save className="w-3 h-3" />}
+            {saving ? <Spinner className="w-3 h-3 zu-spinner" /> : saved ? <CheckCircle2 className="w-3 h-3" /> : <Save className="w-3 h-3" />}
             {saved ? "Saved" : "Save"}
           </button>
         )}
@@ -207,7 +207,7 @@ function DoctorNotesPanel({ booking, onSaved, readonly }) {
           disabled={!isDirty || saving}
           className={`hms-checkup-notes__save ${saved ? 'is-saved' : isDirty ? 'is-dirty' : ''}`}
         >
-          {saving ? <Spinner className="w-4 h-4 hms-billing-spin" /> : saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+          {saving ? <Spinner className="w-4 h-4 zu-spinner" /> : saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
           {saved ? "Saved" : "Save Assessment"}
         </button>
       )}
@@ -274,7 +274,7 @@ export default function CheckupBookingDetail() {
 
   if (loading) return (
     <div className="hms-loader-center">
-      <Spinner className="w-5 h-5 hms-billing-spin" /> Loading…
+      <Spinner className="w-5 h-5 zu-spinner" /> Loading…
     </div>
   );
 
@@ -312,7 +312,7 @@ export default function CheckupBookingDetail() {
               disabled={cancelling}
               className="hms-checkup-detail-cancel"
             >
-              {cancelling ? <Spinner className="w-4 h-4 hms-billing-spin" /> : <XCircle className="w-4 h-4" />}
+              {cancelling ? <Spinner className="w-4 h-4 zu-spinner" /> : <XCircle className="w-4 h-4" />}
               Cancel Booking
             </button>
           )}
@@ -323,7 +323,7 @@ export default function CheckupBookingDetail() {
               disabled={advancing}
               className={`hms-checkup-detail-advance ${flow.cls}`}
             >
-              {advancing ? <Spinner className="w-4 h-4 hms-billing-spin" /> : FlowIcon && <FlowIcon className="w-4 h-4" />}
+              {advancing ? <Spinner className="w-4 h-4 zu-spinner" /> : FlowIcon && <FlowIcon className="w-4 h-4" />}
               {flow.label}
             </button>
           )}

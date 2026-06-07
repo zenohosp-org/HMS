@@ -4,6 +4,7 @@ import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi } from '@/utils/api'
 import { fmtId } from '@/utils/idFormat'
 import Pagination from '@/components/ui/Pagination'
+import TableSkeleton from '@/components/ui/TableSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
 import CreateInvoiceModal from '@/components/modals/CreateInvoiceModal'
 import { InvoiceDetailModal } from '@/pages/billing/InvoiceList'
@@ -244,9 +245,9 @@ export default function OPDBilling() {
       <div className="hms-billing-tablecard">
 
         {/* Controls bar */}
-        <div className="hms-billing-controls">
-          <div className="hms-billing-controls__group">
-            <div className="hms-billing-segment">
+        <div className="zu-filter-bar">
+          <div className="zu-filter-bar__controls">
+            <div className="zu-pill-group">
               {[
                 { key: 'ALL', label: 'All' },
                 { key: 'UNPAID', label: 'Unpaid' },
@@ -255,22 +256,22 @@ export default function OPDBilling() {
                 <button
                   key={key}
                   onClick={() => handleFilterChange(key)}
-                  className={`hms-billing-segment__btn ${statusFilter === key ? 'is-active' : ''}`}
+                  className={`zu-pill-group__btn ${statusFilter === key ? 'is-active' : ''}`}
                 >
                   {label}
                 </button>
               ))}
             </div>
-            <div className="hms-billing-search">
-              <Search className="hms-billing-search__icon w-3.5 h-3.5" />
-              <input
-                type="text"
-                placeholder="Search invoice, patient…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="hms-billing-search__input"
-              />
-            </div>
+          </div>
+          <div className="zu-filter-bar__search">
+            <Search className="zu-filter-bar__search-icon" />
+            <input
+              type="text"
+              placeholder="Search invoice, patient…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="zu-filter-bar__search-input"
+            />
           </div>
         </div>
 
@@ -291,11 +292,8 @@ export default function OPDBilling() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="hms-billing-cell-state">
-                    <div className="hms-billing-cell-state__stack">
-                      <Loader2 className="w-8 h-8 hms-billing-spin is-blue" />
-                      <p className="hms-billing-cell-state__text">Loading invoices…</p>
-                    </div>
+                  <td colSpan={7} className="hms-billing-cell-state zu-table-loading-cell">
+                    <TableSkeleton rows={8} columns={7} />
                   </td>
                 </tr>
               ) : invoices.length === 0 ? (

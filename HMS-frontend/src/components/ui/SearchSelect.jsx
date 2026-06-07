@@ -77,7 +77,7 @@ function SearchSelect({
           />
         )}
         <div className="hms-async-select__icons">
-          {loading && isOpen && <Spinner className="w-4 h-4 animate-spin" />}
+          {loading && isOpen && <Spinner className="w-4 h-4 zu-spinner" />}
           {value && !disabled && (
             <button type="button" className="hms-async-select__clear" onClick={handleClear}>
               <X className="w-4 h-4" />

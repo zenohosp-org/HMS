@@ -50,6 +50,7 @@
     gap: var(--zu-space-lg);
     margin-bottom: var(--zu-space-lg);
 }
+
 .zu-card.is-stat {
     flex-direction: row;
     align-items: center;
@@ -170,6 +171,44 @@
     color: var(--zu-gray-400);
     font-size: 15px;
     font-weight: 500;
+}
+
+.zu-table-loading-cell {
+    padding: 0 !important;
+}
+
+/* ─────────────────────────── Table Skeleton ─────────────────────────── */
+.zu-table-skeleton {
+    display: flex;
+    flex-direction: column;
+    animation: zu-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.zu-table-skeleton-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--zu-gray-100);
+}
+
+.zu-table-skeleton-row:last-child {
+    border-bottom: none;
+}
+
+.zu-table-skeleton-cell {
+    height: 14px;
+    background-color: var(--zu-gray-200);
+    border-radius: var(--zu-radius-sm);
+    flex: 1;
+}
+
+.zu-table-skeleton-cell.is-wide {
+    flex: 2;
+}
+
+.zu-table-skeleton-cell.is-narrow {
+    flex: 0.5;
 }
 
 /* ─────────────────────────── Badges ─────────────────────────── */
@@ -455,6 +494,49 @@
     }
 }
 
+/* ─────────────────────────── Loaders ─────────────────────────── */
+.zu-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    gap: var(--zu-space-md);
+    padding: var(--zu-space-xl);
+    color: var(--zu-gray-500);
+}
+
+.zu-spinner {
+    animation: zu-btn-spin 1s linear infinite;
+    color: var(--zu-slate-400);
+    transform-origin: center center;
+}
+
+.zu-loader.is-global {
+    height: 100vh;
+    background: var(--zu-slate-50);
+}
+
+.zu-loader-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--zu-gray-600);
+    animation: zu-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes zu-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .5;
+    }
+}
+
 /* ─────────────────────────── Modal ─────────────────────────── */
 .zu-modal-overlay {
     position: fixed;
@@ -489,6 +571,13 @@
     padding: 20px 24px 16px;
     border-bottom: 1px solid var(--zu-gray-100);
     flex-shrink: 0;
+}
+
+.zu-modal-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .zu-modal-header h3 {
@@ -531,9 +620,18 @@
     flex-shrink: 0;
 }
 
+.zu-modal-footer--between {
+    justify-content: space-between;
+}
+
 @keyframes zu-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* ─────────────────────────── Menu (Dropdown/Kebab) ─────────────────────────── */
@@ -610,6 +708,7 @@
         opacity: 0;
         transform: translateY(-6px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -684,34 +783,241 @@
     flex-shrink: 0;
 }
 
-.zu-avatar.is-sm { width: 28px; height: 28px; font-size: 12px; }
-.zu-avatar.is-md { width: 40px; height: 40px; font-size: 14px; }
-.zu-avatar.is-lg { width: 48px; height: 48px; font-size: 15px; }
-.zu-avatar.is-xl { width: 56px; height: 56px; font-size: 17px; }
-.zu-avatar.is-2xl { width: 64px; height: 64px; font-size: 22px; }
+.zu-avatar.is-sm {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+}
+
+.zu-avatar.is-md {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+}
+
+.zu-avatar.is-lg {
+    width: 48px;
+    height: 48px;
+    font-size: 15px;
+}
+
+.zu-avatar.is-xl {
+    width: 56px;
+    height: 56px;
+    font-size: 17px;
+}
+
+.zu-avatar.is-2xl {
+    width: 64px;
+    height: 64px;
+    font-size: 22px;
+}
 
 .zu-avatar.is-info {
     background: var(--zu-info-bg);
     color: var(--zu-info-text);
     border-color: var(--zu-info-border);
 }
+
 .zu-avatar.is-rose {
     background: var(--zu-rose-bg);
     color: var(--zu-rose-text);
     border-color: var(--zu-rose-border);
 }
+
 .zu-avatar.is-success {
     background: var(--zu-success-bg);
     color: var(--zu-success-text);
     border-color: var(--zu-success-border);
 }
+
 .zu-avatar.is-amber {
     background: var(--zu-warning-bg);
     color: var(--zu-amber-text);
     border-color: var(--zu-warning-border);
 }
+
 .zu-avatar.is-violet {
     background: var(--zu-violet-bg);
     color: var(--zu-violet-text);
     border-color: var(--zu-violet-border);
+}
+
+/* ─────────────────────────── Filter Bar ─────────────────────────── */
+/*
+ * A horizontal toolbar that sits between the page header and the main
+ * content. Composes: search input, filter pills, date inputs, and
+ * select dropdowns. Use alongside zu-page-content.
+ *
+ * Markup example:
+ *   <div class="zu-filter-bar">
+ *     <div class="zu-filter-bar__search">
+ *       <SearchIcon class="zu-filter-bar__search-icon" />
+ *       <input class="zu-filter-bar__search-input" />
+ *     </div>
+ *     <div class="zu-filter-bar__controls">
+ *       <button class="zu-filter-pill [is-active]">Label</button>
+ *       <select class="zu-filter-select">…</select>
+ *       <input type="date" class="zu-filter-date" />
+ *     </div>
+ *   </div>
+ */
+.zu-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0;
+    flex-wrap: wrap;
+}
+
+/* Left side: grows to fill space */
+.zu-filter-bar__search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.zu-filter-bar__search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--zu-gray-400);
+    pointer-events: none;
+    width: 16px;
+    height: 16px;
+}
+
+.zu-filter-bar__search-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    font-size: 14px;
+    border: 1px solid var(--zu-gray-200);
+    border-radius: var(--zu-radius-sm);
+    background: var(--zu-white);
+    color: var(--zu-gray-900);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    font-family: var(--zu-font-family);
+}
+
+.zu-filter-bar__search-input::placeholder {
+    color: var(--zu-gray-400);
+}
+
+.zu-filter-bar__search-input:focus {
+    border-color: var(--zu-gray-400);
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+}
+
+/* Right side: shrinks group of pills/selects */
+.zu-filter-bar__controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+
+
+
+/*
+ * zu-pill-group — a contained segmented control (pills inside a box).
+ * Use when you want a compact segment bar that sits inside a controls row.
+ * Example:
+ *   <div class="zu-pill-group">
+ *     <button class="zu-pill-group__btn [is-active]">All</button>
+ *     <button class="zu-pill-group__btn">Paid</button>
+ *   </div>
+ */
+.zu-pill-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    background: var(--zu-gray-100);
+    border: 1px solid var(--zu-gray-200);
+    border-radius: var(--zu-radius-sm);
+}
+
+.zu-pill-group__btn {
+    padding: 6px 12px;
+    border-radius: calc(var(--zu-radius-sm) - 2px);
+    border: none;
+    background: transparent;
+    color: var(--zu-gray-500);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    font-family: var(--zu-font-family);
+    white-space: nowrap;
+    text-transform: capitalize;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.zu-pill-group__btn-count {
+    background: var(--zu-gray-200);
+    color: var(--zu-gray-600);
+    padding: 2px 6px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.zu-pill-group__btn.is-active .zu-pill-group__btn-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--zu-white);
+}
+
+.zu-pill-group__btn:hover {
+    color: var(--zu-gray-700);
+}
+
+.zu-pill-group__btn.is-active {
+    background: var(--zu-white);
+    color: var(--zu-gray-900);
+    box-shadow: var(--zu-shadow-card);
+}
+
+/* Native date input that matches the filter bar look */
+.zu-filter-date {
+    padding: 8px 12px;
+    font-size: 13px;
+    border: 1px solid var(--zu-gray-200);
+    border-radius: var(--zu-radius-sm);
+    background: var(--zu-white);
+    color: var(--zu-gray-700);
+    outline: none;
+    cursor: pointer;
+    font-family: var(--zu-font-family);
+    transition: border-color 0.15s;
+}
+
+.zu-filter-date:focus {
+    border-color: var(--zu-gray-400);
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+}
+
+/* Native select that matches the filter bar look */
+.zu-filter-select {
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid var(--zu-gray-200);
+    border-radius: var(--zu-radius-sm);
+    background: var(--zu-white);
+    color: var(--zu-gray-700);
+    outline: none;
+    cursor: pointer;
+    font-family: var(--zu-font-family);
+    transition: border-color 0.15s;
+}
+
+.zu-filter-select:focus {
+    border-color: var(--zu-gray-400);
 }

@@ -1,6 +1,6 @@
-import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import TableSkeleton from "@/components/ui/TableSkeleton";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { roomLogsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
@@ -34,7 +34,6 @@ const formatFull = fmtDateTime;
  * getHospitalLogs), debounced search, 30-row pagination.
  */
 function RoomLogsPage() {
-    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
 
@@ -109,7 +108,6 @@ function RoomLogsPage() {
                         ? "Loading…"
                         : `${filteredLogs.length} event${filteredLogs.length !== 1 ? "s" : ""}`
                 }
-                onBack={() => navigate("/rooms/allocation")}
             />
 
             <div className="zu-page-content">
@@ -135,7 +133,7 @@ function RoomLogsPage() {
                     </div>
 
                     {loading ? (
-                        <CenterLoader />
+                        <TableSkeleton rows={8} columns={5} />
                     ) : filteredLogs.length === 0 ? (
                         <div className="hms-rooms-log-empty">
                             <CalendarClock size={40} className="opacity-30" />

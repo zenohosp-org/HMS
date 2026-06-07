@@ -780,7 +780,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         {/* ── Body ── */}
         {loadingBill ? (
           <div className="hms-loader-stack">
-            <Spinner className="w-8 h-8 animate-spin text-info" />
+            <Spinner className="w-8 h-8 zu-spinner text-info" />
             <p className="text-13 font-medium text-gray-600">Loading bill and pending charges…</p>
           </div>
         ) : (
@@ -1109,7 +1109,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   disabled={savingBill || items.length === 0}
                   className="zu-btn-secondary flex items-center gap-2"
                 >
-                  {savingBill ? <Spinner className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
+                  {savingBill ? <Spinner className="w-4 h-4 zu-spinner" /> : <Receipt className="w-4 h-4" />}
                   {savingBill ? 'Saving…' : 'Save Bill'}
                 </button>
                 {(isCash || showEarlyCollect) && (
@@ -1119,7 +1119,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                     className="zu-btn-primary flex items-center gap-2"
                   >
                     {collectingPayment
-                      ? <><Spinner className="w-4 h-4 animate-spin" /> Recording…</>
+                      ? <><Spinner className="w-4 h-4 zu-spinner" /> Recording…</>
                       : <><IndianRupee className="w-4 h-4" /> Amount Paid</>
 
                     }

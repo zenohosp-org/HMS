@@ -4,12 +4,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { patientApi } from "@/utils/api";
 import PatientModal from "@/components/modals/PatientModal";
+import BookAppointmentModal from "@/components/modals/BookAppointmentModal";
 import Pagination from "@/components/ui/Pagination";
 import PageHeader from "@/components/ui/PageHeader";
 import { TableSkeleton } from "@/components/ui";
 import { calcAge, formatDate } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
-import { Search, Loader2, Users, MoreHorizontal, Pencil, ExternalLink } from "lucide-react";
+import { Search, Loader2, Users, MoreHorizontal, Pencil, ExternalLink, Calendar } from "lucide-react";
 
 const PAGE_SIZE = 30;
 
@@ -28,6 +29,7 @@ function Patients() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [modal, setModal] = useState({ open: false, patient: null });
+  const [bookModal, setBookModal] = useState({ open: false, patient: null });
   const [openMenuId, setOpenMenuId] = useState(null);
 
   const load = () => {
@@ -125,20 +127,19 @@ function Patients() {
                 <th>Phone</th>
                 <th>Registered</th>
                 <th>Last Visit</th>
-                <th>Blood</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7}>
-                    <TableSkeleton rows={10} columns={7} />
+                  <td colSpan={6}>
+                    <TableSkeleton rows={10} columns={6} />
                   </td>
                 </tr>
               ) : patients.length === 0 ? (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={6}>
                     <div className="hms-pat-table-empty">
                       <div className="hms-pat-table-empty__icon">
                         <Users className="w-5 h-5" />
@@ -152,7 +153,7 @@ function Patients() {
               ) : (
                 patients.map((p) => {
                   return (
-                    <tr key={p.id}>
+                    <tr key={p.id} onClick={() => navigate(`/patients/${p.id}`)} style={{ cursor: "pointer" }}>
                       <td>
                         <div className="hms-pat-id-cell">
                           <div>
@@ -178,12 +179,6 @@ function Patients() {
                           : <span className="hms-pat-mute">—</span>
                         }
                       </td>
-                      <td>
-                        {p.bloodGroup
-                          ? <span className="hms-pat-blood">{p.bloodGroup}</span>
-                          : <span className="hms-pat-mute">—</span>
-                        }
-                      </td>
                       <td className="is-right">
                         <button
                           onClick={(e) => {
@@ -206,6 +201,12 @@ function Patients() {
                                 className="hms-pat-kebab-menu__item"
                               >
                                 <Pencil className="w-4 h-4" /> Edit Patient
+                              </button>
+                              <button
+                                onClick={() => { setOpenMenuId(null); setBookModal({ open: true, patient: p }); }}
+                                className="hms-pat-kebab-menu__item"
+                              >
+                                <Calendar className="w-4 h-4" /> Book Appointment
                               </button>
                               <button
                                 onClick={() => { setOpenMenuId(null); navigate(`/patients/${p.id}`); }}
@@ -245,6 +246,15 @@ function Patients() {
           onSave={handleSave}
         />
       )}
+      <BookAppointmentModal
+        isOpen={bookModal.open}
+        onClose={() => setBookModal({ open: false, patient: null })}
+        onSuccess={() => {
+          setBookModal({ open: false, patient: null });
+          navigate("/appointments");
+        }}
+        prefilledPatient={bookModal.patient}
+      />
                 </div>
         </div>
   );

@@ -258,7 +258,7 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
             Cancel
           </button>
           <button type="button" onClick={handleSave} disabled={saving || loading} className="zu-btn-primary">
-            {saving ? <Spinner className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            {saving ? <Spinner className="w-4 h-4 zu-spinner" /> : <CheckCircle2 className="w-4 h-4" />}
             {existing ? "Update Vitals" : "Save Vitals"}
           </button>
         </div>

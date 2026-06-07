@@ -5,6 +5,7 @@ import { checkupApi, patientApi, doctorsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import PageHeader from "@/components/ui/PageHeader";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import {
   ClipboardList, Plus, Search, X, Calendar, Clock, User,
   AlertCircle, CheckCircle2, Loader2, ChevronRight,
@@ -238,7 +239,7 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
             </button>
           ) : (
             <button disabled={saving} onClick={handleBook} className="hms-checkup-modal__btn-next">
-              {saving ? <><Loader2 className="w-4 h-4 hms-billing-spin" /> Booking…</> : <><CheckCircle2 className="w-4 h-4" /> Confirm Booking</>}
+              {saving ? <><Loader2 className="w-4 h-4 zu-spinner" /> Booking…</> : <><CheckCircle2 className="w-4 h-4" /> Confirm Booking</>}
             </button>
           )}
         </div>
@@ -281,7 +282,7 @@ function AssignDoctorCell({ booking, doctors, onAssigned }) {
         onClick={() => setOpen(o => !o)}
         className="hms-checkup-assign"
       >
-        {saving ? <Loader2 className="w-3 h-3 hms-billing-spin" /> : <UserPlus className="w-3 h-3 shrink-0" />}
+        {saving ? <Loader2 className="w-3 h-3 zu-spinner" /> : <UserPlus className="w-3 h-3 shrink-0" />}
         <span>{name ?? "Assign doctor"}</span>
       </button>
       {open && (
@@ -358,6 +359,7 @@ export default function CheckupBookings() {
       />
 
       {/* Stats */}
+      <div className="zu-page-content">
       <div className="zu-stat-card-grid">
         {[
           { label: "Today's Checkups", value: stats.today, icon: Calendar, accent: "blue" },
@@ -378,43 +380,64 @@ export default function CheckupBookings() {
       </div>
 
       {/* Filters */}
-      <div className="hms-checkup-filters">
-        <div className="hms-checkup-filters__search">
-          <Search className="hms-checkup-filters__search-icon w-4 h-4" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, UHID, booking number…" className="hms-checkup-filters__search-input" />
+      <div className="zu-filter-bar">
+        <div className="zu-filter-bar__search">
+          <Search className="zu-filter-bar__search-icon" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, UHID, booking number…" className="zu-filter-bar__search-input" />
         </div>
-        <SearchableSelect
-          options={[{ value: "ALL", label: "All Status" }, ...Object.entries(STATUS_CONFIG).map(([k, v]) => ({ value: k, label: v.label }))]}
-          value={filterStatus}
-          onChange={v => setFilterStatus(v)}
-          placeholder="All Status"
-        />
-        <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="hms-checkup-filters__date" />
+        <div className="zu-filter-bar__controls">
+          <div className="zu-pill-group">
+            <button 
+              onClick={() => setFilterStatus("ALL")}
+              className={`zu-pill-group__btn ${filterStatus === "ALL" ? "is-active" : ""}`}
+            >
+              All
+            </button>
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => {
+              const count = bookings.filter(b => b.status === k).length;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setFilterStatus(k)}
+                  className={`zu-pill-group__btn ${filterStatus === k ? "is-active" : ""}`}
+                >
+                  {count > 0 && <span className="zu-pill-group__btn-count">{count}</span>}
+                  {v.label}
+                </button>
+              );
+            })}
+          </div>
+          <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="zu-filter-date" />
+        </div>
       </div>
 
       {/* Bookings table */}
       <div className="hms-checkup-tablecard">
-        {loading ? (
-          <div className="hms-checkup-table-loading">
-            <Loader2 className="w-5 h-5 hms-billing-spin mr-2" /> Loading…
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="hms-checkup-cell-state">
-            <ClipboardList className="hms-checkup-cell-state__icon" />
-            <p className="hms-checkup-cell-state__text">No bookings found</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="hms-checkup-table">
-              <thead>
+        <div className="overflow-x-auto">
+          <table className="hms-checkup-table">
+            <thead>
+              <tr>
+                {["Booking #", "Patient", "Package", "Scheduled", "Doctor", "Payment", "Status", ""].map(h => (
+                  <th key={h}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
                 <tr>
-                  {["Booking #", "Patient", "Package", "Scheduled", "Doctor", "Payment", "Status", ""].map(h => (
-                    <th key={h}>{h}</th>
-                  ))}
+                  <td colSpan={8} className="zu-table-loading-cell">
+                    <TableSkeleton rows={8} columns={8} />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filtered.map(b => (
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="hms-checkup-cell-state">
+                    <ClipboardList className="hms-checkup-cell-state__icon" />
+                    <p className="hms-checkup-cell-state__text">No bookings found</p>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map(b => (
                   <tr key={b.id}>
                     <td>
                       <p className="hms-checkup-cell__primary">{fmtId(b.bookingNumber)}</p>
@@ -444,14 +467,15 @@ export default function CheckupBookings() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
               </tbody>
             </table>
           </div>
-        )}
       </div>
 
       {showModal && <BookingModal hospitalId={hospitalId} onClose={() => setShowModal(false)} onBooked={load} />}
+      </div>
     </div>
   );
 }

@@ -121,7 +121,6 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
     const status = roomData?.status;
     const roomType = roomData?.roomType ?? roomInfo.roomType ?? "GENERAL";
     const accentTone = roomData ? statusTone(status) : "";
-    const iconTone = roomData ? statusTone(status) : "";
 
     return (
         <div
@@ -129,14 +128,12 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
             className={
                 "hms-room-cell" +
                 (!roomData ? " is-empty" : "") +
-                (isSelected ? " is-selected" : "")
+                (isSelected ? " is-selected" : "") +
+                (status === "OCCUPIED" ? " is-occupied" : "")
             }
         >
             <div className={"hms-room-cell__accent " + accentTone} />
             <div className="hms-room-cell__head">
-                <div className={"hms-room-cell__icon " + iconTone}>
-                    <Bed size={16} />
-                </div>
                 <div className="hms-room-cell__body">
                     <div className="hms-room-cell__title-row">
                         <p className="hms-room-cell__title">
@@ -147,6 +144,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
                                 {fmtId(roomData.roomCode)}
                             </span>
                         )}
+                        {roomData && <div className={"hms-room-cell__status-dot " + accentTone} />}
                     </div>
                     <div className="hms-room-cell__tags">
                         <Badge tone={TYPE_TONE[roomType] || "neutral"} soft>
@@ -157,7 +155,11 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
                                 {roomData.bedCount} beds
                             </Badge>
                         )}
-                        <StatusChip status={status} />
+                        {isMultiBed && status === "OCCUPIED" && (
+                            <Badge tone="info" soft>
+                                Patients Inside
+                            </Badge>
+                        )}
                     </div>
                 </div>
                 {roomData && (
@@ -169,43 +171,26 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
 
             {roomData && status === "OCCUPIED" && roomData.currentPatient && !isMultiBed && (
                 <div className="hms-room-cell__patient">
-                    <div className="hms-room-cell__patient-row">
-                        <User size={12} className="text-gray-400 shrink-0" />
-                        <span className="hms-room-cell__patient-name">
-                            {roomData.currentPatient.firstName} {roomData.currentPatient.lastName}
-                        </span>
-                        <span className="hms-room-cell__patient-uhid">
-                            {fmtId(roomData.currentPatient.uhid)}
-                        </span>
-                    </div>
-                    {roomData.attenderName ? (
-                        <div className="hms-room-cell__attender">
-                            <span className="hms-room-cell__attender-label">
-                                Attender
-                            </span>
-                            <span className="hms-room-cell__attender-name">
-                                {roomData.attenderName}
-                                {roomData.attenderRelationship && (
-                                    <span className="hms-room-cell__attender-rel">
-                                        ({roomData.attenderRelationship})
-                                    </span>
-                                )}
-                            </span>
-                        </div>
-                    ) : (
-                        <div className="hms-room-cell__no-attender">
-                            <span className="hms-room-cell__no-attender-text">
-                                No attender
-                            </span>
-                        </div>
-                    )}
+                    <p className="hms-room-cell__patient-name">
+                        {roomData.currentPatient.firstName} {roomData.currentPatient.lastName}
+                    </p>
+                    <p className="hms-room-cell__patient-uhid">
+                        {fmtId(roomData.currentPatient.uhid)}
+                    </p>
                 </div>
             )}
-            {roomData && isMultiBed && (
-                <p className="hms-room-cell__footer-hint">
-                    Open panel to view beds →
-                </p>
+            
+            {roomData && status === "OCCUPIED" && isMultiBed && (
+                <div className="hms-room-cell__patient">
+                    <p className="hms-room-cell__patient-name text-[#0284c7]">
+                        Beds are occupied
+                    </p>
+                    <p className="hms-room-cell__patient-uhid">
+                        Click panel to view details
+                    </p>
+                </div>
             )}
+
             {!roomData && (
                 <p className="hms-room-cell__footer-hint">
                     Not provisioned
@@ -271,21 +256,7 @@ function Rooms() {
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [showAttenderModal, setShowAttenderModal] = useState({ open: false, room: null });
     const [infrastructure, setInfrastructure] = useState([]);
-    const [collapsedFloors, setCollapsedFloors] = useState(new Set());
-    const [collapsedWards, setCollapsedWards] = useState(new Set());
 
-    const toggleFloor = (key) =>
-        setCollapsedFloors((prev) => {
-            const n = new Set(prev);
-            n.has(key) ? n.delete(key) : n.add(key);
-            return n;
-        });
-    const toggleWard = (key) =>
-        setCollapsedWards((prev) => {
-            const n = new Set(prev);
-            n.has(key) ? n.delete(key) : n.add(key);
-            return n;
-        });
 
     const fetchRooms = async () => {
         try {
@@ -513,7 +484,7 @@ function Rooms() {
 
             {/* Controls */}
             <Card className="hms-rooms-controls">
-                <div className="hms-rooms-filter-pills">
+                <div className="zu-pill-group">
                     {["ALL", "AVAILABLE", "OCCUPIED"].map((f) => {
                         const active = filter === f;
                         return (
@@ -521,11 +492,9 @@ function Rooms() {
                                 key={f}
                                 type="button"
                                 onClick={() => setFilter(f)}
-                                className={
-                                    "hms-rooms-filter-pill" + (active ? " is-active" : "")
-                                }
+                                className={"zu-pill-group__btn" + (active ? " is-active" : "")}
                             >
-                                {f}
+                                {f === "ALL" ? "All" : f}
                             </button>
                         );
                     })}
@@ -547,186 +516,40 @@ function Rooms() {
                         <CenterLoader text="Loading infrastructure" />
                     ) : showInfrastructureView ? (
                         <div className="hms-rooms-tree">
-                            {filteredInfrastructure.map((building, bIdx) => {
-                                const bRooms = building.floors.flatMap((f) =>
-                                    f.wards.flatMap((w) =>
-                                        w.rooms.map((r) => r.roomData).filter(Boolean)
-                                    )
-                                );
-                                const bOcc = bRooms.filter((r) => r.status === "OCCUPIED").length;
-                                const bldgCode = `BLDG-${String(bIdx + 1).padStart(2, "0")}`;
-                                return (
-                                    <div key={building.id ?? bIdx} className="hms-room-building">
-                                        {/* Building header */}
-                                        <div className="hms-room-building__header">
-                                            <div className="hms-room-building__header-row">
-                                                <div className="hms-room-building__lead">
-                                                    <div className="hms-room-building__icon">
-                                                        <Building2 size={16} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="hms-room-building__name">
-                                                            {building.name || `Building ${bIdx + 1}`}
-                                                        </p>
-                                                        <p className="hms-room-building__code">
-                                                            {bldgCode}
-                                                        </p>
+                            {filteredInfrastructure.flatMap((building, bIdx) =>
+                                building.floors.flatMap((floor, fIdx) =>
+                                    floor.wards.map((ward, wIdx) => {
+                                        const wRooms = ward.rooms.map((r) => r.roomData).filter(Boolean);
+                                        const wOcc = wRooms.filter((r) => r.status === "OCCUPIED").length;
+                                        const bName = building.name || `Building ${bIdx + 1}`;
+                                        const fName = floor.name || `Floor ${fIdx + 1}`;
+                                        const wName = ward.name || `Ward ${wIdx + 1}`;
+
+                                        return (
+                                            <div key={ward.id ?? `${bIdx}-${fIdx}-${wIdx}`} className="hms-room-section">
+                                                <div className="hms-room-section__head">
+                                                    <h3 className="hms-room-section__title">
+                                                        {bName} <span className="hms-room-section__sep">/</span> {fName} <span className="hms-room-section__sep">/</span> {wName}
+                                                    </h3>
+                                                    <div className="hms-room-section__occupancy">
+                                                        <OccupancyBar occupied={wOcc} total={wRooms.length} size="sm" />
                                                     </div>
                                                 </div>
-                                                <div className="hms-room-building__aside">
-                                                    <SectionLabel
-                                                        icon={Layers}
-                                                        label="floors"
-                                                        count={building.floors.length}
-                                                        onDark
-                                                    />
-                                                    <div className="hms-room-building__occupancy">
-                                                        <OccupancyBar
-                                                            occupied={bOcc}
-                                                            total={bRooms.length}
-                                                            size="md"
+                                                <div className="hms-room-grid">
+                                                    {ward.rooms.map((room) => (
+                                                        <InfrastructureRoomCard
+                                                            key={room.name}
+                                                            roomInfo={room}
+                                                            roomData={room.roomData}
+                                                            {...cardProps(room.roomData)}
                                                         />
-                                                    </div>
+                                                    ))}
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div className="hms-room-building__body">
-                                            {building.floors.map((floor, fIdx) => {
-                                                const floorKey = floor.id ?? `${bIdx}-${fIdx}`;
-                                                const floorCollapsed = collapsedFloors.has(floorKey);
-                                                const fRooms = floor.wards.flatMap((w) =>
-                                                    w.rooms.map((r) => r.roomData).filter(Boolean)
-                                                );
-                                                const fOcc = fRooms.filter(
-                                                    (r) => r.status === "OCCUPIED"
-                                                ).length;
-                                                return (
-                                                    <div key={floorKey} className="hms-room-floor">
-                                                        <div
-                                                            onClick={() => toggleFloor(floorKey)}
-                                                            className="hms-room-floor__head"
-                                                        >
-                                                            <div className="hms-room-floor__head-lead">
-                                                                {floorCollapsed ? (
-                                                                    <ChevronRight
-                                                                        size={14}
-                                                                        className="text-gray-400"
-                                                                    />
-                                                                ) : (
-                                                                    <ChevronDown
-                                                                        size={14}
-                                                                        className="text-gray-400"
-                                                                    />
-                                                                )}
-                                                                <Layers
-                                                                    size={12}
-                                                                    className="text-gray-400"
-                                                                />
-                                                                <span className="hms-room-floor__name">
-                                                                    {floor.name || `Floor ${fIdx + 1}`}
-                                                                </span>
-                                                                <SectionLabel
-                                                                    icon={LayoutGrid}
-                                                                    label="wards"
-                                                                    count={floor.wards.length}
-                                                                />
-                                                            </div>
-                                                            <div className="hms-room-floor__occupancy">
-                                                                <OccupancyBar
-                                                                    occupied={fOcc}
-                                                                    total={fRooms.length}
-                                                                    size="sm"
-                                                                />
-                                                            </div>
-                                                        </div>
-
-                                                        {!floorCollapsed && (
-                                                            <div className="hms-room-floor__body">
-                                                                {floor.wards.map((ward, wIdx) => {
-                                                                    const wardKey =
-                                                                        ward.id ??
-                                                                        `${bIdx}-${fIdx}-${wIdx}`;
-                                                                    const wardCollapsed =
-                                                                        collapsedWards.has(wardKey);
-                                                                    const wRooms = ward.rooms
-                                                                        .map((r) => r.roomData)
-                                                                        .filter(Boolean);
-                                                                    const wOcc = wRooms.filter(
-                                                                        (r) => r.status === "OCCUPIED"
-                                                                    ).length;
-                                                                    return (
-                                                                        <div key={wardKey}>
-                                                                            <div
-                                                                                onClick={() =>
-                                                                                    toggleWard(wardKey)
-                                                                                }
-                                                                                className="hms-room-ward__head"
-                                                                            >
-                                                                                <div className="hms-room-ward__head-lead">
-                                                                                    {wardCollapsed ? (
-                                                                                        <ChevronRight
-                                                                                            size={12}
-                                                                                            className="text-gray-400"
-                                                                                        />
-                                                                                    ) : (
-                                                                                        <ChevronDown
-                                                                                            size={12}
-                                                                                            className="text-gray-400"
-                                                                                        />
-                                                                                    )}
-                                                                                    <LayoutGrid
-                                                                                        size={12}
-                                                                                        className="text-gray-400"
-                                                                                    />
-                                                                                    <span className="hms-room-ward__name">
-                                                                                        {ward.name ||
-                                                                                            `Ward ${wIdx + 1}`}
-                                                                                    </span>
-                                                                                    <span className="hms-room-ward__count">
-                                                                                        ·{" "}
-                                                                                        {ward.rooms.length}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <div className="hms-room-ward__occupancy">
-                                                                                    <OccupancyBar
-                                                                                        occupied={wOcc}
-                                                                                        total={wRooms.length}
-                                                                                        size="sm"
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {!wardCollapsed && (
-                                                                                <div className="hms-room-grid">
-                                                                                    {ward.rooms.map(
-                                                                                        (room) => (
-                                                                                            <InfrastructureRoomCard
-                                                                                                key={room.name}
-                                                                                                roomInfo={room}
-                                                                                                roomData={
-                                                                                                    room.roomData
-                                                                                                }
-                                                                                                {...cardProps(
-                                                                                                    room.roomData
-                                                                                                )}
-                                                                                            />
-                                                                                        )
-                                                                                    )}
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                        );
+                                    })
+                                )
+                            )}
 
                             {unmappedRooms.length > 0 && (
                                 <div className="hms-rooms-unmapped">

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import NewOrderModal from "./NewOrderModal";
 import WriteReportModal from "./WriteReportModal";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 const PRIORITY_META = {
   ROUTINE: { cls: "is-routine", icon: Clock },
   URGENT: { cls: "is-urgent", icon: AlertTriangle },
@@ -85,7 +86,7 @@ function RadiologyQueue() {
   return (
     <div className="zu-page" onClick={() => setActionMenu(null)}>
       <PageHeader
-        title={<><ScanLine className="w-5 h-5 hms-rad-page__title-icon" /> Radiology Queue</>}
+        title="Radiology Queue"
         subtitle="X-Ray, CT Scan, MRI, Ultrasound, and other imaging investigations"
         actions={<div className="hms-rad-page__chips">
           <div className="hms-rad-chip-row">
@@ -137,29 +138,33 @@ function RadiologyQueue() {
         </div>
       </div>
       {/* Search + filters */}
-      <div className="hms-rad-filterbar">
-        <div className="hms-rad-priority-row">
-          {["ALL", "ROUTINE", "URGENT", "STAT"].map((p) => (
-            <button
-              key={p}
-              onClick={() => setPriorityFilter(p)}
-              className={`hms-rad-priority-btn ${priorityFilter === p ? "is-on" : ""}`}
-            >{p}</button>
-          ))}
-        </div>
-        <div className="hms-rad-search">
-          <Search className="w-4 h-4 hms-rad-search__icon" />
+      <div className="zu-filter-bar">
+        <div className="zu-filter-bar__search">
+          <Search className="zu-filter-bar__search-icon" />
           <input
-            className="hms-rad-search__input"
+            className="zu-filter-bar__search-input"
             placeholder="Search patient, test, UHID, technician…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <div className="zu-filter-bar__controls">
+          <div className="zu-pill-group">
+          {["ALL", "ROUTINE", "URGENT", "STAT"].map((p) => (
+            <button
+              key={p}
+              onClick={() => setPriorityFilter(p)}
+              className={`zu-pill-group__btn ${priorityFilter === p ? "is-active" : ""}`}
+            >
+              {p === "ALL" ? "All" : p}
+            </button>
+          ))}
+          </div>
+        </div>
       </div>
       {loading ? (
         <div className="hms-rad-section__loading">
-          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+          <TableSkeleton rows={6} columns={5} />
         </div>
       ) : (
         <>

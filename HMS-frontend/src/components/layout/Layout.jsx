@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import { CenterLoader } from "@/components/ui/Loader";
 
 function Layout() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -15,7 +16,9 @@ function Layout() {
                     <Header onMenuClick={() => setSidebarOpen((p) => !p)} />
                 </div>
                 <main className="zu-app-shell-content">
-                    <Outlet />
+                    <Suspense fallback={<CenterLoader />}>
+                        <Outlet />
+                    </Suspense>
                 </main>
             </div>
         </div>

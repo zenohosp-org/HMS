@@ -5,6 +5,7 @@ import { ambulanceApi } from '@/utils/api'
 import { fmtId } from '@/utils/idFormat'
 import Pagination from '@/components/ui/Pagination'
 import PageHeader from '@/components/ui/PageHeader'
+import TableSkeleton from '@/components/ui/TableSkeleton'
 import {
   Ambulance, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
@@ -230,9 +231,9 @@ export default function AmbulanceBilling() {
       <div className="hms-billing-tablecard">
 
         {/* Controls */}
-        <div className="hms-billing-controls">
-          <div className="hms-billing-controls__group">
-            <div className="hms-billing-segment">
+        <div className="zu-filter-bar">
+          <div className="zu-filter-bar__controls">
+            <div className="zu-pill-group">
               {[
                 { key: 'ALL',    label: 'All'    },
                 { key: 'UNPAID', label: 'Unpaid' },
@@ -241,23 +242,23 @@ export default function AmbulanceBilling() {
                 <button
                   key={key}
                   onClick={() => handlePayFilter(key)}
-                  className={`hms-billing-segment__btn ${payFilter === key ? 'is-active' : ''}`}
+                  className={`zu-pill-group__btn ${payFilter === key ? 'is-active' : ''}`}
                 >
                   {label}
                 </button>
               ))}
             </div>
-            <div className="hms-billing-search">
-              <Search className="hms-billing-search__icon w-3.5 h-3.5" />
-              <input
-                type="text"
-                placeholder="Search patient, vehicle, address…"
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1) }}
-                className="hms-billing-search__input is-wide"
-              />
-            </div>
           </div>
+          <div className="zu-filter-bar__search">
+            <Search className="zu-filter-bar__search-icon" />
+            <input
+              type="text"
+              placeholder="Search patient, vehicle, address…"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
+              className="zu-filter-bar__search-input"
+            />
+        </div>
         </div>
 
         {/* Table */}
@@ -278,11 +279,8 @@ export default function AmbulanceBilling() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="hms-billing-cell-state">
-                    <div className="hms-billing-cell-state__stack">
-                      <Loader2 className="w-8 h-8 hms-billing-spin is-orange" />
-                      <p className="hms-billing-cell-state__text">Loading bookings…</p>
-                    </div>
+                  <td colSpan={8} className="hms-billing-cell-state zu-table-loading-cell">
+                    <TableSkeleton rows={8} columns={8} />
                   </td>
                 </tr>
               ) : paginated.length === 0 ? (
@@ -409,7 +407,7 @@ export default function AmbulanceBilling() {
                           className="hms-billing-rowbtn"
                         >
                           {markingId === b.id
-                            ? <Loader2 className="w-4 h-4 hms-billing-spin" />
+                            ? <Loader2 className="w-4 h-4 zu-spinner" />
                             : <MoreHorizontal className="w-4 h-4" />}
                         </button>
                       </td>

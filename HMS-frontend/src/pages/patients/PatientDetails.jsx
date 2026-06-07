@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { calcAge, formatDate, formatDateTime } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
 import PatientModal from "@/components/modals/PatientModal";
+import BookAppointmentModal from "@/components/modals/BookAppointmentModal";
 import { ArrowLeft, User, FileText, Phone, Mail, MapPin, Droplets, Calendar, Clock, Edit2, ClipboardList, ChevronRight, Activity, AlertCircle, Stethoscope, MoreHorizontal, Bed, CalendarClock, ScanLine } from "lucide-react";
 
 const TYPE_META = {
@@ -142,6 +143,7 @@ function PatientDetails() {
   const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState("overview");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [bookModalOpen, setBookModalOpen] = useState(false);
   const [radiologyOrders, setRadiologyOrders] = useState([]);
   const [radiologyLoading, setRadiologyLoading] = useState(false);
   const [invoices, setInvoices] = useState([]);
@@ -527,6 +529,12 @@ function PatientDetails() {
                   <h3 className="hms-pat-tab-head__title">Appointments</h3>
                   <p className="hms-pat-tab-head__sub">{appointments.length} appointment{appointments.length !== 1 ? "s" : ""} for {patient.firstName}</p>
                 </div>
+                <button
+                  onClick={() => setBookModalOpen(true)}
+                  className="hms-pat-bill-new-btn"
+                >
+                  + Book Appointment
+                </button>
               </div>
               {appointmentsLoading ? (
                 <CenterLoader />
@@ -534,7 +542,9 @@ function PatientDetails() {
                 <div className="hms-pat-tab-empty">
                   <Calendar className="hms-pat-tab-empty__icon" />
                   <p className="hms-pat-tab-empty__title">No appointments yet</p>
-                  <p className="hms-pat-tab-empty__sub">Book an appointment from the Appointments Dashboard.</p>
+                  <button onClick={() => setBookModalOpen(true)} className="hms-pat-bill-empty__link">
+                    Book first appointment
+                  </button>
                 </div>
               ) : (
                 <div className="hms-pat-appt-grid">
@@ -724,6 +734,16 @@ function PatientDetails() {
           onSave={handleUpdate}
         />
       )}
+      <BookAppointmentModal
+        isOpen={bookModalOpen}
+        onClose={() => setBookModalOpen(false)}
+        onSuccess={() => {
+          setBookModalOpen(false);
+          loadAppointments();
+          loadPatient();
+        }}
+        prefilledPatient={patient}
+      />
     </div>
   );
 }

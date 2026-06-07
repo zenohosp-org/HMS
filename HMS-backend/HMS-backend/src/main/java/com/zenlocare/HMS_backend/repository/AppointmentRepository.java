@@ -114,7 +114,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         AND (:doctorId IS NULL OR a.doctor.id = :doctorId)
         AND (:dateFilter = 'ALL'
              OR (:dateFilter = 'TODAY' AND a.apptDate = :today)
-             OR (:dateFilter = 'UPCOMING' AND (a.apptDate > :today OR (a.apptDate = :today AND a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.SCHEDULED)))
+             OR (:dateFilter = 'UPCOMING' AND a.apptDate >= :today AND a.status NOT IN (
+                   com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.COMPLETED,
+                   com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CANCELLED,
+                   com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.NO_SHOW))
              OR (:dateFilter = 'COMPLETED' AND a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.COMPLETED)
              OR (:dateFilter = 'CANCELLED' AND a.status IN (
                    com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CANCELLED,
@@ -137,7 +140,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         AND (:doctorId IS NULL OR a.doctor.id = :doctorId)
         AND (:dateFilter = 'ALL'
              OR (:dateFilter = 'TODAY' AND a.apptDate = :today)
-             OR (:dateFilter = 'UPCOMING' AND (a.apptDate > :today OR (a.apptDate = :today AND a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.SCHEDULED)))
+             OR (:dateFilter = 'UPCOMING' AND a.apptDate >= :today AND a.status NOT IN (
+                   com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.COMPLETED,
+                   com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CANCELLED,
+                   com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.NO_SHOW))
              OR (:dateFilter = 'COMPLETED' AND a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.COMPLETED)
              OR (:dateFilter = 'CANCELLED' AND a.status IN (
                    com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CANCELLED,

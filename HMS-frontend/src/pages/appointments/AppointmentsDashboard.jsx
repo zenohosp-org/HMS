@@ -4,6 +4,7 @@ import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, MoreHorizont
 import ConsultationModal from "@/components/modals/ConsultationModal";
 import VitalsModal from "@/components/modals/VitalsModal";
 import ExternalResultsModal from "@/components/modals/ExternalResultsModal";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 // Re-open the consultation modal from these states. COMPLETED is gone —
 // once the doctor clicks Mark Complete in the consultation view the
@@ -135,7 +136,7 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
         className="hms-appt-am__btn"
         disabled={loading}
       >
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreHorizontal className="w-4 h-4" />}
+        {loading ? <Loader2 className="w-4 h-4 zu-spinner" /> : <MoreHorizontal className="w-4 h-4" />}
       </button>
       {open && (
         <div className="hms-appt-am__pop">
@@ -245,7 +246,7 @@ function AppointmentsDashboard() {
   const location = useLocation();
   const [viewMode, setViewMode] = useState("list");
   const [calendarView, setCalendarView] = useState("month");
-  const [listFilter, setListFilter] = useState("all");
+  const [listFilter, setListFilter] = useState("upcoming");
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [admitPrefill, setAdmitPrefill] = useState(null);
   // Holds the full appointment row whose check-in just triggered the
@@ -450,24 +451,26 @@ function AppointmentsDashboard() {
   const renderListView = () => (
     <div className="hms-appt-list">
       <div className="hms-appt-list__head">
-        <h3 className="hms-appt-list__title">All Appointments</h3>
+
         <div className="hms-appt-list__filters">
-          <div className="hms-appt-list__search">
-            <Search className="w-4 h-4 hms-appt-list__search-icon" />
+          <div className="zu-search hms-appt-list__search">
+            <Search className="zu-search-icon" size={16} />
             <input
               type="text"
               placeholder="Search patient, UHID, doctor..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="hms-appt-list__search-input"
+              className="hms-input w-full"
             />
           </div>
-          <SearchableSelect
-            value={selectedDoctorId}
-            onChange={(value) => setSelectedDoctorId(value)}
-            options={[{ value: "all", label: "All Doctors" }, ...doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}` }))]}
-            className="hms-appt-list__doctor-select"
-          />
+          <div className="hms-appt-list__doctor-wrap">
+            <SearchableSelect
+              value={selectedDoctorId}
+              onChange={(value) => setSelectedDoctorId(value)}
+              options={[{ value: "all", label: "All Doctors" }, ...doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}` }))]}
+              className="hms-appt-list__doctor-select w-full"
+            />
+          </div>
         </div>
       </div>
       <div className="hms-appt-list__body">
@@ -485,7 +488,13 @@ function AppointmentsDashboard() {
               </tr>
             </thead>
             <tbody>
-              {filteredAppointments.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="zu-table-loading-cell">
+                    <TableSkeleton rows={8} columns={7} />
+                  </td>
+                </tr>
+              ) : filteredAppointments.length === 0 ? (
                 <tr>
                   <td colSpan={7}>
                     <div className="hms-appt-empty-cell">
@@ -503,7 +512,6 @@ function AppointmentsDashboard() {
                   </td>
                   <td>
                     <div className="hms-appt-pat">
-                      <div className="hms-appt-pat__avatar">{appt.patientName.charAt(0)}</div>
                       <div>
                         <p className="hms-appt-pat__name">{appt.patientName}</p>
                         {appt.checkupBookingId && (
@@ -695,29 +703,31 @@ function AppointmentsDashboard() {
       />
       <div className="zu-page-content">
       {viewMode === "list" && (
-          <div className="hms-appt-filters">
-            <div className="hms-appt-filters__pills">
-              {["all", "upcoming", "today", "completed", "cancelled"].map((f) => (
+          <div className="zu-filter-bar">
+            <div className="zu-filter-bar__controls">
+              <div className="zu-pill-group">
+              {["upcoming", "today", "all", "completed", "cancelled"].map((f) => (
                 <button
                   key={f}
                   onClick={() => setListFilter(f)}
-                  className={`hms-appt-filter-pill ${listFilter === f ? "is-active" : ""}`}
+                  className={`zu-pill-group__btn ${listFilter === f ? "is-active" : ""}`}
                 >
-                  {f === "all" ? "All Appointments" : f}
+                  {f === "all" ? "All" : f}
                 </button>
               ))}
+              </div>
             </div>
-            {listFilter === "today" && (
+            <div style={{ marginLeft: "auto" }}>
               <button
                 onClick={handleRefreshTokens}
                 disabled={isRefreshingTokens}
                 title="Renumber today's tokens starting from 1, in booking order"
                 className="hms-appt-refresh-tokens"
               >
-                {isRefreshingTokens ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                <span>Refresh Tokens</span>
+                {isRefreshingTokens ? <Loader2 className="w-4 h-4 zu-spinner" /> : <RefreshCw className="w-4 h-4" />}
+                <span>Reset Token #</span>
               </button>
-            )}
+            </div>
           </div>
         )}
       {/* Content Area */}
@@ -753,7 +763,7 @@ function AppointmentsDashboard() {
             </div>
           </div>
         )}
-        {isLoading ? (
+        {isLoading && viewMode !== "list" ? (
           <div className="hms-appt-loading">
             <div className="hms-appt-loading__inner">
               <div className="hms-appt-loading__spinner" />

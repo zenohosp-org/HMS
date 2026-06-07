@@ -92,7 +92,7 @@ export default function GeneralSettings() {
                 <Card className="p-0 overflow-hidden">
                     {loading ? (
                         <div className="hms-loader-stack">
-                            <Spinner size={32} className="animate-spin text-gray-700" />
+                            <Spinner size={32} className="zu-spinner text-gray-700" />
                             <p className="m-0 text-13 text-gray-500">Loading settings…</p>
                         </div>
                     ) : (
@@ -123,7 +123,7 @@ export default function GeneralSettings() {
 
                                         <div className="hms-settings-list__actions">
                                             {isSaving && (
-                                                <Spinner size={16} className="animate-spin text-gray-400" />
+                                                <Spinner size={16} className="zu-spinner text-gray-400" />
                                             )}
                                             <ToggleSwitch
                                                 checked={enabled}

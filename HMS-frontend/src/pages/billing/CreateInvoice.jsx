@@ -329,7 +329,7 @@ function CreateInvoice() {
                   value={patientSearch}
                   onChange={(e) => setPatientSearch(e.target.value)}
                 />
-                {searching && <Spinner className="hms-create-inv-search__spinner w-3.5 h-3.5 hms-billing-spin" />}
+                {searching && <Spinner className="hms-create-inv-search__spinner w-3.5 h-3.5 zu-spinner" />}
                 {patientResults.length > 0 && (
                   <div className="hms-create-inv-suggest">
                     {patientResults.map((p) => (
@@ -354,7 +354,7 @@ function CreateInvoice() {
             <div className="hms-create-inv-card">
               <p className="hms-create-inv-section-label">
                 <Sparkles className="w-3.5 h-3.5 text-warning" /> Detected Items
-                {loadingSuggestions && <Spinner className="w-3 h-3 hms-billing-spin text-gray-400" />}
+                {loadingSuggestions && <Spinner className="w-3 h-3 zu-spinner text-gray-400" />}
               </p>
               {!loadingSuggestions && suggestions && (
                 <div className="hms-create-inv-sug-list">
@@ -703,7 +703,7 @@ function CreateInvoice() {
             disabled={saving || !patient || items.length === 0}
             className="hms-create-inv-gen-btn"
           >
-            {saving ? <Spinner className="w-4 h-4 hms-billing-spin" /> : <Printer className="w-4 h-4" />}
+            {saving ? <Spinner className="w-4 h-4 zu-spinner" /> : <Printer className="w-4 h-4" />}
             {saving ? "Generating…" : "Generate Invoice & Print"}
           </button>
           <div className="h-4" />
@@ -724,7 +724,7 @@ function CreateInvoice() {
                   </div>
                 </div>
                 <button onClick={() => loadLogs()} className="hms-create-inv-pane__refresh" title="Refresh">
-                  <RefreshCw className={`w-3.5 h-3.5 ${logsLoading ? "hms-billing-spin" : ""}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${logsLoading ? "zu-spinner" : ""}`} />
                 </button>
               </div>
 
@@ -817,7 +817,7 @@ function CreateInvoice() {
                                   disabled={markingPaidId === inv.id}
                                   className="hms-create-inv-log__pay-btn"
                                 >
-                                  {markingPaidId === inv.id ? <Spinner className="w-3 h-3 hms-billing-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                  {markingPaidId === inv.id ? <Spinner className="w-3 h-3 zu-spinner" /> : <CheckCircle2 className="w-3 h-3" />}
                                   Mark as Paid{selectedAccount ? ` → ${selectedAccount.accountName}` : ""}
                                 </button>
                               )}

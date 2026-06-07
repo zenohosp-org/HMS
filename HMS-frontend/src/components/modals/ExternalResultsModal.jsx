@@ -373,7 +373,7 @@ export default function ExternalResultsModal({ appointment, onClose, onSaved }) 
               disabled={saving}
               className="zu-btn-primary"
             >
-              {saving ? <Spinner className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              {saving ? <Spinner className="w-4 h-4 zu-spinner" /> : <CheckCircle2 className="w-4 h-4" />}
               {saving ? "Saving…" : `Save All${staged.length > 0 ? ` (${staged.length}${form.testName.trim() && form.sourceName.trim() ? "+1" : ""})` : ""}`}
             </button>
           </div>

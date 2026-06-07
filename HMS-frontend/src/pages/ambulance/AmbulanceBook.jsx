@@ -1,4 +1,5 @@
 import { Spinner } from "@/components/ui/Loader";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
@@ -593,12 +594,11 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes, isAddTypeOpen, onClose
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="hms-amb-state">
-                  <div className="hms-amb-state__stack">
-                    <Spinner className="w-8 h-8 hms-billing-spin text-gray-900" />
-                    <p className="hms-amb-state__text">Loading vehicles…</p>
-                  </div>
-                </td></tr>
+                <tr>
+                  <td colSpan={6} className="zu-table-loading-cell">
+                    <TableSkeleton rows={6} columns={6} />
+                  </td>
+                </tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={6} className="hms-amb-state">
                   <div className="hms-amb-state__stack">
@@ -775,12 +775,11 @@ function BookingsTab({ hospitalId, isNewBookingOpen, onCloseNewBooking }) {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="hms-amb-state">
-                  <div className="hms-amb-state__stack">
-                    <Spinner className="w-8 h-8 hms-billing-spin text-gray-900" />
-                    <p className="hms-amb-state__text">Loading bookings…</p>
-                  </div>
-                </td></tr>
+                <tr>
+                  <td colSpan={6} className="zu-table-loading-cell">
+                    <TableSkeleton rows={6} columns={6} />
+                  </td>
+                </tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={6} className="hms-amb-state">
                   <div className="hms-amb-state__stack">
@@ -970,7 +969,7 @@ export default function AmbulanceBook() {
   return (
     <div className="zu-page">
       <PageHeader 
-        title={<div className="flex items-center gap-2"><Ambulance className="w-5 h-5" /> Ambulance</div>}
+        title="Ambulance"
         subtitle="Manage fleet and dispatch bookings"
         actions={headerActions}
       />

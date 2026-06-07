@@ -145,7 +145,7 @@ function WaiverModal({ item, invoiceId, onClose, onWaived }) {
               className="hms-inv-waiver__submit"
             >
               {submitting
-                ? <><Loader2 className="w-4 h-4 hms-billing-spin" /> Applying…</>
+                ? <><Loader2 className="w-4 h-4 zu-spinner" /> Applying…</>
                 : <><Scissors className="w-4 h-4" /> Apply Waiver</>
               }
             </button>
@@ -340,7 +340,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
         {/* ── Body ── */}
         {loading ? (
           <div className="hms-inv-detail__loading">
-            <Loader2 className="w-6 h-6 hms-billing-spin" />
+            <Loader2 className="w-6 h-6 zu-spinner" />
           </div>
         ) : (
           <div className="hms-inv-detail__body">
@@ -577,7 +577,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                         className="zu-btn-primary"
                       >
                         {paying
-                          ? <><Loader2 className="w-3.5 h-3.5 hms-billing-spin" /> Processing…</>
+                          ? <><Loader2 className="w-3.5 h-3.5 zu-spinner" /> Processing…</>
                           : 'Payment Received'
                         }
                       </button>
@@ -760,7 +760,7 @@ function MarkAsPaidModal({ invoice, onClose, onPaid }) {
             className="zu-btn-primary"
           >
             {submitting
-              ? <><Loader2 className="w-4 h-4 hms-billing-spin" /> Processing…</>
+              ? <><Loader2 className="w-4 h-4 zu-spinner" /> Processing…</>
               : <><CheckCircle2 className="w-4 h-4" /> Confirm Payment</>
             }
           </button>

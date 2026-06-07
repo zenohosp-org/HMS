@@ -242,9 +242,6 @@ export default function PatientServices() {
                     columns={columns}
                     data={paginated}
                     loading={loading}
-                    loadingMessage={
-                        <span className="text-gray-500">Loading services…</span>
-                    }
                     emptyMessage={
                         <div className="hms-cell-empty">
                             <span className="hms-cell-empty__icon">

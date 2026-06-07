@@ -958,7 +958,7 @@ export default function IPDDetailPane({
                                     disabled={checkingDischarge}
                                 >
                                     {checkingDischarge ? (
-                                        <Spinner size={11} className="animate-spin" />
+                                        <Spinner size={11} className="zu-spinner" />
                                     ) : (
                                         <LogOut size={11} />
                                     )}
@@ -1036,6 +1036,7 @@ export default function IPDDetailPane({
                             savingRecord={savingRecord}
                             handleSaveRecord={handleSaveRecord}
                             setShowPrescriptionModal={setShowPrescriptionModal}
+                            isDischarged={!!admission.actualDischargeDate}
                         />
                     )}
                     {activeTab === "Attendor Details" && <AttenderTab admission={admission} />}
@@ -1105,31 +1106,34 @@ function LogTab({
     savingRecord,
     handleSaveRecord,
     setShowPrescriptionModal,
+    isDischarged,
 }) {
     return (
         <div className="hms-ipd-tab-body">
             <div className="hms-ipd-log-head">
                 <div className="hms-ipd-log-head__row">
                     <p className="hms-ipd-log-head__label">Timeline</p>
-                    <div className="hms-ipd-log-head__actions">
-                        <button
-                            type="button"
-                            onClick={() => setShowPrescriptionModal(true)}
-                            className="hms-ipd-chip-btn is-success-solid"
-                        >
-                            <Pill size={11} /> Write prescription
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setShowAddRecord((v) => !v)}
-                            className="hms-ipd-chip-btn"
-                        >
-                            {showAddRecord ? <X size={11} /> : <Plus size={11} />}
-                            {showAddRecord ? "Cancel" : "Add record"}
-                        </button>
-                    </div>
+                    {!isDischarged && (
+                        <div className="hms-ipd-log-head__actions">
+                            <button
+                                type="button"
+                                onClick={() => setShowPrescriptionModal(true)}
+                                className="hms-ipd-chip-btn is-success-solid"
+                            >
+                                <Pill size={11} /> Write prescription
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowAddRecord((v) => !v)}
+                                className="hms-ipd-chip-btn"
+                            >
+                                {showAddRecord ? <X size={11} /> : <Plus size={11} />}
+                                {showAddRecord ? "Cancel" : "Add record"}
+                            </button>
+                        </div>
+                    )}
                 </div>
-                {showAddRecord && (
+                {!isDischarged && showAddRecord && (
                     <form
                         onSubmit={handleSaveRecord}
                         className="hms-ipd-record-form"

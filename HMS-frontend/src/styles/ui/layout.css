@@ -26,7 +26,6 @@
 .zu-app-shell-content {
     flex: 1;
     overflow-y: auto;
-    padding: var(--zu-space-lg);
 }
 
 .zu-app-shell.is-focus .zu-app-shell-content,
@@ -40,6 +39,10 @@
         padding: 0;
         overflow: visible;
     }
+}
+
+.zu-page-content {
+    padding: 0 28px;
 }
 
 /* ─────────────────────────── Sidebar ─────────────────────────── */
@@ -114,7 +117,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 4px;
 }
 
 .sidebar-section-label {
@@ -194,6 +197,7 @@
     flex: 1;
     overflow: hidden;
 }
+
 .sidebar-nav-label span {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -229,7 +233,7 @@
 
 .sidebar-submenu button {
     display: block;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     padding: 8px 1rem;
     border-radius: 0.5rem;
@@ -417,12 +421,11 @@
 
 /* ─────────────────────────── Page Header ─────────────────────────── */
 .zu-page-header {
-    padding: 32px 32px 24px;
+    padding: 20px 28px;
     background: var(--zu-white);
     border-bottom: 1px solid var(--zu-gray-200);
     position: sticky;
-    top: -24px;
-    margin: -24px -24px 24px -24px;
+    top: 0;
     z-index: var(--zu-z-sticky);
 }
 

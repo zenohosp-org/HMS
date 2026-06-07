@@ -46,9 +46,9 @@ const SETTINGS_LINKS = [
     { label: "Packages", to: "/checkups/packages", icon: ClipboardList },
 ];
 const ROOMS_LINKS = [
-    { label: "Room Allocation", to: "/rooms/allocation", icon: Bed },
-    { label: "Room Logs", to: "/rooms/logs", icon: ClipboardList },
-    { label: "IPD Admissions", to: "/admissions", icon: BedDouble },
+    { label: "IPD Admission", to: "/admissions", icon: BedDouble },
+    { label: "Rooms and Allocations", to: "/rooms/allocation", icon: Bed },
+    { label: "Logs", to: "/rooms/logs", icon: ClipboardList },
 ];
 const AMBULANCE_LINKS = [
     { label: "Book", to: "/ambulance/book", icon: Ambulance },

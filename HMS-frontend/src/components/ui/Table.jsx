@@ -18,12 +18,14 @@
  *   onRowClick     (row, idx) => void                  // optional row click
  *   className extra classes appended to the wrapper
  */
+import TableSkeleton from "./TableSkeleton";
+
 export default function Table({
     columns = [],
     data = [],
     rowKey,
     loading = false,
-    loadingMessage = "Loading…",
+    loadingMessage = <TableSkeleton rows={8} />,
     emptyMessage = "No data",
     onRowClick,
     className = "",
@@ -67,8 +69,12 @@ export default function Table({
                 <tbody>
                     {loading ? (
                         <tr>
-                            <td colSpan={columns.length}>
-                                <div className="zu-table-loading">{loadingMessage}</div>
+                            <td colSpan={columns.length} className="zu-table-loading-cell">
+                                {typeof loadingMessage === 'string' ? (
+                                    <div className="zu-table-loading">{loadingMessage}</div>
+                                ) : (
+                                    loadingMessage
+                                )}
                             </td>
                         </tr>
                     ) : data.length === 0 ? (

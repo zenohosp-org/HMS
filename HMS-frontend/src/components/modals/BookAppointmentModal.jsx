@@ -8,7 +8,7 @@ import { fmtId } from "@/utils/idFormat";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 function MiniCalendar({ value, onChange }) {
   const today = new Date();
@@ -16,12 +16,12 @@ function MiniCalendar({ value, onChange }) {
   const [view, setView] = useState({ year: selected?.getFullYear() ?? today.getFullYear(), month: selected?.getMonth() ?? today.getMonth() });
   const firstDay = new Date(view.year, view.month, 1).getDay();
   const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
-  const prevMonth = () => setView(v => { const m = v.month===0?11:v.month-1; const y = v.month===0?v.year-1:v.year; return {year:y,month:m}; });
-  const nextMonth = () => setView(v => { const m = v.month===11?0:v.month+1; const y = v.month===11?v.year+1:v.year; return {year:y,month:m}; });
-  const cells = [...Array(firstDay).fill(null), ...Array.from({length:daysInMonth},(_,i)=>i+1)];
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const prevMonth = () => setView(v => { const m = v.month === 0 ? 11 : v.month - 1; const y = v.month === 0 ? v.year - 1 : v.year; return { year: y, month: m }; });
+  const nextMonth = () => setView(v => { const m = v.month === 11 ? 0 : v.month + 1; const y = v.month === 11 ? v.year + 1 : v.year; return { year: y, month: m }; });
+  const cells = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
   const pick = (day) => {
-    const ds = `${view.year}-${String(view.month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    const ds = `${view.year}-${String(view.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     if (ds < todayStr) return;
     onChange(ds);
   };
@@ -38,7 +38,7 @@ function MiniCalendar({ value, onChange }) {
       <div className="hms-mini-cal__grid">
         {cells.map((day, i) => {
           if (!day) return <div key={`e-${i}`} />;
-          const ds = `${view.year}-${String(view.month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+          const ds = `${view.year}-${String(view.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const isPast = ds < todayStr;
           const isSelected = ds === value;
           const isToday = ds === todayStr;
@@ -55,10 +55,10 @@ function MiniCalendar({ value, onChange }) {
 }
 
 const TYPE_OPTIONS = [
-  { value: "OPD",           label: "Fresh Walk-in",   desc: "First-time or walk-in patient" },
-  { value: "FOLLOWUP",      label: "Follow-up",       desc: "Returning patient" },
-  { value: "EMERGENCY",     label: "Emergency",       desc: "Urgent — minimal data" },
-  { value: "HEALTH_CHECKUP",label: "Health Checkup",  desc: "Link a checkup package" },
+  { value: "OPD", label: "Fresh Walk-in", desc: "First-time or walk-in patient" },
+  { value: "FOLLOWUP", label: "Follow-up", desc: "Returning patient" },
+  { value: "EMERGENCY", label: "Emergency", desc: "Urgent — minimal data" },
+  { value: "HEALTH_CHECKUP", label: "Health Checkup", desc: "Link a checkup package" },
 ];
 
 function SectionLabel({ step, label, icon }) {
@@ -75,44 +75,52 @@ function SectionLabel({ step, label, icon }) {
   );
 }
 
-export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate }) {
+export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate, prefilledPatient }) {
   const { user } = useAuth();
   const { notify } = useNotification();
   const navigate = useNavigate();
 
-  const [patients, setPatients]                   = useState([]);
-  const [doctors, setDoctors]                     = useState([]);
-  const [pastDoctors, setPastDoctors]             = useState([]);
-  const [showAllDoctors, setShowAllDoctors]        = useState(false);
+  const [patients, setPatients] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [pastDoctors, setPastDoctors] = useState([]);
+  const [showAllDoctors, setShowAllDoctors] = useState(false);
   const [doctorAppointments, setDoctorAppointments] = useState([]);
 
-  const [patientId, setPatientId]           = useState("");
-  const [doctorId, setDoctorId]             = useState("");
-  const [apptDate, setApptDate]             = useState(selectedDate ? selectedDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
-  const [apptTime, setApptTime]             = useState("");
-  const [type, setType]                     = useState("OPD");
+  const [patientId, setPatientId] = useState(prefilledPatient ? String(prefilledPatient.id) : "");
+  const [doctorId, setDoctorId] = useState("");
+  const [apptDate, setApptDate] = useState(selectedDate ? selectedDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
+  const [apptTime, setApptTime] = useState("");
+  const [type, setType] = useState("OPD");
   const [chiefComplaint, setChiefComplaint] = useState("");
-  const [packages, setPackages]             = useState([]);
-  const [packageId, setPackageId]           = useState("");
-  const [patientSearch, setPatientSearch]   = useState("");
-  const [doctorSearch, setDoctorSearch]     = useState("");
-  const [patientOpen, setPatientOpen]       = useState(false);
-  const [doctorOpen, setDoctorOpen]         = useState(false);
+  const [packages, setPackages] = useState([]);
+  const [packageId, setPackageId] = useState("");
+  const [patientSearch, setPatientSearch] = useState(prefilledPatient ? `${prefilledPatient.firstName} ${prefilledPatient.lastName}` : "");
+  const [doctorSearch, setDoctorSearch] = useState("");
+  const [patientOpen, setPatientOpen] = useState(false);
+  const [doctorOpen, setDoctorOpen] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && prefilledPatient) {
+      setPatientId(String(prefilledPatient.id));
+      setPatientSearch(`${prefilledPatient.firstName} ${prefilledPatient.lastName}`);
+    }
+  }, [isOpen, prefilledPatient]);
   const patientRef = useRef(null);
-  const doctorRef  = useRef(null);
-  const [isLoading, setIsLoading]           = useState(false);
-  const [errors, setErrors]                 = useState({});
+  const doctorRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const [emergencyName, setEmergencyName]   = useState("");
+  const [emergencyName, setEmergencyName] = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [isAutoConfirm, setIsAutoConfirm] = useState(false);
 
-  const isEmergency     = type === "EMERGENCY";
-  const isFollowUp      = type === "FOLLOWUP";
+  const isEmergency = type === "EMERGENCY";
+  const isFollowUp = type === "FOLLOWUP";
   const isHealthCheckup = type === "HEALTH_CHECKUP";
 
   const selectedPatient = patients.find(p => String(p.id) === patientId);
-  const selectedDoctor  = doctors.find(d => d.id === doctorId);
-  const selectedPkg     = packages.find(p => p.id === packageId);
+  const selectedDoctor = doctors.find(d => d.id === doctorId);
+  const selectedPkg = packages.find(p => p.id === packageId);
 
   const filteredPatients = patients.filter(p => {
     const q = patientSearch.toLowerCase();
@@ -156,7 +164,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   useEffect(() => {
     const handler = (e) => {
       if (patientRef.current && !patientRef.current.contains(e.target)) setPatientOpen(false);
-      if (doctorRef.current  && !doctorRef.current.contains(e.target))  setDoctorOpen(false);
+      if (doctorRef.current && !doctorRef.current.contains(e.target)) setDoctorOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -165,7 +173,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   useEffect(() => {
     if (!isOpen || !doctorId || !apptDate) { setDoctorAppointments([]); return; }
     appointmentsApi.getByDoctor(doctorId, apptDate)
-      .then(appts => setDoctorAppointments(appts.filter(a => ["SCHEDULED","CONFIRMED","CHECKED_IN","IN_PROGRESS"].includes(a.status))))
+      .then(appts => setDoctorAppointments(appts.filter(a => ["SCHEDULED", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS"].includes(a.status))))
       .catch(console.error);
   }, [doctorId, apptDate, isOpen]);
 
@@ -177,8 +185,8 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
       if (!emergencyName.trim()) errs.patient = "Patient name is required";
     } else {
       if (!patientId) errs.patient = "Please select a patient";
-      if (!doctorId)  errs.doctor  = "Please select a doctor";
-      if (!apptTime)  errs.time    = "Please select a time slot";
+      if (!doctorId) errs.doctor = "Please select a doctor";
+      if (!apptTime) errs.time = "Please select a time slot";
     }
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setIsLoading(true);
@@ -193,8 +201,18 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
           ? { emergencyPatientName: emergencyName.trim(), emergencyPhone: emergencyPhone.trim() || undefined, doctorId: doctorId || undefined, apptTime: apptTime || undefined }
           : { patientId: Number(patientId), doctorId, apptTime }),
       };
-      const appointment = await appointmentsApi.create(payload);
-      notify(isEmergency ? "Emergency appointment created!" : "Appointment scheduled successfully!", "success");
+      let appointment = await appointmentsApi.create(payload);
+
+      if (isAutoConfirm) {
+        try {
+          appointment = await appointmentsApi.updateStatus(appointment.id, 'CONFIRMED');
+        } catch (err) {
+          console.error("Failed to auto-confirm:", err);
+        }
+      }
+
+      const tokenMsg = appointment.tokenNumber ? ` (Token: ${appointment.tokenNumber})` : "";
+      notify(isEmergency ? `Emergency appointment created!${tokenMsg}` : `Appointment scheduled successfully!${tokenMsg}`, "success");
       onSuccess(appointment);
       resetForm();
     } catch (err) {
@@ -206,7 +224,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
     setPatientId(""); setPatientSearch(""); setDoctorSearch("");
     if (user?.role !== "doctor") setDoctorId("");
     setApptTime(""); setType("OPD"); setPackageId(""); setChiefComplaint("");
-    setEmergencyName(""); setEmergencyPhone("");
+    setEmergencyName(""); setEmergencyPhone(""); setIsAutoConfirm(false);
     setPastDoctors([]); setShowAllDoctors(false);
     setErrors({});
   };
@@ -216,22 +234,32 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
     const toMin = t => { const [hh, mm] = t.split(':').map(Number); return hh * 60 + mm; };
     const slots = [];
     let totalMin = 9 * 60;
+
+    const now = new Date();
+    const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    const todayStr = localNow.toISOString().split("T")[0];
+    const isToday = apptDate === todayStr;
+    const currentMin = now.getHours() * 60 + now.getMinutes();
+
     while (totalMin < 18 * 60) {
       const h = Math.floor(totalMin / 60);
       const m = totalMin % 60;
-      const timeStr = `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:00`;
+      const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
       const hour12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
       const ampm = h >= 12 ? "PM" : "AM";
-      const displayTime = `${String(hour12).padStart(2,"0")}:${String(m).padStart(2,"0")} ${ampm}`;
+      const displayTime = `${String(hour12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
       const slotStart = totalMin;
       const slotEnd = totalMin + slotDuration;
+
+      const isPast = isToday && slotStart <= currentMin;
+
       const isBooked = doctorAppointments.some(a => {
         if (!a.apptTime) return false;
         const aStart = toMin(a.apptTime);
         const aEnd = a.apptEndTime ? toMin(a.apptEndTime) : aStart + slotDuration;
         return slotStart < aEnd && slotEnd > aStart;
       });
-      slots.push({ timeStr, displayTime, isBooked });
+      slots.push({ timeStr, displayTime, isBooked, isPast });
       totalMin += slotDuration;
     }
     return slots;
@@ -279,7 +307,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                   <div>
                     <input
                       type="text" value={emergencyName}
-                      onChange={e => { setEmergencyName(e.target.value); setErrors(er => ({...er, patient:""})); }}
+                      onChange={e => { setEmergencyName(e.target.value); setErrors(er => ({ ...er, patient: "" })); }}
                       placeholder="Patient full name *"
                       className={`hms-book-emergency-input${errors.patient ? " is-error" : ""}`}
                     />
@@ -293,31 +321,33 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 </div>
               ) : (
                 <div>
-                  <div className="hms-book-search" ref={patientRef}>
-                    <Search className="hms-book-search__icon w-4 h-4" />
-                    <input type="text" value={patientSearch}
-                      onChange={e => { setPatientSearch(e.target.value); setPatientOpen(true); }}
-                      onFocus={() => setPatientOpen(true)}
-                      placeholder="Search by name or UHID…"
-                      className={`hms-book-search__input${errors.patient ? " is-error" : ""}`}
-                    />
-                    {patientOpen && filteredPatients.length > 0 && (
-                      <div className="hms-book-suggest">
-                        {(patientSearch ? filteredPatients : filteredPatients.slice(0, 5)).map(p => (
-                          <button key={p.id} type="button"
-                            onMouseDown={e => e.preventDefault()}
-                            onClick={() => { setPatientId(String(p.id)); setPatientSearch(""); setPatientOpen(false); setErrors(e => ({...e, patient:""})); }}
-                            className="hms-book-suggest__item">
-                            <div className="hms-book-suggest__avatar">{p.firstName[0]}</div>
-                            <div className="hms-book-suggest__body">
-                              <p className="hms-book-suggest__name">{p.firstName} {p.lastName}</p>
-                              <p className="hms-book-suggest__sub">{fmtId(p.uhid)}</p>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  {!prefilledPatient && (
+                    <div className={`zu-search ${errors.patient ? "border-rose-500" : ""}`} ref={patientRef}>
+                      <Search className="zu-search-icon" size={16} />
+                      <input type="text" value={patientSearch}
+                        onChange={e => { setPatientSearch(e.target.value); setPatientOpen(true); }}
+                        onFocus={() => setPatientOpen(true)}
+                        placeholder="Search by name or UHID…"
+                        className="hms-input w-full"
+                      />
+                      {patientOpen && filteredPatients.length > 0 && (
+                        <div className="hms-book-suggest">
+                          {(patientSearch ? filteredPatients : filteredPatients.slice(0, 5)).map(p => (
+                            <button key={p.id} type="button"
+                              onMouseDown={e => e.preventDefault()}
+                              onClick={() => { setPatientId(String(p.id)); setPatientSearch(""); setPatientOpen(false); setErrors(e => ({ ...e, patient: "" })); }}
+                              className="hms-book-suggest__item">
+                              <div className="hms-book-suggest__avatar">{p.firstName[0]}</div>
+                              <div className="hms-book-suggest__body">
+                                <p className="hms-book-suggest__name">{p.firstName} {p.lastName}</p>
+                                <p className="hms-book-suggest__sub">{fmtId(p.uhid)}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {selectedPatient ? (
                     <div className="hms-book-picked">
@@ -326,17 +356,21 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                         <p className="hms-book-picked__name">{selectedPatient.firstName} {selectedPatient.lastName}</p>
                         <p className="hms-book-picked__sub">{fmtId(selectedPatient.uhid)}</p>
                       </div>
-                      <button type="button" onClick={() => { setPatientId(""); setPastDoctors([]); }} className="hms-book-picked__clear"><X className="w-3.5 h-3.5" /></button>
+                      {!prefilledPatient && (
+                        <button type="button" onClick={() => { setPatientId(""); setPastDoctors([]); }} className="hms-book-picked__clear"><X className="w-3.5 h-3.5" /></button>
+                      )}
                     </div>
                   ) : (
                     errors.patient && <p className="hms-field-error">{errors.patient}</p>
                   )}
 
-                  <button type="button"
-                    onClick={() => { onClose(); navigate("/patients", { state: { openRegistration: true } }); }}
-                    className="hms-book-register-btn">
-                    <UserPlus className="w-3.5 h-3.5" /> Register new patient
-                  </button>
+                  {!prefilledPatient && (
+                    <button type="button"
+                      onClick={() => { onClose(); navigate("/patients", { state: { openRegistration: true } }); }}
+                      className="hms-book-register-btn">
+                      <UserPlus className="w-3.5 h-3.5" /> Register new patient
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -404,21 +438,21 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 </p>
               )}
 
-              <div className="hms-book-search" ref={doctorRef}>
-                <Search className="hms-book-search__icon w-4 h-4" />
+              <div className={`zu-search ${errors.doctor ? "border-rose-500" : ""}`} ref={doctorRef}>
+                <Search className="zu-search-icon" size={16} />
                 <input type="text" value={doctorSearch}
                   onChange={e => { setDoctorSearch(e.target.value); setDoctorOpen(true); }}
                   onFocus={() => { if (!selectedDoctor && user?.role !== "doctor") setDoctorOpen(true); }}
                   disabled={user?.role === "doctor"}
                   placeholder="Search by name or specialization…"
-                  className={`hms-book-search__input${errors.doctor ? " is-error" : ""}`}
+                  className="hms-input w-full"
                 />
                 {doctorOpen && filteredDoctors.length > 0 && (
                   <div className="hms-book-suggest">
                     {(doctorSearch ? filteredDoctors : filteredDoctors.slice(0, 5)).map(d => (
                       <button key={d.id} type="button"
                         onMouseDown={e => e.preventDefault()}
-                        onClick={() => { setDoctorId(d.id); setDoctorSearch(""); setDoctorOpen(false); setApptTime(""); setErrors(p => ({...p, doctor:""})); }}
+                        onClick={() => { setDoctorId(d.id); setDoctorSearch(""); setDoctorOpen(false); setApptTime(""); setErrors(p => ({ ...p, doctor: "" })); }}
                         className="hms-book-suggest__item">
                         <div className="hms-book-suggest__avatar">{d.firstName[0]}</div>
                         <div className="hms-book-suggest__body">
@@ -480,11 +514,11 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
 
                   {isEmergency ? (
                     <div className="hms-book-time-stack">
-                      <input type="time" value={apptTime ? apptTime.substring(0,5) : ""}
+                      <input type="time" value={apptTime ? apptTime.substring(0, 5) : ""}
                         onChange={e => setApptTime(e.target.value ? e.target.value + ":00" : "")}
                         className="hms-input"
                       />
-                      <button type="button" onClick={() => { const n = new Date(); setApptTime(`${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}:00`); }}
+                      <button type="button" onClick={() => { const n = new Date(); setApptTime(`${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}:00`); }}
                         className="hms-book-emergency-now">
                         Set to Now
                       </button>
@@ -499,12 +533,13 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                         {timeSlots.map(slot => {
                           const on = apptTime === slot.timeStr;
                           return (
-                            <button key={slot.timeStr} type="button" disabled={slot.isBooked}
-                              onClick={() => { setApptTime(slot.timeStr); setErrors(e => ({...e, time:""})); }}
+                            <button key={slot.timeStr} type="button" disabled={slot.isBooked || slot.isPast}
+                              onClick={() => { setApptTime(slot.timeStr); setErrors(e => ({ ...e, time: "" })); }}
                               className={`hms-book-slot${on ? " is-on" : ""}`}>
                               <Clock className="hms-book-slot__icon w-3.5 h-3.5" />
                               <span>{slot.displayTime}</span>
                               {slot.isBooked && <span className="hms-book-slot__booked">Booked</span>}
+                              {slot.isPast && !slot.isBooked && <span className="hms-book-slot__booked" style={{ opacity: 0.6 }}>Passed</span>}
                               {on && <CheckCircle className="hms-book-slot__ok w-3.5 h-3.5" />}
                             </button>
                           );
@@ -531,12 +566,18 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
         </div>
 
         {/* Footer */}
-        <div className="zu-modal-footer">
-          <button type="button" onClick={() => { resetForm(); onClose(); }} className="zu-btn-cancel">Cancel</button>
-          <button type="submit" form="book-form" disabled={isLoading}
-            className={isEmergency ? "hms-book-emergency-btn" : "zu-btn-primary"}>
-            {isLoading ? "Saving…" : isEmergency ? "Create Emergency Appointment" : "Schedule Appointment"}
-          </button>
+        <div className="zu-modal-footer zu-modal-footer--between">
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+            <input type="checkbox" checked={isAutoConfirm} onChange={e => setIsAutoConfirm(e.target.checked)} className="hms-checkbox" />
+            <span className="font-medium">Patient reached Hospital</span>
+          </label>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { resetForm(); onClose(); }} className="zu-btn-cancel">Cancel</button>
+            <button type="submit" form="book-form" disabled={isLoading}
+              className={isEmergency ? "hms-book-emergency-btn" : "zu-btn-primary"}>
+              {isLoading ? "Saving…" : isEmergency ? "Create Emergency Appointment" : "Schedule Appointment"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

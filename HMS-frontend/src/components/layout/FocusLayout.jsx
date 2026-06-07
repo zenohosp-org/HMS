@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
+import { CenterLoader } from "@/components/ui/Loader";
 
 /**
  * Sidebar-less variant of Layout used by full-page focus flows
@@ -19,7 +21,9 @@ export default function FocusLayout() {
                 <Header />
             </div>
             <main className="zu-app-shell-content is-focus">
-                <Outlet />
+                <Suspense fallback={<CenterLoader />}>
+                    <Outlet />
+                </Suspense>
             </main>
         </div>
     );

@@ -1,5 +1,5 @@
-import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback } from "react";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import { useAuth } from "@/context/AuthContext";
 import { roomLogsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
@@ -107,7 +107,7 @@ function RoomLogsModal({ onClose, roomId, roomNumber }) {
 
                 {loading ? (
                     <div className="hms-rooms-log-modal-loader">
-                        <Spinner size={20} className="animate-spin" />
+                        <TableSkeleton rows={6} columns={5} />
                     </div>
                 ) : filteredLogs.length === 0 ? (
                     <div className="hms-rooms-log-modal-empty">

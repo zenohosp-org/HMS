@@ -100,7 +100,7 @@ function AssignAssetDropdown({ hospitalId, roomId, onAssigned }) {
                 <div className="hms-room-asset-dropdown">
                     {loading ? (
                         <div className="hms-room-asset-dropdown__loading">
-                            <Spinner size={14} className="animate-spin" /> Searching…
+                            <Spinner size={14} className="zu-spinner" /> Searching…
                         </div>
                     ) : results.length === 0 ? (
                         <div className="hms-room-asset-dropdown__empty">
@@ -130,7 +130,7 @@ function AssignAssetDropdown({ hospitalId, roomId, onAssigned }) {
                                         {assigning === a.assetId ? (
                                             <Spinner
                                                 size={12}
-                                                className="animate-spin text-gray-700"
+                                                className="zu-spinner text-gray-700"
                                             />
                                         ) : (
                                             <Plus size={12} className="text-success" />
@@ -172,7 +172,7 @@ function BedsSection({ room, hospitalId }) {
     if (loading) {
         return (
             <div className="hms-room-inline-loader">
-                <Spinner size={16} className="animate-spin" />
+                <Spinner size={16} className="zu-spinner" />
                 <span className="hms-room-inline-loader__text">Loading beds…</span>
             </div>
         );
@@ -297,6 +297,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
     const [assetsLoading, setAssetsLoading] = useState(false);
     const [removingId, setRemovingId] = useState(null);
     const [showAssign, setShowAssign] = useState(false);
+    const [showAssets, setShowAssets] = useState(false);
 
     const loadAssets = useCallback(async () => {
         if (!room?.id || !hospitalId) return;
@@ -450,106 +451,81 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
 
                 {/* Assets */}
                 <div>
-                    <div className="hms-room-panel-section-row">
+                    <div 
+                        className="hms-room-panel-section-row"
+                        onClick={() => setShowAssets(!showAssets)}
+                        style={{ cursor: "pointer", opacity: 0.8 }}
+                    >
                         <div className="flex items-center gap-2">
                             <Package size={14} className="text-gray-400" />
                             <p className="hms-room-panel-section-head__label">
-                                Assets in room
+                                Assets in room {showAssets ? "(hide)" : "(show)"}
                             </p>
                             {assets.length > 0 && (
-                                <Badge tone="success" soft>
+                                <Badge tone="neutral" soft>
                                     {assets.length}
                                 </Badge>
                             )}
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => setShowAssign((v) => !v)}
-                            className="hms-room-asset-assign-btn"
-                        >
-                            <Plus size={12} /> Assign
-                        </button>
                     </div>
 
-                    {showAssign && (
-                        <div className="mb-3">
-                            <AssignAssetDropdown
-                                hospitalId={hospitalId}
-                                roomId={room.id}
-                                onAssigned={() => {
-                                    loadAssets();
-                                    setShowAssign(false);
-                                }}
-                            />
-                        </div>
-                    )}
-
-                    {assetsLoading ? (
-                        <div className="hms-room-inline-loader">
-                            <Spinner size={16} className="animate-spin" />
-                            <span className="hms-room-inline-loader__text">Loading assets…</span>
-                        </div>
-                    ) : assets.length === 0 ? (
-                        <div className="hms-room-asset-empty">
-                            <Package size={24} className="text-gray-300 mb-1.5" />
-                            <p className="hms-room-asset-empty__text">
-                                No assets assigned yet
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="hms-room-asset-list">
-                            {assets.map((a) => (
-                                <div key={a.assetId} className="hms-room-asset">
-                                    <div className="hms-room-asset__icon">
-                                        <Package size={14} />
-                                    </div>
-                                    <div className="hms-room-asset__body">
-                                        <div className="hms-room-asset__title-row">
-                                            <p className="hms-room-asset__title">
-                                                {a.assetName}
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleUnassign(a.assetId)}
-                                                disabled={removingId === a.assetId}
-                                                className="hms-room-asset__remove"
-                                                title="Remove from room"
-                                            >
-                                                {removingId === a.assetId ? (
-                                                    <Spinner size={12} className="animate-spin" />
-                                                ) : (
-                                                    <X size={12} />
-                                                )}
-                                            </button>
-                                        </div>
-                                        <div className="hms-room-asset__meta">
-                                            {a.assetCode && (
-                                                <span className="hms-room-asset__meta-item">
-                                                    <Tag size={10} />
-                                                    {a.assetCode}
-                                                </span>
-                                            )}
-                                            {(a.make || a.model) && (
-                                                <span className="hms-room-asset__meta-item">
-                                                    {[a.make, a.model].filter(Boolean).join(" ")}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="hms-room-asset__foot">
-                                            <AssetStatusBadge status={a.status} />
-                                            <a
-                                                href={`https://asset.zenohosp.com/assets/${a.assetId}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="hms-room-asset__link"
-                                                title="View in Assets app"
-                                            >
-                                                Details <ArrowUpRight size={10} />
-                                            </a>
-                                        </div>
-                                    </div>
+                    {showAssets && (
+                        <div className="mt-2">
+                            {assetsLoading ? (
+                                <div className="hms-room-inline-loader">
+                                    <Spinner size={16} className="zu-spinner" />
+                                    <span className="hms-room-inline-loader__text">Loading assets…</span>
                                 </div>
-                            ))}
+                            ) : assets.length === 0 ? (
+                                <div className="hms-room-asset-empty">
+                                    <Package size={24} className="text-gray-300 mb-1.5" />
+                                    <p className="hms-room-asset-empty__text">
+                                        No assets assigned yet
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="hms-room-asset-list">
+                                    {assets.map((a) => (
+                                        <div key={a.assetId} className="hms-room-asset">
+                                            <div className="hms-room-asset__icon">
+                                                <Package size={14} />
+                                            </div>
+                                            <div className="hms-room-asset__body">
+                                                <div className="hms-room-asset__title-row">
+                                                    <p className="hms-room-asset__title">
+                                                        {a.assetName}
+                                                    </p>
+                                                </div>
+                                                <div className="hms-room-asset__meta">
+                                                    {a.assetCode && (
+                                                        <span className="hms-room-asset__meta-item">
+                                                            <Tag size={10} />
+                                                            {a.assetCode}
+                                                        </span>
+                                                    )}
+                                                    {(a.make || a.model) && (
+                                                        <span className="hms-room-asset__meta-item">
+                                                            {[a.make, a.model].filter(Boolean).join(" ")}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="hms-room-asset__foot">
+                                                    <AssetStatusBadge status={a.status} />
+                                                    <a
+                                                        href={`https://asset.zenohosp.com/assets/${a.assetId}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="hms-room-asset__link"
+                                                        title="View in Assets app"
+                                                    >
+                                                        Details <ArrowUpRight size={10} />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

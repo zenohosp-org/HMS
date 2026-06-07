@@ -237,147 +237,38 @@
 }
 
 
-/* ─── Building card ─── */
-.hms-room-building {
-    border-radius: 12px;
-    border: 1px solid var(--hms-gray-200);
-    background: var(--hms-white);
-    overflow: hidden;
+/* ─── Flat section block ─── */
+.hms-room-section {
+    margin-bottom: 24px;
 }
 
-.hms-room-building__header {
-    padding: 12px 16px;
-    background: linear-gradient(90deg, var(--hms-gray-900), var(--hms-gray-800));
-    border-bottom: 1px solid var(--hms-gray-700);
-}
-
-.hms-room-building__header-row {
+.hms-room-section__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--hms-gray-200);
 }
 
-.hms-room-building__lead { display: flex; align-items: center; gap: 12px; }
-
-.hms-room-building__icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(4px);
-    color: var(--hms-white);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.hms-room-building__name {
+.hms-room-section__title {
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
-    color: var(--hms-white);
-    letter-spacing: -0.02em;
-}
-
-.hms-room-building__code {
-    margin: 2px 0 0;
-    font-size: 11px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.hms-room-building__aside {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.hms-room-building__occupancy { width: 176px; }
-
-.hms-room-building__body {
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-
-/* ─── Floor block ─── */
-.hms-room-floor {
-    border-radius: 8px;
-    border: 1px solid var(--hms-gray-100);
-    overflow: hidden;
-}
-
-.hms-room-floor__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: var(--hms-gray-50);
-    border-bottom: 1px solid var(--hms-gray-100);
-    cursor: pointer;
-    user-select: none;
-}
-
-.hms-room-floor__head-lead {
+    color: var(--hms-gray-800);
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.hms-room-floor__name {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--hms-gray-700);
+.hms-room-section__sep {
+    color: var(--hms-gray-300);
+    font-weight: 400;
 }
 
-.hms-room-floor__occupancy { width: 144px; }
-
-.hms-room-floor__body {
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+.hms-room-section__occupancy {
+    width: 140px;
 }
-
-
-/* ─── Ward block ─── */
-.hms-room-ward__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    padding: 4px 6px;
-    border-radius: 6px;
-    cursor: pointer;
-    user-select: none;
-}
-
-.hms-room-ward__head-lead {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.hms-room-ward__name {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--hms-gray-600);
-}
-
-.hms-room-ward__count {
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
-    color: var(--hms-gray-400);
-}
-
-.hms-room-ward__occupancy { width: 112px; }
 
 
 /* ─── Room grid (auto-fill 220px cells) ─── */
@@ -412,6 +303,11 @@
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
+.hms-room-cell.is-occupied {
+    background: #f0f9ff;
+    border-color: #bae6fd;
+}
+
 .hms-room-cell__accent {
     position: absolute;
     left: 0;
@@ -429,28 +325,15 @@
     gap: 8px;
 }
 
-.hms-room-cell__icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    background: var(--hms-gray-50);
-    color: var(--hms-gray-400);
-    border: 1px solid var(--hms-gray-100);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+.hms-room-cell__status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--hms-gray-300);
+    margin-left: 2px;
 }
-.hms-room-cell__icon.is-available {
-    background: var(--hms-success-bg);
-    color: var(--hms-success);
-    border-color: transparent;
-}
-.hms-room-cell__icon.is-occupied {
-    background: var(--hms-info-bg);
-    color: #0369a1;
-    border-color: transparent;
-}
+.hms-room-cell__status-dot.is-available { background: var(--hms-success); }
+.hms-room-cell__status-dot.is-occupied  { background: var(--hms-info); }
 
 .hms-room-cell__body { flex: 1; min-width: 0; }
 
@@ -458,7 +341,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    line-height: 1;
+    line-height: 1.2;
 }
 
 .hms-room-cell__title {

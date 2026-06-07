@@ -187,19 +187,35 @@ body {
    lab / radiology / pathology reports. Violet focus tone matches the
    modal's accent (distinct from blue=consult, emerald=rx, amber=vitals). */
 
-/* Scrollbar */
+/* Scrollbar — stay invisible until the user hovers/scrolls the container,
+   so it doesn't sit on screen as a permanent rail. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover,
+*:focus-within {
+  scrollbar-color: #cbd5e1 transparent;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: transparent;
   border-radius: 8px;
+}
+
+*:hover::-webkit-scrollbar-thumb,
+*:focus-within::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
 }
 
 ::-webkit-scrollbar-thumb:hover {

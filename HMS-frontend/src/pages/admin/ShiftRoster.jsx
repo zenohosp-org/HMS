@@ -248,7 +248,7 @@ function ShiftRoster() {
                 {/* Groups */}
                 {loading ? (
                     <div className="hms-shift-state">
-                        <Spinner size={20} className="text-gray-400 animate-spin" />
+                        <Spinner size={20} className="text-gray-400 zu-spinner" />
                     </div>
                 ) : staffOptions.length === 0 ? (
                     <div className="hms-shift-state is-empty">

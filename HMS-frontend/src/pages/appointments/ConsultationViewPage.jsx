@@ -552,7 +552,7 @@ function VitalsStateHint({ status, vitals, recordedByName, recordedAt }) {
   if (status === "loading") {
     return (
       <span className="hms-cv-vital-state is-loading">
-        <Spinner className="w-3 h-3 animate-spin" /> Loading
+        <Spinner className="w-3 h-3 zu-spinner" /> Loading
       </span>
     );
   }
@@ -999,7 +999,7 @@ function TopActionBar({ autosaveStatus, hydrating, saving, onMarkComplete }) {
         disabled={saving}
         className="hms-cv-complete-btn"
       >
-        {saving ? <Spinner className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+        {saving ? <Spinner className="w-4 h-4 zu-spinner" /> : <CheckCircle2 className="w-4 h-4" />}
         Mark Complete
       </button>
       <AutosaveIndicator status={autosaveStatus} hydrating={hydrating} />
@@ -1053,14 +1053,14 @@ function AutosaveIndicator({ status, hydrating }) {
   if (hydrating) {
     return (
       <span className="hms-cv-autosave is-hydrating">
-        <Spinner className="w-3 h-3 animate-spin" /> Loading draft…
+        <Spinner className="w-3 h-3 zu-spinner" /> Loading draft…
       </span>
     );
   }
   if (status === "saving") {
     return (
       <span className="hms-cv-autosave is-saving">
-        <Spinner className="w-3 h-3 animate-spin" /> Saving draft…
+        <Spinner className="w-3 h-3 zu-spinner" /> Saving draft…
       </span>
     );
   }
