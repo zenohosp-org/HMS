@@ -190,6 +190,88 @@ function GetInfoModal({ invoice, onClose }) {
             )}
           </div>
         </div>
+
+        {/* Itemized Bill Section */}
+        {invoice.items && invoice.items.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 border-b pb-1 mb-4">Itemized Bill</h3>
+            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+              <table className="w-full text-sm text-left text-gray-500">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-2 font-semibold">Type</th>
+                    <th className="px-4 py-2 font-semibold">Description</th>
+                    <th className="px-4 py-2 font-semibold text-center">Qty</th>
+                    <th className="px-4 py-2 font-semibold text-right">Unit Price</th>
+                    <th className="px-4 py-2 font-semibold text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoice.items.map((item, idx) => {
+                    const waived = Number(item.waiverAmount || 0);
+                    const effective = Number(item.totalPrice || 0) - waived;
+                    return (
+                      <tr key={item.id || idx} className="border-b last:border-0 hover:bg-gray-50">
+                        <td className="px-4 py-2">{item.itemType?.replace('_', ' ')}</td>
+                        <td className="px-4 py-2">
+                          <div className="font-medium text-gray-900">{item.description}</div>
+                          {item.waiverReason && <div className="text-xs text-gray-500">Waiver: {item.waiverReason}</div>}
+                        </td>
+                        <td className="px-4 py-2 text-center">{item.quantity}</td>
+                        <td className="px-4 py-2 text-right">₹{Number(item.unitPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className="px-4 py-2 text-right font-medium text-gray-900">
+                          {waived > 0 ? (
+                            <div className="flex flex-col items-end">
+                              <span className="line-through text-xs text-gray-400">₹{Number(item.totalPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              <span>₹{effective.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                          ) : (
+                            <span>₹{Number(item.totalPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Payment History Section */}
+        {invoice.payments && invoice.payments.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 border-b pb-1 mb-4">Payment History</h3>
+            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+              <table className="w-full text-sm text-left text-gray-500">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-2 font-semibold">Date</th>
+                    <th className="px-4 py-2 font-semibold">Method</th>
+                    <th className="px-4 py-2 font-semibold">Reference</th>
+                    <th className="px-4 py-2 font-semibold">Collected By</th>
+                    <th className="px-4 py-2 font-semibold text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoice.payments.map((p, idx) => (
+                    <tr key={p.id || idx} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="px-4 py-2">{new Date(p.paidAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                      <td className="px-4 py-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                          {p.paymentMethod}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-gray-600">{p.referenceNumber || p.notes || '—'}</td>
+                      <td className="px-4 py-2 text-gray-900">{p.collectedBy || '—'}</td>
+                      <td className="px-4 py-2 text-right font-medium text-green-600">₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   );

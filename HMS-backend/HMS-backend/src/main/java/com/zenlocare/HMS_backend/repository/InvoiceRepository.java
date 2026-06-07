@@ -104,8 +104,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     // single-query approach with `CAST(i.status AS string) = :status` was broken
     // because `status` is stored as an Integer via InvoiceStatusConverter, so the
     // cast yielded "1"/"2"/... and never matched names like "UNPAID".
-    @Query("""
+    @Query(value = """
         SELECT i FROM Invoice i
+        LEFT JOIN FETCH i.appointment a
+        LEFT JOIN FETCH a.createdBy
+        LEFT JOIN FETCH a.doctor d
+        LEFT JOIN FETCH d.user
         WHERE i.hospital.id = :hospitalId
         AND i.admission IS NULL
         AND (
@@ -117,6 +121,19 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
             LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
         )
         ORDER BY i.createdAt DESC
+        """,
+        countQuery = """
+        SELECT COUNT(i) FROM Invoice i
+        WHERE i.hospital.id = :hospitalId
+        AND i.admission IS NULL
+        AND (
+            LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
+                LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+        )
         """)
     Page<Invoice> searchOpdInvoices(
         @Param("hospitalId") UUID hospitalId,
@@ -124,8 +141,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         Pageable pageable
     );
 
-    @Query("""
+    @Query(value = """
         SELECT i FROM Invoice i
+        LEFT JOIN FETCH i.appointment a
+        LEFT JOIN FETCH a.createdBy
+        LEFT JOIN FETCH a.doctor d
+        LEFT JOIN FETCH d.user
         WHERE i.hospital.id = :hospitalId
         AND i.admission IS NULL
         AND i.status IN :statuses
@@ -138,6 +159,20 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
             LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
         )
         ORDER BY i.createdAt DESC
+        """,
+        countQuery = """
+        SELECT COUNT(i) FROM Invoice i
+        WHERE i.hospital.id = :hospitalId
+        AND i.admission IS NULL
+        AND i.status IN :statuses
+        AND (
+            LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
+                LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+        )
         """)
     Page<Invoice> searchOpdInvoicesByStatuses(
         @Param("hospitalId") UUID hospitalId,
