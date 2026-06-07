@@ -1,11 +1,14 @@
 import { Suspense, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { CenterLoader } from "@/components/ui/Loader";
 
 function Layout() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const location = useLocation();
+    const isDashboard = location.pathname === "/dashboard" || location.pathname === "/";
+
     return (
         <div className="zu-app-shell">
             <div className="no-print">
@@ -15,7 +18,7 @@ function Layout() {
                 <div className="no-print">
                     <Header onMenuClick={() => setSidebarOpen((p) => !p)} />
                 </div>
-                <main className="zu-app-shell-content">
+                <main className={`zu-app-shell-content ${isDashboard ? "zu-dashboard" : ""}`.trim()}>
                     <Suspense fallback={<CenterLoader />}>
                         <Outlet />
                     </Suspense>

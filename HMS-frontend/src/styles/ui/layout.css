@@ -41,6 +41,10 @@
     }
 }
 
+.zu-app-shell-content.zu-dashboard {
+    padding: 28px;
+}
+
 .zu-page-content {
     padding: 0 28px;
 }
