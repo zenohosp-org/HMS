@@ -114,4 +114,8 @@ public class Invoice {
     public void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by_id")
+    private User updatedBy;
 }

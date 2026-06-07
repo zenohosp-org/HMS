@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { ambulanceApi } from '@/utils/api'
@@ -9,7 +9,7 @@ import TableSkeleton from '@/components/ui/TableSkeleton'
 import {
   Ambulance, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
-  ReceiptText, MoreHorizontal, MapPin, User, Navigation,
+  ReceiptText, MoreHorizontal, MapPin, Navigation,
   IndianRupee
 } from 'lucide-react'
 
@@ -54,6 +54,64 @@ function StatCard({ label, value, sub, Icon, accent }) {
   )
 }
 
+function AmbulanceActionMenu({ booking, markPaid, printReceipt }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const popRef = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener('mousedown', handler);
+      if (popRef.current) {
+        const rect = popRef.current.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight - 20) {
+          popRef.current.classList.add("is-upward");
+        } else {
+          popRef.current.classList.remove("is-upward");
+        }
+      }
+    }
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [open]);
+
+  const canMarkPaid = booking.status === 'COMPLETED' && booking.paymentStatus !== 'PAID'
+
+  return (
+    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
+      <button onClick={() => setOpen(!open)} className="hms-billing-rowbtn">
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+      {open && (
+        <div className="hms-appt-am__pop" ref={popRef}>
+          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
+            {canMarkPaid && (
+              <button
+                onClick={() => { setOpen(false); markPaid(booking) }}
+                className="hms-billing-menu__item"
+              >
+                <IndianRupee className="hms-billing-menu__item-icon is-success w-4 h-4" /> Mark as Paid
+              </button>
+            )}
+            <button
+              onClick={() => { setOpen(false); printReceipt(booking) }}
+              className="hms-billing-menu__item"
+            >
+              <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Receipt
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AmbulanceBilling() {
   const { user } = useAuth()
   const { notify } = useNotification()
@@ -63,7 +121,6 @@ export default function AmbulanceBilling() {
   const [search, setSearch]           = useState('')
   const [payFilter, setPayFilter]     = useState('ALL')
   const [page, setPage]               = useState(1)
-  const [menuState, setMenuState]     = useState(null)
   const [markingId, setMarkingId]     = useState(null)
 
   const loadData = () => {
@@ -76,12 +133,6 @@ export default function AmbulanceBilling() {
   }
 
   useEffect(() => { loadData() }, [user?.hospitalId])
-
-  useEffect(() => {
-    const close = () => setMenuState(null)
-    document.addEventListener('click', close)
-    return () => document.removeEventListener('click', close)
-  }, [])
 
   const filtered = useMemo(() => {
     let list = bookings.filter(b => !b.mergedToIpd)
@@ -118,15 +169,7 @@ export default function AmbulanceBilling() {
 
   const handlePayFilter = (f) => { setPayFilter(f); setPage(1) }
 
-  const openMenu = (booking, btnEl) => {
-    const r = btnEl.getBoundingClientRect()
-    const flipUp = window.innerHeight - r.bottom < 160
-    setMenuState({
-      booking,
-      right: window.innerWidth - r.right,
-      ...(flipUp ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }),
-    })
-  }
+
 
   const markPaid = async (booking) => {
     setMarkingId(booking.id)
@@ -331,7 +374,6 @@ export default function AmbulanceBilling() {
                         ) : (
                           <>
                             <div className="hms-billing-walkin">
-                              <User className="hms-billing-walkin__icon w-3.5 h-3.5" />
                               <p className="hms-billing-walkin__label">Walk-in / Emergency</p>
                             </div>
                             {b.pickupAddress && (
@@ -402,14 +444,17 @@ export default function AmbulanceBilling() {
 
                       {/* Actions */}
                       <td className="hms-billing-actions-cell" onClick={e => e.stopPropagation()}>
-                        <button
-                          onClick={e => { e.stopPropagation(); openMenu(b, e.currentTarget) }}
-                          className="hms-billing-rowbtn"
-                        >
-                          {markingId === b.id
-                            ? <Loader2 className="w-4 h-4 zu-spinner" />
-                            : <MoreHorizontal className="w-4 h-4" />}
-                        </button>
+                        {markingId === b.id ? (
+                          <div className="hms-billing-rowbtn">
+                            <Loader2 className="w-4 h-4 zu-spinner" />
+                          </div>
+                        ) : (
+                          <AmbulanceActionMenu 
+                            booking={b} 
+                            markPaid={markPaid} 
+                            printReceipt={printReceipt} 
+                          />
+                        )}
                       </td>
                     </tr>
                   )
@@ -432,35 +477,7 @@ export default function AmbulanceBilling() {
         )}
       </div>
 
-      {/* Context Action Menu */}
-      {menuState && (() => {
-        const { booking, right, top, bottom } = menuState
-        const canMarkPaid = booking.status === 'COMPLETED' && booking.paymentStatus !== 'PAID'
-        return (
-          <>
-            <div className="hms-billing-menu-overlay" onClick={() => setMenuState(null)} />
-            <div
-              style={{ right, ...(top !== undefined ? { top } : { bottom }) }}
-              className="hms-billing-menu"
-            >
-              {canMarkPaid && (
-                <button
-                  onClick={() => { setMenuState(null); markPaid(booking) }}
-                  className="hms-billing-menu__item"
-                >
-                  <IndianRupee className="hms-billing-menu__item-icon is-success w-4 h-4" /> Mark as Paid
-                </button>
-              )}
-              <button
-                onClick={() => { setMenuState(null); printReceipt(booking) }}
-                className="hms-billing-menu__item"
-              >
-                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Receipt
-              </button>
-            </div>
-          </>
-        )
-      })()}
+
       </div>
     </div>
   )

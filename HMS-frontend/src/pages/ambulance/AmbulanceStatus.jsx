@@ -236,34 +236,36 @@ export default function AmbulanceStatus() {
                   </div>
                 )}
 
-                {/* Type + Charge */}
-                <div className="flex items-center justify-between">
-                  <span className="hms-amb-status-card__type">
-                    {b.ambulanceType?.name || "Standard"}
-                  </span>
-                  {b.charge && (
-                    <span className="hms-amb-status-card__charge">
-                      ₹{b.charge}
+                {/* Meta details: Type, Charge, Driver, Vehicle */}
+                <div className="hms-amb-status-card__meta-grid">
+                  <div className="hms-amb-status-card__meta-item">
+                    <span className="hms-amb-status-card__meta-label">Type & Charge</span>
+                    <span className="hms-amb-status-card__meta-value">
+                      {b.ambulanceType?.name || "Standard"}
+                      {b.charge && <span className="hms-amb-status-card__charge"> · ₹{b.charge}</span>}
                     </span>
+                  </div>
+                  
+                  {(b.driverName || b.vehicleNumber) && (
+                    <div className="hms-amb-status-card__meta-item">
+                      <span className="hms-amb-status-card__meta-label">Driver & Vehicle</span>
+                      <span className="hms-amb-status-card__meta-value">
+                        {b.driverName && (
+                          <span className="hms-amb-status-card__driver-item">
+                            <Phone className="w-3 h-3" />
+                            {b.driverName}
+                          </span>
+                        )}
+                        {b.vehicleNumber && (
+                          <span className="hms-amb-status-card__driver-item">
+                            <Car className="w-3 h-3 ml-1" />
+                            {b.vehicleNumber}
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   )}
                 </div>
-
-                {/* Driver / Vehicle */}
-                {(b.driverName || b.vehicleNumber) && (
-                  <div className="hms-amb-status-card__driver-row">
-                    {b.driverName && (
-                      <span className="hms-amb-status-card__driver-item">
-                        <Phone className="w-3 h-3" />
-                        {b.driverName}{b.driverPhone && ` · ${b.driverPhone}`}
-                      </span>
-                    )}
-                    {b.vehicleNumber && (
-                      <span className="hms-amb-status-card__driver-item">
-                        <Car className="w-3 h-3" />{b.vehicleNumber}
-                      </span>
-                    )}
-                  </div>
-                )}
 
                 {/* Status control */}
                 <StatusSelect current={b.status} bookingId={b.id} onUpdate={load} />

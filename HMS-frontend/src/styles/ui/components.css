@@ -559,10 +559,14 @@
     max-height: 90vh;
     overflow: hidden;
     width: 100%;
-    max-width: 560px;
     z-index: var(--zu-z-modal);
     font-family: var(--zu-font-family);
 }
+
+.zu-modal-sm { max-width: 400px; }
+.zu-modal-md { max-width: 560px; }
+.zu-modal-lg { max-width: 800px; }
+.zu-modal-xl { max-width: 1000px; }
 
 .zu-modal-header {
     display: flex;

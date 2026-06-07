@@ -6,6 +6,8 @@ import { fmtId } from "@/utils/idFormat";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import PageHeader from "@/components/ui/PageHeader";
 import TableSkeleton from "@/components/ui/TableSkeleton";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 import {
   ClipboardList, Plus, Search, X, Calendar, Clock, User,
   AlertCircle, CheckCircle2, Loader2, ChevronRight,
@@ -51,7 +53,6 @@ function PaymentBadge({ status }) {
 }
 
 function BookingModal({ hospitalId, onClose, onBooked }) {
-  const [step, setStep] = useState(1);
   const [packages, setPackages] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [patientQuery, setPatientQuery] = useState("");
@@ -115,136 +116,129 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
   };
 
   return (
-    <div className="hms-checkup-modal-overlay">
-      <div className="hms-checkup-modal">
-        <div className="hms-checkup-modal__head">
-          <div>
-            <h2 className="hms-checkup-modal__title">Book Health Checkup</h2>
-            <p className="hms-checkup-modal__sub">Step {step} of 2</p>
-          </div>
-          <button onClick={onClose} className="hms-checkup-modal__close"><X className="w-4 h-4" /></button>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      size={selectedPkg ? "xl" : "md"}
+      title={
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Book Health Checkup</h2>
         </div>
-
-        <div className="hms-checkup-modal__body">
+      }
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button disabled={!canProceed} loading={saving} onClick={handleBook}>
+             <CheckCircle2 className="w-4 h-4 mr-2" /> Confirm Booking
+          </Button>
+        </div>
+      }
+    >
+      <div className={`hms-checkup-modal__split ${selectedPkg ? 'has-package' : ''}`}>
+        {/* Left Form Pane */}
+        <div className="hms-checkup-modal__left">
           {error && (
             <div className="hms-checkup-modal__alert">
               <AlertCircle className="w-4 h-4 shrink-0" />{error}
             </div>
           )}
 
-          {step === 1 && (
-            <>
-              <div ref={patientRef} className="relative">
-                <label className="hms-checkup-modal__label"><User className="inline w-3 h-3 mr-1" />Patient *</label>
-                <div className="relative">
-                  <Search className="hms-checkup-modal__search-icon w-4 h-4" />
-                  <input value={patientQuery} onChange={e => searchPatient(e.target.value)} onFocus={() => patientResults.length && setPatientOpen(true)} placeholder="Search by name, UHID or phone…" className="hms-checkup-modal__input has-icon" />
-                </div>
-                {patientOpen && patientResults.length > 0 && (
-                  <div className="hms-checkup-modal__suggest">
-                    {patientResults.slice(0, 5).map(p => (
-                      <button key={p.id} onClick={() => selectPatient(p)} className="hms-checkup-modal__suggest-row">
-                        <p className="hms-checkup-modal__suggest-name">{p.firstName} {p.lastName}</p>
-                        <p className="hms-checkup-modal__suggest-sub">{fmtId(p.uhid)} · {p.phone}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
+          <div ref={patientRef} className="relative">
+            <label className="hms-checkup-modal__label"><User className="inline w-3 h-3 mr-1" />Patient *</label>
+            <div className="relative">
+              <Search className="hms-checkup-modal__search-icon w-4 h-4" />
+              <input value={patientQuery} onChange={e => searchPatient(e.target.value)} onFocus={() => patientResults.length && setPatientOpen(true)} placeholder="Search by name, UHID or phone…" className="hms-checkup-modal__input has-icon" />
+            </div>
+            {patientOpen && patientResults.length > 0 && (
+              <div className="hms-checkup-modal__suggest">
+                {patientResults.slice(0, 5).map(p => (
+                  <button key={p.id} onClick={() => selectPatient(p)} className="hms-checkup-modal__suggest-row">
+                    <p className="hms-checkup-modal__suggest-name">{p.firstName} {p.lastName}</p>
+                    <p className="hms-checkup-modal__suggest-sub">{fmtId(p.uhid)} · {p.phone}</p>
+                  </button>
+                ))}
               </div>
+            )}
+          </div>
 
-              <div>
-                <label className="hms-checkup-modal__label">Package *</label>
-                <SearchableSelect
-                  options={packages.map(p => ({ value: p.id, label: `${p.name} — ₹${Number(p.price).toLocaleString("en-IN")}` }))}
-                  value={form.packageId}
-                  onChange={v => set("packageId", v)}
-                  placeholder="— Select a package —"
-                />
-              </div>
+          <div>
+            <label className="hms-checkup-modal__label">Package *</label>
+            <SearchableSelect
+              options={packages.map(p => ({ value: p.id, label: `${p.name} — ₹${Number(p.price).toLocaleString("en-IN")}` }))}
+              value={form.packageId}
+              onChange={v => set("packageId", v)}
+              placeholder="— Select a package —"
+            />
+          </div>
 
-              {selectedPkg && (
-                <div className="hms-checkup-modal__pkg-tile">
-                  <p className="hms-checkup-modal__pkg-tile-title">{selectedPkg.tests?.length || 0} tests included</p>
-                  <p className="hms-checkup-modal__pkg-tile-tests">{selectedPkg.tests?.map(t => t.testName).join(" · ")}</p>
-                </div>
-              )}
+          <div className="hms-form-grid is-2col">
+            <div>
+              <label className="hms-checkup-modal__label"><Calendar className="inline w-3 h-3 mr-1" />Date *</label>
+              <input type="date" value={form.scheduledDate} onChange={e => set("scheduledDate", e.target.value)} className="hms-checkup-modal__input" />
+            </div>
+            <div>
+              <label className="hms-checkup-modal__label"><Clock className="inline w-3 h-3 mr-1" />Time</label>
+              <input type="time" value={form.scheduledTime} onChange={e => set("scheduledTime", e.target.value)} className="hms-checkup-modal__input" />
+            </div>
+          </div>
 
-              <div className="hms-form-grid is-2col">
-                <div>
-                  <label className="hms-checkup-modal__label"><Calendar className="inline w-3 h-3 mr-1" />Date *</label>
-                  <input type="date" value={form.scheduledDate} onChange={e => set("scheduledDate", e.target.value)} className="hms-checkup-modal__input" />
-                </div>
-                <div>
-                  <label className="hms-checkup-modal__label"><Clock className="inline w-3 h-3 mr-1" />Time</label>
-                  <input type="time" value={form.scheduledTime} onChange={e => set("scheduledTime", e.target.value)} className="hms-checkup-modal__input" />
-                </div>
-              </div>
-            </>
-          )}
+          <hr className="border-gray-100" />
 
-          {step === 2 && (
-            <>
-              <div>
-                <label className="hms-checkup-modal__label"><UserCheck className="inline w-3 h-3 mr-1" />Assigned Doctor</label>
-                <SearchableSelect
-                  value={form.doctorId}
-                  onChange={value => set("doctorId", value)}
-                  options={[{ value: "", label: "— Assign later —" }, ...doctors.map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName} · ${d.specialization}` }))]}
-                />
-              </div>
+          <div>
+            <label className="hms-checkup-modal__label"><UserCheck className="inline w-3 h-3 mr-1" />Assigned Doctor</label>
+            <SearchableSelect
+              value={form.doctorId}
+              onChange={value => set("doctorId", value)}
+              options={[{ value: "", label: "— Assign later —" }, ...doctors.map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName} · ${d.specialization}` }))]}
+            />
+          </div>
 
-              <div className="hms-form-grid is-2col">
-                <div>
-                  <label className="hms-checkup-modal__label"><Banknote className="inline w-3 h-3 mr-1" />Payment Status</label>
-                  <SearchableSelect
-                    value={form.paymentStatus}
-                    onChange={value => set("paymentStatus", value)}
-                    options={[
-                      { value: "PENDING", label: "Pending" },
-                      { value: "PAID", label: "Paid" },
-                      { value: "PARTIAL", label: "Partial" },
-                    ]}
-                  />
-                </div>
-                <div>
-                  <label className="hms-checkup-modal__label">Amount Paid (₹)</label>
-                  <input type="number" step="0.01" value={form.amountPaid} onChange={e => set("amountPaid", e.target.value)} placeholder={selectedPkg ? String(selectedPkg.price) : "0.00"} className="hms-checkup-modal__input" />
-                </div>
-              </div>
+          <div className="hms-form-grid is-2col">
+            <div>
+              <label className="hms-checkup-modal__label"><Banknote className="inline w-3 h-3 mr-1" />Payment Status</label>
+              <SearchableSelect
+                value={form.paymentStatus}
+                onChange={value => set("paymentStatus", value)}
+                clearable={false}
+                searchable={false}
+                options={[
+                  { value: "PENDING", label: "Pending" },
+                  { value: "PAID", label: "Paid" },
+                ]}
+              />
+            </div>
+            <div>
+              <label className="hms-checkup-modal__label">Amount Paid (₹)</label>
+              <input type="number" step="0.01" value={form.amountPaid} onChange={e => set("amountPaid", e.target.value)} placeholder={selectedPkg ? String(selectedPkg.price) : "0.00"} className="hms-checkup-modal__input" />
+            </div>
+          </div>
 
-              <div>
-                <label className="hms-checkup-modal__label">Notes</label>
-                <textarea rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Any special instructions or notes…" className="hms-checkup-modal__input" />
-              </div>
-
-              {/* Summary */}
-              <div className="hms-checkup-modal__summary">
-                <p className="hms-checkup-modal__summary-title">Booking Summary</p>
-                <p className="hms-checkup-modal__summary-row"><strong>Patient:</strong> {form.patient?.firstName} {form.patient?.lastName}</p>
-                <p className="hms-checkup-modal__summary-row"><strong>Package:</strong> {selectedPkg?.name}</p>
-                <p className="hms-checkup-modal__summary-row"><strong>Date:</strong> {form.scheduledDate} at {form.scheduledTime}</p>
-                <p className="hms-checkup-modal__summary-total">Total: ₹{selectedPkg ? Number(selectedPkg.price).toLocaleString("en-IN") : "—"}</p>
-              </div>
-            </>
-          )}
+          <div>
+            <label className="hms-checkup-modal__label">Notes</label>
+            <textarea rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Any special instructions or notes…" className="hms-checkup-modal__input" />
+          </div>
         </div>
 
-        <div className="hms-checkup-modal__foot">
-          {step === 2 ? (
-            <button onClick={() => setStep(1)} className="hms-checkup-modal__btn-back">← Back</button>
-          ) : <div />}
-          {step === 1 ? (
-            <button disabled={!canProceed} onClick={() => setStep(2)} className="hms-checkup-modal__btn-next">
-              Next →
-            </button>
-          ) : (
-            <button disabled={saving} onClick={handleBook} className="hms-checkup-modal__btn-next">
-              {saving ? <><Loader2 className="w-4 h-4 zu-spinner" /> Booking…</> : <><CheckCircle2 className="w-4 h-4" /> Confirm Booking</>}
-            </button>
-          )}
-        </div>
+        {/* Right Details Pane (Only if package is selected) */}
+        {selectedPkg && (
+          <div className="hms-checkup-modal__right">
+            <div className="hms-checkup-modal__right-box">
+              <h3 className="hms-checkup-modal__right-title">{selectedPkg.name}</h3>
+              <p className="hms-checkup-modal__right-price">₹{Number(selectedPkg.price).toLocaleString("en-IN")}</p>
+              
+              <div className="hms-checkup-modal__right-divider">
+                <p className="hms-checkup-modal__right-subtitle">{selectedPkg.tests?.length || 0} tests included:</p>
+                <ul className="hms-checkup-modal__right-list">
+                  {selectedPkg.tests?.map((t, i) => (
+                    <li key={i}>{t.testName}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -381,32 +375,25 @@ export default function CheckupBookings() {
 
       {/* Filters */}
       <div className="zu-filter-bar">
+        <div style={{ minWidth: 200 }}>
+          <SearchableSelect
+            value={filterStatus}
+            onChange={setFilterStatus}
+            clearable={false}
+            options={[
+              { value: "ALL", label: `All (${bookings.length})` },
+              ...Object.entries(STATUS_CONFIG).map(([k, v]) => {
+                const count = bookings.filter(b => b.status === k).length;
+                return { value: k, label: count > 0 ? `${v.label} (${count})` : v.label };
+              })
+            ]}
+          />
+        </div>
         <div className="zu-filter-bar__search">
           <Search className="zu-filter-bar__search-icon" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, UHID, booking number…" className="zu-filter-bar__search-input" />
         </div>
         <div className="zu-filter-bar__controls">
-          <div className="zu-pill-group">
-            <button 
-              onClick={() => setFilterStatus("ALL")}
-              className={`zu-pill-group__btn ${filterStatus === "ALL" ? "is-active" : ""}`}
-            >
-              All
-            </button>
-            {Object.entries(STATUS_CONFIG).map(([k, v]) => {
-              const count = bookings.filter(b => b.status === k).length;
-              return (
-                <button
-                  key={k}
-                  onClick={() => setFilterStatus(k)}
-                  className={`zu-pill-group__btn ${filterStatus === k ? "is-active" : ""}`}
-                >
-                  {count > 0 && <span className="zu-pill-group__btn-count">{count}</span>}
-                  {v.label}
-                </button>
-              );
-            })}
-          </div>
           <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="zu-filter-date" />
         </div>
       </div>

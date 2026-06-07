@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi, admissionApi } from '@/utils/api'
@@ -68,6 +68,73 @@ function StatCard({ label, value, sub, Icon, accent }) {
   )
 }
 
+function InvoiceActionMenu({ inv, activeAdmissions, activeAdmissionIds, setFinalizeAdmission, setDetailInvoiceId, printInvoice }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const popRef = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener('mousedown', handler);
+      if (popRef.current) {
+        const rect = popRef.current.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight - 20) {
+          popRef.current.classList.add("is-upward");
+        } else {
+          popRef.current.classList.remove("is-upward");
+        }
+      }
+    }
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [open]);
+
+  const isActiveAdm = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
+  const isPending = isActiveAdm && (inv.status === 'UNPAID' || inv.status === 'PARTIAL' || inv.status === 'UNSETTLED')
+  const isPaidAdmit = isActiveAdm && (inv.status === 'PAID' || inv.status === 'SETTLED')
+  const admission = isActiveAdm ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId)) : null
+
+  return (
+    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
+      <button onClick={() => setOpen(!open)} className="hms-billing-rowbtn">
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+      {open && (
+        <div className="hms-appt-am__pop" ref={popRef}>
+          <div className="hms-billing-menu__list" style={{ padding: '6px 0' }}>
+              {isPending && (
+                <button onClick={() => { setOpen(false); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
+                  <Receipt className="hms-billing-menu__item-icon w-4 h-4" />
+                  {(inv.status === 'PARTIAL' || inv.status === 'UNSETTLED') ? 'Continue Bill' : 'Generate Bill'}
+                </button>
+              )}
+              {isPaidAdmit && (
+                <button onClick={() => { setOpen(false); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
+                  <Plus className="hms-billing-menu__item-icon w-4 h-4" /> Add Charges
+                </button>
+              )}
+              {!isPending && (
+                <button onClick={() => { setOpen(false); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
+                  <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
+                </button>
+              )}
+              <div className="hms-billing-menu__divider" />
+              <button onClick={() => { setOpen(false); printInvoice(inv) }} className="hms-billing-menu__item">
+                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
+              </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function IPDBilling() {
   const { user } = useAuth()
   const { notify } = useNotification()
@@ -83,7 +150,6 @@ export default function IPDBilling() {
   const [activeAdmissions, setActiveAdmissions] = useState([])
   const [finalizeAdmission, setFinalizeAdmission] = useState(null)
   const [detailInvoiceId, setDetailInvoiceId] = useState(null)
-  const [menuState, setMenuState] = useState(null)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -120,22 +186,6 @@ export default function IPDBilling() {
   useEffect(() => {
     loadData()
   }, [user?.hospitalId, page, statusFilter, debouncedSearch])
-
-  useEffect(() => {
-    const close = () => { setMenuState(null) }
-    document.addEventListener('click', close)
-    return () => document.removeEventListener('click', close)
-  }, [])
-
-  const openRowMenu = (inv, btnEl) => {
-    const r = btnEl.getBoundingClientRect()
-    const flipUp = window.innerHeight - r.bottom < 210
-    setMenuState({
-      inv,
-      right: window.innerWidth - r.right,
-      ...(flipUp ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }),
-    })
-  }
 
   const activeAdmissionIds = useMemo(
     () => new Set(activeAdmissions.map(a => String(a.id))),
@@ -374,12 +424,14 @@ export default function IPDBilling() {
                         </div>
                       </td>
                       <td className="hms-billing-actions-cell" onClick={e => e.stopPropagation()}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openRowMenu(inv, e.currentTarget) }}
-                          className="hms-billing-rowbtn"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
+                        <InvoiceActionMenu 
+                          inv={inv} 
+                          activeAdmissions={activeAdmissions} 
+                          activeAdmissionIds={activeAdmissionIds} 
+                          setFinalizeAdmission={setFinalizeAdmission} 
+                          setDetailInvoiceId={setDetailInvoiceId} 
+                          printInvoice={printInvoice} 
+                        />
                       </td>
                     </tr>
                   )
@@ -402,44 +454,7 @@ export default function IPDBilling() {
         )}
       </div>
 
-      {/* Row context Action Menu */}
-      {menuState && (() => {
-        const { inv, right, top, bottom } = menuState
-        const isActiveAdm = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
-        const isPending = isActiveAdm && (inv.status === 'UNPAID' || inv.status === 'PARTIAL' || inv.status === 'UNSETTLED')
-        const isPaidAdmit = isActiveAdm && (inv.status === 'PAID' || inv.status === 'SETTLED')
-        const admission = isActiveAdm ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId)) : null
-        return (
-          <>
-            <div className="hms-billing-menu-overlay" onClick={() => setMenuState(null)} />
-            <div
-              style={{ right, ...(top !== undefined ? { top } : { bottom }) }}
-              className="hms-billing-menu"
-            >
-              {isPending && (
-                <button onClick={() => { setMenuState(null); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
-                  <Receipt className="hms-billing-menu__item-icon w-4 h-4" />
-                  {(inv.status === 'PARTIAL' || inv.status === 'UNSETTLED') ? 'Continue Bill' : 'Generate Bill'}
-                </button>
-              )}
-              {isPaidAdmit && (
-                <button onClick={() => { setMenuState(null); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
-                  <Plus className="hms-billing-menu__item-icon w-4 h-4" /> Add Charges
-                </button>
-              )}
-              {!isPending && (
-                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
-                  <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
-                </button>
-              )}
-              <div className="hms-billing-menu__divider" />
-              <button onClick={() => { setMenuState(null); printInvoice(inv) }} className="hms-billing-menu__item">
-                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
-              </button>
-            </div>
-          </>
-        )
-      })()}
+
 
       {/* Modals */}
       {finalizeAdmission && (

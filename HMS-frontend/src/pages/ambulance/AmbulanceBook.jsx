@@ -1,6 +1,6 @@
 import { Spinner } from "@/components/ui/Loader";
 import TableSkeleton from "@/components/ui/TableSkeleton";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { ambulanceApi, patientApi } from "@/utils/api";
@@ -8,6 +8,8 @@ import { fmtId } from "@/utils/idFormat";
 import Pagination from "@/components/ui/Pagination";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import PageHeader from "@/components/ui/PageHeader";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 import { Ambulance, Plus, X, Search, Calendar, Clock, MapPin, Car, CheckCircle2, AlertCircle, Clock3, XCircle, Truck, Activity, MoreHorizontal, Wrench, Trash2, Edit2, ChevronRight, UserPlus,  } from "lucide-react";
 
 const PAGE_SIZE = 30;
@@ -513,15 +515,86 @@ function AddTypeModal({ hospitalId, onClose, onCreated }) {
   );
 }
 
+// ── Vehicle Action Menu ──────────────────────────────────────────────────────
+
+function VehicleActionMenu({ v, setEditVehicle, setInternalShowModal, handleStatusToggle, handleDelete }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const popRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
+        setOpen(false);
+      }
+    };
+    const updatePos = () => {
+      if (open && ref.current && popRef.current) {
+        const r = ref.current.getBoundingClientRect();
+        const flipUp = window.innerHeight - r.bottom < 160;
+        popRef.current.style.position = 'fixed';
+        popRef.current.style.right = `${window.innerWidth - r.right}px`;
+        popRef.current.style.zIndex = '9999';
+        if (flipUp) {
+          popRef.current.style.bottom = `${window.innerHeight - r.top + 4}px`;
+          popRef.current.style.top = 'auto';
+        } else {
+          popRef.current.style.top = `${r.bottom + 4}px`;
+          popRef.current.style.bottom = 'auto';
+        }
+      }
+    };
+
+    if (open) {
+      document.addEventListener('mousedown', handler);
+      window.addEventListener('scroll', updatePos, { capture: true, passive: true });
+      window.addEventListener('resize', updatePos);
+      updatePos();
+    }
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      window.removeEventListener('scroll', updatePos, { capture: true });
+      window.removeEventListener('resize', updatePos);
+    };
+  }, [open]);
+
+  return (
+    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
+      <button onClick={() => setOpen(!open)} className="hms-amb-row-act-btn">
+        <MoreHorizontal className="w-5 h-5" />
+      </button>
+      {open && (
+        <div className="hms-appt-am__pop" ref={popRef}>
+          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
+            <button onClick={() => { setOpen(false); setEditVehicle(v); setInternalShowModal(true); }} className="hms-amb-menu__item">
+              <Edit2 className="w-4 h-4" /> Edit Details
+            </button>
+            {v.status !== "IN_USE" && (
+              <button onClick={() => { setOpen(false); handleStatusToggle(v); }} className="hms-amb-menu__item is-warning">
+                <Wrench className="w-4 h-4" />
+                {v.status === "MAINTENANCE" ? "Mark Available" : "Mark Maintenance"}
+              </button>
+            )}
+            <div className="hms-amb-menu__divider" />
+            <button onClick={() => { setOpen(false); handleDelete(v); }} className="hms-amb-menu__item is-danger">
+              <Trash2 className="w-4 h-4" /> Delete Vehicle
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Vehicles Tab ─────────────────────────────────────────────────────────────
 
 function VehiclesTab({ hospitalId, types, onRefreshTypes, isAddTypeOpen, onCloseAddType, isAddVehicleOpen, onCloseAddVehicle }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [openMenuId, setOpenMenuId] = useState(null);
   const [internalShowModal, setInternalShowModal] = useState(false);
   const [editVehicle, setEditVehicle] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -532,23 +605,35 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes, isAddTypeOpen, onClose
 
   useEffect(() => { if (hospitalId) load(); }, [hospitalId]);
 
-  useEffect(() => {
-    const handler = () => setOpenMenuId(null);
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, []);
 
-  const handleStatusToggle = async (v) => {
+
+  const handleStatusToggle = (v) => {
     const next = v.status === "MAINTENANCE" ? "AVAILABLE" : "MAINTENANCE";
-    if (!confirm(`Set ${v.vehicleNumber} to ${next}?`)) return;
-    await ambulanceApi.updateVehicleStatus(v.id, next);
-    load();
+    setConfirmDialog({
+      title: "Confirm Status Change",
+      message: `Set ${v.vehicleNumber} to ${next}?`,
+      actionLabel: "Confirm",
+      actionVariant: "primary",
+      onConfirm: async () => {
+        await ambulanceApi.updateVehicleStatus(v.id, next);
+        setConfirmDialog(null);
+        load();
+      }
+    });
   };
 
-  const handleDelete = async (v) => {
-    if (!confirm(`Delete vehicle ${v.vehicleNumber}? This cannot be undone.`)) return;
-    await ambulanceApi.deleteVehicle(v.id);
-    load();
+  const handleDelete = (v) => {
+    setConfirmDialog({
+      title: "Delete Vehicle",
+      message: `Delete vehicle ${v.vehicleNumber}? This cannot be undone.`,
+      actionLabel: "Delete",
+      actionVariant: "danger",
+      onConfirm: async () => {
+        await ambulanceApi.deleteVehicle(v.id);
+        setConfirmDialog(null);
+        load();
+      }
+    });
   };
 
   const filtered = vehicles.filter(v => {
@@ -631,32 +716,13 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes, isAddTypeOpen, onClose
                     </td>
                     <td className="hms-amb-row-cell__notes">{v.notes || "—"}</td>
                     <td className="hms-amb-row-act-cell">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === v.id ? null : v.id); }}
-                        className="hms-amb-row-act-btn"
-                      >
-                        <MoreHorizontal className="w-5 h-5" />
-                      </button>
-                      {openMenuId === v.id && (
-                        <>
-                          <div className="hms-amb-menu-overlay" onClick={() => setOpenMenuId(null)} />
-                          <div className="hms-amb-menu" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => { setOpenMenuId(null); setEditVehicle(v); setInternalShowModal(true); }} className="hms-amb-menu__item">
-                              <Edit2 className="w-4 h-4" /> Edit Details
-                            </button>
-                            {v.status !== "IN_USE" && (
-                              <button onClick={() => { setOpenMenuId(null); handleStatusToggle(v); }} className="hms-amb-menu__item is-warning">
-                                <Wrench className="w-4 h-4" />
-                                {v.status === "MAINTENANCE" ? "Mark Available" : "Mark Maintenance"}
-                              </button>
-                            )}
-                            <div className="hms-amb-menu__divider" />
-                            <button onClick={() => { setOpenMenuId(null); handleDelete(v); }} className="hms-amb-menu__item is-danger">
-                              <Trash2 className="w-4 h-4" /> Delete Vehicle
-                            </button>
-                          </div>
-                        </>
-                      )}
+                      <VehicleActionMenu 
+                        v={v} 
+                        setEditVehicle={setEditVehicle} 
+                        setInternalShowModal={setInternalShowModal} 
+                        handleStatusToggle={handleStatusToggle} 
+                        handleDelete={handleDelete} 
+                      />
                     </td>
                   </tr>
                 );
@@ -666,9 +732,31 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes, isAddTypeOpen, onClose
         </div>
       </div>
 
-      {(isAddVehicleOpen || internalShowModal) && (
-        <VehicleModal hospitalId={hospitalId} types={types} vehicle={isAddVehicleOpen ? null : editVehicle} onClose={() => { onCloseAddVehicle?.(); setInternalShowModal(false); setEditVehicle(null); }} onSaved={load} />
+      {(isAddVehicleOpen) && (
+        <VehicleModal hospitalId={hospitalId} types={types} vehicle={null} onClose={onCloseAddVehicle} onSaved={load} />
       )}
+      {internalShowModal && (
+        <VehicleModal
+          hospitalId={hospitalId}
+          types={types}
+          vehicle={editVehicle}
+          onClose={() => setInternalShowModal(false)}
+          onSaved={() => { setInternalShowModal(false); load(); }}
+        />
+      )}
+
+      <Modal isOpen={!!confirmDialog} onClose={() => setConfirmDialog(null)} title={confirmDialog?.title} size="sm">
+        <div className="zu-modal-body">
+          {confirmDialog?.message}
+        </div>
+        <div className="zu-modal-footer">
+          <Button variant="ghost" onClick={() => setConfirmDialog(null)}>Cancel</Button>
+          <Button variant={confirmDialog?.actionVariant || "primary"} onClick={confirmDialog?.onConfirm}>
+            {confirmDialog?.actionLabel}
+          </Button>
+        </div>
+      </Modal>
+
       {isAddTypeOpen && (
         <AddTypeModal hospitalId={hospitalId} onClose={onCloseAddType} onCreated={() => { onRefreshTypes(); onCloseAddType?.(); }} />
       )}
@@ -683,6 +771,7 @@ function BookingsTab({ hospitalId, isNewBookingOpen, onCloseNewBooking }) {
   const [bookings, setBookings] = useState([]);
   const [availableVehicles, setAvailableVehicles] = useState([]);
   const [hospitalInfo, setHospitalInfo] = useState(null);
+  const [confirmCancel, setConfirmCancel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -709,11 +798,8 @@ function BookingsTab({ hospitalId, isNewBookingOpen, onCloseNewBooking }) {
     load();
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Cancel this booking?")) return;
-    await ambulanceApi.deleteBooking(id);
-    notify("Booking cancelled", "success");
-    load();
+  const handleDelete = (id) => {
+    setConfirmCancel(id);
   };
 
   const filtered = bookings.filter(b => {
@@ -925,6 +1011,21 @@ function BookingsTab({ hospitalId, isNewBookingOpen, onCloseNewBooking }) {
           onSaved={() => { load(); notify("Ambulance booked successfully", "success"); }}
         />
       )}
+
+      <Modal isOpen={!!confirmCancel} onClose={() => setConfirmCancel(null)} title="Cancel Booking" size="sm">
+        <div className="zu-modal-body">
+          Cancel this booking? This cannot be undone.
+        </div>
+        <div className="zu-modal-footer">
+          <Button variant="ghost" onClick={() => setConfirmCancel(null)}>Keep</Button>
+          <Button variant="danger" onClick={async () => {
+            await ambulanceApi.deleteBooking(confirmCancel);
+            notify("Booking cancelled", "success");
+            setConfirmCancel(null);
+            load();
+          }}>Cancel Booking</Button>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -42,4 +42,8 @@ public class InvoicePayment {
     @CreationTimestamp
     @Column(name = "paid_at", updatable = false)
     private LocalDateTime paidAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "collected_by_id")
+    private User collectedByUser;
 }

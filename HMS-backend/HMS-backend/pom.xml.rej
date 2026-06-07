@@ -1,0 +1,24 @@
+diff a/HMS-backend/HMS-backend/pom.xml b/HMS-backend/HMS-backend/pom.xml	(rejected hunks)
+@@ -17,6 +17,7 @@
+ 
+ 	<properties>
+ 		<java.version>21</java.version>
++		<lombok.version>1.18.30</lombok.version>
+ 	</properties>
+ 
+ 	<dependencies>
+@@ -104,12 +105,13 @@
+ 			<plugin>
+ 				<groupId>org.apache.maven.plugins</groupId>
+ 				<artifactId>maven-compiler-plugin</artifactId>
++				<version>3.11.0</version>
+ 				<configuration>
+ 					<annotationProcessorPaths>
+ 						<path>
+ 							<groupId>org.projectlombok</groupId>
+ 							<artifactId>lombok</artifactId>
+-							<version>${lombok.version}</version>
++							<version>1.18.30</version>
+ 						</path>
+ 					</annotationProcessorPaths>
+ 				</configuration>

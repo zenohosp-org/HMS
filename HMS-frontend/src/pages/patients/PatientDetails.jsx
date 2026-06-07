@@ -19,22 +19,38 @@ const TYPE_META = {
   OTHER:        { label: "Other", dotMod: "is-other", chipMod: "is-other" }
 };
 
-function SideInfoRow({ icon, label, value }) {
+const getDisplayStatus = (appt) => {
+  if (appt.status === "SCHEDULED") {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const localNow = new Date(now.getTime() - offset * 60 * 1e3);
+    const todayStr = localNow.toISOString().split("T")[0];
+    const timeStr = localNow.toISOString().split("T")[1].substring(0, 5);
+    if (appt.apptDate < todayStr || (appt.apptDate === todayStr && appt.apptTime < timeStr)) {
+      return "EXPIRED";
+    }
+  }
+  return appt.status;
+};
+
+function SideInfoRow({ icon: Icon, label, value }) {
   return (
-    <div className="hms-pat-detail__row">
-      <div className="hms-pat-detail__row-icon">{icon}</div>
+    <div className="hms-side-info">
+      <div className="hms-side-info__icon">
+        <Icon size={14} />
+      </div>
       <div>
-        <p className="hms-pat-detail__row-label">{label}</p>
-        <p className="hms-pat-detail__row-value">{value || "—"}</p>
+        <p className="hms-side-info__label">{label}</p>
+        <p className="hms-side-info__value">{value || "—"}</p>
       </div>
     </div>
   );
 }
-function SectionHeader({ icon, title }) {
+function SectionHeader({ icon: Icon, title }) {
   return (
-    <div className="hms-pat-detail__sect-head">
-      <div className="hms-pat-detail__sect-icon">{icon}</div>
-      <h3 className="hms-pat-detail__sect-title">{title}</h3>
+    <div className="hms-side-section__head">
+      <Icon size={14} className="text-gray-500" />
+      <h3 className="hms-side-section__title">{title}</h3>
     </div>
   );
 }
@@ -202,9 +218,12 @@ function PatientDetails() {
     const offset = now.getTimezoneOffset();
     const localNow = new Date(now.getTime() - offset * 60 * 1e3);
     const todayStr = localNow.toISOString().split("T")[0];
+    const timeStr = localNow.toISOString().split("T")[1].substring(0, 5);
     const future = appointments.filter((a) => {
       if (!["SCHEDULED", "CONFIRMED"].includes(a.status)) return false;
-      return a.apptDate >= todayStr;
+      if (a.apptDate < todayStr) return false;
+      if (a.apptDate === todayStr && a.apptTime < timeStr) return false;
+      return true;
     }).sort((a, b) => {
       const dateCompare = a.apptDate.localeCompare(b.apptDate);
       if (dateCompare !== 0) return dateCompare;
@@ -240,23 +259,23 @@ function PatientDetails() {
   );
   const age = patient.dob ? calcAge(patient.dob) : null;
   return (
-    <div className="hms-pat-detail">
+    <div className="hms-detail-page">
       {/* ━━━━━━━━━━━━━━━  LEFT PANE — Patient Profile  ━━━━━━━━━━━━━━━ */}
-      <aside className="hms-pat-detail__aside">
+      <aside className="hms-detail-page__aside">
         {/* Back & Actions */}
-        <div className="hms-pat-detail__topbar">
+        <div className="hms-detail-aside__topbar">
           <button
             onClick={() => navigate(-1)}
-            className="hms-pat-detail__back"
+            className="hms-detail-aside__back"
           >
-            <ArrowLeft className="w-3 h-3" /> Back to Patients
+            <ArrowLeft size={14} /> Back to Patients
           </button>
           <div className="relative">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="hms-pat-detail__menu-btn"
+              className="zu-btn-icon"
             >
-              <MoreHorizontal className="w-5 h-5" />
+              <MoreHorizontal size={14} />
             </button>
             {menuOpen && (
               <div className="hms-pat-detail__menu">
@@ -277,11 +296,13 @@ function PatientDetails() {
           </div>
         </div>
         {/* Avatar + Name block */}
-        <div className="hms-pat-detail__hero">
-          <div className="hms-pat-detail__hero-avatar">{patient.firstName[0]}{patient.lastName?.[0] ?? ""}</div>
-          <h2 className="hms-pat-detail__hero-name">{patient.firstName} {patient.lastName}</h2>
-          <p className="hms-pat-detail__hero-sub">{age !== null ? `${age} years` : "—"} · {patient.gender}</p>
-          <div className="hms-pat-detail__hero-chips">
+        <div className="hms-detail-aside__hero">
+          <span className="hms-avatar is-2xl is-info hms-detail-aside__hero-avatar">
+            {patient.firstName[0]}{patient.lastName?.[0] ?? ""}
+          </span>
+          <h2 className="hms-detail-aside__name">{patient.firstName} {patient.lastName}</h2>
+          <p className="hms-detail-aside__subtitle">{age !== null ? `${age} years` : "—"} · {patient.gender}</p>
+          <div className="mt-3 flex items-center justify-center gap-2">
             <span className="hms-pat-detail__hero-chip is-active">Active</span>
             {blood && (
               <span className="hms-pat-detail__hero-chip is-blood">
@@ -289,24 +310,24 @@ function PatientDetails() {
               </span>
             )}
           </div>
-          <p className="hms-pat-detail__hero-uhid">{fmtId(patient.uhid)}</p>
+          <p className="hms-detail-aside__reg mt-2">{fmtId(patient.uhid)}</p>
         </div>
         {/* Sections */}
-        <div className="hms-pat-detail__sections">
+        <div className="hms-detail-aside__sections">
           {/* Personal Information */}
           <div>
-            <SectionHeader icon={<User className="w-4 h-4" />} title="Personal Information" />
-            <div className="hms-pat-detail__sect-list">
-              <SideInfoRow icon={<Calendar className="w-4 h-4" />} label="Date of Birth" value={patient.dob ? formatDate(patient.dob) : null} />
-              <SideInfoRow icon={<Phone className="w-4 h-4" />} label="Phone" value={patient.phone} />
-              <SideInfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={patient.email} />
-              <SideInfoRow icon={<MapPin className="w-4 h-4" />} label="Address" value={patient.address} />
+            <SectionHeader icon={User} title="Personal Information" />
+            <div className="hms-side-section__list">
+              <SideInfoRow icon={Calendar} label="Date of Birth" value={patient.dob ? formatDate(patient.dob) : null} />
+              <SideInfoRow icon={Phone} label="Phone" value={patient.phone} />
+              <SideInfoRow icon={Mail} label="Email" value={patient.email} />
+              <SideInfoRow icon={MapPin} label="Address" value={patient.address} />
             </div>
           </div>
           {/* Room Allocation */}
           {allocatedRoom && (
             <div>
-              <SectionHeader icon={<Bed className="w-4 h-4" />} title="Allocation" />
+              <SectionHeader icon={Bed} title="Allocation" />
               <div className="hms-pat-room-card">
                 <p className="hms-pat-room-card__label">Current Room</p>
                 <div className="hms-pat-room-card__row">
@@ -324,18 +345,18 @@ function PatientDetails() {
           )}
           {/* Medical Information */}
           <div>
-            <SectionHeader icon={<Activity className="w-4 h-4" />} title="Medical Information" />
-            <div className="hms-pat-detail__sect-list">
-              <SideInfoRow icon={<Droplets className="w-4 h-4" />} label="Blood Type" value={patient.bloodGroup} />
-              <SideInfoRow icon={<FileText className="w-4 h-4" />} label="Total Records" value={recordsLoading ? "…" : String(records.length)} />
-              <SideInfoRow icon={<Calendar className="w-4 h-4" />} label="Registered" value={formatDate(patient.createdAt)} />
+            <SectionHeader icon={Activity} title="Medical Information" />
+            <div className="hms-side-section__list">
+              <SideInfoRow icon={Droplets} label="Blood Type" value={patient.bloodGroup} />
+              <SideInfoRow icon={FileText} label="Total Records" value={recordsLoading ? "…" : String(records.length)} />
+              <SideInfoRow icon={Calendar} label="Registered" value={formatDate(patient.createdAt)} />
             </div>
           </div>
         </div>
       </aside>
 
       {/* ━━━━━━━━━━━━━━━  RIGHT PANE — Details  ━━━━━━━━━━━━━━━ */}
-      <div className="hms-pat-detail__main">
+      <div className="hms-detail-page__main">
         {/* Tab bar */}
         <div className="hms-pat-detail__tabs">
           {["overview", "appointments", "records", "radiology", "billing"].map((t) => (
@@ -549,14 +570,15 @@ function PatientDetails() {
               ) : (
                 <div className="hms-pat-appt-grid">
                   {appointments.map((appt) => {
-                    const stripeMod = ["COMPLETED"].includes(appt.status) ? "is-success"
-                      : ["CANCELLED", "NO_SHOW"].includes(appt.status) ? "is-danger"
-                      : ["IN_PROGRESS"].includes(appt.status) ? "is-warning"
-                      : "is-info";
-                    const statusMod = ["COMPLETED"].includes(appt.status) ? "is-success"
-                      : ["CANCELLED", "NO_SHOW"].includes(appt.status) ? "is-danger"
-                      : ["IN_PROGRESS"].includes(appt.status) ? "is-warning"
-                      : "is-info";
+                    const dispStatus = getDisplayStatus(appt);
+                    const stripeMod = ["COMPLETED"].includes(dispStatus) ? "is-success"
+                      : ["CANCELLED", "NO_SHOW", "EXPIRED"].includes(dispStatus) ? "is-danger"
+                      : ["IN_PROGRESS"].includes(dispStatus) ? "is-warning"
+                      : "is-primary";
+                    const statusMod = ["COMPLETED"].includes(dispStatus) ? "is-success"
+                      : ["CANCELLED", "NO_SHOW", "EXPIRED"].includes(dispStatus) ? "is-danger"
+                      : ["IN_PROGRESS"].includes(dispStatus) ? "is-warning"
+                      : "is-primary";
                     return (
                       <div key={appt.id} className="hms-pat-appt-card">
                         {/* Status indicator line */}
@@ -568,7 +590,7 @@ function PatientDetails() {
                               <Clock className="w-3 h-3" />{appt.apptTime.substring(0, 5)} - {appt.apptEndTime ? appt.apptEndTime.substring(0, 5) : "Unknown"}
                             </p>
                           </div>
-                          <span className={`hms-pat-appt-status ${statusMod}`}>{appt.status.replace("_", " ")}</span>
+                          <span className={`hms-pat-appt-status ${statusMod}`}>{dispStatus.replace(/_/g, " ")}</span>
                         </div>
                         <div className="hms-pat-appt-card__body">
                           <div className="hms-pat-appt-doctor">

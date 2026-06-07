@@ -25,6 +25,8 @@ export default function SearchableSelect({
   placeholder = "Select…",
   disabled = false,
   loading = false,
+  clearable = true,
+  searchable = true,
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -77,7 +79,7 @@ export default function SearchableSelect({
           {loading ? "Loading…" : (selected?.label ?? placeholder)}
         </span>
         <span className="hms-select__icons">
-          {value && !disabled && (
+          {clearable && value && !disabled && (
             <span
               role="button"
               className="hms-select__clear inline-flex items-center justify-center cursor-pointer"
@@ -96,17 +98,19 @@ export default function SearchableSelect({
 
       {open && (
         <div className="hms-select__dropdown">
-          <div className="hms-select__search-row">
-            <Search className="w-3 h-3 shrink-0" />
-            <input
-              ref={searchRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search…"
-              className="hms-select__search-input"
-            />
-          </div>
+          {searchable && (
+            <div className="hms-select__search-row">
+              <Search className="w-3 h-3 shrink-0" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search…"
+                className="hms-select__search-input"
+              />
+            </div>
+          )}
           <ul className="hms-select__list">
             {filtered.length === 0 && (
               <li className="hms-select__empty">No results</li>

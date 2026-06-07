@@ -165,4 +165,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         @Param("search") String search,
         Pageable pageable
     );
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE Appointment a SET a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.EXPIRED, a.updatedAt = :now WHERE a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.SCHEDULED AND (a.apptDate < :today OR (a.apptDate = :today AND a.apptTime < :currentTime))")
+    int expirePastAppointments(@org.springframework.data.repository.query.Param("today") java.time.LocalDate today, @org.springframework.data.repository.query.Param("currentTime") java.time.LocalTime currentTime, @org.springframework.data.repository.query.Param("now") java.time.LocalDateTime now);
 }

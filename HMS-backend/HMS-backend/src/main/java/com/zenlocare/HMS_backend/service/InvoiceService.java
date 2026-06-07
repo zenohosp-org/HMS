@@ -139,7 +139,7 @@ public class InvoiceService {
     }
 
     @Transactional
-    public Invoice markAsPaid(UUID invoiceId, UUID bankAccountId) {
+    public Invoice markAsPaid(UUID invoiceId, UUID bankAccountId, User user) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
         if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
@@ -162,6 +162,7 @@ public class InvoiceService {
         }
         invoice.setStatus(invoice.getAdmission() != null ? InvoiceStatus.SETTLED : InvoiceStatus.PAID);
         invoice.setUpdatedAt(LocalDateTime.now());
+        invoice.setUpdatedBy(user);
         Invoice saved = invoiceRepository.save(invoice);
         if (bankAccountId != null) {
             creditBankAccount(bankAccountId, saved);
@@ -171,7 +172,7 @@ public class InvoiceService {
 
     @Transactional
     public InvoiceDTO collectPayment(UUID invoiceId, BigDecimal amount, String paymentMethod,
-                                     UUID bankAccountId, String collectedBy) {
+                                     UUID bankAccountId, String collectedBy, User user) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
         if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
@@ -191,18 +192,21 @@ public class InvoiceService {
             throw new RuntimeException("Payment ₹" + amount + " exceeds outstanding balance ₹" + remaining);
         }
 
-        invoicePaymentRepository.save(InvoicePayment.builder()
+        InvoicePayment payment = InvoicePayment.builder()
                 .invoice(invoice)
                 .amount(amount)
                 .paymentMethod(paymentMethod)
                 .bankAccountId(bankAccountId)
                 .collectedBy(collectedBy)
-                .build());
+                .build();
+        payment.setCollectedByUser(user);
+        invoicePaymentRepository.save(payment);
 
         BigDecimal newPaid = (invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO)
                 .add(amount);
         invoice.setPaidAmount(newPaid);
         invoice.setUpdatedAt(LocalDateTime.now());
+        invoice.setUpdatedBy(user);
 
         BigDecimal advance = invoice.getAdvanceAdjusted() != null ? invoice.getAdvanceAdjusted() : BigDecimal.ZERO;
         BigDecimal total = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
@@ -536,7 +540,7 @@ public class InvoiceService {
 
     // ── Replace all items on an IPD invoice and recalculate totals ─────────────
     @Transactional
-    public InvoiceDTO finalizeIPDInvoice(UUID invoiceId, InvoiceRequest req) {
+    public InvoiceDTO finalizeIPDInvoice(UUID invoiceId, InvoiceRequest req, User user) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
         // Reopening a SETTLED bill (new charges added while patient still admitted) — reset to UNSETTLED.
@@ -574,6 +578,7 @@ public class InvoiceService {
         invoice.setTotal(req.getTotal() != null ? req.getTotal() : BigDecimal.ZERO);
         if (req.getNotes() != null) invoice.setNotes(req.getNotes());
         invoice.setUpdatedAt(LocalDateTime.now());
+        invoice.setUpdatedBy(user);
         Invoice saved = invoiceRepository.save(invoice);
 
         // Mark advances applied if any were deducted
@@ -599,7 +604,7 @@ public class InvoiceService {
     @Transactional
     public InvoiceDTO collectAndSave(UUID invoiceId, InvoiceRequest itemsReq,
                                      BigDecimal amount, String paymentMethod,
-                                     UUID bankAccountId, String collectedBy) {
+                                     UUID bankAccountId, String collectedBy, User user) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
 
@@ -636,17 +641,20 @@ public class InvoiceService {
         if (itemsReq.getNotes() != null) invoice.setNotes(itemsReq.getNotes());
 
         // Record payment
-        invoicePaymentRepository.save(InvoicePayment.builder()
+        InvoicePayment payment = InvoicePayment.builder()
                 .invoice(invoice)
                 .amount(amount)
                 .paymentMethod(paymentMethod)
                 .bankAccountId(bankAccountId)
                 .collectedBy(collectedBy)
-                .build());
+                .build();
+        payment.setCollectedByUser(user);
+        invoicePaymentRepository.save(payment);
 
         BigDecimal newPaid = (invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO).add(amount);
         invoice.setPaidAmount(newPaid);
         invoice.setUpdatedAt(LocalDateTime.now());
+        invoice.setUpdatedBy(user);
 
         BigDecimal advance = invoice.getAdvanceAdjusted() != null ? invoice.getAdvanceAdjusted() : BigDecimal.ZERO;
         BigDecimal total = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
@@ -695,7 +703,7 @@ public class InvoiceService {
     }
 
     @Transactional
-    public InvoiceDTO applyWaiver(UUID invoiceId, UUID itemId, java.math.BigDecimal waiverAmount, String waiverReason) {
+    public InvoiceDTO applyWaiver(UUID invoiceId, UUID itemId, java.math.BigDecimal waiverAmount, String waiverReason, User user) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
         if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
@@ -719,6 +727,7 @@ public class InvoiceService {
         invoice.setDiscount(totalWaiver);
         invoice.setTotal(invoice.getSubtotal().add(invoice.getTax()).subtract(totalWaiver));
         invoice.setUpdatedAt(LocalDateTime.now());
+        invoice.setUpdatedBy(user);
 
         invoiceRepository.save(invoice);
         return toDTO(invoice);
@@ -737,61 +746,110 @@ public class InvoiceService {
     }
 
     private InvoiceDTO toDTO(Invoice inv) {
-        return InvoiceDTO.builder()
-                .id(inv.getId().toString())
-                .invoiceNumber(inv.getInvoiceNumber())
-                .patientId(inv.getPatient() != null ? inv.getPatient().getId() : null)
-                .patientName(inv.getPatient() != null
-                        ? inv.getPatient().getFirstName() + " " + inv.getPatient().getLastName() : null)
-                .patientUhid(inv.getPatient() != null ? inv.getPatient().getUhid() : null)
-                .admissionId(inv.getAdmission() != null ? inv.getAdmission().getId() : null)
-                .admissionNumber(inv.getAdmission() != null ? inv.getAdmission().getAdmissionNumber() : null)
-                .appointmentId(inv.getAppointment() != null ? inv.getAppointment().getId() : null)
-                .appointmentDate(inv.getAppointment() != null && inv.getAppointment().getApptDate() != null && inv.getAppointment().getApptTime() != null
-                        ? LocalDateTime.of(inv.getAppointment().getApptDate(), inv.getAppointment().getApptTime())
-                        : null)
-                .appointmentDoctorName(inv.getAppointment() != null && inv.getAppointment().getDoctor() != null && inv.getAppointment().getDoctor().getUser() != null
-                        ? inv.getAppointment().getDoctor().getUser().getFirstName() + " " + inv.getAppointment().getDoctor().getUser().getLastName()
-                        : null)
-                .subtotal(inv.getSubtotal())
-                .tax(inv.getTax())
-                .discount(inv.getDiscount())
-                .total(inv.getTotal())
-                .paymentMethod(inv.getPaymentMethod())
-                .notes(inv.getNotes())
-                .status(inv.getStatus().name())
-                .advanceAdjusted(inv.getAdvanceAdjusted())
-                .paidAmount(inv.getPaidAmount())
-                .createdAt(inv.getCreatedAt())
-                .updatedAt(inv.getUpdatedAt())
-                .items(inv.getItems() != null ? inv.getItems().stream().map(item ->
-                        new InvoiceDTO.ItemDTO(
-                                item.getId(),
-                                item.getItemType(),
-                                item.getDescription(),
-                                item.getQuantity(),
-                                item.getUnitPrice(),
-                                item.getTotalPrice(),
-                                item.getWaiverAmount(),
-                                item.getWaiverReason(),
-                                item.getServiceId(),
-                                item.getRadiologyOrderId(),
-                                item.getAppointmentId(),
-                                item.getAmbulanceBookingId(),
-                                item.getPharmacyBillId(),
-                                item.getOtBookingId(),
-                                item.getOtInvoiceItemId()
-                        )
-                ).collect(Collectors.toList()) : java.util.Collections.emptyList())
-                .payments(invoicePaymentRepository.findByInvoice_IdOrderByPaidAtAsc(inv.getId())
-                        .stream().map(p -> new InvoiceDTO.PaymentDTO(
-                                p.getId(),
-                                p.getAmount(),
-                                p.getPaymentMethod(),
-                                p.getCollectedBy(),
-                                p.getPaidAt()
-                        )).collect(Collectors.toList()))
-                .build();
+        String bookedBy = "System";
+        String doctorName = null;
+        LocalDateTime apptDateTime = null;
+        String apptType = null;
+        Integer tokenNum = null;
+        String apptStatus = null;
+        String chiefComplaint = null;
+        String cancelledReason = null;
+
+        if (inv.getAppointment() != null) {
+            if (inv.getAppointment().getCreatedBy() != null) {
+                String fName = inv.getAppointment().getCreatedBy().getFirstName();
+                String lName = inv.getAppointment().getCreatedBy().getLastName();
+                bookedBy = (fName + " " + (lName != null ? lName : "")).trim();
+            }
+            if (inv.getAppointment().getDoctor() != null && inv.getAppointment().getDoctor().getUser() != null) {
+                doctorName = inv.getAppointment().getDoctor().getUser().getFirstName() + " " + inv.getAppointment().getDoctor().getUser().getLastName();
+            }
+            if (inv.getAppointment().getApptDate() != null && inv.getAppointment().getApptTime() != null) {
+                apptDateTime = LocalDateTime.of(inv.getAppointment().getApptDate(), inv.getAppointment().getApptTime());
+            }
+            apptType = inv.getAppointment().getType() != null ? String.valueOf(inv.getAppointment().getType()) : null;
+            tokenNum = inv.getAppointment().getTokenNumber();
+            apptStatus = inv.getAppointment().getStatus() != null ? String.valueOf(inv.getAppointment().getStatus()) : null;
+            chiefComplaint = inv.getAppointment().getChiefComplaint();
+            cancelledReason = inv.getAppointment().getCancelledReason();
+        }
+
+        List<InvoiceDTO.ItemDTO> itemsList = new ArrayList<>();
+        if (inv.getItems() != null) {
+            itemsList = inv.getItems().stream().map(item ->
+                    new InvoiceDTO.ItemDTO(
+                            item.getId(),
+                            item.getItemType(),
+                            item.getDescription(),
+                            item.getQuantity(),
+                            item.getUnitPrice(),
+                            item.getTotalPrice(),
+                            item.getWaiverAmount(),
+                            item.getWaiverReason(),
+                            item.getServiceId(),
+                            item.getRadiologyOrderId(),
+                            item.getAppointmentId(),
+                            item.getAmbulanceBookingId(),
+                            item.getPharmacyBillId(),
+                            item.getOtBookingId(),
+                            item.getOtInvoiceItemId()
+                    )).collect(Collectors.toList());
+        }
+        InvoiceDTO.InvoiceDTOBuilder b = InvoiceDTO.builder();
+        b.id(inv.getId().toString());
+        b.invoiceNumber(inv.getInvoiceNumber());
+        
+        if (inv.getPatient() != null) {
+            b.patientId(inv.getPatient().getId());
+            b.patientName(inv.getPatient().getFirstName() + " " + inv.getPatient().getLastName());
+            b.patientUhid(inv.getPatient().getUhid());
+        }
+        
+        if (inv.getAdmission() != null) {
+            b.admissionId(inv.getAdmission().getId());
+            b.admissionNumber(inv.getAdmission().getAdmissionNumber());
+        }
+        
+        if (inv.getAppointment() != null) {
+            b.appointmentId(inv.getAppointment().getId());
+        }
+        
+        b.appointmentDate(apptDateTime);
+        b.appointmentDoctorName(doctorName);
+        b.bookedBy(bookedBy);
+        b.appointmentType(apptType);
+        b.appointmentTokenNumber(tokenNum);
+        b.appointmentStatus(apptStatus);
+        b.appointmentChiefComplaint(chiefComplaint);
+        b.appointmentCancelledReason(cancelledReason);
+        
+        b.subtotal(inv.getSubtotal());
+        b.tax(inv.getTax());
+        b.discount(inv.getDiscount());
+        b.total(inv.getTotal());
+        b.paymentMethod(inv.getPaymentMethod());
+        b.notes(inv.getNotes());
+        
+        if (inv.getStatus() != null) {
+            b.status(String.valueOf(inv.getStatus()));
+        }
+        
+        b.advanceAdjusted(inv.getAdvanceAdjusted());
+        b.paidAmount(inv.getPaidAmount());
+        b.createdAt(inv.getCreatedAt());
+        b.updatedAt(inv.getUpdatedAt());
+        b.items(itemsList);
+        
+        List<InvoiceDTO.PaymentDTO> pList = new ArrayList<>();
+        if (inv.getId() != null) {
+             pList = invoicePaymentRepository.findByInvoice_IdOrderByPaidAtAsc(inv.getId())
+                .stream().map(p -> new InvoiceDTO.PaymentDTO(
+                        p.getId(), p.getAmount(), p.getPaymentMethod(), p.getCollectedBy(), p.getPaidAt()
+                )).collect(Collectors.toList());
+        }
+        b.payments(pList);
+        
+        return b.build();
     }
 
     @org.springframework.transaction.annotation.Transactional(readOnly = true)

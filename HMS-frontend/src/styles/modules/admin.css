@@ -1879,6 +1879,13 @@
 
 /* ─────────────────────────── DoctorDetails: fullscreen split-pane page ─────────────────────────── */
 
+.hms-detail-page {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+}
 .hms-detail-page__aside {
     width: 288px;
     flex-shrink: 0;

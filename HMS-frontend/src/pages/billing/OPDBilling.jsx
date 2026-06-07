@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi } from '@/utils/api'
@@ -8,10 +8,13 @@ import TableSkeleton from '@/components/ui/TableSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
 import CreateInvoiceModal from '@/components/modals/CreateInvoiceModal'
 import { InvoiceDetailModal } from '@/pages/billing/InvoiceList'
+import Modal from '@/components/ui/Modal'
+import Button from '@/components/ui/Button'
 import {
   ReceiptText, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
-  Receipt, Eye, Plus, MoreHorizontal, Pill, FlaskConical, Stethoscope, BedDouble, ScanLine, Wrench
+  Receipt, Eye, Plus, MoreHorizontal, Pill, FlaskConical, Stethoscope, BedDouble, ScanLine, Wrench,
+  Info
 } from 'lucide-react'
 
 const PAGE_SIZE = 10
@@ -70,6 +73,187 @@ function StatCard({ label, value, sub, Icon, accent }) {
   )
 }
 
+function GetInfoModal({ invoice, onClose }) {
+  if (!invoice) return null;
+  const createdAt = new Date(invoice.createdAt || invoice.created_at || new Date()).toLocaleString("en-IN", {
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+  });
+  
+  const bookedBy = invoice.bookedBy || invoice.createdBy || "System";
+  const docName = invoice.appointmentDoctorName ? `Dr. ${invoice.appointmentDoctorName}` : "Not Assigned";
+
+  const schedDate = invoice.appointmentDate ? new Date(invoice.appointmentDate).toLocaleString("en-IN", {
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+  }) : "—";
+
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={<h2 className="text-lg font-semibold text-gray-900">Booking & Billing Information</h2>}
+      size="md"
+      footer={
+        <div className="flex w-full justify-end">
+          <Button variant="secondary" onClick={onClose}>Close</Button>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-6 py-2">
+        {/* Appointment Section */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 border-b pb-1 mb-4">Appointment Details</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Patient Name</p>
+              <p className="text-base text-gray-900">{invoice.patientName || "—"}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Booked On</p>
+              <p className="text-base text-gray-900">{createdAt}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Booked By</p>
+              <p className="text-base text-gray-900">{bookedBy}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Doctor Details</p>
+              <p className="text-base text-gray-900">{docName}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Scheduled Time</p>
+              <p className="text-base text-gray-900">{schedDate}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Visit Type & Token</p>
+              <p className="text-base text-gray-900">
+                {invoice.appointmentType || "—"} {invoice.appointmentTokenNumber ? `(Token: #${invoice.appointmentTokenNumber})` : ""}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Appt. Status</p>
+              <p className="text-base text-gray-900">{invoice.appointmentStatus || "—"}</p>
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <p className="text-sm font-medium text-gray-500 mb-1">Chief Complaint</p>
+              <p className="text-base text-gray-900">{invoice.appointmentChiefComplaint || "—"}</p>
+            </div>
+            {invoice.appointmentStatus === 'CANCELLED' && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <p className="text-sm font-medium text-red-500 mb-1">Cancelled Reason</p>
+                <p className="text-base text-red-600">{invoice.appointmentCancelledReason || "—"}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Billing Section */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 border-b pb-1 mb-4">Billing Details</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Billing Status</p>
+              <p className="text-base text-gray-900">{invoice.status || "—"}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Subtotal</p>
+              <p className="text-base text-gray-900">₹{invoice.subtotal?.toFixed(2) || "0.00"}</p>
+            </div>
+            {Number(invoice.discount) > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Discount</p>
+                <p className="text-base text-gray-900 text-green-600">-₹{invoice.discount?.toFixed(2)}</p>
+              </div>
+            )}
+            {Number(invoice.tax) > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Tax</p>
+                <p className="text-base text-gray-900">₹{invoice.tax?.toFixed(2)}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Grand Total</p>
+              <p className="text-base font-semibold text-gray-900">₹{invoice.total?.toFixed(2) || "0.00"}</p>
+            </div>
+            {Number(invoice.paidAmount) > 0 && (
+              <>
+                <div>
+                  <p className="text-sm font-medium text-gray-500 mb-1">Paid Amount</p>
+                  <p className="text-base text-green-600 font-semibold">₹{invoice.paidAmount?.toFixed(2)}</p>
+                </div>
+                {invoice.paymentMethod && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Payment Method</p>
+                    <p className="text-base text-gray-900">{invoice.paymentMethod.replace(/_/g, ' ')}</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function InvoiceActionMenu({ inv, setDetailInvoiceId, printInvoice, onGetInfo }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const popRef = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener('mousedown', handler);
+      if (popRef.current) {
+        const rect = popRef.current.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight - 20) {
+          popRef.current.classList.add("is-upward");
+        } else {
+          popRef.current.classList.remove("is-upward");
+        }
+      }
+    }
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [open]);
+
+  return (
+    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
+      <button onClick={() => setOpen(!open)} className="hms-billing-rowbtn">
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+      {open && (
+        <div className="hms-appt-am__pop" ref={popRef}>
+          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
+            {(inv.status === 'UNPAID' || inv.status === 'PARTIAL') && (
+              <button onClick={() => { setOpen(false); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
+                <Receipt className="hms-billing-menu__item-icon w-4 h-4" /> Collect Payment
+              </button>
+            )}
+            {inv.status !== 'UNPAID' && inv.status !== 'PARTIAL' && (
+              <button onClick={() => { setOpen(false); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
+                <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
+              </button>
+            )}
+            <button onClick={() => { setOpen(false); onGetInfo(inv) }} className="hms-billing-menu__item">
+              <Info className="hms-billing-menu__item-icon w-4 h-4" /> Get Info
+            </button>
+            <div className="hms-billing-menu__divider" />
+            <button onClick={() => { setOpen(false); printInvoice(inv) }} className="hms-billing-menu__item">
+              <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function OPDBilling() {
   const { user } = useAuth()
   const { notify } = useNotification()
@@ -82,9 +266,10 @@ export default function OPDBilling() {
   const [page, setPage]                   = useState(1)
   const [totalPages, setTotalPages]       = useState(1)
   const [totalElements, setTotalElements] = useState(0)
+
   const [showCreate, setShowCreate]       = useState(false)
   const [detailInvoiceId, setDetailInvoiceId] = useState(null)
-  const [menuState, setMenuState]         = useState(null)
+  const [infoInvoice, setInfoInvoice]     = useState(null)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -117,22 +302,6 @@ export default function OPDBilling() {
   useEffect(() => {
     loadData()
   }, [user?.hospitalId, page, statusFilter, debouncedSearch])
-
-  useEffect(() => {
-    const close = () => { setMenuState(null) }
-    document.addEventListener('click', close)
-    return () => document.removeEventListener('click', close)
-  }, [])
-
-  const openRowMenu = (inv, btnEl) => {
-    const r = btnEl.getBoundingClientRect()
-    const flipUp = window.innerHeight - r.bottom < 210
-    setMenuState({
-      inv,
-      right: window.innerWidth - r.right,
-      ...(flipUp ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }),
-    })
-  }
 
   const printInvoice = (inv) => {
     const items = inv.items ?? []
@@ -352,12 +521,12 @@ export default function OPDBilling() {
                         </div>
                       </td>
                       <td className="hms-billing-actions-cell" onClick={e => e.stopPropagation()}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openRowMenu(inv, e.currentTarget) }}
-                          className="hms-billing-rowbtn"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
+                        <InvoiceActionMenu 
+                          inv={inv} 
+                          setDetailInvoiceId={setDetailInvoiceId} 
+                          printInvoice={printInvoice}
+                          onGetInfo={setInfoInvoice}
+                        />
                       </td>
                     </tr>
                   )
@@ -380,34 +549,7 @@ export default function OPDBilling() {
         )}
       </div>
 
-      {/* Context Action Menu */}
-      {menuState && (() => {
-        const { inv, right, top, bottom } = menuState
-        return (
-          <>
-            <div className="hms-billing-menu-overlay" onClick={() => setMenuState(null)} />
-            <div
-              style={{ right, ...(top !== undefined ? { top } : { bottom }) }}
-              className="hms-billing-menu"
-            >
-              {(inv.status === 'UNPAID' || inv.status === 'PARTIAL') && (
-                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
-                  <Receipt className="hms-billing-menu__item-icon w-4 h-4" /> Collect Payment
-                </button>
-              )}
-              {inv.status !== 'UNPAID' && inv.status !== 'PARTIAL' && (
-                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
-                  <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
-                </button>
-              )}
-              <div className="hms-billing-menu__divider" />
-              <button onClick={() => { setMenuState(null); printInvoice(inv) }} className="hms-billing-menu__item">
-                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
-              </button>
-            </div>
-          </>
-        )
-      })()}
+
 
       {/* Modals */}
       {showCreate && <CreateInvoiceModal onClose={() => setShowCreate(false)} onCreated={loadData} />}
@@ -417,6 +559,13 @@ export default function OPDBilling() {
           invoiceId={detailInvoiceId}
           onClose={() => setDetailInvoiceId(null)}
           onInvoiceUpdated={loadData}
+        />
+      )}
+
+      {infoInvoice && (
+        <GetInfoModal
+          invoice={infoInvoice}
+          onClose={() => setInfoInvoice(null)}
         />
       )}
       </div>

@@ -48,6 +48,22 @@ const STATUS_MOD = {
   COMPLETED: "is-completed",
   CANCELLED: "is-cancelled",
   NO_SHOW: "is-no-show",
+  EXPIRED: "is-expired",
+};
+
+const getDisplayStatus = (appt) => {
+  if (appt.status === "SCHEDULED") {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const localNow = new Date(now.getTime() - offset * 60 * 1e3);
+    const todayStr = localNow.toISOString().split("T")[0];
+    const timeStr = localNow.toISOString().split("T")[1].substring(0, 5);
+    
+    if (appt.apptDate < todayStr || (appt.apptDate === todayStr && appt.apptTime < timeStr)) {
+      return "EXPIRED";
+    }
+  }
+  return appt.status;
 };
 const APPT_TONE_MODS = ["is-blue", "is-emerald", "is-amber", "is-slate", "is-rose"];
 const STATUS_TRANSITIONS = {
@@ -87,16 +103,28 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
   const [showCancelReason, setShowCancelReason] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const ref = useRef(null);
+  const popRef = useRef(null);
   const actions = STATUS_TRANSITIONS[appt.status] ?? [];
   useEffect(() => {
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) {
+      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
         setOpen(false);
-        setShowCancelReason(false);
       }
     };
-    if (open) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    if (open) {
+      document.addEventListener('mousedown', handler);
+      if (popRef.current) {
+        const rect = popRef.current.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight - 20) {
+          popRef.current.classList.add("is-upward");
+        } else {
+          popRef.current.classList.remove("is-upward");
+        }
+      }
+    }
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
   }, [open]);
 
   const handleAction = async (status) => {
@@ -127,19 +155,12 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
     return <CheckCircle2 className="w-4 h-4 hms-appt-am__item-icon" />;
   };
   return (
-    <div className="hms-appt-am" ref={ref}>
-      <button
-        onClick={() => {
-          setOpen(!open);
-          setShowCancelReason(false);
-        }}
-        className="hms-appt-am__btn"
-        disabled={loading}
-      >
-        {loading ? <Loader2 className="w-4 h-4 zu-spinner" /> : <MoreHorizontal className="w-4 h-4" />}
+    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
+      <button onClick={() => setOpen(!open)} className="hms-appt-am__btn">
+        <MoreHorizontal className="w-5 h-5" />
       </button>
       {open && (
-        <div className="hms-appt-am__pop">
+        <div className="hms-appt-am__pop" ref={popRef}>
           <div className="hms-appt-am__head">
             <p className="hms-appt-am__title">Actions</p>
           </div>
@@ -530,7 +551,10 @@ function AppointmentsDashboard() {
                     <p className="hms-appt-table__time">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p>
                   </td>
                   <td>
-                    <span className={`hms-appt-status ${STATUS_MOD[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span>
+                    {(() => {
+                      const dispStatus = getDisplayStatus(appt);
+                      return <span className={`hms-appt-status ${STATUS_MOD[dispStatus] || ""}`}>{dispStatus.replace(/_/g, " ")}</span>;
+                    })()}
                   </td>
                   <td>{TYPE_LABEL[appt.type] ?? appt.type}</td>
                   <td>
@@ -794,7 +818,12 @@ function AppointmentsDashboard() {
                         <p className="hms-appt-day-row__name">{appt.patientName}</p>
                         <p className="hms-appt-day-row__meta">{TYPE_LABEL[appt.type] ?? appt.type} &middot; Dr. {appt.doctorName}</p>
                       </div>
-                      <div className={`hms-appt-day-row__status ${STATUS_MOD[appt.status] || ""}`}>{appt.status.replace("_", " ")}</div>
+                      <div className="hms-appt-day-row__actions">
+                      {(() => {
+                        const dispStatus = getDisplayStatus(appt);
+                        return <div className={`hms-appt-day-row__status ${STATUS_MOD[dispStatus] || ""}`}>{dispStatus.replace("_", " ")}</div>;
+                      })()}
+                      </div>
                     </div>
                   );
                 })}

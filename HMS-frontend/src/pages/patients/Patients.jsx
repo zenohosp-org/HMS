@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
@@ -10,7 +10,67 @@ import PageHeader from "@/components/ui/PageHeader";
 import { TableSkeleton } from "@/components/ui";
 import { calcAge, formatDate } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
-import { Search, Loader2, Users, MoreHorizontal, Pencil, ExternalLink, Calendar } from "lucide-react";
+import { Search, Users, MoreHorizontal, Pencil, ExternalLink, Calendar } from "lucide-react";
+
+function PatientActionMenu({ p, setModal, setBookModal, navigate }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const popRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener('mousedown', handler);
+      if (popRef.current) {
+        const rect = popRef.current.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight - 20) {
+          popRef.current.classList.add("is-upward");
+        } else {
+          popRef.current.classList.remove("is-upward");
+        }
+      }
+    }
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [open]);
+
+  return (
+    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
+      <button onClick={() => setOpen(!open)} className="hms-pat-kebab-btn">
+        <MoreHorizontal className="w-5 h-5" />
+      </button>
+      {open && (
+        <div className="hms-appt-am__pop" ref={popRef}>
+          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
+            <button
+              onClick={() => { setOpen(false); setModal({ open: true, patient: p }); }}
+              className="hms-pat-kebab-menu__item"
+            >
+              <Pencil className="w-4 h-4" /> Edit Patient
+            </button>
+            <button
+              onClick={() => { setOpen(false); setBookModal({ open: true, patient: p }); }}
+              className="hms-pat-kebab-menu__item"
+            >
+              <Calendar className="w-4 h-4" /> Book Appointment
+            </button>
+            <button
+              onClick={() => { setOpen(false); navigate(`/patients/${p.id}`); }}
+              className="hms-pat-kebab-menu__item"
+            >
+              <ExternalLink className="w-4 h-4" /> Patient Details
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const PAGE_SIZE = 30;
 
@@ -30,7 +90,6 @@ function Patients() {
   const [totalElements, setTotalElements] = useState(0);
   const [modal, setModal] = useState({ open: false, patient: null });
   const [bookModal, setBookModal] = useState({ open: false, patient: null });
-  const [openMenuId, setOpenMenuId] = useState(null);
 
   const load = () => {
     if (!user?.hospitalId) return;
@@ -180,43 +239,12 @@ function Patients() {
                         }
                       </td>
                       <td className="is-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuId(openMenuId === p.id ? null : p.id);
-                          }}
-                          className="hms-pat-kebab-btn"
-                        >
-                          <MoreHorizontal className="w-5 h-5" />
-                        </button>
-                        {openMenuId === p.id && (
-                          <>
-                            <div className="hms-pat-kebab-menu__scrim" onClick={() => setOpenMenuId(null)} />
-                            <div
-                              className="hms-pat-kebab-menu"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                onClick={() => { setOpenMenuId(null); setModal({ open: true, patient: p }); }}
-                                className="hms-pat-kebab-menu__item"
-                              >
-                                <Pencil className="w-4 h-4" /> Edit Patient
-                              </button>
-                              <button
-                                onClick={() => { setOpenMenuId(null); setBookModal({ open: true, patient: p }); }}
-                                className="hms-pat-kebab-menu__item"
-                              >
-                                <Calendar className="w-4 h-4" /> Book Appointment
-                              </button>
-                              <button
-                                onClick={() => { setOpenMenuId(null); navigate(`/patients/${p.id}`); }}
-                                className="hms-pat-kebab-menu__item"
-                              >
-                                <ExternalLink className="w-4 h-4" /> Patient Details
-                              </button>
-                            </div>
-                          </>
-                        )}
+                        <PatientActionMenu 
+                          p={p} 
+                          setModal={setModal} 
+                          setBookModal={setBookModal} 
+                          navigate={navigate} 
+                        />
                       </td>
                     </tr>
                   );

@@ -1,0 +1,2712 @@
+diff --git a/.vscode/settings.json b/.vscode/settings.json
+index 7b016a8..d53ecaf 100644
+--- a/.vscode/settings.json
++++ b/.vscode/settings.json
+@@ -1,3 +1,4 @@
+ {
+-    "java.compile.nullAnalysis.mode": "automatic"
++    "java.compile.nullAnalysis.mode": "automatic",
++    "java.configuration.updateBuildConfiguration": "automatic"
+ }
+\ No newline at end of file
+diff --git a/HMS-backend/HMS-backend/pom.xml b/HMS-backend/HMS-backend/pom.xml
+index 076dd25..c5c6714 100644
+--- a/HMS-backend/HMS-backend/pom.xml
++++ b/HMS-backend/HMS-backend/pom.xml
+@@ -17,6 +17,7 @@
+ 
+ 	<properties>
+ 		<java.version>21</java.version>
++		<lombok.version>1.18.30</lombok.version>
+ 	</properties>
+ 
+ 	<dependencies>
+@@ -104,12 +105,13 @@
+ 			<plugin>
+ 				<groupId>org.apache.maven.plugins</groupId>
+ 				<artifactId>maven-compiler-plugin</artifactId>
++				<version>3.11.0</version>
+ 				<configuration>
+ 					<annotationProcessorPaths>
+ 						<path>
+ 							<groupId>org.projectlombok</groupId>
+ 							<artifactId>lombok</artifactId>
+-							<version>${lombok.version}</version>
++							<version>1.18.30</version>
+ 						</path>
+ 					</annotationProcessorPaths>
+ 				</configuration>
+diff --git a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/controller/BillingController.java b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/controller/BillingController.java
+index eeac1d5..307c2c8 100644
+--- a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/controller/BillingController.java
++++ b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/controller/BillingController.java
+@@ -4,6 +4,7 @@ import com.zenlocare.HMS_backend.dto.InvoiceDTO;
+ import com.zenlocare.HMS_backend.dto.InvoiceRequest;
+ import com.zenlocare.HMS_backend.dto.SmartBillingSuggestion;
+ import com.zenlocare.HMS_backend.entity.Invoice;
++import com.zenlocare.HMS_backend.entity.User;
+ import com.zenlocare.HMS_backend.service.InvoiceService;
+ import com.zenlocare.HMS_backend.service.PatientAdvanceService;
+ import com.zenlocare.HMS_backend.service.PatientAdvanceService.PatientAdvanceDTO;
+@@ -12,6 +13,7 @@ import lombok.Data;
+ import lombok.RequiredArgsConstructor;
+ import lombok.extern.slf4j.Slf4j;
+ import org.springframework.http.ResponseEntity;
++import org.springframework.security.core.annotation.AuthenticationPrincipal;
+ import org.springframework.web.bind.annotation.*;
+ 
+ import java.math.BigDecimal;
+@@ -44,10 +46,11 @@ public class BillingController {
+     @PatchMapping("/invoices/{id}/pay")
+     public ResponseEntity<Invoice> markAsPaid(
+             @PathVariable UUID id,
+-            @RequestBody(required = false) Map<String, String> body) {
++            @RequestBody(required = false) Map<String, String> body,
++            @AuthenticationPrincipal User user) {
+         UUID bankAccountId = (body != null && body.get("bankAccountId") != null)
+                 ? UUID.fromString(body.get("bankAccountId")) : null;
+-        return ResponseEntity.ok(invoiceService.markAsPaid(id, bankAccountId));
++        return ResponseEntity.ok(invoiceService.markAsPaid(id, bankAccountId, user));
+     }
+ 
+     @GetMapping("/admissions/{admissionId}/invoice")
+@@ -58,9 +61,12 @@ public class BillingController {
+     }
+ 
+     @PutMapping("/invoices/{id}/finalize")
+-    public ResponseEntity<InvoiceDTO> finalizeIPDInvoice(@PathVariable UUID id, @RequestBody InvoiceRequest req) {
++    public ResponseEntity<InvoiceDTO> finalizeIPDInvoice(
++            @PathVariable UUID id, 
++            @RequestBody InvoiceRequest req,
++            @AuthenticationPrincipal User user) {
+         try {
+-            return ResponseEntity.ok(invoiceService.finalizeIPDInvoice(id, req));
++            return ResponseEntity.ok(invoiceService.finalizeIPDInvoice(id, req, user));
+         } catch (RuntimeException e) {
+             log.error("finalizeIPDInvoice failed for invoiceId={}", id, e);
+             return ResponseEntity.badRequest().build();
+@@ -124,11 +130,12 @@ public class BillingController {
+     @PostMapping("/invoices/{id}/payments")
+     public ResponseEntity<InvoiceDTO> collectPayment(
+             @PathVariable UUID id,
+-            @RequestBody PaymentRequest req) {
++            @RequestBody PaymentRequest req,
++            @AuthenticationPrincipal User user) {
+         try {
+             return ResponseEntity.ok(invoiceService.collectPayment(
+                     id, req.getAmount(), req.getPaymentMethod(),
+-                    req.getBankAccountId(), req.getCollectedBy()));
++                    req.getBankAccountId(), req.getCollectedBy(), user));
+         } catch (RuntimeException e) {
+             log.error("collectPayment failed for invoiceId={}", id, e);
+             return ResponseEntity.badRequest().build();
+@@ -146,12 +153,13 @@ public class BillingController {
+     @PostMapping("/invoices/{id}/collect")
+     public ResponseEntity<InvoiceDTO> collectAndSave(
+             @PathVariable UUID id,
+-            @RequestBody CollectAndSaveRequest req) {
++            @RequestBody CollectAndSaveRequest req,
++            @AuthenticationPrincipal User user) {
+         try {
+             return ResponseEntity.ok(invoiceService.collectAndSave(
+                     id, req,
+                     req.getAmount(), req.getPaymentMethod(),
+-                    req.getBankAccountId(), req.getCollectedBy()));
++                    req.getBankAccountId(), req.getCollectedBy(), user));
+         } catch (RuntimeException e) {
+             log.error("collectAndSave failed for invoiceId={}", id, e);
+             return ResponseEntity.badRequest().body(
+@@ -170,11 +178,12 @@ public class BillingController {
+     public ResponseEntity<InvoiceDTO> waiveItem(
+             @PathVariable UUID invoiceId,
+             @PathVariable UUID itemId,
+-            @RequestBody Map<String, Object> body) {
++            @RequestBody Map<String, Object> body,
++            @AuthenticationPrincipal User user) {
+         BigDecimal amount = new BigDecimal(body.getOrDefault("waiverAmount", "0").toString());
+         String reason = (String) body.getOrDefault("waiverReason", "");
+         try {
+-            return ResponseEntity.ok(invoiceService.applyWaiver(invoiceId, itemId, amount, reason));
++            return ResponseEntity.ok(invoiceService.applyWaiver(invoiceId, itemId, amount, reason, user));
+         } catch (RuntimeException e) {
+             return ResponseEntity.badRequest().build();
+         }
+diff --git a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/dto/InvoiceDTO.java b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/dto/InvoiceDTO.java
+index ec52869..b20e5bc 100644
+--- a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/dto/InvoiceDTO.java
++++ b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/dto/InvoiceDTO.java
+@@ -25,6 +25,12 @@ public class InvoiceDTO {
+     private UUID appointmentId;
+     private LocalDateTime appointmentDate;
+     private String appointmentDoctorName;
++    private String bookedBy;
++    private String appointmentType;
++    private Integer appointmentTokenNumber;
++    private String appointmentStatus;
++    private String appointmentChiefComplaint;
++    private String appointmentCancelledReason;
+     private BigDecimal subtotal;
+     private BigDecimal tax;
+     private BigDecimal discount;
+diff --git a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/Appointment.java b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/Appointment.java
+index 45a96d8..e34b818 100644
+--- a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/Appointment.java
++++ b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/Appointment.java
+@@ -111,7 +111,7 @@ public class Appointment {
+ 
+     public enum AppointmentStatus {
+         SCHEDULED(1), CONFIRMED(2), CHECKED_IN(3), IN_PROGRESS(4),
+-        COMPLETED(5), CANCELLED(6), NO_SHOW(7), BILLED(8);
++        COMPLETED(5), CANCELLED(6), NO_SHOW(7), BILLED(8), EXPIRED(9);
+ 
+         public final int id;
+ 
+diff --git a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/Invoice.java b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/Invoice.java
+index 5d74050..838c18e 100644
+--- a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/Invoice.java
++++ b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/Invoice.java
+@@ -114,4 +114,8 @@ public class Invoice {
+     public void onUpdate() {
+         this.updatedAt = LocalDateTime.now();
+     }
++
++    @ManyToOne(fetch = FetchType.LAZY)
++    @JoinColumn(name = "updated_by_id")
++    private User updatedBy;
+ }
+diff --git a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/InvoicePayment.java b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/InvoicePayment.java
+index 043e7df..75819a5 100644
+--- a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/InvoicePayment.java
++++ b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/entity/InvoicePayment.java
+@@ -42,4 +42,8 @@ public class InvoicePayment {
+     @CreationTimestamp
+     @Column(name = "paid_at", updatable = false)
+     private LocalDateTime paidAt;
++
++    @ManyToOne(fetch = FetchType.LAZY)
++    @JoinColumn(name = "collected_by_id")
++    private User collectedByUser;
+ }
+diff --git a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/repository/AppointmentRepository.java b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/repository/AppointmentRepository.java
+index 00a0475..aa2c049 100644
+--- a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/repository/AppointmentRepository.java
++++ b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/repository/AppointmentRepository.java
+@@ -165,4 +165,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID>
+         @Param("search") String search,
+         Pageable pageable
+     );
++
++    @org.springframework.data.jpa.repository.Modifying
++    @Query("UPDATE Appointment a SET a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.EXPIRED, a.updatedAt = :now WHERE a.status = com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.SCHEDULED AND (a.apptDate < :today OR (a.apptDate = :today AND a.apptTime < :currentTime))")
++    int expirePastAppointments(@org.springframework.data.repository.query.Param("today") java.time.LocalDate today, @org.springframework.data.repository.query.Param("currentTime") java.time.LocalTime currentTime, @org.springframework.data.repository.query.Param("now") java.time.LocalDateTime now);
+ }
+diff --git a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/service/InvoiceService.java b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/service/InvoiceService.java
+index 1e2cf45..97170f9 100644
+--- a/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/service/InvoiceService.java
++++ b/HMS-backend/HMS-backend/src/main/java/com/zenlocare/HMS_backend/service/InvoiceService.java
+@@ -139,7 +139,7 @@ public class InvoiceService {
+     }
+ 
+     @Transactional
+-    public Invoice markAsPaid(UUID invoiceId, UUID bankAccountId) {
++    public Invoice markAsPaid(UUID invoiceId, UUID bankAccountId, User user) {
+         Invoice invoice = invoiceRepository.findById(invoiceId)
+                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
+         if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
+@@ -162,6 +162,7 @@ public class InvoiceService {
+         }
+         invoice.setStatus(invoice.getAdmission() != null ? InvoiceStatus.SETTLED : InvoiceStatus.PAID);
+         invoice.setUpdatedAt(LocalDateTime.now());
++        invoice.setUpdatedBy(user);
+         Invoice saved = invoiceRepository.save(invoice);
+         if (bankAccountId != null) {
+             creditBankAccount(bankAccountId, saved);
+@@ -171,7 +172,7 @@ public class InvoiceService {
+ 
+     @Transactional
+     public InvoiceDTO collectPayment(UUID invoiceId, BigDecimal amount, String paymentMethod,
+-                                     UUID bankAccountId, String collectedBy) {
++                                     UUID bankAccountId, String collectedBy, User user) {
+         Invoice invoice = invoiceRepository.findById(invoiceId)
+                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
+         if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
+@@ -191,18 +192,21 @@ public class InvoiceService {
+             throw new RuntimeException("Payment ₹" + amount + " exceeds outstanding balance ₹" + remaining);
+         }
+ 
+-        invoicePaymentRepository.save(InvoicePayment.builder()
++        InvoicePayment payment = InvoicePayment.builder()
+                 .invoice(invoice)
+                 .amount(amount)
+                 .paymentMethod(paymentMethod)
+                 .bankAccountId(bankAccountId)
+                 .collectedBy(collectedBy)
+-                .build());
++                .build();
++        payment.setCollectedByUser(user);
++        invoicePaymentRepository.save(payment);
+ 
+         BigDecimal newPaid = (invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO)
+                 .add(amount);
+         invoice.setPaidAmount(newPaid);
+         invoice.setUpdatedAt(LocalDateTime.now());
++        invoice.setUpdatedBy(user);
+ 
+         BigDecimal advance = invoice.getAdvanceAdjusted() != null ? invoice.getAdvanceAdjusted() : BigDecimal.ZERO;
+         BigDecimal total = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
+@@ -536,7 +540,7 @@ public class InvoiceService {
+ 
+     // ── Replace all items on an IPD invoice and recalculate totals ─────────────
+     @Transactional
+-    public InvoiceDTO finalizeIPDInvoice(UUID invoiceId, InvoiceRequest req) {
++    public InvoiceDTO finalizeIPDInvoice(UUID invoiceId, InvoiceRequest req, User user) {
+         Invoice invoice = invoiceRepository.findById(invoiceId)
+                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
+         // Reopening a SETTLED bill (new charges added while patient still admitted) — reset to UNSETTLED.
+@@ -574,6 +578,7 @@ public class InvoiceService {
+         invoice.setTotal(req.getTotal() != null ? req.getTotal() : BigDecimal.ZERO);
+         if (req.getNotes() != null) invoice.setNotes(req.getNotes());
+         invoice.setUpdatedAt(LocalDateTime.now());
++        invoice.setUpdatedBy(user);
+         Invoice saved = invoiceRepository.save(invoice);
+ 
+         // Mark advances applied if any were deducted
+@@ -599,7 +604,7 @@ public class InvoiceService {
+     @Transactional
+     public InvoiceDTO collectAndSave(UUID invoiceId, InvoiceRequest itemsReq,
+                                      BigDecimal amount, String paymentMethod,
+-                                     UUID bankAccountId, String collectedBy) {
++                                     UUID bankAccountId, String collectedBy, User user) {
+         Invoice invoice = invoiceRepository.findById(invoiceId)
+                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
+ 
+@@ -636,17 +641,20 @@ public class InvoiceService {
+         if (itemsReq.getNotes() != null) invoice.setNotes(itemsReq.getNotes());
+ 
+         // Record payment
+-        invoicePaymentRepository.save(InvoicePayment.builder()
++        InvoicePayment payment = InvoicePayment.builder()
+                 .invoice(invoice)
+                 .amount(amount)
+                 .paymentMethod(paymentMethod)
+                 .bankAccountId(bankAccountId)
+                 .collectedBy(collectedBy)
+-                .build());
++                .build();
++        payment.setCollectedByUser(user);
++        invoicePaymentRepository.save(payment);
+ 
+         BigDecimal newPaid = (invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO).add(amount);
+         invoice.setPaidAmount(newPaid);
+         invoice.setUpdatedAt(LocalDateTime.now());
++        invoice.setUpdatedBy(user);
+ 
+         BigDecimal advance = invoice.getAdvanceAdjusted() != null ? invoice.getAdvanceAdjusted() : BigDecimal.ZERO;
+         BigDecimal total = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
+@@ -695,7 +703,7 @@ public class InvoiceService {
+     }
+ 
+     @Transactional
+-    public InvoiceDTO applyWaiver(UUID invoiceId, UUID itemId, java.math.BigDecimal waiverAmount, String waiverReason) {
++    public InvoiceDTO applyWaiver(UUID invoiceId, UUID itemId, java.math.BigDecimal waiverAmount, String waiverReason, User user) {
+         Invoice invoice = invoiceRepository.findById(invoiceId)
+                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
+         if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
+@@ -719,6 +727,7 @@ public class InvoiceService {
+         invoice.setDiscount(totalWaiver);
+         invoice.setTotal(invoice.getSubtotal().add(invoice.getTax()).subtract(totalWaiver));
+         invoice.setUpdatedAt(LocalDateTime.now());
++        invoice.setUpdatedBy(user);
+ 
+         invoiceRepository.save(invoice);
+         return toDTO(invoice);
+@@ -737,61 +746,110 @@ public class InvoiceService {
+     }
+ 
+     private InvoiceDTO toDTO(Invoice inv) {
+-        return InvoiceDTO.builder()
+-                .id(inv.getId().toString())
+-                .invoiceNumber(inv.getInvoiceNumber())
+-                .patientId(inv.getPatient() != null ? inv.getPatient().getId() : null)
+-                .patientName(inv.getPatient() != null
+-                        ? inv.getPatient().getFirstName() + " " + inv.getPatient().getLastName() : null)
+-                .patientUhid(inv.getPatient() != null ? inv.getPatient().getUhid() : null)
+-                .admissionId(inv.getAdmission() != null ? inv.getAdmission().getId() : null)
+-                .admissionNumber(inv.getAdmission() != null ? inv.getAdmission().getAdmissionNumber() : null)
+-                .appointmentId(inv.getAppointment() != null ? inv.getAppointment().getId() : null)
+-                .appointmentDate(inv.getAppointment() != null && inv.getAppointment().getApptDate() != null && inv.getAppointment().getApptTime() != null
+-                        ? LocalDateTime.of(inv.getAppointment().getApptDate(), inv.getAppointment().getApptTime())
+-                        : null)
+-                .appointmentDoctorName(inv.getAppointment() != null && inv.getAppointment().getDoctor() != null && inv.getAppointment().getDoctor().getUser() != null
+-                        ? inv.getAppointment().getDoctor().getUser().getFirstName() + " " + inv.getAppointment().getDoctor().getUser().getLastName()
+-                        : null)
+-                .subtotal(inv.getSubtotal())
+-                .tax(inv.getTax())
+-                .discount(inv.getDiscount())
+-                .total(inv.getTotal())
+-                .paymentMethod(inv.getPaymentMethod())
+-                .notes(inv.getNotes())
+-                .status(inv.getStatus().name())
+-                .advanceAdjusted(inv.getAdvanceAdjusted())
+-                .paidAmount(inv.getPaidAmount())
+-                .createdAt(inv.getCreatedAt())
+-                .updatedAt(inv.getUpdatedAt())
+-                .items(inv.getItems() != null ? inv.getItems().stream().map(item ->
+-                        new InvoiceDTO.ItemDTO(
+-                                item.getId(),
+-                                item.getItemType(),
+-                                item.getDescription(),
+-                                item.getQuantity(),
+-                                item.getUnitPrice(),
+-                                item.getTotalPrice(),
+-                                item.getWaiverAmount(),
+-                                item.getWaiverReason(),
+-                                item.getServiceId(),
+-                                item.getRadiologyOrderId(),
+-                                item.getAppointmentId(),
+-                                item.getAmbulanceBookingId(),
+-                                item.getPharmacyBillId(),
+-                                item.getOtBookingId(),
+-                                item.getOtInvoiceItemId()
+-                        )
+-                ).collect(Collectors.toList()) : java.util.Collections.emptyList())
+-                .payments(invoicePaymentRepository.findByInvoice_IdOrderByPaidAtAsc(inv.getId())
+-                        .stream().map(p -> new InvoiceDTO.PaymentDTO(
+-                                p.getId(),
+-                                p.getAmount(),
+-                                p.getPaymentMethod(),
+-                                p.getCollectedBy(),
+-                                p.getPaidAt()
+-                        )).collect(Collectors.toList()))
+-                .build();
++        String bookedBy = "System";
++        String doctorName = null;
++        LocalDateTime apptDateTime = null;
++        String apptType = null;
++        Integer tokenNum = null;
++        String apptStatus = null;
++        String chiefComplaint = null;
++        String cancelledReason = null;
++
++        if (inv.getAppointment() != null) {
++            if (inv.getAppointment().getCreatedBy() != null) {
++                String fName = inv.getAppointment().getCreatedBy().getFirstName();
++                String lName = inv.getAppointment().getCreatedBy().getLastName();
++                bookedBy = (fName + " " + (lName != null ? lName : "")).trim();
++            }
++            if (inv.getAppointment().getDoctor() != null && inv.getAppointment().getDoctor().getUser() != null) {
++                doctorName = inv.getAppointment().getDoctor().getUser().getFirstName() + " " + inv.getAppointment().getDoctor().getUser().getLastName();
++            }
++            if (inv.getAppointment().getApptDate() != null && inv.getAppointment().getApptTime() != null) {
++                apptDateTime = LocalDateTime.of(inv.getAppointment().getApptDate(), inv.getAppointment().getApptTime());
++            }
++            apptType = inv.getAppointment().getType() != null ? String.valueOf(inv.getAppointment().getType()) : null;
++            tokenNum = inv.getAppointment().getTokenNumber();
++            apptStatus = inv.getAppointment().getStatus() != null ? String.valueOf(inv.getAppointment().getStatus()) : null;
++            chiefComplaint = inv.getAppointment().getChiefComplaint();
++            cancelledReason = inv.getAppointment().getCancelledReason();
++        }
++
++        List<InvoiceDTO.ItemDTO> itemsList = new ArrayList<>();
++        if (inv.getItems() != null) {
++            itemsList = inv.getItems().stream().map(item ->
++                    new InvoiceDTO.ItemDTO(
++                            item.getId(),
++                            item.getItemType(),
++                            item.getDescription(),
++                            item.getQuantity(),
++                            item.getUnitPrice(),
++                            item.getTotalPrice(),
++                            item.getWaiverAmount(),
++                            item.getWaiverReason(),
++                            item.getServiceId(),
++                            item.getRadiologyOrderId(),
++                            item.getAppointmentId(),
++                            item.getAmbulanceBookingId(),
++                            item.getPharmacyBillId(),
++                            item.getOtBookingId(),
++                            item.getOtInvoiceItemId()
++                    )).collect(Collectors.toList());
++        }
++        InvoiceDTO.InvoiceDTOBuilder b = InvoiceDTO.builder();
++        b.id(inv.getId().toString());
++        b.invoiceNumber(inv.getInvoiceNumber());
++        
++        if (inv.getPatient() != null) {
++            b.patientId(inv.getPatient().getId());
++            b.patientName(inv.getPatient().getFirstName() + " " + inv.getPatient().getLastName());
++            b.patientUhid(inv.getPatient().getUhid());
++        }
++        
++        if (inv.getAdmission() != null) {
++            b.admissionId(inv.getAdmission().getId());
++            b.admissionNumber(inv.getAdmission().getAdmissionNumber());
++        }
++        
++        if (inv.getAppointment() != null) {
++            b.appointmentId(inv.getAppointment().getId());
++        }
++        
++        b.appointmentDate(apptDateTime);
++        b.appointmentDoctorName(doctorName);
++        b.bookedBy(bookedBy);
++        b.appointmentType(apptType);
++        b.appointmentTokenNumber(tokenNum);
++        b.appointmentStatus(apptStatus);
++        b.appointmentChiefComplaint(chiefComplaint);
++        b.appointmentCancelledReason(cancelledReason);
++        
++        b.subtotal(inv.getSubtotal());
++        b.tax(inv.getTax());
++        b.discount(inv.getDiscount());
++        b.total(inv.getTotal());
++        b.paymentMethod(inv.getPaymentMethod());
++        b.notes(inv.getNotes());
++        
++        if (inv.getStatus() != null) {
++            b.status(String.valueOf(inv.getStatus()));
++        }
++        
++        b.advanceAdjusted(inv.getAdvanceAdjusted());
++        b.paidAmount(inv.getPaidAmount());
++        b.createdAt(inv.getCreatedAt());
++        b.updatedAt(inv.getUpdatedAt());
++        b.items(itemsList);
++        
++        List<InvoiceDTO.PaymentDTO> pList = new ArrayList<>();
++        if (inv.getId() != null) {
++             pList = invoicePaymentRepository.findByInvoice_IdOrderByPaidAtAsc(inv.getId())
++                .stream().map(p -> new InvoiceDTO.PaymentDTO(
++                        p.getId(), p.getAmount(), p.getPaymentMethod(), p.getCollectedBy(), p.getPaidAt()
++                )).collect(Collectors.toList());
++        }
++        b.payments(pList);
++        
++        return b.build();
+     }
+ 
+     @org.springframework.transaction.annotation.Transactional(readOnly = true)
+diff --git a/HMS-frontend/src/components/ui/SearchableSelect.jsx b/HMS-frontend/src/components/ui/SearchableSelect.jsx
+index 63caaad..3798f65 100644
+--- a/HMS-frontend/src/components/ui/SearchableSelect.jsx
++++ b/HMS-frontend/src/components/ui/SearchableSelect.jsx
+@@ -25,6 +25,8 @@ export default function SearchableSelect({
+   placeholder = "Select…",
+   disabled = false,
+   loading = false,
++  clearable = true,
++  searchable = true,
+ }) {
+   const [open, setOpen] = useState(false);
+   const [query, setQuery] = useState("");
+@@ -77,7 +79,7 @@ export default function SearchableSelect({
+           {loading ? "Loading…" : (selected?.label ?? placeholder)}
+         </span>
+         <span className="hms-select__icons">
+-          {value && !disabled && (
++          {clearable && value && !disabled && (
+             <span
+               role="button"
+               className="hms-select__clear inline-flex items-center justify-center cursor-pointer"
+@@ -96,17 +98,19 @@ export default function SearchableSelect({
+ 
+       {open && (
+         <div className="hms-select__dropdown">
+-          <div className="hms-select__search-row">
+-            <Search className="w-3 h-3 shrink-0" />
+-            <input
+-              ref={searchRef}
+-              type="text"
+-              value={query}
+-              onChange={(e) => setQuery(e.target.value)}
+-              placeholder="Search…"
+-              className="hms-select__search-input"
+-            />
+-          </div>
++          {searchable && (
++            <div className="hms-select__search-row">
++              <Search className="w-3 h-3 shrink-0" />
++              <input
++                ref={searchRef}
++                type="text"
++                value={query}
++                onChange={(e) => setQuery(e.target.value)}
++                placeholder="Search…"
++                className="hms-select__search-input"
++              />
++            </div>
++          )}
+           <ul className="hms-select__list">
+             {filtered.length === 0 && (
+               <li className="hms-select__empty">No results</li>
+diff --git a/HMS-frontend/src/pages/admin/DoctorDetails.jsx b/HMS-frontend/src/pages/admin/DoctorDetails.jsx
+index 40ee4a9..bd7aa9f 100644
+--- a/HMS-frontend/src/pages/admin/DoctorDetails.jsx
++++ b/HMS-frontend/src/pages/admin/DoctorDetails.jsx
+@@ -30,10 +30,25 @@ const STATUS_TONE = {
+     COMPLETED: "success",
+     CANCELLED: "danger",
+     NO_SHOW: "danger",
++    EXPIRED: "danger",
+     IN_PROGRESS: "warning",
+ };
+ const statusTone = (s) => STATUS_TONE[s] || "info";
+ 
++const getDisplayStatus = (appt) => {
++    if (appt.status === "SCHEDULED") {
++        const now = new Date();
++        const offset = now.getTimezoneOffset();
++        const localNow = new Date(now.getTime() - offset * 60 * 1000);
++        const todayStr = localNow.toISOString().split("T")[0];
++        const timeStr = localNow.toISOString().split("T")[1].substring(0, 5);
++        if (appt.apptDate < todayStr || (appt.apptDate === todayStr && appt.apptTime < timeStr)) {
++            return "EXPIRED";
++        }
++    }
++    return appt.status;
++};
++
+ /** Sidebar key/value row with leading icon. */
+ function SideInfoRow({ icon: Icon, label, value }) {
+     return (
+@@ -111,14 +126,19 @@ function DoctorDetails() {
+     }, [doctorAppointments]);
+ 
+     const nextAppointment = useMemo(() => {
+-        const todayStr = new Date().toISOString().split("T")[0];
++        const now = new Date();
++        const offset = now.getTimezoneOffset();
++        const localNow = new Date(now.getTime() - offset * 60 * 1000);
++        const todayStr = localNow.toISOString().split("T")[0];
++        const timeStr = localNow.toISOString().split("T")[1].substring(0, 5);
+         return (
+             doctorAppointments
+-                .filter(
+-                    (a) =>
+-                        ["SCHEDULED", "CONFIRMED"].includes(a.status) &&
+-                        a.apptDate >= todayStr
+-                )
++                .filter((a) => {
++                    if (!["SCHEDULED", "CONFIRMED"].includes(a.status)) return false;
++                    if (a.apptDate < todayStr) return false;
++                    if (a.apptDate === todayStr && a.apptTime < timeStr) return false;
++                    return true;
++                })
+                 .sort((a, b) => {
+                     const d = a.apptDate.localeCompare(b.apptDate);
+                     return d !== 0 ? d : a.apptTime.localeCompare(b.apptTime);
+@@ -275,7 +295,7 @@ function DoctorDetails() {
+     ];
+ 
+     return (
+-        <div className="zu-page">
++        <div className="hms-detail-page">
+             {/* LEFT PANE */}
+             <aside className="hms-detail-page__aside">
+                 <div className="hms-detail-aside__topbar">
+@@ -628,7 +648,8 @@ function AppointmentsTab({ doctor, loading, appointments }) {
+             ) : (
+                 <div className="hms-detail-card-grid">
+                     {appointments.slice(0, 50).map((appt) => {
+-                        const tone = statusTone(appt.status);
++                        const dispStatus = getDisplayStatus(appt);
++                        const tone = statusTone(dispStatus);
+                         return (
+                             <Card key={appt.id} className="hms-appt-card">
+                                 <span className={`hms-appt-card__stripe is-${tone}`} />
+@@ -642,7 +663,7 @@ function AppointmentsTab({ doctor, loading, appointments }) {
+                                         </p>
+                                     </div>
+                                     <Badge tone={tone} soft>
+-                                        {appt.status.replace(/_/g, " ")}
++                                        {dispStatus.replace(/_/g, " ")}
+                                     </Badge>
+                                 </div>
+                                 <div className="hms-appt-card__patient">
+diff --git a/HMS-frontend/src/pages/ambulance/AmbulanceBook.jsx b/HMS-frontend/src/pages/ambulance/AmbulanceBook.jsx
+index c7fd1a9..8713ba9 100644
+--- a/HMS-frontend/src/pages/ambulance/AmbulanceBook.jsx
++++ b/HMS-frontend/src/pages/ambulance/AmbulanceBook.jsx
+@@ -1,6 +1,6 @@
+ import { Spinner } from "@/components/ui/Loader";
+ import TableSkeleton from "@/components/ui/TableSkeleton";
+-import { useState, useEffect, useRef } from "react";
++import { useState, useEffect, useMemo, useRef } from "react";
+ import { useAuth } from "@/context/AuthContext";
+ import { useNotification } from "@/context/NotificationContext";
+ import { ambulanceApi, patientApi } from "@/utils/api";
+@@ -8,6 +8,8 @@ import { fmtId } from "@/utils/idFormat";
+ import Pagination from "@/components/ui/Pagination";
+ import SearchableSelect from "@/components/ui/SearchableSelect";
+ import PageHeader from "@/components/ui/PageHeader";
++import Modal from "@/components/ui/Modal";
++import Button from "@/components/ui/Button";
+ import { Ambulance, Plus, X, Search, Calendar, Clock, MapPin, Car, CheckCircle2, AlertCircle, Clock3, XCircle, Truck, Activity, MoreHorizontal, Wrench, Trash2, Edit2, ChevronRight, UserPlus,  } from "lucide-react";
+ 
+ const PAGE_SIZE = 30;
+@@ -513,15 +515,86 @@ function AddTypeModal({ hospitalId, onClose, onCreated }) {
+   );
+ }
+ 
++// ── Vehicle Action Menu ──────────────────────────────────────────────────────
++
++function VehicleActionMenu({ v, setEditVehicle, setInternalShowModal, handleStatusToggle, handleDelete }) {
++  const [open, setOpen] = useState(false);
++  const ref = useRef(null);
++  const popRef = useRef(null);
++
++  useEffect(() => {
++    const handler = (e) => {
++      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
++        setOpen(false);
++      }
++    };
++    const updatePos = () => {
++      if (open && ref.current && popRef.current) {
++        const r = ref.current.getBoundingClientRect();
++        const flipUp = window.innerHeight - r.bottom < 160;
++        popRef.current.style.position = 'fixed';
++        popRef.current.style.right = `${window.innerWidth - r.right}px`;
++        popRef.current.style.zIndex = '9999';
++        if (flipUp) {
++          popRef.current.style.bottom = `${window.innerHeight - r.top + 4}px`;
++          popRef.current.style.top = 'auto';
++        } else {
++          popRef.current.style.top = `${r.bottom + 4}px`;
++          popRef.current.style.bottom = 'auto';
++        }
++      }
++    };
++
++    if (open) {
++      document.addEventListener('mousedown', handler);
++      window.addEventListener('scroll', updatePos, { capture: true, passive: true });
++      window.addEventListener('resize', updatePos);
++      updatePos();
++    }
++    return () => {
++      document.removeEventListener('mousedown', handler);
++      window.removeEventListener('scroll', updatePos, { capture: true });
++      window.removeEventListener('resize', updatePos);
++    };
++  }, [open]);
++
++  return (
++    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
++      <button onClick={() => setOpen(!open)} className="hms-amb-row-act-btn">
++        <MoreHorizontal className="w-5 h-5" />
++      </button>
++      {open && (
++        <div className="hms-appt-am__pop" ref={popRef}>
++          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
++            <button onClick={() => { setOpen(false); setEditVehicle(v); setInternalShowModal(true); }} className="hms-amb-menu__item">
++              <Edit2 className="w-4 h-4" /> Edit Details
++            </button>
++            {v.status !== "IN_USE" && (
++              <button onClick={() => { setOpen(false); handleStatusToggle(v); }} className="hms-amb-menu__item is-warning">
++                <Wrench className="w-4 h-4" />
++                {v.status === "MAINTENANCE" ? "Mark Available" : "Mark Maintenance"}
++              </button>
++            )}
++            <div className="hms-amb-menu__divider" />
++            <button onClick={() => { setOpen(false); handleDelete(v); }} className="hms-amb-menu__item is-danger">
++              <Trash2 className="w-4 h-4" /> Delete Vehicle
++            </button>
++          </div>
++        </div>
++      )}
++    </div>
++  );
++}
++
+ // ── Vehicles Tab ─────────────────────────────────────────────────────────────
+ 
+ function VehiclesTab({ hospitalId, types, onRefreshTypes, isAddTypeOpen, onCloseAddType, isAddVehicleOpen, onCloseAddVehicle }) {
+   const [vehicles, setVehicles] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [search, setSearch] = useState("");
+-  const [openMenuId, setOpenMenuId] = useState(null);
+   const [internalShowModal, setInternalShowModal] = useState(false);
+   const [editVehicle, setEditVehicle] = useState(null);
++  const [confirmDialog, setConfirmDialog] = useState(null);
+ 
+   const load = async () => {
+     setLoading(true);
+@@ -532,23 +605,35 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes, isAddTypeOpen, onClose
+ 
+   useEffect(() => { if (hospitalId) load(); }, [hospitalId]);
+ 
+-  useEffect(() => {
+-    const handler = () => setOpenMenuId(null);
+-    document.addEventListener("click", handler);
+-    return () => document.removeEventListener("click", handler);
+-  }, []);
+ 
+-  const handleStatusToggle = async (v) => {
++
++  const handleStatusToggle = (v) => {
+     const next = v.status === "MAINTENANCE" ? "AVAILABLE" : "MAINTENANCE";
+-    if (!confirm(`Set ${v.vehicleNumber} to ${next}?`)) return;
+-    await ambulanceApi.updateVehicleStatus(v.id, next);
+-    load();
++    setConfirmDialog({
++      title: "Confirm Status Change",
++      message: `Set ${v.vehicleNumber} to ${next}?`,
++      actionLabel: "Confirm",
++      actionVariant: "primary",
++      onConfirm: async () => {
++        await ambulanceApi.updateVehicleStatus(v.id, next);
++        setConfirmDialog(null);
++        load();
++      }
++    });
+   };
+ 
+-  const handleDelete = async (v) => {
+-    if (!confirm(`Delete vehicle ${v.vehicleNumber}? This cannot be undone.`)) return;
+-    await ambulanceApi.deleteVehicle(v.id);
+-    load();
++  const handleDelete = (v) => {
++    setConfirmDialog({
++      title: "Delete Vehicle",
++      message: `Delete vehicle ${v.vehicleNumber}? This cannot be undone.`,
++      actionLabel: "Delete",
++      actionVariant: "danger",
++      onConfirm: async () => {
++        await ambulanceApi.deleteVehicle(v.id);
++        setConfirmDialog(null);
++        load();
++      }
++    });
+   };
+ 
+   const filtered = vehicles.filter(v => {
+@@ -631,32 +716,13 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes, isAddTypeOpen, onClose
+                     </td>
+                     <td className="hms-amb-row-cell__notes">{v.notes || "—"}</td>
+                     <td className="hms-amb-row-act-cell">
+-                      <button
+-                        onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === v.id ? null : v.id); }}
+-                        className="hms-amb-row-act-btn"
+-                      >
+-                        <MoreHorizontal className="w-5 h-5" />
+-                      </button>
+-                      {openMenuId === v.id && (
+-                        <>
+-                          <div className="hms-amb-menu-overlay" onClick={() => setOpenMenuId(null)} />
+-                          <div className="hms-amb-menu" onClick={e => e.stopPropagation()}>
+-                            <button onClick={() => { setOpenMenuId(null); setEditVehicle(v); setInternalShowModal(true); }} className="hms-amb-menu__item">
+-                              <Edit2 className="w-4 h-4" /> Edit Details
+-                            </button>
+-                            {v.status !== "IN_USE" && (
+-                              <button onClick={() => { setOpenMenuId(null); handleStatusToggle(v); }} className="hms-amb-menu__item is-warning">
+-                                <Wrench className="w-4 h-4" />
+-                                {v.status === "MAINTENANCE" ? "Mark Available" : "Mark Maintenance"}
+-                              </button>
+-                            )}
+-                            <div className="hms-amb-menu__divider" />
+-                            <button onClick={() => { setOpenMenuId(null); handleDelete(v); }} className="hms-amb-menu__item is-danger">
+-                              <Trash2 className="w-4 h-4" /> Delete Vehicle
+-                            </button>
+-                          </div>
+-                        </>
+-                      )}
++                      <VehicleActionMenu 
++                        v={v} 
++                        setEditVehicle={setEditVehicle} 
++                        setInternalShowModal={setInternalShowModal} 
++                        handleStatusToggle={handleStatusToggle} 
++                        handleDelete={handleDelete} 
++                      />
+                     </td>
+                   </tr>
+                 );
+@@ -666,9 +732,31 @@ function VehiclesTab({ hospitalId, types, onRefreshTypes, isAddTypeOpen, onClose
+         </div>
+       </div>
+ 
+-      {(isAddVehicleOpen || internalShowModal) && (
+-        <VehicleModal hospitalId={hospitalId} types={types} vehicle={isAddVehicleOpen ? null : editVehicle} onClose={() => { onCloseAddVehicle?.(); setInternalShowModal(false); setEditVehicle(null); }} onSaved={load} />
++      {(isAddVehicleOpen) && (
++        <VehicleModal hospitalId={hospitalId} types={types} vehicle={null} onClose={onCloseAddVehicle} onSaved={load} />
+       )}
++      {internalShowModal && (
++        <VehicleModal
++          hospitalId={hospitalId}
++          types={types}
++          vehicle={editVehicle}
++          onClose={() => setInternalShowModal(false)}
++          onSaved={() => { setInternalShowModal(false); load(); }}
++        />
++      )}
++
++      <Modal isOpen={!!confirmDialog} onClose={() => setConfirmDialog(null)} title={confirmDialog?.title} size="sm">
++        <div className="zu-modal-body">
++          {confirmDialog?.message}
++        </div>
++        <div className="zu-modal-footer">
++          <Button variant="ghost" onClick={() => setConfirmDialog(null)}>Cancel</Button>
++          <Button variant={confirmDialog?.actionVariant || "primary"} onClick={confirmDialog?.onConfirm}>
++            {confirmDialog?.actionLabel}
++          </Button>
++        </div>
++      </Modal>
++
+       {isAddTypeOpen && (
+         <AddTypeModal hospitalId={hospitalId} onClose={onCloseAddType} onCreated={() => { onRefreshTypes(); onCloseAddType?.(); }} />
+       )}
+@@ -683,6 +771,7 @@ function BookingsTab({ hospitalId, isNewBookingOpen, onCloseNewBooking }) {
+   const [bookings, setBookings] = useState([]);
+   const [availableVehicles, setAvailableVehicles] = useState([]);
+   const [hospitalInfo, setHospitalInfo] = useState(null);
++  const [confirmCancel, setConfirmCancel] = useState(null);
+   const [loading, setLoading] = useState(true);
+   const [search, setSearch] = useState("");
+   const [page, setPage] = useState(1);
+@@ -709,11 +798,8 @@ function BookingsTab({ hospitalId, isNewBookingOpen, onCloseNewBooking }) {
+     load();
+   };
+ 
+-  const handleDelete = async (id) => {
+-    if (!window.confirm("Cancel this booking?")) return;
+-    await ambulanceApi.deleteBooking(id);
+-    notify("Booking cancelled", "success");
+-    load();
++  const handleDelete = (id) => {
++    setConfirmCancel(id);
+   };
+ 
+   const filtered = bookings.filter(b => {
+@@ -925,6 +1011,21 @@ function BookingsTab({ hospitalId, isNewBookingOpen, onCloseNewBooking }) {
+           onSaved={() => { load(); notify("Ambulance booked successfully", "success"); }}
+         />
+       )}
++
++      <Modal isOpen={!!confirmCancel} onClose={() => setConfirmCancel(null)} title="Cancel Booking" size="sm">
++        <div className="zu-modal-body">
++          Cancel this booking? This cannot be undone.
++        </div>
++        <div className="zu-modal-footer">
++          <Button variant="ghost" onClick={() => setConfirmCancel(null)}>Keep</Button>
++          <Button variant="danger" onClick={async () => {
++            await ambulanceApi.deleteBooking(confirmCancel);
++            notify("Booking cancelled", "success");
++            setConfirmCancel(null);
++            load();
++          }}>Cancel Booking</Button>
++        </div>
++      </Modal>
+     </div>
+   );
+ }
+diff --git a/HMS-frontend/src/pages/ambulance/AmbulanceStatus.jsx b/HMS-frontend/src/pages/ambulance/AmbulanceStatus.jsx
+index 16f9048..872b121 100644
+--- a/HMS-frontend/src/pages/ambulance/AmbulanceStatus.jsx
++++ b/HMS-frontend/src/pages/ambulance/AmbulanceStatus.jsx
+@@ -236,35 +236,37 @@ export default function AmbulanceStatus() {
+                   </div>
+                 )}
+ 
+-                {/* Type + Charge */}
+-                <div className="flex items-center justify-between">
+-                  <span className="hms-amb-status-card__type">
+-                    {b.ambulanceType?.name || "Standard"}
+-                  </span>
+-                  {b.charge && (
+-                    <span className="hms-amb-status-card__charge">
+-                      ₹{b.charge}
++                {/* Meta details: Type, Charge, Driver, Vehicle */}
++                <div className="hms-amb-status-card__meta-grid">
++                  <div className="hms-amb-status-card__meta-item">
++                    <span className="hms-amb-status-card__meta-label">Type & Charge</span>
++                    <span className="hms-amb-status-card__meta-value">
++                      {b.ambulanceType?.name || "Standard"}
++                      {b.charge && <span className="hms-amb-status-card__charge"> · ₹{b.charge}</span>}
+                     </span>
++                  </div>
++                  
++                  {(b.driverName || b.vehicleNumber) && (
++                    <div className="hms-amb-status-card__meta-item">
++                      <span className="hms-amb-status-card__meta-label">Driver & Vehicle</span>
++                      <span className="hms-amb-status-card__meta-value">
++                        {b.driverName && (
++                          <span className="hms-amb-status-card__driver-item">
++                            <Phone className="w-3 h-3" />
++                            {b.driverName}
++                          </span>
++                        )}
++                        {b.vehicleNumber && (
++                          <span className="hms-amb-status-card__driver-item">
++                            <Car className="w-3 h-3 ml-1" />
++                            {b.vehicleNumber}
++                          </span>
++                        )}
++                      </span>
++                    </div>
+                   )}
+                 </div>
+ 
+-                {/* Driver / Vehicle */}
+-                {(b.driverName || b.vehicleNumber) && (
+-                  <div className="hms-amb-status-card__driver-row">
+-                    {b.driverName && (
+-                      <span className="hms-amb-status-card__driver-item">
+-                        <Phone className="w-3 h-3" />
+-                        {b.driverName}{b.driverPhone && ` · ${b.driverPhone}`}
+-                      </span>
+-                    )}
+-                    {b.vehicleNumber && (
+-                      <span className="hms-amb-status-card__driver-item">
+-                        <Car className="w-3 h-3" />{b.vehicleNumber}
+-                      </span>
+-                    )}
+-                  </div>
+-                )}
+-
+                 {/* Status control */}
+                 <StatusSelect current={b.status} bookingId={b.id} onUpdate={load} />
+               </div>
+diff --git a/HMS-frontend/src/pages/appointments/AppointmentsDashboard.jsx b/HMS-frontend/src/pages/appointments/AppointmentsDashboard.jsx
+index 2334be0..0f29a36 100644
+--- a/HMS-frontend/src/pages/appointments/AppointmentsDashboard.jsx
++++ b/HMS-frontend/src/pages/appointments/AppointmentsDashboard.jsx
+@@ -48,6 +48,22 @@ const STATUS_MOD = {
+   COMPLETED: "is-completed",
+   CANCELLED: "is-cancelled",
+   NO_SHOW: "is-no-show",
++  EXPIRED: "is-expired",
++};
++
++const getDisplayStatus = (appt) => {
++  if (appt.status === "SCHEDULED") {
++    const now = new Date();
++    const offset = now.getTimezoneOffset();
++    const localNow = new Date(now.getTime() - offset * 60 * 1e3);
++    const todayStr = localNow.toISOString().split("T")[0];
++    const timeStr = localNow.toISOString().split("T")[1].substring(0, 5);
++    
++    if (appt.apptDate < todayStr || (appt.apptDate === todayStr && appt.apptTime < timeStr)) {
++      return "EXPIRED";
++    }
++  }
++  return appt.status;
+ };
+ const APPT_TONE_MODS = ["is-blue", "is-emerald", "is-amber", "is-slate", "is-rose"];
+ const STATUS_TRANSITIONS = {
+@@ -87,16 +103,28 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
+   const [showCancelReason, setShowCancelReason] = useState(false);
+   const [cancelReason, setCancelReason] = useState("");
+   const ref = useRef(null);
++  const popRef = useRef(null);
+   const actions = STATUS_TRANSITIONS[appt.status] ?? [];
+   useEffect(() => {
+     const handler = (e) => {
+-      if (ref.current && !ref.current.contains(e.target)) {
++      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
+         setOpen(false);
+-        setShowCancelReason(false);
+       }
+     };
+-    if (open) document.addEventListener("mousedown", handler);
+-    return () => document.removeEventListener("mousedown", handler);
++    if (open) {
++      document.addEventListener('mousedown', handler);
++      if (popRef.current) {
++        const rect = popRef.current.getBoundingClientRect();
++        if (rect.bottom > window.innerHeight - 20) {
++          popRef.current.classList.add("is-upward");
++        } else {
++          popRef.current.classList.remove("is-upward");
++        }
++      }
++    }
++    return () => {
++      document.removeEventListener('mousedown', handler);
++    };
+   }, [open]);
+ 
+   const handleAction = async (status) => {
+@@ -127,19 +155,12 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
+     return <CheckCircle2 className="w-4 h-4 hms-appt-am__item-icon" />;
+   };
+   return (
+-    <div className="hms-appt-am" ref={ref}>
+-      <button
+-        onClick={() => {
+-          setOpen(!open);
+-          setShowCancelReason(false);
+-        }}
+-        className="hms-appt-am__btn"
+-        disabled={loading}
+-      >
+-        {loading ? <Loader2 className="w-4 h-4 zu-spinner" /> : <MoreHorizontal className="w-4 h-4" />}
++    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
++      <button onClick={() => setOpen(!open)} className="hms-appt-am__btn">
++        <MoreHorizontal className="w-5 h-5" />
+       </button>
+       {open && (
+-        <div className="hms-appt-am__pop">
++        <div className="hms-appt-am__pop" ref={popRef}>
+           <div className="hms-appt-am__head">
+             <p className="hms-appt-am__title">Actions</p>
+           </div>
+@@ -530,7 +551,10 @@ function AppointmentsDashboard() {
+                     <p className="hms-appt-table__time">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p>
+                   </td>
+                   <td>
+-                    <span className={`hms-appt-status ${STATUS_MOD[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span>
++                    {(() => {
++                      const dispStatus = getDisplayStatus(appt);
++                      return <span className={`hms-appt-status ${STATUS_MOD[dispStatus] || ""}`}>{dispStatus.replace(/_/g, " ")}</span>;
++                    })()}
+                   </td>
+                   <td>{TYPE_LABEL[appt.type] ?? appt.type}</td>
+                   <td>
+@@ -794,7 +818,12 @@ function AppointmentsDashboard() {
+                         <p className="hms-appt-day-row__name">{appt.patientName}</p>
+                         <p className="hms-appt-day-row__meta">{TYPE_LABEL[appt.type] ?? appt.type} &middot; Dr. {appt.doctorName}</p>
+                       </div>
+-                      <div className={`hms-appt-day-row__status ${STATUS_MOD[appt.status] || ""}`}>{appt.status.replace("_", " ")}</div>
++                      <div className="hms-appt-day-row__actions">
++                      {(() => {
++                        const dispStatus = getDisplayStatus(appt);
++                        return <div className={`hms-appt-day-row__status ${STATUS_MOD[dispStatus] || ""}`}>{dispStatus.replace("_", " ")}</div>;
++                      })()}
++                      </div>
+                     </div>
+                   );
+                 })}
+diff --git a/HMS-frontend/src/pages/billing/AmbulanceBilling.jsx b/HMS-frontend/src/pages/billing/AmbulanceBilling.jsx
+index 6404c56..0146f31 100644
+--- a/HMS-frontend/src/pages/billing/AmbulanceBilling.jsx
++++ b/HMS-frontend/src/pages/billing/AmbulanceBilling.jsx
+@@ -1,4 +1,4 @@
+-import { useState, useEffect, useMemo } from 'react'
++import { useState, useEffect, useMemo, useRef } from 'react'
+ import { useAuth } from '@/context/AuthContext'
+ import { useNotification } from '@/context/NotificationContext'
+ import { ambulanceApi } from '@/utils/api'
+@@ -54,6 +54,64 @@ function StatCard({ label, value, sub, Icon, accent }) {
+   )
+ }
+ 
++function AmbulanceActionMenu({ booking, markPaid, printReceipt }) {
++  const [open, setOpen] = useState(false)
++  const ref = useRef(null)
++  const popRef = useRef(null)
++
++  useEffect(() => {
++    const handler = (e) => {
++      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
++        setOpen(false);
++      }
++    };
++    if (open) {
++      document.addEventListener('mousedown', handler);
++      if (popRef.current) {
++        const rect = popRef.current.getBoundingClientRect();
++        if (rect.bottom > window.innerHeight - 20) {
++          popRef.current.classList.add("is-upward");
++        } else {
++          popRef.current.classList.remove("is-upward");
++        }
++      }
++    }
++    return () => {
++      document.removeEventListener('mousedown', handler);
++    };
++  }, [open]);
++
++  const canMarkPaid = booking.status === 'COMPLETED' && booking.paymentStatus !== 'PAID'
++
++  return (
++    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
++      <button onClick={() => setOpen(!open)} className="hms-billing-rowbtn">
++        <MoreHorizontal className="w-4 h-4" />
++      </button>
++      {open && (
++        <div className="hms-appt-am__pop" ref={popRef}>
++          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
++            {canMarkPaid && (
++              <button
++                onClick={() => { setOpen(false); markPaid(booking) }}
++                className="hms-billing-menu__item"
++              >
++                <IndianRupee className="hms-billing-menu__item-icon is-success w-4 h-4" /> Mark as Paid
++              </button>
++            )}
++            <button
++              onClick={() => { setOpen(false); printReceipt(booking) }}
++              className="hms-billing-menu__item"
++            >
++              <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Receipt
++            </button>
++          </div>
++        </div>
++      )}
++    </div>
++  )
++}
++
+ export default function AmbulanceBilling() {
+   const { user } = useAuth()
+   const { notify } = useNotification()
+@@ -63,7 +121,6 @@ export default function AmbulanceBilling() {
+   const [search, setSearch]           = useState('')
+   const [payFilter, setPayFilter]     = useState('ALL')
+   const [page, setPage]               = useState(1)
+-  const [menuState, setMenuState]     = useState(null)
+   const [markingId, setMarkingId]     = useState(null)
+ 
+   const loadData = () => {
+@@ -77,12 +134,6 @@ export default function AmbulanceBilling() {
+ 
+   useEffect(() => { loadData() }, [user?.hospitalId])
+ 
+-  useEffect(() => {
+-    const close = () => setMenuState(null)
+-    document.addEventListener('click', close)
+-    return () => document.removeEventListener('click', close)
+-  }, [])
+-
+   const filtered = useMemo(() => {
+     let list = bookings.filter(b => !b.mergedToIpd)
+     if (payFilter === 'PAID')   list = list.filter(b => b.paymentStatus === 'PAID')
+@@ -118,15 +169,7 @@ export default function AmbulanceBilling() {
+ 
+   const handlePayFilter = (f) => { setPayFilter(f); setPage(1) }
+ 
+-  const openMenu = (booking, btnEl) => {
+-    const r = btnEl.getBoundingClientRect()
+-    const flipUp = window.innerHeight - r.bottom < 160
+-    setMenuState({
+-      booking,
+-      right: window.innerWidth - r.right,
+-      ...(flipUp ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }),
+-    })
+-  }
++
+ 
+   const markPaid = async (booking) => {
+     setMarkingId(booking.id)
+@@ -402,14 +445,17 @@ export default function AmbulanceBilling() {
+ 
+                       {/* Actions */}
+                       <td className="hms-billing-actions-cell" onClick={e => e.stopPropagation()}>
+-                        <button
+-                          onClick={e => { e.stopPropagation(); openMenu(b, e.currentTarget) }}
+-                          className="hms-billing-rowbtn"
+-                        >
+-                          {markingId === b.id
+-                            ? <Loader2 className="w-4 h-4 zu-spinner" />
+-                            : <MoreHorizontal className="w-4 h-4" />}
+-                        </button>
++                        {markingId === b.id ? (
++                          <div className="hms-billing-rowbtn">
++                            <Loader2 className="w-4 h-4 zu-spinner" />
++                          </div>
++                        ) : (
++                          <AmbulanceActionMenu 
++                            booking={b} 
++                            markPaid={markPaid} 
++                            printReceipt={printReceipt} 
++                          />
++                        )}
+                       </td>
+                     </tr>
+                   )
+@@ -432,35 +478,7 @@ export default function AmbulanceBilling() {
+         )}
+       </div>
+ 
+-      {/* Context Action Menu */}
+-      {menuState && (() => {
+-        const { booking, right, top, bottom } = menuState
+-        const canMarkPaid = booking.status === 'COMPLETED' && booking.paymentStatus !== 'PAID'
+-        return (
+-          <>
+-            <div className="hms-billing-menu-overlay" onClick={() => setMenuState(null)} />
+-            <div
+-              style={{ right, ...(top !== undefined ? { top } : { bottom }) }}
+-              className="hms-billing-menu"
+-            >
+-              {canMarkPaid && (
+-                <button
+-                  onClick={() => { setMenuState(null); markPaid(booking) }}
+-                  className="hms-billing-menu__item"
+-                >
+-                  <IndianRupee className="hms-billing-menu__item-icon is-success w-4 h-4" /> Mark as Paid
+-                </button>
+-              )}
+-              <button
+-                onClick={() => { setMenuState(null); printReceipt(booking) }}
+-                className="hms-billing-menu__item"
+-              >
+-                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Receipt
+-              </button>
+-            </div>
+-          </>
+-        )
+-      })()}
++
+       </div>
+     </div>
+   )
+diff --git a/HMS-frontend/src/pages/billing/IPDBilling.jsx b/HMS-frontend/src/pages/billing/IPDBilling.jsx
+index 0ee895b..bceb775 100644
+--- a/HMS-frontend/src/pages/billing/IPDBilling.jsx
++++ b/HMS-frontend/src/pages/billing/IPDBilling.jsx
+@@ -1,4 +1,4 @@
+-import { useState, useEffect, useMemo } from 'react'
++import { useState, useEffect, useMemo, useRef } from 'react'
+ import { useAuth } from '@/context/AuthContext'
+ import { useNotification } from '@/context/NotificationContext'
+ import { invoiceApi, admissionApi } from '@/utils/api'
+@@ -68,6 +68,73 @@ function StatCard({ label, value, sub, Icon, accent }) {
+   )
+ }
+ 
++function InvoiceActionMenu({ inv, activeAdmissions, activeAdmissionIds, setFinalizeAdmission, setDetailInvoiceId, printInvoice }) {
++  const [open, setOpen] = useState(false)
++  const ref = useRef(null)
++  const popRef = useRef(null)
++
++  useEffect(() => {
++    const handler = (e) => {
++      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
++        setOpen(false);
++      }
++    };
++    if (open) {
++      document.addEventListener('mousedown', handler);
++      if (popRef.current) {
++        const rect = popRef.current.getBoundingClientRect();
++        if (rect.bottom > window.innerHeight - 20) {
++          popRef.current.classList.add("is-upward");
++        } else {
++          popRef.current.classList.remove("is-upward");
++        }
++      }
++    }
++    return () => {
++      document.removeEventListener('mousedown', handler);
++    };
++  }, [open]);
++
++  const isActiveAdm = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
++  const isPending = isActiveAdm && (inv.status === 'UNPAID' || inv.status === 'PARTIAL' || inv.status === 'UNSETTLED')
++  const isPaidAdmit = isActiveAdm && (inv.status === 'PAID' || inv.status === 'SETTLED')
++  const admission = isActiveAdm ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId)) : null
++
++  return (
++    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
++      <button onClick={() => setOpen(!open)} className="hms-billing-rowbtn">
++        <MoreHorizontal className="w-4 h-4" />
++      </button>
++      {open && (
++        <div className="hms-appt-am__pop" ref={popRef}>
++          <div className="hms-billing-menu__list" style={{ padding: '6px 0' }}>
++              {isPending && (
++                <button onClick={() => { setOpen(false); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
++                  <Receipt className="hms-billing-menu__item-icon w-4 h-4" />
++                  {(inv.status === 'PARTIAL' || inv.status === 'UNSETTLED') ? 'Continue Bill' : 'Generate Bill'}
++                </button>
++              )}
++              {isPaidAdmit && (
++                <button onClick={() => { setOpen(false); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
++                  <Plus className="hms-billing-menu__item-icon w-4 h-4" /> Add Charges
++                </button>
++              )}
++              {!isPending && (
++                <button onClick={() => { setOpen(false); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
++                  <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
++                </button>
++              )}
++              <div className="hms-billing-menu__divider" />
++              <button onClick={() => { setOpen(false); printInvoice(inv) }} className="hms-billing-menu__item">
++                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
++              </button>
++          </div>
++        </div>
++      )}
++    </div>
++  )
++}
++
+ export default function IPDBilling() {
+   const { user } = useAuth()
+   const { notify } = useNotification()
+@@ -83,7 +150,6 @@ export default function IPDBilling() {
+   const [activeAdmissions, setActiveAdmissions] = useState([])
+   const [finalizeAdmission, setFinalizeAdmission] = useState(null)
+   const [detailInvoiceId, setDetailInvoiceId] = useState(null)
+-  const [menuState, setMenuState] = useState(null)
+ 
+   useEffect(() => {
+     const timer = setTimeout(() => {
+@@ -121,22 +187,6 @@ export default function IPDBilling() {
+     loadData()
+   }, [user?.hospitalId, page, statusFilter, debouncedSearch])
+ 
+-  useEffect(() => {
+-    const close = () => { setMenuState(null) }
+-    document.addEventListener('click', close)
+-    return () => document.removeEventListener('click', close)
+-  }, [])
+-
+-  const openRowMenu = (inv, btnEl) => {
+-    const r = btnEl.getBoundingClientRect()
+-    const flipUp = window.innerHeight - r.bottom < 210
+-    setMenuState({
+-      inv,
+-      right: window.innerWidth - r.right,
+-      ...(flipUp ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }),
+-    })
+-  }
+-
+   const activeAdmissionIds = useMemo(
+     () => new Set(activeAdmissions.map(a => String(a.id))),
+     [activeAdmissions]
+@@ -374,12 +424,14 @@ export default function IPDBilling() {
+                         </div>
+                       </td>
+                       <td className="hms-billing-actions-cell" onClick={e => e.stopPropagation()}>
+-                        <button
+-                          onClick={(e) => { e.stopPropagation(); openRowMenu(inv, e.currentTarget) }}
+-                          className="hms-billing-rowbtn"
+-                        >
+-                          <MoreHorizontal className="w-4 h-4" />
+-                        </button>
++                        <InvoiceActionMenu 
++                          inv={inv} 
++                          activeAdmissions={activeAdmissions} 
++                          activeAdmissionIds={activeAdmissionIds} 
++                          setFinalizeAdmission={setFinalizeAdmission} 
++                          setDetailInvoiceId={setDetailInvoiceId} 
++                          printInvoice={printInvoice} 
++                        />
+                       </td>
+                     </tr>
+                   )
+@@ -402,44 +454,7 @@ export default function IPDBilling() {
+         )}
+       </div>
+ 
+-      {/* Row context Action Menu */}
+-      {menuState && (() => {
+-        const { inv, right, top, bottom } = menuState
+-        const isActiveAdm = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
+-        const isPending = isActiveAdm && (inv.status === 'UNPAID' || inv.status === 'PARTIAL' || inv.status === 'UNSETTLED')
+-        const isPaidAdmit = isActiveAdm && (inv.status === 'PAID' || inv.status === 'SETTLED')
+-        const admission = isActiveAdm ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId)) : null
+-        return (
+-          <>
+-            <div className="hms-billing-menu-overlay" onClick={() => setMenuState(null)} />
+-            <div
+-              style={{ right, ...(top !== undefined ? { top } : { bottom }) }}
+-              className="hms-billing-menu"
+-            >
+-              {isPending && (
+-                <button onClick={() => { setMenuState(null); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
+-                  <Receipt className="hms-billing-menu__item-icon w-4 h-4" />
+-                  {(inv.status === 'PARTIAL' || inv.status === 'UNSETTLED') ? 'Continue Bill' : 'Generate Bill'}
+-                </button>
+-              )}
+-              {isPaidAdmit && (
+-                <button onClick={() => { setMenuState(null); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
+-                  <Plus className="hms-billing-menu__item-icon w-4 h-4" /> Add Charges
+-                </button>
+-              )}
+-              {!isPending && (
+-                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
+-                  <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
+-                </button>
+-              )}
+-              <div className="hms-billing-menu__divider" />
+-              <button onClick={() => { setMenuState(null); printInvoice(inv) }} className="hms-billing-menu__item">
+-                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
+-              </button>
+-            </div>
+-          </>
+-        )
+-      })()}
++
+ 
+       {/* Modals */}
+       {finalizeAdmission && (
+diff --git a/HMS-frontend/src/pages/billing/OPDBilling.jsx b/HMS-frontend/src/pages/billing/OPDBilling.jsx
+index 12d4295..0d5f85e 100644
+--- a/HMS-frontend/src/pages/billing/OPDBilling.jsx
++++ b/HMS-frontend/src/pages/billing/OPDBilling.jsx
+@@ -1,4 +1,4 @@
+-import { useState, useEffect } from 'react'
++import { useState, useEffect, useRef } from 'react'
+ import { useAuth } from '@/context/AuthContext'
+ import { useNotification } from '@/context/NotificationContext'
+ import { invoiceApi } from '@/utils/api'
+@@ -8,10 +8,13 @@ import TableSkeleton from '@/components/ui/TableSkeleton'
+ import PageHeader from '@/components/ui/PageHeader'
+ import CreateInvoiceModal from '@/components/modals/CreateInvoiceModal'
+ import { InvoiceDetailModal } from '@/pages/billing/InvoiceList'
++import Modal from '@/components/ui/Modal'
++import Button from '@/components/ui/Button'
+ import {
+   ReceiptText, Search, CheckCircle2, Clock, XCircle,
+   Printer, TrendingUp, AlertCircle, Loader2,
+-  Receipt, Eye, Plus, MoreHorizontal, Pill, FlaskConical, Stethoscope, BedDouble, ScanLine, Wrench
++  Receipt, Eye, Plus, MoreHorizontal, Pill, FlaskConical, Stethoscope, BedDouble, ScanLine, Wrench,
++  Info
+ } from 'lucide-react'
+ 
+ const PAGE_SIZE = 10
+@@ -70,6 +73,187 @@ function StatCard({ label, value, sub, Icon, accent }) {
+   )
+ }
+ 
++function GetInfoModal({ invoice, onClose }) {
++  if (!invoice) return null;
++  const createdAt = new Date(invoice.createdAt || invoice.created_at || new Date()).toLocaleString("en-IN", {
++    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
++  });
++  
++  const bookedBy = invoice.bookedBy || invoice.createdBy || "System";
++  const docName = invoice.appointmentDoctorName ? `Dr. ${invoice.appointmentDoctorName}` : "Not Assigned";
++
++  const schedDate = invoice.appointmentDate ? new Date(invoice.appointmentDate).toLocaleString("en-IN", {
++    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
++  }) : "—";
++
++  return (
++    <Modal
++      isOpen={true}
++      onClose={onClose}
++      title={<h2 className="text-lg font-semibold text-gray-900">Booking & Billing Information</h2>}
++      size="md"
++      footer={
++        <div className="flex w-full justify-end">
++          <Button variant="secondary" onClick={onClose}>Close</Button>
++        </div>
++      }
++    >
++      <div className="flex flex-col gap-6 py-2">
++        {/* Appointment Section */}
++        <div>
++          <h3 className="text-sm font-semibold text-gray-900 border-b pb-1 mb-4">Appointment Details</h3>
++          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
++            <div>
++              <p className="text-sm font-medium text-gray-500 mb-1">Patient Name</p>
++              <p className="text-base text-gray-900">{invoice.patientName || "—"}</p>
++            </div>
++            <div>
++              <p className="text-sm font-medium text-gray-500 mb-1">Booked On</p>
++              <p className="text-base text-gray-900">{createdAt}</p>
++            </div>
++            <div>
++              <p className="text-sm font-medium text-gray-500 mb-1">Booked By</p>
++              <p className="text-base text-gray-900">{bookedBy}</p>
++            </div>
++            <div>
++              <p className="text-sm font-medium text-gray-500 mb-1">Doctor Details</p>
++              <p className="text-base text-gray-900">{docName}</p>
++            </div>
++            <div>
++              <p className="text-sm font-medium text-gray-500 mb-1">Scheduled Time</p>
++              <p className="text-base text-gray-900">{schedDate}</p>
++            </div>
++            <div>
++              <p className="text-sm font-medium text-gray-500 mb-1">Visit Type & Token</p>
++              <p className="text-base text-gray-900">
++                {invoice.appointmentType || "—"} {invoice.appointmentTokenNumber ? `(Token: #${invoice.appointmentTokenNumber})` : ""}
++              </p>
++            </div>
++            <div>
++              <p className="text-sm font-medium text-gray-500 mb-1">Appt. Status</p>
++              <p className="text-base text-gray-900">{invoice.appointmentStatus || "—"}</p>
++            </div>
++            <div style={{ gridColumn: '1 / -1' }}>
++              <p className="text-sm font-medium text-gray-500 mb-1">Chief Complaint</p>
++              <p className="text-base text-gray-900">{invoice.appointmentChiefComplaint || "—"}</p>
++            </div>
++            {invoice.appointmentStatus === 'CANCELLED' && (
++              <div style={{ gridColumn: '1 / -1' }}>
++                <p className="text-sm font-medium text-red-500 mb-1">Cancelled Reason</p>
++                <p className="text-base text-red-600">{invoice.appointmentCancelledReason || "—"}</p>
++              </div>
++            )}
++          </div>
++        </div>
++
++        {/* Billing Section */}
++        <div>
++          <h3 className="text-sm font-semibold text-gray-900 border-b pb-1 mb-4">Billing Details</h3>
++          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
++            <div>
++              <p className="text-sm font-medium text-gray-500 mb-1">Billing Status</p>
++              <p className="text-base text-gray-900">{invoice.status || "—"}</p>
++            </div>
++            <div>
++              <p className="text-sm font-medium text-gray-500 mb-1">Subtotal</p>
++              <p className="text-base text-gray-900">₹{invoice.subtotal?.toFixed(2) || "0.00"}</p>
++            </div>
++            {Number(invoice.discount) > 0 && (
++              <div>
++                <p className="text-sm font-medium text-gray-500 mb-1">Discount</p>
++                <p className="text-base text-gray-900 text-green-600">-₹{invoice.discount?.toFixed(2)}</p>
++              </div>
++            )}
++            {Number(invoice.tax) > 0 && (
++              <div>
++                <p className="text-sm font-medium text-gray-500 mb-1">Tax</p>
++                <p className="text-base text-gray-900">₹{invoice.tax?.toFixed(2)}</p>
++              </div>
++            )}
++            <div>
++              <p className="text-sm font-medium text-gray-500 mb-1">Grand Total</p>
++              <p className="text-base font-semibold text-gray-900">₹{invoice.total?.toFixed(2) || "0.00"}</p>
++            </div>
++            {Number(invoice.paidAmount) > 0 && (
++              <>
++                <div>
++                  <p className="text-sm font-medium text-gray-500 mb-1">Paid Amount</p>
++                  <p className="text-base text-green-600 font-semibold">₹{invoice.paidAmount?.toFixed(2)}</p>
++                </div>
++                {invoice.paymentMethod && (
++                  <div>
++                    <p className="text-sm font-medium text-gray-500 mb-1">Payment Method</p>
++                    <p className="text-base text-gray-900">{invoice.paymentMethod.replace(/_/g, ' ')}</p>
++                  </div>
++                )}
++              </>
++            )}
++          </div>
++        </div>
++      </div>
++    </Modal>
++  );
++}
++
++function InvoiceActionMenu({ inv, setDetailInvoiceId, printInvoice, onGetInfo }) {
++  const [open, setOpen] = useState(false)
++  const ref = useRef(null)
++  const popRef = useRef(null)
++
++  useEffect(() => {
++    const handler = (e) => {
++      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
++        setOpen(false);
++      }
++    };
++    if (open) {
++      document.addEventListener('mousedown', handler);
++      if (popRef.current) {
++        const rect = popRef.current.getBoundingClientRect();
++        if (rect.bottom > window.innerHeight - 20) {
++          popRef.current.classList.add("is-upward");
++        } else {
++          popRef.current.classList.remove("is-upward");
++        }
++      }
++    }
++    return () => {
++      document.removeEventListener('mousedown', handler);
++    };
++  }, [open]);
++
++  return (
++    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
++      <button onClick={() => setOpen(!open)} className="hms-billing-rowbtn">
++        <MoreHorizontal className="w-4 h-4" />
++      </button>
++      {open && (
++        <div className="hms-appt-am__pop" ref={popRef}>
++          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
++            {(inv.status === 'UNPAID' || inv.status === 'PARTIAL') && (
++              <button onClick={() => { setOpen(false); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
++                <Receipt className="hms-billing-menu__item-icon w-4 h-4" /> Collect Payment
++              </button>
++            )}
++            {inv.status !== 'UNPAID' && inv.status !== 'PARTIAL' && (
++              <button onClick={() => { setOpen(false); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
++                <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
++              </button>
++            )}
++            <button onClick={() => { setOpen(false); onGetInfo(inv) }} className="hms-billing-menu__item">
++              <Info className="hms-billing-menu__item-icon w-4 h-4" /> Get Info
++            </button>
++            <div className="hms-billing-menu__divider" />
++            <button onClick={() => { setOpen(false); printInvoice(inv) }} className="hms-billing-menu__item">
++              <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
++            </button>
++          </div>
++        </div>
++      )}
++    </div>
++  )
++}
++
+ export default function OPDBilling() {
+   const { user } = useAuth()
+   const { notify } = useNotification()
+@@ -82,9 +266,10 @@ export default function OPDBilling() {
+   const [page, setPage]                   = useState(1)
+   const [totalPages, setTotalPages]       = useState(1)
+   const [totalElements, setTotalElements] = useState(0)
++
+   const [showCreate, setShowCreate]       = useState(false)
+   const [detailInvoiceId, setDetailInvoiceId] = useState(null)
+-  const [menuState, setMenuState]         = useState(null)
++  const [infoInvoice, setInfoInvoice]     = useState(null)
+ 
+   useEffect(() => {
+     const timer = setTimeout(() => {
+@@ -118,22 +303,6 @@ export default function OPDBilling() {
+     loadData()
+   }, [user?.hospitalId, page, statusFilter, debouncedSearch])
+ 
+-  useEffect(() => {
+-    const close = () => { setMenuState(null) }
+-    document.addEventListener('click', close)
+-    return () => document.removeEventListener('click', close)
+-  }, [])
+-
+-  const openRowMenu = (inv, btnEl) => {
+-    const r = btnEl.getBoundingClientRect()
+-    const flipUp = window.innerHeight - r.bottom < 210
+-    setMenuState({
+-      inv,
+-      right: window.innerWidth - r.right,
+-      ...(flipUp ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }),
+-    })
+-  }
+-
+   const printInvoice = (inv) => {
+     const items = inv.items ?? []
+     const total = Number(inv.total)
+@@ -352,12 +521,12 @@ export default function OPDBilling() {
+                         </div>
+                       </td>
+                       <td className="hms-billing-actions-cell" onClick={e => e.stopPropagation()}>
+-                        <button
+-                          onClick={(e) => { e.stopPropagation(); openRowMenu(inv, e.currentTarget) }}
+-                          className="hms-billing-rowbtn"
+-                        >
+-                          <MoreHorizontal className="w-4 h-4" />
+-                        </button>
++                        <InvoiceActionMenu 
++                          inv={inv} 
++                          setDetailInvoiceId={setDetailInvoiceId} 
++                          printInvoice={printInvoice}
++                          onGetInfo={setInfoInvoice}
++                        />
+                       </td>
+                     </tr>
+                   )
+@@ -380,34 +549,7 @@ export default function OPDBilling() {
+         )}
+       </div>
+ 
+-      {/* Context Action Menu */}
+-      {menuState && (() => {
+-        const { inv, right, top, bottom } = menuState
+-        return (
+-          <>
+-            <div className="hms-billing-menu-overlay" onClick={() => setMenuState(null)} />
+-            <div
+-              style={{ right, ...(top !== undefined ? { top } : { bottom }) }}
+-              className="hms-billing-menu"
+-            >
+-              {(inv.status === 'UNPAID' || inv.status === 'PARTIAL') && (
+-                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
+-                  <Receipt className="hms-billing-menu__item-icon w-4 h-4" /> Collect Payment
+-                </button>
+-              )}
+-              {inv.status !== 'UNPAID' && inv.status !== 'PARTIAL' && (
+-                <button onClick={() => { setMenuState(null); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
+-                  <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
+-                </button>
+-              )}
+-              <div className="hms-billing-menu__divider" />
+-              <button onClick={() => { setMenuState(null); printInvoice(inv) }} className="hms-billing-menu__item">
+-                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
+-              </button>
+-            </div>
+-          </>
+-        )
+-      })()}
++
+ 
+       {/* Modals */}
+       {showCreate && <CreateInvoiceModal onClose={() => setShowCreate(false)} onCreated={loadData} />}
+@@ -419,6 +561,13 @@ export default function OPDBilling() {
+           onInvoiceUpdated={loadData}
+         />
+       )}
++
++      {infoInvoice && (
++        <GetInfoModal
++          invoice={infoInvoice}
++          onClose={() => setInfoInvoice(null)}
++        />
++      )}
+       </div>
+     </div>
+   )
+diff --git a/HMS-frontend/src/pages/checkups/CheckupBookings.jsx b/HMS-frontend/src/pages/checkups/CheckupBookings.jsx
+index 5540975..778dd7e 100644
+--- a/HMS-frontend/src/pages/checkups/CheckupBookings.jsx
++++ b/HMS-frontend/src/pages/checkups/CheckupBookings.jsx
+@@ -6,6 +6,8 @@ import { fmtId } from "@/utils/idFormat";
+ import SearchableSelect from "@/components/ui/SearchableSelect";
+ import PageHeader from "@/components/ui/PageHeader";
+ import TableSkeleton from "@/components/ui/TableSkeleton";
++import Modal from "@/components/ui/Modal";
++import Button from "@/components/ui/Button";
+ import {
+   ClipboardList, Plus, Search, X, Calendar, Clock, User,
+   AlertCircle, CheckCircle2, Loader2, ChevronRight,
+@@ -51,7 +53,6 @@ function PaymentBadge({ status }) {
+ }
+ 
+ function BookingModal({ hospitalId, onClose, onBooked }) {
+-  const [step, setStep] = useState(1);
+   const [packages, setPackages] = useState([]);
+   const [doctors, setDoctors] = useState([]);
+   const [patientQuery, setPatientQuery] = useState("");
+@@ -115,136 +116,129 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
+   };
+ 
+   return (
+-    <div className="hms-checkup-modal-overlay">
+-      <div className="hms-checkup-modal">
+-        <div className="hms-checkup-modal__head">
+-          <div>
+-            <h2 className="hms-checkup-modal__title">Book Health Checkup</h2>
+-            <p className="hms-checkup-modal__sub">Step {step} of 2</p>
+-          </div>
+-          <button onClick={onClose} className="hms-checkup-modal__close"><X className="w-4 h-4" /></button>
++    <Modal
++      isOpen={true}
++      onClose={onClose}
++      size={selectedPkg ? "xl" : "md"}
++      title={
++        <div>
++          <h2 className="text-lg font-semibold text-gray-900">Book Health Checkup</h2>
+         </div>
+-
+-        <div className="hms-checkup-modal__body">
++      }
++      footer={
++        <div className="flex items-center justify-between w-full">
++          <Button variant="secondary" onClick={onClose}>Cancel</Button>
++          <Button disabled={!canProceed} loading={saving} onClick={handleBook}>
++             <CheckCircle2 className="w-4 h-4 mr-2" /> Confirm Booking
++          </Button>
++        </div>
++      }
++    >
++      <div className={`hms-checkup-modal__split ${selectedPkg ? 'has-package' : ''}`}>
++        {/* Left Form Pane */}
++        <div className="hms-checkup-modal__left">
+           {error && (
+             <div className="hms-checkup-modal__alert">
+               <AlertCircle className="w-4 h-4 shrink-0" />{error}
+             </div>
+           )}
+ 
+-          {step === 1 && (
+-            <>
+-              <div ref={patientRef} className="relative">
+-                <label className="hms-checkup-modal__label"><User className="inline w-3 h-3 mr-1" />Patient *</label>
+-                <div className="relative">
+-                  <Search className="hms-checkup-modal__search-icon w-4 h-4" />
+-                  <input value={patientQuery} onChange={e => searchPatient(e.target.value)} onFocus={() => patientResults.length && setPatientOpen(true)} placeholder="Search by name, UHID or phone…" className="hms-checkup-modal__input has-icon" />
+-                </div>
+-                {patientOpen && patientResults.length > 0 && (
+-                  <div className="hms-checkup-modal__suggest">
+-                    {patientResults.slice(0, 5).map(p => (
+-                      <button key={p.id} onClick={() => selectPatient(p)} className="hms-checkup-modal__suggest-row">
+-                        <p className="hms-checkup-modal__suggest-name">{p.firstName} {p.lastName}</p>
+-                        <p className="hms-checkup-modal__suggest-sub">{fmtId(p.uhid)} · {p.phone}</p>
+-                      </button>
+-                    ))}
+-                  </div>
+-                )}
+-              </div>
+-
+-              <div>
+-                <label className="hms-checkup-modal__label">Package *</label>
+-                <SearchableSelect
+-                  options={packages.map(p => ({ value: p.id, label: `${p.name} — ₹${Number(p.price).toLocaleString("en-IN")}` }))}
+-                  value={form.packageId}
+-                  onChange={v => set("packageId", v)}
+-                  placeholder="— Select a package —"
+-                />
++          <div ref={patientRef} className="relative">
++            <label className="hms-checkup-modal__label"><User className="inline w-3 h-3 mr-1" />Patient *</label>
++            <div className="relative">
++              <Search className="hms-checkup-modal__search-icon w-4 h-4" />
++              <input value={patientQuery} onChange={e => searchPatient(e.target.value)} onFocus={() => patientResults.length && setPatientOpen(true)} placeholder="Search by name, UHID or phone…" className="hms-checkup-modal__input has-icon" />
++            </div>
++            {patientOpen && patientResults.length > 0 && (
++              <div className="hms-checkup-modal__suggest">
++                {patientResults.slice(0, 5).map(p => (
++                  <button key={p.id} onClick={() => selectPatient(p)} className="hms-checkup-modal__suggest-row">
++                    <p className="hms-checkup-modal__suggest-name">{p.firstName} {p.lastName}</p>
++                    <p className="hms-checkup-modal__suggest-sub">{fmtId(p.uhid)} · {p.phone}</p>
++                  </button>
++                ))}
+               </div>
++            )}
++          </div>
+ 
+-              {selectedPkg && (
+-                <div className="hms-checkup-modal__pkg-tile">
+-                  <p className="hms-checkup-modal__pkg-tile-title">{selectedPkg.tests?.length || 0} tests included</p>
+-                  <p className="hms-checkup-modal__pkg-tile-tests">{selectedPkg.tests?.map(t => t.testName).join(" · ")}</p>
+-                </div>
+-              )}
++          <div>
++            <label className="hms-checkup-modal__label">Package *</label>
++            <SearchableSelect
++              options={packages.map(p => ({ value: p.id, label: `${p.name} — ₹${Number(p.price).toLocaleString("en-IN")}` }))}
++              value={form.packageId}
++              onChange={v => set("packageId", v)}
++              placeholder="— Select a package —"
++            />
++          </div>
+ 
+-              <div className="hms-form-grid is-2col">
+-                <div>
+-                  <label className="hms-checkup-modal__label"><Calendar className="inline w-3 h-3 mr-1" />Date *</label>
+-                  <input type="date" value={form.scheduledDate} onChange={e => set("scheduledDate", e.target.value)} className="hms-checkup-modal__input" />
+-                </div>
+-                <div>
+-                  <label className="hms-checkup-modal__label"><Clock className="inline w-3 h-3 mr-1" />Time</label>
+-                  <input type="time" value={form.scheduledTime} onChange={e => set("scheduledTime", e.target.value)} className="hms-checkup-modal__input" />
+-                </div>
+-              </div>
+-            </>
+-          )}
++          <div className="hms-form-grid is-2col">
++            <div>
++              <label className="hms-checkup-modal__label"><Calendar className="inline w-3 h-3 mr-1" />Date *</label>
++              <input type="date" value={form.scheduledDate} onChange={e => set("scheduledDate", e.target.value)} className="hms-checkup-modal__input" />
++            </div>
++            <div>
++              <label className="hms-checkup-modal__label"><Clock className="inline w-3 h-3 mr-1" />Time</label>
++              <input type="time" value={form.scheduledTime} onChange={e => set("scheduledTime", e.target.value)} className="hms-checkup-modal__input" />
++            </div>
++          </div>
+ 
+-          {step === 2 && (
+-            <>
+-              <div>
+-                <label className="hms-checkup-modal__label"><UserCheck className="inline w-3 h-3 mr-1" />Assigned Doctor</label>
+-                <SearchableSelect
+-                  value={form.doctorId}
+-                  onChange={value => set("doctorId", value)}
+-                  options={[{ value: "", label: "— Assign later —" }, ...doctors.map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName} · ${d.specialization}` }))]}
+-                />
+-              </div>
++          <hr className="border-gray-100" />
+ 
+-              <div className="hms-form-grid is-2col">
+-                <div>
+-                  <label className="hms-checkup-modal__label"><Banknote className="inline w-3 h-3 mr-1" />Payment Status</label>
+-                  <SearchableSelect
+-                    value={form.paymentStatus}
+-                    onChange={value => set("paymentStatus", value)}
+-                    options={[
+-                      { value: "PENDING", label: "Pending" },
+-                      { value: "PAID", label: "Paid" },
+-                      { value: "PARTIAL", label: "Partial" },
+-                    ]}
+-                  />
+-                </div>
+-                <div>
+-                  <label className="hms-checkup-modal__label">Amount Paid (₹)</label>
+-                  <input type="number" step="0.01" value={form.amountPaid} onChange={e => set("amountPaid", e.target.value)} placeholder={selectedPkg ? String(selectedPkg.price) : "0.00"} className="hms-checkup-modal__input" />
+-                </div>
+-              </div>
++          <div>
++            <label className="hms-checkup-modal__label"><UserCheck className="inline w-3 h-3 mr-1" />Assigned Doctor</label>
++            <SearchableSelect
++              value={form.doctorId}
++              onChange={value => set("doctorId", value)}
++              options={[{ value: "", label: "— Assign later —" }, ...doctors.map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName} · ${d.specialization}` }))]}
++            />
++          </div>
+ 
+-              <div>
+-                <label className="hms-checkup-modal__label">Notes</label>
+-                <textarea rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Any special instructions or notes…" className="hms-checkup-modal__input" />
+-              </div>
++          <div className="hms-form-grid is-2col">
++            <div>
++              <label className="hms-checkup-modal__label"><Banknote className="inline w-3 h-3 mr-1" />Payment Status</label>
++              <SearchableSelect
++                value={form.paymentStatus}
++                onChange={value => set("paymentStatus", value)}
++                clearable={false}
++                searchable={false}
++                options={[
++                  { value: "PENDING", label: "Pending" },
++                  { value: "PAID", label: "Paid" },
++                ]}
++              />
++            </div>
++            <div>
++              <label className="hms-checkup-modal__label">Amount Paid (₹)</label>
++              <input type="number" step="0.01" value={form.amountPaid} onChange={e => set("amountPaid", e.target.value)} placeholder={selectedPkg ? String(selectedPkg.price) : "0.00"} className="hms-checkup-modal__input" />
++            </div>
++          </div>
+ 
+-              {/* Summary */}
+-              <div className="hms-checkup-modal__summary">
+-                <p className="hms-checkup-modal__summary-title">Booking Summary</p>
+-                <p className="hms-checkup-modal__summary-row"><strong>Patient:</strong> {form.patient?.firstName} {form.patient?.lastName}</p>
+-                <p className="hms-checkup-modal__summary-row"><strong>Package:</strong> {selectedPkg?.name}</p>
+-                <p className="hms-checkup-modal__summary-row"><strong>Date:</strong> {form.scheduledDate} at {form.scheduledTime}</p>
+-                <p className="hms-checkup-modal__summary-total">Total: ₹{selectedPkg ? Number(selectedPkg.price).toLocaleString("en-IN") : "—"}</p>
+-              </div>
+-            </>
+-          )}
++          <div>
++            <label className="hms-checkup-modal__label">Notes</label>
++            <textarea rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Any special instructions or notes…" className="hms-checkup-modal__input" />
++          </div>
+         </div>
+ 
+-        <div className="hms-checkup-modal__foot">
+-          {step === 2 ? (
+-            <button onClick={() => setStep(1)} className="hms-checkup-modal__btn-back">← Back</button>
+-          ) : <div />}
+-          {step === 1 ? (
+-            <button disabled={!canProceed} onClick={() => setStep(2)} className="hms-checkup-modal__btn-next">
+-              Next →
+-            </button>
+-          ) : (
+-            <button disabled={saving} onClick={handleBook} className="hms-checkup-modal__btn-next">
+-              {saving ? <><Loader2 className="w-4 h-4 zu-spinner" /> Booking…</> : <><CheckCircle2 className="w-4 h-4" /> Confirm Booking</>}
+-            </button>
+-          )}
+-        </div>
++        {/* Right Details Pane (Only if package is selected) */}
++        {selectedPkg && (
++          <div className="hms-checkup-modal__right">
++            <div className="hms-checkup-modal__right-box">
++              <h3 className="hms-checkup-modal__right-title">{selectedPkg.name}</h3>
++              <p className="hms-checkup-modal__right-price">₹{Number(selectedPkg.price).toLocaleString("en-IN")}</p>
++              
++              <div className="hms-checkup-modal__right-divider">
++                <p className="hms-checkup-modal__right-subtitle">{selectedPkg.tests?.length || 0} tests included:</p>
++                <ul className="hms-checkup-modal__right-list">
++                  {selectedPkg.tests?.map((t, i) => (
++                    <li key={i}>{t.testName}</li>
++                  ))}
++                </ul>
++              </div>
++            </div>
++          </div>
++        )}
+       </div>
+-    </div>
++    </Modal>
+   );
+ }
+ 
+@@ -381,32 +375,25 @@ export default function CheckupBookings() {
+ 
+       {/* Filters */}
+       <div className="zu-filter-bar">
++        <div style={{ minWidth: 200 }}>
++          <SearchableSelect
++            value={filterStatus}
++            onChange={setFilterStatus}
++            clearable={false}
++            options={[
++              { value: "ALL", label: `All (${bookings.length})` },
++              ...Object.entries(STATUS_CONFIG).map(([k, v]) => {
++                const count = bookings.filter(b => b.status === k).length;
++                return { value: k, label: count > 0 ? `${v.label} (${count})` : v.label };
++              })
++            ]}
++          />
++        </div>
+         <div className="zu-filter-bar__search">
+           <Search className="zu-filter-bar__search-icon" />
+           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search patient, UHID, booking number…" className="zu-filter-bar__search-input" />
+         </div>
+         <div className="zu-filter-bar__controls">
+-          <div className="zu-pill-group">
+-            <button 
+-              onClick={() => setFilterStatus("ALL")}
+-              className={`zu-pill-group__btn ${filterStatus === "ALL" ? "is-active" : ""}`}
+-            >
+-              All
+-            </button>
+-            {Object.entries(STATUS_CONFIG).map(([k, v]) => {
+-              const count = bookings.filter(b => b.status === k).length;
+-              return (
+-                <button
+-                  key={k}
+-                  onClick={() => setFilterStatus(k)}
+-                  className={`zu-pill-group__btn ${filterStatus === k ? "is-active" : ""}`}
+-                >
+-                  {count > 0 && <span className="zu-pill-group__btn-count">{count}</span>}
+-                  {v.label}
+-                </button>
+-              );
+-            })}
+-          </div>
+           <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="zu-filter-date" />
+         </div>
+       </div>
+diff --git a/HMS-frontend/src/pages/patients/PatientDetails.jsx b/HMS-frontend/src/pages/patients/PatientDetails.jsx
+index 090d51a..b33abf4 100644
+--- a/HMS-frontend/src/pages/patients/PatientDetails.jsx
++++ b/HMS-frontend/src/pages/patients/PatientDetails.jsx
+@@ -19,22 +19,38 @@ const TYPE_META = {
+   OTHER:        { label: "Other", dotMod: "is-other", chipMod: "is-other" }
+ };
+ 
+-function SideInfoRow({ icon, label, value }) {
++const getDisplayStatus = (appt) => {
++  if (appt.status === "SCHEDULED") {
++    const now = new Date();
++    const offset = now.getTimezoneOffset();
++    const localNow = new Date(now.getTime() - offset * 60 * 1e3);
++    const todayStr = localNow.toISOString().split("T")[0];
++    const timeStr = localNow.toISOString().split("T")[1].substring(0, 5);
++    if (appt.apptDate < todayStr || (appt.apptDate === todayStr && appt.apptTime < timeStr)) {
++      return "EXPIRED";
++    }
++  }
++  return appt.status;
++};
++
++function SideInfoRow({ icon: Icon, label, value }) {
+   return (
+-    <div className="hms-pat-detail__row">
+-      <div className="hms-pat-detail__row-icon">{icon}</div>
++    <div className="hms-side-info">
++      <div className="hms-side-info__icon">
++        <Icon size={14} />
++      </div>
+       <div>
+-        <p className="hms-pat-detail__row-label">{label}</p>
+-        <p className="hms-pat-detail__row-value">{value || "—"}</p>
++        <p className="hms-side-info__label">{label}</p>
++        <p className="hms-side-info__value">{value || "—"}</p>
+       </div>
+     </div>
+   );
+ }
+-function SectionHeader({ icon, title }) {
++function SectionHeader({ icon: Icon, title }) {
+   return (
+-    <div className="hms-pat-detail__sect-head">
+-      <div className="hms-pat-detail__sect-icon">{icon}</div>
+-      <h3 className="hms-pat-detail__sect-title">{title}</h3>
++    <div className="hms-side-section__head">
++      <Icon size={14} className="text-gray-500" />
++      <h3 className="hms-side-section__title">{title}</h3>
+     </div>
+   );
+ }
+@@ -202,9 +218,12 @@ function PatientDetails() {
+     const offset = now.getTimezoneOffset();
+     const localNow = new Date(now.getTime() - offset * 60 * 1e3);
+     const todayStr = localNow.toISOString().split("T")[0];
++    const timeStr = localNow.toISOString().split("T")[1].substring(0, 5);
+     const future = appointments.filter((a) => {
+       if (!["SCHEDULED", "CONFIRMED"].includes(a.status)) return false;
+-      return a.apptDate >= todayStr;
++      if (a.apptDate < todayStr) return false;
++      if (a.apptDate === todayStr && a.apptTime < timeStr) return false;
++      return true;
+     }).sort((a, b) => {
+       const dateCompare = a.apptDate.localeCompare(b.apptDate);
+       if (dateCompare !== 0) return dateCompare;
+@@ -240,23 +259,23 @@ function PatientDetails() {
+   );
+   const age = patient.dob ? calcAge(patient.dob) : null;
+   return (
+-    <div className="hms-pat-detail">
++    <div className="hms-detail-page">
+       {/* ━━━━━━━━━━━━━━━  LEFT PANE — Patient Profile  ━━━━━━━━━━━━━━━ */}
+-      <aside className="hms-pat-detail__aside">
++      <aside className="hms-detail-page__aside">
+         {/* Back & Actions */}
+-        <div className="hms-pat-detail__topbar">
++        <div className="hms-detail-aside__topbar">
+           <button
+             onClick={() => navigate(-1)}
+-            className="hms-pat-detail__back"
++            className="hms-detail-aside__back"
+           >
+-            <ArrowLeft className="w-3 h-3" /> Back to Patients
++            <ArrowLeft size={14} /> Back to Patients
+           </button>
+           <div className="relative">
+             <button
+               onClick={() => setMenuOpen(!menuOpen)}
+-              className="hms-pat-detail__menu-btn"
++              className="zu-btn-icon"
+             >
+-              <MoreHorizontal className="w-5 h-5" />
++              <MoreHorizontal size={14} />
+             </button>
+             {menuOpen && (
+               <div className="hms-pat-detail__menu">
+@@ -277,11 +296,13 @@ function PatientDetails() {
+           </div>
+         </div>
+         {/* Avatar + Name block */}
+-        <div className="hms-pat-detail__hero">
+-          <div className="hms-pat-detail__hero-avatar">{patient.firstName[0]}{patient.lastName?.[0] ?? ""}</div>
+-          <h2 className="hms-pat-detail__hero-name">{patient.firstName} {patient.lastName}</h2>
+-          <p className="hms-pat-detail__hero-sub">{age !== null ? `${age} years` : "—"} · {patient.gender}</p>
+-          <div className="hms-pat-detail__hero-chips">
++        <div className="hms-detail-aside__hero">
++          <span className="hms-avatar is-2xl is-info hms-detail-aside__hero-avatar">
++            {patient.firstName[0]}{patient.lastName?.[0] ?? ""}
++          </span>
++          <h2 className="hms-detail-aside__name">{patient.firstName} {patient.lastName}</h2>
++          <p className="hms-detail-aside__subtitle">{age !== null ? `${age} years` : "—"} · {patient.gender}</p>
++          <div className="mt-3 flex items-center justify-center gap-2">
+             <span className="hms-pat-detail__hero-chip is-active">Active</span>
+             {blood && (
+               <span className="hms-pat-detail__hero-chip is-blood">
+@@ -289,24 +310,24 @@ function PatientDetails() {
+               </span>
+             )}
+           </div>
+-          <p className="hms-pat-detail__hero-uhid">{fmtId(patient.uhid)}</p>
++          <p className="hms-detail-aside__reg mt-2">{fmtId(patient.uhid)}</p>
+         </div>
+         {/* Sections */}
+-        <div className="hms-pat-detail__sections">
++        <div className="hms-detail-aside__sections">
+           {/* Personal Information */}
+           <div>
+-            <SectionHeader icon={<User className="w-4 h-4" />} title="Personal Information" />
+-            <div className="hms-pat-detail__sect-list">
+-              <SideInfoRow icon={<Calendar className="w-4 h-4" />} label="Date of Birth" value={patient.dob ? formatDate(patient.dob) : null} />
+-              <SideInfoRow icon={<Phone className="w-4 h-4" />} label="Phone" value={patient.phone} />
+-              <SideInfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={patient.email} />
+-              <SideInfoRow icon={<MapPin className="w-4 h-4" />} label="Address" value={patient.address} />
++            <SectionHeader icon={User} title="Personal Information" />
++            <div className="hms-side-section__list">
++              <SideInfoRow icon={Calendar} label="Date of Birth" value={patient.dob ? formatDate(patient.dob) : null} />
++              <SideInfoRow icon={Phone} label="Phone" value={patient.phone} />
++              <SideInfoRow icon={Mail} label="Email" value={patient.email} />
++              <SideInfoRow icon={MapPin} label="Address" value={patient.address} />
+             </div>
+           </div>
+           {/* Room Allocation */}
+           {allocatedRoom && (
+             <div>
+-              <SectionHeader icon={<Bed className="w-4 h-4" />} title="Allocation" />
++              <SectionHeader icon={Bed} title="Allocation" />
+               <div className="hms-pat-room-card">
+                 <p className="hms-pat-room-card__label">Current Room</p>
+                 <div className="hms-pat-room-card__row">
+@@ -324,18 +345,18 @@ function PatientDetails() {
+           )}
+           {/* Medical Information */}
+           <div>
+-            <SectionHeader icon={<Activity className="w-4 h-4" />} title="Medical Information" />
+-            <div className="hms-pat-detail__sect-list">
+-              <SideInfoRow icon={<Droplets className="w-4 h-4" />} label="Blood Type" value={patient.bloodGroup} />
+-              <SideInfoRow icon={<FileText className="w-4 h-4" />} label="Total Records" value={recordsLoading ? "…" : String(records.length)} />
+-              <SideInfoRow icon={<Calendar className="w-4 h-4" />} label="Registered" value={formatDate(patient.createdAt)} />
++            <SectionHeader icon={Activity} title="Medical Information" />
++            <div className="hms-side-section__list">
++              <SideInfoRow icon={Droplets} label="Blood Type" value={patient.bloodGroup} />
++              <SideInfoRow icon={FileText} label="Total Records" value={recordsLoading ? "…" : String(records.length)} />
++              <SideInfoRow icon={Calendar} label="Registered" value={formatDate(patient.createdAt)} />
+             </div>
+           </div>
+         </div>
+       </aside>
+ 
+       {/* ━━━━━━━━━━━━━━━  RIGHT PANE — Details  ━━━━━━━━━━━━━━━ */}
+-      <div className="hms-pat-detail__main">
++      <div className="hms-detail-page__main">
+         {/* Tab bar */}
+         <div className="hms-pat-detail__tabs">
+           {["overview", "appointments", "records", "radiology", "billing"].map((t) => (
+@@ -549,14 +570,15 @@ function PatientDetails() {
+               ) : (
+                 <div className="hms-pat-appt-grid">
+                   {appointments.map((appt) => {
+-                    const stripeMod = ["COMPLETED"].includes(appt.status) ? "is-success"
+-                      : ["CANCELLED", "NO_SHOW"].includes(appt.status) ? "is-danger"
+-                      : ["IN_PROGRESS"].includes(appt.status) ? "is-warning"
+-                      : "is-info";
+-                    const statusMod = ["COMPLETED"].includes(appt.status) ? "is-success"
+-                      : ["CANCELLED", "NO_SHOW"].includes(appt.status) ? "is-danger"
+-                      : ["IN_PROGRESS"].includes(appt.status) ? "is-warning"
+-                      : "is-info";
++                    const dispStatus = getDisplayStatus(appt);
++                    const stripeMod = ["COMPLETED"].includes(dispStatus) ? "is-success"
++                      : ["CANCELLED", "NO_SHOW", "EXPIRED"].includes(dispStatus) ? "is-danger"
++                      : ["IN_PROGRESS"].includes(dispStatus) ? "is-warning"
++                      : "is-primary";
++                    const statusMod = ["COMPLETED"].includes(dispStatus) ? "is-success"
++                      : ["CANCELLED", "NO_SHOW", "EXPIRED"].includes(dispStatus) ? "is-danger"
++                      : ["IN_PROGRESS"].includes(dispStatus) ? "is-warning"
++                      : "is-primary";
+                     return (
+                       <div key={appt.id} className="hms-pat-appt-card">
+                         {/* Status indicator line */}
+@@ -568,7 +590,7 @@ function PatientDetails() {
+                               <Clock className="w-3 h-3" />{appt.apptTime.substring(0, 5)} - {appt.apptEndTime ? appt.apptEndTime.substring(0, 5) : "Unknown"}
+                             </p>
+                           </div>
+-                          <span className={`hms-pat-appt-status ${statusMod}`}>{appt.status.replace("_", " ")}</span>
++                          <span className={`hms-pat-appt-status ${statusMod}`}>{dispStatus.replace(/_/g, " ")}</span>
+                         </div>
+                         <div className="hms-pat-appt-card__body">
+                           <div className="hms-pat-appt-doctor">
+diff --git a/HMS-frontend/src/pages/patients/Patients.jsx b/HMS-frontend/src/pages/patients/Patients.jsx
+index 6b84367..32735ee 100644
+--- a/HMS-frontend/src/pages/patients/Patients.jsx
++++ b/HMS-frontend/src/pages/patients/Patients.jsx
+@@ -1,4 +1,4 @@
+-import { useEffect, useState } from "react";
++import { useState, useEffect, useRef } from "react";
+ import { useNavigate, useLocation } from "react-router-dom";
+ import { useAuth } from "@/context/AuthContext";
+ import { useNotification } from "@/context/NotificationContext";
+@@ -10,7 +10,67 @@ import PageHeader from "@/components/ui/PageHeader";
+ import { TableSkeleton } from "@/components/ui";
+ import { calcAge, formatDate } from "@/utils/validators";
+ import { fmtId } from "@/utils/idFormat";
+-import { Search, Loader2, Users, MoreHorizontal, Pencil, ExternalLink, Calendar } from "lucide-react";
++import { Search, Users, MoreHorizontal, Pencil, ExternalLink, Calendar } from "lucide-react";
++
++function PatientActionMenu({ p, setModal, setBookModal, navigate }) {
++  const [open, setOpen] = useState(false);
++  const ref = useRef(null);
++  const popRef = useRef(null);
++
++  useEffect(() => {
++    const handler = (e) => {
++      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
++        setOpen(false);
++      }
++    };
++    if (open) {
++      document.addEventListener('mousedown', handler);
++      if (popRef.current) {
++        const rect = popRef.current.getBoundingClientRect();
++        if (rect.bottom > window.innerHeight - 20) {
++          popRef.current.classList.add("is-upward");
++        } else {
++          popRef.current.classList.remove("is-upward");
++        }
++      }
++    }
++    return () => {
++      document.removeEventListener('mousedown', handler);
++    };
++  }, [open]);
++
++  return (
++    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
++      <button onClick={() => setOpen(!open)} className="hms-pat-kebab-btn">
++        <MoreHorizontal className="w-5 h-5" />
++      </button>
++      {open && (
++        <div className="hms-appt-am__pop" ref={popRef}>
++          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
++            <button
++              onClick={() => { setOpen(false); setModal({ open: true, patient: p }); }}
++              className="hms-pat-kebab-menu__item"
++            >
++              <Pencil className="w-4 h-4" /> Edit Patient
++            </button>
++            <button
++              onClick={() => { setOpen(false); setBookModal({ open: true, patient: p }); }}
++              className="hms-pat-kebab-menu__item"
++            >
++              <Calendar className="w-4 h-4" /> Book Appointment
++            </button>
++            <button
++              onClick={() => { setOpen(false); navigate(`/patients/${p.id}`); }}
++              className="hms-pat-kebab-menu__item"
++            >
++              <ExternalLink className="w-4 h-4" /> Patient Details
++            </button>
++          </div>
++        </div>
++      )}
++    </div>
++  );
++}
+ 
+ const PAGE_SIZE = 30;
+ 
+@@ -30,7 +90,6 @@ function Patients() {
+   const [totalElements, setTotalElements] = useState(0);
+   const [modal, setModal] = useState({ open: false, patient: null });
+   const [bookModal, setBookModal] = useState({ open: false, patient: null });
+-  const [openMenuId, setOpenMenuId] = useState(null);
+ 
+   const load = () => {
+     if (!user?.hospitalId) return;
+@@ -180,43 +239,12 @@ function Patients() {
+                         }
+                       </td>
+                       <td className="is-right">
+-                        <button
+-                          onClick={(e) => {
+-                            e.stopPropagation();
+-                            setOpenMenuId(openMenuId === p.id ? null : p.id);
+-                          }}
+-                          className="hms-pat-kebab-btn"
+-                        >
+-                          <MoreHorizontal className="w-5 h-5" />
+-                        </button>
+-                        {openMenuId === p.id && (
+-                          <>
+-                            <div className="hms-pat-kebab-menu__scrim" onClick={() => setOpenMenuId(null)} />
+-                            <div
+-                              className="hms-pat-kebab-menu"
+-                              onClick={(e) => e.stopPropagation()}
+-                            >
+-                              <button
+-                                onClick={() => { setOpenMenuId(null); setModal({ open: true, patient: p }); }}
+-                                className="hms-pat-kebab-menu__item"
+-                              >
+-                                <Pencil className="w-4 h-4" /> Edit Patient
+-                              </button>
+-                              <button
+-                                onClick={() => { setOpenMenuId(null); setBookModal({ open: true, patient: p }); }}
+-                                className="hms-pat-kebab-menu__item"
+-                              >
+-                                <Calendar className="w-4 h-4" /> Book Appointment
+-                              </button>
+-                              <button
+-                                onClick={() => { setOpenMenuId(null); navigate(`/patients/${p.id}`); }}
+-                                className="hms-pat-kebab-menu__item"
+-                              >
+-                                <ExternalLink className="w-4 h-4" /> Patient Details
+-                              </button>
+-                            </div>
+-                          </>
+-                        )}
++                        <PatientActionMenu 
++                          p={p} 
++                          setModal={setModal} 
++                          setBookModal={setBookModal} 
++                          navigate={navigate} 
++                        />
+                       </td>
+                     </tr>
+                   );
+diff --git a/HMS-frontend/src/styles/modules/admin.css b/HMS-frontend/src/styles/modules/admin.css
+index 7c06869..7575d1e 100644
+--- a/HMS-frontend/src/styles/modules/admin.css
++++ b/HMS-frontend/src/styles/modules/admin.css
+@@ -1879,6 +1879,13 @@
+ 
+ /* ─────────────────────────── DoctorDetails: fullscreen split-pane page ─────────────────────────── */
+ 
++.hms-detail-page {
++    display: flex;
++    flex-direction: row;
++    flex: 1;
++    overflow: hidden;
++    height: 100%;
++}
+ .hms-detail-page__aside {
+     width: 288px;
+     flex-shrink: 0;
+diff --git a/HMS-frontend/src/styles/modules/clinical.css b/HMS-frontend/src/styles/modules/clinical.css
+index 0a75e9f..c918ea9 100644
+--- a/HMS-frontend/src/styles/modules/clinical.css
++++ b/HMS-frontend/src/styles/modules/clinical.css
+@@ -5001,7 +5001,7 @@
+ 
+ .hms-appt-body {
+     flex: 1;
+-    overflow: hidden;
++    overflow: visible !important;
+     display: flex;
+     flex-direction: column;
+     gap: 24px;
+@@ -5041,7 +5041,7 @@
+     background: var(--hms-white);
+     border-radius: 8px;
+     box-shadow: var(--hms-shadow-xs);
+-    overflow: hidden;
++    overflow: visible !important;
+     display: flex;
+     flex-direction: column;
+     flex: 1;
+@@ -5129,11 +5129,11 @@
+     display: flex;
+     flex-direction: column;
+     flex: 1;
+-    overflow: hidden;
++    overflow: visible !important;
+ }
+ 
+ .hms-appt-list__table-wrap {
+-    overflow-x: auto;
++    overflow: visible !important;
+     flex: 1;
+ }
+ 
+@@ -5289,7 +5289,8 @@
+ }
+ 
+ .hms-appt-status.is-cancelled,
+-.hms-appt-status.is-no-show {
++.hms-appt-status.is-no-show,
++.hms-appt-status.is-expired {
+     background: var(--hms-white);
+     color: #ef4444;
+     border-color: #f87171;
+@@ -5358,6 +5359,13 @@
+     overflow: hidden;
+ }
+ 
++.hms-appt-am__pop.is-upward {
++    top: auto;
++    bottom: 100%;
++    margin-top: 0;
++    margin-bottom: 4px;
++}
++
+ .hms-appt-am__head {
+     padding: 12px 16px;
+ }
+diff --git a/HMS-frontend/src/styles/modules/finance.css b/HMS-frontend/src/styles/modules/finance.css
+index 177122e..ed78d30 100644
+--- a/HMS-frontend/src/styles/modules/finance.css
++++ b/HMS-frontend/src/styles/modules/finance.css
+@@ -1579,13 +1579,21 @@
+ .hms-amb-status-card {
+     background: var(--hms-white);
+     border: 1px solid var(--hms-gray-200);
+-    border-radius: 8px;
+-    padding: 16px;
++    border-radius: 12px;
++    padding: 20px;
+     display: flex;
+     flex-direction: column;
+-    gap: 8px;
++    gap: 16px;
+     position: relative;
+     overflow: hidden;
++    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
++    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
++}
++
++.hms-amb-status-card:hover {
++    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
++    border-color: var(--hms-gray-300);
++    transform: translateY(-2px);
+ }
+ 
+ .hms-amb-status-card__stripe {
+@@ -1604,9 +1612,11 @@
+ 
+ .hms-amb-status-card__head {
+     display: flex;
+-    align-items: flex-start;
++    align-items: center;
+     justify-content: space-between;
+     gap: 8px;
++    padding-bottom: 12px;
++    border-bottom: 1px solid var(--hms-gray-100);
+ }
+ 
+ .hms-amb-status-card__ref {
+@@ -1633,10 +1643,11 @@
+ .hms-amb-status-card__route {
+     display: flex;
+     flex-direction: column;
+-    gap: 4px;
+-    padding: 8px 10px;
++    gap: 8px;
++    padding: 12px;
+     background: var(--hms-gray-50);
+-    border-radius: 6px;
++    border: 1px solid var(--hms-gray-100);
++    border-radius: 8px;
+ }
+ 
+ .hms-amb-status-card__route-row {
+@@ -1816,11 +1827,12 @@
+ .hms-amb-status-card__pat-block {
+     display: flex;
+     align-items: center;
+-    gap: 8px;
++    gap: 12px;
++    padding: 4px 0;
+ }
+ .hms-amb-status-card__avatar {
+-    width: 28px;
+-    height: 28px;
++    width: 36px;
++    height: 36px;
+     border-radius: 999px;
+     background: var(--hms-gray-100);
+     display: flex;
+@@ -1838,18 +1850,32 @@
+     font-size: 13px;
+     color: var(--hms-gray-500);
+ }
+-.hms-amb-status-card__meta-row {
++.hms-amb-status-card__meta-grid {
++    display: grid;
++    grid-template-columns: 1fr 1fr;
++    gap: 12px;
++    padding: 12px 0;
++    border-top: 1px dashed var(--hms-gray-200);
++}
++.hms-amb-status-card__meta-item {
+     display: flex;
+-    align-items: center;
++    flex-direction: column;
+     gap: 4px;
+-    font-size: 12px;
+-    color: var(--hms-gray-500);
+ }
+-.hms-amb-status-card__driver-row {
+-    display: flex;
+-    gap: 16px;
++.hms-amb-status-card__meta-label {
++    font-size: 11px;
++    text-transform: uppercase;
++    letter-spacing: 0.5px;
++    color: var(--hms-gray-400);
++    font-weight: 600;
++}
++.hms-amb-status-card__meta-value {
+     font-size: 13px;
+-    color: var(--hms-gray-500);
++    font-weight: 500;
++    color: var(--hms-gray-800);
++    display: flex;
++    align-items: center;
++    gap: 6px;
+ }
+ .hms-amb-status-card__driver-item {
+     display: flex;
+@@ -4871,6 +4897,89 @@
+ 
+ .hms-checkup-modal__btn-back:hover { background: var(--hms-gray-50); }
+ 
++.hms-checkup-modal__split {
++    display: flex;
++    flex-direction: column;
++    gap: 20px;
++    padding: 8px 0;
++}
++
++@media (min-width: 768px) {
++    .hms-checkup-modal__split.has-package {
++        flex-direction: row;
++        gap: 24px;
++    }
++}
++
++.hms-checkup-modal__left {
++    flex: 1;
++    display: flex;
++    flex-direction: column;
++    gap: 20px;
++    max-height: 65vh;
++    overflow-y: auto;
++    padding-right: 8px;
++}
++
++.hms-checkup-modal__right {
++    width: 100%;
++    display: flex;
++    flex-direction: column;
++    gap: 16px;
++    flex-shrink: 0;
++}
++
++@media (min-width: 768px) {
++    .hms-checkup-modal__right {
++        width: 320px;
++        border-left: 1px solid var(--hms-gray-100);
++        padding-left: 24px;
++    }
++}
++
++.hms-checkup-modal__right-box {
++    background: var(--hms-gray-50);
++    border-radius: 8px;
++    padding: 16px;
++    border: 1px solid var(--hms-gray-100);
++}
++
++.hms-checkup-modal__right-title {
++    font-weight: 600;
++    color: var(--hms-gray-900);
++    margin-bottom: 4px;
++    line-height: 1.25;
++}
++
++.hms-checkup-modal__right-price {
++    font-size: 20px;
++    font-weight: 700;
++    color: var(--hms-gray-900);
++    margin-bottom: 16px;
++}
++
++.hms-checkup-modal__right-divider {
++    border-top: 1px solid var(--hms-gray-200);
++    padding-top: 12px;
++}
++
++.hms-checkup-modal__right-subtitle {
++    font-size: 14px;
++    font-weight: 500;
++    color: var(--hms-gray-700);
++    margin-bottom: 8px;
++}
++
++.hms-checkup-modal__right-list {
++    font-size: 14px;
++    color: var(--hms-gray-600);
++    list-style-type: disc;
++    list-style-position: inside;
++}
++
++.hms-checkup-modal__right-list li {
++    margin-bottom: 4px;
++}
+ 
+ /* Checkup table tweaks */
+ .hms-checkup-cell-state {
+diff --git a/HMS-frontend/src/styles/ui/components.css b/HMS-frontend/src/styles/ui/components.css
+index f8e200a..875e45e 100644
+--- a/HMS-frontend/src/styles/ui/components.css
++++ b/HMS-frontend/src/styles/ui/components.css
+@@ -559,11 +559,15 @@
+     max-height: 90vh;
+     overflow: hidden;
+     width: 100%;
+-    max-width: 560px;
+     z-index: var(--zu-z-modal);
+     font-family: var(--zu-font-family);
+ }
+ 
++.zu-modal-sm { max-width: 400px; }
++.zu-modal-md { max-width: 560px; }
++.zu-modal-lg { max-width: 800px; }
++.zu-modal-xl { max-width: 1000px; }
++
+ .zu-modal-header {
+     display: flex;
+     align-items: center;

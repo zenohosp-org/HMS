@@ -5001,7 +5001,7 @@
 
 .hms-appt-body {
     flex: 1;
-    overflow: hidden;
+    overflow: visible !important;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -5041,7 +5041,7 @@
     background: var(--hms-white);
     border-radius: 8px;
     box-shadow: var(--hms-shadow-xs);
-    overflow: hidden;
+    overflow: visible !important;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -5129,11 +5129,11 @@
     display: flex;
     flex-direction: column;
     flex: 1;
-    overflow: hidden;
+    overflow: visible !important;
 }
 
 .hms-appt-list__table-wrap {
-    overflow-x: auto;
+    overflow: visible !important;
     flex: 1;
 }
 
@@ -5289,7 +5289,8 @@
 }
 
 .hms-appt-status.is-cancelled,
-.hms-appt-status.is-no-show {
+.hms-appt-status.is-no-show,
+.hms-appt-status.is-expired {
     background: var(--hms-white);
     color: #ef4444;
     border-color: #f87171;
@@ -5356,6 +5357,13 @@
     box-shadow: var(--hms-shadow-lg);
     z-index: 30;
     overflow: hidden;
+}
+
+.hms-appt-am__pop.is-upward {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 4px;
 }
 
 .hms-appt-am__head {

@@ -30,9 +30,24 @@ const STATUS_TONE = {
     COMPLETED: "success",
     CANCELLED: "danger",
     NO_SHOW: "danger",
+    EXPIRED: "danger",
     IN_PROGRESS: "warning",
 };
 const statusTone = (s) => STATUS_TONE[s] || "info";
+
+const getDisplayStatus = (appt) => {
+    if (appt.status === "SCHEDULED") {
+        const now = new Date();
+        const offset = now.getTimezoneOffset();
+        const localNow = new Date(now.getTime() - offset * 60 * 1000);
+        const todayStr = localNow.toISOString().split("T")[0];
+        const timeStr = localNow.toISOString().split("T")[1].substring(0, 5);
+        if (appt.apptDate < todayStr || (appt.apptDate === todayStr && appt.apptTime < timeStr)) {
+            return "EXPIRED";
+        }
+    }
+    return appt.status;
+};
 
 /** Sidebar key/value row with leading icon. */
 function SideInfoRow({ icon: Icon, label, value }) {
@@ -111,14 +126,19 @@ function DoctorDetails() {
     }, [doctorAppointments]);
 
     const nextAppointment = useMemo(() => {
-        const todayStr = new Date().toISOString().split("T")[0];
+        const now = new Date();
+        const offset = now.getTimezoneOffset();
+        const localNow = new Date(now.getTime() - offset * 60 * 1000);
+        const todayStr = localNow.toISOString().split("T")[0];
+        const timeStr = localNow.toISOString().split("T")[1].substring(0, 5);
         return (
             doctorAppointments
-                .filter(
-                    (a) =>
-                        ["SCHEDULED", "CONFIRMED"].includes(a.status) &&
-                        a.apptDate >= todayStr
-                )
+                .filter((a) => {
+                    if (!["SCHEDULED", "CONFIRMED"].includes(a.status)) return false;
+                    if (a.apptDate < todayStr) return false;
+                    if (a.apptDate === todayStr && a.apptTime < timeStr) return false;
+                    return true;
+                })
                 .sort((a, b) => {
                     const d = a.apptDate.localeCompare(b.apptDate);
                     return d !== 0 ? d : a.apptTime.localeCompare(b.apptTime);
@@ -275,7 +295,7 @@ function DoctorDetails() {
     ];
 
     return (
-        <div className="zu-page">
+        <div className="hms-detail-page">
             {/* LEFT PANE */}
             <aside className="hms-detail-page__aside">
                 <div className="hms-detail-aside__topbar">
@@ -628,7 +648,8 @@ function AppointmentsTab({ doctor, loading, appointments }) {
             ) : (
                 <div className="hms-detail-card-grid">
                     {appointments.slice(0, 50).map((appt) => {
-                        const tone = statusTone(appt.status);
+                        const dispStatus = getDisplayStatus(appt);
+                        const tone = statusTone(dispStatus);
                         return (
                             <Card key={appt.id} className="hms-appt-card">
                                 <span className={`hms-appt-card__stripe is-${tone}`} />
@@ -642,7 +663,7 @@ function AppointmentsTab({ doctor, loading, appointments }) {
                                         </p>
                                     </div>
                                     <Badge tone={tone} soft>
-                                        {appt.status.replace(/_/g, " ")}
+                                        {dispStatus.replace(/_/g, " ")}
                                     </Badge>
                                 </div>
                                 <div className="hms-appt-card__patient">

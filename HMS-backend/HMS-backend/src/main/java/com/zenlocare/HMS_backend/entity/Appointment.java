@@ -111,7 +111,7 @@ public class Appointment {
 
     public enum AppointmentStatus {
         SCHEDULED(1), CONFIRMED(2), CHECKED_IN(3), IN_PROGRESS(4),
-        COMPLETED(5), CANCELLED(6), NO_SHOW(7), BILLED(8);
+        COMPLETED(5), CANCELLED(6), NO_SHOW(7), BILLED(8), EXPIRED(9);
 
         public final int id;
 

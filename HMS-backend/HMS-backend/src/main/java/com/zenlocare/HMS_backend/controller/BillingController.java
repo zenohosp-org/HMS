@@ -4,6 +4,7 @@ import com.zenlocare.HMS_backend.dto.InvoiceDTO;
 import com.zenlocare.HMS_backend.dto.InvoiceRequest;
 import com.zenlocare.HMS_backend.dto.SmartBillingSuggestion;
 import com.zenlocare.HMS_backend.entity.Invoice;
+import com.zenlocare.HMS_backend.entity.User;
 import com.zenlocare.HMS_backend.service.InvoiceService;
 import com.zenlocare.HMS_backend.service.PatientAdvanceService;
 import com.zenlocare.HMS_backend.service.PatientAdvanceService.PatientAdvanceDTO;
@@ -12,6 +13,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -44,10 +46,11 @@ public class BillingController {
     @PatchMapping("/invoices/{id}/pay")
     public ResponseEntity<Invoice> markAsPaid(
             @PathVariable UUID id,
-            @RequestBody(required = false) Map<String, String> body) {
+            @RequestBody(required = false) Map<String, String> body,
+            @AuthenticationPrincipal User user) {
         UUID bankAccountId = (body != null && body.get("bankAccountId") != null)
                 ? UUID.fromString(body.get("bankAccountId")) : null;
-        return ResponseEntity.ok(invoiceService.markAsPaid(id, bankAccountId));
+        return ResponseEntity.ok(invoiceService.markAsPaid(id, bankAccountId, user));
     }
 
     @GetMapping("/admissions/{admissionId}/invoice")
@@ -58,9 +61,12 @@ public class BillingController {
     }
 
     @PutMapping("/invoices/{id}/finalize")
-    public ResponseEntity<InvoiceDTO> finalizeIPDInvoice(@PathVariable UUID id, @RequestBody InvoiceRequest req) {
+    public ResponseEntity<InvoiceDTO> finalizeIPDInvoice(
+            @PathVariable UUID id, 
+            @RequestBody InvoiceRequest req,
+            @AuthenticationPrincipal User user) {
         try {
-            return ResponseEntity.ok(invoiceService.finalizeIPDInvoice(id, req));
+            return ResponseEntity.ok(invoiceService.finalizeIPDInvoice(id, req, user));
         } catch (RuntimeException e) {
             log.error("finalizeIPDInvoice failed for invoiceId={}", id, e);
             return ResponseEntity.badRequest().build();
@@ -124,11 +130,12 @@ public class BillingController {
     @PostMapping("/invoices/{id}/payments")
     public ResponseEntity<InvoiceDTO> collectPayment(
             @PathVariable UUID id,
-            @RequestBody PaymentRequest req) {
+            @RequestBody PaymentRequest req,
+            @AuthenticationPrincipal User user) {
         try {
             return ResponseEntity.ok(invoiceService.collectPayment(
                     id, req.getAmount(), req.getPaymentMethod(),
-                    req.getBankAccountId(), req.getCollectedBy()));
+                    req.getBankAccountId(), req.getCollectedBy(), user));
         } catch (RuntimeException e) {
             log.error("collectPayment failed for invoiceId={}", id, e);
             return ResponseEntity.badRequest().build();
@@ -146,12 +153,13 @@ public class BillingController {
     @PostMapping("/invoices/{id}/collect")
     public ResponseEntity<InvoiceDTO> collectAndSave(
             @PathVariable UUID id,
-            @RequestBody CollectAndSaveRequest req) {
+            @RequestBody CollectAndSaveRequest req,
+            @AuthenticationPrincipal User user) {
         try {
             return ResponseEntity.ok(invoiceService.collectAndSave(
                     id, req,
                     req.getAmount(), req.getPaymentMethod(),
-                    req.getBankAccountId(), req.getCollectedBy()));
+                    req.getBankAccountId(), req.getCollectedBy(), user));
         } catch (RuntimeException e) {
             log.error("collectAndSave failed for invoiceId={}", id, e);
             return ResponseEntity.badRequest().body(
@@ -170,11 +178,12 @@ public class BillingController {
     public ResponseEntity<InvoiceDTO> waiveItem(
             @PathVariable UUID invoiceId,
             @PathVariable UUID itemId,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal User user) {
         BigDecimal amount = new BigDecimal(body.getOrDefault("waiverAmount", "0").toString());
         String reason = (String) body.getOrDefault("waiverReason", "");
         try {
-            return ResponseEntity.ok(invoiceService.applyWaiver(invoiceId, itemId, amount, reason));
+            return ResponseEntity.ok(invoiceService.applyWaiver(invoiceId, itemId, amount, reason, user));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
