@@ -3,12 +3,19 @@ package com.zenlocare.HMS_backend.service;
 import com.zenlocare.HMS_backend.dto.AppointmentDto;
 import com.zenlocare.HMS_backend.dto.AppointmentRequest;
 import com.zenlocare.HMS_backend.entity.*;
+import com.zenlocare.HMS_backend.integration.LabsClient;
+import com.zenlocare.HMS_backend.integration.dto.LabsCheckupBookingRequest;
+import com.zenlocare.HMS_backend.integration.dto.LabsCheckupBookingResponse;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -29,7 +36,8 @@ public class AppointmentService {
         private final DoctorRepository doctorRepository;
         private final PriceListRepository priceListRepository;
         private final UserRepository userRepository;
-        private final HealthCheckupService healthCheckupService;
+        private final HealthCheckupBookingRepository healthCheckupBookingRepository;
+        private final LabsClient labsClient;
         private final InvoiceService invoiceService;
 
         public List<AppointmentDto> getAppointmentsByHospital(UUID hospitalId, LocalDate date) {
@@ -169,18 +177,37 @@ public class AppointmentService {
                 // hospital's today-queue dense and sequential (1..100) instead of
                 // gapped by no-shows or future bookings.
 
-                // Auto-create checkup booking if a package is selected
+                // Auto-create checkup booking via labs if a package is
+                // selected. Labs (api-labs.zenohosp.com) now owns the
+                // health_checkup_bookings table; HMS delegates the write
+                // over HTTP, forwarding the caller's JWT so labs validates
+                // the same identity. Both apps share the same Postgres, so
+                // immediately after labs commits we can re-fetch the
+                // entity via the still-existing HealthCheckupBookingRepository
+                // to satisfy the @ManyToOne on Appointment. Phase D flattens
+                // this relationship to a plain UUID column and the re-fetch
+                // disappears.
                 HealthCheckupBooking checkupBooking = null;
                 if (request.getPackageId() != null) {
-                        String creatorName = createdBy.getFirstName() + " " + createdBy.getLastName();
-                        HealthCheckupService.BookingRequest br = new HealthCheckupService.BookingRequest();
+                        LabsCheckupBookingRequest br = new LabsCheckupBookingRequest();
                         br.setPatientId(request.getPatientId());
                         br.setPackageId(request.getPackageId());
                         br.setDoctorId(doctor.getId());
                         br.setScheduledDate(request.getApptDate().toString());
                         br.setScheduledTime(apptTime.toString());
                         br.setPaymentStatus("PENDING");
-                        checkupBooking = healthCheckupService.createBooking(hospital.getId(), br, creatorName);
+
+                        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                        String jwt = (auth != null && auth.getCredentials() instanceof String s) ? s : null;
+                        LabsCheckupBookingResponse created = labsClient.createHealthCheckupBooking(br, jwt);
+                        if (created == null || created.getId() == null) {
+                                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                                                "Labs returned no booking id for the checkup");
+                        }
+                        checkupBooking = healthCheckupBookingRepository.findById(created.getId())
+                                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                                                        "Labs created checkup booking " + created.getId()
+                                                                        + " but HMS could not read it back"));
                 }
 
                 Appointment appointment = Appointment.builder()
