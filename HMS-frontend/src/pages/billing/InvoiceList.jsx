@@ -3,13 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { invoiceApi, bankApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
+import { escapeHtml } from "@/utils/html";
+import JsBarcode from "jsbarcode";
 import { useNotification } from "@/context/NotificationContext";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import PageHeader from "@/components/ui/PageHeader";
 import {
   Search, ChevronLeft, Printer, Eye, FileText,
   CheckCircle2, Clock, XCircle, CreditCard, X, Landmark, Loader2,
-  Scissors, Plus,
+  Scissors,
 } from "lucide-react";
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
@@ -52,7 +54,9 @@ function WaiverModal({ item, invoiceId, onClose, onWaived }) {
   )
   const [reason, setReason] = useState(item.waiverReason || '')
   const [submitting, setSubmitting] = useState(false)
+  const [removing, setRemoving] = useState(false)
 
+  const hasWaiver = Number(item.waiverAmount || 0) > 0
   const max = Number(item.totalPrice || 0)
   const pct = (p) => setAmount(String(((max * p) / 100).toFixed(2)))
 
@@ -73,14 +77,25 @@ function WaiverModal({ item, invoiceId, onClose, onWaived }) {
     }
   }
 
+  const handleRemove = async () => {
+    setRemoving(true)
+    try {
+      const updated = await invoiceApi.waiveItem(invoiceId, item.id, 0, '')
+      notify('Waiver removed', 'success')
+      onWaived(updated)
+    } catch {
+      notify('Failed to remove waiver', 'error')
+    } finally {
+      setRemoving(false)
+    }
+  }
+
   return (
     <div className="hms-inv-waiver-overlay">
       <div className="hms-inv-waiver">
         <div className="hms-inv-waiver__head">
           <div>
-            <h3 className="hms-inv-waiver__title">
-              <Scissors className="hms-inv-waiver__title-icon w-4 h-4" /> Apply Waiver
-            </h3>
+            <h3 className="hms-inv-waiver__title">Apply Waiver</h3>
             <p className="hms-inv-waiver__sub">{item.description}</p>
           </div>
           <button onClick={onClose} className="hms-inv-waiver__close">
@@ -138,15 +153,28 @@ function WaiverModal({ item, invoiceId, onClose, onWaived }) {
           </div>
 
           <div className="hms-inv-waiver__actions">
+            {hasWaiver && (
+              <button
+                type="button"
+                onClick={handleRemove}
+                disabled={removing || submitting}
+                className="zu-btn-secondary"
+              >
+                {removing
+                  ? <><Loader2 className="w-4 h-4 zu-spinner" /> Removing…</>
+                  : 'Remove Waiver'
+                }
+              </button>
+            )}
             <button type="button" onClick={onClose} className="zu-btn-secondary">Cancel</button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || removing}
               className="hms-inv-waiver__submit"
             >
               {submitting
                 ? <><Loader2 className="w-4 h-4 zu-spinner" /> Applying…</>
-                : <><Scissors className="w-4 h-4" /> Apply Waiver</>
+                : 'Apply Waiver'
               }
             </button>
           </div>
@@ -169,7 +197,6 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
   const [payMethod, setPayMethod] = useState('Cash')
   const [referenceNumber, setReferenceNumber] = useState('')
   const [paying, setPaying] = useState(false)
-  const [showRecordPayment, setShowRecordPayment] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -197,6 +224,8 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
   const handleWaived = (updated) => {
     setDetail(updated)
     setWaiverItem(null)
+    const newBalance = Math.max(0, Number(updated.total || 0) - Number(updated.paidAmount || 0))
+    setPayAmount(newBalance > 0 ? newBalance.toFixed(2) : '')
     onInvoiceUpdated?.()
   }
 
@@ -216,7 +245,6 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
       const newBalance = Math.max(0, Number(updated.total || 0) - Number(updated.paidAmount || 0))
       setPayAmount(newBalance > 0 ? newBalance.toFixed(2) : '')
       setReferenceNumber('')
-      setShowRecordPayment(false)
       notify('Payment collected successfully', 'success')
       onInvoiceUpdated?.()
       if (updated.status === 'PAID' || updated.status === 'SETTLED') onClose()
@@ -237,29 +265,39 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
       PAID: 'background:#d1fae5;color:#065f46', UNPAID: 'background:#fef3c7;color:#92400e',
       PARTIAL: 'background:#ffedd5;color:#9a3412', CANCELLED: 'background:#fee2e2;color:#991b1b',
     }
+    // Built as raw SVG markup (not the React <Barcode>) since this view is
+    // serialized into a standalone iframe document, outside the React tree.
+    const barcodeValue = detail.invoiceNumber ?? ''
+    let barcodeSvg = ''
+    if (barcodeValue) {
+      const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      JsBarcode(svgEl, barcodeValue, { format: 'CODE128', height: 40, width: 1.2, fontSize: 12, margin: 6, displayValue: true })
+      barcodeSvg = svgEl.outerHTML
+    }
     const rows = items.map(item => `
       <tr>
-        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.itemType?.replace('_', ' ') ?? ''}</td>
-        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.description ?? ''}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${escapeHtml(item.itemType?.replace('_', ' '))}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${escapeHtml(item.description)}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:center">×${item.quantity}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:right">₹${Number(item.unitPrice).toLocaleString('en-IN')}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;font-weight:600;color:#111;text-align:right">₹${Number(item.totalPrice).toLocaleString('en-IN')}</td>
       </tr>`).join('')
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Invoice ${fmtId(detail.invoiceNumber)}</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Invoice ${escapeHtml(fmtId(detail.invoiceNumber))}</title>
       <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Lexend', sans-serif;font-size:13px;color:#1a1a1a;padding:36px}table{width:100%;border-collapse:collapse}@media print{body{padding:24px}}</style>
       </head><body>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #10b981">
-        <div><div style="font-size:22px;font-weight:800;color:#10b981">ZenoHosp HMS</div><div style="font-size:11px;color:#6b7280;margin-top:2px">${user?.hospitalName ?? ''}</div></div>
+        <div><div style="font-size:22px;font-weight:800;color:#10b981">ZenoHosp HMS</div><div style="font-size:11px;color:#6b7280;margin-top:2px">${escapeHtml(user?.hospitalName)}</div></div>
         <div style="text-align:right">
-          <div style="font-size:16px;font-weight:700">${fmtId(detail.invoiceNumber)}</div>
+          <div style="font-size:16px;font-weight:700">${escapeHtml(fmtId(detail.invoiceNumber))}</div>
           <div style="font-size:11px;color:#6b7280;margin-top:4px">${detail.createdAt ? new Date(detail.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'long', year: 'numeric' }) : ''}</div>
-          <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusStyle[detail.status] ?? statusStyle.UNPAID}">${detail.status}</span></div>
+          <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusStyle[detail.status] ?? statusStyle.UNPAID}">${escapeHtml(detail.status)}</span></div>
         </div>
       </div>
       <div style="margin-bottom:20px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Billed To</div>
-        <div style="font-size:15px;font-weight:700">${detail.patientName ?? '—'}</div>
-        ${detail.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${fmtId(detail.patientUhid)}</div>` : ''}
+        <div style="font-size:15px;font-weight:700">${escapeHtml(detail.patientName) || '—'}</div>
+        ${detail.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${escapeHtml(fmtId(detail.patientUhid))}</div>` : ''}
+        ${barcodeSvg ? `<div style="margin-top:10px">${barcodeSvg}</div>` : ''}
       </div>
       <table><thead><tr style="background:#f3f4f6">
         <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Type</th>
@@ -351,13 +389,6 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                 Services and Bills
               </div>
 
-              {canWaive && (
-                <div className="hms-inv-detail__waiver-hint">
-                  <Scissors className="w-3.5 h-3.5 shrink-0" />
-                  Hover a row to apply a waiver on that line item.
-                </div>
-              )}
-
               <div className="hms-inv-detail__items-wrap">
                 <table className="hms-inv-detail__items">
                   <thead>
@@ -368,13 +399,12 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                       <th className="is-amt is-right">Amount</th>
                       <th className="is-gst is-center">Gst %</th>
                       <th className="is-total is-right">Total</th>
-                      {canWaive && <th className="is-waive" />}
                     </tr>
                   </thead>
                   <tbody>
                     {(detail.items || []).length === 0 ? (
                       <tr>
-                        <td colSpan={canWaive ? 7 : 6} className="is-empty">
+                        <td colSpan={6} className="is-empty">
                           No line items on this invoice.
                         </td>
                       </tr>
@@ -396,10 +426,20 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                                 {item.quantity > 1 && (
                                   <span className="hms-inv-detail__item-qty">×{item.quantity} units</span>
                                 )}
-                                {item.waiverReason && (
-                                  <span className="hms-inv-detail__item-reason">
-                                    <Scissors className="w-2.5 h-2.5 shrink-0" />{item.waiverReason}
-                                  </span>
+                                {(item.waiverReason || canWaive) && (
+                                  <div className="hms-inv-detail__item-meta">
+                                    {item.waiverReason && (
+                                      <span className="hms-inv-detail__item-reason">{item.waiverReason}</span>
+                                    )}
+                                    {canWaive && (
+                                      <button
+                                        onClick={() => setWaiverItem(item)}
+                                        className={`hms-inv-detail__waive-link ${waived > 0 ? 'is-on' : ''}`}
+                                      >
+                                        {waived > 0 ? 'Edit waiver' : 'Apply waiver'}
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             </td>
@@ -417,17 +457,6 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                                 <span className="hms-inv-detail__total-eff">{fmt(item.totalPrice)}</span>
                               )}
                             </td>
-                            {canWaive && (
-                              <td>
-                                <button
-                                  onClick={() => setWaiverItem(item)}
-                                  title={waived > 0 ? 'Edit waiver' : 'Apply waiver'}
-                                  className={`hms-inv-detail__waive-btn ${waived > 0 ? 'is-on' : ''}`}
-                                >
-                                  <Scissors className="w-3.5 h-3.5" />
-                                </button>
-                              </td>
-                            )}
                           </tr>
                         )
                       })
@@ -456,7 +485,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                 )}
                 {Number(detail.discount || 0) > 0 && (
                   <div className="hms-inv-detail__total-row is-waiver">
-                    <span className="hms-inv-detail__total-row__label flex items-center gap-1.5"><Scissors className="w-3 h-3" />Total Waivers:</span>
+                    <span className="hms-inv-detail__total-row__label">Total Waivers:</span>
                     <span className="hms-inv-detail__total-row__amt font-semibold">−{fmt(detail.discount)}</span>
                   </div>
                 )}
@@ -482,21 +511,8 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                   </div>
                 )}
 
-                {/* Payment History header + Record Payment toggle */}
-                <div className="hms-inv-detail__pay-head">
-                  <p className="hms-inv-detail__pay-head-title">Payment History</p>
-                  {canPay && (
-                    <button
-                      onClick={() => setShowRecordPayment(p => !p)}
-                      className="hms-inv-detail__pay-toggle"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Record Payment
-                    </button>
-                  )}
-                </div>
-
-                {/* Collapsible record payment form */}
-                {showRecordPayment && canPay && (
+                {/* Record payment form */}
+                {canPay && (
                   <div className="hms-inv-detail__pay-form">
                     <div className="hms-inv-detail__pay-grid">
                       <div>
@@ -521,6 +537,8 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                             const def = eligible.find(a => a.isDefault) ?? eligible[0]
                             setBankAccountId(def ? def.id : '')
                           }}
+                          clearable={false}
+                          searchable={false}
                           options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
                         />
                       </div>
@@ -554,19 +572,12 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                               ({payMethod === 'Cash' ? 'CASH only' : 'SAVINGS / CURRENT only'})
                             </span>
                           </label>
-                          <div className="hms-inv-detail__pay-bank-row">
-                            {eligibleAccounts.map(a => (
-                              <button
-                                key={a.id}
-                                type="button"
-                                onClick={() => setBankAccountId(a.id)}
-                                className={`hms-inv-detail__pay-bank-btn ${bankAccountId === a.id ? 'is-on' : ''}`}
-                              >
-                                {bankAccountId === a.id && <CheckCircle2 className="w-3 h-3 shrink-0" />}
-                                {a.accountName}
-                              </button>
-                            ))}
-                          </div>
+                          <SearchableSelect
+                            value={bankAccountId}
+                            onChange={setBankAccountId}
+                            clearable={false}
+                            options={eligibleAccounts.map(a => ({ value: a.id, label: a.accountName }))}
+                          />
                         </div>
                       )
                     })()}
@@ -595,7 +606,7 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                 )}
 
                 {/* Payment history entries */}
-                {detail.payments?.length > 0 ? (
+                {detail.payments?.length > 0 && (
                   <div className="hms-inv-detail__history">
                     {detail.payments.map(p => (
                       <div key={p.id} className="hms-inv-detail__history-row">
@@ -604,22 +615,15 @@ export function InvoiceDetailModal({ invoiceId, onClose, onInvoiceUpdated }) {
                         </p>
                         <div className="hms-inv-detail__history-body">
                           <p className="hms-inv-detail__history-ref">{p.referenceNumber || p.notes || 'Notes'}</p>
-                          <p className="hms-inv-detail__history-method">{p.paymentMethod}</p>
+                          <p className="hms-inv-detail__history-method">
+                            {p.paymentMethod}
+                            {(p.collectedByName || p.collectedBy) && ` · by ${p.collectedByName || p.collectedBy}`}
+                          </p>
                         </div>
                         <p className="hms-inv-detail__history-amt">{fmt(p.amount)}</p>
                       </div>
                     ))}
-                    {balanceDue > 0 && !showRecordPayment && (
-                      <div className="hms-inv-detail__balance-row">
-                        <span className="hms-inv-detail__balance-row__label">Balance Due</span>
-                        <span className="hms-inv-detail__balance-row__amt">{fmt(balanceDue)}</span>
-                      </div>
-                    )}
                   </div>
-                ) : (
-                  !showRecordPayment && (
-                    <p className="hms-inv-detail__history-empty">No payments recorded yet.</p>
-                  )
                 )}
 
                 {/* PAID invoices: just show print */}

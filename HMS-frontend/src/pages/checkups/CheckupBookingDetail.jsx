@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { checkupApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import Barcode from "@/components/ui/Barcode";
 import { ArrowLeft, Printer, AlertCircle, ClipboardList, User, Package, Calendar, Clock, Stethoscope, Banknote, CheckCircle2, Circle, Save, FileText, Activity, XCircle, AlertTriangle, Receipt, ExternalLink,  } from "lucide-react";
 
 // Payment status badge — keeps the UI in sync with the lifecycle the backend
@@ -13,6 +14,7 @@ import { ArrowLeft, Printer, AlertCircle, ClipboardList, User, Package, Calendar
 const PAYMENT_CONFIG = {
   PENDING: { label: "Pending", cls: "is-pending" },
   BILLED:  { label: "Billed",  cls: "is-billed" },
+  PARTIAL: { label: "Partial", cls: "is-partial" },
   PAID:    { label: "Paid",    cls: "is-paid" },
 };
 
@@ -127,6 +129,8 @@ function ResultRow({ result, onSave, disabled }) {
           onChange={value => setStatus(value)}
           options={RESULT_STATUS_OPTIONS.map(s => ({ value: s, label: RESULT_STATUS_CONFIG[s].label }))}
           disabled={disabled}
+          clearable={false}
+          searchable={false}
         />
       </td>
       <td>
@@ -341,6 +345,11 @@ export default function CheckupBookingDetail() {
       <div className="hms-checkup-print-header">
         <h1 className="text-18 font-bold text-gray-900">{user?.hospitalName}</h1>
         <p className="text-13 text-gray-500">Health Checkup Report · {fmtId(booking.bookingNumber)}</p>
+        <Barcode
+          value={booking.bookingNumber}
+          height={40}
+          className="hms-checkup-print-header__barcode"
+        />
       </div>
 
       {/* Header card */}
@@ -404,6 +413,11 @@ export default function CheckupBookingDetail() {
                 <span className="hms-checkup-detail-pay__amt">
                   ₹{Number(booking.amountPaid || 0).toLocaleString("en-IN")} paid
                 </span>
+                {booking.paymentStatus === "PARTIAL" && (
+                  <span className="hms-checkup-detail-pay__balance">
+                    ₹{Number((booking.healthPackage?.price || 0) - (booking.amountPaid || 0)).toLocaleString("en-IN")} due
+                  </span>
+                )}
               </div>
               {booking.invoiceId && (
                 <button

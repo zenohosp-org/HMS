@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { vitalsApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
-import { Activity, HeartPulse, Wind, Scale, Droplet, CheckCircle2, User as UserIcon, IdCard, CalendarClock, Stethoscope,  } from "lucide-react";
+import { Activity, HeartPulse, Wind, Scale, Droplet, CheckCircle2, User as UserIcon, IdCard, CalendarClock, Stethoscope, Clock, Ruler } from "lucide-react";
 
 /**
  * Nurse-facing form to record per-visit vitals (BP, SpO2, HR, weight) on
@@ -32,6 +32,8 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
   const [spo2, setSpo2] = useState("");
   const [heartRate, setHeartRate] = useState("");
   const [weightKg, setWeightKg] = useState("");
+  const [heightCm, setHeightCm] = useState("");
+  const [bloodGlucose, setBloodGlucose] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,6 +53,8 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
         if (v.spo2 != null)        setSpo2(String(v.spo2));
         if (v.heartRate != null)   setHeartRate(String(v.heartRate));
         if (v.weightKg != null)    setWeightKg(String(v.weightKg));
+        if (v.heightCm != null)    setHeightCm(String(v.heightCm));
+        if (v.bloodGlucose != null) setBloodGlucose(String(v.bloodGlucose));
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -69,6 +73,8 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
     const sp = spo2 === "" ? null : Number(spo2);
     const hr = heartRate === "" ? null : Number(heartRate);
     const wt = weightKg === "" ? null : Number(weightKg);
+    const ht = heightCm === "" ? null : Number(heightCm);
+    const bg = bloodGlucose === "" ? null : Number(bloodGlucose);
 
     if (sys != null && (sys < 40 || sys > 300)) {
       notify("Systolic BP must be between 40 and 300 mmHg", "warning"); return;
@@ -85,14 +91,20 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
     if (wt != null && (wt <= 0 || wt > 999)) {
       notify("Weight must be between 0 and 999 kg", "warning"); return;
     }
-    if (sys == null && dia == null && sp == null && hr == null && wt == null) {
+    if (ht != null && (ht < 10 || ht > 300)) {
+      notify("Height must be between 10 and 300 cm", "warning"); return;
+    }
+    if (bg != null && (bg < 20 || bg > 1000)) {
+      notify("Blood glucose must be between 20 and 1000 mg/dL", "warning"); return;
+    }
+    if (sys == null && dia == null && sp == null && hr == null && wt == null && ht == null && bg == null) {
       notify("Enter at least one vital sign before saving", "warning"); return;
     }
 
     setSaving(true);
     try {
       const saved = await vitalsApi.upsert(appointment.id, {
-        bpSystolic: sys, bpDiastolic: dia, spo2: sp, heartRate: hr, weightKg: wt,
+        bpSystolic: sys, bpDiastolic: dia, spo2: sp, heartRate: hr, weightKg: wt, heightCm: ht, bloodGlucose: bg,
       });
       notify(existing ? "Vitals updated" : "Vitals recorded", "success");
       onSaved?.(saved);
@@ -107,9 +119,9 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
     appointment?.patientName ||
     [appointment?.patientFirstName, appointment?.patientLastName].filter(Boolean).join(" ");
   const uhidDisplay = fmtId(appointment?.patientUhid) || appointment?.patientUhid || "—";
-  const apptTime = appointment?.apptTime ? appointment.apptTime.substring(0, 5) : "";
-  const dateTimeText = [appointment?.apptDate, apptTime].filter(Boolean).join(" · ");
   const bloodGroup = appointment?.patientBloodGroup || "—";
+  const ageDisplay = computeAge(appointment?.patientDob) || "—";
+  const sexDisplay = appointment?.patientGender || "—";
 
   return (
     <div className="zu-modal-overlay">
@@ -135,14 +147,6 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
               </span>
             )}
           </div>
-
-          {/* Patient meta strip */}
-          <div className="hms-cmodal__meta is-4col">
-            <PreField icon={<UserIcon className="w-3.5 h-3.5" />} label="Patient" value={patientFullName || "—"} />
-            <PreField icon={<IdCard className="w-3.5 h-3.5" />} label="UHID" value={uhidDisplay} mono />
-            <PreField icon={<Droplet className="w-3.5 h-3.5" />} label="Blood group" value={bloodGroup} />
-            <PreField icon={<CalendarClock className="w-3.5 h-3.5" />} label="Date & time" value={dateTimeText || "—"} />
-          </div>
         </div>
 
         {/* Body */}
@@ -151,6 +155,15 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
             <CenterLoader text="Loading vitals…" />
           ) : (
             <div className="hms-form-stack">
+
+              {/* Patient info card */}
+              <div className="hms-vitals-patient-card">
+                <PreField icon={<UserIcon className="w-3.5 h-3.5" />} label="Patient" value={patientFullName || "—"} />
+                <PreField icon={<IdCard className="w-3.5 h-3.5" />} label="UHID" value={uhidDisplay} mono />
+                <PreField icon={<Clock className="w-3.5 h-3.5" />} label="Age" value={ageDisplay} />
+                <PreField icon={<UserIcon className="w-3.5 h-3.5" />} label="Sex" value={sexDisplay} />
+                <PreField icon={<Droplet className="w-3.5 h-3.5" />} label="Blood group" value={bloodGroup} />
+              </div>
 
               {/* BP — split into two paired inputs */}
               <VitalField
@@ -229,6 +242,40 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
                     <span className="hms-vitals-row__unit">kg</span>
                   </div>
                 </VitalField>
+
+                <VitalField
+                  icon={<Ruler className="w-3.5 h-3.5" />}
+                  label="Height"
+                  hint="Body height"
+                >
+                  <div className="hms-vitals-row">
+                    <input
+                      type="number" min="10" max="300" step="1" inputMode="numeric"
+                      value={heightCm}
+                      onChange={e => setHeightCm(e.target.value)}
+                      placeholder="170"
+                      className="hms-vitals-input"
+                    />
+                    <span className="hms-vitals-row__unit">cm</span>
+                  </div>
+                </VitalField>
+
+                <VitalField
+                  icon={<Activity className="w-3.5 h-3.5" />}
+                  label="Blood Glucose"
+                  hint="Random/Fasting, mg/dL"
+                >
+                  <div className="hms-vitals-row">
+                    <input
+                      type="number" min="20" max="1000" step="1" inputMode="numeric"
+                      value={bloodGlucose}
+                      onChange={e => setBloodGlucose(e.target.value)}
+                      placeholder="100"
+                      className="hms-vitals-input"
+                    />
+                    <span className="hms-vitals-row__unit">mg/dL</span>
+                  </div>
+                </VitalField>
               </div>
 
               {existing && (
@@ -299,3 +346,15 @@ function VitalField({ icon, label, hint, children }) {
     </div>
   );
 }
+
+function computeAge(dob) {
+  if (!dob) return null;
+  const birth = new Date(dob);
+  if (Number.isNaN(birth.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age -= 1;
+  return age >= 0 && age < 150 ? `${age} yr` : null;
+}
+

@@ -8,6 +8,7 @@ import {
 } from '@/utils/api'
 import { generateInvoiceNumber } from '@/utils/validators'
 import { fmtId } from '@/utils/idFormat'
+import Barcode from '@/components/ui/Barcode'
 import { X, Info, Search, Plus, Trash2, Printer, BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench, Sparkles, CheckCircle2, Landmark, User } from "lucide-react";
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
@@ -652,6 +653,12 @@ export default function CreateInvoiceModal({ onClose, onCreated }) {
           <p className="hms-inv-print__billto-label">Bill To</p>
           <p className="hms-inv-print__billto-name">{patient?.firstName} {patient?.lastName}</p>
           <p className="hms-inv-print__billto-uhid">{fmtId(patient?.uhid)}</p>
+        </div>
+        <div className="hms-inv-print__barcode">
+          <Barcode
+            value={invoiceNo}
+            height={40}
+          />
         </div>
         <table className="hms-inv-print__table">
           <thead>

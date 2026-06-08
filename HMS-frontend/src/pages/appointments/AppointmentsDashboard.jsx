@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Stethoscope, Activity, FlaskConical, Printer } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, AlertTriangle, LogIn, Loader2, PlayCircle, BedDouble, HeartPulse, Search, RefreshCw, Stethoscope, Activity, FlaskConical, Printer, Undo } from "lucide-react";
 import ConsultationModal from "@/components/modals/ConsultationModal";
 import VitalsModal from "@/components/modals/VitalsModal";
 import ExternalResultsModal from "@/components/modals/ExternalResultsModal";
@@ -15,10 +15,10 @@ const CONSULT_OPEN_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS"]);
 // hand the patient their consultation + Rx + lab summary.
 const PRINT_ELIGIBLE = new Set(["COMPLETED", "BILLED"]);
 // Vitals are recorded by the nurse before the doctor takes over, so the
-// action surfaces from CHECKED_IN onward. Allow editing through IN_PROGRESS
+// action surfaces from CONFIRMED onward. Allow editing through IN_PROGRESS
 // (re-takes happen) but drop it for COMPLETED — once the consult is done
 // vitals are part of the historical record, not editable from the queue.
-const VITALS_ELIGIBLE = new Set(["CHECKED_IN", "IN_PROGRESS"]);
+const VITALS_ELIGIBLE = new Set(["CONFIRMED", "CHECKED_IN", "IN_PROGRESS"]);
 // Outside-clinic lab reports the patient walked in with. Front-desk /
 // nursing flow, captured at the same window as vitals so the doctor's
 // consultation page lands with everything pre-filled.
@@ -29,7 +29,7 @@ import BookAppointmentModal from "@/components/modals/BookAppointmentModal";
 import AdmitPatientModal from "@/pages/admin/AdmitPatientModal";
 import Pagination from "@/components/ui/Pagination";
 import { useAuth } from "@/context/AuthContext";
-import { appointmentsApi, doctorsApi, consultationDraftsApi, vitalsApi } from "@/utils/api";
+import { appointmentsApi, doctorsApi, consultationDraftsApi, vitalsApi, bankApi, invoiceApi } from "@/utils/api";
 import { format, addDays, startOfWeek, endOfWeek, addWeeks, startOfMonth, endOfMonth, addMonths, isSameDay, isSameMonth, parseISO, isToday } from "date-fns";
 import { useNotification } from "@/context/NotificationContext";
 const APPT_PAGE_SIZE = 30;
@@ -81,13 +81,12 @@ const STATUS_TRANSITIONS = {
     { status: "NO_SHOW", label: "No Show", icon: "noshow" }
   ],
   CHECKED_IN: [
+    { status: "CONFIRMED", label: "Undo Check In", icon: "undo" },
     { status: "IN_PROGRESS", label: "Start Consultation", icon: "progress" },
-    { status: "COMPLETED", label: "Mark Completed", icon: "complete" },
-    { status: "CANCELLED", label: "Cancel", icon: "cancel" }
+    { status: "COMPLETED", label: "Mark Completed", icon: "complete" }
   ],
   IN_PROGRESS: [
-    { status: "COMPLETED", label: "Mark Completed", icon: "complete" },
-    { status: "CANCELLED", label: "Cancel", icon: "cancel" }
+    { status: "COMPLETED", label: "Mark Completed", icon: "complete" }
   ],
   COMPLETED: [],
   CANCELLED: [
@@ -97,14 +96,24 @@ const STATUS_TRANSITIONS = {
     { status: "SCHEDULED", label: "Reschedule", icon: "reschedule" }
   ]
 };
-function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsultation, onRecordVitals, onAddExternalResults, onPrintConsultation, hasDraft, hasVitals }) {
+
+function ActionMenu({ appt, onUpdate, onEdit, onAdmit, onViewPatientDetails, onOpenConsultation, onRecordVitals, onAddExternalResults, onPrintConsultation, hasDraft, hasVitals }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCancelReason, setShowCancelReason] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  
+  // Refund States
+  const [invoice, setInvoice] = useState(null);
+  const [loadingInvoice, setLoadingInvoice] = useState(false);
+  const [refundMode, setRefundMode] = useState("Cash");
+  const [refundBankAccountId, setRefundBankAccountId] = useState("");
+  const [bankAccounts, setBankAccounts] = useState([]);
+
   const ref = useRef(null);
   const popRef = useRef(null);
   const actions = STATUS_TRANSITIONS[appt.status] ?? [];
+
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
@@ -130,6 +139,24 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
   const handleAction = async (status) => {
     if (status === "CANCELLED") {
       setShowCancelReason(true);
+      setLoadingInvoice(true);
+      try {
+        const inv = await invoiceApi.getByAppointment(appt.id);
+        setInvoice(inv);
+        if (inv && inv.paidAmount > 0) {
+          const banks = await bankApi.list(appt.hospitalId);
+          setBankAccounts(banks);
+        }
+      } catch (err) {
+        console.error("Failed to load refund details:", err);
+      } finally {
+        setLoadingInvoice(false);
+      }
+      return;
+    }
+    if (status === "SCHEDULED") {
+      setOpen(false);
+      onEdit();
       return;
     }
     setLoading(true);
@@ -137,14 +164,31 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
     setLoading(false);
     setOpen(false);
   };
+
   const submitCancel = async () => {
+    if (!cancelReason || !cancelReason.trim()) {
+      alert("Cancellation reason is required.");
+      return;
+    }
+    if (invoice && invoice.paidAmount > 0 && refundMode !== "Cash" && !refundBankAccountId) {
+      alert("Please select a bank account for the non-cash refund.");
+      return;
+    }
     setLoading(true);
-    await onUpdate(String(appt.id), "CANCELLED", cancelReason || void 0);
+    await onUpdate(
+      String(appt.id),
+      "CANCELLED",
+      cancelReason,
+      refundMode,
+      refundMode === "Cash" ? null : refundBankAccountId
+    );
     setLoading(false);
     setOpen(false);
     setShowCancelReason(false);
     setCancelReason("");
+    setInvoice(null);
   };
+
   const iconFor = (icon) => {
     if (icon === "complete") return <CheckCircle2 className="w-4 h-4 hms-appt-am__item-icon" />;
     if (icon === "cancel") return <XCircle className="w-4 h-4 hms-appt-am__item-icon" />;
@@ -152,8 +196,10 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
     if (icon === "progress") return <PlayCircle className="w-4 h-4 hms-appt-am__item-icon" />;
     if (icon === "noshow") return <AlertCircle className="w-4 h-4 hms-appt-am__item-icon" />;
     if (icon === "reschedule") return <CalendarIcon className="w-4 h-4 hms-appt-am__item-icon" />;
+    if (icon === "undo") return <Undo className="w-4 h-4 hms-appt-am__item-icon" />;
     return <CheckCircle2 className="w-4 h-4 hms-appt-am__item-icon" />;
   };
+
   return (
     <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
       <button onClick={() => setOpen(!open)} className="hms-appt-am__btn">
@@ -175,7 +221,15 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
                   {iconFor(action.icon)}{action.label}
                 </button>
               ))}
-              {actions.length > 0 && <div className="hms-appt-am__divider" />}
+              {(appt.status === "SCHEDULED" || appt.status === "CONFIRMED") && (
+                <button
+                  onClick={() => { setOpen(false); onEdit(); }}
+                  className="hms-appt-am__item is-neutral"
+                >
+                  <CalendarIcon className="w-4 h-4 hms-appt-am__item-icon" />Edit Appointment
+                </button>
+              )}
+              {(actions.length > 0 || appt.status === "SCHEDULED" || appt.status === "CONFIRMED") && <div className="hms-appt-am__divider" />}
               <button
                 onClick={() => { setOpen(false); onViewPatientDetails(); }}
                 className="hms-appt-am__item is-neutral"
@@ -231,7 +285,7 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
             </div>
           ) : (
             <div className="hms-appt-am__cancel">
-              <p className="hms-appt-am__cancel-label">Cancellation Reason <span className="hms-appt-am__cancel-label-hint">(optional)</span></p>
+              <p className="hms-appt-am__cancel-label">Cancellation Reason <span className="hms-appt-am__cancel-label-hint" style={{ color: '#ef4444' }}>(required)</span></p>
               <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
@@ -240,11 +294,69 @@ function ActionMenu({ appt, onUpdate, onAdmit, onViewPatientDetails, onOpenConsu
                 className="hms-appt-am__cancel-textarea"
                 autoFocus
               />
-              <div className="hms-appt-am__cancel-actions">
+
+              {loadingInvoice ? (
+                <p className="text-11 text-gray-500 mt-2">Loading billing details...</p>
+              ) : invoice && invoice.paidAmount > 0 ? (
+                <div className="mt-3 p-3 border border-amber-200 bg-amber-50 rounded text-left">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-11 font-semibold text-amber-900">Refund Required</p>
+                      <p className="text-11 text-amber-700">
+                        This appointment is paid. A refund of <strong>₹{invoice.paidAmount}</strong> will be processed.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 space-y-2">
+                    <div>
+                      <label className="text-10 font-medium text-gray-600 block">Refund Mode</label>
+                      <select
+                        value={refundMode}
+                        onChange={(e) => {
+                          setRefundMode(e.target.value);
+                          setRefundBankAccountId("");
+                        }}
+                        className="w-full text-11 p-1 border border-gray-300 rounded bg-white mt-1"
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Card">Card</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                      </select>
+                    </div>
+
+                    {refundMode !== "Cash" && (
+                      <div>
+                        <label className="text-10 font-medium text-gray-600 block">Refund Bank Account</label>
+                        <select
+                          value={refundBankAccountId}
+                          onChange={(e) => setRefundBankAccountId(e.target.value)}
+                          className="w-full text-11 p-1 border border-gray-300 rounded bg-white mt-1"
+                        >
+                          <option value="">Select bank account...</option>
+                          {bankAccounts
+                            .filter(a => ["SAVINGS", "CURRENT"].includes((a.accountType || "").toUpperCase()))
+                            .map(a => (
+                              <option key={a.id} value={a.id}>
+                                {a.accountName} ({a.bankName} - ···{a.accountNumber.slice(-4)})
+                              </option>
+                            ))
+                          }
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="hms-appt-am__cancel-actions mt-3">
                 <button
                   onClick={() => {
                     setShowCancelReason(false);
                     setCancelReason("");
+                    setInvoice(null);
                   }}
                   className="zu-btn-secondary is-sm flex-1"
                 >Back</button>
@@ -269,6 +381,7 @@ function AppointmentsDashboard() {
   const [calendarView, setCalendarView] = useState("month");
   const [listFilter, setListFilter] = useState("upcoming");
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [editAppointment, setEditAppointment] = useState(null);
   const [admitPrefill, setAdmitPrefill] = useState(null);
   // Holds the full appointment row whose check-in just triggered the
   // consultation modal. Cleared on save / cancel.
@@ -381,7 +494,8 @@ function AppointmentsDashboard() {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [doctors, user, location]);
-  const handleStatusUpdate = async (id, status, cancelledReason) => {
+
+  const handleStatusUpdate = async (id, status, cancelledReason, refundMode, refundBankAccountId) => {
     const snapshot = appointments.find((a) => String(a.id) === id);
     setAppointments((prev) => prev.map((a) => String(a.id) === id ? { ...a, status } : a));
 
@@ -399,7 +513,7 @@ function AppointmentsDashboard() {
     }
 
     try {
-      const updated = await appointmentsApi.updateStatus(id, status, cancelledReason);
+      const updated = await appointmentsApi.updateStatus(id, status, cancelledReason, refundMode, refundBankAccountId);
       notify(`Appointment marked as ${status.replace(/_/g, " ").toLowerCase()}`, "success");
       // Swap in the server's authoritative DTO so any derived fields are fresh.
       if (shouldOpenConsult && updated) {
@@ -490,6 +604,7 @@ function AppointmentsDashboard() {
               onChange={(value) => setSelectedDoctorId(value)}
               options={[{ value: "all", label: "All Doctors" }, ...doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}` }))]}
               className="hms-appt-list__doctor-select w-full"
+              clearable={false}
             />
           </div>
         </div>
@@ -562,6 +677,7 @@ function AppointmentsDashboard() {
                       <ActionMenu
                         appt={appt}
                         onUpdate={handleStatusUpdate}
+                        onEdit={() => { setEditAppointment(appt); setIsBookingModalOpen(true); }}
                         onAdmit={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), uhid: appt.patientUhid }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })}
                         onViewPatientDetails={() => navigate(`/patients/${appt.patientId}`)}
                         onOpenConsultation={() => setConsultationAppointment(appt)}
@@ -775,6 +891,7 @@ function AppointmentsDashboard() {
                 onChange={(value) => setSelectedDoctorId(value)}
                 options={[{ value: "all", label: "All Doctors" }, ...doctors.map((d) => ({ value: d.id, label: `Dr. ${d.firstName} ${d.lastName}` }))]}
                 className="hms-appt-list__doctor-select"
+                clearable={false}
               />
               <div className="hms-appt-cal-bar__nav">
                 <button onClick={goToday} className="zu-btn-secondary">Today</button>
@@ -833,9 +950,14 @@ function AppointmentsDashboard() {
       </div>
       <BookAppointmentModal
         isOpen={isBookingModalOpen}
-        onClose={() => setIsBookingModalOpen(false)}
+        onClose={() => {
+          setIsBookingModalOpen(false);
+          setEditAppointment(null);
+        }}
+        editAppointment={editAppointment}
         onSuccess={() => {
           setIsBookingModalOpen(false);
+          setEditAppointment(null);
           loadData();
         }}
       />

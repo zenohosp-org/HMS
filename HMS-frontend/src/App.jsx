@@ -29,6 +29,7 @@ const AmbulanceBilling = lazy(() => import("./pages/billing/AmbulanceBilling"));
 const AppointmentsDashboard = lazy(() => import("@/pages/appointments/AppointmentsDashboard"));
 const ConsultationViewPage = lazy(() => import("@/pages/appointments/ConsultationViewPage"));
 const PrintConsultation = lazy(() => import("@/pages/print/PrintConsultation"));
+const PrintDischargeSummary = lazy(() => import("@/pages/print/PrintDischargeSummary"));
 const ShiftRoster = lazy(() => import("@/pages/admin/ShiftRoster"));
 const Departments = lazy(() => import("@/pages/admin/Departments"));
 const Designations = lazy(() => import("@/pages/admin/Designations"));
@@ -137,6 +138,14 @@ function App() {
  element={
  <ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}>
  <PrintConsultation />
+ </ProtectedRoute>
+ }
+ />
+ <Route
+ path="/print/admission/:admissionId/discharge-summary"
+ element={
+ <ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor", "staff"]}>
+ <PrintDischargeSummary />
  </ProtectedRoute>
  }
  />

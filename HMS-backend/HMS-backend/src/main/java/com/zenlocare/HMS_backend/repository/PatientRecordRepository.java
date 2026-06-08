@@ -46,6 +46,16 @@ public interface PatientRecordRepository extends JpaRepository<PatientRecord, In
     List<PatientRecord> findByPatientIdAndHospitalIdAndAdmissionIdAndHistoryTypeOrderByCreatedAtDesc(
             Integer patientId, UUID hospitalId, UUID admissionId, HistoryType historyType);
 
+    /**
+     * Every record type tied to a single admission, newest first — powers the
+     * discharge summary print view, which needs the full clinical course of
+     * the stay (consultations, prescriptions, lab results, surgery notes) in
+     * one query rather than looping per HistoryType.
+     */
+    @EntityGraph(attributePaths = {"createdBy", "createdBy.role", "prescriptionItems"})
+    List<PatientRecord> findByPatientIdAndHospitalIdAndAdmissionIdOrderByCreatedAtDesc(
+            Integer patientId, UUID hospitalId, UUID admissionId);
+
     @Query("SELECT COUNT(DISTINCT pr.patient.id) FROM PatientRecord pr WHERE pr.createdBy.id = :userId")
     long countUniquePatientsByDoctor(@Param("userId") UUID userId);
 

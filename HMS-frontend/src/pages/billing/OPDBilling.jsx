@@ -3,6 +3,8 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi } from '@/utils/api'
 import { fmtId } from '@/utils/idFormat'
+import { escapeHtml } from '@/utils/html'
+import JsBarcode from 'jsbarcode'
 import Pagination from '@/components/ui/Pagination'
 import TableSkeleton from '@/components/ui/TableSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
@@ -90,7 +92,7 @@ function GetInfoModal({ invoice, onClose }) {
     <Modal
       isOpen={true}
       onClose={onClose}
-      title={<h2 className="text-lg font-semibold text-gray-900">Booking & Billing Information</h2>}
+      title="Booking & Billing Information"
       size="md"
       footer={
         <div className="flex w-full justify-end">
@@ -101,46 +103,46 @@ function GetInfoModal({ invoice, onClose }) {
       <div className="flex flex-col gap-6 py-2">
         {/* Appointment Section */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 border-b pb-1 mb-4">Appointment Details</h3>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <h3 className="hms-section-head">Appointment Details</h3>
+          <div className="hms-form-grid is-2col mt-3">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Patient Name</p>
-              <p className="text-base text-gray-900">{invoice.patientName || "—"}</p>
+              <p className="hms-kv__label">Patient Name</p>
+              <p className="hms-kv__value">{invoice.patientName || "—"}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Booked On</p>
-              <p className="text-base text-gray-900">{createdAt}</p>
+              <p className="hms-kv__label">Booked On</p>
+              <p className="hms-kv__value">{createdAt}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Booked By</p>
-              <p className="text-base text-gray-900">{bookedBy}</p>
+              <p className="hms-kv__label">Booked By</p>
+              <p className="hms-kv__value">{bookedBy}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Doctor Details</p>
-              <p className="text-base text-gray-900">{docName}</p>
+              <p className="hms-kv__label">Doctor Details</p>
+              <p className="hms-kv__value">{docName}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Scheduled Time</p>
-              <p className="text-base text-gray-900">{schedDate}</p>
+              <p className="hms-kv__label">Scheduled Time</p>
+              <p className="hms-kv__value">{schedDate}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Visit Type & Token</p>
-              <p className="text-base text-gray-900">
+              <p className="hms-kv__label">Visit Type & Token</p>
+              <p className="hms-kv__value">
                 {invoice.appointmentType || "—"} {invoice.appointmentTokenNumber ? `(Token: #${invoice.appointmentTokenNumber})` : ""}
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Appt. Status</p>
-              <p className="text-base text-gray-900">{invoice.appointmentStatus || "—"}</p>
+              <p className="hms-kv__label">Appt. Status</p>
+              <p className="hms-kv__value">{invoice.appointmentStatus || "—"}</p>
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <p className="text-sm font-medium text-gray-500 mb-1">Chief Complaint</p>
-              <p className="text-base text-gray-900">{invoice.appointmentChiefComplaint || "—"}</p>
+            <div className="is-span-2">
+              <p className="hms-kv__label">Chief Complaint</p>
+              <p className="hms-kv__value">{invoice.appointmentChiefComplaint || "—"}</p>
             </div>
             {invoice.appointmentStatus === 'CANCELLED' && (
-              <div style={{ gridColumn: '1 / -1' }}>
-                <p className="text-sm font-medium text-red-500 mb-1">Cancelled Reason</p>
-                <p className="text-base text-red-600">{invoice.appointmentCancelledReason || "—"}</p>
+              <div className="is-span-2">
+                <p className="hms-kv__label text-danger">Cancelled Reason</p>
+                <p className="hms-kv__value text-danger">{invoice.appointmentCancelledReason || "—"}</p>
               </div>
             )}
           </div>
@@ -148,42 +150,42 @@ function GetInfoModal({ invoice, onClose }) {
 
         {/* Billing Section */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 border-b pb-1 mb-4">Billing Details</h3>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <h3 className="hms-section-head">Billing Details</h3>
+          <div className="hms-form-grid is-2col mt-3">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Billing Status</p>
-              <p className="text-base text-gray-900">{invoice.status || "—"}</p>
+              <p className="hms-kv__label">Billing Status</p>
+              <p className="hms-kv__value">{invoice.status || "—"}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Subtotal</p>
-              <p className="text-base text-gray-900">₹{invoice.subtotal?.toFixed(2) || "0.00"}</p>
+              <p className="hms-kv__label">Subtotal</p>
+              <p className="hms-kv__value">₹{invoice.subtotal?.toFixed(2) || "0.00"}</p>
             </div>
             {Number(invoice.discount) > 0 && (
               <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Discount</p>
-                <p className="text-base text-gray-900 text-green-600">-₹{invoice.discount?.toFixed(2)}</p>
+                <p className="hms-kv__label">Discount</p>
+                <p className="hms-kv__value text-success">-₹{invoice.discount?.toFixed(2)}</p>
               </div>
             )}
             {Number(invoice.tax) > 0 && (
               <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Tax</p>
-                <p className="text-base text-gray-900">₹{invoice.tax?.toFixed(2)}</p>
+                <p className="hms-kv__label">Tax</p>
+                <p className="hms-kv__value">₹{invoice.tax?.toFixed(2)}</p>
               </div>
             )}
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Grand Total</p>
-              <p className="text-base font-semibold text-gray-900">₹{invoice.total?.toFixed(2) || "0.00"}</p>
+              <p className="hms-kv__label">Grand Total</p>
+              <p className="hms-kv__value is-strong">₹{invoice.total?.toFixed(2) || "0.00"}</p>
             </div>
             {Number(invoice.paidAmount) > 0 && (
               <>
                 <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Paid Amount</p>
-                  <p className="text-base text-green-600 font-semibold">₹{invoice.paidAmount?.toFixed(2)}</p>
+                  <p className="hms-kv__label">Paid Amount</p>
+                  <p className="hms-kv__value text-success">₹{invoice.paidAmount?.toFixed(2)}</p>
                 </div>
                 {invoice.paymentMethod && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Payment Method</p>
-                    <p className="text-base text-gray-900">{invoice.paymentMethod.replace(/_/g, ' ')}</p>
+                    <p className="hms-kv__label">Payment Method</p>
+                    <p className="hms-kv__value">{invoice.paymentMethod.replace(/_/g, ' ')}</p>
                   </div>
                 )}
               </>
@@ -194,16 +196,16 @@ function GetInfoModal({ invoice, onClose }) {
         {/* Itemized Bill Section */}
         {invoice.items && invoice.items.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 border-b pb-1 mb-4">Itemized Bill</h3>
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
-              <table className="w-full text-sm text-left text-gray-500">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+            <h3 className="hms-section-head">Itemized Bill</h3>
+            <div className="hms-table-wrapper mt-3">
+              <table className="hms-table">
+                <thead>
                   <tr>
-                    <th className="px-4 py-2 font-semibold">Type</th>
-                    <th className="px-4 py-2 font-semibold">Description</th>
-                    <th className="px-4 py-2 font-semibold text-center">Qty</th>
-                    <th className="px-4 py-2 font-semibold text-right">Unit Price</th>
-                    <th className="px-4 py-2 font-semibold text-right">Total</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th className="text-center">Qty</th>
+                    <th className="text-right">Unit Price</th>
+                    <th className="text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -211,18 +213,18 @@ function GetInfoModal({ invoice, onClose }) {
                     const waived = Number(item.waiverAmount || 0);
                     const effective = Number(item.totalPrice || 0) - waived;
                     return (
-                      <tr key={item.id || idx} className="border-b last:border-0 hover:bg-gray-50">
-                        <td className="px-4 py-2">{item.itemType?.replace('_', ' ')}</td>
-                        <td className="px-4 py-2">
-                          <div className="font-medium text-gray-900">{item.description}</div>
-                          {item.waiverReason && <div className="text-xs text-gray-500">Waiver: {item.waiverReason}</div>}
+                      <tr key={item.id || idx}>
+                        <td>{item.itemType?.replace('_', ' ')}</td>
+                        <td>
+                          <div className="font-semibold text-gray-900">{item.description}</div>
+                          {item.waiverReason && <div className="text-11 text-gray-500">Waiver: {item.waiverReason}</div>}
                         </td>
-                        <td className="px-4 py-2 text-center">{item.quantity}</td>
-                        <td className="px-4 py-2 text-right">₹{Number(item.unitPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td className="px-4 py-2 text-right font-medium text-gray-900">
+                        <td className="text-center">{item.quantity}</td>
+                        <td className="text-right">₹{Number(item.unitPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className="text-right font-medium text-gray-900">
                           {waived > 0 ? (
                             <div className="flex flex-col items-end">
-                              <span className="line-through text-xs text-gray-400">₹{Number(item.totalPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              <span className="line-through text-11 text-gray-400">₹{Number(item.totalPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                               <span>₹{effective.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                           ) : (
@@ -241,30 +243,30 @@ function GetInfoModal({ invoice, onClose }) {
         {/* Payment History Section */}
         {invoice.payments && invoice.payments.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 border-b pb-1 mb-4">Payment History</h3>
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
-              <table className="w-full text-sm text-left text-gray-500">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+            <h3 className="hms-section-head">Payment History</h3>
+            <div className="hms-table-wrapper mt-3">
+              <table className="hms-table">
+                <thead>
                   <tr>
-                    <th className="px-4 py-2 font-semibold">Date</th>
-                    <th className="px-4 py-2 font-semibold">Method</th>
-                    <th className="px-4 py-2 font-semibold">Reference</th>
-                    <th className="px-4 py-2 font-semibold">Collected By</th>
-                    <th className="px-4 py-2 font-semibold text-right">Amount</th>
+                    <th>Date</th>
+                    <th>Method</th>
+                    <th>Reference</th>
+                    <th>Collected By</th>
+                    <th className="text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {invoice.payments.map((p, idx) => (
-                    <tr key={p.id || idx} className="border-b last:border-0 hover:bg-gray-50">
-                      <td className="px-4 py-2">{new Date(p.paidAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                      <td className="px-4 py-2">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                    <tr key={p.id || idx}>
+                      <td>{new Date(p.paidAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                      <td>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-12 font-medium bg-gray-100 text-gray-800">
                           {p.paymentMethod}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-gray-600">{p.referenceNumber || p.notes || '—'}</td>
-                      <td className="px-4 py-2 text-gray-900">{p.collectedBy || '—'}</td>
-                      <td className="px-4 py-2 text-right font-medium text-green-600">₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td className="text-gray-600">{p.referenceNumber || p.notes || '—'}</td>
+                      <td className="text-gray-900">{p.collectedByName || p.collectedBy || '—'}</td>
+                      <td className="text-right font-medium text-success">₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -391,34 +393,44 @@ export default function OPDBilling() {
     const discount = Number(inv.discount || 0)
     const subtotal = total + discount
     const statusCls = { PAID: 'background:#d1fae5;color:#065f46', UNPAID: 'background:#fef3c7;color:#92400e', PARTIAL: 'background:#ffedd5;color:#9a3412', CANCELLED: 'background:#fee2e2;color:#991b1b' }
+    // Built as raw SVG markup (not the React <Barcode>) since this view is
+    // serialized into a standalone iframe document, outside the React tree.
+    const barcodeValue = inv.invoiceNumber ?? ''
+    let barcodeSvg = ''
+    if (barcodeValue) {
+      const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      JsBarcode(svgEl, barcodeValue, { format: 'CODE128', height: 40, width: 1.2, fontSize: 12, margin: 6, displayValue: true })
+      barcodeSvg = svgEl.outerHTML
+    }
     const itemRows = items.map(item => `
       <tr>
-        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.itemType?.replace('_', ' ') ?? ''}</td>
-        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.description ?? ''}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${escapeHtml(item.itemType?.replace('_', ' '))}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${escapeHtml(item.description)}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:center">×${item.quantity}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:right">₹${Number(item.unitPrice).toLocaleString('en-IN')}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;font-weight:600;color:#111;text-align:right">₹${Number(item.totalPrice).toLocaleString('en-IN')}</td>
       </tr>`).join('')
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
-      <title>Invoice ${fmtId(inv.invoiceNumber)}</title>
+      <title>Invoice ${escapeHtml(fmtId(inv.invoiceNumber))}</title>
       <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Lexend', sans-serif;font-size:13px;color:#1a1a1a;padding:36px}table{width:100%;border-collapse:collapse}@media print{body{padding:24px}}</style>
     </head><body>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #10b981">
         <div>
           <div style="font-size:22px;font-weight:800;color:#10b981">ZenoHosp HMS</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:2px">${user?.hospitalName ?? 'Hospital Management System'}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px">${escapeHtml(user?.hospitalName) || 'Hospital Management System'}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:16px;font-weight:700">${fmtId(inv.invoiceNumber)}</div>
+          <div style="font-size:16px;font-weight:700">${escapeHtml(fmtId(inv.invoiceNumber))}</div>
           <div style="font-size:11px;color:#6b7280;margin-top:4px">${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'long', year: 'numeric' }) : '—'}</div>
-          <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusCls[inv.status] ?? statusCls.UNPAID}">${inv.status}</span></div>
+          <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusCls[inv.status] ?? statusCls.UNPAID}">${escapeHtml(inv.status)}</span></div>
         </div>
       </div>
       <div style="margin-bottom:20px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Billed To</div>
-        <div style="font-size:15px;font-weight:700">${inv.patientName ?? '—'}</div>
-        ${inv.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${fmtId(inv.patientUhid)}</div>` : ''}
-        ${inv.paymentMethod ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">Payment: ${inv.paymentMethod}</div>` : ''}
+        <div style="font-size:15px;font-weight:700">${escapeHtml(inv.patientName) || '—'}</div>
+        ${inv.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${escapeHtml(fmtId(inv.patientUhid))}</div>` : ''}
+        ${inv.paymentMethod ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">Payment: ${escapeHtml(inv.paymentMethod)}</div>` : ''}
+        ${barcodeSvg ? `<div style="margin-top:10px">${barcodeSvg}</div>` : ''}
       </div>
       <table>
         <thead>

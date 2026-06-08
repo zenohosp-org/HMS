@@ -27,4 +27,6 @@ public class AppointmentRequest {
     // For status updates
     private Appointment.AppointmentStatus status;
     private String cancelledReason;
+    private UUID refundBankAccountId;
+    private String refundMode;
 }

@@ -64,4 +64,11 @@ public class InvoiceController {
             invoiceService.getPaginatedIpdInvoices(hospitalId, page, size, status, search)
         );
     }
+
+    @GetMapping("/appointment/{appointmentId}")
+    public ResponseEntity<InvoiceDTO> getInvoiceByAppointment(@PathVariable UUID appointmentId) {
+        return invoiceService.getInvoiceByAppointment(appointmentId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

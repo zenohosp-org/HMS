@@ -81,6 +81,7 @@ export default function DischargeModal({ admission, onClose, onDischarged }) {
                 followUpDoctorId: admission.admittingDoctorId || null,
             });
             notify("Patient discharged successfully", "success");
+            window.open(`/print/admission/${admission.id}/discharge-summary`, "_blank", "noopener,noreferrer");
             onDischarged();
         } catch (err) {
             const msg = err?.response?.data?.message || err?.message || "";

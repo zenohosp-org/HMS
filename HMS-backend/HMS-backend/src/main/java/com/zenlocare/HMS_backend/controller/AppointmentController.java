@@ -80,12 +80,23 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.createAppointment(request, currentUser.getId()));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<AppointmentDto> updateAppointment(
+            @PathVariable UUID id,
+            @RequestBody AppointmentRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(appointmentService.updateAppointment(id, request, currentUser));
+    }
+
     @PutMapping("/{id}/status")
     public ResponseEntity<AppointmentDto> updateAppointmentStatus(
             @PathVariable UUID id,
-            @RequestBody AppointmentRequest request) {
+            @RequestBody AppointmentRequest request,
+            @AuthenticationPrincipal User currentUser) {
         return ResponseEntity
-                .ok(appointmentService.updateAppointmentStatus(id, request.getStatus(), request.getCancelledReason()));
+                .ok(appointmentService.updateAppointmentStatus(
+                        id, request.getStatus(), request.getCancelledReason(),
+                        request.getRefundMode(), request.getRefundBankAccountId(), currentUser));
     }
 
     /**

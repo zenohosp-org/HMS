@@ -104,8 +104,18 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     // single-query approach with `CAST(i.status AS string) = :status` was broken
     // because `status` is stored as an Integer via InvoiceStatusConverter, so the
     // cast yielded "1"/"2"/... and never matched names like "UNPAID".
+    // JOIN FETCH the to-one associations that InvoiceService.toDTO() reads for every
+    // row (patient, updatedBy, appointment chain) so the page load doesn't trigger a
+    // lazy-load round trip per invoice (was: ~6-8 extra queries x page size). The
+    // `items` collection is intentionally NOT fetch-joined here — joining a
+    // @OneToMany defeats pagination (Hibernate would have to load every matching
+    // row into memory first); it's loaded in one batched IN query instead via
+    // Invoice.items' @BatchSize. Count queries reuse the same `p` alias without
+    // FETCH (fetch joins aren't valid in COUNT queries).
     @Query(value = """
         SELECT i FROM Invoice i
+        LEFT JOIN FETCH i.patient p
+        LEFT JOIN FETCH i.updatedBy
         LEFT JOIN FETCH i.appointment a
         LEFT JOIN FETCH a.createdBy
         LEFT JOIN FETCH a.doctor d
@@ -114,25 +124,26 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         AND i.admission IS NULL
         AND (
             LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
+            LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(p.firstName, ' ', p.lastName))
                 LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+            LOWER(p.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
         )
         ORDER BY i.createdAt DESC
         """,
         countQuery = """
         SELECT COUNT(i) FROM Invoice i
+        LEFT JOIN i.patient p
         WHERE i.hospital.id = :hospitalId
         AND i.admission IS NULL
         AND (
             LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
+            LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(p.firstName, ' ', p.lastName))
                 LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+            LOWER(p.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
         )
         """)
     Page<Invoice> searchOpdInvoices(
@@ -143,6 +154,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     @Query(value = """
         SELECT i FROM Invoice i
+        LEFT JOIN FETCH i.patient p
+        LEFT JOIN FETCH i.updatedBy
         LEFT JOIN FETCH i.appointment a
         LEFT JOIN FETCH a.createdBy
         LEFT JOIN FETCH a.doctor d
@@ -152,26 +165,27 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         AND i.status IN :statuses
         AND (
             LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
+            LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(p.firstName, ' ', p.lastName))
                 LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+            LOWER(p.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
         )
         ORDER BY i.createdAt DESC
         """,
         countQuery = """
         SELECT COUNT(i) FROM Invoice i
+        LEFT JOIN i.patient p
         WHERE i.hospital.id = :hospitalId
         AND i.admission IS NULL
         AND i.status IN :statuses
         AND (
             LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
+            LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(p.firstName, ' ', p.lastName))
                 LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+            LOWER(p.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
         )
         """)
     Page<Invoice> searchOpdInvoicesByStatuses(
@@ -181,19 +195,40 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         Pageable pageable
     );
 
-    @Query("""
+    @Query(value = """
         SELECT i FROM Invoice i
+        LEFT JOIN FETCH i.patient p
+        LEFT JOIN FETCH i.admission
+        LEFT JOIN FETCH i.updatedBy
+        LEFT JOIN FETCH i.appointment a
+        LEFT JOIN FETCH a.createdBy
+        LEFT JOIN FETCH a.doctor d
+        LEFT JOIN FETCH d.user
         WHERE i.hospital.id = :hospitalId
         AND i.admission IS NOT NULL
         AND (
             LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
+            LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(p.firstName, ' ', p.lastName))
                 LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+            LOWER(p.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
         )
         ORDER BY i.createdAt DESC
+        """,
+        countQuery = """
+        SELECT COUNT(i) FROM Invoice i
+        LEFT JOIN i.patient p
+        WHERE i.hospital.id = :hospitalId
+        AND i.admission IS NOT NULL
+        AND (
+            LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(p.firstName, ' ', p.lastName))
+                LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+        )
         """)
     Page<Invoice> searchIpdInvoices(
         @Param("hospitalId") UUID hospitalId,
@@ -201,20 +236,42 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         Pageable pageable
     );
 
-    @Query("""
+    @Query(value = """
         SELECT i FROM Invoice i
+        LEFT JOIN FETCH i.patient p
+        LEFT JOIN FETCH i.admission
+        LEFT JOIN FETCH i.updatedBy
+        LEFT JOIN FETCH i.appointment a
+        LEFT JOIN FETCH a.createdBy
+        LEFT JOIN FETCH a.doctor d
+        LEFT JOIN FETCH d.user
         WHERE i.hospital.id = :hospitalId
         AND i.admission IS NOT NULL
         AND i.status IN :statuses
         AND (
             LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(CONCAT(i.patient.firstName, ' ', i.patient.lastName))
+            LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(p.firstName, ' ', p.lastName))
                 LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(i.patient.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+            LOWER(p.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
         )
         ORDER BY i.createdAt DESC
+        """,
+        countQuery = """
+        SELECT COUNT(i) FROM Invoice i
+        LEFT JOIN i.patient p
+        WHERE i.hospital.id = :hospitalId
+        AND i.admission IS NOT NULL
+        AND i.status IN :statuses
+        AND (
+            LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(CONCAT(p.firstName, ' ', p.lastName))
+                LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.uhid) LIKE LOWER(CONCAT('%', :search, '%'))
+        )
         """)
     Page<Invoice> searchIpdInvoicesByStatuses(
         @Param("hospitalId") UUID hospitalId,

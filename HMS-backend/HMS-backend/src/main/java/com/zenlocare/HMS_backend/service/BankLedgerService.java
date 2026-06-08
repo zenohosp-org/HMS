@@ -40,4 +40,21 @@ public class BankLedgerService {
                     .transactionDate(LocalDateTime.now())
                     .build()));
     }
+
+    @Transactional
+    public void debitPayment(UUID bankAccountId, BigDecimal amount,
+                              String description, String referenceNo, UUID relatedEntityId) {
+        bankAccountRepository.findById(bankAccountId).ifPresent(account ->
+            bankTransactionRepository.save(BankTransaction.builder()
+                    .hospitalId(account.getHospitalId())
+                    .bankAccountId(bankAccountId)
+                    .amount(amount)
+                    .type("DEBIT")
+                    .description(description)
+                    .referenceNo(referenceNo)
+                    .relatedEntityId(relatedEntityId)
+                    .relatedEntityType("INVOICE")
+                    .transactionDate(LocalDateTime.now())
+                    .build()));
+    }
 }

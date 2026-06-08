@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { X, Calendar, Clock, FileText, Search, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { patientApi, doctorsApi, appointmentsApi, checkupApi } from "@/utils/api";
+import { patientApi, doctorsApi, appointmentsApi, checkupApi, invoiceApi, bankApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 
@@ -75,7 +75,7 @@ function SectionLabel({ step, label, icon }) {
   );
 }
 
-export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate, prefilledPatient }) {
+export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selectedDate, prefilledPatient, editAppointment }) {
   const { user } = useAuth();
   const { notify } = useNotification();
   const navigate = useNavigate();
@@ -99,12 +99,53 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   const [patientOpen, setPatientOpen] = useState(false);
   const [doctorOpen, setDoctorOpen] = useState(false);
 
+  // Refund & Edit Billing States
+  const [invoice, setInvoice] = useState(null);
+  const [bankAccounts, setBankAccounts] = useState([]);
+  const [refundMode, setRefundMode] = useState("Cash");
+  const [refundBankAccountId, setRefundBankAccountId] = useState("");
+  const [loadingInvoice, setLoadingInvoice] = useState(false);
+
   useEffect(() => {
-    if (isOpen && prefilledPatient) {
+    if (isOpen && prefilledPatient && !editAppointment) {
       setPatientId(String(prefilledPatient.id));
       setPatientSearch(`${prefilledPatient.firstName} ${prefilledPatient.lastName}`);
     }
-  }, [isOpen, prefilledPatient]);
+  }, [isOpen, prefilledPatient, editAppointment]);
+
+  useEffect(() => {
+    if (isOpen && editAppointment) {
+      setPatientId(String(editAppointment.patientId));
+      setDoctorId(editAppointment.doctorId || "");
+      setApptDate(editAppointment.apptDate || "");
+      setApptTime(editAppointment.apptTime || "");
+      setType(editAppointment.type || "OPD");
+      setChiefComplaint(editAppointment.chiefComplaint || "");
+      setPackageId(editAppointment.packageId || "");
+      setPatientSearch("");
+
+      setLoadingInvoice(true);
+      invoiceApi.getByAppointment(editAppointment.id)
+        .then(inv => {
+          setInvoice(inv);
+          if (inv && inv.paidAmount > 0) {
+            bankApi.list(user.hospitalId)
+              .then(banks => setBankAccounts(banks))
+              .catch(console.error);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch appointment invoice", err);
+        })
+        .finally(() => setLoadingInvoice(false));
+    } else if (isOpen) {
+      setInvoice(null);
+      setBankAccounts([]);
+      setRefundMode("Cash");
+      setRefundBankAccountId("");
+    }
+  }, [isOpen, editAppointment, user?.hospitalId]);
+
   const patientRef = useRef(null);
   const doctorRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -121,6 +162,54 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   const selectedPatient = patients.find(p => String(p.id) === patientId);
   const selectedDoctor = doctors.find(d => d.id === doctorId);
   const selectedPkg = packages.find(p => p.id === packageId);
+
+  const displayPatientName = selectedPatient
+    ? `${selectedPatient.firstName} ${selectedPatient.lastName}`
+    : editAppointment
+      ? editAppointment.patientName || `${editAppointment.patientFirstName || ""} ${editAppointment.patientLastName || ""}`.trim()
+      : "";
+
+  const displayPatientUhid = selectedPatient
+    ? selectedPatient.uhid
+    : editAppointment
+      ? editAppointment.patientUhid
+      : "";
+
+  const displayPatientAvatar = selectedPatient
+    ? selectedPatient.firstName?.[0]
+    : editAppointment
+      ? (editAppointment.patientFirstName || editAppointment.patientName)?.[0]
+      : "";
+
+  const hasRefund = (() => {
+    if (!editAppointment || !invoice || (invoice.paidAmount || 0) <= 0) return false;
+    const oldDoc = doctors.find(d => d.id === editAppointment.doctorId);
+    const isOldFollowUp = editAppointment.type === "FOLLOWUP";
+    const fOld = oldDoc ? (isOldFollowUp && oldDoc.followUpFee != null ? oldDoc.followUpFee : oldDoc.consultationFee) : 0;
+
+    const isNewFollowUp = type === "FOLLOWUP";
+    const fNew = selectedDoctor ? (isNewFollowUp && selectedDoctor.followUpFee != null ? selectedDoctor.followUpFee : selectedDoctor.consultationFee) : 0;
+
+    const diff = fNew - fOld;
+    const newTotal = (invoice.total || 0) + diff;
+    const refundAmt = (invoice.paidAmount || 0) - newTotal;
+    return refundAmt > 0;
+  })();
+
+  const refundAmount = (() => {
+    if (!editAppointment || !invoice) return 0;
+    const oldDoc = doctors.find(d => d.id === editAppointment.doctorId);
+    const isOldFollowUp = editAppointment.type === "FOLLOWUP";
+    const fOld = oldDoc ? (isOldFollowUp && oldDoc.followUpFee != null ? oldDoc.followUpFee : oldDoc.consultationFee) : 0;
+
+    const isNewFollowUp = type === "FOLLOWUP";
+    const fNew = selectedDoctor ? (isNewFollowUp && selectedDoctor.followUpFee != null ? selectedDoctor.followUpFee : selectedDoctor.consultationFee) : 0;
+
+    const diff = fNew - fOld;
+    const newTotal = (invoice.total || 0) + diff;
+    const refundAmt = (invoice.paidAmount || 0) - newTotal;
+    return refundAmt > 0 ? refundAmt : 0;
+  })();
 
   const filteredPatients = patients.filter(p => {
     const q = patientSearch.toLowerCase();
@@ -142,7 +231,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
       checkupApi.getPackages(user.hospitalId, true),
     ]).then(([p, d, pk]) => {
       setPatients(p); setDoctors(d.filter(x => x.userIsActive)); setPackages(pk);
-      if (user.role === "doctor") {
+      if (user.role === "doctor" && !editAppointment) {
         const doc = d.find(x => x.userId === user.userId);
         if (doc) setDoctorId(doc.id);
       }
@@ -188,6 +277,14 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
       if (!doctorId) errs.doctor = "Please select a doctor";
       if (!apptTime) errs.time = "Please select a time slot";
     }
+    if (editAppointment && hasRefund) {
+      if (!refundMode) {
+        errs.refund = "Refund mode is required";
+      }
+      if (refundMode !== "Cash" && !refundBankAccountId) {
+        errs.refund = "Please select a bank account for non-cash refund";
+      }
+    }
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setIsLoading(true);
     try {
@@ -200,23 +297,32 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
         ...(isEmergency
           ? { emergencyPatientName: emergencyName.trim(), emergencyPhone: emergencyPhone.trim() || undefined, doctorId: doctorId || undefined, apptTime: apptTime || undefined }
           : { patientId: Number(patientId), doctorId, apptTime }),
+        ...(editAppointment && hasRefund
+          ? { refundMode, refundBankAccountId: refundMode === "Cash" ? null : refundBankAccountId }
+          : {})
       };
-      let appointment = await appointmentsApi.create(payload);
 
-      if (isAutoConfirm) {
-        try {
-          appointment = await appointmentsApi.updateStatus(appointment.id, 'CONFIRMED');
-        } catch (err) {
-          console.error("Failed to auto-confirm:", err);
+      let appointment;
+      if (editAppointment) {
+        appointment = await appointmentsApi.update(editAppointment.id, payload);
+        notify("Appointment updated successfully!", "success");
+      } else {
+        appointment = await appointmentsApi.create(payload);
+        if (isAutoConfirm) {
+          try {
+            appointment = await appointmentsApi.updateStatus(appointment.id, 'CONFIRMED');
+          } catch (err) {
+            console.error("Failed to auto-confirm:", err);
+          }
         }
+        const tokenMsg = appointment.tokenNumber ? ` (Token: ${appointment.tokenNumber})` : "";
+        notify(isEmergency ? `Emergency appointment created!${tokenMsg}` : `Appointment scheduled successfully!${tokenMsg}`, "success");
       }
 
-      const tokenMsg = appointment.tokenNumber ? ` (Token: ${appointment.tokenNumber})` : "";
-      notify(isEmergency ? `Emergency appointment created!${tokenMsg}` : `Appointment scheduled successfully!${tokenMsg}`, "success");
       onSuccess(appointment);
       resetForm();
     } catch (err) {
-      notify(err.response?.data?.message || "Failed to book appointment", "error");
+      notify(err.response?.data?.message || "Failed to save appointment", "error");
     } finally { setIsLoading(false); }
   };
 
@@ -226,6 +332,10 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
     setApptTime(""); setType("OPD"); setPackageId(""); setChiefComplaint("");
     setEmergencyName(""); setEmergencyPhone(""); setIsAutoConfirm(false);
     setPastDoctors([]); setShowAllDoctors(false);
+    setInvoice(null);
+    setBankAccounts([]);
+    setRefundMode("Cash");
+    setRefundBankAccountId("");
     setErrors({});
   };
 
@@ -321,7 +431,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 </div>
               ) : (
                 <div>
-                  {!prefilledPatient && (
+                  {!prefilledPatient && !editAppointment && (
                     <div className={`zu-search ${errors.patient ? "border-rose-500" : ""}`} ref={patientRef}>
                       <Search className="zu-search-icon" size={16} />
                       <input type="text" value={patientSearch}
@@ -349,14 +459,14 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                     </div>
                   )}
 
-                  {selectedPatient ? (
+                  {(selectedPatient || editAppointment) ? (
                     <div className="hms-book-picked">
-                      <div className="hms-book-picked__avatar">{selectedPatient.firstName[0]}</div>
+                      <div className="hms-book-picked__avatar">{displayPatientAvatar}</div>
                       <div className="hms-book-picked__body">
-                        <p className="hms-book-picked__name">{selectedPatient.firstName} {selectedPatient.lastName}</p>
-                        <p className="hms-book-picked__sub">{fmtId(selectedPatient.uhid)}</p>
+                        <p className="hms-book-picked__name">{displayPatientName}</p>
+                        <p className="hms-book-picked__sub">{fmtId(displayPatientUhid)}</p>
                       </div>
-                      {!prefilledPatient && (
+                      {!prefilledPatient && !editAppointment && (
                         <button type="button" onClick={() => { setPatientId(""); setPastDoctors([]); }} className="hms-book-picked__clear"><X className="w-3.5 h-3.5" /></button>
                       )}
                     </div>
@@ -364,7 +474,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                     errors.patient && <p className="hms-field-error">{errors.patient}</p>
                   )}
 
-                  {!prefilledPatient && (
+                  {!prefilledPatient && !editAppointment && (
                     <button type="button"
                       onClick={() => { onClose(); navigate("/patients", { state: { openRegistration: true } }); }}
                       className="hms-book-register-btn">
@@ -562,20 +672,93 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
                 placeholder={isEmergency ? "Brief description of emergency (optional)" : "Enter the reason for the appointment (optional)"} />
             </div>
 
+            {editAppointment && loadingInvoice && (
+              <>
+                <hr className="hms-book-divider" />
+                <div className="hms-book-section p-4 border border-gray-200 bg-gray-50 rounded">
+                  <p className="text-xs text-gray-500">Loading billing invoice details...</p>
+                </div>
+              </>
+            )}
+
+            {editAppointment && !loadingInvoice && hasRefund && (
+              <>
+                <hr className="hms-book-divider" />
+                <div className="hms-book-section p-4 border border-amber-200 bg-amber-50 rounded text-left">
+                  <div className="flex items-start gap-2 mb-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-amber-900">Refund Required</h4>
+                      <p className="text-xs text-amber-700">
+                        Changing doctor/fee results in patient overpayment. A refund of <strong>₹{refundAmount.toFixed(2)}</strong> will be processed.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                    <div className="hms-form-group">
+                      <label className="hms-label text-xs font-medium text-gray-600 block mb-1">Refund Mode</label>
+                      <select
+                        value={refundMode}
+                        onChange={(e) => {
+                          setRefundMode(e.target.value);
+                          setRefundBankAccountId("");
+                          setErrors(prev => ({ ...prev, refund: "" }));
+                        }}
+                        className="hms-input w-full bg-white border border-gray-300 rounded p-2 text-sm"
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Card">Card</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                      </select>
+                    </div>
+
+                    {refundMode !== "Cash" && (
+                      <div className="hms-form-group">
+                        <label className="hms-label text-xs font-medium text-gray-600 block mb-1">Refund Bank Account</label>
+                        <select
+                          value={refundBankAccountId}
+                          onChange={(e) => {
+                            setRefundBankAccountId(e.target.value);
+                            setErrors(prev => ({ ...prev, refund: "" }));
+                          }}
+                          className="hms-input w-full bg-white border border-gray-300 rounded p-2 text-sm"
+                        >
+                          <option value="">Select bank account...</option>
+                          {bankAccounts
+                            .filter(a => ["SAVINGS", "CURRENT"].includes((a.accountType || "").toUpperCase()))
+                            .map(a => (
+                              <option key={a.id} value={a.id}>
+                                {a.accountName} ({a.bankName} - ···{a.accountNumber.slice(-4)})
+                              </option>
+                            ))
+                          }
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                  {errors.refund && <p className="hms-field-error mt-2" style={{ color: '#ef4444' }}>{errors.refund}</p>}
+                </div>
+              </>
+            )}
+
           </form>
         </div>
 
         {/* Footer */}
         <div className="zu-modal-footer zu-modal-footer--between">
-          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
-            <input type="checkbox" checked={isAutoConfirm} onChange={e => setIsAutoConfirm(e.target.checked)} className="hms-checkbox" />
-            <span className="font-medium">Patient reached Hospital</span>
-          </label>
+          {!editAppointment ? (
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+              <input type="checkbox" checked={isAutoConfirm} onChange={e => setIsAutoConfirm(e.target.checked)} className="hms-checkbox" />
+              <span className="font-medium">Patient reached Hospital</span>
+            </label>
+          ) : <div />}
           <div className="flex gap-2">
             <button type="button" onClick={() => { resetForm(); onClose(); }} className="zu-btn-cancel">Cancel</button>
             <button type="submit" form="book-form" disabled={isLoading}
               className={isEmergency ? "hms-book-emergency-btn" : "zu-btn-primary"}>
-              {isLoading ? "Saving…" : isEmergency ? "Create Emergency Appointment" : "Schedule Appointment"}
+              {isLoading ? "Saving…" : editAppointment ? "Save Changes" : isEmergency ? "Create Emergency Appointment" : "Schedule Appointment"}
             </button>
           </div>
         </div>

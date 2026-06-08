@@ -35,9 +35,12 @@ public class RecordController {
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<RecordDto>> getPatientRecords(
             @PathVariable Integer patientId,
-            @RequestParam UUID hospitalId) {
+            @RequestParam UUID hospitalId,
+            @RequestParam(required = false) UUID admissionId) {
 
-        List<PatientRecord> records = recordService.getRecordsByPatient(patientId, hospitalId);
+        List<PatientRecord> records = (admissionId != null)
+                ? recordService.getRecordsByPatientAndAdmission(patientId, hospitalId, admissionId)
+                : recordService.getRecordsByPatient(patientId, hospitalId);
         List<RecordDto> dtos = records.stream().map(this::mapToDto).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }

@@ -3,6 +3,8 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { ambulanceApi } from '@/utils/api'
 import { fmtId } from '@/utils/idFormat'
+import { escapeHtml } from '@/utils/html'
+import JsBarcode from 'jsbarcode'
 import Pagination from '@/components/ui/Pagination'
 import PageHeader from '@/components/ui/PageHeader'
 import TableSkeleton from '@/components/ui/TableSkeleton'
@@ -201,34 +203,45 @@ export default function AmbulanceBilling() {
       ? 'background:#d1fae5;color:#065f46'
       : 'background:#fef3c7;color:#92400e'
 
+    // Built as raw SVG markup (not the React <Barcode>) since this view is
+    // serialized into a standalone iframe document, outside the React tree.
+    const barcodeValue = ref
+    let barcodeSvg = ''
+    if (barcodeValue) {
+      const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      JsBarcode(svgEl, barcodeValue, { format: 'CODE128', height: 40, width: 1.2, fontSize: 12, margin: 6, displayValue: true })
+      barcodeSvg = svgEl.outerHTML
+    }
+
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
-      <title>Ambulance Receipt ${ref}</title>
+      <title>Ambulance Receipt ${escapeHtml(ref)}</title>
       <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Lexend', sans-serif;font-size:13px;color:#1a1a1a;padding:36px}@media print{body{padding:24px}}.row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f3f4f6;font-size:13px}.label{color:#6b7280;font-weight:500}.val{font-weight:600;color:#111}</style>
     </head><body>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #f97316">
         <div>
           <div style="font-size:22px;font-weight:800;color:#f97316">ZenoHosp HMS</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:2px">${user?.hospitalName ?? 'Hospital Management System'}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px">${escapeHtml(user?.hospitalName) || 'Hospital Management System'}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:16px;font-weight:700">${ref}</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:4px">${dateStr}</div>
-          <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${paidCls}">${booking.paymentStatus}</span></div>
+          <div style="font-size:16px;font-weight:700">${escapeHtml(ref)}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px">${escapeHtml(dateStr)}</div>
+          <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${paidCls}">${escapeHtml(booking.paymentStatus)}</span></div>
         </div>
       </div>
       <div style="margin-bottom:20px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Patient</div>
         ${patientName
-          ? `<div style="font-size:15px;font-weight:700">${patientName}</div>${uhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${fmtId(uhid)}</div>` : ''}`
+          ? `<div style="font-size:15px;font-weight:700">${escapeHtml(patientName)}</div>${uhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${escapeHtml(fmtId(uhid))}</div>` : ''}`
           : `<div style="font-size:14px;font-weight:600;color:#d97706">Walk-in / Emergency</div>`}
+        ${barcodeSvg ? `<div style="margin-top:10px">${barcodeSvg}</div>` : ''}
       </div>
       <div style="background:#f9fafb;border-radius:8px;padding:16px;margin-bottom:20px">
-        <div class="row"><span class="label">Ambulance Type</span><span class="val">${typeName || '—'}</span></div>
-        <div class="row"><span class="label">Vehicle Number</span><span class="val">${vehNum || '—'}</span></div>
-        ${driver ? `<div class="row"><span class="label">Driver</span><span class="val">${driver}</span></div>` : ''}
-        ${pickup ? `<div class="row"><span class="label">Pickup</span><span class="val" style="max-width:200px;text-align:right">${pickup}</span></div>` : ''}
-        ${dest ? `<div class="row"><span class="label">Destination</span><span class="val" style="max-width:200px;text-align:right">${dest}</span></div>` : ''}
-        ${booking.notes ? `<div class="row"><span class="label">Notes</span><span class="val">${booking.notes}</span></div>` : ''}
+        <div class="row"><span class="label">Ambulance Type</span><span class="val">${escapeHtml(typeName) || '—'}</span></div>
+        <div class="row"><span class="label">Vehicle Number</span><span class="val">${escapeHtml(vehNum) || '—'}</span></div>
+        ${driver ? `<div class="row"><span class="label">Driver</span><span class="val">${escapeHtml(driver)}</span></div>` : ''}
+        ${pickup ? `<div class="row"><span class="label">Pickup</span><span class="val" style="max-width:200px;text-align:right">${escapeHtml(pickup)}</span></div>` : ''}
+        ${dest ? `<div class="row"><span class="label">Destination</span><span class="val" style="max-width:200px;text-align:right">${escapeHtml(dest)}</span></div>` : ''}
+        ${booking.notes ? `<div class="row"><span class="label">Notes</span><span class="val">${escapeHtml(booking.notes)}</span></div>` : ''}
       </div>
       <div style="display:flex;justify-content:flex-end">
         <div style="min-width:200px;border-top:2px solid #1a1a1a;padding-top:8px">

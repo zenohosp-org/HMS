@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { Spinner } from "@/components/ui/Loader";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { fmtId } from "@/utils/idFormat";
-import { Stethoscope, Pill, Plus, CheckCircle2, ClipboardList, CalendarClock, FileText, ListChecks, Save, AlertCircle, User as UserIcon, IdCard, Activity, HeartPulse, Wind, Scale, Droplet,  } from "lucide-react";
+import { Stethoscope, Pill, Plus, CheckCircle2, ClipboardList, CalendarClock, FileText, ListChecks, Save, AlertCircle, User as UserIcon, IdCard, Activity, HeartPulse, Wind, Scale, Droplet, Ruler } from "lucide-react";
 import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
+import VitalsModal from "@/components/modals/VitalsModal";
 
 /**
  * Single-flow consultation page launched after an OPD appointment hits
@@ -17,13 +19,15 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
   const { user } = useAuth();
   const { notify } = useNotification();
 
+  const [showVitalsModal, setShowVitalsModal] = useState(false);
+
   const {
     chiefComplaint, setChiefComplaint,
     notes, setNotes,
     instructions, setInstructions,
     nextVisitDate, setNextVisitDate,
     items, setItemField, addItem, removeItem,
-    drugCount, vitals, vitalsStatus, hydrating, autosaveStatus, saving,
+    drugCount, vitals, setVitals, vitalsStatus, hydrating, autosaveStatus, saving,
     saveConsultation,
   } = useConsultationDraft({
     appointment,
@@ -72,7 +76,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
             <PreField icon={<CalendarClock className="w-3.5 h-3.5" />} label="Date & time" value={dateTimeText || "—"} />
           </div>
 
-          <VitalsStrip vitals={vitals} vitalsStatus={vitalsStatus} bloodGroup={appointment?.patientBloodGroup} />
+          <VitalsStrip vitals={vitals} vitalsStatus={vitalsStatus} bloodGroup={appointment?.patientBloodGroup} onEditVitals={() => setShowVitalsModal(true)} />
         </div>
 
         {/* ── Body: clinical (left, wider) + prescription (right) ─────── */}
@@ -175,11 +179,21 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
           </div>
         </div>
       </div>
+      {showVitalsModal && (
+        <VitalsModal
+          appointment={appointment}
+          onClose={() => setShowVitalsModal(false)}
+          onSaved={(savedVitals) => {
+            setVitals(savedVitals);
+            setShowVitalsModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function VitalsStrip({ vitals, vitalsStatus, bloodGroup }) {
+function VitalsStrip({ vitals, vitalsStatus, bloodGroup, onEditVitals }) {
   // While the API is in flight render an unobtrusive "…" so the strip
   // doesn't flash "—" before populating. Once vitalsStatus settles to
   // "loaded", a missing field is a deliberate "—".
@@ -190,6 +204,8 @@ function VitalsStrip({ vitals, vitalsStatus, bloodGroup }) {
   const spo2 = vitals?.spo2 != null ? `${vitals.spo2}%` : null;
   const hr = vitals?.heartRate != null ? `${vitals.heartRate} bpm` : null;
   const wt = vitals?.weightKg != null ? `${Number(vitals.weightKg).toFixed(1)} kg` : null;
+  const ht = vitals?.heightCm != null ? `${vitals.heightCm} cm` : null;
+  const bg = vitals?.bloodGlucose != null ? `${vitals.bloodGlucose} mg/dL` : null;
   const recordedAt = vitals?.updatedAt || vitals?.recordedAt;
 
   let trailing;
@@ -208,9 +224,19 @@ function VitalsStrip({ vitals, vitalsStatus, bloodGroup }) {
       <VitalChip icon={<Wind className="w-3 h-3" />} iconTone="blue" label="SpO₂" value={spo2 || placeholder} />
       <VitalChip icon={<HeartPulse className="w-3 h-3" />} iconTone="emerald" label="Pulse" value={hr || placeholder} />
       <VitalChip icon={<Scale className="w-3 h-3" />} iconTone="amber" label="Weight" value={wt || placeholder} />
-      <span className="hms-vitals-strip__trailing">
-        {trailing}
-      </span>
+      <VitalChip icon={<Ruler className="w-3 h-3" />} iconTone="blue" label="Height" value={ht || placeholder} />
+      <VitalChip icon={<Activity className="w-3 h-3" />} iconTone="rose" label="Glucose" value={bg || placeholder} />
+      <div className="hms-vitals-strip__trailing" style={{ display: "flex", alignItems: "center", gap: "12px", marginLeft: "auto" }}>
+        <span>{trailing}</span>
+        <button
+          type="button"
+          onClick={onEditVitals}
+          className="zu-btn-secondary is-sm"
+          style={{ padding: "2px 8px", fontSize: "11px", height: "24px" }}
+        >
+          {vitals ? "Edit Vitals" : "Record Vitals"}
+        </button>
+      </div>
     </div>
   );
 }

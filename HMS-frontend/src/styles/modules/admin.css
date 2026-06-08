@@ -3009,18 +3009,23 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
     margin-top: 14px;
 }
 
 .hms-ipd-header__id-group {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
 .hms-ipd-header__actions {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 6px;
 }
 
@@ -3034,6 +3039,8 @@
     font-weight: 700;
     background: var(--hms-brand-primary);
     color: var(--hms-white);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .hms-ipd-id-pill.is-outline {
@@ -3053,6 +3060,7 @@
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
     background: var(--hms-gray-50);
     color: var(--hms-gray-600);
     border: 1px solid var(--hms-gray-200);
@@ -3141,6 +3149,57 @@
     flex-shrink: 0;
 }
 
+
+/* Wristband — printed via the header "Wristband" button; full-page only in print */
+.hms-ipd-wristband-print {
+    display: none;
+}
+
+@media print {
+    .hms-ipd-wristband-print {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: var(--hms-white);
+        color: #000;
+        padding: 48px;
+        text-align: center;
+    }
+}
+
+.hms-ipd-wristband-print__hosp {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.hms-ipd-wristband-print__name {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.hms-ipd-wristband-print__row {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+}
+
+.hms-ipd-wristband-print__room {
+    font-size: 13px;
+    color: #555;
+    margin: 0;
+}
+
+.hms-ipd-wristband-print__barcode {
+    margin-top: 12px;
+}
 
 /* Tab bar + body shell */
 .hms-ipd-tabs-bar {

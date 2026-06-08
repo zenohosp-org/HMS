@@ -10,7 +10,8 @@ import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import { fmtId } from "@/utils/idFormat";
 import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
 import PastRecordDetailModal from "@/components/modals/PastRecordDetailModal";
-import { Stethoscope, Pill, FlaskConical, ChevronLeft, ChevronRight, LogOut, CalendarClock, CheckCircle2, Save, AlertCircle, ClipboardList, FileText, ListChecks, Plus, IdCard, Droplet, HeartPulse, Scale, Wind, Activity, FileBarChart, Clock, User as UserIcon, PlayCircle,  } from "lucide-react";
+import VitalsModal from "@/components/modals/VitalsModal";
+import { Stethoscope, Pill, FlaskConical, ChevronLeft, ChevronRight, LogOut, CalendarClock, CheckCircle2, Save, AlertCircle, ClipboardList, FileText, ListChecks, Plus, IdCard, Droplet, HeartPulse, Scale, Wind, Activity, FileBarChart, Clock, User as UserIcon, PlayCircle, Ruler } from "lucide-react";
 
 /**
  * Full-page, queue-walked consultation workspace. Replaces the modal
@@ -48,6 +49,7 @@ export default function ConsultationViewPage() {
   // modal. Cleared when the modal closes or the doctor navigates
   // patients (so a stale row from the previous chart can't linger).
   const [openedPastRecord, setOpenedPastRecord] = useState(null);
+  const [showVitalsModal, setShowVitalsModal] = useState(false);
 
   // ── Queue load ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -284,6 +286,7 @@ export default function ConsultationViewPage() {
         loadingPast={loadingPast}
         onStartConsultation={handleStartConsultation}
         onOpenPastRecord={setOpenedPastRecord}
+        onEditVitals={() => setShowVitalsModal(true)}
       />
 
       <section className="hms-cv-main">
@@ -317,6 +320,17 @@ export default function ConsultationViewPage() {
           onClose={() => setOpenedPastRecord(null)}
         />
       )}
+
+      {showVitalsModal && (
+        <VitalsModal
+          appointment={current}
+          onClose={() => setShowVitalsModal(false)}
+          onSaved={(savedVitals) => {
+            draft.setVitals(savedVitals);
+            setShowVitalsModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -324,7 +338,7 @@ export default function ConsultationViewPage() {
 // ────────────────────────────────────────────────────────────────────────
 // LEFT RAIL — patient identity, vitals, past records
 // ────────────────────────────────────────────────────────────────────────
-function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast, onStartConsultation, onOpenPastRecord }) {
+function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast, onStartConsultation, onOpenPastRecord, onEditVitals }) {
   const fullName = appointment?.patientName || "—";
   const uhid = fmtId(appointment?.patientUhid) || appointment?.patientUhid || "—";
   const age = computeAge(appointment?.patientDob);
@@ -336,6 +350,8 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
   const spo2 = vitals?.spo2 != null ? `${vitals.spo2}` : placeholder;
   const hr = vitals?.heartRate != null ? `${vitals.heartRate}` : placeholder;
   const wt = vitals?.weightKg != null ? `${Number(vitals.weightKg).toFixed(1)}` : placeholder;
+  const ht = vitals?.heightCm != null ? `${vitals.heightCm}` : placeholder;
+  const bg = vitals?.bloodGlucose != null ? `${vitals.bloodGlucose}` : placeholder;
 
   return (
     <aside className="hms-cv-aside">
@@ -363,9 +379,22 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
         {/* Medical information — blood group + a 2x2 grid of vital cards */}
         <SidebarSection
           title="Medical Information"
-          trailing={<VitalsStateHint status={vitalsStatus} vitals={vitals}
-                                      recordedByName={vitals?.recordedByName}
-                                      recordedAt={vitals?.updatedAt || vitals?.recordedAt} />}
+          trailing={
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <VitalsStateHint status={vitalsStatus} vitals={vitals}
+                                          recordedByName={vitals?.recordedByName}
+                                          recordedAt={vitals?.updatedAt || vitals?.recordedAt} />
+              <button
+                type="button"
+                onClick={onEditVitals}
+                className="zu-btn-secondary is-sm"
+                style={{ padding: "2px 8px", fontSize: "11px", height: "24px" }}
+                title="Record or edit vitals"
+              >
+                {vitals ? "Edit" : "Record"}
+              </button>
+            </div>
+          }
         >
           <div className="hms-cv-blood">
             <div className="hms-cv-blood__left">
@@ -409,6 +438,20 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
               value={wt}
               unit="kg"
               tone="amber"
+            />
+            <VitalTile
+              icon={<Ruler className="w-4 h-4" />}
+              label="Height"
+              value={ht}
+              unit="cm"
+              tone="blue"
+            />
+            <VitalTile
+              icon={<Activity className="w-4 h-4" />}
+              label="Glucose"
+              value={bg}
+              unit="mg/dL"
+              tone="rose"
             />
           </div>
         </SidebarSection>

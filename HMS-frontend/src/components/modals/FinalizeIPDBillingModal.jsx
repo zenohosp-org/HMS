@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { generateInvoiceNumber } from '@/utils/validators'
 import { fmtId } from '@/utils/idFormat'
-import { X, Receipt, CheckCircle2, AlertCircle, Plus, Trash2, BedDouble, ScanLine, Stethoscope, Pill, FlaskConical, Wrench, Scissors, Landmark, Wallet, IndianRupee, Clock, UserCheck, Ambulance,  } from "lucide-react";
+import { X, Receipt, AlertCircle, Plus, Trash2, BedDouble, ScanLine, Stethoscope, Pill, FlaskConical, Wrench, Scissors, Landmark, Wallet, IndianRupee, Clock, UserCheck, Ambulance,  } from "lucide-react";
 
 const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Insurance']
 const GST_RATE = 0.18
@@ -529,9 +529,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
 
   const hasZeroPrice = items.some(i => Number(i.unitPrice) === 0 && i.itemType !== 'CUSTOM')
   const hasOpdCarryOver = useMemo(() => items.some(i => i.fromOpd), [items])
-  // Bill is only locked after discharge. While patient is admitted, PAID bills can be
-  // reopened to add new charges — the discharge gate prevents leaving with a balance.
-  const isPaid = false
 
   const buildPayload = () => ({
     invoiceNumber: fallbackInvoiceNo,
@@ -702,6 +699,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
               const def = eligible.find(a => a.isDefault) ?? eligible[0]
               setPayBankAccountId(def ? def.id : '')
             }}
+            clearable={false}
+            searchable={false}
             options={PAYMENT_METHODS.map(m => ({ value: m, label: m }))}
           />
         </div>
@@ -722,19 +721,13 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
               ({payMethod === 'Cash' ? 'CASH only' : 'SAVINGS / CURRENT only'})
             </span>
           </label>
-          <div className="hms-pay-account-chips">
-            {eligibleAccounts.map(a => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => setPayBankAccountId(a.id)}
-                className={`hms-pay-account-chip${payBankAccountId === a.id ? ' is-on' : ''}`}
-              >
-                {payBankAccountId === a.id && <CheckCircle2 className="w-3 h-3 shrink-0" />}
-                {a.accountName}
-              </button>
-            ))}
-          </div>
+          <SearchableSelect
+            className="hms-input"
+            value={payBankAccountId}
+            onChange={setPayBankAccountId}
+            clearable={false}
+            options={eligibleAccounts.map(a => ({ value: a.id, label: a.accountName }))}
+          />
         </div>
       )}
       {balanceDue > 0 && (
@@ -808,7 +801,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                     </p>
                   </div>
                 )}
-                {hasZeroPrice && !isPaid && (
+                {hasZeroPrice && (
                   <div className="hms-finalize-alert is-amber">
                     <AlertCircle className="hms-finalize-alert__icon w-4 h-4" />
                     <p className="m-0">
@@ -849,7 +842,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                             <SearchableSelect
                               value={item.itemType ?? 'CUSTOM'}
                               onChange={val => updateItem(item.key, { itemType: val })}
-                              disabled={isPaid}
+                              clearable={false}
+                              searchable={false}
                               className="hms-finalize-table__type-select"
                               options={Object.keys(TYPE_META).map(k => ({ value: k, label: TYPE_META[k]?.label || k }))}
                             />
@@ -863,7 +857,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                                 className="hms-finalize-table__input"
                                 placeholder="Description…"
                                 value={item.description}
-                                disabled={isPaid}
                                 onChange={e => updateItem(item.key, { description: e.target.value })}
                               />
                             </div>
@@ -874,7 +867,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                               min={1}
                               className="hms-finalize-table__input is-center no-spin"
                               value={item.quantity}
-                              disabled={isPaid}
                               onChange={e => updateItem(item.key, { quantity: parseInt(e.target.value) || 1 })}
                             />
                           </td>
@@ -885,7 +877,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                               step="0.01"
                               className="hms-finalize-table__input is-right"
                               value={item.unitPrice}
-                              disabled={isPaid}
                               onChange={e => updateItem(item.key, { unitPrice: parseFloat(e.target.value) || 0 })}
                             />
                           </td>
@@ -893,14 +884,12 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                             <span className="hms-finalize-table__total">{fmt(item.totalPrice || 0)}</span>
                           </td>
                           <td>
-                            {!isPaid && (
-                              <button
-                                onClick={() => removeItem(item.key)}
-                                className="hms-finalize-table__remove"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => removeItem(item.key)}
+                              className="hms-finalize-table__remove"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -915,19 +904,17 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                   <span>Subtotal</span>
                   <span className="font-semibold">{fmt(subtotal)}</span>
                 </div>
-                {!isPaid && (
-                  <div className="hms-finalize-totals__row">
-                    <span>Discount (%)</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      className="hms-finalize-discount-input"
-                      value={discountPct}
-                      onChange={e => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))}
-                    />
-                  </div>
-                )}
+                <div className="hms-finalize-totals__row">
+                  <span>Discount (%)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    className="hms-finalize-discount-input"
+                    value={discountPct}
+                    onChange={e => setDiscountPct(Math.min(100, parseFloat(e.target.value) || 0))}
+                  />
+                </div>
                 {discountAmt > 0 && (
                   <div className="hms-finalize-totals__row is-discount">
                     <span>Discount</span>
@@ -956,8 +943,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                     <span>-{fmt(totalCashPaid)}</span>
                   </div>
                 )}
-                <div className={`hms-finalize-totals__row is-balance${isPaid ? ' is-settled' : ''}`}>
-                  <span>{isPaid ? 'Fully Settled' : 'Balance Due'}</span>
+                <div className="hms-finalize-totals__row is-balance">
+                  <span>Balance Due</span>
                   <span>{fmt(balanceDue)}</span>
                 </div>
               </div>
@@ -1032,8 +1019,8 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                           </p>
                           <div className="hms-pay-history__body">
                             <p className="hms-pay-history__method">{p.paymentMethod}</p>
-                            {p.collectedBy && (
-                              <p className="hms-pay-history__method">· {p.collectedBy}</p>
+                            {(p.collectedByName || p.collectedBy) && (
+                              <p className="hms-pay-history__method">· {p.collectedByName || p.collectedBy}</p>
                             )}
                           </div>
                           <p className="hms-pay-history__amt">{fmt(p.amount)}</p>
@@ -1044,7 +1031,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                 )}
 
                 {/* 4a. CASH patients — Collect Payment */}
-                {isCash && !isPaid && (
+                {isCash && (
                   <div>
                     <p className="hms-pay-section-label">
                       <IndianRupee className="w-3.5 h-3.5" /> Amount Paid
@@ -1054,7 +1041,7 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                 )}
 
                 {/* 4b. CREDIT patients — Deferred notice + optional early collect */}
-                {!isCash && !isPaid && (
+                {!isCash && (
                   <div className="flex flex-col gap-3">
                     <div className="hms-pay-defer-note">
                       <p className="hms-pay-defer-note__text">
@@ -1087,7 +1074,6 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
                     placeholder={`IPD Bill — Admission ${fmtId(admission.admissionNumber)}`}
                     value={billNotes}
                     onChange={e => setBillNotes(e.target.value)}
-                    disabled={isPaid}
                   />
                 </div>
 
@@ -1102,31 +1088,29 @@ export default function FinalizeIPDBillingModal({ admission, onClose, onFinalize
         {!loadingBill && (
           <div className="hms-finalize-footer">
             <button type="button" onClick={() => onClose(dirty)} className="zu-btn-cancel">Close</button>
-            {!isPaid && (
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSaveBill}
+                disabled={savingBill || items.length === 0}
+                className="zu-btn-secondary flex items-center gap-2"
+              >
+                {savingBill ? <Spinner className="w-4 h-4 zu-spinner" /> : <Receipt className="w-4 h-4" />}
+                {savingBill ? 'Saving…' : 'Save Bill'}
+              </button>
+              {(isCash || showEarlyCollect) && (
                 <button
-                  onClick={handleSaveBill}
-                  disabled={savingBill || items.length === 0}
-                  className="zu-btn-secondary flex items-center gap-2"
+                  onClick={handleCollectPayment}
+                  disabled={collectingPayment || !Number(payAmount)}
+                  className="zu-btn-primary flex items-center gap-2"
                 >
-                  {savingBill ? <Spinner className="w-4 h-4 zu-spinner" /> : <Receipt className="w-4 h-4" />}
-                  {savingBill ? 'Saving…' : 'Save Bill'}
-                </button>
-                {(isCash || showEarlyCollect) && (
-                  <button
-                    onClick={handleCollectPayment}
-                    disabled={collectingPayment || !Number(payAmount)}
-                    className="zu-btn-primary flex items-center gap-2"
-                  >
-                    {collectingPayment
-                      ? <><Spinner className="w-4 h-4 zu-spinner" /> Recording…</>
-                      : <><IndianRupee className="w-4 h-4" /> Amount Paid</>
+                  {collectingPayment
+                    ? <><Spinner className="w-4 h-4 zu-spinner" /> Recording…</>
+                    : <><IndianRupee className="w-4 h-4" /> Amount Paid</>
 
-                    }
-                  </button>
-                )}
-              </div>
-            )}
+                  }
+                </button>
+              )}
+            </div>
           </div>
         )}
 

@@ -10,9 +10,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -31,6 +34,7 @@ public class AppointmentService {
         private final UserRepository userRepository;
         private final HealthCheckupService healthCheckupService;
         private final InvoiceService invoiceService;
+        private final InvoiceRepository invoiceRepository;
 
         public List<AppointmentDto> getAppointmentsByHospital(UUID hospitalId, LocalDate date) {
                 if (date != null) {
@@ -231,6 +235,8 @@ public class AppointmentService {
                                 Appointment.AppointmentStatus.CANCELLED,
                                 Appointment.AppointmentStatus.NO_SHOW),
                         Appointment.AppointmentStatus.CHECKED_IN, java.util.EnumSet.of(
+                                Appointment.AppointmentStatus.CONFIRMED,
+                                Appointment.AppointmentStatus.SCHEDULED,
                                 Appointment.AppointmentStatus.IN_PROGRESS,
                                 Appointment.AppointmentStatus.COMPLETED,
                                 Appointment.AppointmentStatus.CANCELLED),
@@ -260,7 +266,7 @@ public class AppointmentService {
 
         @Transactional
         public AppointmentDto updateAppointmentStatus(UUID id, Appointment.AppointmentStatus status,
-                        String cancelledReason) {
+                        String cancelledReason, String refundMode, UUID refundBankAccountId, User actor) {
                 // findByIdWithRelations hydrates patient + doctor.user + createdBy + hospital
                 // up-front so the DTO mapper below (and any downstream listeners) never
                 // hit a LazyInit/Role proxy if Hibernate auto-flushes between the read
@@ -277,10 +283,34 @@ public class AppointmentService {
                         }
                 }
 
-                appointment.setStatus(status);
                 if (status == Appointment.AppointmentStatus.CANCELLED) {
+                        if (current != Appointment.AppointmentStatus.SCHEDULED && current != Appointment.AppointmentStatus.CONFIRMED) {
+                                throw new RuntimeException("Appointments can only be cancelled if their status is SCHEDULED or CONFIRMED.");
+                        }
+                        if (cancelledReason == null || cancelledReason.trim().isEmpty()) {
+                                throw new IllegalArgumentException("Cancellation reason is mandatory.");
+                        }
                         appointment.setCancelledReason(cancelledReason);
+                        appointment.setCancelledBy(actor);
+                        appointment.setCancelledAt(java.time.LocalDateTime.now());
+
+                        // Handle refund and set invoice status to CANCELLED
+                        Optional<Invoice> opt = invoiceRepository.findByAppointment_Id(id);
+                        if (opt.isPresent()) {
+                                Invoice invoice = opt.get();
+                                BigDecimal paid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+                                if (paid.compareTo(BigDecimal.ZERO) > 0) {
+                                        invoiceService.refundInvoicePayment(invoice, paid, refundMode, refundBankAccountId, actor);
+                                        invoice.setStatus(InvoiceStatus.CANCELLED);
+                                        invoiceRepository.save(invoice);
+                                } else {
+                                        // If unpaid, run normal logic (remove consultation item or delete invoice if empty)
+                                        invoiceService.cancelAppointmentInvoice(id);
+                                }
+                        }
                 }
+
+                appointment.setStatus(status);
 
                 // Token lifecycle:
                 //   - Becoming queue-eligible (CONFIRMED/CHECKED_IN/IN_PROGRESS/COMPLETED/BILLED)
@@ -311,14 +341,157 @@ public class AppointmentService {
                 AppointmentDto result = AppointmentDto.fromEntity(appointmentRepository.save(appointment));
 
                 // CONFIRMED → create invoice with consultation fee immediately
-                // CANCELLED → remove consultation item; delete invoice if it becomes empty
                 if (status == Appointment.AppointmentStatus.CONFIRMED) {
                         try { invoiceService.createAppointmentInvoice(id, true); } catch (Exception ignored) {}
-                } else if (status == Appointment.AppointmentStatus.CANCELLED) {
-                        try { invoiceService.cancelAppointmentInvoice(id); } catch (Exception ignored) {}
                 }
 
                 return result;
+        }
+
+        @Transactional
+        public AppointmentDto updateAppointment(UUID id, AppointmentRequest request, User actor) {
+                Appointment appointment = appointmentRepository.findByIdWithRelations(id)
+                                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+                Appointment.AppointmentStatus status = appointment.getStatus();
+                if (status != Appointment.AppointmentStatus.SCHEDULED && status != Appointment.AppointmentStatus.CONFIRMED
+                                && status != Appointment.AppointmentStatus.CANCELLED && status != Appointment.AppointmentStatus.NO_SHOW) {
+                        throw new RuntimeException("Appointments can only be edited if their status is SCHEDULED, CONFIRMED, CANCELLED, or NO_SHOW.");
+                }
+
+                if (status == Appointment.AppointmentStatus.CANCELLED || status == Appointment.AppointmentStatus.NO_SHOW) {
+                        appointment.setStatus(Appointment.AppointmentStatus.SCHEDULED);
+                        appointment.setTokenNumber(null);
+                }
+
+                // Eagerly check slot collisions if doctor, date or time changed
+                UUID oldDocId = appointment.getDoctor() != null ? appointment.getDoctor().getId() : null;
+                UUID newDocId = request.getDoctorId();
+                LocalDate oldDate = appointment.getApptDate();
+                LocalDate newDate = request.getApptDate();
+                LocalTime oldTime = appointment.getApptTime();
+                LocalTime newTime = request.getApptTime() != null ? request.getApptTime() : oldTime;
+
+                Doctor newDoc = null;
+                if (newDocId != null) {
+                        newDoc = doctorRepository.findById(newDocId)
+                                        .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                        if (newDoc.getHospital() == null
+                                        || !appointment.getHospital().getId().equals(newDoc.getHospital().getId())) {
+                                throw new RuntimeException("Doctor does not belong to this hospital");
+                        }
+                }
+
+                LocalTime apptEndTime = newDoc != null
+                                ? newTime.plusMinutes(newDoc.getSlotDurationMin() != null ? newDoc.getSlotDurationMin() : 15)
+                                : newTime.plusMinutes(15);
+
+                if (newDoc != null && (!newDocId.equals(oldDocId) || !newDate.equals(oldDate) || !newTime.equals(oldTime))) {
+                        long overlappingCount = appointmentRepository.countOverlappingAppointmentsExcludeSelf(
+                                        newDocId, newDate, newTime, apptEndTime, appointment.getId());
+                        if (overlappingCount > 0) {
+                                throw new RuntimeException("Slot collision detected for Doctor on the specified date and time.");
+                        }
+                }
+
+                // If doctor is changed, adjust consultation fee
+                if (newDoc != null && !newDocId.equals(oldDocId)) {
+                        boolean isFollowUp = appointment.getType() == Appointment.AppointmentType.FOLLOWUP;
+                        
+                        // Old fee
+                        BigDecimal fOld = BigDecimal.ZERO;
+                        Doctor oldDoc = appointment.getDoctor();
+                        if (oldDoc != null) {
+                                fOld = (isFollowUp && oldDoc.getFollowUpFee() != null && oldDoc.getFollowUpFee().compareTo(BigDecimal.ZERO) > 0)
+                                                ? oldDoc.getFollowUpFee()
+                                                : (oldDoc.getConsultationFee() != null ? oldDoc.getConsultationFee() : BigDecimal.ZERO);
+                        }
+
+                        // New fee
+                        BigDecimal fNew = (isFollowUp && newDoc.getFollowUpFee() != null && newDoc.getFollowUpFee().compareTo(BigDecimal.ZERO) > 0)
+                                        ? newDoc.getFollowUpFee()
+                                        : (newDoc.getConsultationFee() != null ? newDoc.getConsultationFee() : BigDecimal.ZERO);
+
+                        BigDecimal diff = fNew.subtract(fOld);
+
+                        if (diff.compareTo(BigDecimal.ZERO) != 0) {
+                                Optional<Invoice> opt = invoiceRepository.findByAppointment_Id(id)
+                                                .filter(inv -> inv.getStatus() != InvoiceStatus.CANCELLED);
+                                if (opt.isPresent()) {
+                                        Invoice invoice = opt.get();
+                                        
+                                        // Create and save the new ADJUSTMENT InvoiceItem
+                                        String description = "Adjustment - Doctor changed from Dr. " 
+                                                        + (oldDoc != null && oldDoc.getUser() != null ? oldDoc.getUser().getLastName() : "Old")
+                                                        + " to Dr. " 
+                                                        + (newDoc.getUser() != null ? newDoc.getUser().getLastName() : "New");
+                                        
+                                        InvoiceItem adjItem = InvoiceItem.builder()
+                                                        .invoice(invoice)
+                                                        .itemType("ADJUSTMENT")
+                                                        .description(description)
+                                                        .quantity(1)
+                                                        .unitPrice(diff)
+                                                        .totalPrice(diff)
+                                                        .appointmentId(appointment.getId())
+                                                        .build();
+                                        
+                                        if (invoice.getItems() == null) {
+                                                invoice.setItems(new java.util.ArrayList<>());
+                                        }
+                                        invoice.getItems().add(adjItem);
+
+                                        // Update invoice totals
+                                        invoice.setSubtotal(invoice.getSubtotal().add(diff));
+                                        invoice.setTotal(invoice.getTotal().add(diff));
+                                        invoice.setUpdatedAt(LocalDateTime.now());
+                                        invoice.setUpdatedBy(actor);
+                                        invoiceRepository.save(invoice);
+
+                                        // Apply overpayment rule for refunds: refundAmount = paidAmount - newTotal
+                                        BigDecimal paid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+                                        BigDecimal total = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
+                                        BigDecimal refundAmount = paid.subtract(total);
+
+                                        if (refundAmount.compareTo(BigDecimal.ZERO) > 0) {
+                                                invoiceService.refundInvoicePayment(invoice, refundAmount, request.getRefundMode(), request.getRefundBankAccountId(), actor);
+                                        }
+
+                                        // Recompute invoice status
+                                        BigDecimal newPaid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+                                        BigDecimal newTotal = invoice.getTotal() != null ? invoice.getTotal() : BigDecimal.ZERO;
+                                        if (newPaid.compareTo(BigDecimal.ZERO) == 0) {
+                                                invoice.setStatus(InvoiceStatus.UNPAID);
+                                        } else if (newPaid.compareTo(newTotal) >= 0) {
+                                                invoice.setStatus(InvoiceStatus.PAID);
+                                        } else {
+                                                invoice.setStatus(InvoiceStatus.PARTIAL);
+                                        }
+                                        invoiceRepository.save(invoice);
+                                }
+                        }
+                }
+
+                // Update appointment fields
+                appointment.setDoctor(newDoc);
+                appointment.setApptDate(newDate);
+                appointment.setApptTime(newTime);
+                appointment.setApptEndTime(apptEndTime);
+                if (request.getType() != null) {
+                        appointment.setType(request.getType());
+                }
+                if (request.getChiefComplaint() != null) {
+                        appointment.setChiefComplaint(request.getChiefComplaint());
+                }
+                if (request.getPriceListId() != null) {
+                        PriceList priceList = priceListRepository.findById(request.getPriceListId())
+                                        .orElseThrow(() -> new RuntimeException("Price List not found"));
+                        appointment.setPriceList(priceList);
+                }
+
+                appointment.setUpdatedAt(LocalDateTime.now());
+
+                return AppointmentDto.fromEntity(appointmentRepository.save(appointment));
         }
 
         /**

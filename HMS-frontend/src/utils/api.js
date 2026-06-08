@@ -72,8 +72,14 @@ const patientApi = {
     }).then(res => res.data),
 };
 const recordApi = {
-  list: async (patientId, hospitalId) => {
-    const { data } = await api.get(`/records/patient/${patientId}?hospitalId=${hospitalId}`);
+  // Pass an admissionId to scope to a single admission's full clinical
+  // course (consultations, prescriptions, lab results, surgery notes —
+  // the discharge summary's primary input); omit it for the patient's
+  // entire record history across all visits.
+  list: async (patientId, hospitalId, admissionId) => {
+    const params = { hospitalId };
+    if (admissionId) params.admissionId = admissionId;
+    const { data } = await api.get(`/records/patient/${patientId}`, { params });
     return data;
   },
   listByUser: async (userId, hospitalId) => {
@@ -198,8 +204,12 @@ const appointmentsApi = {
     const { data } = await api.post("/appointments", payload);
     return data;
   },
-  updateStatus: async (id, status, cancelledReason) => {
-    const { data } = await api.put(`/appointments/${id}/status`, { status, cancelledReason });
+  updateStatus: async (id, status, cancelledReason, refundMode, refundBankAccountId) => {
+    const { data } = await api.put(`/appointments/${id}/status`, { status, cancelledReason, refundMode, refundBankAccountId });
+    return data;
+  },
+  update: async (id, payload) => {
+    const { data } = await api.put(`/appointments/${id}`, payload);
     return data;
   },
   // Single-appointment hydration used by the print-consultation page,
@@ -373,6 +383,10 @@ const invoiceApi = {
   },
   getByPatient: async (patientId) => {
     const { data } = await api.get(`/billing/patient/${patientId}/invoices`);
+    return data;
+  },
+  getByAppointment: async (appointmentId) => {
+    const { data } = await api.get(`/invoices/appointment/${appointmentId}`);
     return data;
   },
   getSmartSuggestions: async (patientId, admissionId) => {

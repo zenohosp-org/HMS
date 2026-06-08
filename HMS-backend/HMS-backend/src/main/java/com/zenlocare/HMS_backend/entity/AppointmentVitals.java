@@ -64,6 +64,13 @@ public class AppointmentVitals {
     @Column(name = "weight_kg", precision = 5, scale = 2)
     private BigDecimal weightKg;
 
+    @Column(name = "height_cm")
+    private Integer heightCm;
+
+    @Column(name = "blood_glucose")
+    private Integer bloodGlucose;
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recorded_by", nullable = false)
     private User recordedBy;

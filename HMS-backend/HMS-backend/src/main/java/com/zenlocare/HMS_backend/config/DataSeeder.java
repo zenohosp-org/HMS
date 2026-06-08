@@ -79,6 +79,13 @@ public class DataSeeder implements CommandLineRunner {
             log.warn("Could not add admission_id to appointments: " + e.getMessage());
         }
         try {
+            jdbcTemplate.execute("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS cancelled_by UUID REFERENCES users(id)");
+            jdbcTemplate.execute("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP WITHOUT TIME ZONE");
+            log.info("✅ Added cancelled_by and cancelled_at to appointments");
+        } catch (Exception e) {
+            log.warn("Could not add cancelled_by and cancelled_at to appointments: " + e.getMessage());
+        }
+        try {
             // Stamp pulled pharmacy bills onto invoice_items so the IPD finalize
             // modal can dedupe across reloads without comparing drug names.
             jdbcTemplate.execute(
@@ -129,11 +136,19 @@ public class DataSeeder implements CommandLineRunner {
                     spo2            integer NULL,
                     heart_rate      integer NULL,
                     weight_kg       numeric(5,2) NULL,
+                    height_cm       integer NULL,
+                    blood_glucose   integer NULL,
                     recorded_by     uuid NOT NULL,
                     recorded_at     timestamp without time zone NOT NULL DEFAULT NOW(),
                     updated_at      timestamp without time zone NOT NULL DEFAULT NOW()
                 )
                 """);
+            try {
+                jdbcTemplate.execute("ALTER TABLE appointment_vitals ADD COLUMN IF NOT EXISTS height_cm integer NULL");
+                jdbcTemplate.execute("ALTER TABLE appointment_vitals ADD COLUMN IF NOT EXISTS blood_glucose integer NULL");
+            } catch (Exception alterEx) {
+                log.warn("Could not alter appointment_vitals to add height_cm/blood_glucose columns: " + alterEx.getMessage());
+            }
             jdbcTemplate.execute(
                 "CREATE INDEX IF NOT EXISTS idx_appointment_vitals_hospital_id ON appointment_vitals(hospital_id)");
             jdbcTemplate.execute(

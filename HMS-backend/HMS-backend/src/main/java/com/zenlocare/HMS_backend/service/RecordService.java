@@ -75,6 +75,18 @@ public class RecordService {
                 patientId, hospitalId, admissionId, type);
     }
 
+    /**
+     * Every record tied to a single admission regardless of type, newest
+     * first — the full clinical course of the stay. Backs the discharge
+     * summary print view (consultations, prescriptions, lab results,
+     * surgery notes all rolled into one document).
+     */
+    public List<PatientRecord> getRecordsByPatientAndAdmission(
+            Integer patientId, UUID hospitalId, UUID admissionId) {
+        return recordRepository.findByPatientIdAndHospitalIdAndAdmissionIdOrderByCreatedAtDesc(
+                patientId, hospitalId, admissionId);
+    }
+
     /** Records tied to a single appointment, newest first. Backs the print view. */
     public List<PatientRecord> getRecordsByAppointment(UUID appointmentId, UUID hospitalId) {
         return recordRepository.findByAppointmentIdAndHospitalIdOrderByCreatedAtDesc(

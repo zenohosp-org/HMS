@@ -91,6 +91,7 @@ public class Invoice {
 
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
+    @org.hibernate.annotations.BatchSize(size = 25)
     private List<InvoiceItem> items;
 
     @Builder.Default

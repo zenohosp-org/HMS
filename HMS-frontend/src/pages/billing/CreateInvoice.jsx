@@ -14,6 +14,7 @@ import {
 } from "@/utils/api";
 import { generateInvoiceNumber } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
+import Barcode from "@/components/ui/Barcode";
 import { Info, Search, Plus, Trash2, Printer, X, BedDouble, ScanLine, Stethoscope, FlaskConical, Pill, Wrench, Sparkles, Receipt, ChevronRight, CheckCircle2, Clock, Ban, PanelRightClose, PanelRightOpen, Landmark, RefreshCw, User, AlertTriangle } from "lucide-react";
 
 const PAYMENT_METHODS = ["Cash", "UPI", "Card", "Bank Transfer", "Insurance"];
@@ -850,6 +851,12 @@ function CreateInvoice() {
           <p className="text-11 text-gray-500 uppercase tracking-wide mb-1">Bill To</p>
           <p className="font-bold">{patient?.firstName} {patient?.lastName}</p>
           <p className="text-13 text-gray-500">{fmtId(patient?.uhid)}</p>
+        </div>
+        <div className="hms-create-inv-print__barcode">
+          <Barcode
+            value={invoiceNo}
+            height={40}
+          />
         </div>
         <table className="w-full text-13">
           <thead>

@@ -31,6 +31,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class InvoiceService {
 
+    private static String userDisplayName(User u) {
+        if (u == null) return null;
+        String name = ((u.getFirstName() != null ? u.getFirstName() : "") + " "
+                + (u.getLastName() != null ? u.getLastName() : "")).trim();
+        return !name.isEmpty() ? name : u.getEmail();
+    }
+
     private final InvoiceRepository invoiceRepository;
     private final HospitalRepository hospitalRepository;
     private final PatientRepository patientRepository;
@@ -352,7 +359,8 @@ public class InvoiceService {
 
         String invoiceNum = HospitalIdPrefix.of(appt.getHospital())
                 + "OPD-" + appointmentId.toString().replace("-", "").substring(0, 12).toUpperCase();
-        Optional<Invoice> existing = invoiceRepository.findByAppointment_Id(appointmentId);
+        Optional<Invoice> existing = invoiceRepository.findByAppointment_Id(appointmentId)
+                .filter(inv -> inv.getStatus() != InvoiceStatus.CANCELLED);
 
         if (existing.isPresent()) {
             if (!includeConsultation) return;
@@ -507,7 +515,7 @@ public class InvoiceService {
         Optional<Invoice> opt = invoiceRepository.findByAppointment_Id(appointmentId);
         if (opt.isEmpty()) return;
         Invoice invoice = opt.get();
-        if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) return;
+        if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus()) || InvoiceStatus.CANCELLED.equals(invoice.getStatus())) return;
         // If this appointment's invoice was absorbed into an IPD admission (OPD→IPD conversion),
         // do NOT touch it — the IPD invoice lifecycle is managed through the discharge flow.
         // Deleting or stripping items here would break the discharge gate.
@@ -530,11 +538,67 @@ public class InvoiceService {
         }
     }
 
+    @Transactional
+    public void refundInvoicePayment(Invoice invoice, BigDecimal amount, String refundMode,
+                                     UUID refundBankAccountId, User actor) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Refund amount must be positive.");
+        }
+        if (refundMode == null || refundMode.isBlank()) {
+            throw new IllegalArgumentException("Refund mode is required.");
+        }
+        BigDecimal paid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+        if (paid.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Refunds are not allowed when the invoice has no paid amount.");
+        }
+        if (amount.compareTo(paid) > 0) {
+            throw new IllegalArgumentException("Refund amount cannot exceed the paid amount.");
+        }
+
+        // Create negative payment record
+        InvoicePayment refundPayment = InvoicePayment.builder()
+                .invoice(invoice)
+                .amount(amount.negate())
+                .paymentMethod(refundMode)
+                .bankAccountId(refundMode.equalsIgnoreCase("Cash") ? null : refundBankAccountId)
+                .collectedBy(userDisplayName(actor))
+                .collectedByUser(actor)
+                .notes("Refund for appointment cancellation / rescheduling")
+                .paidAt(LocalDateTime.now())
+                .build();
+        invoicePaymentRepository.save(refundPayment);
+
+        // Reduce paid amount
+        invoice.setPaidAmount(paid.subtract(amount));
+        invoice.setUpdatedAt(LocalDateTime.now());
+        invoice.setUpdatedBy(actor);
+        invoiceRepository.save(invoice);
+
+        // Bank debit ledger entry (skip for Cash)
+        if (!refundMode.equalsIgnoreCase("Cash")) {
+            if (refundBankAccountId == null) {
+                throw new IllegalArgumentException("refundBankAccountId is required for non-cash refunds.");
+            }
+            bankLedgerService.debitPayment(
+                    refundBankAccountId,
+                    amount,
+                    "Refund — " + invoice.getInvoiceNumber(),
+                    invoice.getInvoiceNumber(),
+                    invoice.getId()
+            );
+        }
+    }
+
     // ── Return the invoice linked to an admission ──────────────────────────────
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Optional<InvoiceDTO> getAdmissionInvoice(UUID admissionId) {
         return invoiceRepository.findAllByAdmission_IdOrderByCreatedAtDesc(admissionId)
                 .stream().findFirst().map(this::toDTO);
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public Optional<InvoiceDTO> getInvoiceByAppointment(UUID appointmentId) {
+        return invoiceRepository.findByAppointment_Id(appointmentId).map(this::toDTO);
     }
 
 
@@ -746,6 +810,16 @@ public class InvoiceService {
     }
 
     private InvoiceDTO toDTO(Invoice inv) {
+        List<InvoicePayment> payments = (inv.getId() != null)
+            ? invoicePaymentRepository.findByInvoice_IdOrderByPaidAtAsc(inv.getId())
+            : List.of();
+        return toDTO(inv, payments);
+    }
+
+    // Page-listing variant — caller has already batch-fetched payments for the whole
+    // page (one IN query) and groups them by invoice id, so this avoids the
+    // one-query-per-invoice round trip that toDTO(Invoice) does on its own.
+    private InvoiceDTO toDTO(Invoice inv, List<InvoicePayment> payments) {
         String bookedBy = "System";
         String doctorName = null;
         LocalDateTime apptDateTime = null;
@@ -846,15 +920,18 @@ public class InvoiceService {
         b.paidAmount(inv.getPaidAmount());
         b.createdAt(inv.getCreatedAt());
         b.updatedAt(inv.getUpdatedAt());
-        b.items(itemsList);
-        
-        List<InvoiceDTO.PaymentDTO> pList = new ArrayList<>();
-        if (inv.getId() != null) {
-             pList = invoicePaymentRepository.findByInvoice_IdOrderByPaidAtAsc(inv.getId())
-                .stream().map(p -> new InvoiceDTO.PaymentDTO(
-                        p.getId(), p.getAmount(), p.getPaymentMethod(), p.getCollectedBy(), p.getPaidAt()
-                )).collect(Collectors.toList());
+        if (inv.getUpdatedBy() != null) {
+            b.updatedById(inv.getUpdatedBy().getId());
+            b.updatedByName(userDisplayName(inv.getUpdatedBy()));
         }
+        b.items(itemsList);
+
+        List<InvoiceDTO.PaymentDTO> pList = payments.stream().map(p -> new InvoiceDTO.PaymentDTO(
+                p.getId(), p.getAmount(), p.getPaymentMethod(), p.getCollectedBy(),
+                p.getCollectedByUser() != null ? p.getCollectedByUser().getId() : null,
+                userDisplayName(p.getCollectedByUser()),
+                p.getPaidAt()
+        )).collect(Collectors.toList());
         b.payments(pList);
         
         return b.build();
@@ -941,8 +1018,16 @@ public class InvoiceService {
 
     private Map<String, Object> buildPageResponse(Page<Invoice> result) {
         Map<String, Object> response = new HashMap<>();
-        List<InvoiceDTO> dtos = result.getContent().stream()
-                .map(this::toDTO)
+
+        List<Invoice> invoices = result.getContent();
+        List<UUID> invoiceIds = invoices.stream().map(Invoice::getId).collect(Collectors.toList());
+        Map<UUID, List<InvoicePayment>> paymentsByInvoiceId = invoiceIds.isEmpty()
+            ? Map.of()
+            : invoicePaymentRepository.findByInvoice_IdInOrderByPaidAtAsc(invoiceIds).stream()
+                .collect(Collectors.groupingBy(p -> p.getInvoice().getId()));
+
+        List<InvoiceDTO> dtos = invoices.stream()
+                .map(inv -> toDTO(inv, paymentsByInvoiceId.getOrDefault(inv.getId(), List.of())))
                 .collect(Collectors.toList());
         response.put("invoices", dtos);
         response.put("totalElements", result.getTotalElements());

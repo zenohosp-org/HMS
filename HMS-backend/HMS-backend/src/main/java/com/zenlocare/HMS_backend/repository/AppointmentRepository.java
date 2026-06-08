@@ -104,6 +104,23 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
             @Param("startTime") LocalTime startTime,
             @Param("endTime") LocalTime endTime);
 
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.apptDate = :apptDate " +
+           "AND a.id != :excludeApptId " +
+           "AND a.status IN (" +
+           "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.SCHEDULED," +
+           "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CONFIRMED," +
+           "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.CHECKED_IN," +
+           "  com.zenlocare.HMS_backend.entity.Appointment.AppointmentStatus.IN_PROGRESS) " +
+           "AND ((a.apptTime <= :startTime AND a.apptEndTime > :startTime) " +
+           "  OR (a.apptTime < :endTime AND a.apptEndTime >= :endTime) " +
+           "  OR (a.apptTime >= :startTime AND a.apptEndTime <= :endTime))")
+    long countOverlappingAppointmentsExcludeSelf(
+            @Param("doctorId") UUID doctorId,
+            @Param("apptDate") LocalDate apptDate,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime,
+            @Param("excludeApptId") UUID excludeApptId);
+
     @Query(value = """
         SELECT a FROM Appointment a
         LEFT JOIN FETCH a.patient p

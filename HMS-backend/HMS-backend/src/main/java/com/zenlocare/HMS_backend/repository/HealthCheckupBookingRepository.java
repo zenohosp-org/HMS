@@ -21,6 +21,13 @@ public interface HealthCheckupBookingRepository extends JpaRepository<HealthChec
 
     List<HealthCheckupBooking> findByPatient_IdOrderByScheduledDateDesc(Integer patientId);
 
+    // Detail-view loader — fetch-joins `results` so the test-results table renders.
+    // With open-in-view=false, a plain findById() leaves the lazy OneToMany
+    // uninitialized; Jackson then serializes it as an empty list (no error,
+    // no data) and the frontend shows zero results despite rows existing in the DB.
+    @Query("SELECT b FROM HealthCheckupBooking b LEFT JOIN FETCH b.results WHERE b.id = :id")
+    Optional<HealthCheckupBooking> findByIdWithResults(@Param("id") UUID id);
+
     // Matches both legacy "HCP-2026-NNNN" and prefixed "1001-HCP-2026-NNNN" formats; max sequence computed in service.
     @Query("SELECT b.bookingNumber FROM HealthCheckupBooking b WHERE b.hospital.id = :hospitalId AND b.bookingNumber LIKE CONCAT('%HCP-', :year, '-%')")
     List<String> findBookingNumbersForYear(@Param("hospitalId") UUID hospitalId, @Param("year") String year);

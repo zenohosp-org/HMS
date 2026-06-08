@@ -124,6 +124,8 @@ public class VitalsController {
         row.setSpo2(clamp(req.getSpo2(), 0, 100));
         row.setHeartRate(clamp(req.getHeartRate(), 20, 300));
         row.setWeightKg(req.getWeightKg());
+        row.setHeightCm(clamp(req.getHeightCm(), 10, 300));
+        row.setBloodGlucose(clamp(req.getBloodGlucose(), 20, 1000));
         row.setUpdatedAt(LocalDateTime.now());
 
         return ResponseEntity.ok(toDto(vitalsRepo.save(row)));
@@ -148,6 +150,8 @@ public class VitalsController {
         dto.setSpo2(v.getSpo2());
         dto.setHeartRate(v.getHeartRate());
         dto.setWeightKg(v.getWeightKg());
+        dto.setHeightCm(v.getHeightCm());
+        dto.setBloodGlucose(v.getBloodGlucose());
         dto.setRecordedAt(v.getRecordedAt() != null ? v.getRecordedAt().toString() : null);
         dto.setUpdatedAt(v.getUpdatedAt() != null ? v.getUpdatedAt().toString() : null);
         if (v.getRecordedBy() != null) {
@@ -168,6 +172,8 @@ public class VitalsController {
         private Integer spo2;
         private Integer heartRate;
         private BigDecimal weightKg;
+        private Integer heightCm;
+        private Integer bloodGlucose;
     }
 
     @Data
@@ -180,6 +186,8 @@ public class VitalsController {
         private Integer spo2;
         private Integer heartRate;
         private BigDecimal weightKg;
+        private Integer heightCm;
+        private Integer bloodGlucose;
         private String recordedAt;
         private String updatedAt;
         private String recordedById;

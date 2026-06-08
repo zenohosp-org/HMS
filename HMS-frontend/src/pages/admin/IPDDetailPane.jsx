@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import SearchableSelect from "@/components/ui/SearchableSelect";
-import { X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors, Activity, Package, Receipt, Phone, User, ExternalLink, RotateCcw, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, Plus, FileText,  } from "lucide-react";
+import { X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors, Activity, Package, Receipt, Phone, User, ExternalLink, RotateCcw, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, Plus, FileText, Printer,  } from "lucide-react";
 import { fmtDateTime, fmtDateMed } from "@/utils/date";
 import {
     roomLogsApi,
@@ -17,6 +17,7 @@ import {
     recordApi,
 } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
+import Barcode from "@/components/ui/Barcode";
 import axios from "axios";
 import SSOCookieManager from "@/utils/ssoManager";
 import WritePrescriptionModal from "@/components/modals/WritePrescriptionModal";
@@ -859,6 +860,7 @@ export default function IPDDetailPane({
     if (!admission) return null;
 
     const isAdmitted = admission.status === "ADMITTED";
+    const isDischarged = admission.status === "DISCHARGED";
     const canMoveOT = isAdmitted && !admission.inOt && admission.roomType !== "POST_OT";
     const canReturnWard = isAdmitted && !!admission.previousRoomId;
 
@@ -950,6 +952,22 @@ export default function IPDDetailPane({
                                 <User size={11} /> Patient
                                 <ExternalLink size={9} className="opacity-40" />
                             </button>
+                            <button
+                                type="button"
+                                className="hms-ipd-chip-btn"
+                                onClick={() => window.print()}
+                            >
+                                <Printer size={11} /> Wristband
+                            </button>
+                            {isDischarged && (
+                                <button
+                                    type="button"
+                                    className="hms-ipd-chip-btn"
+                                    onClick={() => window.open(`/print/admission/${admission.id}/discharge-summary`, "_blank", "noopener,noreferrer")}
+                                >
+                                    <FileText size={11} /> Discharge Summary
+                                </button>
+                            )}
                             {isAdmitted && (
                                 <button
                                     type="button"
@@ -1011,6 +1029,27 @@ export default function IPDDetailPane({
                             </button>
                         </div>
                     )}
+                </div>
+
+                {/* Wristband — printed via the "Wristband" button; hidden on screen,
+                    rendered full-page only inside @media print */}
+                <div className="hms-ipd-wristband-print">
+                    <p className="hms-ipd-wristband-print__hosp">{user?.hospitalName}</p>
+                    <p className="hms-ipd-wristband-print__name">{admission.patientName}</p>
+                    <div className="hms-ipd-wristband-print__row">
+                        <span>UHID: {fmtId(admission.patientUhid)}</span>
+                        <span>{fmtId(admission.admissionNumber || admission.ipdId)}</span>
+                    </div>
+                    {admission.roomNumber && (
+                        <p className="hms-ipd-wristband-print__room">
+                            Room {admission.roomNumber} · {admission.roomType}
+                        </p>
+                    )}
+                    <Barcode
+                        value={admission.patientUhid}
+                        height={48}
+                        className="hms-ipd-wristband-print__barcode"
+                    />
                 </div>
 
                 {/* Tabs */}

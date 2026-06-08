@@ -3,6 +3,8 @@ import { useAuth } from '@/context/AuthContext'
 import { useNotification } from '@/context/NotificationContext'
 import { invoiceApi, admissionApi } from '@/utils/api'
 import { fmtId } from '@/utils/idFormat'
+import { escapeHtml } from '@/utils/html'
+import JsBarcode from 'jsbarcode'
 import Pagination from '@/components/ui/Pagination'
 import PageHeader from '@/components/ui/PageHeader'
 import TableSkeleton from '@/components/ui/TableSkeleton'
@@ -111,7 +113,7 @@ function InvoiceActionMenu({ inv, activeAdmissions, activeAdmissionIds, setFinal
               {isPending && (
                 <button onClick={() => { setOpen(false); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
                   <Receipt className="hms-billing-menu__item-icon w-4 h-4" />
-                  {(inv.status === 'PARTIAL' || inv.status === 'UNSETTLED') ? 'Continue Bill' : 'Generate Bill'}
+                  {(inv.status === 'PARTIAL' || inv.status === 'UNSETTLED') ? 'Continue Bill' : 'View Bill'}
                 </button>
               )}
               {isPaidAdmit && (
@@ -198,34 +200,44 @@ export default function IPDBilling() {
     const discount = Number(inv.discount || 0)
     const subtotal = total + discount
     const statusCls = { PAID: 'background:#d1fae5;color:#065f46', SETTLED: 'background:#d1fae5;color:#065f46', UNPAID: 'background:#fef3c7;color:#92400e', UNSETTLED: 'background:#fef3c7;color:#92400e', PARTIAL: 'background:#ffedd5;color:#9a3412', CANCELLED: 'background:#fee2e2;color:#991b1b' }
+    // Built as raw SVG markup (not the React <Barcode>) since this view is
+    // serialized into a standalone iframe document, outside the React tree.
+    const barcodeValue = inv.invoiceNumber ?? ''
+    let barcodeSvg = ''
+    if (barcodeValue) {
+      const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      JsBarcode(svgEl, barcodeValue, { format: 'CODE128', height: 40, width: 1.2, fontSize: 12, margin: 6, displayValue: true })
+      barcodeSvg = svgEl.outerHTML
+    }
     const itemRows = items.map(item => `
       <tr>
-        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.itemType?.replace('_', ' ') ?? ''}</td>
-        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${item.description ?? ''}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${escapeHtml(item.itemType?.replace('_', ' '))}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151">${escapeHtml(item.description)}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:center">×${item.quantity}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;text-align:right">₹${Number(item.unitPrice).toLocaleString('en-IN')}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;font-weight:600;color:#111;text-align:right">₹${Number(item.totalPrice).toLocaleString('en-IN')}</td>
       </tr>`).join('')
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
-      <title>Invoice ${fmtId(inv.invoiceNumber)}</title>
+      <title>Invoice ${escapeHtml(fmtId(inv.invoiceNumber))}</title>
       <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Lexend', sans-serif;font-size:13px;color:#1a1a1a;padding:36px}table{width:100%;border-collapse:collapse}@media print{body{padding:24px}}</style>
     </head><body>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #10b981">
         <div>
           <div style="font-size:22px;font-weight:800;color:#10b981">ZenoHosp HMS</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:2px">${user?.hospitalName ?? 'Hospital Management System'}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px">${escapeHtml(user?.hospitalName) || 'Hospital Management System'}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:16px;font-weight:700">${fmtId(inv.invoiceNumber)}</div>
+          <div style="font-size:16px;font-weight:700">${escapeHtml(fmtId(inv.invoiceNumber))}</div>
           <div style="font-size:11px;color:#6b7280;margin-top:4px">${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'long', year: 'numeric' }) : '—'}</div>
-          <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusCls[inv.status] ?? statusCls.UNPAID}">${inv.status}</span></div>
+          <div style="margin-top:8px"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;${statusCls[inv.status] ?? statusCls.UNPAID}">${escapeHtml(inv.status)}</span></div>
         </div>
       </div>
       <div style="margin-bottom:20px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:6px">Billed To</div>
-        <div style="font-size:15px;font-weight:700">${inv.patientName ?? '—'}</div>
-        ${inv.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${fmtId(inv.patientUhid)}</div>` : ''}
-        ${inv.paymentMethod ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">Payment: ${inv.paymentMethod}</div>` : ''}
+        <div style="font-size:15px;font-weight:700">${escapeHtml(inv.patientName) || '—'}</div>
+        ${inv.patientUhid ? `<div style="font-size:12px;color:#6b7280">UHID: ${escapeHtml(fmtId(inv.patientUhid))}</div>` : ''}
+        ${inv.paymentMethod ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">Payment: ${escapeHtml(inv.paymentMethod)}</div>` : ''}
+        ${barcodeSvg ? `<div style="margin-top:10px">${barcodeSvg}</div>` : ''}
       </div>
       <table>
         <thead>
@@ -289,9 +301,9 @@ export default function IPDBilling() {
       <div className="zu-page-content">
       <div className="zu-stat-card-grid">
         <StatCard label="Total IPD Cases" value={stats.total} sub="matching filters" Icon={ReceiptText} accent="blue" />
-        <StatCard label="Total Settled" value={fmt(stats.settled)} sub="fully cleared bills" Icon={TrendingUp} accent="emerald" />
-        <StatCard label="Outstanding Due" value={fmt(stats.unsettled)} sub="balance outstanding" Icon={AlertCircle} accent="amber" />
-        <StatCard label="Admissions Today" value={stats.todayCount} sub="loaded cases" Icon={Clock} accent="rose" />
+        <StatCard label="Total Settled" value={fmt(stats.settled)} sub="from loaded settled" Icon={TrendingUp} accent="emerald" />
+        <StatCard label="Outstanding Due" value={fmt(stats.unsettled)} sub="from loaded unsettled" Icon={AlertCircle} accent="amber" />
+        <StatCard label="Invoices Today" value={stats.todayCount} sub="loaded today" Icon={Clock} accent="rose" />
       </div>
 
       {/* Table Container */}
@@ -460,7 +472,7 @@ export default function IPDBilling() {
       {finalizeAdmission && (
         <FinalizeIPDBillingModal
           admission={finalizeAdmission}
-          onClose={() => { setFinalizeAdmission(null); loadData() }}
+          onClose={(dirty) => { setFinalizeAdmission(null); if (dirty) loadData() }}
           onFinalized={() => { setFinalizeAdmission(null); loadData() }}
         />
       )}

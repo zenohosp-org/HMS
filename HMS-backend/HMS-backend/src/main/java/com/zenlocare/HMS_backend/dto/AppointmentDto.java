@@ -45,6 +45,9 @@ public class AppointmentDto {
 
         private String chiefComplaint;
         private String cancelledReason;
+        private UUID cancelledById;
+        private String cancelledByName;
+        private LocalDateTime cancelledAt;
 
         private UUID priceListId;
         private String priceListName;
@@ -66,6 +69,9 @@ public class AppointmentDto {
                                 : null;
                 String creatorName = a.getCreatedBy().getFirstName()
                                 + (a.getCreatedBy().getLastName() != null ? " " + a.getCreatedBy().getLastName() : "");
+                String cancelledName = a.getCancelledBy() != null
+                                ? a.getCancelledBy().getFirstName() + (a.getCancelledBy().getLastName() != null ? " " + a.getCancelledBy().getLastName() : "")
+                                : null;
 
                 return AppointmentDto.builder()
                                 .id(a.getId())
@@ -89,6 +95,9 @@ public class AppointmentDto {
                                 .tokenNumber(a.getTokenNumber())
                                 .chiefComplaint(a.getChiefComplaint())
                                 .cancelledReason(a.getCancelledReason())
+                                .cancelledById(a.getCancelledBy() != null ? a.getCancelledBy().getId() : null)
+                                .cancelledByName(cancelledName)
+                                .cancelledAt(a.getCancelledAt())
                                 .priceListId(a.getPriceList() != null ? a.getPriceList().getId() : null)
                                 .priceListName(a.getPriceList() != null ? a.getPriceList().getName() : null)
                                 .checkupBookingId(a.getCheckupBooking() != null ? a.getCheckupBooking().getId() : null)

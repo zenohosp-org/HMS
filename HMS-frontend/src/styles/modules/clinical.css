@@ -508,8 +508,8 @@
 .hms-vitals-field__head {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
+    justify-content: flex-start;
+    gap: 8px;
 }
 
 .hms-vitals-field__title {
@@ -614,6 +614,24 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }
+
+.hms-vitals-patient-card {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    padding: 16px;
+    background: var(--hms-gray-50);
+    border: 1px solid var(--hms-gray-100);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+@media (max-width: 720px) {
+    .hms-vitals-patient-card {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 
 
 /* ===================================================================
@@ -2274,11 +2292,7 @@
     margin-top: 4px;
     font-size: 16px;
     font-weight: 700;
-    color: var(--hms-info);
-}
-
-.hms-finalize-totals__row.is-balance.is-settled {
-    color: var(--hms-success);
+    color: var(--hms-warning);
 }
 
 .hms-finalize-discount-input {
@@ -2469,39 +2483,6 @@
     color: var(--hms-gray-700);
 }
 
-.hms-pay-account-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 4px;
-}
-
-.hms-pay-account-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 2px solid var(--hms-gray-200);
-    background: var(--hms-white);
-    color: var(--hms-gray-500);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    font-family: var(--hms-font-family);
-}
-
-.hms-pay-account-chip:hover {
-    border-color: var(--hms-gray-400);
-}
-
-.hms-pay-account-chip.is-on {
-    border-color: var(--hms-gray-900);
-    background: var(--hms-gray-900);
-    color: var(--hms-white);
-}
-
 .hms-pay-balance-row {
     display: flex;
     justify-content: space-between;
@@ -2518,7 +2499,7 @@
 
 .hms-pay-balance-row__amt {
     font-weight: 700;
-    color: var(--hms-info);
+    color: var(--hms-warning);
     font-variant-numeric: tabular-nums;
 }
 
@@ -3331,6 +3312,10 @@
         font-size: 14px;
         color: #6b7280;
         margin: 0;
+    }
+
+    .hms-inv-print__barcode {
+        margin: 4px 0 20px;
     }
 
     .hms-inv-print__table {
@@ -9447,6 +9432,12 @@
     font-style: italic;
     color: var(--hms-gray-600);
     margin-top: 2px;
+}
+
+.hms-print-discharge-barcode {
+    margin: 20px 0 0;
+    display: flex;
+    justify-content: center;
 }
 
 .hms-print-signature {

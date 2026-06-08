@@ -76,7 +76,7 @@ public class HealthCheckupService {
 
     /** Returns the booking, asserting it belongs to the caller's hospital. */
     private HealthCheckupBooking loadBookingForTenant(UUID bookingId, UUID hospitalId) {
-        HealthCheckupBooking booking = bookingRepo.findById(bookingId)
+        HealthCheckupBooking booking = bookingRepo.findByIdWithResults(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
         assertSameHospital(hospitalId, booking.getHospital().getId(), "Booking");
         return booking;
@@ -193,6 +193,12 @@ public class HealthCheckupService {
 
         String bookingNumber = generateBookingNumber(hospital);
 
+        String paymentStatus = req.getPaymentStatus() != null ? req.getPaymentStatus() : "PENDING";
+        java.math.BigDecimal amountPaid = req.getAmountPaid() != null ? req.getAmountPaid() : java.math.BigDecimal.ZERO;
+        if ("PAID".equals(paymentStatus) && amountPaid.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Cannot mark booking as Paid without recording an amount paid");
+        }
+
         HealthCheckupBooking booking = HealthCheckupBooking.builder()
                 .hospital(hospital)
                 .patient(patient)
@@ -202,8 +208,8 @@ public class HealthCheckupService {
                 .scheduledDate(LocalDate.parse(req.getScheduledDate()))
                 .scheduledTime(req.getScheduledTime() != null ? LocalTime.parse(req.getScheduledTime()) : null)
                 .status(CheckupBookingStatus.SCHEDULED)
-                .paymentStatus(req.getPaymentStatus() != null ? req.getPaymentStatus() : "PENDING")
-                .amountPaid(req.getAmountPaid() != null ? req.getAmountPaid() : java.math.BigDecimal.ZERO)
+                .paymentStatus(paymentStatus)
+                .amountPaid(amountPaid)
                 .notes(req.getNotes())
                 .createdBy(performedBy)
                 .build();

@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { checkupApi } from "@/utils/api";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import PageHeader from "@/components/ui/PageHeader";
+import Modal from "@/components/ui/Modal";
 import {
   Package, Plus, Edit2, Trash2, ToggleLeft, ToggleRight,
   ChevronDown, ChevronUp, GripVertical, X, Check, AlertCircle,
@@ -72,117 +73,119 @@ function PackageFormModal({ initial, hospitalId, onClose, onSaved }) {
   };
 
   return (
-    <div className="hms-pkg-modal-overlay">
-      <div className="hms-pkg-modal">
-        <div className="hms-pkg-modal__head">
-          <h2 className="hms-pkg-modal__title">{form.id ? "Edit Package" : "New Health Package"}</h2>
-          <button onClick={onClose} className="hms-pkg-modal__close"><X className="w-4 h-4" /></button>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      size="lg"
+      title={form.id ? "Edit Package" : "New Health Package"}
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <label className="hms-pkg-modal__active-toggle" style={{ margin: 0 }}>
+            <input type="checkbox" checked={form.active} onChange={e => set("active", e.target.checked)} />
+            <span>Active (visible for booking)</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={onClose} className="zu-btn-cancel">Cancel</button>
+            <button type="submit" form="package-form" disabled={saving} className="zu-btn-primary is-green">
+              {saving ? "Saving…" : "Save Package"}
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <form id="package-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
+        {error && (
+          <div className="hms-pkg-modal__error">
+            <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+          </div>
+        )}
+
+        <div className="hms-pkg-modal__grid">
+          <div className="is-span-2">
+            <label className="hms-pkg-modal__label">Package Name</label>
+            <input value={form.name} onChange={e => set("name", e.target.value)} placeholder="e.g. Executive Health Package" className="hms-pkg-modal__input" />
+          </div>
+          <div>
+            <label className="hms-pkg-modal__label">Category</label>
+            <SearchableSelect value={form.category} onChange={v => set("category", v)}
+              options={CATEGORIES.map(c => ({ value: c.value, label: c.label }))}
+              clearable={false}
+              searchable={false}
+            />
+          </div>
+          <div>
+            <label className="hms-pkg-modal__label">Target Gender</label>
+            <SearchableSelect value={form.targetGender} onChange={v => set("targetGender", v)}
+              options={[
+                { value: "ANY", label: "Any / Unisex" },
+                { value: "MALE", label: "Male Only" },
+                { value: "FEMALE", label: "Female Only" },
+              ]}
+              clearable={false}
+              searchable={false}
+            />
+          </div>
+          <div>
+            <label className="hms-pkg-modal__label">Price (₹)</label>
+            <input type="number" step="0.01" value={form.price} onChange={e => set("price", e.target.value)} placeholder="0.00" className="hms-pkg-modal__input" />
+          </div>
+          <div>
+            <label className="hms-pkg-modal__label">Validity (Days)</label>
+            <input type="number" min="1" value={form.validityDays} onChange={e => set("validityDays", parseInt(e.target.value))} className="hms-pkg-modal__input" />
+          </div>
+          <div className="is-span-2">
+            <label className="hms-pkg-modal__label">Description</label>
+            <textarea rows={2} value={form.description} onChange={e => set("description", e.target.value)} placeholder="Brief description of what this package covers…" className="hms-pkg-modal__input" />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="hms-pkg-modal__form">
-          {error && (
-            <div className="hms-pkg-modal__error">
-              <AlertCircle className="w-4 h-4 shrink-0" /> {error}
-            </div>
-          )}
-
-          <div className="hms-pkg-modal__grid">
-            <div className="is-span-2">
-              <label className="hms-pkg-modal__label">Package Name</label>
-              <input value={form.name} onChange={e => set("name", e.target.value)} placeholder="e.g. Executive Health Package" className="hms-pkg-modal__input" />
-            </div>
-            <div>
-              <label className="hms-pkg-modal__label">Category</label>
-              <SearchableSelect value={form.category} onChange={v => set("category", v)}
-                options={CATEGORIES.map(c => ({ value: c.value, label: c.label }))}
-              />
-            </div>
-            <div>
-              <label className="hms-pkg-modal__label">Target Gender</label>
-              <SearchableSelect value={form.targetGender} onChange={v => set("targetGender", v)}
-                options={[
-                  { value: "ANY", label: "Any / Unisex" },
-                  { value: "MALE", label: "Male Only" },
-                  { value: "FEMALE", label: "Female Only" },
-                ]}
-              />
-            </div>
-            <div>
-              <label className="hms-pkg-modal__label">Price (₹)</label>
-              <input type="number" step="0.01" value={form.price} onChange={e => set("price", e.target.value)} placeholder="0.00" className="hms-pkg-modal__input" />
-            </div>
-            <div>
-              <label className="hms-pkg-modal__label">Validity (Days)</label>
-              <input type="number" min="1" value={form.validityDays} onChange={e => set("validityDays", parseInt(e.target.value))} className="hms-pkg-modal__input" />
-            </div>
-            <div className="is-span-2">
-              <label className="hms-pkg-modal__label">Description</label>
-              <textarea rows={2} value={form.description} onChange={e => set("description", e.target.value)} placeholder="Brief description of what this package covers…" className="hms-pkg-modal__input" />
-            </div>
+        {/* Tests */}
+        <div>
+          <div className="hms-pkg-modal__test-head">
+            <label className="hms-pkg-modal__label">Tests Included ({form.tests.length})</label>
+            <button type="button" onClick={addTest} className="hms-pkg-modal__add-test">
+              <Plus className="w-3 h-3" /> Add Test
+            </button>
           </div>
 
-          {/* Tests */}
-          <div>
-            <div className="hms-pkg-modal__test-head">
-              <label className="hms-pkg-modal__label">Tests Included ({form.tests.length})</label>
-              <button type="button" onClick={addTest} className="hms-pkg-modal__add-test">
-                <Plus className="w-3 h-3" /> Add Test
-              </button>
+          {form.tests.length === 0 ? (
+            <div className="hms-pkg-modal__tests-empty">
+              <Package className="w-6 h-6 opacity-40" />
+              <p className="hms-pkg-modal__tests-empty-text">No tests added yet. Click "Add Test" to begin.</p>
             </div>
-
-            {form.tests.length === 0 ? (
-              <div className="hms-pkg-modal__tests-empty">
-                <Package className="w-6 h-6 opacity-40" />
-                <p className="hms-pkg-modal__tests-empty-text">No tests added yet. Click "Add Test" to begin.</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {form.tests.map((t, i) => (
-                  <div key={i} className="hms-pkg-modal__test-row">
-                    <GripVertical className="hms-pkg-modal__test-grip w-4 h-4" />
-                    <div className="hms-pkg-modal__test-fields">
-                      <div className="is-span-2">
-                        <input value={t.testName} onChange={e => updateTest(i, "testName", e.target.value)} placeholder="Test name (e.g. Complete Blood Count)" className="hms-pkg-modal__test-field" />
-                      </div>
-                      <div>
-                        <SearchableSelect value={t.testCategory} onChange={v => updateTest(i, "testCategory", v)}
-                          options={TEST_CATEGORIES.map(c => ({ value: c, label: c.replace("_", " ") }))}
-                        />
-                      </div>
-                      <div>
-                        <input value={t.normalRange} onChange={e => updateTest(i, "normalRange", e.target.value)} placeholder="Normal range" className="hms-pkg-modal__test-field" />
-                      </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {form.tests.map((t, i) => (
+                <div key={i} className="hms-pkg-modal__test-row">
+                  <GripVertical className="hms-pkg-modal__test-grip w-4 h-4" />
+                  <div className="hms-pkg-modal__test-fields">
+                    <div>
+                      <input value={t.testName} onChange={e => updateTest(i, "testName", e.target.value)} placeholder="Test name (e.g. Complete Blood Count)" className="hms-pkg-modal__test-field" />
                     </div>
-                    <div className="hms-pkg-modal__test-actions">
-                      <label className="hms-pkg-modal__test-req">
-                        <input type="checkbox" checked={t.mandatory} onChange={e => updateTest(i, "mandatory", e.target.checked)} />
-                        Req.
-                      </label>
-                      <button type="button" onClick={() => removeTest(i)} className="hms-pkg-modal__test-remove">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                    <div>
+                      <SearchableSelect value={t.testCategory} onChange={v => updateTest(i, "testCategory", v)}
+                        options={TEST_CATEGORIES.map(c => ({ value: c, label: c.replace("_", " ") }))}
+                        clearable={false}
+                        searchable={false}
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="hms-pkg-modal__foot">
-            <label className="hms-pkg-modal__active-toggle">
-              <input type="checkbox" checked={form.active} onChange={e => set("active", e.target.checked)} />
-              <span>Active (visible for booking)</span>
-            </label>
-            <div className="hms-pkg-modal__foot-actions">
-              <button type="button" onClick={onClose} className="zu-btn-cancel">Cancel</button>
-              <button type="submit" disabled={saving} className="zu-btn-primary is-green">
-                {saving ? "Saving…" : "Save Package"}
-              </button>
+                  <div className="hms-pkg-modal__test-actions">
+                    <label className="hms-pkg-modal__test-req">
+                      <input type="checkbox" checked={t.mandatory} onChange={e => updateTest(i, "mandatory", e.target.checked)} />
+                      Req.
+                    </label>
+                    <button type="button" onClick={() => removeTest(i)} className="hms-pkg-modal__test-remove">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </form>
-      </div>
-    </div>
+          )}
+        </div>
+      </form>
+    </Modal>
   );
 }
 

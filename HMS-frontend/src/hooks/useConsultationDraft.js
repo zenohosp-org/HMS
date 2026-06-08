@@ -251,7 +251,7 @@ export function useConsultationDraft({ appointment, hospitalId, notify, onSaved 
     items, setItemField, addItem, removeItem,
     drugCount,
     // sidecar
-    vitals, vitalsStatus,
+    vitals, setVitals, vitalsStatus,
     // bookkeeping
     hydrating, autosaveStatus, saving,
     // action

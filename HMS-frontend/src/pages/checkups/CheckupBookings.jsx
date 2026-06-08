@@ -98,6 +98,11 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
   const canProceed = form.patient && form.packageId && form.scheduledDate;
 
   const handleBook = async () => {
+    const amountPaid = form.amountPaid ? parseFloat(form.amountPaid) : 0;
+    if (form.paymentStatus === "PAID" && amountPaid <= 0) {
+      setError("Enter the amount paid before marking this booking as Paid.");
+      return;
+    }
     setSaving(true); setError(null);
     try {
       await checkupApi.createBooking(hospitalId, {
@@ -107,7 +112,7 @@ function BookingModal({ hospitalId, onClose, onBooked }) {
         scheduledDate: form.scheduledDate,
         scheduledTime: form.scheduledTime || null,
         paymentStatus: form.paymentStatus,
-        amountPaid: form.amountPaid ? parseFloat(form.amountPaid) : 0,
+        amountPaid,
         notes: form.notes,
       });
       onBooked(); onClose();

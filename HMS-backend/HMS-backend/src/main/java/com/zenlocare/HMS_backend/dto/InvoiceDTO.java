@@ -42,6 +42,8 @@ public class InvoiceDTO {
     private BigDecimal paidAmount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private UUID updatedById;
+    private String updatedByName;
     private List<ItemDTO> items;
     private List<PaymentDTO> payments;
 
@@ -53,6 +55,8 @@ public class InvoiceDTO {
         private BigDecimal amount;
         private String paymentMethod;
         private String collectedBy;
+        private UUID collectedById;
+        private String collectedByName;
         private LocalDateTime paidAt;
     }
 
