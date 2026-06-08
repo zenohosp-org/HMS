@@ -677,51 +677,53 @@ const featureFlagsApi = {
   },
 };
 
-// Health checkups now served by labs (api-labs.zenohosp.com / labsApi
-// instance). Contract is byte-identical to the previous HMS endpoint —
-// only the host changes.
+// Health checkups served via HMS backend proxy to labs. The HMS frontend
+// stays single-origin (hms.zenohosp.com/api/health-checkups/*); the proxy
+// forwards every request to labs (api-labs.zenohosp.com/api/health-checkups/*)
+// with JWT preserved. Contract is byte-identical to labs — the HMS proxy
+// is transparent.
 const checkupApi = {
   getPackages: async (hospitalId, activeOnly = false) => {
-    const { data } = await labsApi.get("/health-checkups/packages", { params: { hospitalId, activeOnly } });
+    const { data } = await api.get("/health-checkups/packages", { params: { hospitalId, activeOnly } });
     return data;
   },
   savePackage: async (hospitalId, payload) => {
-    const { data } = await labsApi.post("/health-checkups/packages", payload, { params: { hospitalId } });
+    const { data } = await api.post("/health-checkups/packages", payload, { params: { hospitalId } });
     return data;
   },
-  togglePackage: async (id) => labsApi.patch(`/health-checkups/packages/${id}/toggle`),
-  deletePackage: async (id) => labsApi.delete(`/health-checkups/packages/${id}`),
+  togglePackage: async (id) => api.patch(`/health-checkups/packages/${id}/toggle`),
+  deletePackage: async (id) => api.delete(`/health-checkups/packages/${id}`),
 
   getBookings: async (hospitalId, params = {}) => {
-    const { data } = await labsApi.get("/health-checkups/bookings", { params: { hospitalId, ...params } });
+    const { data } = await api.get("/health-checkups/bookings", { params: { hospitalId, ...params } });
     return data;
   },
   getBooking: async (id) => {
-    const { data } = await labsApi.get(`/health-checkups/bookings/${id}`);
+    const { data } = await api.get(`/health-checkups/bookings/${id}`);
     return data;
   },
   createBooking: async (hospitalId, payload) => {
-    const { data } = await labsApi.post("/health-checkups/bookings", payload, { params: { hospitalId } });
+    const { data } = await api.post("/health-checkups/bookings", payload, { params: { hospitalId } });
     return data;
   },
   updateStatus: async (id, status) => {
-    const { data } = await labsApi.patch(`/health-checkups/bookings/${id}/status`, { status });
+    const { data } = await api.patch(`/health-checkups/bookings/${id}/status`, { status });
     return data;
   },
   updateResult: async (bookingId, resultId, payload) => {
-    const { data } = await labsApi.patch(`/health-checkups/bookings/${bookingId}/results/${resultId}`, payload);
+    const { data } = await api.patch(`/health-checkups/bookings/${bookingId}/results/${resultId}`, payload);
     return data;
   },
   saveDoctorNotes: async (bookingId, payload) => {
-    const { data } = await labsApi.patch(`/health-checkups/bookings/${bookingId}/doctor-notes`, payload);
+    const { data } = await api.patch(`/health-checkups/bookings/${bookingId}/doctor-notes`, payload);
     return data;
   },
   assignDoctor: async (bookingId, doctorId) => {
-    const { data } = await labsApi.patch(`/health-checkups/bookings/${bookingId}/doctor`, { doctorId: doctorId || null });
+    const { data } = await api.patch(`/health-checkups/bookings/${bookingId}/doctor`, { doctorId: doctorId || null });
     return data;
   },
   getStats: async (hospitalId) => {
-    const { data } = await labsApi.get("/health-checkups/stats", { params: { hospitalId } });
+    const { data } = await api.get("/health-checkups/stats", { params: { hospitalId } });
     return data;
   },
 };
