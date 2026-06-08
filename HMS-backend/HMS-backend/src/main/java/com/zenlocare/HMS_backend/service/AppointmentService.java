@@ -36,7 +36,6 @@ public class AppointmentService {
         private final DoctorRepository doctorRepository;
         private final PriceListRepository priceListRepository;
         private final UserRepository userRepository;
-        private final HealthCheckupBookingRepository healthCheckupBookingRepository;
         private final LabsClient labsClient;
         private final InvoiceService invoiceService;
 
@@ -178,16 +177,13 @@ public class AppointmentService {
                 // gapped by no-shows or future bookings.
 
                 // Auto-create checkup booking via labs if a package is
-                // selected. Labs (api-labs.zenohosp.com) now owns the
-                // health_checkup_bookings table; HMS delegates the write
-                // over HTTP, forwarding the caller's JWT so labs validates
-                // the same identity. Both apps share the same Postgres, so
-                // immediately after labs commits we can re-fetch the
-                // entity via the still-existing HealthCheckupBookingRepository
-                // to satisfy the @ManyToOne on Appointment. Phase D flattens
-                // this relationship to a plain UUID column and the re-fetch
-                // disappears.
-                HealthCheckupBooking checkupBooking = null;
+                // selected. Labs owns health_checkup_bookings end-to-end now;
+                // HMS only stores the FK UUID on the appointment row. The
+                // @ManyToOne join (and the re-fetch that propped it up
+                // during the migration) is gone — the booking's number,
+                // status, results all live in labs and are surfaced via the
+                // labs UI / the HMS-proxied checkup detail page.
+                UUID checkupBookingId = null;
                 if (request.getPackageId() != null) {
                         LabsCheckupBookingRequest br = new LabsCheckupBookingRequest();
                         br.setPatientId(request.getPatientId());
@@ -204,10 +200,7 @@ public class AppointmentService {
                                 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                                                 "Labs returned no booking id for the checkup");
                         }
-                        checkupBooking = healthCheckupBookingRepository.findById(created.getId())
-                                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                                                        "Labs created checkup booking " + created.getId()
-                                                                        + " but HMS could not read it back"));
+                        checkupBookingId = created.getId();
                 }
 
                 Appointment appointment = Appointment.builder()
@@ -222,7 +215,7 @@ public class AppointmentService {
                                 .status(Appointment.AppointmentStatus.SCHEDULED)
                                 .chiefComplaint(request.getChiefComplaint())
                                 .priceList(priceList)
-                                .checkupBooking(checkupBooking)
+                                .checkupBookingId(checkupBookingId)
                                 .createdBy(createdBy)
                                 .build();
 

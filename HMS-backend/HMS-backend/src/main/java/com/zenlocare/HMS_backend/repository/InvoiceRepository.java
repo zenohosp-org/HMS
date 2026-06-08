@@ -78,9 +78,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         """)
     boolean existsRegistrationFeeForPatient(@Param("patientId") Integer patientId);
 
-    // Quick check used by the radiology auto-bill path — replaces a full-table
-    // scan in InvoiceService.billRadiologyOrder. Returns true if any invoice
-    // item anywhere already references this radiology order id.
+    // Quick check used by the labs-side radiology auto-bill flow (HMS no
+    // longer auto-bills radiology). Returns true if any invoice item anywhere
+    // already references this radiology order id — guards the labs integration
+    // from double-billing into invoice_items.
     @Query("""
         SELECT CASE WHEN COUNT(ii) > 0 THEN TRUE ELSE FALSE END
         FROM InvoiceItem ii

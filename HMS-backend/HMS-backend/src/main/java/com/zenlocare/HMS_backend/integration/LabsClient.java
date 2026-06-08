@@ -111,6 +111,33 @@ public class LabsClient {
         }
     }
 
+    /**
+     * Generic JSON proxy. Used by HealthCheckupProxyController to forward
+     * every health-checkup request HMS receives to labs verbatim — path,
+     * query string, body, JWT all preserved. Response status, headers and
+     * body are echoed back to the original caller so the HMS frontend sees
+     * labs' exact contract.
+     *
+     * 4xx/5xx from labs propagate through. Network failures map to 502.
+     */
+    public ResponseEntity<String> proxyJson(HttpMethod method, String path,
+                                            String queryString, String body, String jwt) {
+        StringBuilder url = new StringBuilder(labsApiUrl).append(path);
+        if (queryString != null && !queryString.isBlank()) url.append('?').append(queryString);
+        HttpEntity<String> entity = new HttpEntity<>(body, authHeaders(jwt));
+        try {
+            return restTemplate.exchange(url.toString(), method, entity, String.class);
+        } catch (HttpStatusCodeException e) {
+            log.warn("Labs proxy {} {} returned {}: {}", method, path, e.getStatusCode(),
+                    e.getResponseBodyAsString());
+            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsString());
+        } catch (Exception e) {
+            log.error("Labs proxy {} {} unreachable: {}", method, path, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                    "Labs service unreachable: " + e.getMessage(), e);
+        }
+    }
+
     private HttpHeaders authHeaders(String jwt) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
