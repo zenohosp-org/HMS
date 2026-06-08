@@ -377,7 +377,7 @@ function AppointmentsDashboard() {
 
     try {
       const updated = await appointmentsApi.updateStatus(id, status, cancelledReason);
-      notify(`Appointment marked as ${status.replace(/_/g, " ").toLowerCase()}`, "success");
+      notify(`Appointment marked as ${(status || "updated").replace(/_/g, " ").toLowerCase()}`, "success");
       // Swap in the server's authoritative DTO so any derived fields are fresh.
       if (shouldOpenConsult && updated) {
         setConsultationAppointment((cur) => cur ? { ...updated } : cur);
@@ -518,10 +518,10 @@ function AppointmentsDashboard() {
                   </td>
                   <td>
                     <p className="hms-appt-table__date">{format(parseISO(appt.apptDate), "yyyy-MM-dd")}</p>
-                    <p className="hms-appt-table__time">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p>
+                    <p className="hms-appt-table__time">{appt.apptTime ? `${appt.apptTime.substring(0, 5)} ${parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}` : "—"}</p>
                   </td>
                   <td>
-                    <span className={`hms-appt-status ${STATUS_MOD[appt.status] || ""}`}>{appt.status.replace(/_/g, " ")}</span>
+                    <span className={`hms-appt-status ${STATUS_MOD[appt.status] || ""}`}>{(appt.status || "—").replace(/_/g, " ")}</span>
                   </td>
                   <td>{TYPE_LABEL[appt.type] ?? appt.type}</td>
                   <td>
@@ -785,7 +785,7 @@ function AppointmentsDashboard() {
                         <p className="hms-appt-day-row__name">{appt.patientName}</p>
                         <p className="hms-appt-day-row__meta">{TYPE_LABEL[appt.type] ?? appt.type} &middot; Dr. {appt.doctorName}</p>
                       </div>
-                      <div className={`hms-appt-day-row__status ${STATUS_MOD[appt.status] || ""}`}>{appt.status.replace("_", " ")}</div>
+                      <div className={`hms-appt-day-row__status ${STATUS_MOD[appt.status] || ""}`}>{(appt.status || "—").replace("_", " ")}</div>
                     </div>
                   );
                 })}

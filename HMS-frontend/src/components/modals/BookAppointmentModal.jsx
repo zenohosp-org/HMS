@@ -128,10 +128,13 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
 
   useEffect(() => {
     if (!isOpen || !user?.hospitalId) return;
+    // Checkup packages now live in the labs service. Catch its failure
+    // independently so a labs outage doesn't take the whole appointment-
+    // booking modal offline — the doctor just sees an empty package list.
     Promise.all([
       patientApi.list(user.hospitalId),
       doctorsApi.list(user.hospitalId),
-      checkupApi.getPackages(user.hospitalId, true),
+      checkupApi.getPackages(user.hospitalId, true).catch(() => []),
     ]).then(([p, d, pk]) => {
       setPatients(p); setDoctors(d.filter(x => x.userIsActive)); setPackages(pk);
       if (user.role === "doctor") {
