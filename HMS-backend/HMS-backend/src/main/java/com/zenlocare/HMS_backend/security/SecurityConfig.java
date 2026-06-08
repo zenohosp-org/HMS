@@ -115,6 +115,7 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:5173",
                 "http://localhost:5174",
+                "http://localhost:5175",
                 "https://*.onrender.com",
                 "https://*.vercel.app",
                 "https://ot.zenohosp.com",
@@ -124,6 +125,8 @@ public class SecurityConfig {
                 "https://api-inventory.zenohosp.com",
                 "https://finance.zenohosp.com",
                 "https://api-finance.zenohosp.com",
+                "https://labs.zenohosp.com",
+                "https://api-labs.zenohosp.com",
                 frontendUrl));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
