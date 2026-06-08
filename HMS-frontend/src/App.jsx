@@ -30,9 +30,6 @@ import ShiftRoster from "@/pages/admin/ShiftRoster";
 import Departments from "@/pages/admin/Departments";
 import Designations from "@/pages/admin/Designations";
 import Admissions from "@/pages/admin/Admissions";
-import RadiologyQueue from "@/pages/radiology/RadiologyQueue";
-import RadiologyReports from "@/pages/radiology/RadiologyReports";
-import RadiologyReportView from "@/pages/radiology/RadiologyReportView";
 import InfrastructureMapping from "@/pages/ipd/InfrastructureMapping"
 import Settings from "@/pages/settings/Settings"
 import GeneralSettings from "@/pages/settings/GeneralSettings"
@@ -91,13 +88,8 @@ function App() {
  {/* Appointments */}
  <Route path="appointments" element={<AppointmentsDashboard />} />
  
- {/* Radiology */}
- <Route path="radiology" element={<Navigate to="/radiology/imaging-queue" replace />} />
- <Route path="radiology/imaging-queue" element={<RadiologyQueue />} />
- <Route path="radiology/imagin-queue" element={<RadiologyQueue />} />
- <Route path="radiology/reports" element={<RadiologyReports />} />
- <Route path="radiology/reports/:id" element={<RadiologyReportView />} />
- 
+ {/* Radiology pages now live on labs.zenohosp.com; HMS no longer hosts them. */}
+
  {/* Doctors */}
  <Route path="doctors" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><DoctorsList /></ProtectedRoute>} />
  <Route path="doctors/:id" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor"]}><DoctorDetails /></ProtectedRoute>} />

@@ -20,8 +20,7 @@ import {
     ChevronDown,
     UserSquare2,
     CalendarDays,
-    ScanLine,
-    FileText,
+    FlaskConical,
     Award,
     Ambulance,
     HeartPulse,
@@ -55,10 +54,6 @@ const AMBULANCE_LINKS = [
     { label: "Status", to: "/ambulance/status", icon: Activity },
 ];
 const CHECKUP_LINK = { label: "Health Checkups", to: "/checkups/bookings", icon: HeartPulse };
-const RADIOLOGY_LINKS = [
-    { label: "Imaging Queue", to: "/radiology/imaging-queue", icon: ScanLine },
-    { label: "Reports", to: "/radiology/reports", icon: FileText },
-];
 const HR_LINKS = [
     { label: "Staff Directory", to: "/staffs/directory", icon: UserSquare2 },
     { label: "Shift Roster", to: "/staffs/roster", icon: CalendarDays },
@@ -71,6 +66,7 @@ const BILLING_LINKS = [
     { label: "Ambulance Billing", to: "/billing/ambulance", icon: Ambulance },
 ];
 const EXTERNAL_APPS = [
+    { label: "Labs", href: "https://labs.zenohosp.com", icon: FlaskConical },
     { label: "Finance", href: "https://finance.zenohosp.com", icon: BarChart2 },
     { label: "Inventory", href: "https://inventory.zenohosp.com", icon: Boxes },
     { label: "Directory", href: "https://directory.zenohosp.com", icon: BookOpen },
@@ -81,11 +77,9 @@ function Sidebar({ isOpen }) {
     const { user } = useAuth();
     const location = useLocation();
     const ambulanceEnabled = useFeatureFlag("AMBULANCE");
-    const radiologyEnabled = useFeatureFlag("RADIOLOGY");
     const checkupsEnabled = useFeatureFlag("HEALTH_CHECKUPS");
     const ipdEnabled = useFeatureFlag("IPD");
     const [hrOpen, setHrOpen] = useState(() => location.pathname.startsWith("/staffs"));
-    const [radOpen, setRadOpen] = useState(() => location.pathname.startsWith("/radiology"));
     const [roomsOpen, setRoomsOpen] = useState(
         () => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions")
     );
@@ -110,7 +104,6 @@ function Sidebar({ isOpen }) {
     });
     const isHrAdmin = user?.role === "hospital_admin" || user?.role === "super_admin";
     const hrActive = location.pathname.startsWith("/staffs");
-    const radActive = location.pathname.startsWith("/radiology");
     const roomsActive =
         location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions");
     const ambActive = location.pathname.startsWith("/ambulance");
@@ -235,15 +228,6 @@ function Sidebar({ isOpen }) {
                         roomsOpen,
                         setRoomsOpen,
                         roomsActive
-                    )}
-                {radiologyEnabled &&
-                    renderAccordionSection(
-                        RADIOLOGY_LINKS,
-                        "Radiology",
-                        ScanLine,
-                        radOpen,
-                        setRadOpen,
-                        radActive
                     )}
                 {ambulanceEnabled &&
                     renderAccordionSection(
