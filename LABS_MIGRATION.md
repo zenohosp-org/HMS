@@ -2,12 +2,19 @@
 
 Tracks the multi-session migration of radiology + health-checkups from HMS into
 the labs service (`labs.zenohosp.com` / port 8086 locally,
-`api-labs.zenohosp.com` in prod). HMS-backend and HMS-frontend swap to call
-labs over HTTP; labs becomes the sole owner of those domains.
+`api-labs.zenohosp.com` in prod), plus the reverse arrangement for
+hospital-services (labs proxies HMS). Each domain ends up with exactly one
+owner of data + writes; the other app proxies when it needs UI.
+
+| Domain              | Data owner | HMS UI                | Labs UI               |
+| ------------------- | ---------- | --------------------- | --------------------- |
+| Health Checkups     | Labs       | ✅ via HMS → labs proxy| ✅ direct             |
+| Radiology / Lab Ord | Labs       | ❌ removed (link out)  | ✅ direct             |
+| Hospital Services   | HMS        | ✅ direct             | ✅ via labs → HMS proxy|
 
 DB stays shared (single `zenohosp` Postgres). Rows are not migrated; only the
-code path changes. Phases are committed independently so any phase can be
-reverted in isolation.
+code path changes. Phases / chunks are committed independently so any one can
+be reverted in isolation.
 
 ---
 
@@ -87,7 +94,115 @@ git reset --hard 98ba1e0   # drop the whole migration
 
 ---
 
-## Phase D — Delete obsolete HMS code (NOT STARTED)
+## Chunk 1 — HMS proxies labs for checkups, drops radiology backend (DONE)
+
+Local commit: `61092db`. Replaces Phase D's plan with a one-shot
+restructure on the HMS side.
+
+- `Appointment.checkupBooking` `@ManyToOne HealthCheckupBooking` →
+  `checkupBookingId` `@Column UUID`. DB column type + FK stay; only the
+  Java-side join goes away.
+- `AppointmentDto`: drops `checkupBookingNumber` + `checkupPackageName`
+  from the wire shape (the denormalised reads off the `@ManyToOne` are
+  unsourceable now). Frontend keeps `checkupBookingId` for navigation
+  on the appointments row.
+- `AppointmentService.createAppointment`: re-fetch via
+  `HealthCheckupBookingRepository` is gone — just stores the UUID labs
+  returned. Repository injection removed.
+- `InvoiceService`: deletes `billRadiologyOrder()` + `billCheckupBooking()`
+  and the three "mark RADIOLOGY items as BILLED" stream blocks in
+  `createInvoice`, `finalizeIPDInvoice`, `collectAndSave`. Labs owns the
+  radiology lifecycle; HMS no longer flips order statuses.
+- New `labsClient.proxyJson(method, path, queryString, body, jwt)` —
+  generic forwarder. Path / query / body / JWT preserved verbatim; labs'
+  status + body echoed back.
+- New `HealthCheckupProxyController` at `/api/health-checkups/**` —
+  RequestMapping wildcard hands the request off to `proxyJson`. All 12
+  checkup endpoints flow through.
+- Deletes (all confirmed unused at this commit): RadiologyController,
+  HealthCheckupController, RadiologyService, HealthCheckupService,
+  HealthPackageRepository, HealthCheckupBookingRepository,
+  RadiologyOrderRepository, and 8 entity/DTO/converter classes.
+
+Tables (`radiology_orders`, `health_packages`, `health_package_tests`,
+`health_checkup_bookings`, `health_checkup_results`) stay in the shared
+DB — Hibernate just stops mapping them.
+
+## Chunk 2 — HMS frontend checkupApi back to HMS api (DONE)
+
+Local commit: `3c8dc8c`. Pairs with Chunk 1.
+
+`checkupApi`'s 12 methods now travel:
+```
+HMS frontend → hms.zenohosp.com/api/health-checkups/*
+             → HealthCheckupProxyController
+             → api-labs.zenohosp.com/api/health-checkups/*
+```
+
+Single-origin in the SPA (single SSO cookie, single log stream, single
+rate-limit / observability point).
+
+## Chunk 4 — Remove radiology UI from HMS, add Labs external link (DONE)
+
+Local commit: `38f71b1`. Frontend rationalisation matching the backend
+deletes.
+
+- Deletes `src/pages/radiology/*` (5 page + modal files).
+- Drops the 4 radiology route registrations + lazy imports from
+  `App.jsx`.
+- Sidebar: drops `RADIOLOGY_LINKS`, `radiologyEnabled` read, `radOpen`
+  state, `radActive`, accordion render, and the `ScanLine` / `FileText`
+  icon imports. Adds `Labs` to `EXTERNAL_APPS` as the first entry
+  (labs.zenohosp.com, `FlaskConical` icon).
+
+Kept: `radiologyApi` in `utils/api.js` — still routes to `labsApi` for
+the read-only integration points (`FinalizeIPDBillingModal` radiology
+line items, `IPDDetailPane` radiology widget, `ViewBillingModal`
+historical line items, `PrintConsultation` radiology results). Those
+are clinical/billing context inside HMS pages, not standalone
+radiology UI.
+
+(Chunk 3 was folded into Chunk 1 — radiology backend deletions
+happened in the same commit as the checkup proxy.)
+
+## Hospital-services proxy — labs side (DONE per labs Claude)
+
+Labs delivered the reverse arrangement: hospital_services data + writes
+stay in HMS; labs proxies the same routes through to HMS.
+
+Labs-side changes (acknowledged by labs Claude):
+- Deletes labs' `HospitalService` entity / controller / service / repo /
+  DTO (5 files).
+- Adds `HospitalServicesProxyController` — 5 routes (GET, POST, PUT,
+  DELETE, PATCH /toggle-status), JWT forwarded as
+  `Authorization: Bearer`, body passed as `byte[]` for transparency.
+- Adds `RestTemplateConfig` backed by Java 11+ `HttpClient` /
+  `JdkClientHttpRequestFactory`. **Note for future cross-app forwarders:**
+  the default `SimpleClientHttpRequestFactory` uses `HttpURLConnection`
+  which silently fails on PATCH. Reuse the JDK factory pattern.
+- Config: `hms.api.url=${HMS_API_URL:http://localhost:9001}`.
+  Prod env var: `HMS_API_URL=https://api-hms.zenohosp.com`.
+
+Labs verified via curl: full CRUD round-trip through the proxy against
+HMS — GET/POST/PUT/PATCH/DELETE all succeed; rows show up correctly in
+HMS DB; 401 fires before proxy when JWT is missing. Boot logs confirm
+labs no longer maps `hospital_services` at all.
+
+Two contract notes (non-breaking) flagged by labs:
+1. `DELETE /{id}` is idempotent — HMS's `repository.deleteById` doesn't
+   throw on missing id, so a stale UUID returns 204 rather than 404. If
+   HMS ever wants 404-on-missing-id, change HMS; labs mirrors.
+2. `PATCH /toggle-status` returns 204 (empty body) — matches HMS's
+   existing controller. Labs frontend's `hospitalServiceApi` already
+   ignores the body.
+
+No HMS-side change needed for this arrangement — HMS's existing
+`HospitalServiceController` keeps serving the routes; labs forwards to
+it. The labs frontend's only hospital-services touchpoint
+(`NewOrderModal.jsx` reading the list via the proxy) is verified
+working.
+
+## Phase D — Delete obsolete HMS code (NOT STARTED — superseded by Chunks 1-4)
 
 Runs only after Phase C is verified in prod. Per-phase commits will mirror A/B/C.
 
