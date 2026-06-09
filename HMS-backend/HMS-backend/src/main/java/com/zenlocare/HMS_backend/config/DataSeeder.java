@@ -195,6 +195,8 @@ public class DataSeeder implements CommandLineRunner {
         seedHospitalAdmin();
         ensureZemaRulesSchema();
         seedZemaRules();
+        ensureBloodBankSchema();
+        seedBloodBankLookups();
     }
 
     /**
@@ -1014,5 +1016,165 @@ public class DataSeeder implements CommandLineRunner {
         insertCombinationRule("combo", "((sbp !== null && sbp >= 140) || (dbp !== null && dbp >= 90)) && age !== null && age < 40", "Early hypertension", "Early-onset hypertension (age < 40) - consider secondary causes (renal, endocrine). Suggest workup.", "warning", 32);
         insertCombinationRule("combo", "bmi !== null && bmi >= 25 && pulse !== null && pulse > 100", "Elevated BMI with tachycardia", "Elevated BMI with tachycardia - consider metabolic stress, deconditioning, or obstructive sleep apnea screening.", "warning", 33);
         insertCombinationRule("combo", "sbp !== null && dbp !== null && sbp < 140 && dbp < 90 && (spo2 === null || spo2 >= 95) && (pulse === null || (pulse >= 60 && pulse <= 100)) && (shockIndex === null || shockIndex <= 0.9)", "No acute hemodynamic or respiratory concern", "No acute hemodynamic or respiratory concern identified from current vitals. Routine follow-up suggested.", "reassurance", 34);
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    // Blood Bank — schema + system-default lookups
+    // ───────────────────────────────────────────────────────────────────
+
+    private void ensureBloodBankSchema() {
+        try {
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS blood_bank_lookups (
+                    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    hospital_id   UUID REFERENCES hospitals(id),
+                    lookup_type   VARCHAR(24)  NOT NULL,
+                    code          VARCHAR(40)  NOT NULL,
+                    label         VARCHAR(120) NOT NULL,
+                    metadata      JSONB,
+                    display_order INTEGER      DEFAULT 0,
+                    is_system     BOOLEAN      DEFAULT false,
+                    is_active     BOOLEAN      DEFAULT true,
+                    created_at    TIMESTAMP    DEFAULT now()
+                )
+            """);
+            jdbcTemplate.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uniq_blood_bank_lookups_tenant
+                    ON blood_bank_lookups (hospital_id, lookup_type, code)
+            """);
+            jdbcTemplate.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uniq_blood_bank_lookups_system
+                    ON blood_bank_lookups (lookup_type, code) WHERE hospital_id IS NULL
+            """);
+
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS blood_donors (
+                    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    hospital_id       UUID NOT NULL REFERENCES hospitals(id),
+                    donor_code        VARCHAR(30)  NOT NULL,
+                    first_name        VARCHAR(100) NOT NULL,
+                    last_name         VARCHAR(100),
+                    phone             VARCHAR(20),
+                    email             VARCHAR(120),
+                    dob               DATE,
+                    gender            VARCHAR(10),
+                    blood_group_code  VARCHAR(40),
+                    donor_type_code   VARCHAR(40),
+                    address           TEXT,
+                    aadhaar_number    VARCHAR(14),
+                    patient_id        INTEGER,
+                    total_donations   INTEGER      DEFAULT 0,
+                    last_donation_date DATE,
+                    is_eligible       BOOLEAN      DEFAULT true,
+                    notes             TEXT,
+                    created_at        TIMESTAMP    DEFAULT now(),
+                    updated_at        TIMESTAMP    DEFAULT now(),
+                    UNIQUE (hospital_id, donor_code)
+                )
+            """);
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_blood_donors_hospital ON blood_donors(hospital_id)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_blood_donors_phone ON blood_donors(phone)");
+
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS blood_units (
+                    id                       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    hospital_id              UUID NOT NULL REFERENCES hospitals(id),
+                    bag_number               VARCHAR(60) NOT NULL,
+                    blood_group_code         VARCHAR(40) NOT NULL,
+                    component_code           VARCHAR(40) NOT NULL,
+                    status_code              VARCHAR(40) NOT NULL DEFAULT 'QUARANTINE',
+                    source_code              VARCHAR(40) NOT NULL DEFAULT 'IN_HOUSE_DONOR',
+                    donor_id                 UUID REFERENCES blood_donors(id),
+                    volume_ml                INTEGER,
+                    collection_date          DATE,
+                    expiry_date              DATE NOT NULL,
+                    storage_location         VARCHAR(80),
+                    screening_passed         BOOLEAN DEFAULT false,
+                    cost_price               NUMERIC(10,2),
+                    sale_price               NUMERIC(10,2),
+                    issued_to_patient_id     INTEGER,
+                    issued_to_admission_id   UUID,
+                    issued_by_user_id        UUID,
+                    issued_at                TIMESTAMP,
+                    issued_doctor_name       VARCHAR(120),
+                    replacements_pledged     INTEGER DEFAULT 0,
+                    replacements_received    INTEGER DEFAULT 0,
+                    invoice_item_id          UUID,
+                    notes                    TEXT,
+                    created_at               TIMESTAMP DEFAULT now(),
+                    updated_at               TIMESTAMP DEFAULT now(),
+                    UNIQUE (hospital_id, bag_number)
+                )
+            """);
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_blood_units_hospital ON blood_units(hospital_id)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_blood_units_group ON blood_units(blood_group_code)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_blood_units_status ON blood_units(status_code)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_blood_units_expiry ON blood_units(expiry_date)");
+        } catch (Exception e) {
+            log.warn("Blood-bank schema setup: " + e.getMessage());
+        }
+    }
+
+    private void seedBloodBankLookups() {
+        // Blood groups
+        upsertBloodBankLookup("BLOOD_GROUP", "A_POS",  "A+",  null, 1);
+        upsertBloodBankLookup("BLOOD_GROUP", "A_NEG",  "A−",  null, 2);
+        upsertBloodBankLookup("BLOOD_GROUP", "B_POS",  "B+",  null, 3);
+        upsertBloodBankLookup("BLOOD_GROUP", "B_NEG",  "B−",  null, 4);
+        upsertBloodBankLookup("BLOOD_GROUP", "AB_POS", "AB+", null, 5);
+        upsertBloodBankLookup("BLOOD_GROUP", "AB_NEG", "AB−", null, 6);
+        upsertBloodBankLookup("BLOOD_GROUP", "O_POS",  "O+",  null, 7);
+        upsertBloodBankLookup("BLOOD_GROUP", "O_NEG",  "O−",  null, 8);
+
+        // Components — shelfLifeDays drives the bag's expiry calculation
+        upsertBloodBankLookup("COMPONENT", "WHOLE_BLOOD",   "Whole Blood",           "{\"shelfLifeDays\":35,\"defaultVolumeMl\":350}", 1);
+        upsertBloodBankLookup("COMPONENT", "PRBC",          "Packed RBC",            "{\"shelfLifeDays\":42,\"defaultVolumeMl\":280}", 2);
+        upsertBloodBankLookup("COMPONENT", "FFP",           "Fresh Frozen Plasma",   "{\"shelfLifeDays\":365,\"defaultVolumeMl\":220}", 3);
+        upsertBloodBankLookup("COMPONENT", "PLATELETS_RDP", "Platelets (RDP)",       "{\"shelfLifeDays\":5,\"defaultVolumeMl\":60}", 4);
+        upsertBloodBankLookup("COMPONENT", "PLATELETS_SDP", "Platelets (SDP)",       "{\"shelfLifeDays\":5,\"defaultVolumeMl\":250}", 5);
+        upsertBloodBankLookup("COMPONENT", "CRYO",          "Cryoprecipitate",       "{\"shelfLifeDays\":365,\"defaultVolumeMl\":15}", 6);
+
+        // Unit statuses — color drives the badge tone in the UI
+        upsertBloodBankLookup("UNIT_STATUS", "QUARANTINE", "Quarantine", "{\"tone\":\"warning\"}",   1);
+        upsertBloodBankLookup("UNIT_STATUS", "AVAILABLE",  "Available",  "{\"tone\":\"success\"}",   2);
+        upsertBloodBankLookup("UNIT_STATUS", "RESERVED",   "Reserved",   "{\"tone\":\"info\"}",      3);
+        upsertBloodBankLookup("UNIT_STATUS", "ISSUED",     "Issued",     "{\"tone\":\"violet\"}",    4);
+        upsertBloodBankLookup("UNIT_STATUS", "EXPIRED",    "Expired",    "{\"tone\":\"neutral\"}",   5);
+        upsertBloodBankLookup("UNIT_STATUS", "DISCARDED",  "Discarded",  "{\"tone\":\"danger\"}",    6);
+
+        // Donor types
+        upsertBloodBankLookup("DONOR_TYPE", "VOLUNTARY",   "Voluntary",   null, 1);
+        upsertBloodBankLookup("DONOR_TYPE", "REPLACEMENT", "Replacement", null, 2);
+        upsertBloodBankLookup("DONOR_TYPE", "FAMILY",      "Family",      null, 3);
+        upsertBloodBankLookup("DONOR_TYPE", "AUTOLOGOUS",  "Autologous",  null, 4);
+        upsertBloodBankLookup("DONOR_TYPE", "PAID",        "Paid",        null, 5);
+
+        // Source — where the bag came from
+        upsertBloodBankLookup("SOURCE_TYPE", "IN_HOUSE_DONOR",    "In-house donor",      null, 1);
+        upsertBloodBankLookup("SOURCE_TYPE", "EXTERNAL_PURCHASE", "External purchase",   null, 2);
+
+        log.info("✅ Blood bank lookups seeded.");
+    }
+
+    /** NULL-safe idempotent upsert — same pattern as the room-type seed. */
+    private void upsertBloodBankLookup(String type, String code, String label, String metadataJson, int order) {
+        try {
+            Integer existing = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM blood_bank_lookups WHERE hospital_id IS NULL AND lookup_type = ? AND code = ?",
+                Integer.class, type, code);
+            if (existing != null && existing > 0) {
+                jdbcTemplate.update(
+                    "UPDATE blood_bank_lookups SET label = ?, metadata = ?::jsonb, display_order = ?, is_system = true " +
+                    "WHERE hospital_id IS NULL AND lookup_type = ? AND code = ?",
+                    label, metadataJson, order, type, code);
+            } else {
+                jdbcTemplate.update(
+                    "INSERT INTO blood_bank_lookups (hospital_id, lookup_type, code, label, metadata, display_order, is_system, is_active) " +
+                    "VALUES (NULL, ?, ?, ?, ?::jsonb, ?, true, true)",
+                    type, code, label, metadataJson, order);
+            }
+        } catch (Exception e) {
+            log.warn("Could not seed blood-bank lookup {}/{}: {}", type, code, e.getMessage());
+        }
     }
 }

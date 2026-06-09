@@ -26,6 +26,7 @@ import {
     HeartPulse,
     Settings,
     ConciergeBell,
+    Droplet,
 } from "lucide-react";
 
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
@@ -54,6 +55,10 @@ const AMBULANCE_LINKS = [
     { label: "Status", to: "/ambulance/status", icon: Activity },
 ];
 const CHECKUP_LINK = { label: "Health Checkups", to: "/checkups/bookings", icon: HeartPulse };
+const BLOOD_BANK_LINKS = [
+    { label: "Stock & Issuance", to: "/blood-bank/stock", icon: Droplet },
+    { label: "Donors", to: "/blood-bank/donors", icon: Users },
+];
 const HR_LINKS = [
     { label: "Staff Directory", to: "/staffs/directory", icon: UserSquare2 },
     { label: "Shift Roster", to: "/staffs/roster", icon: CalendarDays },
@@ -85,6 +90,7 @@ function Sidebar({ isOpen }) {
         () => location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions")
     );
     const [ambOpen, setAmbOpen] = useState(() => location.pathname.startsWith("/ambulance"));
+    const [bbOpen, setBbOpen] = useState(() => location.pathname.startsWith("/blood-bank"));
     const [settingsOpen, setSettingsOpen] = useState(
         () =>
             location.pathname.startsWith("/settings") ||
@@ -108,6 +114,7 @@ function Sidebar({ isOpen }) {
     const roomsActive =
         location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions");
     const ambActive = location.pathname.startsWith("/ambulance");
+    const bbActive = location.pathname.startsWith("/blood-bank");
     const settingsActive =
         location.pathname.startsWith("/settings") ||
         location.pathname.startsWith("/checkups/packages") ||
@@ -244,6 +251,14 @@ function Sidebar({ isOpen }) {
                         setAmbOpen,
                         ambActive
                     )}
+                {renderAccordionSection(
+                    BLOOD_BANK_LINKS,
+                    "Blood Bank",
+                    Droplet,
+                    bbOpen,
+                    setBbOpen,
+                    bbActive
+                )}
                 {checkupsEnabled && renderLink(CHECKUP_LINK)}
                 {renderAccordionSection(
                     visibleBillingLinks,

@@ -837,6 +837,56 @@ const zemaRulesApi = {
   }
 };
 
+// Blood Bank — donors, bag inventory, issuance, stats. Lookups (groups,
+// components, statuses, donor types, source types) live as DB rows so the
+// admin can extend them without a backend deploy.
+const bloodBankApi = {
+  listLookups: async (hospitalId, type) => {
+    const { data } = await api.get("/blood-bank/lookups", { params: { hospitalId, type } });
+    return data;
+  },
+  listDonors: async (hospitalId) => {
+    const { data } = await api.get("/blood-bank/donors", { params: { hospitalId } });
+    return data;
+  },
+  getDonor: async (id) => {
+    const { data } = await api.get(`/blood-bank/donors/${id}`);
+    return data;
+  },
+  registerDonor: async (hospitalId, payload) => {
+    const { data } = await api.post("/blood-bank/donors", payload, { params: { hospitalId } });
+    return data;
+  },
+  updateDonor: async (id, payload) => {
+    const { data } = await api.put(`/blood-bank/donors/${id}`, payload);
+    return data;
+  },
+  listUnits: async (hospitalId, params = {}) => {
+    const { data } = await api.get("/blood-bank/units", { params: { hospitalId, ...params } });
+    return data;
+  },
+  getUnit: async (id) => {
+    const { data } = await api.get(`/blood-bank/units/${id}`);
+    return data;
+  },
+  registerUnit: async (hospitalId, payload) => {
+    const { data } = await api.post("/blood-bank/units", payload, { params: { hospitalId } });
+    return data;
+  },
+  updateStatus: async (id, statusCode) => {
+    const { data } = await api.patch(`/blood-bank/units/${id}/status`, { statusCode });
+    return data;
+  },
+  issueUnit: async (id, payload) => {
+    const { data } = await api.post(`/blood-bank/units/${id}/issue`, payload);
+    return data;
+  },
+  getStats: async (hospitalId) => {
+    const { data } = await api.get("/blood-bank/stats", { params: { hospitalId } });
+    return data;
+  },
+};
+
 // IPD Medication Administration Record — order cards with embedded admin log.
 const marApi = {
   list:      (admissionId)      => api.get(`/ipd/mar/admission/${admissionId}`).then((r) => r.data),
@@ -949,4 +999,5 @@ export {
   nursingTaskApi,
   referralApi,
   zemaRulesApi,
+  bloodBankApi,
 };

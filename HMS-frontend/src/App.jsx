@@ -41,6 +41,8 @@ import AmbulanceStatus from "@/pages/ambulance/AmbulanceStatus";
 import PackageManager from "@/pages/checkups/PackageManager";
 import CheckupBookings from "@/pages/checkups/CheckupBookings";
 import CheckupBookingDetail from "@/pages/checkups/CheckupBookingDetail";
+import BloodBankStock from "@/pages/blood-bank/BloodBankStock";
+import BloodDonors from "@/pages/blood-bank/BloodDonors";
 import UiGallery from "@/pages/dev/UiGallery";
 import GlobalLoader from "@/components/ui/GlobalLoader";
 function App() {
@@ -73,6 +75,11 @@ function App() {
  <Route path="ambulance/status" element={<AmbulanceStatus />} />
  
  {/* Health Checkups */}
+ {/* Blood Bank */}
+ <Route path="blood-bank" element={<Navigate to="/blood-bank/stock" replace />} />
+ <Route path="blood-bank/stock" element={<BloodBankStock />} />
+ <Route path="blood-bank/donors" element={<BloodDonors />} />
+
  <Route path="checkups/packages" element={<PackageManager />} />
  <Route path="checkups/bookings" element={<CheckupBookings />} />
  <Route path="checkups/bookings/:id" element={<CheckupBookingDetail />} />
