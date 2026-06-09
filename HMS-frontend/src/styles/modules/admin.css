@@ -3253,48 +3253,6 @@
 }
 
 
-/* Inline add-record form */
-.hms-ipd-record-form {
-    border-radius: 8px;
-    border: 1px solid var(--hms-gray-200);
-    background: var(--hms-white);
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-.hms-ipd-record-form__head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.hms-ipd-record-form__head-icon {
-    color: var(--hms-gray-400);
-}
-
-.hms-ipd-record-form__head-text {
-    margin: 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--hms-gray-700);
-}
-
-.hms-ipd-record-form__grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.hms-ipd-record-form__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
-
-
 /* Timeline list — entry = dot column + card body */
 .hms-ipd-timeline {
     display: flex;

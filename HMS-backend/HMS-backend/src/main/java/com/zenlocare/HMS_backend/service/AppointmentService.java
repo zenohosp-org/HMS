@@ -360,6 +360,31 @@ public class AppointmentService {
                 }
 
                 if (status == Appointment.AppointmentStatus.CANCELLED || status == Appointment.AppointmentStatus.NO_SHOW) {
+                        if (status == Appointment.AppointmentStatus.NO_SHOW) {
+                                Optional<Invoice> optInv = invoiceRepository.findByAppointment_Id(id);
+                                if (optInv.isPresent()) {
+                                        Invoice invoice = optInv.get();
+                                        BigDecimal paid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+                                        if (paid.compareTo(BigDecimal.ZERO) > 0) {
+                                                String action = request.getNoShowPaymentAction();
+                                                if (action == null || action.trim().isEmpty()) {
+                                                        throw new IllegalArgumentException("Existing payments on no-show appointment must either be refunded or forfeited.");
+                                                }
+                                                if (action.equalsIgnoreCase("REFUND")) {
+                                                        invoiceService.refundInvoicePayment(invoice, paid, request.getRefundMode(), request.getRefundBankAccountId(), actor);
+                                                        invoice.setStatus(InvoiceStatus.CANCELLED);
+                                                        invoiceRepository.save(invoice);
+                                                } else if (action.equalsIgnoreCase("FORFEIT")) {
+                                                        invoice.setAppointment(null); // Decouple from appointment
+                                                        String oldNotes = invoice.getNotes() != null ? invoice.getNotes() : "";
+                                                        invoice.setNotes((oldNotes + "\nNo-show fee forfeited (rescheduled)").trim());
+                                                        invoiceRepository.save(invoice);
+                                                } else {
+                                                        throw new IllegalArgumentException("Invalid noShowPaymentAction: " + action);
+                                                }
+                                        }
+                                }
+                        }
                         appointment.setStatus(Appointment.AppointmentStatus.SCHEDULED);
                         appointment.setTokenNumber(null);
                 }

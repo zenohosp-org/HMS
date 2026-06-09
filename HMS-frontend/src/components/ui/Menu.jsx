@@ -151,7 +151,13 @@ export default function Menu({
                             if (item.divider) {
                                 return <div key={`d-${i}`} className="zu-menu-divider" />;
                             }
-                            const cls = `zu-menu-item${item.tone === "danger" ? " is-danger" : ""}`;
+                            const cls = `zu-menu-item${
+                                item.tone === "danger"
+                                    ? " is-danger"
+                                    : item.tone === "warning"
+                                    ? " is-warning"
+                                    : ""
+                            }${item.className ? ` ${item.className}` : ""}`;
                             const handleClick = (e) => {
                                 e.stopPropagation();
                                 if (item.closeOnClick !== false) close();

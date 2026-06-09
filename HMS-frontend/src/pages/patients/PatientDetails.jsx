@@ -11,6 +11,7 @@ import BookAppointmentModal from "@/components/modals/BookAppointmentModal";
 import { ArrowLeft, User, FileText, Phone, Mail, MapPin, Droplets, Calendar, Clock, Edit2, ClipboardList, ChevronRight, Activity, AlertCircle, Stethoscope, MoreHorizontal, Bed, CalendarClock, ScanLine } from "lucide-react";
 
 const TYPE_META = {
+  PROGRESS_NOTE: { label: "Progress Note", dotMod: "is-progress-note", chipMod: "is-progress-note" },
   CONSULTATION: { label: "Consultation", dotMod: "is-consultation", chipMod: "is-consultation" },
   PRESCRIPTION: { label: "Prescription", dotMod: "is-prescription", chipMod: "is-prescription" },
   LAB_RESULT:   { label: "Lab Result", dotMod: "is-lab", chipMod: "is-lab" },

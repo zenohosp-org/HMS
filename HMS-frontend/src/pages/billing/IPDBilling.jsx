@@ -10,6 +10,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import TableSkeleton from '@/components/ui/TableSkeleton'
 import FinalizeIPDBillingModal from '@/components/modals/FinalizeIPDBillingModal'
 import { InvoiceDetailModal } from '@/pages/billing/InvoiceList'
+import Menu from '@/components/ui/Menu'
 import {
   ReceiptText, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
@@ -71,68 +72,55 @@ function StatCard({ label, value, sub, Icon, accent }) {
 }
 
 function InvoiceActionMenu({ inv, activeAdmissions, activeAdmissionIds, setFinalizeAdmission, setDetailInvoiceId, printInvoice }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  const popRef = useRef(null)
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
-        setOpen(false);
-      }
-    };
-    if (open) {
-      document.addEventListener('mousedown', handler);
-      if (popRef.current) {
-        const rect = popRef.current.getBoundingClientRect();
-        if (rect.bottom > window.innerHeight - 20) {
-          popRef.current.classList.add("is-upward");
-        } else {
-          popRef.current.classList.remove("is-upward");
-        }
-      }
-    }
-    return () => {
-      document.removeEventListener('mousedown', handler);
-    };
-  }, [open]);
-
   const isActiveAdm = !!inv.admissionId && activeAdmissionIds.has(String(inv.admissionId))
   const isPending = isActiveAdm && (inv.status === 'UNPAID' || inv.status === 'PARTIAL' || inv.status === 'UNSETTLED')
   const isPaidAdmit = isActiveAdm && (inv.status === 'PAID' || inv.status === 'SETTLED')
   const admission = isActiveAdm ? activeAdmissions.find(a => String(a.id) === String(inv.admissionId)) : null
 
+  const items = []
+
+  if (isPending) {
+    items.push({
+      label: (inv.status === 'PARTIAL' || inv.status === 'UNSETTLED') ? 'Continue Bill' : 'View Bill',
+      icon: <Receipt className="w-4 h-4" />,
+      disabled: !admission,
+      onClick: () => admission && setFinalizeAdmission(admission)
+    })
+  }
+
+  if (isPaidAdmit) {
+    items.push({
+      label: 'Add Charges',
+      icon: <Plus className="w-4 h-4" />,
+      disabled: !admission,
+      onClick: () => admission && setFinalizeAdmission(admission)
+    })
+  }
+
+  if (!isPending) {
+    items.push({
+      label: 'View Details',
+      icon: <Eye className="w-4 h-4" />,
+      onClick: () => setDetailInvoiceId(inv.id)
+    })
+  }
+
+  items.push({ divider: true })
+
+  items.push({
+    label: 'Print Invoice',
+    icon: <Printer className="w-4 h-4" />,
+    onClick: () => printInvoice(inv)
+  })
+
   return (
-    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
-      <button onClick={() => setOpen(!open)} className="hms-billing-rowbtn">
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
-      {open && (
-        <div className="hms-appt-am__pop" ref={popRef}>
-          <div className="hms-billing-menu__list" style={{ padding: '6px 0' }}>
-              {isPending && (
-                <button onClick={() => { setOpen(false); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
-                  <Receipt className="hms-billing-menu__item-icon w-4 h-4" />
-                  {(inv.status === 'PARTIAL' || inv.status === 'UNSETTLED') ? 'Continue Bill' : 'View Bill'}
-                </button>
-              )}
-              {isPaidAdmit && (
-                <button onClick={() => { setOpen(false); admission && setFinalizeAdmission(admission) }} disabled={!admission} className="hms-billing-menu__item">
-                  <Plus className="hms-billing-menu__item-icon w-4 h-4" /> Add Charges
-                </button>
-              )}
-              {!isPending && (
-                <button onClick={() => { setOpen(false); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
-                  <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
-                </button>
-              )}
-              <div className="hms-billing-menu__divider" />
-              <button onClick={() => { setOpen(false); printInvoice(inv) }} className="hms-billing-menu__item">
-                <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
-              </button>
-          </div>
-        </div>
-      )}
+    <div className="hms-appt-am" onClick={e => e.stopPropagation()}>
+      <Menu
+        items={items}
+        triggerIcon={<MoreHorizontal className="w-4 h-4" />}
+        triggerClassName="hms-billing-rowbtn"
+        align="right"
+      />
     </div>
   )
 }

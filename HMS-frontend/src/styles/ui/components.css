@@ -548,6 +548,13 @@
     z-index: var(--zu-z-modal-overlay);
     padding: 20px;
     animation: zu-fade-in 0.18s ease-out;
+    /* `pointer-events` is inherited — when this overlay is mounted inside a
+       host that turns it off (e.g. the IPD drawer's `.hms-ipd-pane`, which
+       sets `pointer-events: none` and only re-enables it on its own scrim
+       and panel), clicks would otherwise fall through the modal onto
+       whatever sits behind it. Force it back on so the modal is always
+       interactive regardless of where it's mounted. */
+    pointer-events: auto;
 }
 
 .zu-modal {
@@ -697,6 +704,16 @@
 .zu-menu-item.is-danger:focus-visible {
     background: var(--zu-danger-bg);
     color: var(--zu-danger);
+}
+
+.zu-menu-item.is-warning {
+    color: #b45309;
+}
+
+.zu-menu-item.is-warning:hover,
+.zu-menu-item.is-warning:focus-visible {
+    background: #fffbeb;
+    color: #b45309;
 }
 
 .zu-menu-item:disabled {

@@ -10,6 +10,7 @@ import TableSkeleton from '@/components/ui/TableSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
 import CreateInvoiceModal from '@/components/modals/CreateInvoiceModal'
 import { InvoiceDetailModal } from '@/pages/billing/InvoiceList'
+import Menu from '@/components/ui/Menu'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import {
@@ -280,60 +281,46 @@ function GetInfoModal({ invoice, onClose }) {
 }
 
 function InvoiceActionMenu({ inv, setDetailInvoiceId, printInvoice, onGetInfo }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  const popRef = useRef(null)
+  const items = []
 
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
-        setOpen(false);
-      }
-    };
-    if (open) {
-      document.addEventListener('mousedown', handler);
-      if (popRef.current) {
-        const rect = popRef.current.getBoundingClientRect();
-        if (rect.bottom > window.innerHeight - 20) {
-          popRef.current.classList.add("is-upward");
-        } else {
-          popRef.current.classList.remove("is-upward");
-        }
-      }
-    }
-    return () => {
-      document.removeEventListener('mousedown', handler);
-    };
-  }, [open]);
+  if (inv.status === 'UNPAID' || inv.status === 'PARTIAL') {
+    items.push({
+      label: 'Collect Payment',
+      icon: <Receipt className="w-4 h-4" />,
+      onClick: () => setDetailInvoiceId(inv.id)
+    })
+  }
+
+  if (inv.status !== 'UNPAID' && inv.status !== 'PARTIAL') {
+    items.push({
+      label: 'View Details',
+      icon: <Eye className="w-4 h-4" />,
+      onClick: () => setDetailInvoiceId(inv.id)
+    })
+  }
+
+  items.push({
+    label: 'Get Info',
+    icon: <Info className="w-4 h-4" />,
+    onClick: () => onGetInfo(inv)
+  })
+
+  items.push({ divider: true })
+
+  items.push({
+    label: 'Print Invoice',
+    icon: <Printer className="w-4 h-4" />,
+    onClick: () => printInvoice(inv)
+  })
 
   return (
-    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
-      <button onClick={() => setOpen(!open)} className="hms-billing-rowbtn">
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
-      {open && (
-        <div className="hms-appt-am__pop" ref={popRef}>
-          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
-            {(inv.status === 'UNPAID' || inv.status === 'PARTIAL') && (
-              <button onClick={() => { setOpen(false); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
-                <Receipt className="hms-billing-menu__item-icon w-4 h-4" /> Collect Payment
-              </button>
-            )}
-            {inv.status !== 'UNPAID' && inv.status !== 'PARTIAL' && (
-              <button onClick={() => { setOpen(false); setDetailInvoiceId(inv.id) }} className="hms-billing-menu__item">
-                <Eye className="hms-billing-menu__item-icon w-4 h-4" /> View Details
-              </button>
-            )}
-            <button onClick={() => { setOpen(false); onGetInfo(inv) }} className="hms-billing-menu__item">
-              <Info className="hms-billing-menu__item-icon w-4 h-4" /> Get Info
-            </button>
-            <div className="hms-billing-menu__divider" />
-            <button onClick={() => { setOpen(false); printInvoice(inv) }} className="hms-billing-menu__item">
-              <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Invoice
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="hms-appt-am" onClick={e => e.stopPropagation()}>
+      <Menu
+        items={items}
+        triggerIcon={<MoreHorizontal className="w-4 h-4" />}
+        triggerClassName="hms-billing-rowbtn"
+        align="right"
+      />
     </div>
   )
 }

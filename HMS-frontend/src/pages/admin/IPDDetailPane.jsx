@@ -2,7 +2,6 @@ import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import SearchableSelect from "@/components/ui/SearchableSelect";
 import { X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors, Activity, Package, Receipt, Phone, User, ExternalLink, RotateCcw, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, Plus, FileText, Printer,  } from "lucide-react";
 import { fmtDateTime, fmtDateMed } from "@/utils/date";
 import {
@@ -21,15 +20,12 @@ import Barcode from "@/components/ui/Barcode";
 import axios from "axios";
 import SSOCookieManager from "@/utils/ssoManager";
 import WritePrescriptionModal from "@/components/modals/WritePrescriptionModal";
+import AddMedicalRecordModal from "@/components/modals/AddMedicalRecordModal";
 import { useNotification } from "@/context/NotificationContext";
 import {
     Alert,
     Badge,
-    Button,
-    FormGroup,
-    Input,
     Tabs,
-    Textarea,
 } from "@/components/ui";
 
 const otApi = axios.create({
@@ -172,12 +168,6 @@ export default function IPDDetailPane({
     const [billingFetched, setBillingFetched] = useState(false);
 
     const [showAddRecord, setShowAddRecord] = useState(false);
-    const [recordForm, setRecordForm] = useState({
-        historyType: "CONSULTATION",
-        description: "",
-        nextVisitDate: "",
-    });
-    const [savingRecord, setSavingRecord] = useState(false);
     const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
 
     const [checkingDischarge, setCheckingDischarge] = useState(false);
@@ -759,48 +749,21 @@ export default function IPDDetailPane({
         fetchBilling();
     }, [fetchBilling]);
 
-    const handleSaveRecord = async (e) => {
-        e.preventDefault();
-        if (!recordForm.description.trim()) return;
-        setSavingRecord(true);
-        try {
-            const saved = await recordApi.create({
-                patientId: admission.patientId,
-                hospitalId: user.hospitalId,
-                historyType: recordForm.historyType,
-                description: recordForm.description,
-                nextVisitDate: recordForm.nextVisitDate || undefined,
-                admissionId: admission.id,
-                admissionNumber: admission.admissionNumber || admission.ipdId,
-            });
-
-            const creatorName =
-                user?.name ||
-                [user?.firstName, user?.lastName].filter(Boolean).join(" ");
-            const optimisticEvent = {
-                id: `rec-${saved?.id ?? Date.now()}`,
-                type: "RECORD",
-                title: recordForm.historyType.replace("_", " "),
-                subtitle: [saved?.mrn, creatorName].filter(Boolean).join(" · "),
-                description: recordForm.description,
-                timestamp: new Date(),
-            };
-            setLogs((prev) => [optimisticEvent, ...prev]);
-
-            notify("Record added", "success");
-            setShowAddRecord(false);
-            setRecordForm({
-                historyType: "CONSULTATION",
-                description: "",
-                nextVisitDate: "",
-            });
-
-            fetchLogs(true);
-        } catch {
-            notify("Failed to add record", "error");
-        } finally {
-            setSavingRecord(false);
-        }
+    const handleRecordSaved = (saved, { historyType, description }) => {
+        const creatorName =
+            user?.name ||
+            [user?.firstName, user?.lastName].filter(Boolean).join(" ");
+        const optimisticEvent = {
+            id: `rec-${saved?.id ?? Date.now()}`,
+            type: "RECORD",
+            title: historyType.replace("_", " "),
+            subtitle: [saved?.mrn, creatorName].filter(Boolean).join(" · "),
+            description,
+            timestamp: new Date(),
+        };
+        setLogs((prev) => [optimisticEvent, ...prev]);
+        setShowAddRecord(false);
+        fetchLogs(true);
     };
 
     const fetchLogsRef = useRef(fetchLogs);
@@ -826,11 +789,6 @@ export default function IPDDetailPane({
         setBillingFetched(false);
         setDischargeBlock(null);
         setShowAddRecord(false);
-        setRecordForm({
-            historyType: "CONSULTATION",
-            description: "",
-            nextVisitDate: "",
-        });
         fetchLogs();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [admission?.id]);
@@ -1070,11 +1028,6 @@ export default function IPDDetailPane({
                             logs={logs}
                             showAddRecord={showAddRecord}
                             setShowAddRecord={setShowAddRecord}
-                            recordForm={recordForm}
-                            setRecordForm={setRecordForm}
-                            savingRecord={savingRecord}
-                            handleSaveRecord={handleSaveRecord}
-                            setShowPrescriptionModal={setShowPrescriptionModal}
                             isDischarged={!!admission.actualDischargeDate}
                         />
                     )}
@@ -1108,26 +1061,43 @@ export default function IPDDetailPane({
                 </div>
             </div>
 
-            {showPrescriptionModal && (() => {
+            {(showPrescriptionModal || showAddRecord) && (() => {
                 const parts = (admission.patientName || "").trim().split(/\s+/);
-                const firstName = parts[0] || "";
-                const lastName = parts.slice(1).join(" ");
+                const patient = {
+                    id: admission.patientId,
+                    firstName: parts[0] || "",
+                    lastName: parts.slice(1).join(" "),
+                    uhid: admission.patientUhid,
+                };
+                const admissionNumber = admission.admissionNumber || admission.ipdId;
                 return (
-                    <WritePrescriptionModal
-                        patient={{
-                            id: admission.patientId,
-                            firstName,
-                            lastName,
-                            uhid: admission.patientUhid,
-                        }}
-                        admissionId={admission.id}
-                        admissionNumber={admission.admissionNumber || admission.ipdId}
-                        onClose={() => setShowPrescriptionModal(false)}
-                        onSaved={() => {
-                            setShowPrescriptionModal(false);
-                            fetchLogs(true);
-                        }}
-                    />
+                    <>
+                        {showPrescriptionModal && (
+                            <WritePrescriptionModal
+                                patient={patient}
+                                admissionId={admission.id}
+                                admissionNumber={admissionNumber}
+                                onClose={() => setShowPrescriptionModal(false)}
+                                onSaved={() => {
+                                    setShowPrescriptionModal(false);
+                                    fetchLogs(true);
+                                }}
+                            />
+                        )}
+                        {showAddRecord && (
+                            <AddMedicalRecordModal
+                                patient={patient}
+                                admissionId={admission.id}
+                                admissionNumber={admissionNumber}
+                                onClose={() => setShowAddRecord(false)}
+                                onSaved={handleRecordSaved}
+                                onSwitchToPrescription={() => {
+                                    setShowAddRecord(false);
+                                    setShowPrescriptionModal(true);
+                                }}
+                            />
+                        )}
+                    </>
                 );
             })()}
         </div>
@@ -1140,10 +1110,6 @@ function LogTab({
     logs,
     showAddRecord,
     setShowAddRecord,
-    recordForm,
-    setRecordForm,
-    savingRecord,
-    handleSaveRecord,
     setShowPrescriptionModal,
     isDischarged,
 }) {
@@ -1163,96 +1129,15 @@ function LogTab({
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setShowAddRecord((v) => !v)}
+                                onClick={() => setShowAddRecord(true)}
                                 className="hms-ipd-chip-btn"
+                                disabled={showAddRecord}
                             >
-                                {showAddRecord ? <X size={11} /> : <Plus size={11} />}
-                                {showAddRecord ? "Cancel" : "Add record"}
+                                <Plus size={11} /> Add record
                             </button>
                         </div>
                     )}
                 </div>
-                {!isDischarged && showAddRecord && (
-                    <form
-                        onSubmit={handleSaveRecord}
-                        className="hms-ipd-record-form"
-                    >
-                        <div className="hms-ipd-record-form__head">
-                            <FileText size={14} className="hms-ipd-record-form__head-icon" />
-                            <p className="hms-ipd-record-form__head-text">
-                                New medical record
-                            </p>
-                        </div>
-                        <div className="hms-ipd-record-form__grid">
-                            <FormGroup label="Type">
-                                <SearchableSelect
-                                    value={recordForm.historyType}
-                                    onChange={(v) => {
-                                        if (v === "PRESCRIPTION") {
-                                            setShowAddRecord(false);
-                                            setShowPrescriptionModal(true);
-                                            return;
-                                        }
-                                        setRecordForm((p) => ({ ...p, historyType: v }));
-                                    }}
-                                    options={[
-                                        "CONSULTATION",
-                                        "PRESCRIPTION",
-                                        "LAB_RESULT",
-                                        "SURGERY",
-                                        "DIAGNOSIS",
-                                        "OTHER",
-                                    ].map((t) => ({ value: t, label: t.replace("_", " ") }))}
-                                />
-                            </FormGroup>
-                            <FormGroup label="Next visit date">
-                                <Input
-                                    type="datetime-local"
-                                    value={recordForm.nextVisitDate}
-                                    onChange={(e) =>
-                                        setRecordForm((p) => ({ ...p, nextVisitDate: e.target.value }))
-                                    }
-                                />
-                            </FormGroup>
-                        </div>
-                        <FormGroup
-                            label={
-                                <span>
-                                    Notes / description{" "}
-                                    <span className="text-danger">*</span>
-                                </span>
-                            }
-                        >
-                            <Textarea
-                                rows={3}
-                                placeholder="Enter notes or description…"
-                                value={recordForm.description}
-                                onChange={(e) =>
-                                    setRecordForm((p) => ({ ...p, description: e.target.value }))
-                                }
-                                required
-                            />
-                        </FormGroup>
-                        <div className="hms-ipd-record-form__footer">
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                type="button"
-                                onClick={() => setShowAddRecord(false)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                type="submit"
-                                loading={savingRecord}
-                            >
-                                Save record
-                            </Button>
-                        </div>
-                    </form>
-                )}
             </div>
 
             {loadingLogs ? (

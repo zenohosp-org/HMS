@@ -8,66 +8,38 @@ import BookAppointmentModal from "@/components/modals/BookAppointmentModal";
 import Pagination from "@/components/ui/Pagination";
 import PageHeader from "@/components/ui/PageHeader";
 import { TableSkeleton } from "@/components/ui";
+import Menu from "@/components/ui/Menu";
 import { calcAge, formatDate } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
 import { Search, Users, MoreHorizontal, Pencil, ExternalLink, Calendar } from "lucide-react";
 
 function PatientActionMenu({ p, setModal, setBookModal, navigate }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const popRef = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
-        setOpen(false);
-      }
-    };
-    if (open) {
-      document.addEventListener('mousedown', handler);
-      if (popRef.current) {
-        const rect = popRef.current.getBoundingClientRect();
-        if (rect.bottom > window.innerHeight - 20) {
-          popRef.current.classList.add("is-upward");
-        } else {
-          popRef.current.classList.remove("is-upward");
-        }
-      }
+  const items = [
+    {
+      label: "Edit Patient",
+      icon: <Pencil className="w-4 h-4" />,
+      onClick: () => setModal({ open: true, patient: p })
+    },
+    {
+      label: "Book Appointment",
+      icon: <Calendar className="w-4 h-4" />,
+      onClick: () => setBookModal({ open: true, patient: p })
+    },
+    {
+      label: "Patient Details",
+      icon: <ExternalLink className="w-4 h-4" />,
+      onClick: () => navigate(`/patients/${p.id}`)
     }
-    return () => {
-      document.removeEventListener('mousedown', handler);
-    };
-  }, [open]);
+  ];
 
   return (
-    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
-      <button onClick={() => setOpen(!open)} className="hms-pat-kebab-btn">
-        <MoreHorizontal className="w-5 h-5" />
-      </button>
-      {open && (
-        <div className="hms-appt-am__pop" ref={popRef}>
-          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
-            <button
-              onClick={() => { setOpen(false); setModal({ open: true, patient: p }); }}
-              className="hms-pat-kebab-menu__item"
-            >
-              <Pencil className="w-4 h-4" /> Edit Patient
-            </button>
-            <button
-              onClick={() => { setOpen(false); setBookModal({ open: true, patient: p }); }}
-              className="hms-pat-kebab-menu__item"
-            >
-              <Calendar className="w-4 h-4" /> Book Appointment
-            </button>
-            <button
-              onClick={() => { setOpen(false); navigate(`/patients/${p.id}`); }}
-              className="hms-pat-kebab-menu__item"
-            >
-              <ExternalLink className="w-4 h-4" /> Patient Details
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="hms-appt-am" onClick={e => e.stopPropagation()}>
+      <Menu
+        items={items}
+        triggerIcon={<MoreHorizontal className="w-5 h-5" />}
+        triggerClassName="hms-pat-kebab-btn"
+        align="right"
+      />
     </div>
   );
 }

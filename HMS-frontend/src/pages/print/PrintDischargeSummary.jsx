@@ -225,6 +225,7 @@ export default function PrintDischargeSummary() {
 const dash = "—";
 
 const HISTORY_TYPE_LABELS = {
+  PROGRESS_NOTE: "Progress Notes",
   CONSULTATION: "Consultations",
   LAB_RESULT: "Lab Results",
   SURGERY: "Surgery / Procedures",

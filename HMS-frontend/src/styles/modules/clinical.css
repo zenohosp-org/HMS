@@ -4151,6 +4151,10 @@
     flex-shrink: 0;
 }
 
+.hms-pat-rec-card__dot.is-progress-note {
+    background: #0d9488;
+}
+
 .hms-pat-rec-card__dot.is-consultation {
     background: #3b82f6;
 }
@@ -4223,6 +4227,12 @@
     padding: 2px 10px;
     border-radius: 9999px;
     border: 1px solid;
+}
+
+.hms-pat-rec-type.is-progress-note {
+    background: #f0fdfa;
+    color: #0f766e;
+    border-color: #99f6e4;
 }
 
 .hms-pat-rec-type.is-consultation {

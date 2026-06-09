@@ -182,6 +182,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
       : "";
 
   const hasRefund = (() => {
+    if (editAppointment?.noShowPaymentAction) return false;
     if (!editAppointment || !invoice || (invoice.paidAmount || 0) <= 0) return false;
     const oldDoc = doctors.find(d => d.id === editAppointment.doctorId);
     const isOldFollowUp = editAppointment.type === "FOLLOWUP";
@@ -197,6 +198,7 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
   })();
 
   const refundAmount = (() => {
+    if (editAppointment?.noShowPaymentAction) return 0;
     if (!editAppointment || !invoice) return 0;
     const oldDoc = doctors.find(d => d.id === editAppointment.doctorId);
     const isOldFollowUp = editAppointment.type === "FOLLOWUP";
@@ -297,9 +299,15 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
         ...(isEmergency
           ? { emergencyPatientName: emergencyName.trim(), emergencyPhone: emergencyPhone.trim() || undefined, doctorId: doctorId || undefined, apptTime: apptTime || undefined }
           : { patientId: Number(patientId), doctorId, apptTime }),
-        ...(editAppointment && hasRefund
-          ? { refundMode, refundBankAccountId: refundMode === "Cash" ? null : refundBankAccountId }
-          : {})
+        ...(editAppointment?.noShowPaymentAction
+          ? {
+              noShowPaymentAction: editAppointment.noShowPaymentAction,
+              refundMode: editAppointment.refundMode,
+              refundBankAccountId: editAppointment.refundBankAccountId
+            }
+          : (editAppointment && hasRefund
+            ? { refundMode, refundBankAccountId: refundMode === "Cash" ? null : refundBankAccountId }
+            : {}))
       };
 
       let appointment;
@@ -393,10 +401,20 @@ export default function BookAppointmentModal({ isOpen, onClose, onSuccess, selec
             <div>
               <h2 className="hms-cmodal__title flex items-center gap-2">
                 {isEmergency && <AlertTriangle className="w-5 h-5 text-rose" />}
-                {isEmergency ? "Emergency Appointment" : "Add Appointment"}
+                {isEmergency
+                  ? "Emergency Appointment"
+                  : editAppointment
+                    ? "Reschedule Appointment"
+                    : "Add Appointment"
+                }
               </h2>
               <p className="hms-cmodal__subtitle">
-                {isEmergency ? "Quick entry — complete details can be updated after." : "Schedule a new appointment for a patient."}
+                {isEmergency
+                  ? "Quick entry — complete details can be updated after."
+                  : editAppointment
+                    ? "Update details or reschedule the slot for this patient."
+                    : "Schedule a new appointment for a patient."
+                }
               </p>
             </div>
             <button onClick={() => { resetForm(); onClose(); }} className="zu-modal-close">

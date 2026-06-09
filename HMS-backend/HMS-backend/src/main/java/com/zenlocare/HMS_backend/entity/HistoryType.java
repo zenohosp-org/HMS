@@ -13,7 +13,8 @@ public enum HistoryType {
     LAB_RESULT(3),
     SURGERY(4),
     DIAGNOSIS(5),
-    OTHERS(6);
+    OTHERS(6),
+    PROGRESS_NOTE(7);
 
     public final int id;
 

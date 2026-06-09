@@ -519,7 +519,7 @@ public class DataSeeder implements CommandLineRunner {
         });
         seedRefTable("record_history_types", new Object[][]{
             {1, "CONSULTATION"}, {2, "PRESCRIPTION"}, {3, "LAB_RESULT"},
-            {4, "SURGERY"}, {5, "DIAGNOSIS"}, {6, "OTHERS"}
+            {4, "SURGERY"}, {5, "DIAGNOSIS"}, {6, "OTHERS"}, {7, "PROGRESS_NOTE"}
         });
         // Clinical taxonomies for the prescription picker. Ids are stable
         // contract — adding new rows is OK, renumbering is not.

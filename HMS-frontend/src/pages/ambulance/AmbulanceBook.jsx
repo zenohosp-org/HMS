@@ -10,6 +10,7 @@ import SearchableSelect from "@/components/ui/SearchableSelect";
 import PageHeader from "@/components/ui/PageHeader";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import Menu from "@/components/ui/Menu";
 import { Ambulance, Plus, X, Search, Calendar, Clock, MapPin, Car, CheckCircle2, AlertCircle, Clock3, XCircle, Truck, Activity, MoreHorizontal, Wrench, Trash2, Edit2, ChevronRight, UserPlus,  } from "lucide-react";
 
 const PAGE_SIZE = 30;
@@ -518,70 +519,40 @@ function AddTypeModal({ hospitalId, onClose, onCreated }) {
 // ── Vehicle Action Menu ──────────────────────────────────────────────────────
 
 function VehicleActionMenu({ v, setEditVehicle, setInternalShowModal, handleStatusToggle, handleDelete }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const popRef = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
-        setOpen(false);
-      }
-    };
-    const updatePos = () => {
-      if (open && ref.current && popRef.current) {
-        const r = ref.current.getBoundingClientRect();
-        const flipUp = window.innerHeight - r.bottom < 160;
-        popRef.current.style.position = 'fixed';
-        popRef.current.style.right = `${window.innerWidth - r.right}px`;
-        popRef.current.style.zIndex = '9999';
-        if (flipUp) {
-          popRef.current.style.bottom = `${window.innerHeight - r.top + 4}px`;
-          popRef.current.style.top = 'auto';
-        } else {
-          popRef.current.style.top = `${r.bottom + 4}px`;
-          popRef.current.style.bottom = 'auto';
-        }
-      }
-    };
-
-    if (open) {
-      document.addEventListener('mousedown', handler);
-      window.addEventListener('scroll', updatePos, { capture: true, passive: true });
-      window.addEventListener('resize', updatePos);
-      updatePos();
+  const items = [
+    {
+      label: "Edit Details",
+      icon: <Edit2 className="w-4 h-4" />,
+      onClick: () => { setEditVehicle(v); setInternalShowModal(true); }
     }
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      window.removeEventListener('scroll', updatePos, { capture: true });
-      window.removeEventListener('resize', updatePos);
-    };
-  }, [open]);
+  ];
+
+  if (v.status !== "IN_USE") {
+    items.push({
+      label: v.status === "MAINTENANCE" ? "Mark Available" : "Mark Maintenance",
+      icon: <Wrench className="w-4 h-4" />,
+      tone: "warning",
+      onClick: () => handleStatusToggle(v)
+    });
+  }
+
+  items.push({ divider: true });
+
+  items.push({
+    label: "Delete Vehicle",
+    icon: <Trash2 className="w-4 h-4" />,
+    tone: "danger",
+    onClick: () => handleDelete(v)
+  });
 
   return (
-    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
-      <button onClick={() => setOpen(!open)} className="hms-amb-row-act-btn">
-        <MoreHorizontal className="w-5 h-5" />
-      </button>
-      {open && (
-        <div className="hms-appt-am__pop" ref={popRef}>
-          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
-            <button onClick={() => { setOpen(false); setEditVehicle(v); setInternalShowModal(true); }} className="hms-amb-menu__item">
-              <Edit2 className="w-4 h-4" /> Edit Details
-            </button>
-            {v.status !== "IN_USE" && (
-              <button onClick={() => { setOpen(false); handleStatusToggle(v); }} className="hms-amb-menu__item is-warning">
-                <Wrench className="w-4 h-4" />
-                {v.status === "MAINTENANCE" ? "Mark Available" : "Mark Maintenance"}
-              </button>
-            )}
-            <div className="hms-amb-menu__divider" />
-            <button onClick={() => { setOpen(false); handleDelete(v); }} className="hms-amb-menu__item is-danger">
-              <Trash2 className="w-4 h-4" /> Delete Vehicle
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="hms-appt-am" onClick={e => e.stopPropagation()}>
+      <Menu
+        items={items}
+        triggerIcon={<MoreHorizontal className="w-5 h-5" />}
+        triggerClassName="hms-amb-row-act-btn"
+        align="right"
+      />
     </div>
   );
 }

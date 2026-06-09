@@ -110,6 +110,10 @@ function ActionMenu({ appt, onUpdate, onEdit, onAdmit, onViewPatientDetails, onO
   const [refundBankAccountId, setRefundBankAccountId] = useState("");
   const [bankAccounts, setBankAccounts] = useState([]);
 
+  // No-Show Reschedule States
+  const [showNoShowChoice, setShowNoShowChoice] = useState(false);
+  const [noShowAction, setNoShowAction] = useState("FORFEIT");
+
   const ref = useRef(null);
   const popRef = useRef(null);
   const actions = STATUS_TRANSITIONS[appt.status] ?? [];
@@ -155,6 +159,23 @@ function ActionMenu({ appt, onUpdate, onEdit, onAdmit, onViewPatientDetails, onO
       return;
     }
     if (status === "SCHEDULED") {
+      if (appt.status === "NO_SHOW") {
+        setLoadingInvoice(true);
+        try {
+          const inv = await invoiceApi.getByAppointment(appt.id);
+          setInvoice(inv);
+          if (inv && inv.paidAmount > 0) {
+            const banks = await bankApi.list(appt.hospitalId);
+            setBankAccounts(banks);
+            setShowNoShowChoice(true);
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to load refund details:", err);
+        } finally {
+          setLoadingInvoice(false);
+        }
+      }
       setOpen(false);
       onEdit();
       return;
@@ -163,6 +184,21 @@ function ActionMenu({ appt, onUpdate, onEdit, onAdmit, onViewPatientDetails, onO
     await onUpdate(String(appt.id), status);
     setLoading(false);
     setOpen(false);
+  };
+
+  const submitNoShowReschedule = () => {
+    if (noShowAction === "REFUND" && refundMode !== "Cash" && !refundBankAccountId) {
+      alert("Please select a bank account for the non-cash refund.");
+      return;
+    }
+    const extra = {
+      noShowPaymentAction: noShowAction,
+      refundMode: noShowAction === "REFUND" ? refundMode : undefined,
+      refundBankAccountId: (noShowAction === "REFUND" && refundMode !== "Cash") ? refundBankAccountId : undefined
+    };
+    setShowNoShowChoice(false);
+    setOpen(false);
+    onEdit(extra);
   };
 
   const submitCancel = async () => {
@@ -210,7 +246,7 @@ function ActionMenu({ appt, onUpdate, onEdit, onAdmit, onViewPatientDetails, onO
           <div className="hms-appt-am__head">
             <p className="hms-appt-am__title">Actions</p>
           </div>
-          {!showCancelReason ? (
+          {!showCancelReason && !showNoShowChoice ? (
             <div className="hms-appt-am__list">
               {actions.map((action) => (
                 <button
@@ -283,7 +319,7 @@ function ActionMenu({ appt, onUpdate, onEdit, onAdmit, onViewPatientDetails, onO
                 </button>
               )}
             </div>
-          ) : (
+          ) : showCancelReason ? (
             <div className="hms-appt-am__cancel">
               <p className="hms-appt-am__cancel-label">Cancellation Reason <span className="hms-appt-am__cancel-label-hint" style={{ color: '#ef4444' }}>(required)</span></p>
               <textarea
@@ -364,6 +400,102 @@ function ActionMenu({ appt, onUpdate, onEdit, onAdmit, onViewPatientDetails, onO
                   onClick={submitCancel}
                   className="zu-btn-danger is-sm flex-1"
                 >Confirm Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div className="hms-appt-am__cancel text-left">
+              <p className="text-11 font-semibold text-gray-700">Rescheduling No-Show</p>
+              <p className="text-11 text-gray-600 mt-1">
+                This appointment has an existing payment of <strong>₹{invoice?.paidAmount}</strong>. How would you like to handle it?
+              </p>
+              
+              <div className="mt-3 space-y-2 text-left">
+                <label className="flex items-center gap-2 text-11 text-gray-700 cursor-pointer select-none">
+                  <input
+                    id="no-show-forfeit-radio"
+                    type="radio"
+                    name="noShowAction"
+                    value="FORFEIT"
+                    checked={noShowAction === "FORFEIT"}
+                    onChange={() => setNoShowAction("FORFEIT")}
+                    className="hms-radio"
+                  />
+                  <span>Retain payment as forfeited fee</span>
+                </label>
+                <label className="flex items-center gap-2 text-11 text-gray-700 cursor-pointer select-none">
+                  <input
+                    id="no-show-refund-radio"
+                    type="radio"
+                    name="noShowAction"
+                    value="REFUND"
+                    checked={noShowAction === "REFUND"}
+                    onChange={() => setNoShowAction("REFUND")}
+                    className="hms-radio"
+                  />
+                  <span>Refund payment to patient</span>
+                </label>
+              </div>
+
+              {noShowAction === "REFUND" && (
+                <div className="mt-3 p-3 border border-amber-200 bg-amber-50 rounded text-left">
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-10 font-medium text-gray-600 block">Refund Mode</label>
+                      <select
+                        id="no-show-refund-mode-select"
+                        value={refundMode}
+                        onChange={(e) => {
+                          setRefundMode(e.target.value);
+                          setRefundBankAccountId("");
+                        }}
+                        className="w-full text-11 p-1 border border-gray-300 rounded bg-white mt-1"
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Card">Card</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                      </select>
+                    </div>
+
+                    {refundMode !== "Cash" && (
+                      <div>
+                        <label className="text-10 font-medium text-gray-600 block">Refund Bank Account</label>
+                        <select
+                          id="no-show-refund-bank-select"
+                          value={refundBankAccountId}
+                          onChange={(e) => setRefundBankAccountId(e.target.value)}
+                          className="w-full text-11 p-1 border border-gray-300 rounded bg-white mt-1"
+                        >
+                          <option value="">Select bank account...</option>
+                          {bankAccounts
+                            .filter(a => ["SAVINGS", "CURRENT"].includes((a.accountType || "").toUpperCase()))
+                            .map(a => (
+                              <option key={a.id} value={a.id}>
+                                {a.accountName} ({a.bankName} - ···{a.accountNumber.slice(-4)})
+                              </option>
+                            ))
+                          }
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="hms-appt-am__cancel-actions mt-3">
+                <button
+                  id="no-show-back-btn"
+                  onClick={() => {
+                    setShowNoShowChoice(false);
+                    setInvoice(null);
+                  }}
+                  className="zu-btn-secondary is-sm flex-1"
+                >Back</button>
+                <button
+                  id="no-show-continue-btn"
+                  onClick={submitNoShowReschedule}
+                  className="zu-btn-primary is-sm flex-1"
+                >Continue</button>
               </div>
             </div>
           )}
@@ -677,7 +809,7 @@ function AppointmentsDashboard() {
                       <ActionMenu
                         appt={appt}
                         onUpdate={handleStatusUpdate}
-                        onEdit={() => { setEditAppointment(appt); setIsBookingModalOpen(true); }}
+                        onEdit={(extra) => { setEditAppointment(extra ? { ...appt, ...extra } : appt); setIsBookingModalOpen(true); }}
                         onAdmit={() => setAdmitPrefill({ patient: { id: appt.patientId, firstName: appt.patientFirstName || appt.patientName?.split(" ")[0], lastName: appt.patientLastName || appt.patientName?.split(" ").slice(1).join(" "), uhid: appt.patientUhid }, doctorId: appt.doctorId, chiefComplaint: appt.chiefComplaint, source: "OPD_REFERRAL", appointmentId: appt.id })}
                         onViewPatientDetails={() => navigate(`/patients/${appt.patientId}`)}
                         onOpenConsultation={() => setConsultationAppointment(appt)}

@@ -8,6 +8,7 @@ import JsBarcode from 'jsbarcode'
 import Pagination from '@/components/ui/Pagination'
 import PageHeader from '@/components/ui/PageHeader'
 import TableSkeleton from '@/components/ui/TableSkeleton'
+import Menu from '@/components/ui/Menu'
 import {
   Ambulance, Search, CheckCircle2, Clock, XCircle,
   Printer, TrendingUp, AlertCircle, Loader2,
@@ -57,59 +58,32 @@ function StatCard({ label, value, sub, Icon, accent }) {
 }
 
 function AmbulanceActionMenu({ booking, markPaid, printReceipt }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  const popRef = useRef(null)
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target) && (!popRef.current || !popRef.current.contains(e.target))) {
-        setOpen(false);
-      }
-    };
-    if (open) {
-      document.addEventListener('mousedown', handler);
-      if (popRef.current) {
-        const rect = popRef.current.getBoundingClientRect();
-        if (rect.bottom > window.innerHeight - 20) {
-          popRef.current.classList.add("is-upward");
-        } else {
-          popRef.current.classList.remove("is-upward");
-        }
-      }
-    }
-    return () => {
-      document.removeEventListener('mousedown', handler);
-    };
-  }, [open]);
-
   const canMarkPaid = booking.status === 'COMPLETED' && booking.paymentStatus !== 'PAID'
 
+  const items = []
+
+  if (canMarkPaid) {
+    items.push({
+      label: 'Mark as Paid',
+      icon: <IndianRupee className="w-4 h-4" />,
+      onClick: () => markPaid(booking)
+    })
+  }
+
+  items.push({
+    label: 'Print Receipt',
+    icon: <Printer className="w-4 h-4" />,
+    onClick: () => printReceipt(booking)
+  })
+
   return (
-    <div className="hms-appt-am" ref={ref} onClick={e => e.stopPropagation()}>
-      <button onClick={() => setOpen(!open)} className="hms-billing-rowbtn">
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
-      {open && (
-        <div className="hms-appt-am__pop" ref={popRef}>
-          <div className="hms-appt-am__list" style={{ padding: '6px 0' }}>
-            {canMarkPaid && (
-              <button
-                onClick={() => { setOpen(false); markPaid(booking) }}
-                className="hms-billing-menu__item"
-              >
-                <IndianRupee className="hms-billing-menu__item-icon is-success w-4 h-4" /> Mark as Paid
-              </button>
-            )}
-            <button
-              onClick={() => { setOpen(false); printReceipt(booking) }}
-              className="hms-billing-menu__item"
-            >
-              <Printer className="hms-billing-menu__item-icon w-4 h-4" /> Print Receipt
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="hms-appt-am" onClick={e => e.stopPropagation()}>
+      <Menu
+        items={items}
+        triggerIcon={<MoreHorizontal className="w-4 h-4" />}
+        triggerClassName="hms-billing-rowbtn"
+        align="right"
+      />
     </div>
   )
 }

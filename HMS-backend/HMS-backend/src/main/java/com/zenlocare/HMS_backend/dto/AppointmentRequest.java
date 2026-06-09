@@ -29,4 +29,5 @@ public class AppointmentRequest {
     private String cancelledReason;
     private UUID refundBankAccountId;
     private String refundMode;
+    private String noShowPaymentAction;
 }

@@ -3,7 +3,7 @@ import { fmtId } from "@/utils/idFormat";
 import {
   Stethoscope, Pill, ClipboardList, FileText, ListChecks, CalendarClock,
   IdCard, Clock, X, User as UserIcon, Beaker, Scissors, FlaskConical,
-  Tag, BedDouble,
+  Tag, BedDouble, NotebookPen,
 } from "lucide-react";
 
 /**
@@ -223,6 +223,11 @@ function splitDescription(description) {
 }
 
 const TYPE_META = {
+  PROGRESS_NOTE: {
+    label:   "Progress Note",
+    icon:    NotebookPen,
+    iconCls: "is-info",
+  },
   CONSULTATION: {
     label:   "Consultation",
     icon:    Stethoscope,
