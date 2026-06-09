@@ -780,54 +780,22 @@ function ConsultTab({ draft, zemaResult, zemaAnalysisState, setZemaAnalysisState
               type="button"
               onClick={startAnalysis}
               className="zema-btn-primary"
-              style={{
-                background: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
-                border: "none",
-                color: "#fff",
-                fontWeight: "700",
-                padding: "10px 24px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                boxShadow: "0 4px 12px rgba(245, 158, 11, 0.2)",
-                animation: "none"
-              }}
             >
               Analyze with Zema AI
             </button>
           )}
 
           {zemaAnalysisState === "loading" && (
-            <div className="zema-panel" style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "40px",
-              background: "linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(239, 68, 68, 0.03) 100%)",
-              border: "1px solid rgba(245, 158, 11, 0.25)",
-              borderRadius: "12px",
-              gap: "12px",
-              textAlign: "center"
-            }}>
-              <div style={{ position: "relative", width: "48px", height: "48px" }}>
+            <div className="zema-loader-card">
+              <div className="zema-loader-card__logo-container">
                 <img 
                   src={zemaAiLogo} 
-                  style={{ width: "48px", height: "48px", animation: "spin 3s infinite linear" }} 
+                  className="zema-loader-card__logo" 
                   alt="Analyzing" 
                 />
-                <div style={{
-                  position: "absolute",
-                  inset: "-8px",
-                  background: "radial-gradient(circle, rgba(245, 158, 11, 0.3) 0%, transparent 70%)",
-                  zIndex: -1,
-                  borderRadius: "50%",
-                  animation: "ping 1.5s infinite ease-in-out"
-                }} />
+                <div className="zema-loader-card__glow" />
               </div>
-              <span style={{ fontSize: "14px", fontWeight: "700", color: "#f97316", letterSpacing: "0.05em" }}>
+              <span className="zema-loader-card__text">
                 Analyzing with Zema AI...
               </span>
             </div>
@@ -859,9 +827,9 @@ function ConsultTab({ draft, zemaResult, zemaAnalysisState, setZemaAnalysisState
               {!isZemaCollapsed && (
                 <>
                   {zemaResult.bpError && (
-                    <div style={{ color: "#ef4444", fontSize: "11px", marginBottom: "12px", fontWeight: "600", display: "flex", gap: "4px", alignItems: "center", background: "rgba(255,255,255,0.8)", padding: "6px 10px", borderRadius: "6px" }}>
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      {zemaResult.bpError}
+                    <div className="zema-alert-banner is-error">
+                      <AlertCircle className="w-3.5 h-3.5 zema-alert-banner__icon" />
+                      <span>{zemaResult.bpError}</span>
                     </div>
                   )}
 
@@ -874,17 +842,7 @@ function ConsultTab({ draft, zemaResult, zemaAnalysisState, setZemaAnalysisState
                         {zemaResult.metrics.bmi.raw !== null && <span className="zema-metric-subcard__unit">kg/m²</span>}
                       </div>
                       {zemaResult.metrics.bmi.category && (
-                        <div style={{
-                          marginTop: "6px",
-                          fontSize: "10px",
-                          fontWeight: "700",
-                          background: "rgba(255, 255, 255, 0.22)",
-                          border: "1px solid rgba(255, 255, 255, 0.35)",
-                          padding: "2px 8px",
-                          borderRadius: "999px",
-                          display: "inline-block",
-                          color: "#ffffff"
-                        }}>
+                        <div className={`zema-category-badge is-${zemaResult.metrics.bmi.severity || 'normal'}`}>
                           {zemaResult.metrics.bmi.category}
                         </div>
                       )}
@@ -905,17 +863,7 @@ function ConsultTab({ draft, zemaResult, zemaAnalysisState, setZemaAnalysisState
                         {zemaResult.metrics.map.raw !== null && <span className="zema-metric-subcard__unit">mmHg</span>}
                       </div>
                       {zemaResult.metrics.map.category && (
-                        <div style={{
-                          marginTop: "6px",
-                          fontSize: "10px",
-                          fontWeight: "700",
-                          background: "rgba(255, 255, 255, 0.22)",
-                          border: "1px solid rgba(255, 255, 255, 0.35)",
-                          padding: "2px 8px",
-                          borderRadius: "999px",
-                          display: "inline-block",
-                          color: "#ffffff"
-                        }}>
+                        <div className={`zema-category-badge is-${zemaResult.metrics.map.severity || 'normal'}`}>
                           {zemaResult.metrics.map.category}
                         </div>
                       )}
@@ -928,17 +876,7 @@ function ConsultTab({ draft, zemaResult, zemaAnalysisState, setZemaAnalysisState
                         {zemaResult.metrics.pulsePressure.raw !== null && <span className="zema-metric-subcard__unit">mmHg</span>}
                       </div>
                       {zemaResult.metrics.pulsePressure.category && (
-                        <div style={{
-                          marginTop: "6px",
-                          fontSize: "10px",
-                          fontWeight: "700",
-                          background: "rgba(255, 255, 255, 0.22)",
-                          border: "1px solid rgba(255, 255, 255, 0.35)",
-                          padding: "2px 8px",
-                          borderRadius: "999px",
-                          display: "inline-block",
-                          color: "#ffffff"
-                        }}>
+                        <div className={`zema-category-badge is-${zemaResult.metrics.pulsePressure.severity || 'normal'}`}>
                           {zemaResult.metrics.pulsePressure.category}
                         </div>
                       )}
@@ -953,17 +891,7 @@ function ConsultTab({ draft, zemaResult, zemaAnalysisState, setZemaAnalysisState
                         {zemaResult.metrics.shockIndex.display}
                       </div>
                       {zemaResult.metrics.shockIndex.category && (
-                        <div style={{
-                          marginTop: "6px",
-                          fontSize: "10px",
-                          fontWeight: "700",
-                          background: "rgba(255, 255, 255, 0.22)",
-                          border: "1px solid rgba(255, 255, 255, 0.35)",
-                          padding: "2px 8px",
-                          borderRadius: "999px",
-                          alignSelf: "flex-start",
-                          color: "#ffffff"
-                        }}>
+                        <div className={`zema-category-badge is-${zemaResult.metrics.shockIndex.severity || 'normal'}`}>
                           {zemaResult.metrics.shockIndex.category}
                         </div>
                       )}
@@ -995,13 +923,9 @@ function ConsultTab({ draft, zemaResult, zemaAnalysisState, setZemaAnalysisState
                   )}
 
                   {zemaResult.isPediatric && (
-                    <div style={{ marginTop: "12px", background: "rgba(255, 255, 255, 0.25)", border: "1px solid rgba(255, 255, 255, 0.4)", borderRadius: "10px", padding: "10px" }}>
-                      <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                        <AlertCircle className="w-4 h-4 text-white flex-shrink-0" style={{ marginTop: "2px" }} />
-                        <span style={{ fontSize: "11px", color: "#ffffff", fontWeight: "600", lineHeight: "1.4" }}>
-                          {zemaResult.pediatricNote}
-                        </span>
-                      </div>
+                    <div className="zema-alert-banner is-pediatric">
+                      <AlertCircle className="w-4 h-4 zema-alert-banner__icon" />
+                      <span>{zemaResult.pediatricNote}</span>
                     </div>
                   )}
                 </>

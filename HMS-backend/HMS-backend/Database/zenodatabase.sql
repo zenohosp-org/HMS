@@ -2092,3 +2092,26 @@ CREATE TABLE IF NOT EXISTS public.nursing_tasks (
     CONSTRAINT chk_nursing_category CHECK (category IN ('MEDICATION','WOUND_CARE','VITALS','HYGIENE','MOBILITY','IV_LINE','OTHER'))
 );
 CREATE INDEX IF NOT EXISTS idx_nursing_tasks_admission ON public.nursing_tasks(admission_id);
+
+-- ── Patient Referrals ───────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.patient_referrals (
+    id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    admission_id      UUID        NOT NULL REFERENCES public.admissions(id),
+    hospital_id       UUID        NOT NULL REFERENCES public.hospitals(id),
+    referred_to_name  VARCHAR(255) NOT NULL,
+    referred_to_type  VARCHAR(10)  NOT NULL DEFAULT 'INTERNAL',
+    reason            TEXT        NOT NULL,
+    priority          VARCHAR(12)  NOT NULL DEFAULT 'ROUTINE',
+    status            VARCHAR(12)  NOT NULL DEFAULT 'PENDING',
+    notes             TEXT,
+    referred_by       UUID        REFERENCES public.users(id),
+    accepted_by_name  VARCHAR(255),
+    accepted_at       TIMESTAMP,
+    completed_at      TIMESTAMP,
+    responded_by      UUID        REFERENCES public.users(id),
+    created_at        TIMESTAMP   NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_referral_type     CHECK (referred_to_type IN ('INTERNAL','EXTERNAL')),
+    CONSTRAINT chk_referral_priority CHECK (priority IN ('ROUTINE','URGENT','EMERGENCY')),
+    CONSTRAINT chk_referral_status   CHECK (status   IN ('PENDING','ACCEPTED','COMPLETED','CANCELLED'))
+);
+CREATE INDEX IF NOT EXISTS idx_patient_referrals_admission ON public.patient_referrals(admission_id);

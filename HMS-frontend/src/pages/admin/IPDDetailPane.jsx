@@ -28,6 +28,7 @@ import IpdMarTab from "@/pages/admin/IpdMarTab";
 import IpdIoTab from "@/pages/admin/IpdIoTab";
 import IpdLabTab from "@/pages/admin/IpdLabTab";
 import IpdNursingTab from "@/pages/admin/IpdNursingTab";
+import IpdReferralTab from "@/pages/admin/IpdReferralTab";
 import { useNotification } from "@/context/NotificationContext";
 import {
     Alert,
@@ -61,8 +62,9 @@ const TABS = [
     { id: "Meds",               label: "Meds"     },
     { id: "I/O",                label: "I/O"      },
     { id: "Labs",               label: "Labs"     },
-    { id: "Tasks",              label: "Tasks"    },
-    { id: "Attendor Details",   label: "Attender" },
+    { id: "Tasks",              label: "Tasks"     },
+    { id: "Referrals",          label: "Referrals" },
+    { id: "Attendor Details",   label: "Attender"  },
     { id: "Room Mapped Assets", label: "Assets"   },
     { id: "IPD Billing",        label: "Billing"  },
 ];
@@ -1111,6 +1113,12 @@ export default function IPDDetailPane({
                     )}
                     {activeTab === "Tasks" && (
                         <IpdNursingTab
+                            admissionId={admission.id}
+                            isDischarged={!!admission.actualDischargeDate}
+                        />
+                    )}
+                    {activeTab === "Referrals" && (
+                        <IpdReferralTab
                             admissionId={admission.id}
                             isDischarged={!!admission.actualDischargeDate}
                         />

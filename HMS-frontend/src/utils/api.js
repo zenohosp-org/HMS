@@ -843,6 +843,14 @@ const nursingTaskApi = {
   remove:   (admissionId, taskId)          => api.delete(`/ipd/nursing-tasks/${admissionId}/${taskId}`).then((r) => r.data),
 };
 
+const referralApi = {
+  list:     (admissionId)                      => api.get(`/ipd/referrals/${admissionId}`).then((r) => r.data),
+  create:   (admissionId, payload)             => api.post(`/ipd/referrals/${admissionId}`, payload).then((r) => r.data),
+  accept:   (admissionId, referralId, payload) => api.patch(`/ipd/referrals/${admissionId}/${referralId}/accept`, payload).then((r) => r.data),
+  complete: (admissionId, referralId, payload) => api.patch(`/ipd/referrals/${admissionId}/${referralId}/complete`, payload).then((r) => r.data),
+  cancel:   (admissionId, referralId, payload) => api.patch(`/ipd/referrals/${admissionId}/${referralId}/cancel`, payload).then((r) => r.data),
+};
+
 // Autosave for the in-flight consultation modal. One row per appointment.
 // get() resolves to null when the appointment has no draft yet — the modal
 // uses that to decide between hydrating from autosave or seeding from the
@@ -910,5 +918,6 @@ export {
   ioApi,
   labOrderApi,
   nursingTaskApi,
+  referralApi,
   zemaRulesApi,
 };

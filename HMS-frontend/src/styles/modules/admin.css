@@ -168,7 +168,8 @@
 
 /* ─────────────────────────── Shift roster top nav card + legend ─────────────────────────── */
 .hms-shift-nav {
-    flex-direction: row !important;     /* override Card flex-col */
+    flex-direction: row !important;
+    /* override Card flex-col */
     align-items: center;
     gap: 12px;
     padding: 12px 16px !important;
@@ -219,7 +220,8 @@
 /* ─────────────────────────── Shift roster group card ─────────────────────────── */
 .hms-shift-group {
     padding: 0 !important;
-    overflow: visible !important;       /* allow popover positioning */
+    overflow: visible !important;
+    /* allow popover positioning */
 }
 
 .hms-shift-group__head {
@@ -621,7 +623,8 @@
 
 /* ─────────────────────────── Member card (StaffsList grid item) ─────────────────────────── */
 .hms-member-card {
-    gap: 14px !important;       /* override Card's default gap-sm */
+    gap: 14px !important;
+    /* override Card's default gap-sm */
 }
 
 .hms-member-card .hms-avatar {
@@ -701,7 +704,7 @@
     overflow: hidden;
 }
 
-.hms-member-card__line.is-truncate > span {
+.hms-member-card__line.is-truncate>span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1618,9 +1621,17 @@
     color: var(--hms-gray-400);
 }
 
-.hms-bill-card.is-clear   .hms-bill-card__icon { color: var(--hms-success); }
-.hms-bill-card.is-partial .hms-bill-card__icon { color: #c2410c; }
-.hms-bill-card.is-unpaid  .hms-bill-card__icon { color: var(--hms-danger); }
+.hms-bill-card.is-clear .hms-bill-card__icon {
+    color: var(--hms-success);
+}
+
+.hms-bill-card.is-partial .hms-bill-card__icon {
+    color: #c2410c;
+}
+
+.hms-bill-card.is-unpaid .hms-bill-card__icon {
+    color: var(--hms-danger);
+}
 
 .hms-bill-card__title {
     margin: 0;
@@ -1633,15 +1644,26 @@
     font-size: 12px;
 }
 
-.hms-bill-card.is-clear   .hms-bill-card__title,
-.hms-bill-card.is-clear   .hms-bill-card__sub   { color: #166534; }
+.hms-bill-card.is-clear .hms-bill-card__title,
+.hms-bill-card.is-clear .hms-bill-card__sub {
+    color: #166534;
+}
+
 .hms-bill-card.is-partial .hms-bill-card__title,
-.hms-bill-card.is-partial .hms-bill-card__sub   { color: #c2410c; }
-.hms-bill-card.is-unpaid  .hms-bill-card__title,
-.hms-bill-card.is-unpaid  .hms-bill-card__sub   { color: #dc2626; }
+.hms-bill-card.is-partial .hms-bill-card__sub {
+    color: #c2410c;
+}
+
+.hms-bill-card.is-unpaid .hms-bill-card__title,
+.hms-bill-card.is-unpaid .hms-bill-card__sub {
+    color: #dc2626;
+}
 
 .hms-bill-card .hms-bill-card__title.is-pending,
-.hms-bill-card .hms-bill-card__sub.is-pending   { color: var(--hms-gray-500); font-weight: 600; }
+.hms-bill-card .hms-bill-card__sub.is-pending {
+    color: var(--hms-gray-500);
+    font-weight: 600;
+}
 
 
 /* ─────────────────────────── MoveToOTModal / DischargeModal: loading row + room radio rows ─────────────────────────── */
@@ -1715,7 +1737,9 @@
     padding: 80px 0;
 }
 
-.hms-bill-loading__icon { color: var(--hms-gray-700); }
+.hms-bill-loading__icon {
+    color: var(--hms-gray-700);
+}
 
 .hms-bill-loading__text {
     margin: 0;
@@ -1776,8 +1800,13 @@
     letter-spacing: 0.06em;
 }
 
-.hms-bill-table__head-cell.is-center { text-align: center; }
-.hms-bill-table__head-cell.is-right  { text-align: right; }
+.hms-bill-table__head-cell.is-center {
+    text-align: center;
+}
+
+.hms-bill-table__head-cell.is-right {
+    text-align: right;
+}
 
 .hms-bill-table__cell {
     font-size: 14px;
@@ -1785,8 +1814,13 @@
     font-variant-numeric: tabular-nums;
 }
 
-.hms-bill-table__cell.is-center { text-align: center; }
-.hms-bill-table__cell.is-right  { text-align: right; }
+.hms-bill-table__cell.is-center {
+    text-align: center;
+}
+
+.hms-bill-table__cell.is-right {
+    text-align: right;
+}
 
 .hms-bill-table__desc {
     font-size: 14px;
@@ -1816,13 +1850,40 @@
     font-weight: 600;
 }
 
-.hms-bill-type.is-room          { background: #fff7ed; color: #c2410c; }
-.hms-bill-type.is-consultation  { background: var(--hms-info-bg); color: #0369a1; }
-.hms-bill-type.is-radiology     { background: #f5f3ff; color: #6d28d9; }
-.hms-bill-type.is-lab           { background: #f0fdfa; color: #0f766e; }
-.hms-bill-type.is-medicine      { background: var(--hms-success-bg); color: #166534; }
-.hms-bill-type.is-ot            { background: #f5f3ff; color: #7c3aed; }
-.hms-bill-type.is-custom        { background: var(--hms-gray-100); color: var(--hms-gray-600); }
+.hms-bill-type.is-room {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.hms-bill-type.is-consultation {
+    background: var(--hms-info-bg);
+    color: #0369a1;
+}
+
+.hms-bill-type.is-radiology {
+    background: #f5f3ff;
+    color: #6d28d9;
+}
+
+.hms-bill-type.is-lab {
+    background: #f0fdfa;
+    color: #0f766e;
+}
+
+.hms-bill-type.is-medicine {
+    background: var(--hms-success-bg);
+    color: #166534;
+}
+
+.hms-bill-type.is-ot {
+    background: #f5f3ff;
+    color: #7c3aed;
+}
+
+.hms-bill-type.is-custom {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-600);
+}
 
 
 /* Bill totals block */
@@ -1886,6 +1947,7 @@
     overflow: hidden;
     height: 100%;
 }
+
 .hms-detail-page__aside {
     width: 288px;
     flex-shrink: 0;
@@ -1968,7 +2030,9 @@
     margin-right: 4px;
 }
 
-.hms-status-dot.is-success { background: var(--hms-success); }
+.hms-status-dot.is-success {
+    background: var(--hms-success);
+}
 
 
 /* Aside body — sections of side info rows */
@@ -2143,7 +2207,9 @@
     letter-spacing: 0.06em;
 }
 
-.hms-fee-tile.is-accent .hms-fee-tile__label { color: #166534; }
+.hms-fee-tile.is-accent .hms-fee-tile__label {
+    color: #166534;
+}
 
 .hms-fee-tile__row {
     display: inline-flex;
@@ -2151,7 +2217,9 @@
     gap: 6px;
 }
 
-.hms-fee-tile__row > svg { color: var(--hms-gray-400); }
+.hms-fee-tile__row>svg {
+    color: var(--hms-gray-400);
+}
 
 .hms-fee-tile__value {
     margin: 0;
@@ -2204,10 +2272,21 @@
     width: 4px;
 }
 
-.hms-appt-card__stripe.is-success { background: var(--hms-success); }
-.hms-appt-card__stripe.is-danger  { background: var(--hms-danger); }
-.hms-appt-card__stripe.is-warning { background: var(--hms-warning); }
-.hms-appt-card__stripe.is-info    { background: var(--hms-info); }
+.hms-appt-card__stripe.is-success {
+    background: var(--hms-success);
+}
+
+.hms-appt-card__stripe.is-danger {
+    background: var(--hms-danger);
+}
+
+.hms-appt-card__stripe.is-warning {
+    background: var(--hms-warning);
+}
+
+.hms-appt-card__stripe.is-info {
+    background: var(--hms-info);
+}
 
 .hms-appt-card__head {
     display: flex;
@@ -2368,7 +2447,9 @@
     background: var(--hms-gray-300);
 }
 
-.hms-schedule-day.is-on .hms-schedule-day__dot { background: var(--hms-success); }
+.hms-schedule-day.is-on .hms-schedule-day__dot {
+    background: var(--hms-success);
+}
 
 .hms-schedule-day__name {
     font-size: 14px;
@@ -2582,11 +2663,30 @@
     color: var(--hms-gray-700);
 }
 
-.hms-kpi-card__icon.is-info    { background: var(--hms-info-bg);    color: var(--hms-info); }
-.hms-kpi-card__icon.is-success { background: var(--hms-success-bg); color: var(--hms-success); }
-.hms-kpi-card__icon.is-warning { background: var(--hms-warning-bg); color: #b45309; }
-.hms-kpi-card__icon.is-neutral { background: var(--hms-gray-100);   color: var(--hms-gray-700); }
-.hms-kpi-card__icon.is-rose    { background: #fff1f2;               color: #be123c; }
+.hms-kpi-card__icon.is-info {
+    background: var(--hms-info-bg);
+    color: var(--hms-info);
+}
+
+.hms-kpi-card__icon.is-success {
+    background: var(--hms-success-bg);
+    color: var(--hms-success);
+}
+
+.hms-kpi-card__icon.is-warning {
+    background: var(--hms-warning-bg);
+    color: #b45309;
+}
+
+.hms-kpi-card__icon.is-neutral {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-700);
+}
+
+.hms-kpi-card__icon.is-rose {
+    background: #fff1f2;
+    color: #be123c;
+}
 
 .hms-kpi-card__trend {
     display: inline-flex;
@@ -2598,8 +2698,15 @@
     border-radius: 999px;
 }
 
-.hms-kpi-card__trend.is-up   { background: var(--hms-success-bg); color: var(--hms-success); }
-.hms-kpi-card__trend.is-down { background: #fff1f2;               color: #be123c; }
+.hms-kpi-card__trend.is-up {
+    background: var(--hms-success-bg);
+    color: var(--hms-success);
+}
+
+.hms-kpi-card__trend.is-down {
+    background: #fff1f2;
+    color: #be123c;
+}
 
 .hms-kpi-card__value {
     margin: 0;
@@ -2698,8 +2805,13 @@
     margin: 0;
 }
 
-.hms-tooltip__line.is-paid        { color: #10b981; }
-.hms-tooltip__line.is-outstanding { color: #f43f5e; }
+.hms-tooltip__line.is-paid {
+    color: #10b981;
+}
+
+.hms-tooltip__line.is-outstanding {
+    color: #f43f5e;
+}
 
 
 /* AdminDashboard: donut centre text */
@@ -2802,8 +2914,14 @@
     border-radius: 2px;
 }
 
-.hms-rev-legend__sq.is-paid        { background: #10b981; }
-.hms-rev-legend__sq.is-outstanding { background: #f43f5e; opacity: 0.7; }
+.hms-rev-legend__sq.is-paid {
+    background: #10b981;
+}
+
+.hms-rev-legend__sq.is-outstanding {
+    background: #f43f5e;
+    opacity: 0.7;
+}
 
 
 /* AdminDashboard: empty-chart placeholder */
@@ -2854,11 +2972,30 @@
     flex-shrink: 0;
 }
 
-.hms-quick-action__icon.is-success { background: var(--hms-success-bg); color: var(--hms-success); }
-.hms-quick-action__icon.is-neutral { background: var(--hms-gray-100);   color: var(--hms-gray-700); }
-.hms-quick-action__icon.is-info    { background: var(--hms-info-bg);    color: var(--hms-info); }
-.hms-quick-action__icon.is-warning { background: var(--hms-warning-bg); color: #b45309; }
-.hms-quick-action__icon.is-rose    { background: #fff1f2;               color: #be123c; }
+.hms-quick-action__icon.is-success {
+    background: var(--hms-success-bg);
+    color: var(--hms-success);
+}
+
+.hms-quick-action__icon.is-neutral {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-700);
+}
+
+.hms-quick-action__icon.is-info {
+    background: var(--hms-info-bg);
+    color: var(--hms-info);
+}
+
+.hms-quick-action__icon.is-warning {
+    background: var(--hms-warning-bg);
+    color: #b45309;
+}
+
+.hms-quick-action__icon.is-rose {
+    background: #fff1f2;
+    color: #be123c;
+}
 
 .hms-quick-action__body {
     flex: 1;
@@ -2928,7 +3065,7 @@
 .hms-ipd-pane__panel {
     position: relative;
     width: 100%;
-    max-width: 520px;
+    max-width: 760px;
     height: 100%;
     background: var(--hms-white);
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.12);
@@ -3001,7 +3138,7 @@
     gap: 6px;
 }
 
-.hms-ipd-header__meta-item > svg {
+.hms-ipd-header__meta-item>svg {
     color: var(--hms-gray-300);
 }
 
@@ -3625,8 +3762,13 @@
     letter-spacing: 0.06em;
 }
 
-.hms-ipd-bill-head__cell.is-center { text-align: center; }
-.hms-ipd-bill-head__cell.is-right  { text-align: right; }
+.hms-ipd-bill-head__cell.is-center {
+    text-align: center;
+}
+
+.hms-ipd-bill-head__cell.is-right {
+    text-align: right;
+}
 
 .hms-ipd-bill-row {
     display: grid;
@@ -3648,13 +3790,40 @@
     font-weight: 600;
 }
 
-.hms-ipd-bill-row__type.is-room          { background: #fff7ed; color: #c2410c; }
-.hms-ipd-bill-row__type.is-consultation  { background: var(--hms-info-bg); color: #0369a1; }
-.hms-ipd-bill-row__type.is-radiology     { background: #f5f3ff; color: #6d28d9; }
-.hms-ipd-bill-row__type.is-lab           { background: #f0fdfa; color: #0f766e; }
-.hms-ipd-bill-row__type.is-medicine      { background: var(--hms-success-bg); color: #166534; }
-.hms-ipd-bill-row__type.is-ot            { background: #f5f3ff; color: #7c3aed; }
-.hms-ipd-bill-row__type.is-custom        { background: var(--hms-gray-100); color: var(--hms-gray-600); }
+.hms-ipd-bill-row__type.is-room {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.hms-ipd-bill-row__type.is-consultation {
+    background: var(--hms-info-bg);
+    color: #0369a1;
+}
+
+.hms-ipd-bill-row__type.is-radiology {
+    background: #f5f3ff;
+    color: #6d28d9;
+}
+
+.hms-ipd-bill-row__type.is-lab {
+    background: #f0fdfa;
+    color: #0f766e;
+}
+
+.hms-ipd-bill-row__type.is-medicine {
+    background: var(--hms-success-bg);
+    color: #166534;
+}
+
+.hms-ipd-bill-row__type.is-ot {
+    background: #f5f3ff;
+    color: #7c3aed;
+}
+
+.hms-ipd-bill-row__type.is-custom {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-600);
+}
 
 .hms-ipd-bill-row__desc {
     font-size: 12px;
@@ -3697,9 +3866,11 @@
     color: var(--hms-gray-500);
 }
 
-.hms-ipd-bill-totals__row.is-success { color: var(--hms-success); }
+.hms-ipd-bill-totals__row.is-success {
+    color: var(--hms-success);
+}
 
-.hms-ipd-bill-totals__row > span:last-child {
+.hms-ipd-bill-totals__row>span:last-child {
     font-variant-numeric: tabular-nums;
 }
 
@@ -3714,7 +3885,7 @@
     margin-top: 4px;
 }
 
-.hms-ipd-bill-totals__grand > span:last-child {
+.hms-ipd-bill-totals__grand>span:last-child {
     font-variant-numeric: tabular-nums;
 }
 
@@ -3808,8 +3979,13 @@
     font-family: var(--hms-font-family);
 }
 
-.hms-ipd-retry-row__btn.is-violet  { color: #7c3aed; }
-.hms-ipd-retry-row__btn.is-success { color: var(--hms-success); }
+.hms-ipd-retry-row__btn.is-violet {
+    color: #7c3aed;
+}
+
+.hms-ipd-retry-row__btn.is-success {
+    color: var(--hms-success);
+}
 
 
 /* Centered loader + empty state (pane-local — sized to 64px padding) */
@@ -3896,6 +4072,7 @@
     line-height: 1.5;
     transition: border-color 0.15s;
 }
+
 .hms-vitals-notes-input:focus {
     outline: none;
     border-color: var(--hms-primary);
@@ -3922,6 +4099,7 @@
     padding: 12px 16px;
     transition: border-color 0.15s;
 }
+
 .hms-vitals-reading-card:hover {
     border-color: var(--hms-gray-300);
 }
@@ -4240,4 +4418,3 @@
 .hms-allergy-form__cancel-btn:hover {
     background: var(--hms-gray-50);
 }
-

@@ -461,20 +461,35 @@
 /* Zema AI Mockup Custom Styles */
 .zema-gradient-card {
     background: linear-gradient(135deg, #ffe543 0%, #ff8010 50%, #ff3b1d 100%);
-    border-radius: 20px;
+    border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 12px 30px rgba(255, 90, 0, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+    box-shadow: 0 12px 35px rgba(255, 90, 0, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
     color: #ffffff;
     font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease-in-out;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.zema-gradient-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .zema-gradient-card__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: relative;
+    z-index: 1;
 }
 
 .zema-gradient-card__logo-block {
@@ -485,47 +500,67 @@
 
 .zema-gradient-card__logo-glow {
     position: relative;
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
     z-index: 1;
 }
 
+.zema-gradient-card__logo-glow::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, #ff8010, #ff3b1d, #ffe543, #ff8010);
+    z-index: -1;
+    opacity: 0.6;
+    filter: blur(4px);
+    animation: spin 6s infinite linear;
+}
+
 .zema-gradient-card__logo {
-    width: 64px;
-    height: 64px;
+    width: 22px;
+    height: 22px;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
-    animation: spin 10s infinite linear;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.15));
+    animation: spin 15s infinite linear;
 }
 
 .zema-gradient-card__title {
     font-size: 20px;
-    font-weight: 700;
-    color: #c2410c;
-    /* Dark orange contrast text against bright yellow */
+    font-weight: 800;
+    color: #7c2d12;
     letter-spacing: -0.01em;
     margin: 0;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
 }
 
 .zema-gradient-card__toggle {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #7c2d12;
     cursor: pointer;
-    padding: 4px;
-    border-radius: 50%;
+    padding: 6px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s, color 0.2s;
+    position: relative;
+    z-index: 2;
+    transition: all 0.2s ease;
 }
 
 .zema-gradient-card__toggle:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.35);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #7c2d12;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 /* First Row Grid: 4 cards */
@@ -533,61 +568,75 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
-    margin: 40px 0 16px;
+    margin: 24px 0 16px;
+    position: relative;
+    z-index: 1;
 }
 
 /* Glassmorphic Metrics Card */
 .zema-metric-subcard {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 14px;
-    padding: 12px 16px;
-    transition: transform 0.2s, box-shadow 0.2s;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 104px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.10);
 }
 
 .zema-metric-subcard:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.45);
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15), 0 0 12px rgba(255, 255, 255, 0.2);
 }
 
 .zema-metric-subcard__label {
     font-size: 11px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.85);
+    font-weight: 700;
+    color: #7c2d12;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
-    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    opacity: 0.95;
 }
 
 .zema-metric-subcard__value {
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 22px;
+    font-weight: 800;
     color: #ffffff;
     display: flex;
     align-items: baseline;
     gap: 4px;
+    line-height: 1.2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .zema-metric-subcard__unit {
-    font-size: 11px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.95);
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* Second Row: Wide block with 3 columns split by borders */
 .zema-metrics-row-2 {
     background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 14px;
+    border-radius: 12px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    padding: 12px 0;
+    padding: 16px 0;
     margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08);
 }
 
 .zema-metrics-row-2__col {
@@ -598,54 +647,195 @@
 }
 
 .zema-metrics-row-2__col:not(:last-child) {
-    border-right: 1px solid rgba(255, 255, 255, 0.25);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .zema-metrics-row-2__label {
     font-size: 11px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.85);
+    font-weight: 700;
+    color: #7c2d12;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
-    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    opacity: 0.95;
 }
 
 .zema-metrics-row-2__value {
-    font-size: 17px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 800;
     color: #ffffff;
     display: flex;
     align-items: baseline;
     gap: 4px;
+    line-height: 1.2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .zema-metrics-row-2__unit {
-    font-size: 11px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.95);
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Dynamic severity badge pills */
+.zema-category-badge {
+    margin-top: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    width: fit-content;
+}
+
+.zema-category-badge.is-critical {
+    background: #dc2626;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+}
+
+.zema-category-badge.is-warning {
+    background: #ea580c;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(234, 88, 12, 0.3);
+}
+
+.zema-category-badge.is-info {
+    background: #0284c7;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+.zema-category-badge.is-reassurance {
+    background: #16a34a;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+.zema-category-badge.is-normal {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #7c2d12;
 }
 
 /* Clinical Decision Support Area */
 .zema-decision-support {
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
     padding-top: 20px;
+    position: relative;
+    z-index: 1;
 }
 
 .zema-decision-support__title {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 700;
-    color: #c2410c;
-    /* High contrast rust orange text */
-    margin: 0 0 10px 0;
-    letter-spacing: -0.01em;
+    color: #7c2d12;
+    margin: 0 0 12px 0;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .zema-decision-support__text {
     font-size: 13.5px;
     line-height: 1.6;
-    color: #7c2d12;
-    /* Rich warm dark orange/brown readable text */
+    color: #5c1d04;
     margin: 0;
     text-align: justify;
-    font-weight: 500;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Loader Card Style */
+.zema-loader-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(239, 68, 68, 0.02) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    border-radius: 16px;
+    gap: 16px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    animation: zema-pulse-glow 4s infinite ease-in-out;
+}
+
+.zema-loader-card__logo-container {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.zema-loader-card__logo {
+    width: 44px;
+    height: 44px;
+    animation: spin 3s infinite linear;
+}
+
+.zema-loader-card__glow {
+    position: absolute;
+    inset: -6px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.35) 0%, transparent 70%);
+    z-index: -1;
+    border-radius: 50%;
+    animation: ping 2s infinite ease-in-out;
+}
+
+.zema-loader-card__text {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Alert Banner Styles */
+.zema-alert-banner {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.zema-alert-banner.is-error {
+    color: #7f1d1d;
+    background: rgba(254, 226, 226, 0.7);
+    border: 1px solid rgba(239, 68, 68, 0.45);
+}
+
+.zema-alert-banner.is-pediatric {
+    color: #1e3a8a;
+    background: rgba(219, 234, 254, 0.7);
+    border: 1px solid rgba(59, 130, 246, 0.45);
+    margin-top: 16px;
+    margin-bottom: 0;
+}
+
+.zema-alert-banner__icon {
+    flex-shrink: 0;
+    margin-top: 1px;
 }
