@@ -47,6 +47,7 @@ public interface PrescriptionItemRepository extends JpaRepository<PrescriptionIt
             SELECT pi FROM PrescriptionItem pi
             JOIN FETCH pi.record r
             JOIN FETCH r.createdBy u
+            LEFT JOIN FETCH pi.stoppedBy sb
             WHERE r.admissionId = :admissionId
               AND r.hospital.id = :hospitalId
             ORDER BY r.createdAt ASC, pi.displayOrder ASC

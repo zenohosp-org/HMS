@@ -180,7 +180,14 @@ export default function PastRecordDetailModal({ record, onClose }) {
         <div className="zu-modal-footer is-split">
           <div className="hms-past-footer-meta">
             <UserIcon className="w-3 h-3 shrink-0" />
-            {creator ? (
+            {record.attendingDoctorName ? (
+              <>
+                <span className="hms-past-footer-meta__strong">Dr. {record.attendingDoctorName}</span>
+                {creator && creator !== record.attendingDoctorName && (
+                  <span className="hms-past-footer-meta__role"> · Entered by {creator}</span>
+                )}
+              </>
+            ) : creator ? (
               <>
                 Recorded by <span className="hms-past-footer-meta__strong">{creator}</span>
                 {creatorRole && <span className="hms-past-footer-meta__role"> · {creatorRole}</span>}

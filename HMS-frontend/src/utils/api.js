@@ -801,10 +801,46 @@ const ipdVitalsApi = {
   create: (payload)     => api.post("/ipd/vitals", payload).then((r) => r.data),
 };
 
+const zemaRulesApi = {
+  list: async (hospitalId) => {
+    const { data } = await api.get("/zema-rules", { params: { hospitalId } });
+    return data;
+  }
+};
+
 // IPD Medication Administration Record — order cards with embedded admin log.
 const marApi = {
-  list:   (admissionId) => api.get(`/ipd/mar/admission/${admissionId}`).then((r) => r.data),
-  create: (payload)     => api.post("/ipd/mar", payload).then((r) => r.data),
+  list:      (admissionId)      => api.get(`/ipd/mar/admission/${admissionId}`).then((r) => r.data),
+  create:    (payload)          => api.post("/ipd/mar", payload).then((r) => r.data),
+  stopOrder: (itemId, reason)   => api.patch(`/ipd/prescription-items/${itemId}/stop`, { reason }).then((r) => r.data),
+};
+
+const allergyApi = {
+  list:   (patientId, hospitalId) => api.get(`/patients/${patientId}/allergies`, { params: { hospitalId } }).then((r) => r.data),
+  add:    (patientId, payload)    => api.post(`/patients/${patientId}/allergies`, payload).then((r) => r.data),
+  remove: (patientId, allergyId)  => api.delete(`/patients/${patientId}/allergies/${allergyId}`).then((r) => r.data),
+};
+
+const ioApi = {
+  list:   (admissionId)          => api.get(`/ipd/fluid/${admissionId}`).then((r) => r.data),
+  add:    (admissionId, payload) => api.post(`/ipd/fluid/${admissionId}`, payload).then((r) => r.data),
+  remove: (admissionId, entryId) => api.delete(`/ipd/fluid/${admissionId}/${entryId}`).then((r) => r.data),
+};
+
+const labOrderApi = {
+  list:    (admissionId)                   => api.get(`/ipd/lab-orders/${admissionId}`).then((r) => r.data),
+  create:  (admissionId, payload)          => api.post(`/ipd/lab-orders/${admissionId}`, payload).then((r) => r.data),
+  collect: (admissionId, orderId)          => api.patch(`/ipd/lab-orders/${admissionId}/${orderId}/collect`).then((r) => r.data),
+  result:  (admissionId, orderId, payload) => api.patch(`/ipd/lab-orders/${admissionId}/${orderId}/result`, payload).then((r) => r.data),
+  cancel:  (admissionId, orderId)          => api.delete(`/ipd/lab-orders/${admissionId}/${orderId}`).then((r) => r.data),
+};
+
+const nursingTaskApi = {
+  list:     (admissionId)                  => api.get(`/ipd/nursing-tasks/${admissionId}`).then((r) => r.data),
+  create:   (admissionId, payload)         => api.post(`/ipd/nursing-tasks/${admissionId}`, payload).then((r) => r.data),
+  complete: (admissionId, taskId)          => api.patch(`/ipd/nursing-tasks/${admissionId}/${taskId}/complete`).then((r) => r.data),
+  skip:     (admissionId, taskId, payload) => api.patch(`/ipd/nursing-tasks/${admissionId}/${taskId}/skip`, payload).then((r) => r.data),
+  remove:   (admissionId, taskId)          => api.delete(`/ipd/nursing-tasks/${admissionId}/${taskId}`).then((r) => r.data),
 };
 
 // Autosave for the in-flight consultation modal. One row per appointment.
@@ -870,4 +906,9 @@ export {
   externalResultsApi,
   ipdVitalsApi,
   marApi,
+  allergyApi,
+  ioApi,
+  labOrderApi,
+  nursingTaskApi,
+  zemaRulesApi,
 };

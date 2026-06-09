@@ -14,7 +14,7 @@ import {
     patientServicesApi,
     admissionApi,
     recordApi,
-    ipdVitalsApi,
+    allergyApi,
 } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import Barcode from "@/components/ui/Barcode";
@@ -22,8 +22,12 @@ import axios from "axios";
 import SSOCookieManager from "@/utils/ssoManager";
 import WritePrescriptionModal from "@/components/modals/WritePrescriptionModal";
 import AddMedicalRecordModal from "@/components/modals/AddMedicalRecordModal";
+import PastRecordDetailModal from "@/components/modals/PastRecordDetailModal";
 import IpdVitalsTab from "@/pages/admin/IpdVitalsTab";
 import IpdMarTab from "@/pages/admin/IpdMarTab";
+import IpdIoTab from "@/pages/admin/IpdIoTab";
+import IpdLabTab from "@/pages/admin/IpdLabTab";
+import IpdNursingTab from "@/pages/admin/IpdNursingTab";
 import { useNotification } from "@/context/NotificationContext";
 import {
     Alert,
@@ -55,6 +59,9 @@ const TABS = [
     { id: "IPD Log",            label: "IPD log"  },
     { id: "Vitals",             label: "Vitals"   },
     { id: "Meds",               label: "Meds"     },
+    { id: "I/O",                label: "I/O"      },
+    { id: "Labs",               label: "Labs"     },
+    { id: "Tasks",              label: "Tasks"    },
     { id: "Attendor Details",   label: "Attender" },
     { id: "Room Mapped Assets", label: "Assets"   },
     { id: "IPD Billing",        label: "Billing"  },
@@ -174,6 +181,10 @@ export default function IPDDetailPane({
 
     const [showAddRecord, setShowAddRecord] = useState(false);
     const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+    const [viewRecord, setViewRecord] = useState(null);
+
+    const [allergies, setAllergies] = useState([]);
+    const [showAllergyPanel, setShowAllergyPanel] = useState(false);
 
     const [checkingDischarge, setCheckingDischarge] = useState(false);
     const [dischargeBlock, setDischargeBlock] = useState(null);
@@ -403,12 +414,18 @@ export default function IPDDetailPane({
                                 const creator = r.createdBy
                                     ? `${r.createdBy.firstName} ${r.createdBy.lastName}`
                                     : "";
+                                const attendingName = r.attendingDoctorName
+                                    ? `Dr. ${r.attendingDoctorName}`
+                                    : null;
                                 events.push({
                                     id: `rec-${r.id}`,
                                     type: "RECORD",
-                                    title: (r.historyType || "OTHER").replace("_", " "),
-                                    subtitle: [r.mrn, creator].filter(Boolean).join(" · "),
-                                    description: r.description || "",
+                                    historyType: r.historyType || "OTHER",
+                                    title: (r.historyType || "OTHER").replace(/_/g, " "),
+                                    subtitle: [r.mrn, attendingName ?? creator].filter(Boolean).join(" · "),
+                                    description: r.description || r.notes || "",
+                                    prescriptionItems: Array.isArray(r.prescriptionItems) ? r.prescriptionItems : [],
+                                    rawRecord: r,
                                     timestamp: new Date(r.createdAt),
                                 });
                             });
@@ -783,6 +800,14 @@ export default function IPDDetailPane({
     }, [activeTab]);
 
     useEffect(() => {
+        if (!admission?.patientId || !user?.hospitalId) return;
+        allergyApi
+            .list(admission.patientId, user.hospitalId)
+            .then((data) => setAllergies(Array.isArray(data) ? data : []))
+            .catch(() => setAllergies([]));
+    }, [admission?.patientId, user?.hospitalId]);
+
+    useEffect(() => {
         setActiveTab("IPD Log");
         setLogs([]);
         setAssets([]);
@@ -909,6 +934,16 @@ export default function IPDDetailPane({
                         <div className="hms-ipd-header__actions">
                             <button
                                 type="button"
+                                className={`hms-ipd-chip-btn${allergies.length > 0 ? " is-allergy" : ""}`}
+                                onClick={() => setShowAllergyPanel((v) => !v)}
+                            >
+                                <AlertTriangle size={11} />
+                                {allergies.length > 0
+                                    ? `${allergies.length} Allerg${allergies.length === 1 ? "y" : "ies"}`
+                                    : "Allergies"}
+                            </button>
+                            <button
+                                type="button"
                                 className="hms-ipd-chip-btn"
                                 onClick={() => navigate(`/patients/${admission.patientId}`)}
                             >
@@ -994,6 +1029,17 @@ export default function IPDDetailPane({
                     )}
                 </div>
 
+                {showAllergyPanel && (
+                    <AllergyPanel
+                        patientId={admission.patientId}
+                        hospitalId={user.hospitalId}
+                        allergies={allergies}
+                        setAllergies={setAllergies}
+                        notify={notify}
+                        isDischarged={!!admission.actualDischargeDate}
+                    />
+                )}
+
                 {/* Wristband — printed via the "Wristband" button; hidden on screen,
                     rendered full-page only inside @media print */}
                 <div className="hms-ipd-wristband-print">
@@ -1033,6 +1079,8 @@ export default function IPDDetailPane({
                             logs={logs}
                             showAddRecord={showAddRecord}
                             setShowAddRecord={setShowAddRecord}
+                            setShowPrescriptionModal={setShowPrescriptionModal}
+                            setViewRecord={setViewRecord}
                             isDischarged={!!admission.actualDischargeDate}
                         />
                     )}
@@ -1044,6 +1092,25 @@ export default function IPDDetailPane({
                     )}
                     {activeTab === "Meds" && (
                         <IpdMarTab
+                            admissionId={admission.id}
+                            isDischarged={!!admission.actualDischargeDate}
+                            allergies={allergies}
+                        />
+                    )}
+                    {activeTab === "I/O" && (
+                        <IpdIoTab
+                            admissionId={admission.id}
+                            isDischarged={!!admission.actualDischargeDate}
+                        />
+                    )}
+                    {activeTab === "Labs" && (
+                        <IpdLabTab
+                            admissionId={admission.id}
+                            isDischarged={!!admission.actualDischargeDate}
+                        />
+                    )}
+                    {activeTab === "Tasks" && (
+                        <IpdNursingTab
                             admissionId={admission.id}
                             isDischarged={!!admission.actualDischargeDate}
                         />
@@ -1078,6 +1145,13 @@ export default function IPDDetailPane({
                 </div>
             </div>
 
+            {viewRecord && (
+                <PastRecordDetailModal
+                    record={viewRecord}
+                    onClose={() => setViewRecord(null)}
+                />
+            )}
+
             {(showPrescriptionModal || showAddRecord) && (() => {
                 const parts = (admission.patientName || "").trim().split(/\s+/);
                 const patient = {
@@ -1094,6 +1168,7 @@ export default function IPDDetailPane({
                                 patient={patient}
                                 admissionId={admission.id}
                                 admissionNumber={admissionNumber}
+                                allergies={allergies}
                                 onClose={() => setShowPrescriptionModal(false)}
                                 onSaved={() => {
                                     setShowPrescriptionModal(false);
@@ -1121,6 +1196,181 @@ export default function IPDDetailPane({
     );
 }
 
+/* ───────────────── Allergy panel ───────────────── */
+
+const SEVERITY_ORDER = { SEVERE: 0, MODERATE: 1, MILD: 2, UNKNOWN: 3 };
+
+function AllergyPanel({ patientId, hospitalId, allergies, setAllergies, notify, isDischarged }) {
+    const [adding, setAdding] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [form, setForm] = useState({ allergen: "", reaction: "", severity: "UNKNOWN" });
+
+    const sorted = [...allergies].sort(
+        (a, b) => (SEVERITY_ORDER[a.severity] ?? 3) - (SEVERITY_ORDER[b.severity] ?? 3)
+    );
+
+    const handleAdd = async () => {
+        if (!form.allergen.trim()) { notify("Allergen name is required", "warning"); return; }
+        setSaving(true);
+        try {
+            const saved = await allergyApi.add(patientId, { ...form, hospitalId });
+            setAllergies((prev) => [...prev, saved]);
+            setForm({ allergen: "", reaction: "", severity: "UNKNOWN" });
+            setAdding(false);
+            notify("Allergy recorded", "success");
+        } catch {
+            notify("Failed to save allergy", "error");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRemove = async (id) => {
+        try {
+            await allergyApi.remove(patientId, id);
+            setAllergies((prev) => prev.filter((a) => a.id !== id));
+        } catch {
+            notify("Failed to remove allergy", "error");
+        }
+    };
+
+    return (
+        <div className="hms-allergy-panel">
+            <div className="hms-allergy-panel__head">
+                <AlertTriangle size={13} className="hms-allergy-panel__icon" />
+                <span className="hms-allergy-panel__title">Known Allergies</span>
+                {!isDischarged && (
+                    <button
+                        type="button"
+                        className="hms-allergy-panel__add-btn"
+                        onClick={() => setAdding((v) => !v)}
+                    >
+                        <Plus size={11} /> Add
+                    </button>
+                )}
+            </div>
+
+            {sorted.length === 0 && !adding && (
+                <p className="hms-allergy-panel__empty">No known allergies recorded.</p>
+            )}
+
+            {sorted.length > 0 && (
+                <div className="hms-allergy-chip-row">
+                    {sorted.map((a) => (
+                        <div
+                            key={a.id}
+                            className={`hms-allergy-chip is-${(a.severity || "UNKNOWN").toLowerCase()}`}
+                            title={[a.reaction, a.recordedByName ? `Recorded by ${a.recordedByName}` : null].filter(Boolean).join(" · ")}
+                        >
+                            <span className="hms-allergy-chip__name">{a.allergen}</span>
+                            {a.reaction && (
+                                <span className="hms-allergy-chip__reaction">· {a.reaction}</span>
+                            )}
+                            <span className="hms-allergy-chip__sev">{a.severity}</span>
+                            {!isDischarged && (
+                                <button
+                                    type="button"
+                                    className="hms-allergy-chip__del"
+                                    onClick={() => handleRemove(a.id)}
+                                    aria-label="Remove allergy"
+                                >
+                                    <X size={9} />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {adding && (
+                <div className="hms-allergy-form">
+                    <input
+                        className="hms-allergy-form__input"
+                        placeholder="Allergen (e.g. Penicillin)"
+                        value={form.allergen}
+                        onChange={(e) => setForm((f) => ({ ...f, allergen: e.target.value }))}
+                    />
+                    <input
+                        className="hms-allergy-form__input"
+                        placeholder="Reaction (optional)"
+                        value={form.reaction}
+                        onChange={(e) => setForm((f) => ({ ...f, reaction: e.target.value }))}
+                    />
+                    <select
+                        className="hms-allergy-form__select"
+                        value={form.severity}
+                        onChange={(e) => setForm((f) => ({ ...f, severity: e.target.value }))}
+                    >
+                        <option value="UNKNOWN">Unknown severity</option>
+                        <option value="MILD">Mild</option>
+                        <option value="MODERATE">Moderate</option>
+                        <option value="SEVERE">Severe</option>
+                    </select>
+                    <div className="hms-allergy-form__actions">
+                        <button
+                            type="button"
+                            className="hms-allergy-form__save-btn"
+                            onClick={handleAdd}
+                            disabled={saving}
+                        >
+                            {saving ? "Saving…" : "Save"}
+                        </button>
+                        <button
+                            type="button"
+                            className="hms-allergy-form__cancel-btn"
+                            onClick={() => { setAdding(false); setForm({ allergen: "", reaction: "", severity: "UNKNOWN" }); }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ───────────────── Record detail (inline in timeline) ───────────────── */
+
+function RecordDetail({ ev }) {
+    const type  = ev.historyType;
+    const items = ev.prescriptionItems ?? [];
+
+    if (type === "PRESCRIPTION") {
+        if (items.length === 0) {
+            return ev.description
+                ? <p className="hms-ipd-timeline__desc">{ev.description}</p>
+                : null;
+        }
+        const visible = items.slice(0, 4);
+        const overflow = items.length - visible.length;
+        return (
+            <div className="hms-rec-drugs">
+                {visible.map((d, i) => {
+                    const signa = [d.dose, d.frequency].filter(Boolean).join(" · ");
+                    return (
+                        <div key={i} className="hms-rec-drug-chip">
+                            <Pill size={10} className="hms-rec-drug-chip__icon" />
+                            <span className="hms-rec-drug-chip__name">{d.drugName}</span>
+                            {signa && <span className="hms-rec-drug-chip__signa">{signa}</span>}
+                        </div>
+                    );
+                })}
+                {overflow > 0 && (
+                    <span className="hms-rec-drugs__more">+{overflow} more</span>
+                )}
+                {ev.description && (
+                    <p className="hms-ipd-timeline__desc">{ev.description}</p>
+                )}
+            </div>
+        );
+    }
+
+    // All other record types — show description if present
+    return ev.description
+        ? <p className="hms-ipd-timeline__desc">{ev.description}</p>
+        : null;
+}
+
 /* ───────────────── IPD Log tab ───────────────── */
 function LogTab({
     loadingLogs,
@@ -1128,6 +1378,7 @@ function LogTab({
     showAddRecord,
     setShowAddRecord,
     setShowPrescriptionModal,
+    setViewRecord,
     isDischarged,
 }) {
     return (
@@ -1186,11 +1437,26 @@ function LogTab({
                                     {ev.subtitle && (
                                         <p className="hms-ipd-timeline__sub">{ev.subtitle}</p>
                                     )}
-                                    {ev.description && (
-                                        <p className="hms-ipd-timeline__desc">{ev.description}</p>
-                                    )}
-                                    {ev.badge && ev.badge !== ev.subtitle && (
-                                        <p className="hms-ipd-timeline__badge">{ev.badge}</p>
+                                    {ev.type === "RECORD" ? (
+                                        <>
+                                            <RecordDetail ev={ev} />
+                                            <button
+                                                type="button"
+                                                className="hms-ipd-view-btn"
+                                                onClick={() => setViewRecord(ev.rawRecord)}
+                                            >
+                                                View in detail
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {ev.description && (
+                                                <p className="hms-ipd-timeline__desc">{ev.description}</p>
+                                            )}
+                                            {ev.badge && ev.badge !== ev.subtitle && (
+                                                <p className="hms-ipd-timeline__badge">{ev.badge}</p>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>

@@ -110,7 +110,8 @@ public class RecordService {
             LocalDateTime nextVisitDate,
             java.util.UUID admissionId, String admissionNumber,
             java.util.UUID appointmentId,
-            java.util.List<com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest> prescriptionItems) {
+            java.util.List<com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest> prescriptionItems,
+            UUID attendingDoctorId) {
 
         DataIntegrityViolationException lastError = null;
         for (int attempt = 1; attempt <= MAX_MRN_ATTEMPTS; attempt++) {
@@ -118,7 +119,7 @@ public class RecordService {
                 return txTemplate.execute(status -> doCreate(
                         hospitalId, patientId, createdBy, historyType, description, instructions,
                         nextVisitDate, admissionId, admissionNumber,
-                        appointmentId, prescriptionItems));
+                        appointmentId, prescriptionItems, attendingDoctorId));
             } catch (DataIntegrityViolationException e) {
                 lastError = e;
                 log.warn("MRN collision on attempt {} for patient {} at hospital {} — retrying",
@@ -134,7 +135,8 @@ public class RecordService {
             LocalDateTime nextVisitDate,
             java.util.UUID admissionId, String admissionNumber,
             java.util.UUID appointmentId,
-            java.util.List<com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest> prescriptionItems) {
+            java.util.List<com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest> prescriptionItems,
+            UUID attendingDoctorId) {
 
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
@@ -156,6 +158,14 @@ public class RecordService {
         // before the entity is read in the controller's DTO mapper.
         if (creator.getRole() != null) creator.getRole().getDisplayName();
 
+        // Resolve the attending doctor if the caller supplied one.
+        // Null-safe: staff entering on their own (no attendingDoctorId supplied)
+        // simply leaves this field unset; the record is still valid.
+        User attendingDoctor = null;
+        if (attendingDoctorId != null) {
+            attendingDoctor = userRepository.findById(attendingDoctorId).orElse(null);
+        }
+
         String mrn = generateMrn(hospital);
 
         // Lenient parse — typos / missing values fall back to OTHERS rather than 500ing.
@@ -165,6 +175,7 @@ public class RecordService {
                 .hospital(hospital)
                 .patient(patient)
                 .createdBy(creator)
+                .attendingDoctor(attendingDoctor)
                 .historyType(type)
                 .description(description)
                 .instructions(instructions)

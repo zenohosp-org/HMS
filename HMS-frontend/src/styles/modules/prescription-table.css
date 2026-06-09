@@ -148,6 +148,21 @@
     margin: 0;
 }
 
+.hms-rx-drug-allergy-warn {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #b91c1c;
+    margin: 0;
+}
+
+.hms-rx-row.is-allergy-match {
+    background: #fff5f5;
+    border-left: 3px solid #f87171;
+}
+
 /* Typeahead results dropdown */
 .hms-rx-drug-results {
     position: absolute;

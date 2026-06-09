@@ -20,6 +20,7 @@
 @import './styles/modules/finance.css';
 @import './styles/modules/dashboard.css';
 @import './styles/modules/infrastructure-tree.css';
+@import './styles/modules/zema-ai.css';
 
 /* Base styles */
 * {

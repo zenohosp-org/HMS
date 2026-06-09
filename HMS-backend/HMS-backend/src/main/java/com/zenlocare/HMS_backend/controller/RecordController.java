@@ -231,7 +231,8 @@ public class RecordController {
                 req.getHistoryType(), req.getDescription(), req.getInstructions(),
                 req.getNextVisitDate(),
                 req.getAdmissionId(), req.getAdmissionNumber(),
-                req.getAppointmentId(), req.getPrescriptionItems());
+                req.getAppointmentId(), req.getPrescriptionItems(),
+                req.getAttendingDoctorId());
         return ResponseEntity.ok(mapToDto(record));
     }
 
@@ -253,6 +254,14 @@ public class RecordController {
         creator.setLastName(record.getCreatedBy().getLastName());
         creator.setRole(record.getCreatedBy().getRole().getDisplayName());
         dto.setCreatedBy(creator);
+
+        if (record.getAttendingDoctor() != null) {
+            var doc = record.getAttendingDoctor();
+            dto.setAttendingDoctorId(doc.getId().toString());
+            dto.setAttendingDoctorName(
+                ((doc.getFirstName() != null ? doc.getFirstName() : "") +
+                (doc.getLastName() != null ? " " + doc.getLastName() : "")).trim());
+        }
 
         // Always emit an array (empty for non-prescription records) so the
         // frontend has a stable shape to iterate without null guards.
@@ -297,6 +306,9 @@ public class RecordController {
         // Structured prescription lines. Required when historyType=PRESCRIPTION,
         // ignored otherwise. Pharmacy reads these to dispense.
         private java.util.List<PrescriptionItemRequest> prescriptionItems;
+        // The doctor who attended/prescribed — users.id UUID. May differ from the
+        // authenticated user when a staff member enters on behalf of a doctor.
+        private UUID attendingDoctorId;
     }
 
     @Data
@@ -328,6 +340,8 @@ public class RecordController {
         private String appointmentId;
         private String mrn;
         private CreatorDto createdBy;
+        private String attendingDoctorId;
+        private String attendingDoctorName;
         private java.util.List<PrescriptionItemDto> prescriptionItems;
 
         @Data

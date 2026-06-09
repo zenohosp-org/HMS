@@ -141,6 +141,9 @@ public class MedicationAdministrationController {
         if (orderAdmissionId == null || !orderAdmissionId.equals(req.getAdmissionId()))
             throw new BadRequestException("Prescription order does not belong to this admission");
 
+        if ("STOPPED".equals(order.getStatus()))
+            throw new BadRequestException("Cannot record a dose against a stopped order");
+
         MedicationAdministration entity = MedicationAdministration.builder()
                 .hospitalId(admissionHospitalId)
                 .admissionId(req.getAdmissionId())
@@ -177,6 +180,17 @@ public class MedicationAdministrationController {
             var doc = rec.getCreatedBy();
             dto.setPrescribedBy(doc.getFirstName() +
                     (doc.getLastName() != null ? " " + doc.getLastName() : ""));
+        }
+
+        dto.setStatus(item.getStatus());
+        if ("STOPPED".equals(item.getStatus())) {
+            dto.setStoppedAt(item.getStoppedAt() != null ? item.getStoppedAt().toString() : null);
+            dto.setStopReason(item.getStopReason());
+            if (item.getStoppedBy() != null) {
+                var stopper = item.getStoppedBy();
+                dto.setStoppedByName(stopper.getFirstName() +
+                        (stopper.getLastName() != null ? " " + stopper.getLastName() : ""));
+            }
         }
 
         dto.setAdministrations(admins.stream().map(this::toAdminDto).toList());
@@ -245,6 +259,11 @@ public class MedicationAdministrationController {
         private String         instructions;
         private String         prescribedAt;
         private String         prescribedBy;
+        /** ACTIVE or STOPPED */
+        private String         status;
+        private String         stoppedAt;
+        private String         stoppedByName;
+        private String         stopReason;
         private List<AdminDto> administrations;
     }
 }

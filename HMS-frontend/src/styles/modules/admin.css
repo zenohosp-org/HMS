@@ -3098,6 +3098,12 @@
     border-color: transparent;
 }
 
+.hms-ipd-chip-btn.is-allergy {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fed7aa;
+}
+
 .hms-ipd-chip-btn.is-ghost {
     background: transparent;
     color: var(--hms-gray-400);
@@ -3345,6 +3351,83 @@
     color: var(--hms-gray-400);
     text-transform: uppercase;
     letter-spacing: 0.06em;
+}
+
+/* ── Prescription drug chips (inline in timeline) ────────────────────────── */
+
+.hms-rec-drugs {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hms-rec-drug-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    background: #f0f7ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    width: fit-content;
+    max-width: 100%;
+}
+
+.hms-rec-drug-chip__icon {
+    color: #3b82f6;
+    flex-shrink: 0;
+}
+
+.hms-rec-drug-chip__name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hms-rec-drug-chip__signa {
+    font-size: 11px;
+    color: #3b82f6;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.hms-rec-drugs__more {
+    font-size: 11px;
+    color: var(--hms-gray-500);
+    padding-left: 2px;
+}
+
+/* ── "View in detail" button on RECORD timeline cards ────────────────────── */
+
+.hms-ipd-view-btn {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--hms-primary, #2563eb);
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: color 0.15s;
+}
+
+.hms-ipd-view-btn::after {
+    content: "→";
+    font-size: 12px;
+}
+
+.hms-ipd-view-btn:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
 }
 
 
@@ -3919,5 +4002,242 @@
     font-size: 12px;
     color: var(--hms-gray-600);
     line-height: 1.5;
+}
+
+/* ── Allergy banner (read-only strip shown in modals and MAR tab) ─────── */
+
+.hms-allergy-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    flex-wrap: wrap;
+}
+
+.hms-allergy-banner__icon {
+    color: #c2410c;
+    margin-top: 1px;
+    flex-shrink: 0;
+}
+
+.hms-allergy-banner__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #c2410c;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* ── Allergy panel (collapsible in IPD header) ───────────────────────── */
+
+.hms-allergy-panel {
+    margin: 0 16px 0;
+    padding: 10px 14px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+}
+
+.hms-allergy-panel__head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.hms-allergy-panel__icon {
+    color: #c2410c;
+    flex-shrink: 0;
+}
+
+.hms-allergy-panel__title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #c2410c;
+    flex: 1;
+}
+
+.hms-allergy-panel__add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #fff;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.hms-allergy-panel__add-btn:hover {
+    background: #ffedd5;
+}
+
+.hms-allergy-panel__empty {
+    font-size: 12px;
+    color: var(--hms-gray-500);
+    margin: 0;
+}
+
+/* ── Allergy chip (used in banner, panel, and chip-row) ──────────────── */
+
+.hms-allergy-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.hms-allergy-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid;
+    cursor: default;
+}
+
+.hms-allergy-chip.is-severe {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.hms-allergy-chip.is-moderate {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fed7aa;
+}
+
+.hms-allergy-chip.is-mild {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fde68a;
+}
+
+.hms-allergy-chip.is-unknown {
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-600);
+    border-color: var(--hms-gray-200);
+}
+
+.hms-allergy-chip__name {
+    font-weight: 700;
+}
+
+.hms-allergy-chip__reaction {
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.hms-allergy-chip__sev {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+.hms-allergy-chip__del {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.6;
+    padding: 0;
+    transition: opacity 0.12s;
+}
+
+.hms-allergy-chip__del:hover {
+    opacity: 1;
+}
+
+/* ── Allergy add-form ────────────────────────────────────────────────── */
+
+.hms-allergy-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #fed7aa;
+}
+
+.hms-allergy-form__input,
+.hms-allergy-form__select {
+    flex: 1 1 140px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    border: 1px solid var(--hms-gray-200);
+    background: #fff;
+    color: var(--hms-gray-900);
+    font-family: var(--hms-font-family);
+    outline: none;
+    transition: border-color 0.12s;
+}
+
+.hms-allergy-form__input:focus,
+.hms-allergy-form__select:focus {
+    border-color: #f97316;
+}
+
+.hms-allergy-form__actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.hms-allergy-form__save-btn {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #f97316;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.hms-allergy-form__save-btn:hover:not(:disabled) {
+    background: #ea580c;
+}
+
+.hms-allergy-form__save-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.hms-allergy-form__cancel-btn {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    background: transparent;
+    color: var(--hms-gray-600);
+    border: 1px solid var(--hms-gray-200);
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.hms-allergy-form__cancel-btn:hover {
+    background: var(--hms-gray-50);
 }
 

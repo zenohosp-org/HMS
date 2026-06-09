@@ -1,0 +1,462 @@
+/* ===================================================================
+   HMS — IPD Lab Order Workflow
+   =================================================================== */
+
+/* ── Summary strip ────────────────────────────────────────────────── */
+
+.lab-summary {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px 0;
+    flex-wrap: wrap;
+}
+
+.lab-summary__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border: 1px solid;
+}
+
+.lab-summary__pill.is-pending {
+    background: #fefce8;
+    color: #854d0e;
+    border-color: #fde68a;
+}
+
+.lab-summary__pill.is-collected {
+    background: #eff6ff;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+.lab-summary__pill.is-resulted {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+/* ── Action row ───────────────────────────────────────────────────── */
+
+.lab-actions {
+    padding: 12px 16px 0;
+}
+
+.lab-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-700);
+    border: 1px solid var(--hms-gray-200);
+    cursor: pointer;
+    transition: background 0.12s;
+    font-family: var(--hms-font-family);
+}
+
+.lab-add-btn:hover {
+    background: var(--hms-gray-100);
+}
+
+/* ── New-order form ───────────────────────────────────────────────── */
+
+.lab-form {
+    margin: 10px 16px 0;
+    padding: 14px;
+    background: var(--hms-gray-50);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 10px;
+}
+
+.lab-form__fields {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.lab-form__field {
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+}
+
+.lab-form__field--grow {
+    flex: 1;
+}
+
+.lab-form__label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--hms-gray-500);
+    margin-bottom: 4px;
+}
+
+.lab-form__input,
+.lab-form__select {
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    border: 1px solid var(--hms-gray-200);
+    background: #fff;
+    color: var(--hms-gray-900);
+    font-family: var(--hms-font-family);
+    outline: none;
+    transition: border-color 0.12s;
+}
+
+.lab-form__input:focus,
+.lab-form__select:focus {
+    border-color: var(--hms-primary);
+}
+
+.lab-form__actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.lab-form__save-btn {
+    padding: 6px 18px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--hms-primary);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background 0.12s;
+    font-family: var(--hms-font-family);
+}
+
+.lab-form__save-btn:hover:not(:disabled) {
+    background: var(--hms-primary-hover, #0369a1);
+}
+
+.lab-form__save-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.lab-form__cancel-btn {
+    padding: 6px 12px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    background: transparent;
+    color: var(--hms-gray-600);
+    border: 1px solid var(--hms-gray-200);
+    cursor: pointer;
+    transition: background 0.12s;
+    font-family: var(--hms-font-family);
+}
+
+.lab-form__cancel-btn:hover {
+    background: var(--hms-gray-100);
+}
+
+/* ── Order list ───────────────────────────────────────────────────── */
+
+.lab-list {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ── Order card ───────────────────────────────────────────────────── */
+
+.lab-card {
+    background: #fff;
+    border: 1px solid var(--hms-gray-150, #e8eaed);
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: box-shadow 0.12s;
+}
+
+.lab-card:hover {
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.lab-card.is-resulted {
+    background: #fafffe;
+    border-color: #bbf7d0;
+}
+
+.lab-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.lab-card__title-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.lab-card__icon {
+    color: var(--hms-primary);
+    flex-shrink: 0;
+}
+
+.lab-card__name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+}
+
+.lab-card__code {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--hms-gray-400);
+    background: var(--hms-gray-50);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: var(--hms-font-mono, monospace);
+}
+
+.lab-card__badges {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+/* ── Status badge ─────────────────────────────────────────────────── */
+
+.lab-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border: 1px solid;
+}
+
+.lab-status-badge.is-pending {
+    background: #fefce8;
+    color: #854d0e;
+    border-color: #fde68a;
+}
+
+.lab-status-badge.is-collected {
+    background: #eff6ff;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+.lab-status-badge.is-resulted {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+/* ── Priority badge ───────────────────────────────────────────────── */
+
+.lab-priority-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 700;
+    border: 1px solid;
+}
+
+.lab-priority-badge.is-routine {
+    background: var(--hms-gray-50);
+    color: var(--hms-gray-500);
+    border-color: var(--hms-gray-200);
+}
+
+.lab-priority-badge.is-urgent {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fed7aa;
+}
+
+.lab-priority-badge.is-stat {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+/* ── Card meta & sub-rows ─────────────────────────────────────────── */
+
+.lab-card__meta {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+    font-size: 11px;
+    color: var(--hms-gray-400);
+}
+
+.lab-card__meta span + span::before {
+    content: "·";
+    margin-right: 8px;
+}
+
+.lab-card__collected-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 6px 0 0;
+    font-size: 11.5px;
+    color: #1e40af;
+}
+
+/* ── Result block (RESULTED state) ───────────────────────────────── */
+
+.lab-result-block {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+}
+
+.lab-result-block__value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.lab-result-block__value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #166534;
+}
+
+.lab-result-block__unit {
+    font-size: 12px;
+    font-weight: 500;
+    color: #166534;
+    opacity: 0.7;
+}
+
+.lab-result-block__range {
+    font-size: 11.5px;
+    color: #166534;
+    opacity: 0.7;
+}
+
+.lab-result-block__notes {
+    font-size: 12px;
+    color: #166534;
+    margin: 6px 0 0;
+    line-height: 1.5;
+}
+
+.lab-result-block__meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #166534;
+    opacity: 0.6;
+    margin: 6px 0 0;
+}
+
+/* ── Card action buttons ──────────────────────────────────────────── */
+
+.lab-card__actions {
+    display: flex;
+    gap: 7px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.lab-card__action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.12s;
+    font-family: var(--hms-font-family);
+}
+
+.lab-card__action-btn.is-collect {
+    background: #eff6ff;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+.lab-card__action-btn.is-collect:hover {
+    background: #dbeafe;
+}
+
+.lab-card__action-btn.is-result {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.lab-card__action-btn.is-result:hover {
+    background: #dcfce7;
+}
+
+.lab-card__action-btn.is-cancel {
+    background: transparent;
+    color: var(--hms-gray-500);
+    border-color: var(--hms-gray-200);
+}
+
+.lab-card__action-btn.is-cancel:hover {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+/* ── Result entry form ────────────────────────────────────────────── */
+
+.lab-result-form {
+    margin-top: 10px;
+    padding: 12px;
+    background: var(--hms-gray-50);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 8px;
+}
+
+.lab-result-form__fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+.lab-result-form__field {
+    display: flex;
+    flex-direction: column;
+}
+
+.lab-result-form__field--full {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 520px) {
+    .lab-result-form__fields {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .lab-form__fields {
+        flex-direction: column;
+    }
+}

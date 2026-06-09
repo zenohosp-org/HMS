@@ -193,6 +193,8 @@ public class DataSeeder implements CommandLineRunner {
         seedRoomTypeConfigs();
         seedRoles();
         seedHospitalAdmin();
+        ensureZemaRulesSchema();
+        seedZemaRules();
     }
 
     /**
@@ -850,5 +852,167 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception e) {
             log.warn("Could not migrate discharge data: " + e.getMessage());
         }
+    }
+
+    private void ensureZemaRulesSchema() {
+        try {
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS public.zema_rules (
+                    rule_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    hospital_id UUID REFERENCES public.hospitals(id),
+                    rule_type VARCHAR(20) NOT NULL CHECK (rule_type IN ('single', 'combination')),
+                    metric VARCHAR(50),
+                    operator VARCHAR(20) CHECK (operator IN ('lt', 'lte', 'gt', 'gte', 'between', 'eq')),
+                    threshold_low NUMERIC(10, 2),
+                    threshold_high NUMERIC(10, 2),
+                    condition_expr TEXT,
+                    label VARCHAR(100) NOT NULL,
+                    output_text TEXT NOT NULL,
+                    severity VARCHAR(20) NOT NULL CHECK (severity IN ('critical', 'warning', 'info', 'reassurance')),
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                    sort_hint INTEGER,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """);
+
+            try {
+                jdbcTemplate.execute("ALTER TABLE public.zema_rules ENABLE ROW LEVEL SECURITY");
+            } catch (Exception e) {
+                log.info("RLS might already be enabled on zema_rules: " + e.getMessage());
+            }
+
+            try {
+                jdbcTemplate.execute("""
+                    CREATE POLICY zema_rules_service ON public.zema_rules
+                      FOR ALL
+                      USING (true)
+                      WITH CHECK (true)
+                """);
+            } catch (Exception e) {
+                log.info("Policy zema_rules_service might already exist: " + e.getMessage());
+            }
+            
+            log.info("✅ Ensured zema_rules schema, RLS, and tenant policy");
+        } catch (Exception e) {
+            log.warn("Could not ensure zema_rules schema: " + e.getMessage());
+        }
+    }
+
+    private void seedZemaRules() {
+        try {
+            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM public.zema_rules WHERE hospital_id IS NULL", Integer.class);
+            if (count != null && count > 0) {
+                // Check if combination combo rules (C1-C8) already exist
+                Integer comboCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM public.zema_rules WHERE hospital_id IS NULL AND rule_type = 'combination' AND metric = 'combo'",
+                    Integer.class);
+                if (comboCount != null && comboCount > 0) {
+                    log.info("ℹ️ Zema rules already seeded (including combo rules) — skipping.");
+                    return;
+                }
+                // Seed only the missing C1-C8 combination rules
+                seedCombinationComboRules();
+                log.info("✅ Seeded 8 combination combo rules (C1-C8) into existing zema_rules.");
+                return;
+            }
+
+            // Seed BMI Rules
+            insertZemaRule("single", "bmi", "lt", null, 18.5, "Underweight", "BMI is consistent with underweight; consider nutritional support and clinical review for underlying causes.", "warning", 1);
+            insertZemaRule("single", "bmi", "between", 18.5, 23.0, "Normal", "BMI is within normal limits; suggest maintaining current healthy lifestyle.", "reassurance", 2);
+            insertZemaRule("single", "bmi", "between", 23.0, 25.0, "Overweight at risk", "BMI is consistent with being overweight (at risk); consider lifestyle modifications and dietary counseling.", "warning", 3);
+            insertZemaRule("single", "bmi", "gte", 25.0, null, "Obese", "BMI is consistent with obesity; suggest clinical review for associated metabolic risks.", "warning", 4);
+
+            // Seed SpO2 Rules
+            insertZemaRule("single", "spo2", "gte", 95.0, null, "Normal", "Oxygen saturation is within normal limits; suggest routine monitoring.", "reassurance", 5);
+            insertZemaRule("single", "spo2", "between", 91.0, 95.0, "Mild hypoxemia", "Oxygen saturation is consistent with mild hypoxemia; consider close clinical monitoring and evaluation of respiratory function.", "warning", 6);
+            insertZemaRule("single", "spo2", "between", 85.0, 91.0, "Moderate hypoxemia", "Oxygen saturation is consistent with moderate hypoxemia; review respiratory status and consider supplemental oxygen assessment.", "critical", 7);
+            insertZemaRule("single", "spo2", "lt", null, 85.0, "Severe hypoxemia", "Oxygen saturation is consistent with severe hypoxemia; critical clinical review and immediate intervention are suggested.", "critical", 8);
+
+            // Seed Pulse Rules
+            insertZemaRule("single", "pulse", "lt", null, 60.0, "Bradycardia", "Pulse rate is consistent with bradycardia; consider clinical evaluation and review of active medications.", "warning", 9);
+            insertZemaRule("single", "pulse", "between", 60.0, 101.0, "Normal", "Pulse rate is within normal limits; suggest routine monitoring.", "reassurance", 10);
+            insertZemaRule("single", "pulse", "gt", 100.0, null, "Tachycardia", "Pulse rate is consistent with tachycardia; consider clinical review for potential triggers like fever, dehydration, or pain.", "warning", 11);
+
+            // Seed Shock Index Rules
+            insertZemaRule("single", "shockIndex", "gt", 1.0, null, "Significantly elevated", "Shock index is consistent with significantly elevated risk; critical review for early signs of hypoperfusion is suggested.", "critical", 12);
+            insertZemaRule("single", "shockIndex", "between", 0.9, 1.0001, "Elevated", "Shock index is consistent with elevated risk; consider review of volume status and vital sign trends.", "warning", 13);
+            insertZemaRule("single", "shockIndex", "between", 0.7, 0.9, "Borderline", "Shock index is consistent with borderline range; suggest ongoing monitoring of hemodynamic trends.", "info", 14);
+            insertZemaRule("single", "shockIndex", "between", 0.5, 0.7, "Normal", "Shock index is within the normal range; suggest routine monitoring.", "reassurance", 15);
+
+            // Seed Pulse Pressure Rules
+            insertZemaRule("single", "pulsePressure", "lt", null, 25.0, "Narrow", "Pulse pressure is narrow; consider evaluation for low stroke volume or systemic vasoconstriction.", "warning", 16);
+            insertZemaRule("single", "pulsePressure", "between", 25.0, 60.0, "Normal", "Pulse pressure is within normal limits; suggest routine monitoring.", "reassurance", 17);
+            insertZemaRule("single", "pulsePressure", "gt", 60.0, null, "Wide", "Pulse pressure is wide; consider clinical review for arterial stiffness or high stroke volume states.", "warning", 18);
+
+            // Seed MAP Rules
+            insertZemaRule("single", "map", "lt", null, 65.0, "Low perfusion", "Mean arterial pressure is consistent with low perfusion; critical review of organ perfusion and volume status is suggested.", "critical", 19);
+            insertZemaRule("single", "map", "between", 65.0, 100.0, "Normal", "Mean arterial pressure is within normal limits; suggest routine monitoring.", "reassurance", 20);
+            insertZemaRule("single", "map", "gt", 100.0, null, "Elevated", "Mean arterial pressure is consistent with elevated values; consider monitoring and review of cardiovascular parameters.", "info", 21);
+
+            // Seed Combination Blood Pressure Rules
+            insertCombinationRule("bp", "(sbp !== null && sbp < 90) || (map !== null && map < 65)", "Hypotension", "Blood pressure and/or mean arterial pressure are consistent with hypotension; clinical review of perfusion and volume status is suggested.", "critical", 22);
+            insertCombinationRule("bp", "(sbp !== null && sbp >= 160) || (dbp !== null && dbp >= 100)", "Stage 2 hypertension", "Blood pressure is consistent with Stage 2 hypertension; urgent clinical review and pharmacotherapy assessment are suggested.", "critical", 23);
+            insertCombinationRule("bp", "(sbp !== null && sbp >= 140 && sbp <= 159) || (dbp !== null && dbp >= 90 && dbp <= 99)", "Stage 1 hypertension", "Blood pressure is consistent with Stage 1 hypertension; consider cardiovascular risk assessment and repeat measurements.", "warning", 24);
+            insertCombinationRule("bp", "(sbp !== null && sbp >= 120 && sbp <= 139) || (dbp !== null && dbp >= 80 && dbp <= 89)", "High-normal", "Blood pressure is consistent with high-normal range; consider routine blood pressure monitoring and lifestyle modifications.", "info", 25);
+            insertCombinationRule("bp", "sbp !== null && dbp !== null && sbp < 120 && dbp < 80", "Normal", "Blood pressure is within the normal range; suggest continuing routine screening.", "reassurance", 26);
+
+            // C1: Cardiometabolic risk cluster
+            insertCombinationRule("combo", "bmi !== null && bmi >= 23 && ((sbp !== null && sbp >= 140) || (dbp !== null && dbp >= 90))", "Cardiometabolic risk cluster", "Cardiometabolic risk cluster (elevated BMI + hypertension). Consider HbA1c, fasting lipid profile, and renal function.", "critical", 27);
+
+            // C2: Respiratory compromise
+            insertCombinationRule("combo", "spo2 !== null && spo2 < 94 && pulse !== null && pulse > 100", "Respiratory compromise", "Possible respiratory compromise (hypoxemia with tachycardia) - review airway and oxygenation.", "critical", 28);
+
+            // C3: Hemodynamic stress
+            insertCombinationRule("combo", "shockIndex !== null && shockIndex > 0.9 && ((sbp !== null && sbp < 100) || (pulse !== null && pulse > 100))", "Hemodynamic stress", "Hemodynamic stress pattern - possible early circulatory compromise. Reassess.", "critical", 29);
+
+            // C4: Wide pulse pressure with age
+            insertCombinationRule("combo", "pulsePressure !== null && pulsePressure > 60 && age !== null && age > 60", "Wide pulse pressure with age", "Wide pulse pressure with age - consistent with arterial stiffness.", "warning", 30);
+
+            // C5: Narrow pulse pressure with tachycardia
+            insertCombinationRule("combo", "pulsePressure !== null && pulsePressure < 25 && pulse !== null && pulse > 100", "Narrow pulse pressure with tachycardia", "Narrow pulse pressure with tachycardia - possible reduced stroke volume. Review.", "warning", 31);
+
+            // C6: Early hypertension (age < 40)
+            insertCombinationRule("combo", "((sbp !== null && sbp >= 140) || (dbp !== null && dbp >= 90)) && age !== null && age < 40", "Early hypertension", "Early-onset hypertension (age < 40) - consider secondary causes (renal, endocrine). Suggest workup.", "warning", 32);
+
+            // C7: Elevated BMI with tachycardia
+            insertCombinationRule("combo", "bmi !== null && bmi >= 25 && pulse !== null && pulse > 100", "Elevated BMI with tachycardia", "Elevated BMI with tachycardia - consider metabolic stress, deconditioning, or obstructive sleep apnea screening.", "warning", 33);
+
+            // C8: No acute hemodynamic or respiratory concern (reassurance)
+            insertCombinationRule("combo", "sbp !== null && dbp !== null && sbp < 140 && dbp < 90 && (spo2 === null || spo2 >= 95) && (pulse === null || (pulse >= 60 && pulse <= 100)) && (shockIndex === null || shockIndex <= 0.9)", "No acute hemodynamic or respiratory concern", "No acute hemodynamic or respiratory concern identified from current vitals. Routine follow-up suggested.", "reassurance", 34);
+
+            log.info("✅ Zema interpretation rules seeded successfully (34 default rules).");
+        } catch (Exception e) {
+            log.warn("Could not seed Zema rules: " + e.getMessage());
+        }
+    }
+
+    private void insertZemaRule(String ruleType, String metric, String operator, Double thresholdLow, Double thresholdHigh, String label, String outputText, String severity, int sortHint) {
+        jdbcTemplate.update("""
+            INSERT INTO public.zema_rules (rule_type, metric, operator, threshold_low, threshold_high, label, output_text, severity, is_active, sort_hint)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, true, ?)
+        """, ruleType, metric, operator, thresholdLow, thresholdHigh, label, outputText, severity, sortHint);
+    }
+
+    private void insertCombinationRule(String metric, String conditionExpr, String label, String outputText, String severity, int sortHint) {
+        jdbcTemplate.update("""
+            INSERT INTO public.zema_rules (rule_type, metric, condition_expr, label, output_text, severity, is_active, sort_hint)
+            VALUES ('combination', ?, ?, ?, ?, ?, true, ?)
+        """, metric, conditionExpr, label, outputText, severity, sortHint);
+    }
+
+    /**
+     * Seeds C1-C8 combination (multi-condition) rules independently.
+     * Called when the base 26 rules already exist but the combo rules are missing.
+     */
+    private void seedCombinationComboRules() {
+        insertCombinationRule("combo", "bmi !== null && bmi >= 23 && ((sbp !== null && sbp >= 140) || (dbp !== null && dbp >= 90))", "Cardiometabolic risk cluster", "Cardiometabolic risk cluster (elevated BMI + hypertension). Consider HbA1c, fasting lipid profile, and renal function.", "critical", 27);
+        insertCombinationRule("combo", "spo2 !== null && spo2 < 94 && pulse !== null && pulse > 100", "Respiratory compromise", "Possible respiratory compromise (hypoxemia with tachycardia) - review airway and oxygenation.", "critical", 28);
+        insertCombinationRule("combo", "shockIndex !== null && shockIndex > 0.9 && ((sbp !== null && sbp < 100) || (pulse !== null && pulse > 100))", "Hemodynamic stress", "Hemodynamic stress pattern - possible early circulatory compromise. Reassess.", "critical", 29);
+        insertCombinationRule("combo", "pulsePressure !== null && pulsePressure > 60 && age !== null && age > 60", "Wide pulse pressure with age", "Wide pulse pressure with age - consistent with arterial stiffness.", "warning", 30);
+        insertCombinationRule("combo", "pulsePressure !== null && pulsePressure < 25 && pulse !== null && pulse > 100", "Narrow pulse pressure with tachycardia", "Narrow pulse pressure with tachycardia - possible reduced stroke volume. Review.", "warning", 31);
+        insertCombinationRule("combo", "((sbp !== null && sbp >= 140) || (dbp !== null && dbp >= 90)) && age !== null && age < 40", "Early hypertension", "Early-onset hypertension (age < 40) - consider secondary causes (renal, endocrine). Suggest workup.", "warning", 32);
+        insertCombinationRule("combo", "bmi !== null && bmi >= 25 && pulse !== null && pulse > 100", "Elevated BMI with tachycardia", "Elevated BMI with tachycardia - consider metabolic stress, deconditioning, or obstructive sleep apnea screening.", "warning", 33);
+        insertCombinationRule("combo", "sbp !== null && dbp !== null && sbp < 140 && dbp < 90 && (spo2 === null || spo2 >= 95) && (pulse === null || (pulse >= 60 && pulse <= 100)) && (shockIndex === null || shockIndex <= 0.9)", "No acute hemodynamic or respiratory concern", "No acute hemodynamic or respiratory concern identified from current vitals. Routine follow-up suggested.", "reassurance", 34);
     }
 }

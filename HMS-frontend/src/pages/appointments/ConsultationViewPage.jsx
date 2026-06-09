@@ -4,14 +4,16 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import {
-  appointmentsApi, doctorsApi, recordApi, radiologyApi, externalResultsApi,
+  appointmentsApi, doctorsApi, recordApi, radiologyApi, externalResultsApi, zemaRulesApi,
 } from "@/utils/api";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import { fmtId } from "@/utils/idFormat";
 import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
 import PastRecordDetailModal from "@/components/modals/PastRecordDetailModal";
 import VitalsModal from "@/components/modals/VitalsModal";
-import { Stethoscope, Pill, FlaskConical, ChevronLeft, ChevronRight, LogOut, CalendarClock, CheckCircle2, Save, AlertCircle, ClipboardList, FileText, ListChecks, Plus, IdCard, Droplet, HeartPulse, Scale, Wind, Activity, FileBarChart, Clock, User as UserIcon, PlayCircle, Ruler } from "lucide-react";
+import { calculateZemaVitals } from "@/utils/zemaCalculationEngine";
+import zemaAiLogo from "@/assets/Zema-AI.svg";
+import { Stethoscope, Pill, FlaskConical, ChevronLeft, ChevronRight, LogOut, CalendarClock, CheckCircle2, Save, AlertCircle, ClipboardList, FileText, ListChecks, Plus, IdCard, Droplet, HeartPulse, Scale, Wind, Activity, FileBarChart, Clock, User as UserIcon, PlayCircle, Ruler, ChevronUp, ChevronDown } from "lucide-react";
 
 /**
  * Full-page, queue-walked consultation workspace. Replaces the modal
@@ -45,11 +47,18 @@ export default function ConsultationViewPage() {
   const [loadingExternal, setLoadingExternal] = useState(false);
   const [loadingPast, setLoadingPast] = useState(false);
   const [loadingLabs, setLoadingLabs] = useState(false);
-  // Currently-opened past record card → drives the read-only detail
-  // modal. Cleared when the modal closes or the doctor navigates
-  // patients (so a stale row from the previous chart can't linger).
   const [openedPastRecord, setOpenedPastRecord] = useState(null);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
+  const [zemaRules, setZemaRules] = useState([]);
+  const [zemaAnalysisState, setZemaAnalysisState] = useState("idle"); // "idle" | "loading" | "completed"
+
+  useEffect(() => {
+    if (user?.hospitalId) {
+      zemaRulesApi.list(user.hospitalId)
+        .then(setZemaRules)
+        .catch((err) => console.error("Failed to load Zema rules", err));
+    }
+  }, [user?.hospitalId]);
 
   // ── Queue load ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -130,6 +139,7 @@ export default function ConsultationViewPage() {
     // Close any past-record modal left over from the previous patient
     // so the doctor never sees an unrelated chart's row hanging around.
     setOpenedPastRecord(null);
+    setZemaAnalysisState("idle");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);
 
@@ -276,6 +286,29 @@ export default function ConsultationViewPage() {
     );
   }
 
+  const getAgeYears = (dob) => {
+    if (!dob) return null;
+    const birth = new Date(dob);
+    if (Number.isNaN(birth.getTime())) return null;
+    const now = new Date();
+    let ageVal = now.getFullYear() - birth.getFullYear();
+    const m = now.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) ageVal -= 1;
+    return ageVal;
+  };
+
+  const ageYears = getAgeYears(current?.patientDob);
+  const zemaResult = calculateZemaVitals({
+    age: ageYears,
+    sex: current?.patientGender,
+    sbp: draft.vitals?.bpSystolic,
+    dbp: draft.vitals?.bpDiastolic,
+    weight: draft.vitals?.weightKg,
+    height: draft.vitals?.heightCm,
+    spo2: draft.vitals?.spo2,
+    pulse: draft.vitals?.heartRate,
+  }, zemaRules);
+
   return (
     <div className="hms-cv">
       <LeftPanel
@@ -287,6 +320,7 @@ export default function ConsultationViewPage() {
         onStartConsultation={handleStartConsultation}
         onOpenPastRecord={setOpenedPastRecord}
         onEditVitals={() => setShowVitalsModal(true)}
+        zemaRules={zemaRules}
       />
 
       <section className="hms-cv-main">
@@ -299,7 +333,14 @@ export default function ConsultationViewPage() {
         <TabBar tab={tab} setTab={setTab} drugCount={draft.drugCount} labCount={labOrders.length + externalResults.length} />
 
         <div className="hms-cv-tab-body">
-          {tab === "consult" && <ConsultTab draft={draft} />}
+          {tab === "consult" && (
+            <ConsultTab
+              draft={draft}
+              zemaResult={zemaResult}
+              zemaAnalysisState={zemaAnalysisState}
+              setZemaAnalysisState={setZemaAnalysisState}
+            />
+          )}
           {tab === "rx" && <RxTab draft={draft} />}
           {tab === "lab" && <LabTab orders={labOrders} loading={loadingLabs} externalResults={externalResults} loadingExternal={loadingExternal} />}
         </div>
@@ -338,7 +379,8 @@ export default function ConsultationViewPage() {
 // ────────────────────────────────────────────────────────────────────────
 // LEFT RAIL — patient identity, vitals, past records
 // ────────────────────────────────────────────────────────────────────────
-function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast, onStartConsultation, onOpenPastRecord, onEditVitals }) {
+// ────────────────────────────────────────────────────────────────────────
+function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast, onStartConsultation, onOpenPastRecord, onEditVitals, zemaRules }) {
   const fullName = appointment?.patientName || "—";
   const uhid = fmtId(appointment?.patientUhid) || appointment?.patientUhid || "—";
   const age = computeAge(appointment?.patientDob);
@@ -352,6 +394,30 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
   const wt = vitals?.weightKg != null ? `${Number(vitals.weightKg).toFixed(1)}` : placeholder;
   const ht = vitals?.heightCm != null ? `${vitals.heightCm}` : placeholder;
   const bg = vitals?.bloodGlucose != null ? `${vitals.bloodGlucose}` : placeholder;
+
+  // Compute Zema AI metrics
+  const getAgeYears = (dob) => {
+    if (!dob) return null;
+    const birth = new Date(dob);
+    if (Number.isNaN(birth.getTime())) return null;
+    const now = new Date();
+    let ageVal = now.getFullYear() - birth.getFullYear();
+    const m = now.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) ageVal -= 1;
+    return ageVal;
+  };
+
+  const ageYears = getAgeYears(appointment?.patientDob);
+  const zemaResult = calculateZemaVitals({
+    age: ageYears,
+    sex: appointment?.patientGender,
+    sbp: vitals?.bpSystolic,
+    dbp: vitals?.bpDiastolic,
+    weight: vitals?.weightKg,
+    height: vitals?.heightCm,
+    spo2: vitals?.spo2,
+    pulse: vitals?.heartRate,
+  }, zemaRules);
 
   return (
     <aside className="hms-cv-aside">
@@ -455,6 +521,7 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
             />
           </div>
         </SidebarSection>
+
 
         {/* Previous records */}
         <SidebarSection title="Previous Records">
@@ -684,9 +751,266 @@ function TabButton({ active, onClick, icon, label, count }) {
   );
 }
 
-function ConsultTab({ draft }) {
+function ConsultTab({ draft, zemaResult, zemaAnalysisState, setZemaAnalysisState }) {
+  const [isZemaCollapsed, setIsZemaCollapsed] = useState(false);
+  const vitals = draft.vitals;
+  const hasVitals = vitals && (
+    vitals.bpSystolic != null ||
+    vitals.bpDiastolic != null ||
+    vitals.spo2 != null ||
+    vitals.heartRate != null ||
+    vitals.weightKg != null ||
+    vitals.heightCm != null
+  );
+
+  const startAnalysis = () => {
+    setZemaAnalysisState("loading");
+    setTimeout(() => {
+      setZemaAnalysisState("completed");
+    }, 1500);
+  };
+
   return (
     <div className="hms-cv-pane">
+      {/* Zema AI Section inside Consultation pane */}
+      {hasVitals && (
+        <div style={{ marginBottom: "20px" }}>
+          {zemaAnalysisState === "idle" && (
+            <button
+              type="button"
+              onClick={startAnalysis}
+              className="zema-btn-primary"
+              style={{
+                background: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
+                border: "none",
+                color: "#fff",
+                fontWeight: "700",
+                padding: "10px 24px",
+                borderRadius: "8px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 4px 12px rgba(245, 158, 11, 0.2)",
+                animation: "none"
+              }}
+            >
+              Analyze with Zema AI
+            </button>
+          )}
+
+          {zemaAnalysisState === "loading" && (
+            <div className="zema-panel" style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "40px",
+              background: "linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(239, 68, 68, 0.03) 100%)",
+              border: "1px solid rgba(245, 158, 11, 0.25)",
+              borderRadius: "12px",
+              gap: "12px",
+              textAlign: "center"
+            }}>
+              <div style={{ position: "relative", width: "48px", height: "48px" }}>
+                <img 
+                  src={zemaAiLogo} 
+                  style={{ width: "48px", height: "48px", animation: "spin 3s infinite linear" }} 
+                  alt="Analyzing" 
+                />
+                <div style={{
+                  position: "absolute",
+                  inset: "-8px",
+                  background: "radial-gradient(circle, rgba(245, 158, 11, 0.3) 0%, transparent 70%)",
+                  zIndex: -1,
+                  borderRadius: "50%",
+                  animation: "ping 1.5s infinite ease-in-out"
+                }} />
+              </div>
+              <span style={{ fontSize: "14px", fontWeight: "700", color: "#f97316", letterSpacing: "0.05em" }}>
+                Analyzing with Zema AI...
+              </span>
+            </div>
+          )}
+
+          {zemaAnalysisState === "completed" && (
+            <div className="zema-gradient-card">
+              <div className="zema-gradient-card__header">
+                <div className="zema-gradient-card__logo-block">
+                  <div className="zema-gradient-card__logo-glow">
+                    <img src={zemaAiLogo} className="zema-gradient-card__logo" alt="" />
+                  </div>
+                  <h3 className="zema-gradient-card__title">Zema AI</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsZemaCollapsed(!isZemaCollapsed)}
+                  className="zema-gradient-card__toggle"
+                  title={isZemaCollapsed ? "Expand" : "Collapse"}
+                >
+                  {isZemaCollapsed ? (
+                    <ChevronDown className="w-5 h-5" />
+                  ) : (
+                    <ChevronUp className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+
+              {!isZemaCollapsed && (
+                <>
+                  {zemaResult.bpError && (
+                    <div style={{ color: "#ef4444", fontSize: "11px", marginBottom: "12px", fontWeight: "600", display: "flex", gap: "4px", alignItems: "center", background: "rgba(255,255,255,0.8)", padding: "6px 10px", borderRadius: "6px" }}>
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {zemaResult.bpError}
+                    </div>
+                  )}
+
+                  {/* Row 1 Metrics: BMI, BSA, MAP, PP */}
+                  <div className="zema-metrics-row-1">
+                    <div className="zema-metric-subcard">
+                      <div className="zema-metric-subcard__label">BMI</div>
+                      <div className="zema-metric-subcard__value">
+                        {zemaResult.metrics.bmi.display}
+                        {zemaResult.metrics.bmi.raw !== null && <span className="zema-metric-subcard__unit">kg/m²</span>}
+                      </div>
+                      {zemaResult.metrics.bmi.category && (
+                        <div style={{
+                          marginTop: "6px",
+                          fontSize: "10px",
+                          fontWeight: "700",
+                          background: "rgba(255, 255, 255, 0.22)",
+                          border: "1px solid rgba(255, 255, 255, 0.35)",
+                          padding: "2px 8px",
+                          borderRadius: "999px",
+                          display: "inline-block",
+                          color: "#ffffff"
+                        }}>
+                          {zemaResult.metrics.bmi.category}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="zema-metric-subcard">
+                      <div className="zema-metric-subcard__label">BSA</div>
+                      <div className="zema-metric-subcard__value">
+                        {zemaResult.metrics.bsa.display}
+                        {zemaResult.metrics.bsa.raw !== null && <span className="zema-metric-subcard__unit">m²</span>}
+                      </div>
+                    </div>
+
+                    <div className="zema-metric-subcard">
+                      <div className="zema-metric-subcard__label">MAP</div>
+                      <div className="zema-metric-subcard__value">
+                        {zemaResult.metrics.map.display}
+                        {zemaResult.metrics.map.raw !== null && <span className="zema-metric-subcard__unit">mmHg</span>}
+                      </div>
+                      {zemaResult.metrics.map.category && (
+                        <div style={{
+                          marginTop: "6px",
+                          fontSize: "10px",
+                          fontWeight: "700",
+                          background: "rgba(255, 255, 255, 0.22)",
+                          border: "1px solid rgba(255, 255, 255, 0.35)",
+                          padding: "2px 8px",
+                          borderRadius: "999px",
+                          display: "inline-block",
+                          color: "#ffffff"
+                        }}>
+                          {zemaResult.metrics.map.category}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="zema-metric-subcard">
+                      <div className="zema-metric-subcard__label">PP</div>
+                      <div className="zema-metric-subcard__value">
+                        {zemaResult.metrics.pulsePressure.display}
+                        {zemaResult.metrics.pulsePressure.raw !== null && <span className="zema-metric-subcard__unit">mmHg</span>}
+                      </div>
+                      {zemaResult.metrics.pulsePressure.category && (
+                        <div style={{
+                          marginTop: "6px",
+                          fontSize: "10px",
+                          fontWeight: "700",
+                          background: "rgba(255, 255, 255, 0.22)",
+                          border: "1px solid rgba(255, 255, 255, 0.35)",
+                          padding: "2px 8px",
+                          borderRadius: "999px",
+                          display: "inline-block",
+                          color: "#ffffff"
+                        }}>
+                          {zemaResult.metrics.pulsePressure.category}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Row 2 Metrics: Shock Index, Ideal Body Weight, BMR */}
+                  <div className="zema-metrics-row-2">
+                    <div className="zema-metrics-row-2__col">
+                      <div className="zema-metrics-row-2__label">Shock Index</div>
+                      <div className="zema-metrics-row-2__value">
+                        {zemaResult.metrics.shockIndex.display}
+                      </div>
+                      {zemaResult.metrics.shockIndex.category && (
+                        <div style={{
+                          marginTop: "6px",
+                          fontSize: "10px",
+                          fontWeight: "700",
+                          background: "rgba(255, 255, 255, 0.22)",
+                          border: "1px solid rgba(255, 255, 255, 0.35)",
+                          padding: "2px 8px",
+                          borderRadius: "999px",
+                          alignSelf: "flex-start",
+                          color: "#ffffff"
+                        }}>
+                          {zemaResult.metrics.shockIndex.category}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="zema-metrics-row-2__col">
+                      <div className="zema-metrics-row-2__label">Ideal Body Weight</div>
+                      <div className="zema-metrics-row-2__value">
+                        {zemaResult.metrics.ibw.display}
+                        {zemaResult.metrics.ibw.raw !== null && <span className="zema-metrics-row-2__unit">kg</span>}
+                      </div>
+                    </div>
+
+                    <div className="zema-metrics-row-2__col">
+                      <div className="zema-metrics-row-2__label">BMR</div>
+                      <div className="zema-metrics-row-2__value">
+                        {zemaResult.metrics.bmr.display}
+                        {zemaResult.metrics.bmr.raw !== null && <span className="zema-metrics-row-2__unit">kcal/day</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clinical Decision Support narrative */}
+                  {zemaResult.interpretationParagraph && (
+                    <div className="zema-decision-support">
+                      <h4 className="zema-decision-support__title">Clinical Decision Support</h4>
+                      <p className="zema-decision-support__text">{zemaResult.interpretationParagraph}</p>
+                    </div>
+                  )}
+
+                  {zemaResult.isPediatric && (
+                    <div style={{ marginTop: "12px", background: "rgba(255, 255, 255, 0.25)", border: "1px solid rgba(255, 255, 255, 0.4)", borderRadius: "10px", padding: "10px" }}>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                        <AlertCircle className="w-4 h-4 text-white flex-shrink-0" style={{ marginTop: "2px" }} />
+                        <span style={{ fontSize: "11px", color: "#ffffff", fontWeight: "600", lineHeight: "1.4" }}>
+                          {zemaResult.pediatricNote}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <Section icon={<ClipboardList className="w-4 h-4" />} title="Chief complaint" hint="What brought the patient in today">
         <textarea
           rows={2}

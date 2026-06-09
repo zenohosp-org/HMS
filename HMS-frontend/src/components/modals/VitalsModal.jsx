@@ -2,9 +2,11 @@ import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { vitalsApi } from "@/utils/api";
+import { vitalsApi, zemaRulesApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
-import { Activity, HeartPulse, Wind, Scale, Droplet, CheckCircle2, User as UserIcon, IdCard, CalendarClock, Stethoscope, Clock, Ruler } from "lucide-react";
+import { calculateZemaVitals } from "@/utils/zemaCalculationEngine";
+import zemaAiLogo from "@/assets/Zema-AI.svg";
+import { Activity, HeartPulse, Wind, Scale, Droplet, CheckCircle2, User as UserIcon, IdCard, CalendarClock, Stethoscope, Clock, Ruler, AlertCircle } from "lucide-react";
 
 /**
  * Nurse-facing form to record per-visit vitals (BP, SpO2, HR, weight) on
@@ -38,6 +40,15 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [existing, setExisting] = useState(null);
+  const [zemaRules, setZemaRules] = useState([]);
+
+  useEffect(() => {
+    if (user?.hospitalId) {
+      zemaRulesApi.list(user.hospitalId)
+        .then(setZemaRules)
+        .catch((err) => console.error("Failed to load Zema rules", err));
+    }
+  }, [user?.hospitalId]);
 
   // Hydrate from any prior reading on this appointment so re-takes start
   // with the last values rather than a blank form.
@@ -122,6 +133,29 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
   const bloodGroup = appointment?.patientBloodGroup || "—";
   const ageDisplay = computeAge(appointment?.patientDob) || "—";
   const sexDisplay = appointment?.patientGender || "—";
+
+  const getAgeYears = (dob) => {
+    if (!dob) return null;
+    const birth = new Date(dob);
+    if (Number.isNaN(birth.getTime())) return null;
+    const now = new Date();
+    let ageVal = now.getFullYear() - birth.getFullYear();
+    const m = now.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) ageVal -= 1;
+    return ageVal;
+  };
+
+  const ageYears = getAgeYears(appointment?.patientDob);
+  const zemaResult = calculateZemaVitals({
+    age: ageYears,
+    sex: appointment?.patientGender,
+    sbp: bpSystolic,
+    dbp: bpDiastolic,
+    weight: weightKg,
+    height: heightCm,
+    spo2: spo2,
+    pulse: heartRate,
+  }, zemaRules);
 
   return (
     <div className="zu-modal-overlay">
@@ -277,6 +311,7 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
                   </div>
                 </VitalField>
               </div>
+
 
               {existing && (
                 <div className="hms-vitals-prev">

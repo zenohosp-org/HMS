@@ -1,9 +1,11 @@
 import { Spinner } from "@/components/ui/Loader";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { recordApi } from "@/utils/api";
-import { Plus, Pill, CheckCircle2 } from "lucide-react";
+import { recordApi, doctorsApi } from "@/utils/api";
+import { Plus, Pill, CheckCircle2, AlertTriangle } from "lucide-react";
+import SearchableSelect from "@/components/ui/SearchableSelect";
+import { FormGroup } from "@/components/ui";
 import {
   PrescriptionDrugRow,
   newBlankDrugItem,
@@ -20,7 +22,7 @@ import {
  *   onSaved — called with the created RecordDto after successful save
  */
 export default function WritePrescriptionModal({
-  patient, appointmentId, admissionId, admissionNumber, onClose, onSaved,
+  patient, appointmentId, admissionId, admissionNumber, allergies, onClose, onSaved,
 }) {
   const { user } = useAuth();
   const { notify } = useNotification();
@@ -29,6 +31,25 @@ export default function WritePrescriptionModal({
   const [nextVisitDate, setNextVisitDate] = useState("");
   const [items, setItems] = useState([newBlankDrugItem()]);
   const [saving, setSaving] = useState(false);
+  const [doctors, setDoctors] = useState([]);
+  const [attendingDoctorId, setAttendingDoctorId] = useState(null);
+
+  useEffect(() => {
+    doctorsApi.list(user.hospitalId).then((list) => {
+      setDoctors(list ?? []);
+      if (user.role === "doctor") setAttendingDoctorId(user.id);
+    }).catch(() => {});
+  }, [user.hospitalId, user.id, user.role]);
+
+  const doctorOptions = doctors.map((d) => ({
+    value: d.userId,
+    label: `Dr. ${[d.firstName, d.lastName].filter(Boolean).join(" ")}${d.specialization ? ` · ${d.specialization}` : ""}`,
+  }));
+
+  const knownAllergies = Array.isArray(allergies) ? allergies : [];
+  const allergenNames = knownAllergies.map((a) => a.allergen.toLowerCase());
+  const drugMatchesAllergy = (drugName) =>
+    !!drugName && allergenNames.some((a) => drugName.toLowerCase().includes(a) || a.includes(drugName.toLowerCase()));
 
   const setItemField = (key, field, value) => {
     setItems(prev => prev.map(i => i.key === key ? { ...i, [field]: value } : i));
@@ -56,6 +77,10 @@ export default function WritePrescriptionModal({
         return;
       }
     }
+    if (!attendingDoctorId) {
+      notify("Select the prescribing doctor", "warning");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -68,6 +93,7 @@ export default function WritePrescriptionModal({
         admissionNumber: admissionNumber || undefined,
         appointmentId: appointmentId || undefined,
         prescriptionItems: filled.map((it, idx) => drugItemToRequest(it, idx)),
+        attendingDoctorId: attendingDoctorId || undefined,
       };
       const created = await recordApi.create(payload);
       notify(`Prescription saved — ${filled.length} drug${filled.length === 1 ? "" : "s"}`, "success");
@@ -105,6 +131,34 @@ export default function WritePrescriptionModal({
         <form onSubmit={handleSave} className="zu-modal-body">
           <div className="hms-form-stack">
 
+            {knownAllergies.length > 0 && (
+              <div className="hms-allergy-banner">
+                <AlertTriangle size={13} className="hms-allergy-banner__icon" />
+                <span className="hms-allergy-banner__label">Known allergies:</span>
+                <div className="hms-allergy-chip-row">
+                  {knownAllergies.map((a) => (
+                    <span
+                      key={a.id}
+                      className={`hms-allergy-chip is-${(a.severity || "UNKNOWN").toLowerCase()} is-readonly`}
+                    >
+                      {a.allergen}
+                      {a.reaction && <span className="hms-allergy-chip__reaction">· {a.reaction}</span>}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <FormGroup label={<span>Prescribing doctor <span className="text-danger">*</span></span>}>
+              <SearchableSelect
+                value={attendingDoctorId}
+                onChange={setAttendingDoctorId}
+                options={doctorOptions}
+                placeholder="Select doctor…"
+                clearable={false}
+              />
+            </FormGroup>
+
             <div className="hms-clinical-section">
               <div className="hms-rx-table">
 
@@ -125,6 +179,7 @@ export default function WritePrescriptionModal({
                     key={item.key}
                     index={idx}
                     item={item}
+                    allergyMatch={drugMatchesAllergy(item.drugName)}
                     onChange={(field, value) => setItemField(item.key, field, value)}
                     onRemove={() => removeItem(item.key)}
                     isLastRemovable={items.length > 1}

@@ -2,7 +2,7 @@ import { Spinner } from "@/components/ui/Loader";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { drugsApi } from "@/utils/api";
-import { Search, Trash2, AlertCircle } from "lucide-react";
+import { Search, Trash2, AlertCircle, AlertTriangle } from "lucide-react";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import "@/styles/modules/prescription-table.css";
 
@@ -81,7 +81,7 @@ export function drugItemToRequest(it, displayOrder) {
   };
 }
 
-export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRemovable }) {
+export function PrescriptionDrugRow({ index, item, allergyMatch, onChange, onRemove, isLastRemovable }) {
   const { user } = useAuth();
   const [query, setQuery] = useState(item.drugName);
   const [results, setResults] = useState([]);
@@ -136,7 +136,7 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
   const isAutoQty = !item.quantityTouched && !!item.quantity;
 
   return (
-    <div className="hms-rx-row">
+    <div className={`hms-rx-row${allergyMatch ? " is-allergy-match" : ""}`}>
 
       {/* ── Main fields row ── */}
       <div className="hms-rx-row__cells">
@@ -163,6 +163,11 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
             const detail = [item.drugGeneric, item.drugStrength, item.drugForm].filter(Boolean).join(" · ");
             return detail ? <p className="hms-rx-drug-linked">{detail}</p> : null;
           })()}
+          {allergyMatch && (
+            <p className="hms-rx-drug-allergy-warn">
+              <AlertTriangle size={9} /> Patient has a recorded allergy to this drug
+            </p>
+          )}
           {!item.drugId && query.trim().length >= 2 && (
             <p className="hms-rx-drug-warn">
               <AlertCircle size={9} /> Not in drug master

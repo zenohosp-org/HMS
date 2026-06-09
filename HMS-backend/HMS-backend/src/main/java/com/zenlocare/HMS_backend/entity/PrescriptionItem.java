@@ -134,4 +134,28 @@ public class PrescriptionItem {
             columnDefinition = "VARCHAR(16) DEFAULT 'PENDING'")
     @Builder.Default
     private PrescriptionDispenseStatus dispenseStatus = PrescriptionDispenseStatus.PENDING;
+
+    /**
+     * Order lifecycle state. ACTIVE = being administered; STOPPED = doctor has
+     * discontinued the drug. A stopped order is never deleted — MAR rows reference
+     * it via FK (order_id) and must stay intact for medico-legal audit purposes.
+     * DEFAULT 'ACTIVE' in the column definition backfills all pre-migration rows.
+     */
+    @Column(name = "status", nullable = false, length = 16,
+            columnDefinition = "VARCHAR(16) DEFAULT 'ACTIVE'")
+    @Builder.Default
+    private String status = "ACTIVE";
+
+    /** Timestamp when a doctor stopped this order. Null while ACTIVE. */
+    @Column(name = "stopped_at")
+    private LocalDateTime stoppedAt;
+
+    /** The doctor who stopped the order. Null while ACTIVE. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stopped_by")
+    private User stoppedBy;
+
+    /** Free-text clinical reason for stopping (required by the stop endpoint). */
+    @Column(name = "stop_reason", columnDefinition = "TEXT")
+    private String stopReason;
 }

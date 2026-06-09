@@ -1,8 +1,8 @@
 import { Spinner } from "@/components/ui/Loader";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { recordApi } from "@/utils/api";
+import { recordApi, doctorsApi } from "@/utils/api";
 import { FileText, CheckCircle2 } from "lucide-react";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { FormGroup, Textarea } from "@/components/ui";
@@ -40,6 +40,20 @@ export default function AddMedicalRecordModal({
   const [historyType, setHistoryType] = useState("PROGRESS_NOTE");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const [doctors, setDoctors] = useState([]);
+  const [attendingDoctorId, setAttendingDoctorId] = useState(null);
+
+  useEffect(() => {
+    doctorsApi.list(user.hospitalId).then((list) => {
+      setDoctors(list ?? []);
+      if (user.role === "doctor") setAttendingDoctorId(user.id);
+    }).catch(() => {});
+  }, [user.hospitalId, user.id, user.role]);
+
+  const doctorOptions = doctors.map((d) => ({
+    value: d.userId,
+    label: `Dr. ${[d.firstName, d.lastName].filter(Boolean).join(" ")}${d.specialization ? ` · ${d.specialization}` : ""}`,
+  }));
 
   const handleTypeChange = (v) => {
     if (v === "PRESCRIPTION") {
@@ -55,6 +69,10 @@ export default function AddMedicalRecordModal({
       notify("Add notes or a description for this record", "warning");
       return;
     }
+    if (!attendingDoctorId) {
+      notify("Select the attending doctor", "warning");
+      return;
+    }
     setSaving(true);
     try {
       const saved = await recordApi.create({
@@ -64,6 +82,7 @@ export default function AddMedicalRecordModal({
         description,
         admissionId,
         admissionNumber,
+        attendingDoctorId: attendingDoctorId || undefined,
       });
       notify("Record added", "success");
       onSaved?.(saved, { historyType, description });
@@ -104,6 +123,16 @@ export default function AddMedicalRecordModal({
                 options={RECORD_TYPE_OPTIONS}
                 clearable={false}
                 searchable={false}
+              />
+            </FormGroup>
+
+            <FormGroup label={<span>Attending doctor <span className="text-danger">*</span></span>}>
+              <SearchableSelect
+                value={attendingDoctorId}
+                onChange={setAttendingDoctorId}
+                options={doctorOptions}
+                placeholder="Select doctor…"
+                clearable={false}
               />
             </FormGroup>
 

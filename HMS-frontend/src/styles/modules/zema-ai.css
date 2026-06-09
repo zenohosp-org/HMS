@@ -1,0 +1,651 @@
+/* ===================================================================
+   HMS DESIGN SYSTEM — Zema AI Visual Styling (zema-ai.css)
+   -------------------------------------------------------------------
+   Futuristic, premium design tokens, gradients, animations, and
+   layouts to support the simulated AI capabilities ("Zema AI").
+   =================================================================== */
+
+:root {
+    /* Color Palette */
+    --zema-purple: #8b5cf6;
+    --zema-indigo: #6366f1;
+    --zema-blue: #3b82f6;
+    --zema-emerald: #10b981;
+    --zema-pink: #ec4899;
+
+    /* Gradients */
+    --zema-grad-brand: linear-gradient(135deg, #7c3aed 0%, #3b82f6 50%, #10b981 100%);
+    --zema-grad-glow: linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981, #ec4899, #8b5cf6);
+    --zema-grad-text: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+    --zema-grad-dark: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+    --zema-grad-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%);
+    --zema-grad-glass-purple: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(99, 102, 241, 0.02) 100%);
+
+    /* Shadows & Glows */
+    --zema-shadow-glow: 0 0 25px rgba(139, 92, 246, 0.25);
+    --zema-shadow-glow-sm: 0 0 12px rgba(139, 92, 246, 0.15);
+    --zema-shadow-glow-lg: 0 0 40px rgba(139, 92, 246, 0.35);
+}
+
+/* ─────────────────────────── Animations ─────────────────────────── */
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Shimmer flow for backgrounds or borders */
+@keyframes zema-shimmer-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Pulse glow animation */
+@keyframes zema-pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.15),
+            inset 0 0 10px rgba(139, 92, 246, 0.05);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(139, 92, 246, 0.35),
+            inset 0 0 15px rgba(139, 92, 246, 0.15);
+    }
+}
+
+/* Rotating gradient background for buttons or indicators */
+@keyframes zema-rotate-glow {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Thinking typewriter cursor blink */
+@keyframes zema-cursor-blink {
+
+    0%,
+    100% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Floating animation for cards/panels */
+@keyframes zema-float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+
+/* ─────────────────────────── Inline Badge ─────────────────────────── */
+
+.zema-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--zema-grad-glass-purple);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--zema-purple);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    box-shadow: var(--zema-shadow-glow-sm);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    user-select: none;
+}
+
+.zema-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: 0.5s;
+    transform: skewX(-20deg);
+}
+
+.zema-badge:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: var(--zema-shadow-glow);
+    transform: scale(1.05);
+}
+
+.zema-badge:hover::before {
+    left: 150%;
+    transition: 0.8s ease-in-out;
+}
+
+.zema-badge-sparkle {
+    display: inline-block;
+    color: var(--zema-purple);
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.zema-badge-text {
+    background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+
+/* ─────────────────────────── Glowing Action Buttons ─────────────────────────── */
+
+.zema-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #0f172a;
+    /* Slate 900 */
+    border-radius: 8px;
+    color: var(--hms-white);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+    z-index: 1;
+}
+
+/* Rainbow border container using a pseudo element behind the button */
+.zema-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--zema-grad-glow);
+    background-size: 400% 400%;
+    z-index: -2;
+    animation: zema-shimmer-flow 8s infinite linear;
+    transition: opacity 0.3s;
+}
+
+/* Inner content area masking the background to create a gradient border */
+.zema-btn::after {
+    content: '';
+    position: absolute;
+    inset: 1.5px;
+    background: #0f172a;
+    border-radius: 6.5px;
+    z-index: -1;
+    transition: background 0.3s;
+}
+
+.zema-btn:hover {
+    color: var(--hms-white);
+    transform: translateY(-1px);
+    box-shadow: var(--zema-shadow-glow);
+}
+
+.zema-btn:hover::after {
+    background: #1e1b4b;
+    /* Subtle dark purple tint on hover */
+}
+
+.zema-btn:active {
+    transform: scale(0.97);
+}
+
+.zema-btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Primary style where the background is completely filled with the brand gradient */
+.zema-btn-primary {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--zema-grad-brand);
+    background-size: 200% 200%;
+    border-radius: 8px;
+    color: #ffffff !important;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: zema-shimmer-flow 5s infinite linear;
+}
+
+.zema-btn-primary:hover {
+    transform: translateY(-1.5px);
+    box-shadow: var(--zema-shadow-glow-lg);
+}
+
+.zema-btn-primary:active {
+    transform: scale(0.97);
+}
+
+
+/* ─────────────────────────── Suggestion Chips ─────────────────────────── */
+
+.zema-suggest-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.zema-suggest-chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px dashed rgba(139, 92, 246, 0.3);
+    color: var(--zema-indigo);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: var(--hms-shadow-xs);
+}
+
+.zema-suggest-chip:hover {
+    background: var(--zema-grad-glass-purple);
+    border-color: var(--zema-purple);
+    border-style: solid;
+    color: var(--zema-purple);
+    transform: translateY(-1px);
+    box-shadow: var(--zema-shadow-glow-sm);
+}
+
+.zema-suggest-chip:active {
+    transform: scale(0.97);
+}
+
+
+/* ─────────────────────────── Glassmorphic Panel (AI Summary Card) ─────────────────────────── */
+
+.zema-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    animation: zema-pulse-glow 6s infinite ease-in-out;
+}
+
+/* Subtle corner neon spotlight */
+.zema-panel::before {
+    content: '';
+    position: absolute;
+    top: -80px;
+    right: -80px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.0) 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.zema-panel:hover {
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 15px 35px rgba(139, 92, 246, 0.08),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+.zema-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 1;
+}
+
+.zema-panel__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.zema-panel__content {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--hms-gray-700);
+    position: relative;
+    z-index: 1;
+}
+
+.zema-panel__footer {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(139, 92, 246, 0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+
+/* ─────────────────────────── Processing / Typing States ─────────────────────────── */
+
+.zema-thinking {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    background: rgba(139, 92, 246, 0.04);
+    border-radius: 8px;
+    border: 1px solid rgba(139, 92, 246, 0.08);
+}
+
+.zema-thinking__sparkle-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--zema-grad-brand);
+    color: #ffffff;
+    box-shadow: var(--zema-shadow-glow-sm);
+    animation: spin 8s infinite linear;
+}
+
+.zema-thinking__dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.zema-thinking__dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--zema-purple);
+    border-radius: 50%;
+    display: inline-block;
+    animation: zema-dot-bounce 1.4s infinite ease-in-out both;
+}
+
+.zema-thinking__dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.zema-thinking__dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes zema-dot-bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0.6);
+        opacity: 0.5;
+    }
+
+    40% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
+
+.zema-thinking__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--zema-purple);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.zema-typewriter-caret {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background: var(--zema-purple);
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: zema-cursor-blink 1s infinite step-end;
+}
+
+/* Zema AI Mockup Custom Styles */
+.zema-gradient-card {
+    background: linear-gradient(135deg, #ffe543 0%, #ff8010 50%, #ff3b1d 100%);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 12px 30px rgba(255, 90, 0, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+}
+
+.zema-gradient-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.zema-gradient-card__logo-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.zema-gradient-card__logo-glow {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.zema-gradient-card__logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    animation: spin 10s infinite linear;
+}
+
+.zema-gradient-card__title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #c2410c;
+    /* Dark orange contrast text against bright yellow */
+    letter-spacing: -0.01em;
+    margin: 0;
+}
+
+.zema-gradient-card__toggle {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.zema-gradient-card__toggle:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+/* First Row Grid: 4 cards */
+.zema-metrics-row-1 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 40px 0 16px;
+}
+
+/* Glassmorphic Metrics Card */
+.zema-metric-subcard {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 14px;
+    padding: 12px 16px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.zema-metric-subcard:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.zema-metric-subcard__label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+}
+
+.zema-metric-subcard__value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.zema-metric-subcard__unit {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* Second Row: Wide block with 3 columns split by borders */
+.zema-metrics-row-2 {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 12px 0;
+    margin-bottom: 24px;
+}
+
+.zema-metrics-row-2__col {
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.zema-metrics-row-2__col:not(:last-child) {
+    border-right: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.zema-metrics-row-2__label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+}
+
+.zema-metrics-row-2__value {
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.zema-metrics-row-2__unit {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* Clinical Decision Support Area */
+.zema-decision-support {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 20px;
+}
+
+.zema-decision-support__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #c2410c;
+    /* High contrast rust orange text */
+    margin: 0 0 10px 0;
+    letter-spacing: -0.01em;
+}
+
+.zema-decision-support__text {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #7c2d12;
+    /* Rich warm dark orange/brown readable text */
+    margin: 0;
+    text-align: justify;
+    font-weight: 500;
+}

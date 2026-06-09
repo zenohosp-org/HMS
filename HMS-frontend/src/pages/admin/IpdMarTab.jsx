@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNotification } from "@/context/NotificationContext";
 import { marApi } from "@/utils/api";
+import { useAuth } from "@/context/AuthContext";
 import { CenterLoader } from "@/components/ui/Loader";
 import {
     Pill, Clock, User as UserIcon, CheckCircle2, XCircle,
     PauseCircle, AlertCircle, ChevronDown, ChevronUp,
+    StopCircle, BanIcon, AlertTriangle,
 } from "lucide-react";
 import { fmtDateTime } from "@/utils/date";
 import "@/styles/modules/ipd-mar.css";
@@ -23,6 +25,9 @@ const STATUS_OPTIONS = [
     { value: "REFUSED", label: "Refused by patient" },
 ];
 
+// Roles that may stop an order (mirrors @PreAuthorize on the backend endpoint)
+const CAN_STOP_ROLES = new Set(["doctor", "hospital_admin", "super_admin"]);
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function localNow() {
@@ -35,23 +40,38 @@ function emptyForm() {
     return { administeredAt: localNow(), status: "GIVEN", doseGiven: "", reason: "", notes: "" };
 }
 
+function emptyStopForm() {
+    return { reason: "" };
+}
+
 // ── Main component ──────────────────────────────────────────────────────────────
 
-export default function IpdMarTab({ admissionId, isDischarged }) {
-    const { notify } = useNotification();
+export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
+    const { notify }    = useNotification();
+    const { user }      = useAuth();
+    const canStop       = CAN_STOP_ROLES.has(user?.role);
 
-    const [orders, setOrders]     = useState([]);
-    const [loading, setLoading]   = useState(true);
-    const [forms, setForms]       = useState({});
-    const [expanded, setExpanded] = useState({});
-    const [savingId, setSavingId] = useState(null);
+    const [orders, setOrders]         = useState([]);
+    const [loading, setLoading]       = useState(true);
+    const [forms, setForms]           = useState({});
+    const [stopForms, setStopForms]   = useState({});
+    const [stopOpen, setStopOpen]     = useState({});
+    const [expanded, setExpanded]     = useState({});
+    const [savingId, setSavingId]     = useState(null);
+    const [stoppingId, setStoppingId] = useState(null);
 
     const fetchOrders = useCallback(async () => {
         try {
             const data = await marApi.list(admissionId);
-            setOrders(data ?? []);
+            // ACTIVE orders first, STOPPED last; within each group preserve server order
+            const sorted = [...(data ?? [])].sort((a, b) => {
+                const aS = "STOPPED" === a.status ? 1 : 0;
+                const bS = "STOPPED" === b.status ? 1 : 0;
+                return aS - bS;
+            });
+            setOrders(sorted);
         } catch {
-            // Non-fatal — empty state shown; user can switch tabs to retry
+            // Non-fatal — empty state shown
         } finally {
             setLoading(false);
         }
@@ -59,11 +79,15 @@ export default function IpdMarTab({ admissionId, isDischarged }) {
 
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-    const getForm     = (id) => forms[id] ?? emptyForm();
-    const setField    = (id, field) => (e) =>
+    const getForm      = (id) => forms[id] ?? emptyForm();
+    const getStopForm  = (id) => stopForms[id] ?? emptyStopForm();
+    const setField     = (id, field) => (e) =>
         setForms((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyForm()), [field]: e.target.value } }));
-    const resetForm   = (id) => setForms((prev) => ({ ...prev, [id]: emptyForm() }));
-    const toggleLog   = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+    const setStopField = (id, field) => (e) =>
+        setStopForms((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyStopForm()), [field]: e.target.value } }));
+    const resetForm    = (id) => setForms((prev) => ({ ...prev, [id]: emptyForm() }));
+    const toggleLog    = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+    const toggleStop   = (id) => setStopOpen((prev) => ({ ...prev, [id]: !prev[id] }));
 
     const handleSubmit = async (e, orderId) => {
         e.preventDefault();
@@ -106,8 +130,58 @@ export default function IpdMarTab({ admissionId, isDischarged }) {
         }
     };
 
+    const handleStop = async (e, orderId) => {
+        e.preventDefault();
+        const f = getStopForm(orderId);
+        if (!f.reason.trim()) {
+            notify("Reason is required to stop an order", "warning");
+            return;
+        }
+
+        setStoppingId(orderId);
+        try {
+            await marApi.stopOrder(orderId, f.reason.trim());
+            setOrders((prev) =>
+                [...prev].sort((a, b) => {
+                    const aId = a.orderId === orderId ? 1 : ("STOPPED" === a.status ? 1 : 0);
+                    const bId = b.orderId === orderId ? 1 : ("STOPPED" === b.status ? 1 : 0);
+                    return aId - bId;
+                })
+            );
+            setStopOpen((prev) => ({ ...prev, [orderId]: false }));
+            notify("Order stopped", "success");
+            fetchOrders();
+        } catch (err) {
+            const msg = err?.response?.data?.message ?? "Failed to stop order";
+            notify(msg, "error");
+        } finally {
+            setStoppingId(null);
+        }
+    };
+
+    const knownAllergies = Array.isArray(allergies) ? allergies : [];
+
     return (
         <div className="hms-ipd-tab-body mar-tab">
+
+            {knownAllergies.length > 0 && (
+                <div className="hms-allergy-banner">
+                    <AlertTriangle size={13} className="hms-allergy-banner__icon" />
+                    <span className="hms-allergy-banner__label">Known allergies:</span>
+                    <div className="hms-allergy-chip-row">
+                        {knownAllergies.map((a) => (
+                            <span
+                                key={a.id}
+                                className={`hms-allergy-chip is-${(a.severity || "UNKNOWN").toLowerCase()} is-readonly`}
+                                title={a.reaction || undefined}
+                            >
+                                {a.allergen}
+                                {a.reaction && <span className="hms-allergy-chip__reaction">· {a.reaction}</span>}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {isDischarged && (
                 <div className="mar-discharge-notice">
@@ -133,12 +207,19 @@ export default function IpdMarTab({ admissionId, isDischarged }) {
                             key={order.orderId}
                             order={order}
                             form={getForm(order.orderId)}
+                            stopForm={getStopForm(order.orderId)}
                             setField={setField}
+                            setStopField={setStopField}
                             onSubmit={handleSubmit}
+                            onStop={handleStop}
                             saving={savingId === order.orderId}
+                            stopping={stoppingId === order.orderId}
+                            stopOpen={!!stopOpen[order.orderId]}
+                            onToggleStop={() => toggleStop(order.orderId)}
                             logExpanded={!!expanded[order.orderId]}
                             onToggleLog={() => toggleLog(order.orderId)}
                             isDischarged={isDischarged}
+                            canStop={canStop}
                         />
                     ))}
                 </div>
@@ -149,14 +230,20 @@ export default function IpdMarTab({ admissionId, isDischarged }) {
 
 // ── Order card ──────────────────────────────────────────────────────────────────
 
-function OrderCard({ order, form, setField, onSubmit, saving, logExpanded, onToggleLog, isDischarged }) {
-    const adminCount  = order.administrations?.length ?? 0;
-    const needsReason = form.status === "HELD" || form.status === "REFUSED";
-
-    const drugTitle = [order.drugName, order.drugStrength, order.drugForm].filter(Boolean).join(" ");
+function OrderCard({
+    order, form, stopForm, setField, setStopField,
+    onSubmit, onStop, saving, stopping,
+    stopOpen, onToggleStop,
+    logExpanded, onToggleLog,
+    isDischarged, canStop,
+}) {
+    const isStopped    = "STOPPED" === order.status;
+    const adminCount   = order.administrations?.length ?? 0;
+    const needsReason  = form.status === "HELD" || form.status === "REFUSED";
+    const drugTitle    = [order.drugName, order.drugStrength, order.drugForm].filter(Boolean).join(" ");
 
     return (
-        <div className="mar-card">
+        <div className={`mar-card${isStopped ? " is-stopped" : ""}`}>
 
             {/* ── Drug info ── */}
             <div className="mar-card__info">
@@ -164,7 +251,14 @@ function OrderCard({ order, form, setField, onSubmit, saving, logExpanded, onTog
                     <Pill size={15} />
                 </div>
                 <div className="mar-card__text">
-                    <p className="mar-card__drug-name">{drugTitle}</p>
+                    <div className="mar-card__name-row">
+                        <p className="mar-card__drug-name">{drugTitle}</p>
+                        {isStopped && (
+                            <span className="mar-card__stopped-badge">
+                                <BanIcon size={10} /> Stopped
+                            </span>
+                        )}
+                    </div>
 
                     {/* Frequency + route pills + per-dose amount */}
                     <div className="mar-card__signa">
@@ -196,6 +290,18 @@ function OrderCard({ order, form, setField, onSubmit, saving, logExpanded, onTog
                 </div>
             </div>
 
+            {/* ── Stopped banner ── */}
+            {isStopped && (
+                <div className="mar-stopped-banner">
+                    <StopCircle size={13} />
+                    <span>
+                        Stopped by Dr. {order.stoppedByName ?? "—"}
+                        {order.stoppedAt ? ` on ${fmtDateTime(order.stoppedAt)}` : ""}
+                        {order.stopReason ? ` — ${order.stopReason}` : ""}
+                    </span>
+                </div>
+            )}
+
             {/* ── Log toggle ── */}
             <button type="button" className="mar-log-toggle" onClick={onToggleLog}>
                 <span>
@@ -218,8 +324,8 @@ function OrderCard({ order, form, setField, onSubmit, saving, logExpanded, onTog
                 </div>
             )}
 
-            {/* ── Entry form — hidden after discharge ── */}
-            {!isDischarged && (
+            {/* ── Administration entry form — hidden after discharge or when stopped ── */}
+            {!isDischarged && !isStopped && (
                 <form className="mar-form" onSubmit={(e) => onSubmit(e, order.orderId)}>
                     <p className="mar-form__heading">Log administration</p>
 
@@ -312,7 +418,55 @@ function OrderCard({ order, form, setField, onSubmit, saving, logExpanded, onTog
                                 : <CheckCircle2 size={14} />}
                             Record
                         </button>
+
+                        {/* Stop order — doctor / admin only */}
+                        {canStop && (
+                            <button
+                                type="button"
+                                className={`mar-stop-btn${stopOpen ? " is-open" : ""}`}
+                                onClick={onToggleStop}
+                            >
+                                <StopCircle size={13} />
+                                Stop order
+                            </button>
+                        )}
                     </div>
+
+                    {/* Inline stop form */}
+                    {canStop && stopOpen && (
+                        <div className="mar-stop-form">
+                            <p className="mar-stop-form__heading">Discontinue this order</p>
+                            <div className="mar-form__field">
+                                <label className="mar-form__label">
+                                    Reason <span className="req">*</span>
+                                </label>
+                                <textarea
+                                    className="mar-input is-textarea"
+                                    rows={2}
+                                    placeholder="e.g. Course completed, adverse reaction, switching drug"
+                                    value={stopForm.reason}
+                                    onChange={setStopField(order.orderId, "reason")}
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="mar-stop-form__actions">
+                                <button
+                                    type="button"
+                                    className="mar-stop-confirm-btn"
+                                    disabled={stopping}
+                                    onClick={(e) => onStop(e, order.orderId)}
+                                >
+                                    {stopping
+                                        ? <span className="zu-spinner" style={{ width: 13, height: 13 }} />
+                                        : <StopCircle size={13} />}
+                                    Confirm stop
+                                </button>
+                                <button type="button" className="mar-stop-cancel-btn" onClick={onToggleStop}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </form>
             )}
         </div>

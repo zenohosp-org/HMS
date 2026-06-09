@@ -78,6 +78,15 @@ public class PatientRecord {
     @Builder.Default
     private List<PrescriptionItem> prescriptionItems = new ArrayList<>();
 
+    /**
+     * The doctor who saw/prescribed — may differ from {@code createdBy} when
+     * a staff member or admin enters the record on behalf of a doctor (Scenario B).
+     * Null when the creator is themselves the attending doctor.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "attending_doctor_id")
+    private User attendingDoctor;
+
     @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

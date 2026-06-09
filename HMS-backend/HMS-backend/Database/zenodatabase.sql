@@ -1966,3 +1966,129 @@ create index idx_med_admin_admission
 
 create index idx_med_admin_order
   on public.medication_administrations (order_id);
+
+-- ── Medication order lifecycle (ACTIVE / STOPPED) ─────────────────────────────
+-- DEFAULT 'ACTIVE' backfills all existing rows automatically at ALTER time
+-- (Postgres 11+ fast column-add — no table rewrite, no separate UPDATE needed).
+ALTER TABLE public.prescription_items
+    ADD COLUMN IF NOT EXISTS status      VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+    ADD COLUMN IF NOT EXISTS stopped_at  TIMESTAMP   NULL,
+    ADD COLUMN IF NOT EXISTS stopped_by  UUID        NULL REFERENCES public.users(id),
+    ADD COLUMN IF NOT EXISTS stop_reason TEXT        NULL;
+
+ALTER TABLE public.prescription_items
+    DROP CONSTRAINT IF EXISTS chk_prescription_item_status;
+ALTER TABLE public.prescription_items
+    ADD CONSTRAINT chk_prescription_item_status
+        CHECK (status IN ('ACTIVE', 'STOPPED'));
+-- ── Attending doctor on patient records (Scenario B: staff enter on behalf of doctor) ──
+ALTER TABLE public.patient_records
+    ADD COLUMN IF NOT EXISTS attending_doctor_id UUID NULL REFERENCES public.users(id);
+
+-- ── Patient allergies ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.patient_allergies (
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id  INTEGER     NOT NULL REFERENCES public.patients(id),
+    hospital_id UUID        NOT NULL REFERENCES public.hospitals(id),
+    allergen    VARCHAR(255) NOT NULL,
+    reaction    VARCHAR(255),
+    severity    VARCHAR(20)  NOT NULL DEFAULT 'UNKNOWN',
+    recorded_by UUID        REFERENCES public.users(id),
+    created_at  TIMESTAMP   NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_allergy_severity CHECK (severity IN ('MILD','MODERATE','SEVERE','UNKNOWN'))
+);
+CREATE INDEX IF NOT EXISTS idx_patient_allergies_patient ON public.patient_allergies(patient_id);
+
+-- ── Zema AI interpretation rules ───────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.zema_rules (
+    rule_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    hospital_id UUID REFERENCES public.hospitals(id),
+    rule_type VARCHAR(20) NOT NULL CHECK (rule_type IN ('single', 'combination')),
+    metric VARCHAR(50),
+    operator VARCHAR(20) CHECK (operator IN ('lt', 'lte', 'gt', 'gte', 'between', 'eq')),
+    threshold_low NUMERIC(10, 2),
+    threshold_high NUMERIC(10, 2),
+    condition_expr TEXT,
+    label VARCHAR(100) NOT NULL,
+    output_text TEXT NOT NULL,
+    severity VARCHAR(20) NOT NULL CHECK (severity IN ('critical', 'warning', 'info', 'reassurance')),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_hint INTEGER,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE public.zema_rules ENABLE ROW LEVEL SECURITY;
+
+-- Allow the backend service role (authenticated) full access.
+-- Tenant isolation is enforced at the application layer via
+-- ZemaRuleRepository.findActiveByHospitalId() which filters
+-- by hospital_id. System-wide defaults (hospital_id IS NULL)
+-- are visible to all hospitals by design.
+DROP POLICY IF EXISTS zema_rules_service ON public.zema_rules;
+CREATE POLICY zema_rules_service ON public.zema_rules
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+-- ── Fluid Intake-Output entries ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.fluid_entries (
+    id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    admission_id UUID        NOT NULL REFERENCES public.admissions(id),
+    hospital_id  UUID        NOT NULL REFERENCES public.hospitals(id),
+    entry_type   VARCHAR(10) NOT NULL,
+    category     VARCHAR(30) NOT NULL,
+    volume_ml    INTEGER     NOT NULL,
+    notes        VARCHAR(255),
+    recorded_by  UUID        REFERENCES public.users(id),
+    entry_time   TIMESTAMP   NOT NULL DEFAULT NOW(),
+    created_at   TIMESTAMP   NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_fluid_entry_type CHECK (entry_type IN ('INTAKE','OUTPUT')),
+    CONSTRAINT chk_fluid_volume     CHECK (volume_ml > 0)
+);
+CREATE INDEX IF NOT EXISTS idx_fluid_entries_admission ON public.fluid_entries(admission_id);
+
+-- ── IPD Lab Orders ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.lab_orders (
+    id                   UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    admission_id         UUID        NOT NULL REFERENCES public.admissions(id),
+    hospital_id          UUID        NOT NULL REFERENCES public.hospitals(id),
+    test_name            VARCHAR(255) NOT NULL,
+    test_code            VARCHAR(100),
+    status               VARCHAR(20)  NOT NULL DEFAULT 'PENDING',
+    priority             VARCHAR(10)  NOT NULL DEFAULT 'ROUTINE',
+    ordered_by           UUID        REFERENCES public.users(id),
+    sample_collected_at  TIMESTAMP,
+    sample_collected_by  UUID        REFERENCES public.users(id),
+    result_value         TEXT,
+    result_unit          VARCHAR(50),
+    reference_range      VARCHAR(100),
+    result_notes         TEXT,
+    resulted_at          TIMESTAMP,
+    resulted_by          UUID        REFERENCES public.users(id),
+    created_at           TIMESTAMP   NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_lab_status   CHECK (status   IN ('PENDING','SAMPLE_COLLECTED','RESULTED')),
+    CONSTRAINT chk_lab_priority CHECK (priority IN ('ROUTINE','URGENT','STAT'))
+);
+CREATE INDEX IF NOT EXISTS idx_lab_orders_admission ON public.lab_orders(admission_id);
+
+-- ── Nursing Tasks ───────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.nursing_tasks (
+    id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    admission_id  UUID        NOT NULL REFERENCES public.admissions(id),
+    hospital_id   UUID        NOT NULL REFERENCES public.hospitals(id),
+    task_name     VARCHAR(255) NOT NULL,
+    category      VARCHAR(20)  NOT NULL DEFAULT 'OTHER',
+    shift         VARCHAR(12)  NOT NULL DEFAULT 'ANY',
+    due_date      DATE,
+    status        VARCHAR(10)  NOT NULL DEFAULT 'PENDING',
+    notes         TEXT,
+    created_by    UUID        REFERENCES public.users(id),
+    completed_by  UUID        REFERENCES public.users(id),
+    completed_at  TIMESTAMP,
+    created_at    TIMESTAMP   NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_nursing_status   CHECK (status   IN ('PENDING','DONE','SKIPPED')),
+    CONSTRAINT chk_nursing_shift    CHECK (shift    IN ('MORNING','AFTERNOON','NIGHT','ANY')),
+    CONSTRAINT chk_nursing_category CHECK (category IN ('MEDICATION','WOUND_CARE','VITALS','HYGIENE','MOBILITY','IV_LINE','OTHER'))
+);
+CREATE INDEX IF NOT EXISTS idx_nursing_tasks_admission ON public.nursing_tasks(admission_id);
