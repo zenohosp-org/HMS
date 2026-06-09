@@ -7,6 +7,7 @@ import { Stethoscope, Pill, Plus, CheckCircle2, ClipboardList, CalendarClock, Fi
 import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import VitalsModal from "@/components/modals/VitalsModal";
+import Modal from "@/components/ui/Modal";
 
 /**
  * Single-flow consultation page launched after an OPD appointment hits
@@ -20,6 +21,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
   const { notify } = useNotification();
 
   const [showVitalsModal, setShowVitalsModal] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   const {
     chiefComplaint, setChiefComplaint,
@@ -44,40 +46,53 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
     [appointment?.patientFirstName, appointment?.patientLastName].filter(Boolean).join(" ");
   const uhidDisplay = fmtId(appointment?.patientUhid) || appointment?.patientUhid || "—";
 
+  const isDirty =
+    chiefComplaint.trim() !== "" ||
+    notes.trim() !== "" ||
+    instructions.trim() !== "" ||
+    nextVisitDate !== "" ||
+    items.some(i => i.drugName.trim() !== "");
+
+  const handleCancel = () => {
+    if (!isDirty) { onClose(); return; }
+    setShowDiscardConfirm(true);
+  };
+
   return (
+    <>
     <div className="zu-modal-overlay">
       <div className="zu-modal is-full">
 
-        {/* ── Header: title row + 4-column meta strip + vitals strip ─── */}
+        {/* ── Header: title + token badge only ─────────────────────── */}
         <div className="zu-modal-header">
-          <div className="zu-modal-header-row">
-            <div className="hms-cmodal__title-block">
-              <div className="hms-icon-tile is-info">
-                <Stethoscope className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="hms-cmodal__title">Consultation</h2>
-                <p className="hms-cmodal__subtitle">
-                  Auto-opened on check-in · saves to the patient record
-                </p>
-              </div>
+          <div className="hms-cmodal__title-block">
+            <div className="hms-icon-tile is-info">
+              <Stethoscope className="w-5 h-5" />
             </div>
-            {appointment?.tokenNumber != null && (
-              <span className="hms-badge is-neutral is-soft">
-                Token #{appointment.tokenNumber}
-              </span>
-            )}
+            <div className="min-w-0">
+              <h2 className="hms-cmodal__title">Consultation</h2>
+              <p className="hms-cmodal__subtitle">
+                Auto-opened on check-in · saves to the patient record
+              </p>
+            </div>
           </div>
-
-          <div className="hms-cmodal__meta is-4col">
-            <PreField icon={<UserIcon className="w-3.5 h-3.5" />} label="Patient" value={patientFullName || "—"} />
-            <PreField icon={<IdCard className="w-3.5 h-3.5" />} label="UHID" value={uhidDisplay} mono />
-            <PreField icon={<Stethoscope className="w-3.5 h-3.5" />} label="Doctor" value={appointment?.doctorName || "—"} />
-            <PreField icon={<CalendarClock className="w-3.5 h-3.5" />} label="Date & time" value={dateTimeText || "—"} />
-          </div>
-
-          <VitalsStrip vitals={vitals} vitalsStatus={vitalsStatus} bloodGroup={appointment?.patientBloodGroup} onEditVitals={() => setShowVitalsModal(true)} />
+          {appointment?.tokenNumber != null && (
+            <span className="hms-badge is-neutral is-soft">
+              Token #{appointment.tokenNumber}
+            </span>
+          )}
         </div>
+
+        {/* ── Meta strip ───────────────────────────────────────────── */}
+        <div className="hms-cmodal__meta is-4col">
+          <PreField icon={<UserIcon className="w-3.5 h-3.5" />} label="Patient" value={patientFullName || "—"} />
+          <PreField icon={<IdCard className="w-3.5 h-3.5" />} label="UHID" value={uhidDisplay} mono />
+          <PreField icon={<Stethoscope className="w-3.5 h-3.5" />} label="Doctor" value={appointment?.doctorName || "—"} />
+          <PreField icon={<CalendarClock className="w-3.5 h-3.5" />} label="Date & time" value={dateTimeText || "—"} />
+        </div>
+
+        {/* ── Vitals strip ─────────────────────────────────────────── */}
+        <VitalsStrip vitals={vitals} vitalsStatus={vitalsStatus} bloodGroup={appointment?.patientBloodGroup} onEditVitals={() => setShowVitalsModal(true)} />
 
         {/* ── Body: clinical (left, wider) + prescription (right) ─────── */}
         <div className="zu-modal-body is-flush">
@@ -140,16 +155,19 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
                     Leave empty for a notes-only consultation
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="hms-rx-add-btn"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add drug
-                </button>
               </div>
 
-              <div className="hms-rx-list">
+              <div className="hms-rx-table">
+                <div className="hms-rx-table-head">
+                  <div className="hms-rx-table-head__cell" />
+                  <div className="hms-rx-table-head__cell">Drug</div>
+                  <div className="hms-rx-table-head__cell">Dose</div>
+                  <div className="hms-rx-table-head__cell">Freq</div>
+                  <div className="hms-rx-table-head__cell">Days</div>
+                  <div className="hms-rx-table-head__cell">Qty *</div>
+                  <div className="hms-rx-table-head__cell">Route</div>
+                  <div className="hms-rx-table-head__cell" />
+                </div>
                 {items.map((item, idx) => (
                   <PrescriptionDrugRow
                     key={item.key}
@@ -160,6 +178,11 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
                     isLastRemovable={items.length > 1}
                   />
                 ))}
+                <div className="hms-rx-add-row">
+                  <button type="button" onClick={addItem} className="hms-rx-add-btn is-ghost">
+                    <Plus className="w-3.5 h-3.5" /> Add drug
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -169,7 +192,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
         <div className="hms-consult-footer">
           <AutosaveIndicator status={autosaveStatus} hydrating={hydrating} />
           <div className="hms-consult-footer__actions">
-            <button type="button" onClick={onClose} disabled={saving} className="zu-btn-cancel">
+            <button type="button" onClick={handleCancel} disabled={saving} className="zu-btn-cancel">
               Cancel
             </button>
             <button type="button" onClick={saveConsultation} disabled={saving} className="zu-btn-primary">
@@ -179,17 +202,47 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
           </div>
         </div>
       </div>
-      {showVitalsModal && (
-        <VitalsModal
-          appointment={appointment}
-          onClose={() => setShowVitalsModal(false)}
-          onSaved={(savedVitals) => {
-            setVitals(savedVitals);
-            setShowVitalsModal(false);
-          }}
-        />
-      )}
     </div>
+    {showVitalsModal && (
+      <VitalsModal
+        appointment={appointment}
+        onClose={() => setShowVitalsModal(false)}
+        onSaved={(savedVitals) => {
+          setVitals(savedVitals);
+          setShowVitalsModal(false);
+        }}
+      />
+    )}
+    <Modal
+      isOpen={showDiscardConfirm}
+      onClose={() => setShowDiscardConfirm(false)}
+      title="Discard consultation?"
+      size="sm"
+      showClose={false}
+      footer={
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            className="zu-btn-cancel"
+            onClick={() => setShowDiscardConfirm(false)}
+          >
+            Keep editing
+          </button>
+          <button
+            type="button"
+            className="zu-btn-danger"
+            onClick={onClose}
+          >
+            Discard and close
+          </button>
+        </div>
+      }
+    >
+      <p style={{ margin: 0, fontSize: 14, color: "var(--hms-gray-600)", lineHeight: 1.6 }}>
+        You have unsaved notes and/or prescription entries. Closing now will lose all of this work.
+      </p>
+    </Modal>
+    </>
   );
 }
 

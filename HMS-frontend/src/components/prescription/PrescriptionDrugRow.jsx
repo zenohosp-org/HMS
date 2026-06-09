@@ -4,10 +4,9 @@ import { useAuth } from "@/context/AuthContext";
 import { drugsApi } from "@/utils/api";
 import { Search, Trash2, AlertCircle } from "lucide-react";
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import "@/styles/modules/prescription-table.css";
 
-// Standard schedule shorthand used in Indian clinical practice. Surfaced as a
-// dropdown so prescriptions are normalised across doctors and pharmacy doesn't
-// have to interpret "twice a day" vs "BD" vs "2x daily".
+// Standard schedule shorthand used in Indian clinical practice.
 export const FREQUENCIES = [
   { value: "OD",   label: "OD — Once daily" },
   { value: "BD",   label: "BD — Twice daily" },
@@ -23,10 +22,7 @@ export const FREQUENCIES = [
   { value: "STAT", label: "STAT — Immediately, once" },
 ];
 
-// Doses per 24h for each frequency code. Drives auto-fill of the
-// dispense quantity from frequency × duration. SOS is intentionally
-// absent — as-needed dosing has no fixed daily count and shouldn't
-// auto-derive a number that pharmacy treats as authoritative.
+// Doses per 24h for auto-fill of dispense quantity.
 export const DOSES_PER_DAY = {
   OD: 1, BD: 2, TDS: 3, QID: 4,
   Q4H: 6, Q6H: 4, Q8H: 3,
@@ -34,21 +30,9 @@ export const DOSES_PER_DAY = {
   STAT: 1,
 };
 
-/**
- * Suggested dispense quantity = doses-per-day × duration in days.
- * Dose strength ("500mg", "5ml") is irrelevant to how many dispensable
- * units pharmacy hands out — it just describes how strong each dose is.
- * Multi-tablet-per-dose prescriptions ("2 tab BD x 5d") are a manual
- * override; staff just type the real number into the editable Quantity
- * field. Returns null for SOS (no fixed daily count) or missing duration
- * so the field stays empty until the doctor fills both inputs.
- */
 export function computeQuantity({ frequency, durationDays }) {
   const perDay = DOSES_PER_DAY[frequency];
   if (!perDay) return null;
-  // STAT means a single dose, immediately — duration is irrelevant and
-  // multi-day STAT is a clinical-input error. Hard-clamp to 1 so the
-  // auto-fill can't silently propagate "STAT × 5 days = 5 tablets".
   if (frequency === "STAT") return 1;
   const days = Number(durationDays);
   if (!Number.isFinite(days) || days <= 0) return null;
@@ -57,16 +41,16 @@ export function computeQuantity({ frequency, durationDays }) {
 }
 
 export const ROUTES = [
-  { value: "ORAL",        label: "Oral" },
-  { value: "IV",          label: "IV" },
-  { value: "IM",          label: "IM" },
-  { value: "SC",          label: "Subcutaneous" },
-  { value: "TOPICAL",     label: "Topical" },
-  { value: "INHALED",     label: "Inhaled" },
-  { value: "OPHTHALMIC",  label: "Eye" },
-  { value: "OTIC",        label: "Ear" },
-  { value: "NASAL",       label: "Nasal" },
-  { value: "RECTAL",      label: "Rectal" },
+  { value: "ORAL",       label: "Oral" },
+  { value: "IV",         label: "IV" },
+  { value: "IM",         label: "IM" },
+  { value: "SC",         label: "Subcutaneous" },
+  { value: "TOPICAL",    label: "Topical" },
+  { value: "INHALED",    label: "Inhaled" },
+  { value: "OPHTHALMIC", label: "Eye" },
+  { value: "OTIC",       label: "Ear" },
+  { value: "NASAL",      label: "Nasal" },
+  { value: "RECTAL",     label: "Rectal" },
 ];
 
 export function newBlankDrugItem() {
@@ -75,18 +59,10 @@ export function newBlankDrugItem() {
     drugId: null, drugName: "", drugGeneric: "", drugStrength: "", drugForm: "",
     dose: "", frequency: "BD", durationDays: "", quantity: "", route: "ORAL",
     instructions: "",
-    // Tracks whether the doctor has manually typed in the quantity
-    // field. While false, the row recomputes quantity from dose ×
-    // frequency × duration on every input change.
     quantityTouched: false,
   };
 }
 
-/**
- * Map a drug-row UI item into the PrescriptionItemRequest shape the
- * backend expects. Returns undefined for empty rows so callers can filter
- * them out before submitting.
- */
 export function drugItemToRequest(it, displayOrder) {
   if (!it.drugName?.trim()) return undefined;
   return {
@@ -105,12 +81,6 @@ export function drugItemToRequest(it, displayOrder) {
   };
 }
 
-/**
- * Single drug line — typeahead drug search + per-drug fields.
- * Selecting a drug from the search fills brand/generic/strength/form from
- * the master so the doctor doesn't retype; they can still override (e.g.
- * for an off-label strength).
- */
 export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRemovable }) {
   const { user } = useAuth();
   const [query, setQuery] = useState(item.drugName);
@@ -122,21 +92,12 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
 
   useEffect(() => { setQuery(item.drugName); }, [item.drugName]);
 
-  // Auto-fill quantity from frequency × duration. Stops the moment the
-  // doctor types a number into the quantity box (signalled by
-  // quantityTouched). Clearing the box brings auto-fill back so a
-  // mis-typed override can be undone without retyping the formula.
+  // Auto-fill quantity from frequency × duration.
   useEffect(() => {
     if (item.quantityTouched) return;
-    const computed = computeQuantity({
-      frequency: item.frequency,
-      durationDays: item.durationDays,
-    });
+    const computed = computeQuantity({ frequency: item.frequency, durationDays: item.durationDays });
     const next = computed != null ? String(computed) : "";
-    if (next !== (item.quantity ?? "")) {
-      onChange("quantity", next);
-    }
-    // onChange is a fresh closure each render; including it would loop.
+    if (next !== (item.quantity ?? "")) onChange("quantity", next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.frequency, item.durationDays, item.quantityTouched]);
 
@@ -172,146 +133,153 @@ export function PrescriptionDrugRow({ index, item, onChange, onRemove, isLastRem
     setOpen(false);
   };
 
+  const isAutoQty = !item.quantityTouched && !!item.quantity;
+
   return (
-    <div className="hms-drug-row">
-      <div className="hms-drug-row__inner">
-        <div className="hms-drug-row__num">{index + 1}</div>
+    <div className="hms-rx-row">
 
-        <div className="hms-drug-row__fields">
-          {/* Drug typeahead */}
-          <div className="hms-drug-row__search">
-            <div className="hms-drug-row__search-wrap">
-              <Search className="hms-drug-row__search-icon w-3 h-3" />
-              <input
-                value={query}
-                onChange={e => onQueryChange(e.target.value)}
-                onFocus={() => { clearTimeout(blurTimer.current); setOpen(true); if (results.length === 0 && query) doSearch(query); }}
-                onBlur={() => { blurTimer.current = setTimeout(() => setOpen(false), 150); }}
-                placeholder="Drug name (e.g. Amoxicillin, Crocin)"
-                className="hms-drug-row__search-input"
-              />
-              {searching && <Spinner className="hms-drug-row__search-spinner w-3 h-3" />}
-            </div>
+      {/* ── Main fields row ── */}
+      <div className="hms-rx-row__cells">
 
-            {open && results.length > 0 && (
-              <div className="hms-drug-row__results">
-                {results.map(d => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    onMouseDown={() => pickDrug(d)}
-                    className="hms-drug-row__result-item"
-                  >
-                    <div className="hms-drug-row__result-head">
-                      <div>
-                        <p className="hms-drug-row__result-name">{d.brandName}</p>
-                        <p className="hms-drug-row__result-sub">
-                          {[d.genericName, d.strength, d.form].filter(Boolean).join(" · ")}
-                        </p>
-                      </div>
-                      <div className="hms-drug-row__result-badges">
-                        {d.schedule && (
-                          <span className="hms-drug-row__schedule-badge">SCH-{d.schedule}</span>
-                        )}
-                        <span className={`hms-drug-row__stock-badge ${d.inStock ? "is-stocked" : "is-out"}`}>
-                          {d.inStock ? "In stock" : "Not stocked"}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+        {/* # */}
+        <div className="hms-rx-row__num">{index + 1}</div>
+
+        {/* Drug search */}
+        <div className="hms-rx-row__drug">
+          <div className="hms-rx-drug-search">
+            <Search size={11} className="hms-rx-drug-icon" />
+            <input
+              value={query}
+              onChange={e => onQueryChange(e.target.value)}
+              onFocus={() => { clearTimeout(blurTimer.current); setOpen(true); if (results.length === 0 && query) doSearch(query); }}
+              onBlur={() => { blurTimer.current = setTimeout(() => setOpen(false), 150); }}
+              placeholder="Drug name (e.g. Amoxicillin, Crocin)"
+              className="hms-rx-drug-input"
+            />
+            {searching && <Spinner className="w-3 h-3" />}
           </div>
 
-          {item.drugId && (
-            <p className="hms-drug-row__linked">
-              {[item.drugGeneric, item.drugStrength, item.drugForm].filter(Boolean).join(" · ") || "Linked to master"}
-            </p>
-          )}
+          {item.drugId && (() => {
+            const detail = [item.drugGeneric, item.drugStrength, item.drugForm].filter(Boolean).join(" · ");
+            return detail ? <p className="hms-rx-drug-linked">{detail}</p> : null;
+          })()}
           {!item.drugId && query.trim().length >= 2 && (
-            <p className="hms-drug-row__warn">
-              <AlertCircle className="w-3 h-3" />
-              Not linked to drug master — pharmacy will see free-text only
+            <p className="hms-rx-drug-warn">
+              <AlertCircle size={9} /> Not in drug master
             </p>
           )}
 
-          <div className="hms-drug-row__grid">
-            <div>
-              <label className="hms-drug-row__col-label">Dose</label>
-              <input
-                value={item.dose}
-                onChange={e => onChange("dose", e.target.value)}
-                placeholder="1 tab / 5ml"
-                className="hms-drug-row__field"
-              />
+          {open && results.length > 0 && (
+            <div className="hms-rx-drug-results">
+              {results.map(d => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onMouseDown={() => pickDrug(d)}
+                  className="hms-rx-drug-result"
+                >
+                  <p className="hms-rx-drug-result__name">{d.brandName}</p>
+                  <p className="hms-rx-drug-result__sub">
+                    {[d.genericName, d.strength, d.form].filter(Boolean).join(" · ")}
+                    {d.schedule && (
+                      <span className="hms-rx-sched-badge">SCH-{d.schedule}</span>
+                    )}
+                    {d.inStock !== undefined && (
+                      <span className={`hms-rx-stock ${d.inStock ? "is-in" : "is-out"}`}>
+                        {d.inStock ? "In stock" : "Out"}
+                      </span>
+                    )}
+                  </p>
+                </button>
+              ))}
             </div>
-            <div>
-              <label className="hms-drug-row__col-label">Frequency</label>
-              <SearchableSelect
-                value={item.frequency}
-                onChange={(v) => onChange("frequency", v)}
-                options={FREQUENCIES}
-              />
-            </div>
-            <div>
-              <label className="hms-drug-row__col-label">Duration (days)</label>
-              <input
-                type="number" min="0"
-                value={item.durationDays}
-                onChange={e => onChange("durationDays", e.target.value)}
-                placeholder="5"
-                className="hms-drug-row__field"
-              />
-            </div>
-            <div>
-              <label className="hms-drug-row__col-label">
-                Quantity *
-                {!item.quantityTouched && item.quantity && (
-                  <span className="hms-drug-row__auto-badge">· auto</span>
-                )}
-              </label>
-              <input
-                type="number" min="1"
-                value={item.quantity}
-                onChange={e => {
-                  const v = e.target.value;
-                  onChange("quantity", v);
-                  onChange("quantityTouched", v !== "");
-                }}
-                placeholder="15"
-                required
-                className="hms-drug-row__field"
-              />
-            </div>
-            <div>
-              <label className="hms-drug-row__col-label">Route</label>
-              <SearchableSelect
-                value={item.route}
-                onChange={(v) => onChange("route", v)}
-                options={ROUTES}
-              />
-            </div>
-          </div>
+          )}
+        </div>
 
+        {/* Dose */}
+        <div className="hms-rx-row__cell">
           <input
-            value={item.instructions}
-            onChange={e => onChange("instructions", e.target.value)}
-            placeholder="After meals · With milk · Taper over 5 days"
-            className="hms-drug-row__instructions"
+            value={item.dose}
+            onChange={e => onChange("dose", e.target.value)}
+            placeholder="1 tab"
+            className="hms-rx-cell-input"
           />
         </div>
 
+        {/* Frequency */}
+        <div className="hms-rx-row__cell">
+          <SearchableSelect
+            value={item.frequency}
+            onChange={v => onChange("frequency", v)}
+            options={FREQUENCIES}
+            clearable={false}
+            searchable={false}
+            compact={true}
+          />
+        </div>
+
+        {/* Duration */}
+        <div className="hms-rx-row__cell">
+          <input
+            type="number" min="0"
+            value={item.durationDays}
+            onChange={e => onChange("durationDays", e.target.value)}
+            placeholder="7"
+            className="hms-rx-cell-input"
+          />
+        </div>
+
+        {/* Quantity */}
+        <div className="hms-rx-row__cell">
+          <input
+            type="number" min="1"
+            value={item.quantity}
+            onChange={e => {
+              const v = e.target.value;
+              onChange("quantity", v);
+              onChange("quantityTouched", v !== "");
+            }}
+            placeholder="14"
+            required
+            title={isAutoQty ? "Auto-computed from frequency × days" : ""}
+            className={`hms-rx-cell-input${isAutoQty ? " is-auto" : ""}`}
+          />
+        </div>
+
+        {/* Route */}
+        <div className="hms-rx-row__cell">
+          <SearchableSelect
+            value={item.route}
+            onChange={v => onChange("route", v)}
+            options={ROUTES}
+            clearable={false}
+            searchable={false}
+            compact={true}
+          />
+        </div>
+
+        {/* Delete */}
         <button
           type="button"
           onClick={onRemove}
           disabled={!isLastRemovable}
           title={isLastRemovable ? "Remove drug" : "At least one drug is required"}
-          className="hms-drug-row__remove"
+          className="hms-rx-del-btn"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 size={13} />
         </button>
       </div>
+
+      {/* ── Instructions sub-row ── */}
+      <div className="hms-rx-row__instr">
+        <input
+          value={item.instructions}
+          onChange={e => onChange("instructions", e.target.value)}
+          placeholder="Instructions: after meals, with milk, taper over 5 days…"
+          className="hms-rx-instr-input"
+        />
+      </div>
+
     </div>
   );
 }

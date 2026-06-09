@@ -14,6 +14,7 @@ import {
     patientServicesApi,
     admissionApi,
     recordApi,
+    ipdVitalsApi,
 } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import Barcode from "@/components/ui/Barcode";
@@ -21,6 +22,8 @@ import axios from "axios";
 import SSOCookieManager from "@/utils/ssoManager";
 import WritePrescriptionModal from "@/components/modals/WritePrescriptionModal";
 import AddMedicalRecordModal from "@/components/modals/AddMedicalRecordModal";
+import IpdVitalsTab from "@/pages/admin/IpdVitalsTab";
+import IpdMarTab from "@/pages/admin/IpdMarTab";
 import { useNotification } from "@/context/NotificationContext";
 import {
     Alert,
@@ -49,10 +52,12 @@ pharmacyApi.interceptors.request.use((config) => {
 });
 
 const TABS = [
-    { id: "IPD Log", label: "IPD log" },
-    { id: "Attendor Details", label: "Attender" },
-    { id: "Room Mapped Assets", label: "Assets" },
-    { id: "IPD Billing", label: "Billing" },
+    { id: "IPD Log",            label: "IPD log"  },
+    { id: "Vitals",             label: "Vitals"   },
+    { id: "Meds",               label: "Meds"     },
+    { id: "Attendor Details",   label: "Attender" },
+    { id: "Room Mapped Assets", label: "Assets"   },
+    { id: "IPD Billing",        label: "Billing"  },
 ];
 
 const GST_RATE = 0.18;
@@ -1028,6 +1033,18 @@ export default function IPDDetailPane({
                             logs={logs}
                             showAddRecord={showAddRecord}
                             setShowAddRecord={setShowAddRecord}
+                            isDischarged={!!admission.actualDischargeDate}
+                        />
+                    )}
+                    {activeTab === "Vitals" && (
+                        <IpdVitalsTab
+                            admissionId={admission.id}
+                            isDischarged={!!admission.actualDischargeDate}
+                        />
+                    )}
+                    {activeTab === "Meds" && (
+                        <IpdMarTab
+                            admissionId={admission.id}
                             isDischarged={!!admission.actualDischargeDate}
                         />
                     )}

@@ -106,18 +106,20 @@ export default function WritePrescriptionModal({
           <div className="hms-form-stack">
 
             <div className="hms-clinical-section">
-              <div className="hms-rx-head">
-                <label className="hms-clinical-section__title">Drugs</label>
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="hms-rx-add-btn is-ghost"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add drug
-                </button>
-              </div>
+              <div className="hms-rx-table">
 
-              <div className="hms-rx-list">
+                {/* Column header */}
+                <div className="hms-rx-table-head">
+                  <div className="hms-rx-table-head__cell" />
+                  <div className="hms-rx-table-head__cell">Drug</div>
+                  <div className="hms-rx-table-head__cell">Dose</div>
+                  <div className="hms-rx-table-head__cell">Freq</div>
+                  <div className="hms-rx-table-head__cell">Days</div>
+                  <div className="hms-rx-table-head__cell">Qty *</div>
+                  <div className="hms-rx-table-head__cell">Route</div>
+                  <div className="hms-rx-table-head__cell" />
+                </div>
+
                 {items.map((item, idx) => (
                   <PrescriptionDrugRow
                     key={item.key}
@@ -128,6 +130,17 @@ export default function WritePrescriptionModal({
                     isLastRemovable={items.length > 1}
                   />
                 ))}
+
+                {/* Add drug row */}
+                <div className="hms-rx-add-row">
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    className="hms-rx-add-btn is-ghost"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add drug
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -149,17 +162,19 @@ export default function WritePrescriptionModal({
               />
             </div>
 
-            <div className="hms-form-grid is-2col">
-              <div className="hms-clinical-section">
-                <label className="hms-rx-notes-label">Next visit</label>
-                <input
-                  type="datetime-local"
-                  value={nextVisitDate}
-                  onChange={e => setNextVisitDate(e.target.value)}
-                  className="hms-clinical-input mt-2"
-                />
+            {!admissionId && (
+              <div className="hms-form-grid is-2col">
+                <div className="hms-clinical-section">
+                  <label className="hms-rx-notes-label">Next visit</label>
+                  <input
+                    type="datetime-local"
+                    value={nextVisitDate}
+                    onChange={e => setNextVisitDate(e.target.value)}
+                    className="hms-clinical-input mt-2"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </form>
 

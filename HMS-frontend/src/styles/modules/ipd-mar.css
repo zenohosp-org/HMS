@@ -1,0 +1,405 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   IPD Medication Administration Record — dedicated stylesheet
+   Used exclusively by IpdMarTab.jsx
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tab wrapper ──────────────────────────────────────────────────────────── */
+
+.mar-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 32px;
+}
+
+.mar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ── Discharge notice (reuse vitals pattern) ──────────────────────────────── */
+
+.mar-discharge-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #92400e;
+}
+
+/* ── Order card ───────────────────────────────────────────────────────────── */
+
+.mar-card {
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Drug info section */
+.mar-card__info {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px 12px;
+}
+
+.mar-card__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.mar-card__text {
+    flex: 1;
+    min-width: 0;
+}
+
+.mar-card__drug-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    line-height: 1.3;
+    margin: 0 0 5px;
+}
+
+/* Signa row: frequency + route pills + dose */
+.mar-card__signa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.mar-signa-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+
+.mar-signa-pill.is-freq {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.mar-signa-pill.is-route {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.mar-signa-dose {
+    font-size: 11.5px;
+    color: var(--hms-gray-600);
+    padding: 0 2px;
+}
+
+.mar-card__instr {
+    font-size: 12px;
+    color: var(--hms-gray-500);
+    font-style: italic;
+    margin: 0 0 6px;
+}
+
+/* Prescriber meta row */
+.mar-card__prescriber {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 11.5px;
+    color: var(--hms-gray-400);
+    margin: 0;
+}
+
+.mar-card__prescriber-sep {
+    color: var(--hms-gray-300);
+}
+
+/* ── Administration log toggle ───────────────────────────────────────────── */
+
+.mar-log-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 9px 16px;
+    background: var(--hms-gray-50);
+    border: none;
+    border-top: 1px solid var(--hms-gray-100);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hms-gray-600);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s, color 0.12s;
+    gap: 8px;
+}
+
+.mar-log-toggle:hover {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-800);
+}
+
+.mar-log-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 4px;
+}
+
+.mar-log-count.has-entries {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.mar-log-count.no-entries {
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-500);
+}
+
+/* ── Administration log list ─────────────────────────────────────────────── */
+
+.mar-log-list {
+    padding: 10px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--hms-gray-100);
+    background: var(--hms-gray-50);
+}
+
+.mar-log-empty {
+    font-size: 12px;
+    color: var(--hms-gray-400);
+    text-align: center;
+    padding: 6px 0;
+    font-style: italic;
+}
+
+/* ── Administration event row ────────────────────────────────────────────── */
+
+.mar-event {
+    border-radius: 8px;
+    padding: 9px 12px;
+    border: 1px solid transparent;
+}
+
+.mar-event.is-given   { background: #f0fdf4; border-color: #bbf7d0; }
+.mar-event.is-held    { background: #fffbeb; border-color: #fde68a; }
+.mar-event.is-refused { background: #fff7ed; border-color: #fed7aa; }
+
+.mar-event__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.mar-event__status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.is-given   .mar-event__status { color: #15803d; }
+.is-held    .mar-event__status { color: #b45309; }
+.is-refused .mar-event__status { color: #c2410c; }
+
+.mar-event__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+.mar-event__meta-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.mar-event__dose-badge {
+    font-size: 10.5px;
+    font-weight: 600;
+    background: var(--hms-gray-200);
+    color: var(--hms-gray-700);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.mar-event__reason {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--hms-gray-600);
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.mar-event__notes {
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: var(--hms-gray-500);
+    line-height: 1.4;
+}
+
+/* ── Entry form ──────────────────────────────────────────────────────────── */
+
+.mar-form {
+    padding: 14px 16px 16px;
+    border-top: 1px solid var(--hms-gray-150, #eaecf0);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mar-form__heading {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--hms-gray-500);
+    margin: 0 0 2px;
+}
+
+/* 2-column row for Time + Status */
+.mar-form__row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 480px) {
+    .mar-form__row-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.mar-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.mar-form__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hms-gray-700);
+}
+
+.mar-form__label .req {
+    color: #ef4444;
+    margin-left: 2px;
+}
+
+.mar-form__label .hint {
+    font-weight: 400;
+    color: var(--hms-gray-400);
+    font-size: 11px;
+    margin-left: 4px;
+}
+
+/* Shared input style for MAR form */
+.mar-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--hms-gray-300);
+    border-radius: 7px;
+    font-size: 13px;
+    color: var(--hms-gray-800);
+    background: var(--hms-white);
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.mar-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.mar-input::placeholder {
+    color: var(--hms-gray-400);
+    font-size: 12.5px;
+}
+
+/* Select keeps the same height/padding as input */
+select.mar-input {
+    appearance: auto;
+    padding-right: 28px;
+    cursor: pointer;
+}
+
+/* Textarea variant */
+.mar-input.is-textarea {
+    height: auto;
+    padding: 8px 10px;
+    resize: vertical;
+    min-height: 60px;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+/* ── Form action row ──────────────────────────────────────────────────────── */
+
+.mar-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 2px;
+}
+
+.mar-record-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 18px;
+    background: var(--hms-gray-900);
+    color: var(--hms-white);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+.mar-record-btn:hover:not(:disabled) {
+    background: var(--hms-gray-700);
+}
+
+.mar-record-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}

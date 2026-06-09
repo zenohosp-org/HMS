@@ -59,49 +59,47 @@ export default function PastRecordDetailModal({ record, onClose }) {
 
         {/* ── Header ───────────────────────────────────────────── */}
         <div className="zu-modal-header">
-          <div className="zu-modal-header-row">
-            <div className="hms-cmodal__title-block">
-              <div className={`hms-icon-tile ${meta.iconCls}`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h2 className="hms-cmodal__title">
-                    {meta.label}
-                  </h2>
-                  {items.length > 0 && record.historyType !== "PRESCRIPTION" && (
-                    <span className="hms-badge is-success is-soft">
-                      + {items.length} Rx
-                    </span>
-                  )}
-                </div>
-                <p className="hms-cmodal__subtitle">
-                  Past record — read-only
-                </p>
-              </div>
+          <div className="hms-cmodal__title-block">
+            <div className={`hms-icon-tile ${meta.iconCls}`}>
+              <Icon className="w-5 h-5" />
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="zu-modal-close"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="hms-cmodal__title">
+                  {meta.label}
+                </h2>
+                {items.length > 0 && record.historyType !== "PRESCRIPTION" && (
+                  <span className="hms-badge is-success is-soft">
+                    + {items.length} Rx
+                  </span>
+                )}
+              </div>
+              <p className="hms-cmodal__subtitle">
+                Past record — read-only
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="zu-modal-close"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          {/* Meta strip — type, date, MRN, visit linkage */}
-          <div className="hms-cmodal__meta is-4col">
-            <MetaField icon={<Clock className="w-3.5 h-3.5" />} label="Date" value={createdAt ? createdAt.toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"} />
-            <MetaField icon={<IdCard className="w-3.5 h-3.5" />} label="MRN" value={fmtId(record.mrn) || record.mrn || "—"} mono />
-            <MetaField icon={<Tag className="w-3.5 h-3.5" />} label="Type" value={meta.label} />
-            <MetaField
-              icon={record.admissionId ? <BedDouble className="w-3.5 h-3.5" /> : <Stethoscope className="w-3.5 h-3.5" />}
-              label={record.admissionId ? "Admission" : "Visit"}
-              value={record.admissionNumber || (record.admissionId ? "IPD" : "OPD")}
-              mono={!!record.admissionNumber}
-            />
-          </div>
+        {/* Meta strip — type, date, MRN, visit linkage */}
+        <div className="hms-cmodal__meta is-4col">
+          <MetaField icon={<Clock className="w-3.5 h-3.5" />} label="Date" value={createdAt ? createdAt.toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"} />
+          <MetaField icon={<IdCard className="w-3.5 h-3.5" />} label="MRN" value={fmtId(record.mrn) || record.mrn || "—"} mono />
+          <MetaField icon={<Tag className="w-3.5 h-3.5" />} label="Type" value={meta.label} />
+          <MetaField
+            icon={record.admissionId ? <BedDouble className="w-3.5 h-3.5" /> : <Stethoscope className="w-3.5 h-3.5" />}
+            label={record.admissionId ? "Admission" : "Visit"}
+            value={record.admissionNumber || (record.admissionId ? "IPD" : "OPD")}
+            mono={!!record.admissionNumber}
+          />
         </div>
 
         {/* ── Body ────────────────────────────────────────────── */}

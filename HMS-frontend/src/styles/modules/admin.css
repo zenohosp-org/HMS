@@ -3767,3 +3767,157 @@
     font-size: 12px;
     opacity: 0.7;
 }
+
+/* ─── IPD Vitals tab ─────────────────────────────────────────────────────── */
+
+.hms-ipd-vitals-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Form section */
+.hms-ipd-vitals-form-section {
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 10px;
+    padding: 16px 20px;
+}
+
+/* Discharged notice replaces the form */
+.hms-ipd-vitals-discharged-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #92400e;
+}
+
+/* Notes textarea inside the vitals form */
+.hms-vitals-notes-input {
+    width: 100%;
+    resize: vertical;
+    min-height: 56px;
+    padding: 8px 10px;
+    border: 1px solid var(--hms-gray-300);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--hms-gray-900);
+    background: var(--hms-white);
+    font-family: inherit;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+}
+.hms-vitals-notes-input:focus {
+    outline: none;
+    border-color: var(--hms-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* History section */
+.hms-ipd-vitals-history {
+    display: flex;
+    flex-direction: column;
+}
+
+.hms-vitals-reading-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Individual reading card */
+.hms-vitals-reading-card {
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 10px;
+    padding: 12px 16px;
+    transition: border-color 0.15s;
+}
+.hms-vitals-reading-card:hover {
+    border-color: var(--hms-gray-300);
+}
+
+.hms-vitals-reading-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.hms-vitals-reading-card__time {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+}
+
+.hms-vitals-reading-card__by {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+}
+
+/* Grid of vital fields inside a card */
+.hms-vitals-reading-card__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.hms-vitals-reading-card__field {
+    background: var(--hms-gray-50);
+    border-radius: 6px;
+    padding: 7px 10px;
+}
+
+.hms-vitals-reading-card__field-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--hms-gray-500);
+    margin-bottom: 3px;
+}
+
+.hms-vitals-reading-card__field-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    line-height: 1.2;
+}
+
+.hms-vitals-reading-card__field-unit {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--hms-gray-500);
+    margin-left: 2px;
+}
+
+.hms-vitals-reading-card__notes {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--hms-gray-100);
+    font-size: 12px;
+    color: var(--hms-gray-600);
+    line-height: 1.5;
+}
+

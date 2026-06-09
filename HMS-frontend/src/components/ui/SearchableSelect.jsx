@@ -27,6 +27,7 @@ export default function SearchableSelect({
   loading = false,
   clearable = true,
   searchable = true,
+  compact = false, // show value code in trigger instead of full label
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -76,7 +77,7 @@ export default function SearchableSelect({
         className="hms-select__trigger"
       >
         <span className={`hms-select__value ${selected ? "" : "is-placeholder"}`}>
-          {loading ? "Loading…" : (selected?.label ?? placeholder)}
+          {loading ? "Loading…" : (compact && selected ? selected.value : (selected?.label ?? placeholder))}
         </span>
         <span className="hms-select__icons">
           {clearable && value && !disabled && (

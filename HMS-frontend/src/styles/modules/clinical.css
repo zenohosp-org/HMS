@@ -84,6 +84,9 @@
 
 .zu-modal-body.is-flush {
     padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 
@@ -198,11 +201,13 @@
 .hms-consult-body {
     display: grid;
     grid-template-columns: 1fr;
+    flex: 1;
+    min-height: 0;
 }
 
 @media (min-width: 960px) {
     .hms-consult-body {
-        grid-template-columns: 3fr 2fr;
+        grid-template-columns: 2fr 2fr;
     }
 
     .hms-consult-body__main {
@@ -215,6 +220,8 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .hms-consult-body__aside {
@@ -223,6 +230,8 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .hms-clinical-section {

@@ -747,16 +747,19 @@ function RxTab({ draft }) {
             Leave empty for a notes-only consultation
           </p>
         </div>
-        <button
-          type="button"
-          onClick={draft.addItem}
-          className="hms-cv-rx-add-btn"
-        >
-          <Plus className="w-4 h-4" /> Add drug
-        </button>
       </div>
 
-      <div className="hms-cv-rx-list">
+      <div className="hms-rx-table">
+        <div className="hms-rx-table-head">
+          <div className="hms-rx-table-head__cell" />
+          <div className="hms-rx-table-head__cell">Drug</div>
+          <div className="hms-rx-table-head__cell">Dose</div>
+          <div className="hms-rx-table-head__cell">Freq</div>
+          <div className="hms-rx-table-head__cell">Days</div>
+          <div className="hms-rx-table-head__cell">Qty *</div>
+          <div className="hms-rx-table-head__cell">Route</div>
+          <div className="hms-rx-table-head__cell" />
+        </div>
         {draft.items.map((item, idx) => (
           <PrescriptionDrugRow
             key={item.key}
@@ -767,6 +770,11 @@ function RxTab({ draft }) {
             isLastRemovable={draft.items.length > 1}
           />
         ))}
+        <div className="hms-rx-add-row">
+          <button type="button" onClick={draft.addItem} className="hms-rx-add-btn is-ghost">
+            <Plus className="w-3.5 h-3.5" /> Add drug
+          </button>
+        </div>
       </div>
     </div>
   );

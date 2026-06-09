@@ -32,4 +32,26 @@ public interface PrescriptionItemRepository extends JpaRepository<PrescriptionIt
             ORDER BY r.createdAt ASC
             """)
     List<PrescriptionItem> findPendingIpd(@Param("hospitalId") UUID hospitalId);
+
+    /**
+     * All prescription items ordered during a single IPD admission, for the MAR
+     * tab. Joins through the parent PatientRecord to filter by both admissionId
+     * and hospitalId (tenant isolation). Includes all dispense statuses — the
+     * MAR needs to track administration of every ordered drug, including those
+     * already dispensed by pharmacy.
+     *
+     * Ordered by prescription date then display_order so drugs appear in the
+     * same sequence as on the printed prescription.
+     */
+    @Query("""
+            SELECT pi FROM PrescriptionItem pi
+            JOIN FETCH pi.record r
+            JOIN FETCH r.createdBy u
+            WHERE r.admissionId = :admissionId
+              AND r.hospital.id = :hospitalId
+            ORDER BY r.createdAt ASC, pi.displayOrder ASC
+            """)
+    List<PrescriptionItem> findByAdmissionIdAndHospitalId(
+            @Param("admissionId") UUID admissionId,
+            @Param("hospitalId") UUID hospitalId);
 }

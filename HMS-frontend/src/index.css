@@ -19,6 +19,7 @@
 @import './styles/modules/rooms.css';
 @import './styles/modules/finance.css';
 @import './styles/modules/dashboard.css';
+@import './styles/modules/infrastructure-tree.css';
 
 /* Base styles */
 * {

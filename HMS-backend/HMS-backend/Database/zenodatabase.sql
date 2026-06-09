@@ -1910,3 +1910,59 @@ create table public.users (
   constraint fksbg59w8q63i0oo53rlgvlcnjq foreign KEY (department_id) references departments (id),
   constraint fk1x1ua9gs3wykwoajj3fv5s863 foreign KEY (designation_id) references designations (id)
 ) TABLESPACE pg_default;
+
+
+create table public.ipd_vitals (
+  id               uuid         not null default gen_random_uuid(),
+  hospital_id      uuid         not null,
+  admission_id     uuid         not null,
+  patient_id       integer      not null,
+  recorded_at      timestamp    not null,
+  recorded_by      uuid         not null,
+  bp_systolic      integer      null,
+  bp_diastolic     integer      null,
+  heart_rate       integer      null,
+  respiratory_rate integer      null,
+  temperature      numeric(4,1) null,
+  spo2             integer      null,
+  pain_score       integer      null,
+  blood_glucose    integer      null,
+  weight_kg        numeric(5,2) null,
+  notes            text         null,
+  created_at       timestamp    not null default now(),
+  constraint ipd_vitals_pkey primary key (id),
+  constraint fk_ipd_vitals_hospital  foreign key (hospital_id)  references hospitals (id),
+  constraint fk_ipd_vitals_admission foreign key (admission_id) references admissions (id),
+  constraint fk_ipd_vitals_patient   foreign key (patient_id)   references patients (patient_id),
+  constraint fk_ipd_vitals_recorder  foreign key (recorded_by)  references users (id)
+) TABLESPACE pg_default;
+
+create index idx_ipd_vitals_admission_time
+  on public.ipd_vitals (admission_id, recorded_at desc);
+create table public.medication_administrations (
+  id               uuid         not null default gen_random_uuid(),
+  hospital_id      uuid         not null,
+  admission_id     uuid         not null,
+  order_id         uuid         not null,
+  patient_id       integer      not null,
+  administered_at  timestamp    not null,
+  administered_by  uuid         not null,
+  status           varchar(16)  not null,
+  dose_given       varchar(100) null,
+  reason           text         null,
+  notes            text         null,
+  created_at       timestamp    not null default now(),
+  constraint medication_administrations_pkey primary key (id),
+  constraint fk_med_admin_hospital  foreign key (hospital_id)  references hospitals (id),
+  constraint fk_med_admin_admission foreign key (admission_id) references admissions (id),
+  constraint fk_med_admin_order     foreign key (order_id)     references prescription_items (id),
+  constraint fk_med_admin_patient   foreign key (patient_id)   references patients (patient_id),
+  constraint fk_med_admin_nurse     foreign key (administered_by) references users (id),
+  constraint chk_med_admin_status   check (status in ('GIVEN', 'HELD', 'REFUSED'))
+) TABLESPACE pg_default;
+
+create index idx_med_admin_admission
+  on public.medication_administrations (admission_id, administered_at desc);
+
+create index idx_med_admin_order
+  on public.medication_administrations (order_id);

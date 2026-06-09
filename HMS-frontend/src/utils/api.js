@@ -795,6 +795,18 @@ const vitalsApi = {
   },
 };
 
+// IPD vitals — many readings per admission, newest-first list.
+const ipdVitalsApi = {
+  list:   (admissionId) => api.get(`/ipd/vitals/admission/${admissionId}`).then((r) => r.data),
+  create: (payload)     => api.post("/ipd/vitals", payload).then((r) => r.data),
+};
+
+// IPD Medication Administration Record — order cards with embedded admin log.
+const marApi = {
+  list:   (admissionId) => api.get(`/ipd/mar/admission/${admissionId}`).then((r) => r.data),
+  create: (payload)     => api.post("/ipd/mar", payload).then((r) => r.data),
+};
+
 // Autosave for the in-flight consultation modal. One row per appointment.
 // get() resolves to null when the appointment has no draft yet — the modal
 // uses that to decide between hydrating from autosave or seeding from the
@@ -855,5 +867,7 @@ export {
   roomTypeApi,
   consultationDraftsApi,
   vitalsApi,
-  externalResultsApi
+  externalResultsApi,
+  ipdVitalsApi,
+  marApi,
 };
