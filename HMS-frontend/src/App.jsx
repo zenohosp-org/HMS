@@ -27,6 +27,7 @@ import AmbulanceBilling from "./pages/billing/AmbulanceBilling";
 import AppointmentsDashboard from "@/pages/appointments/AppointmentsDashboard";
 import ConsultationViewPage from "@/pages/appointments/ConsultationViewPage";
 import PrintConsultation from "@/pages/print/PrintConsultation";
+import PrintDischargeSummary from "@/pages/print/PrintDischargeSummary";
 import ShiftRoster from "@/pages/admin/ShiftRoster";
 import Departments from "@/pages/admin/Departments";
 import Designations from "@/pages/admin/Designations";
@@ -41,6 +42,7 @@ import PackageManager from "@/pages/checkups/PackageManager";
 import CheckupBookings from "@/pages/checkups/CheckupBookings";
 import CheckupBookingDetail from "@/pages/checkups/CheckupBookingDetail";
 import UiGallery from "@/pages/dev/UiGallery";
+import GlobalLoader from "@/components/ui/GlobalLoader";
 function App() {
  return <ErrorBoundary><AuthProvider><FeatureFlagsProvider><NotificationProvider><ReferenceDataProvider><BrowserRouter><Suspense fallback={<GlobalLoader />}><Routes>{
  /* Public */

@@ -373,7 +373,7 @@ export default function IPDDetailPane({
                             badge: statusLabel,
                         });
                     })
-                ),
+                ).catch(() => {}),
 
                 ambulanceApi.getBookings(user.hospitalId).then((data) =>
                     data
