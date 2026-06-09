@@ -11,24 +11,45 @@ const api = axios.create({
   withCredentials: true
   // Automatically send/receive HttpOnly cookies
 });
+
+// Labs service axios instance — radiology + health-checkups. Same auth model
+// as the HMS api instance (SSO cookie via withCredentials, dev mock JWT via
+// Bearer header, 401-redirect to /login). Local dev uses /labs-api (Vite
+// proxies to localhost:8086); production sets VITE_LABS_API_URL to the
+// absolute https://api-labs.zenohosp.com. The base URL normalisation mirrors
+// the HMS api instance — accepts /labs-api, a bare host, or a host+/api.
+const labsApi = axios.create({
+  baseURL: (() => {
+    const rawUrl = import.meta.env.VITE_LABS_API_URL || "/labs-api";
+    if (rawUrl === "/labs-api") return "/labs-api";
+    const baseUrl = rawUrl.replace(/\/$/, "");
+    return baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
+  })(),
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true
+});
+
 if (import.meta.env.VITE_DEV_MOCK_AUTH === 'true' && import.meta.env.VITE_MOCK_JWT) {
   api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${import.meta.env.VITE_MOCK_JWT}`;
     return config;
   });
+  labsApi.interceptors.request.use((config) => {
+    config.headers.Authorization = `Bearer ${import.meta.env.VITE_MOCK_JWT}`;
+    return config;
+  });
 }
 
-api.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
-      if (!err.config?.url?.includes("/auth/me")) {
-        window.location.href = "/login";
-      }
+const unauthorizedRedirect = (err) => {
+  if (err.response?.status === 401) {
+    if (!err.config?.url?.includes("/auth/me")) {
+      window.location.href = "/login";
     }
-    return Promise.reject(err);
   }
-);
+  return Promise.reject(err);
+};
+api.interceptors.response.use((res) => res, unauthorizedRedirect);
+labsApi.interceptors.response.use((res) => res, unauthorizedRedirect);
 const authApi = {
   login: async (email, password) => {
     const { data } = await api.post("/auth/login", { email, password });
@@ -303,39 +324,42 @@ const roomLogsApi = {
     return data;
   }
 };
+// Radiology now served by labs (api-labs.zenohosp.com / labsApi instance).
+// Contract is byte-identical to the previous HMS endpoint — only the host
+// changes.
 const radiologyApi = {
   list: async (hospitalId, status) => {
     const params = { hospitalId };
     if (status) params.status = status;
-    const { data } = await api.get("/radiology", { params });
+    const { data } = await labsApi.get("/radiology", { params });
     return data;
   },
   get: async (id) => {
-    const { data } = await api.get(`/radiology/${id}`);
+    const { data } = await labsApi.get(`/radiology/${id}`);
     return data;
   },
   getByPatient: async (patientId) => {
-    const { data } = await api.get(`/radiology/patient/${patientId}`);
+    const { data } = await labsApi.get(`/radiology/patient/${patientId}`);
     return data;
   },
   getByAdmission: async (admissionId) => {
-    const { data } = await api.get(`/radiology/admission/${admissionId}`);
+    const { data } = await labsApi.get(`/radiology/admission/${admissionId}`);
     return data;
   },
   getStats: async (hospitalId) => {
-    const { data } = await api.get("/radiology/stats", { params: { hospitalId } });
+    const { data } = await labsApi.get("/radiology/stats", { params: { hospitalId } });
     return data;
   },
   create: async (payload) => {
-    const { data } = await api.post("/radiology", payload);
+    const { data } = await labsApi.post("/radiology", payload);
     return data;
   },
   markScanned: async (id) => {
-    const { data } = await api.patch(`/radiology/${id}/scan`);
+    const { data } = await labsApi.patch(`/radiology/${id}/scan`);
     return data;
   },
   generateReport: async (id, findings, observation) => {
-    const { data } = await api.patch(`/radiology/${id}/report`, { findings, observation });
+    const { data } = await labsApi.patch(`/radiology/${id}/report`, { findings, observation });
     return data;
   }
 };
@@ -667,6 +691,11 @@ const featureFlagsApi = {
   },
 };
 
+// Health checkups served via HMS backend proxy to labs. The HMS frontend
+// stays single-origin (hms.zenohosp.com/api/health-checkups/*); the proxy
+// forwards every request to labs (api-labs.zenohosp.com/api/health-checkups/*)
+// with JWT preserved. Contract is byte-identical to labs — the HMS proxy
+// is transparent.
 const checkupApi = {
   getPackages: async (hospitalId, activeOnly = false) => {
     const { data } = await api.get("/health-checkups/packages", { params: { hospitalId, activeOnly } });

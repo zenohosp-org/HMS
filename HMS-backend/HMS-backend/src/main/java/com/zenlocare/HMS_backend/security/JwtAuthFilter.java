@@ -48,9 +48,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             Optional<User> userOpt = userRepository.findByEmail(email);
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
+                // Keep the raw JWT in the credentials slot so downstream
+                // services (LabsClient et al.) can forward the caller's
+                // identity to peer services without re-extracting from
+                // the request. Backward-compatible: nothing currently
+                // reads credentials, so existing callers see no change.
                 var auth = new UsernamePasswordAuthenticationToken(
                         user,
-                        null,
+                        token,
                         List.of(new SimpleGrantedAuthority("ROLE_" + role)));
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);

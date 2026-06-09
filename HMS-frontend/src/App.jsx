@@ -11,42 +11,36 @@ import { lazy, Suspense } from "react";
 import Login from "@/pages/Login";
 import Unauthorized from "@/pages/Unauthorized";
 import SsoCallback from "@/pages/SsoCallback";
-import { GlobalLoader } from "@/components/ui";
-
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const DoctorsList = lazy(() => import("@/pages/admin/DoctorsList"));
-const DoctorDetails = lazy(() => import("@/pages/admin/DoctorDetails"));
-const StaffsList = lazy(() => import("@/pages/admin/StaffsList"));
-const Specializations = lazy(() => import("@/pages/admin/Specializations"));
-const Services = lazy(() => import("@/pages/admin/Services"));
-const Patients = lazy(() => import("@/pages/patients/Patients"));
-const PatientDetails = lazy(() => import("@/pages/patients/PatientDetails"));
-const Rooms = lazy(() => import("@/pages/rooms/Rooms"));
-const RoomLogsPage = lazy(() => import("@/pages/rooms/RoomLogsPage"));
-const OPDBilling = lazy(() => import("./pages/billing/OPDBilling"));
-const IPDBilling = lazy(() => import("./pages/billing/IPDBilling"));
-const AmbulanceBilling = lazy(() => import("./pages/billing/AmbulanceBilling"));
-const AppointmentsDashboard = lazy(() => import("@/pages/appointments/AppointmentsDashboard"));
-const ConsultationViewPage = lazy(() => import("@/pages/appointments/ConsultationViewPage"));
-const PrintConsultation = lazy(() => import("@/pages/print/PrintConsultation"));
-const PrintDischargeSummary = lazy(() => import("@/pages/print/PrintDischargeSummary"));
-const ShiftRoster = lazy(() => import("@/pages/admin/ShiftRoster"));
-const Departments = lazy(() => import("@/pages/admin/Departments"));
-const Designations = lazy(() => import("@/pages/admin/Designations"));
-const Admissions = lazy(() => import("@/pages/admin/Admissions"));
-const RadiologyQueue = lazy(() => import("@/pages/radiology/RadiologyQueue"));
-const RadiologyReports = lazy(() => import("@/pages/radiology/RadiologyReports"));
-const RadiologyReportView = lazy(() => import("@/pages/radiology/RadiologyReportView"));
-const InfrastructureMapping = lazy(() => import("@/pages/ipd/InfrastructureMapping"));
-const Settings = lazy(() => import("@/pages/settings/Settings"));
-const GeneralSettings = lazy(() => import("@/pages/settings/GeneralSettings"));
-const PatientServices = lazy(() => import("@/pages/settings/PatientServices"));
-const AmbulanceBook = lazy(() => import("@/pages/ambulance/AmbulanceBook"));
-const AmbulanceStatus = lazy(() => import("@/pages/ambulance/AmbulanceStatus"));
-const PackageManager = lazy(() => import("@/pages/checkups/PackageManager"));
-const CheckupBookings = lazy(() => import("@/pages/checkups/CheckupBookings"));
-const CheckupBookingDetail = lazy(() => import("@/pages/checkups/CheckupBookingDetail"));
-const UiGallery = lazy(() => import("@/pages/dev/UiGallery"));
+import Dashboard from "@/pages/Dashboard";
+import DoctorsList from "@/pages/admin/DoctorsList";
+import DoctorDetails from "@/pages/admin/DoctorDetails";
+import StaffsList from "@/pages/admin/StaffsList";
+import Specializations from "@/pages/admin/Specializations";
+import Services from "@/pages/admin/Services";
+import Patients from "@/pages/patients/Patients";
+import PatientDetails from "@/pages/patients/PatientDetails";
+import Rooms from "@/pages/rooms/Rooms";
+import RoomLogsPage from "@/pages/rooms/RoomLogsPage";
+import OPDBilling from "./pages/billing/OPDBilling";
+import IPDBilling from "./pages/billing/IPDBilling";
+import AmbulanceBilling from "./pages/billing/AmbulanceBilling";
+import AppointmentsDashboard from "@/pages/appointments/AppointmentsDashboard";
+import ConsultationViewPage from "@/pages/appointments/ConsultationViewPage";
+import PrintConsultation from "@/pages/print/PrintConsultation";
+import ShiftRoster from "@/pages/admin/ShiftRoster";
+import Departments from "@/pages/admin/Departments";
+import Designations from "@/pages/admin/Designations";
+import Admissions from "@/pages/admin/Admissions";
+import InfrastructureMapping from "@/pages/ipd/InfrastructureMapping"
+import Settings from "@/pages/settings/Settings"
+import GeneralSettings from "@/pages/settings/GeneralSettings"
+import PatientServices from "@/pages/settings/PatientServices"
+import AmbulanceBook from "@/pages/ambulance/AmbulanceBook"
+import AmbulanceStatus from "@/pages/ambulance/AmbulanceStatus";
+import PackageManager from "@/pages/checkups/PackageManager";
+import CheckupBookings from "@/pages/checkups/CheckupBookings";
+import CheckupBookingDetail from "@/pages/checkups/CheckupBookingDetail";
+import UiGallery from "@/pages/dev/UiGallery";
 function App() {
  return <ErrorBoundary><AuthProvider><FeatureFlagsProvider><NotificationProvider><ReferenceDataProvider><BrowserRouter><Suspense fallback={<GlobalLoader />}><Routes>{
  /* Public */
@@ -95,13 +89,8 @@ function App() {
  {/* Appointments */}
  <Route path="appointments" element={<AppointmentsDashboard />} />
  
- {/* Radiology */}
- <Route path="radiology" element={<Navigate to="/radiology/imaging-queue" replace />} />
- <Route path="radiology/imaging-queue" element={<RadiologyQueue />} />
- <Route path="radiology/imagin-queue" element={<RadiologyQueue />} />
- <Route path="radiology/reports" element={<RadiologyReports />} />
- <Route path="radiology/reports/:id" element={<RadiologyReportView />} />
- 
+ {/* Radiology pages now live on labs.zenohosp.com; HMS no longer hosts them. */}
+
  {/* Doctors */}
  <Route path="doctors" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><DoctorsList /></ProtectedRoute>} />
  <Route path="doctors/:id" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin", "doctor"]}><DoctorDetails /></ProtectedRoute>} />

@@ -3,12 +3,19 @@ package com.zenlocare.HMS_backend.service;
 import com.zenlocare.HMS_backend.dto.AppointmentDto;
 import com.zenlocare.HMS_backend.dto.AppointmentRequest;
 import com.zenlocare.HMS_backend.entity.*;
+import com.zenlocare.HMS_backend.integration.LabsClient;
+import com.zenlocare.HMS_backend.integration.dto.LabsCheckupBookingRequest;
+import com.zenlocare.HMS_backend.integration.dto.LabsCheckupBookingResponse;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,7 +39,7 @@ public class AppointmentService {
         private final DoctorRepository doctorRepository;
         private final PriceListRepository priceListRepository;
         private final UserRepository userRepository;
-        private final HealthCheckupService healthCheckupService;
+        private final LabsClient labsClient;
         private final InvoiceService invoiceService;
         private final InvoiceRepository invoiceRepository;
 
@@ -173,18 +180,31 @@ public class AppointmentService {
                 // hospital's today-queue dense and sequential (1..100) instead of
                 // gapped by no-shows or future bookings.
 
-                // Auto-create checkup booking if a package is selected
-                HealthCheckupBooking checkupBooking = null;
+                // Auto-create checkup booking via labs if a package is
+                // selected. Labs owns health_checkup_bookings end-to-end now;
+                // HMS only stores the FK UUID on the appointment row. The
+                // @ManyToOne join (and the re-fetch that propped it up
+                // during the migration) is gone — the booking's number,
+                // status, results all live in labs and are surfaced via the
+                // labs UI / the HMS-proxied checkup detail page.
+                UUID checkupBookingId = null;
                 if (request.getPackageId() != null) {
-                        String creatorName = createdBy.getFirstName() + " " + createdBy.getLastName();
-                        HealthCheckupService.BookingRequest br = new HealthCheckupService.BookingRequest();
+                        LabsCheckupBookingRequest br = new LabsCheckupBookingRequest();
                         br.setPatientId(request.getPatientId());
                         br.setPackageId(request.getPackageId());
                         br.setDoctorId(doctor.getId());
                         br.setScheduledDate(request.getApptDate().toString());
                         br.setScheduledTime(apptTime.toString());
                         br.setPaymentStatus("PENDING");
-                        checkupBooking = healthCheckupService.createBooking(hospital.getId(), br, creatorName);
+
+                        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                        String jwt = (auth != null && auth.getCredentials() instanceof String s) ? s : null;
+                        LabsCheckupBookingResponse created = labsClient.createHealthCheckupBooking(br, jwt);
+                        if (created == null || created.getId() == null) {
+                                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                                                "Labs returned no booking id for the checkup");
+                        }
+                        checkupBookingId = created.getId();
                 }
 
                 Appointment appointment = Appointment.builder()
@@ -199,7 +219,7 @@ public class AppointmentService {
                                 .status(Appointment.AppointmentStatus.SCHEDULED)
                                 .chiefComplaint(request.getChiefComplaint())
                                 .priceList(priceList)
-                                .checkupBooking(checkupBooking)
+                                .checkupBookingId(checkupBookingId)
                                 .createdBy(createdBy)
                                 .build();
 

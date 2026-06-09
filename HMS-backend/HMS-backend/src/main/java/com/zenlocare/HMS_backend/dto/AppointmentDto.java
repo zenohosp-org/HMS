@@ -53,8 +53,6 @@ public class AppointmentDto {
         private String priceListName;
 
         private UUID checkupBookingId;
-        private String checkupBookingNumber;
-        private String checkupPackageName;
 
         private UUID createdById;
         private String createdByName;
@@ -100,9 +98,12 @@ public class AppointmentDto {
                                 .cancelledAt(a.getCancelledAt())
                                 .priceListId(a.getPriceList() != null ? a.getPriceList().getId() : null)
                                 .priceListName(a.getPriceList() != null ? a.getPriceList().getName() : null)
-                                .checkupBookingId(a.getCheckupBooking() != null ? a.getCheckupBooking().getId() : null)
-                                .checkupBookingNumber(a.getCheckupBooking() != null ? a.getCheckupBooking().getBookingNumber() : null)
-                                .checkupPackageName(a.getCheckupBooking() != null && a.getCheckupBooking().getHealthPackage() != null ? a.getCheckupBooking().getHealthPackage().getName() : null)
+                                // Booking number + package name lived as denormalised reads off
+                                // the @ManyToOne. Now that labs owns the booking, the join is
+                                // gone — HMS exposes only the flat checkupBookingId UUID. The
+                                // appointments page's checkup link still navigates via the id;
+                                // it just renders without the number label.
+                                .checkupBookingId(a.getCheckupBookingId())
                                 .createdById(a.getCreatedBy().getId())
                                 .createdByName(creatorName)
                                 .createdAt(a.getCreatedAt())

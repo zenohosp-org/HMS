@@ -795,7 +795,7 @@ function AppointmentsDashboard() {
                   </td>
                   <td>
                     <p className="hms-appt-table__date">{format(parseISO(appt.apptDate), "yyyy-MM-dd")}</p>
-                    <p className="hms-appt-table__time">{appt.apptTime.substring(0, 5)} {parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}</p>
+                    <p className="hms-appt-table__time">{appt.apptTime ? `${appt.apptTime.substring(0, 5)} ${parseISO(`1970-01-01T${appt.apptTime}`).getHours() >= 12 ? "PM" : "AM"}` : "—"}</p>
                   </td>
                   <td>
                     {(() => {

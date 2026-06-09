@@ -42,7 +42,6 @@ public class InvoiceService {
     private final HospitalRepository hospitalRepository;
     private final PatientRepository patientRepository;
     private final AdmissionRepository admissionRepository;
-    private final RadiologyOrderRepository radiologyOrderRepository;
     private final AppointmentRepository appointmentRepository;
     private final SpecializationRepository specializationRepository;
     private final BankAccountRepository bankAccountRepository;
@@ -114,17 +113,9 @@ public class InvoiceService {
 
         Invoice saved = invoiceRepository.save(invoice);
 
-        // Mark linked radiology orders as BILLED — runs in same transaction,
-        // so if invoice creation fails the orders are not incorrectly marked.
-        if (saved.getItems() != null) {
-            saved.getItems().stream()
-                .filter(item -> "RADIOLOGY".equals(item.getItemType()) && item.getRadiologyOrderId() != null)
-                .forEach(item -> radiologyOrderRepository.findById(item.getRadiologyOrderId())
-                    .ifPresent(order -> {
-                        order.setStatus(RadiologyStatus.BILLED);
-                        radiologyOrderRepository.save(order);
-                    }));
-        }
+        // Radiology orders live in labs now; labs flips the status on its own
+        // report-generation flow. HMS no longer touches the radiology lifecycle
+        // even when an invoice line item carries radiology_order_id.
 
         // Mark linked appointments as BILLED — same transaction, atomic with invoice save.
         if (saved.getItems() != null) {
@@ -652,15 +643,12 @@ public class InvoiceService {
                         invoice.getAdmission().getId(), invoice.getId(), invoice.getAdvanceAdjusted());
             } catch (Exception ignored) {}
         }
-        // Mark linked appointments and radiology orders as BILLED
+        // Mark linked appointments as BILLED. Radiology orders are owned by
+        // labs now — labs flips their status itself, HMS leaves them alone.
         saved.getItems().stream()
                 .filter(i -> "CONSULTATION".equals(i.getItemType()) && i.getAppointmentId() != null)
                 .forEach(i -> appointmentRepository.findById(i.getAppointmentId())
                         .ifPresent(a -> { a.setStatus(Appointment.AppointmentStatus.BILLED); appointmentRepository.save(a); }));
-        saved.getItems().stream()
-                .filter(i -> "RADIOLOGY".equals(i.getItemType()) && i.getRadiologyOrderId() != null)
-                .forEach(i -> radiologyOrderRepository.findById(i.getRadiologyOrderId())
-                        .ifPresent(o -> { o.setStatus(RadiologyStatus.BILLED); radiologyOrderRepository.save(o); }));
         return toDTO(saved);
     }
 
@@ -746,15 +734,12 @@ public class InvoiceService {
 
         Invoice saved = invoiceRepository.save(invoice);
 
-        // Mark consultations and radiology as BILLED
+        // Mark consultations as BILLED. Radiology orders are owned by labs;
+        // labs flips their status from its own report-generation flow.
         saved.getItems().stream()
                 .filter(i -> "CONSULTATION".equals(i.getItemType()) && i.getAppointmentId() != null)
                 .forEach(i -> appointmentRepository.findById(i.getAppointmentId())
                         .ifPresent(a -> { a.setStatus(Appointment.AppointmentStatus.BILLED); appointmentRepository.save(a); }));
-        saved.getItems().stream()
-                .filter(i -> "RADIOLOGY".equals(i.getItemType()) && i.getRadiologyOrderId() != null)
-                .forEach(i -> radiologyOrderRepository.findById(i.getRadiologyOrderId())
-                        .ifPresent(o -> { o.setStatus(RadiologyStatus.BILLED); radiologyOrderRepository.save(o); }));
 
         return toDTO(saved);
     }
@@ -1172,226 +1157,6 @@ public class InvoiceService {
         return true;
     }
 
-    /**
-     * Auto-bill a radiology order once its report has been generated. Routes by
-     * the patient's current state:
-     *
-     * - **IPD** (order has an admission AND that admission is still ADMITTED):
-     *   append a RADIOLOGY line to the patient's active IPD invoice (creates
-     *   it via the standard IPD path if missing), recompute totals, and re-open
-     *   the invoice from SETTLED if it had already been closed. This is the
-     *   "add to the IPD bill alongside everything else" path.
-     *
-     * - **OPD walk-in** (no admission, or admission is no longer active):
-     *   create a fresh standalone OPD invoice with just this radiology line.
-     *   Invoice number format: {HOSPITAL_PREFIX}RAD-{12-digit-padded order id}.
-     *
-     * Idempotent: if the order is already BILLED or already linked to an
-     * existing invoice item, returns without doing anything. No-op when price
-     * is null — staff will price manually via the legacy flow.
-     */
-    @Transactional
-    public void billRadiologyOrder(com.zenlocare.HMS_backend.entity.RadiologyOrder order) {
-        if (order == null) return;
-        if (order.getPrice() == null || order.getPrice().compareTo(BigDecimal.ZERO) <= 0) return;
-        if (RadiologyStatus.BILLED.equals(order.getStatus())) return;
-
-        // Already linked to an invoice item? Then someone billed it manually first;
-        // just flip the status and exit so we don't double-bill.
-        if (invoiceRepository.existsItemByRadiologyOrderId(order.getId())) {
-            order.setStatus(RadiologyStatus.BILLED);
-            radiologyOrderRepository.save(order);
-            return;
-        }
-
-        boolean isIpd = order.getAdmission() != null
-                && com.zenlocare.HMS_backend.entity.AdmissionStatus.ADMITTED.equals(order.getAdmission().getStatus());
-
-        String description = "Radiology — " + order.getServiceName()
-                + (order.getReportId() != null ? " (Report " + order.getReportId() + ")" : "");
-
-        if (isIpd) {
-            // Find or create the IPD invoice for this admission, then append.
-            java.util.UUID admissionId = order.getAdmission().getId();
-            if (invoiceRepository.findAllByAdmission_IdOrderByCreatedAtDesc(admissionId).isEmpty()) {
-                createAdmissionInvoice(
-                        order.getHospital().getId(),
-                        order.getPatient().getId(),
-                        admissionId,
-                        order.getAdmission().getAdmissionNumber(),
-                        null);
-            }
-            Invoice invoice = invoiceRepository.findAllByAdmission_IdOrderByCreatedAtDesc(admissionId)
-                    .stream().findFirst().orElse(null);
-            if (invoice == null) return;
-
-            if (invoice.getItems() == null) invoice.setItems(new ArrayList<>());
-            invoice.getItems().add(InvoiceItem.builder()
-                    .invoice(invoice)
-                    .itemType("RADIOLOGY")
-                    .radiologyOrderId(order.getId())
-                    .description(description)
-                    .quantity(1)
-                    .unitPrice(order.getPrice())
-                    .totalPrice(order.getPrice())
-                    .build());
-
-            // Recompute totals
-            BigDecimal subtotal = invoice.getItems().stream()
-                    .map(it -> it.getTotalPrice() != null ? it.getTotalPrice() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal tax      = invoice.getTax()            != null ? invoice.getTax()            : BigDecimal.ZERO;
-            BigDecimal discount = invoice.getDiscount()       != null ? invoice.getDiscount()       : BigDecimal.ZERO;
-            invoice.setSubtotal(subtotal);
-            invoice.setTotal(subtotal.add(tax).subtract(discount));
-
-            // Re-open if already settled so staff sees the new line
-            if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
-                invoice.setStatus(InvoiceStatus.UNSETTLED);
-            }
-            invoice.setUpdatedAt(LocalDateTime.now());
-            invoiceRepository.save(invoice);
-        } else {
-            // OPD walk-in (no active admission). Create a standalone invoice.
-            String invoiceNum = HospitalIdPrefix.of(order.getHospital())
-                    + "RAD-" + String.format("%012d", order.getId());
-            Invoice invoice = Invoice.builder()
-                    .invoiceNumber(invoiceNum)
-                    .hospital(order.getHospital())
-                    .patient(order.getPatient())
-                    .subtotal(order.getPrice())
-                    .tax(BigDecimal.ZERO)
-                    .discount(BigDecimal.ZERO)
-                    .total(order.getPrice())
-                    .status(InvoiceStatus.UNPAID)
-                    .notes("Radiology walk-in — " + order.getServiceName())
-                    .build();
-            invoice.setItems(new ArrayList<>(List.of(InvoiceItem.builder()
-                    .invoice(invoice)
-                    .itemType("RADIOLOGY")
-                    .radiologyOrderId(order.getId())
-                    .description(description)
-                    .quantity(1)
-                    .unitPrice(order.getPrice())
-                    .totalPrice(order.getPrice())
-                    .build())));
-            invoiceRepository.save(invoice);
-        }
-
-        order.setStatus(RadiologyStatus.BILLED);
-        radiologyOrderRepository.save(order);
-    }
-
-    /**
-     * Auto-bill a health-checkup booking when it transitions to COMPLETED. Mirrors
-     * the radiology routing:
-     *
-     * - **IPD** — the booking's patient has an active ADMITTED admission → append
-     *   a CHECKUP line item to that admission's IPD invoice (creates one if
-     *   missing), re-open SETTLED so staff sees the new charge.
-     *
-     * - **OPD walk-in** — no active admission → create a standalone invoice
-     *   numbered {HOSPITAL_PREFIX}HCP-{12-digit-padded uuid suffix}.
-     *
-     * Idempotent: skip if booking.invoiceId already set, paymentStatus is BILLED
-     * or PAID, or any existing invoice item already references this booking.
-     * Returns the produced Invoice (or the existing one if already linked).
-     *
-     * Price comes from HealthPackage.price. If null/zero, the method no-ops
-     * — staff can bill manually via CreateInvoice afterwards.
-     */
-    @Transactional
-    public Invoice billCheckupBooking(com.zenlocare.HMS_backend.entity.HealthCheckupBooking booking) {
-        if (booking == null) return null;
-        if (booking.getInvoiceId() != null) {
-            return invoiceRepository.findById(booking.getInvoiceId()).orElse(null);
-        }
-        if ("BILLED".equals(booking.getPaymentStatus()) || "PAID".equals(booking.getPaymentStatus())) {
-            return null;
-        }
-        java.math.BigDecimal price = booking.getHealthPackage() != null
-                ? booking.getHealthPackage().getPrice() : null;
-        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) return null;
-
-        // Look up the patient's current admission (LAZY-load through the patient,
-        // then a fresh query — booking.patient is EAGER so this is cheap).
-        java.util.Optional<com.zenlocare.HMS_backend.entity.Admission> activeAdm =
-                admissionRepository.findByPatientIdAndStatus(
-                        booking.getPatient().getId(),
-                        com.zenlocare.HMS_backend.entity.AdmissionStatus.ADMITTED);
-
-        String description = "Health Checkup — " + booking.getHealthPackage().getName()
-                + " (" + booking.getBookingNumber() + ")";
-
-        Invoice resultInvoice;
-        if (activeAdm.isPresent()) {
-            UUID admissionId = activeAdm.get().getId();
-            if (invoiceRepository.findAllByAdmission_IdOrderByCreatedAtDesc(admissionId).isEmpty()) {
-                createAdmissionInvoice(
-                        booking.getHospital().getId(),
-                        booking.getPatient().getId(),
-                        admissionId,
-                        activeAdm.get().getAdmissionNumber(),
-                        null);
-            }
-            Invoice invoice = invoiceRepository.findAllByAdmission_IdOrderByCreatedAtDesc(admissionId)
-                    .stream().findFirst().orElse(null);
-            if (invoice == null) return null;
-
-            if (invoice.getItems() == null) invoice.setItems(new ArrayList<>());
-            invoice.getItems().add(InvoiceItem.builder()
-                    .invoice(invoice)
-                    .itemType("CHECKUP")
-                    .description(description)
-                    .quantity(1)
-                    .unitPrice(price)
-                    .totalPrice(price)
-                    .build());
-
-            BigDecimal subtotal = invoice.getItems().stream()
-                    .map(it -> it.getTotalPrice() != null ? it.getTotalPrice() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal tax      = invoice.getTax()      != null ? invoice.getTax()      : BigDecimal.ZERO;
-            BigDecimal discount = invoice.getDiscount() != null ? invoice.getDiscount() : BigDecimal.ZERO;
-            invoice.setSubtotal(subtotal);
-            invoice.setTotal(subtotal.add(tax).subtract(discount));
-
-            if (InvoiceStatus.PAID.equals(invoice.getStatus()) || InvoiceStatus.SETTLED.equals(invoice.getStatus())) {
-                invoice.setStatus(InvoiceStatus.UNSETTLED);
-            }
-            invoice.setUpdatedAt(LocalDateTime.now());
-            resultInvoice = invoiceRepository.save(invoice);
-        } else {
-            String invoiceNum = HospitalIdPrefix.of(booking.getHospital())
-                    + "HCP-" + booking.getId().toString().replace("-", "").substring(0, 12).toUpperCase();
-            Invoice invoice = Invoice.builder()
-                    .invoiceNumber(invoiceNum)
-                    .hospital(booking.getHospital())
-                    .patient(booking.getPatient())
-                    .subtotal(price)
-                    .tax(BigDecimal.ZERO)
-                    .discount(BigDecimal.ZERO)
-                    .total(price)
-                    .status(InvoiceStatus.UNPAID)
-                    .notes("Health Checkup — " + booking.getHealthPackage().getName())
-                    .build();
-            invoice.setItems(new ArrayList<>(List.of(InvoiceItem.builder()
-                    .invoice(invoice)
-                    .itemType("CHECKUP")
-                    .description(description)
-                    .quantity(1)
-                    .unitPrice(price)
-                    .totalPrice(price)
-                    .build())));
-            resultInvoice = invoiceRepository.save(invoice);
-        }
-
-        booking.setInvoiceId(resultInvoice.getId());
-        booking.setPaymentStatus("BILLED");
-        // Caller (HealthCheckupService) saves the booking — we don't have a
-        // direct booking repo dependency here to avoid an extra cycle.
-        return resultInvoice;
-    }
 
     private boolean isCollectible(Invoice inv) {
         InvoiceStatus s = inv.getStatus();

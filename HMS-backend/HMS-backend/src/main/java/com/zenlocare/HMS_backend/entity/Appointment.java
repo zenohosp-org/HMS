@@ -84,9 +84,11 @@ public class Appointment {
     @JoinColumn(name = "admission_id")
     private com.zenlocare.HMS_backend.entity.Admission admission;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "checkup_booking_id")
-    private com.zenlocare.HMS_backend.entity.HealthCheckupBooking checkupBooking;
+    // Health-checkup bookings live in the labs service post-migration.
+    // The DB column stays UUID — we just stop loading the related entity
+    // here. Labs is the owner of the row; HMS only stores the FK.
+    @Column(name = "checkup_booking_id")
+    private UUID checkupBookingId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

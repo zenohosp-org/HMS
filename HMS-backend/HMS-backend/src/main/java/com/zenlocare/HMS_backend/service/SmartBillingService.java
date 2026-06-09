@@ -2,8 +2,13 @@ package com.zenlocare.HMS_backend.service;
 
 import com.zenlocare.HMS_backend.dto.SmartBillingSuggestion;
 import com.zenlocare.HMS_backend.entity.*;
+import com.zenlocare.HMS_backend.integration.LabsClient;
+import com.zenlocare.HMS_backend.integration.dto.LabsRadiologyOrderDTO;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,14 +18,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SmartBillingService {
 
     private final RoomRepository roomRepository;
-    private final RadiologyOrderRepository radiologyOrderRepository;
     private final AppointmentRepository appointmentRepository;
     private final AdmissionRepository admissionRepository;
+    private final LabsClient labsClient;
 
     @Transactional(readOnly = true)
     public SmartBillingSuggestion getSuggestions(Integer patientId, UUID admissionId) {
@@ -51,18 +57,13 @@ public class SmartBillingService {
         }
 
         // ── Pending radiology orders ────────────────────────────────────
+        // Sourced from labs (api-labs.zenohosp.com /api/radiology). Labs is
+        // hospital-scoped, so we fetch the combined PENDING_SCAN +
+        // AWAITING_REPORT set for the user's hospital and filter to this
+        // patient client-side. JWT must travel with the call so labs validates
+        // the same identity HMS just validated.
         List<SmartBillingSuggestion.RadiologySuggestion> radiologySuggestions =
-                radiologyOrderRepository.findByPatientIdOrderByCreatedAtDesc(patientId)
-                        .stream()
-                        .filter(r -> r.getStatus() == RadiologyStatus.PENDING_SCAN
-                                  || r.getStatus() == RadiologyStatus.AWAITING_REPORT)
-                        .map(r -> SmartBillingSuggestion.RadiologySuggestion.builder()
-                                .orderId(r.getId())
-                                .serviceName(r.getServiceName())
-                                .status(r.getStatus().name())
-                                .scheduledDate(r.getScheduledDate() != null ? r.getScheduledDate().toString() : null)
-                                .build())
-                        .collect(Collectors.toList());
+                fetchPendingRadiologyForPatient(patientId);
 
         // ── Recent appointments (last 60 days, COMPLETED) ───────────────
         List<SmartBillingSuggestion.AppointmentSuggestion> apptSuggestions = new ArrayList<>(
@@ -125,6 +126,47 @@ public class SmartBillingService {
                 .radiologyOrders(radiologySuggestions)
                 .appointments(apptSuggestions)
                 .build();
+    }
+
+    /**
+     * Fetches pending + awaiting-report radiology orders for the caller's
+     * hospital via labs, narrowed to one patient.
+     *
+     * Two callers reach this code path with very different auth contexts:
+     *  - BillingController → HTTP request → SecurityContext has a real user
+     *    and the JWT lives in Authentication.credentials. Labs is called.
+     *  - InvoiceSyncScheduler → @Scheduled job → no SecurityContext, no JWT.
+     *    Returning an empty list here is safe because the scheduler routes
+     *    through computeEstimatedTotal(), which only reads roomCharge and
+     *    appointments from the suggestion — radiology was never consumed
+     *    on that path, even before the migration.
+     */
+    private List<SmartBillingSuggestion.RadiologySuggestion> fetchPendingRadiologyForPatient(Integer patientId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return Collections.emptyList();
+        String jwt = auth.getCredentials() instanceof String s ? s : null;
+        if (jwt == null || jwt.isBlank()) return Collections.emptyList();
+        if (!(auth.getPrincipal() instanceof User user)) return Collections.emptyList();
+        if (user.getHospital() == null) return Collections.emptyList();
+        UUID hospitalId = user.getHospital().getId();
+
+        try {
+            List<LabsRadiologyOrderDTO> orders = labsClient.getPendingRadiologyOrders(hospitalId, jwt);
+            return orders.stream()
+                    .filter(r -> patientId.equals(r.getPatientId()))
+                    .map(r -> SmartBillingSuggestion.RadiologySuggestion.builder()
+                            .orderId(r.getId())
+                            .serviceName(r.getServiceName())
+                            .status(r.getStatus())
+                            .scheduledDate(r.getScheduledDate() != null ? r.getScheduledDate().toString() : null)
+                            .build())
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            // Fail-soft: a labs outage shouldn't take down the finalize
+            // modal's smart suggestions entirely. Log and return empty.
+            log.warn("Labs radiology fetch failed for patient {}: {}", patientId, e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     /**
