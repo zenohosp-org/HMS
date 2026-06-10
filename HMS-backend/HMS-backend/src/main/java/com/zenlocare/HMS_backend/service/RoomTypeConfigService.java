@@ -26,7 +26,7 @@ public class RoomTypeConfigService {
     /** Create a new custom room type for a specific hospital */
     @Transactional
     public RoomTypeConfig create(UUID hospitalId, String code, String label, String category,
-                                  String icon, String color) {
+                                  String icon, String color, Boolean hasBeds, Boolean hasDailyCharge) {
         if (repo.existsByHospitalIdAndCode(hospitalId, code)) {
             throw new RuntimeException("Room type code '" + code + "' already exists");
         }
@@ -38,6 +38,8 @@ public class RoomTypeConfigService {
                 .category(category != null ? category : "WARD")
                 .icon(icon)
                 .color(color)
+                .hasBeds(hasBeds != null ? hasBeds : true)
+                .hasDailyCharge(hasDailyCharge != null ? hasDailyCharge : true)
                 .isSystem(false)
                 .isActive(true)
                 .build());
@@ -45,7 +47,7 @@ public class RoomTypeConfigService {
 
     /** Update an existing custom room type (system types can only update label/color) */
     @Transactional
-    public RoomTypeConfig update(UUID id, String label, String category, String icon, String color) {
+    public RoomTypeConfig update(UUID id, String label, String category, String icon, String color, Boolean hasBeds, Boolean hasDailyCharge) {
         RoomTypeConfig config = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Room type config not found"));
         config.setLabel(label);
@@ -55,6 +57,8 @@ public class RoomTypeConfigService {
         }
         if (icon != null) config.setIcon(icon);
         if (color != null) config.setColor(color);
+        if (hasBeds != null) config.setHasBeds(hasBeds);
+        if (hasDailyCharge != null) config.setHasDailyCharge(hasDailyCharge);
         return repo.save(config);
     }
 

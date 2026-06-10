@@ -1,10 +1,10 @@
 import { CenterLoader } from "@/components/ui/Loader";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useBlocker } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import SearchableSelect from "@/components/ui/SearchableSelect";
 import { infrastructureApi, roomTypeApi } from "@/utils/api";
-import { Modal, Button, FormGroup, Input } from "@/components/ui";
+import { Modal, Button, FormGroup, Input, Select } from "@/components/ui";
 import {
   Building2,
   Layers,
@@ -14,22 +14,39 @@ import {
   AlertTriangle,
   Network,
   Bed,
+  BedDouble,
+  BedSingle,
+  Crown,
   Scissors,
   HeartPulse,
+  Heart,
+  Baby,
+  Shield,
+  Siren,
+  Activity,
   X,
   Trash2,
   Package,
   Search,
-  Edit2
+  Edit2,
+  Info,
+  Pill,
+  FlaskConical,
+  Droplets,
+  User,
+  ClipboardPlus,
+  Users
 } from "lucide-react";
 
 // Fallback room types used while API loads
 const FALLBACK_ROOM_TYPES = [
-  { value: "GENERAL", label: "General Ward", category: "WARD" },
-  { value: "ICU", label: "ICU", category: "WARD" },
-  { value: "OT", label: "Operating Theatre", category: "OT" },
-  { value: "CATH_LAB", label: "Cath Lab", category: "OT" },
-  { value: "STORE", label: "Inventory Store", category: "STORE" },
+  { value: "GENERAL", label: "General Ward", category: "WARD", hasBeds: true, hasDailyCharge: true },
+  { value: "ICU", label: "ICU", category: "WARD", hasBeds: true, hasDailyCharge: true },
+  { value: "PRIVATE", label: "Private Room", category: "ROOM", hasBeds: true, hasDailyCharge: true },
+  { value: "SEMI_PRIVATE", label: "Semi-Private Room", category: "ROOM", hasBeds: true, hasDailyCharge: true },
+  { value: "OT", label: "Operating Theatre", category: "OT", hasBeds: false, hasDailyCharge: false },
+  { value: "CATH_LAB", label: "Cath Lab", category: "OT", hasBeds: false, hasDailyCharge: false },
+  { value: "STORE", label: "Inventory Store", category: "STORE", hasBeds: false, hasDailyCharge: false },
 ];
 
 function resizeTo(arr, n, makeDefault) {
@@ -66,10 +83,31 @@ function Stepper({ value, onChange, min = 0, max = 50, variant = "default" }) {
 export default function InfrastructureMapping() {
   const { user } = useAuth();
   const { notify } = useNotification();
-  const [buildings, setBuildings] = useState([]);
+  const [buildings, _setBuildings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [roomTypes, setRoomTypes] = useState(FALLBACK_ROOM_TYPES);
+  const [isDirty, setIsDirty] = useState(false);
+
+  const setBuildings = (val) => {
+    setIsDirty(true);
+    _setBuildings(val);
+  };
+
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
 
   // Search & Navigation States
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,7 +121,9 @@ export default function InfrastructureMapping() {
     show: false,
     message: "",
     onConfirm: null,
+    dependencies: [],
   });
+  const [confirmText, setConfirmText] = useState("");
 
   const [editModal, setEditModal] = useState({
     show: false,
@@ -108,17 +148,19 @@ export default function InfrastructureMapping() {
               category: t.category,
               color: t.color,
               icon: t.icon,
+              hasBeds: t.hasBeds ?? true,
+              hasDailyCharge: t.hasDailyCharge ?? true,
               isSystem: t.isSystem
             }))
           );
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     infrastructureApi.get(user.hospitalId)
       .then((data) => {
         if (data?.length) {
-          setBuildings(data.map((b) => ({
+          _setBuildings(data.map((b) => ({
             name: b.name,
             floors: (b.floors ?? []).map((f) => {
               const allWards = f.wards ?? [];
@@ -143,33 +185,57 @@ export default function InfrastructureMapping() {
           })));
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [user.hospitalId]);
 
-  // Calculations
   const stats = useMemo(() => {
-    let rooms = 0;
+    let bldgs = buildings.length;
     let floors = 0;
-    let wards = 0;
+    let rooms = 0;
     let ots = 0;
     let stores = 0;
+    let beds = 0;
 
     buildings.forEach(b => {
       floors += (b.floors || []).length;
       (b.floors || []).forEach(f => {
-        wards += (f.wards || []).length;
         (f.wards || []).forEach(w => {
-          rooms += (w.rooms?.length || 0);
-          if (w.roomType === "OT") ots += 1;
-          if (w.roomType === "CATH_LAB") ots += 1;
-          if (w.roomType === "STORE") stores += 1;
+          const typeObj = roomTypes.find(t => t.value === w.roomType);
+          const category = typeObj ? typeObj.category : null;
+
+          if (category === "OT") ots++;
+          else if (category === "STORE") stores++;
+          
+          if (w.nodeType === "room") {
+            rooms++;
+            beds += (w.rooms?.[0]?.bedNames || []).length;
+          } else {
+            rooms += (w.rooms || []).length;
+            (w.rooms || []).forEach(r => {
+              beds += (r.bedNames || []).length;
+            });
+          }
         });
       });
     });
 
-    return { rooms, floors, wards, ots, stores };
-  }, [buildings]);
+    return { bldgs, floors, rooms, ots, stores, beds };
+  }, [buildings, roomTypes]);
+
+  const supportsBeds = useCallback((typeValue) => {
+    if (!typeValue) return true;
+    const t = roomTypes.find(rt => rt.value === typeValue);
+    if (!t) return true;
+    return t.hasBeds;
+  }, [roomTypes]);
+
+  const supportsDailyCharge = useCallback((typeValue) => {
+    if (!typeValue) return true;
+    const t = roomTypes.find(rt => rt.value === typeValue);
+    if (!t) return true;
+    return t.hasDailyCharge;
+  }, [roomTypes]);
 
   // Filtered Tree representation based on query
   const filteredTree = useMemo(() => {
@@ -199,14 +265,16 @@ export default function InfrastructureMapping() {
     }).filter(b => b.floors.length > 0 || b.name.toLowerCase().includes(query));
   }, [buildings, searchQuery]);
 
-  const confirmReduction = (message, onConfirm) => {
+  const confirmReduction = (message, onConfirm, dependencies = []) => {
+    setConfirmText("");
     setConfirmModal({
       show: true,
       message,
       onConfirm: () => {
         onConfirm();
-        setConfirmModal({ show: false, message: "", onConfirm: null });
-      }
+        setConfirmModal({ show: false, message: "", onConfirm: null, dependencies: [] });
+      },
+      dependencies
     });
   };
 
@@ -235,12 +303,12 @@ export default function InfrastructureMapping() {
       ...b,
       floors: b.floors.map((f, j) => j !== fIdx ? f : {
         ...f,
-        wards: [...f.wards, { 
-          name: type === 'ward' ? `Ward ${newIdx + 1}` : `Room ${newIdx + 1}`, 
+        wards: [...f.wards, {
+          name: type === 'ward' ? `Ward ${newIdx + 1}` : `Room ${newIdx + 1}`,
           nodeType: type,
-          roomType: type === 'ward' ? "GENERAL" : "OT", 
-          dailyCharge: "", 
-          rooms: type === 'room' ? [{ name: `Room ${newIdx + 1}`, bedNames: [] }] : [] 
+          roomType: type === 'ward' ? "GENERAL" : "OT",
+          dailyCharge: "",
+          rooms: type === 'room' ? [{ name: `Room ${newIdx + 1}`, bedNames: [] }] : []
         }]
       })
     }));
@@ -282,26 +350,39 @@ export default function InfrastructureMapping() {
 
   const deleteBuilding = (bIdx) => {
     const b = buildings[bIdx];
-    const hasData = (b.name !== "" && !b.name.startsWith("Building ")) || b.floors.length > 0;
     const executeDelete = () => {
       setBuildings((p) => p.filter((_, i) => i !== bIdx));
       setActiveBuildingIdx((prev) => Math.max(0, prev - 1));
       setActiveFloorIdx(0);
     };
 
-    if (hasData) {
-      confirmReduction(
-        `Are you sure you want to delete ${b.name || `Building ${bIdx + 1}`}? This will permanently discard all configured floors, wards, and rooms under it.`,
-        executeDelete
-      );
-    } else {
-      executeDelete();
-    }
+    let floorCount = b.floors.length;
+    let wardCount = 0; let roomCount = 0; let bedCount = 0;
+    b.floors.forEach(f => {
+      wardCount += (f.wards || []).length;
+      (f.wards || []).forEach(w => {
+        roomCount += (w.rooms || []).length;
+        (w.rooms || []).forEach(r => {
+          bedCount += (r.bedNames || []).length;
+        });
+      });
+    });
+
+    const deps = [];
+    if (floorCount > 0) deps.push(`${floorCount} Floor${floorCount !== 1 ? 's' : ''}`);
+    if (wardCount > 0) deps.push(`${wardCount} Ward${wardCount !== 1 ? 's' : ''}`);
+    if (roomCount > 0) deps.push(`${roomCount} Room${roomCount !== 1 ? 's' : ''}`);
+    if (bedCount > 0) deps.push(`${bedCount} Bed${bedCount !== 1 ? 's' : ''}`);
+
+    confirmReduction(
+      `Are you sure you want to delete ${b.name || `Building ${bIdx + 1}`}? This will permanently discard all configured floors, wards, and rooms under it.`,
+      executeDelete,
+      deps
+    );
   };
 
   const deleteFloor = (bIdx, fIdx) => {
     const f = buildings[bIdx].floors[fIdx];
-    const hasData = (f.name !== "" && !f.name.startsWith("Floor ")) || f.wards.length > 0;
     const executeDelete = () => {
       setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
         ...b,
@@ -310,14 +391,25 @@ export default function InfrastructureMapping() {
       setActiveFloorIdx((prev) => Math.max(0, prev - 1));
     };
 
-    if (hasData) {
-      confirmReduction(
-        `Are you sure you want to delete ${f.name || `Floor ${fIdx + 1}`}? This will permanently discard all configured wards and rooms on it.`,
-        executeDelete
-      );
-    } else {
-      executeDelete();
-    }
+    let wardCount = (f.wards || []).length;
+    let roomCount = 0; let bedCount = 0;
+    (f.wards || []).forEach(w => {
+      roomCount += (w.rooms || []).length;
+      (w.rooms || []).forEach(r => {
+        bedCount += (r.bedNames || []).length;
+      });
+    });
+
+    const deps = [];
+    if (wardCount > 0) deps.push(`${wardCount} Ward${wardCount !== 1 ? 's' : ''}`);
+    if (roomCount > 0) deps.push(`${roomCount} Room${roomCount !== 1 ? 's' : ''}`);
+    if (bedCount > 0) deps.push(`${bedCount} Bed${bedCount !== 1 ? 's' : ''}`);
+
+    confirmReduction(
+      `Are you sure you want to delete ${f.name || `Floor ${fIdx + 1}`}? This will permanently discard all configured wards and rooms on it.`,
+      executeDelete,
+      deps
+    );
   };
 
   const removeWard = (bIdx, fIdx, wIdx) => {
@@ -330,14 +422,64 @@ export default function InfrastructureMapping() {
       }));
     };
 
-    if (ward.name !== "" || ward.rooms.length > 0) {
-      confirmReduction(
-        `Are you sure you want to delete ${ward.name || `Ward ${wIdx + 1}`}? This will permanently discard all configured rooms in it.`,
-        executeDelete
-      );
-    } else {
-      executeDelete();
-    }
+    let roomCount = (ward.rooms || []).length;
+    let bedCount = 0;
+    (ward.rooms || []).forEach(r => {
+      bedCount += (r.bedNames || []).length;
+    });
+
+    const deps = [];
+    if (roomCount > 0) deps.push(`${roomCount} Room${roomCount !== 1 ? 's' : ''}`);
+    if (bedCount > 0) deps.push(`${bedCount} Bed${bedCount !== 1 ? 's' : ''}`);
+
+    confirmReduction(
+      `Are you sure you want to delete ${ward.name || `Ward ${wIdx + 1}`}? This will permanently discard all configured rooms in it.`,
+      executeDelete,
+      deps
+    );
+  };
+
+  const removeRoom = (bIdx, fIdx, wIdx, rIdx) => {
+    const room = buildings[bIdx].floors[fIdx].wards[wIdx].rooms[rIdx];
+    const executeDelete = () => {
+      setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
+        ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
+          ...f, wards: f.wards.map((w, k) => k !== wIdx ? w : {
+            ...w, rooms: w.rooms.filter((_, l) => l !== rIdx)
+          })
+        })
+      }));
+    };
+
+    let bedCount = (room.bedNames || []).length;
+    const deps = [];
+    if (bedCount > 0) deps.push(`${bedCount} Bed${bedCount !== 1 ? 's' : ''}`);
+
+    confirmReduction(
+      `Are you sure you want to delete ${room.name || `Room ${rIdx + 1}`}? This will permanently discard all configured beds inside it.`,
+      executeDelete,
+      deps
+    );
+  };
+
+  const removeBed = (bIdx, fIdx, wIdx, rIdx, bItemIdx) => {
+    const bedName = buildings[bIdx].floors[fIdx].wards[wIdx].rooms[rIdx].bedNames[bItemIdx];
+    const executeDelete = () => {
+      setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
+        ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
+          ...f, wards: f.wards.map((w, k) => k !== wIdx ? w : {
+            ...w, rooms: w.rooms.map((r, l) => l !== rIdx ? r : {
+              ...r, bedNames: r.bedNames.filter((_, idx) => idx !== bItemIdx)
+            })
+          })
+        })
+      }));
+    };
+
+    confirmReduction(
+      `Are you sure you want to delete ${bedName || `Bed ${bItemIdx + 1}`}?`,
+      executeDelete
+    );
   };
 
   const handleSave = async () => {
@@ -357,15 +499,17 @@ export default function InfrastructureMapping() {
               rooms: w.nodeType === "room"
                 ? [{ id: w.rooms?.[0]?.id || null, name: w.name || "Room", bedNames: w.rooms?.[0]?.bedNames || [] }]
                 : (w.rooms || []).map((r) => ({
-                    id: r.id || null,
-                    name: r.name || "",
-                    bedNames: r.bedNames || [],
-                  })),
+                  id: r.id || null,
+                  name: r.name || "",
+                  roomType: r.roomType || null,
+                  bedNames: r.bedNames || [],
+                })),
             })),
           ],
         })),
       }));
       await infrastructureApi.save(user.hospitalId, payload);
+      setIsDirty(false);
       notify("Hospital infrastructure updated and synced successfully!", "success");
     } catch {
       notify("Failed to save infrastructure configuration", "error");
@@ -404,13 +548,33 @@ export default function InfrastructureMapping() {
       const ward = buildings[bIdx].floors[fIdx].wards[wIdx];
       const room = ward.rooms[rIdx];
       formState = {
-        name: room.name
+        name: room.name,
+        roomType: room.roomType || (ward.roomType === "GENERAL" ? "PRIVATE" : ward.roomType),
+        dailyCharge: room.dailyCharge != null && room.dailyCharge !== "" ? room.dailyCharge : (ward.dailyCharge ?? "")
       };
     } else if (type === "bed") {
       const ward = buildings[bIdx].floors[fIdx].wards[wIdx];
       const room = ward.rooms[rIdx];
+
+      let effectiveCharge = null;
+      let inheritedFrom = "";
+      if (ward.nodeType === 'room') {
+        effectiveCharge = ward.dailyCharge;
+        inheritedFrom = "Standalone Room";
+      } else {
+        if (room.dailyCharge != null && room.dailyCharge !== "") {
+          effectiveCharge = room.dailyCharge;
+          inheritedFrom = "Room Override";
+        } else {
+          effectiveCharge = ward.dailyCharge;
+          inheritedFrom = "Ward Base Charge";
+        }
+      }
+
       formState = {
-        name: room.bedNames[bItemIdx] || ""
+        name: room.bedNames[bItemIdx] || "",
+        effectiveCharge,
+        inheritedFrom
       };
     }
 
@@ -463,7 +627,12 @@ export default function InfrastructureMapping() {
 
                 if (type === "ward-room") {
                   const updatedRooms = [...w.rooms];
-                  updatedRooms[rIdx] = { ...updatedRooms[rIdx], name: formState.name };
+                  updatedRooms[rIdx] = {
+                    ...updatedRooms[rIdx],
+                    name: formState.name,
+                    roomType: formState.roomType,
+                    dailyCharge: formState.dailyCharge === "" || formState.dailyCharge == null ? null : Number(formState.dailyCharge)
+                  };
                   return { ...w, rooms: updatedRooms };
                 }
 
@@ -567,10 +736,29 @@ export default function InfrastructureMapping() {
   }, [activeBuilding, activeFloorIdx]);
 
   const getWardIcon = (type) => {
-    if (type === "OT") return Scissors;
-    if (type === "CATH_LAB") return HeartPulse;
-    if (type === "STORE") return Package;
-    return Bed;
+    const roomType = roomTypes.find(t => t.value === type);
+    const iconName = roomType?.icon || "";
+
+    switch (iconName) {
+      case "bed-double": return BedDouble;
+      case "bed-single": return BedSingle;
+      case "crown": return Crown;
+      case "heart-pulse": return HeartPulse;
+      case "baby": return Baby;
+      case "shield": return Shield;
+      case "siren": return Siren;
+      case "heart": return Heart;
+      case "scissors": return Scissors;
+      case "activity": return Activity;
+      case "package": return Package;
+      case "pill": return Pill;
+      case "flask-conical": return FlaskConical;
+      case "droplets": return Droplets;
+      case "user": return User;
+      case "clipboard-plus": return ClipboardPlus;
+      case "users": return Users;
+      default: return Bed;
+    }
   };
 
   if (loading) {
@@ -600,19 +788,31 @@ export default function InfrastructureMapping() {
         </div>
 
         {/* Stats Panel */}
-        <div className="hms-infra-stats-strip">
-          {[
-            { label: "Bldgs", value: buildings.length, colorClass: "zu-stat-card-val is-default" },
-            { label: "Floors", value: stats.floors, colorClass: "zu-stat-card-val is-info" },
-            { label: "Rooms", value: stats.rooms, colorClass: "zu-stat-card-val is-violet" },
-            { label: "OTs", value: stats.ots, colorClass: "zu-stat-card-val is-success" },
-            { label: "Stores", value: stats.stores, colorClass: "zu-stat-card-val is-warning" }
-          ].map(({ label, value, colorClass }) => (
-            <div key={label} className="hms-infra-stats-strip__item">
-              <p className={`${colorClass} tabular-nums`}>{value}</p>
-              <p className="hms-infra-stats-strip__label">{label}</p>
-            </div>
-          ))}
+        <div className="hms-infra-top-stats">
+          <div className="hms-infra-top-stat">
+            <span className="hms-infra-top-stat__val">{stats.bldgs}</span>
+            <span className="hms-infra-top-stat__lbl">BLDGS</span>
+          </div>
+          <div className="hms-infra-top-stat">
+            <span className="hms-infra-top-stat__val">{stats.floors}</span>
+            <span className="hms-infra-top-stat__lbl">FLOORS</span>
+          </div>
+          <div className="hms-infra-top-stat">
+            <span className="hms-infra-top-stat__val">{stats.rooms}</span>
+            <span className="hms-infra-top-stat__lbl">ROOMS</span>
+          </div>
+          <div className="hms-infra-top-stat">
+            <span className="hms-infra-top-stat__val">{stats.ots}</span>
+            <span className="hms-infra-top-stat__lbl">OTS</span>
+          </div>
+          <div className="hms-infra-top-stat">
+            <span className="hms-infra-top-stat__val">{stats.stores}</span>
+            <span className="hms-infra-top-stat__lbl">STORES</span>
+          </div>
+          <div className="hms-infra-top-stat">
+            <span className="hms-infra-top-stat__val">{stats.beds}</span>
+            <span className="hms-infra-top-stat__lbl">BEDS</span>
+          </div>
         </div>
       </div>
 
@@ -629,7 +829,7 @@ export default function InfrastructureMapping() {
             className="zu-filter-bar__search-input"
           />
         </div>
-        
+
         {/* Helper Instructions */}
         <p className="text-12 text-gray-500 m-0 hidden md:block">
           💡 Click a Block or Floor card to navigate the visual hierarchy tree.
@@ -639,7 +839,7 @@ export default function InfrastructureMapping() {
       {/* Main Visual Tree Workspace */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden bg-gray-50 min-h-0 infra-tree-hide-scrollbar">
         <div className="infra-tree-workspace h-full min-h-full">
-          
+
           {/* COLUMN 1: BUILDINGS */}
           <div className="infra-tree-col">
             <div className="infra-tree-col-header">
@@ -715,8 +915,8 @@ export default function InfrastructureMapping() {
                 {activeBuilding ? (activeBuilding.floors || []).length : 0}
               </span>
             </div>
-            <div 
-              className={`infra-tree-col-content${activeBuilding ? " is-connected" : ""}${activeBuilding && (activeBuilding.floors || []).length === 0 ? " is-empty" : ""}`} 
+            <div
+              className={`infra-tree-col-content${activeBuilding ? " is-connected" : ""}${activeBuilding && (activeBuilding.floors || []).length === 0 ? " is-empty" : ""}`}
               style={activeBuilding ? getMinContentHeight(activeBuildingIdx) : undefined}
             >
               {!activeBuilding ? (
@@ -740,7 +940,7 @@ export default function InfrastructureMapping() {
                         </div>
                         <div className="infra-tree-card__info">
                           <h4 className="infra-tree-card__name truncate">{f.name || `Floor ${f.originalIdx + 1}`}</h4>
-                          <p className="infra-tree-card__meta">{(f.wards || []).length} Wards & zones</p>
+                          <p className="infra-tree-card__meta">{(f.wards || []).length} Zones</p>
                         </div>
                         <div className="infra-tree-card__actions" onClick={(e) => e.stopPropagation()}>
                           <button
@@ -785,20 +985,20 @@ export default function InfrastructureMapping() {
           <div className="infra-tree-col">
             <div className="infra-tree-col-header">
               <span className="infra-tree-col-title">
-                <Bed className="w-4 h-4 text-gray-500" /> Ward / Room
+                <Bed className="w-4 h-4 text-gray-500" /> Floor Zones
               </span>
               <span className="infra-tree-col-count">
                 {activeFloor ? (activeFloor.wards || []).length : 0}
               </span>
             </div>
-            <div 
-              className={`infra-tree-col-content${activeFloor ? " is-connected" : ""}${activeFloor && (activeFloor.wards || []).length === 0 ? " is-empty" : ""}`} 
+            <div
+              className={`infra-tree-col-content${activeFloor ? " is-connected" : ""}${activeFloor && (activeFloor.wards || []).length === 0 ? " is-empty" : ""}`}
               style={activeFloor ? getMinContentHeight(activeFloorIdx) : undefined}
             >
               {!activeFloor ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-4 text-gray-400">
                   <Layers className="w-8 h-8 mb-2 opacity-55" />
-                  <p className="text-12 font-medium">Select a floor to view wards & rooms</p>
+                  <p className="text-12 font-medium">Select a floor to view zones</p>
                 </div>
               ) : (
                 <>
@@ -829,11 +1029,11 @@ export default function InfrastructureMapping() {
                           <h4 className="infra-tree-card__name truncate">{w.name || `Node ${wIdx + 1}`}</h4>
                           <div className="infra-tree-card__meta truncate">
                             <span className={tagClass}>{w.roomType}</span>
-                            {w.dailyCharge != null && w.dailyCharge !== "" && `₹${w.dailyCharge}/d • `}
+                            {supportsDailyCharge(w.roomType) && w.dailyCharge != null && w.dailyCharge !== "" && `₹${w.dailyCharge}/d • `}
                             {isWardNode ? (
-                              <>{(w.rooms || []).length} Rooms • {w.rooms?.reduce((acc, r) => acc + (r.bedNames?.length || 0), 0) || 0} Beds</>
+                              <>{(w.rooms || []).length} Rooms{supportsBeds(w.roomType) ? ` • ${w.rooms?.reduce((acc, r) => acc + (r.bedNames?.length || 0), 0) || 0} Beds` : ''}</>
                             ) : (
-                              <>{w.rooms?.[0]?.bedNames?.length || 0} Beds</>
+                              supportsBeds(w.roomType) ? <>{w.rooms?.[0]?.bedNames?.length || 0} Beds</> : null
                             )}
                           </div>
                         </div>
@@ -855,8 +1055,8 @@ export default function InfrastructureMapping() {
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        
-                        {(isWardNode || isWActive) && (
+
+                        {(isWardNode || (isWActive && supportsBeds(w.roomType))) && (
                           <div className={`infra-tree-connection-badge ${isWActive ? "is-active" : "is-inactive"}`}>
                             {isWardNode ? (w.rooms || []).length : 0}
                           </div>
@@ -870,7 +1070,7 @@ export default function InfrastructureMapping() {
                       onClick={() => handleAddWardOrRoom(activeBuildingIdx, activeFloorIdx, 'ward')}
                       className="infra-tree-add-card-btn flex-1"
                     >
-                      <Plus className="w-4 h-4" /> Add Ward
+                      <Plus className="w-4 h-4" /> Add Zone
                     </button>
                     <button
                       type="button"
@@ -896,8 +1096,8 @@ export default function InfrastructureMapping() {
                   {(activeFloor.wards[activeWardIdx].rooms || []).length}
                 </span>
               </div>
-              <div 
-                className={`infra-tree-col-content is-connected${(activeFloor.wards[activeWardIdx].rooms || []).length === 0 ? " is-empty" : ""}`} 
+              <div
+                className={`infra-tree-col-content is-connected${(activeFloor.wards[activeWardIdx].rooms || []).length === 0 ? " is-empty" : ""}`}
                 style={getMinContentHeight(activeWardIdx)}
               >
                 {(activeFloor.wards[activeWardIdx].rooms || []).map((r, rIdx) => {
@@ -914,8 +1114,11 @@ export default function InfrastructureMapping() {
                       <div className="infra-tree-card__info">
                         <h4 className="infra-tree-card__name truncate">{r.name || `Room ${rIdx + 1}`}</h4>
                         <div className="infra-tree-card__meta truncate">
-                          <span className="infra-tree-badge-tag is-general">ROOM</span>
-                          {(r.bedNames || []).length} Beds
+                          <span className={`infra-tree-badge-tag ${r.roomType ? 'is-info' : 'is-general'}`}>{r.roomType || 'ROOM'}</span>
+                          {supportsBeds(r.roomType || activeFloor.wards[activeWardIdx].roomType) && ` ${(r.bedNames || []).length} Beds`}
+                          {supportsDailyCharge(r.roomType || activeFloor.wards[activeWardIdx].roomType) && (r.dailyCharge != null
+                            ? ` • ₹${r.dailyCharge}/d`
+                            : (activeFloor.wards[activeWardIdx].dailyCharge != null ? ` • Inherits ₹${activeFloor.wards[activeWardIdx].dailyCharge}/d` : ""))}
                         </div>
                       </div>
                       <div className="infra-tree-card__actions" onClick={(e) => e.stopPropagation()}>
@@ -929,15 +1132,7 @@ export default function InfrastructureMapping() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setBuildings(p => p.map((b, i) => i !== activeBuildingIdx ? b : {
-                              ...b, floors: b.floors.map((f, j) => j !== activeFloorIdx ? f : {
-                                ...f, wards: f.wards.map((w, k) => k !== activeWardIdx ? w : {
-                                  ...w, rooms: w.rooms.filter((_, idx) => idx !== rIdx)
-                                })
-                              })
-                            }));
-                          }}
+                          onClick={() => removeRoom(activeBuildingIdx, activeFloorIdx, activeWardIdx, rIdx)}
                           className="infra-tree-card__btn is-danger"
                           title="Delete Room"
                         >
@@ -945,9 +1140,11 @@ export default function InfrastructureMapping() {
                         </button>
                       </div>
 
-                      <div className={`infra-tree-connection-badge ${isRActive ? "is-active" : "is-inactive"}`}>
-                        {(r.bedNames || []).length}
-                      </div>
+                      {supportsBeds(r.roomType || activeFloor.wards[activeWardIdx].roomType) && (
+                        <div className={`infra-tree-connection-badge ${isRActive ? "is-active" : "is-inactive"}`}>
+                          {(r.bedNames || []).length}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -971,6 +1168,9 @@ export default function InfrastructureMapping() {
               const room = (ward.rooms || [])[rIdx];
 
               if (!room) return null;
+              
+              const effectiveType = ward.nodeType === 'room' ? ward.roomType : (room.roomType || ward.roomType);
+              if (!supportsBeds(effectiveType)) return null;
 
               return (
                 <div className="infra-tree-col">
@@ -982,8 +1182,8 @@ export default function InfrastructureMapping() {
                       {(room.bedNames || []).length}
                     </span>
                   </div>
-                  <div 
-                    className={`infra-tree-col-content is-connected${(room.bedNames || []).length === 0 ? " is-empty" : ""}`} 
+                  <div
+                    className={`infra-tree-col-content is-connected${(room.bedNames || []).length === 0 ? " is-empty" : ""}`}
                     style={getMinContentHeight(ward.nodeType === 'room' ? activeWardIdx : activeRoomIdx)}
                   >
                     {(room.bedNames || []).map((bedName, bItemIdx) => {
@@ -1009,17 +1209,7 @@ export default function InfrastructureMapping() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
-                                setBuildings(p => p.map((b, i) => i !== activeBuildingIdx ? b : {
-                                  ...b, floors: b.floors.map((f, j) => j !== activeFloorIdx ? f : {
-                                    ...f, wards: f.wards.map((w, k) => k !== activeWardIdx ? w : {
-                                      ...w, rooms: w.rooms.map((r, l) => l !== rIdx ? r : {
-                                        ...r, bedNames: r.bedNames.filter((_, idx) => idx !== bItemIdx)
-                                      })
-                                    })
-                                  })
-                                }));
-                              }}
+                              onClick={() => removeBed(activeBuildingIdx, activeFloorIdx, activeWardIdx, rIdx, bItemIdx)}
                               className="infra-tree-card__btn is-danger"
                               title="Delete Bed"
                             >
@@ -1048,8 +1238,7 @@ export default function InfrastructureMapping() {
       {/* Sticky Save Bar */}
       {buildings.length > 0 && (
         <div className="hms-infra-save-bar">
-          <div className="flex items-center gap-2.5">
-            <AlertTriangle className="w-4 h-4 hms-infra-save-bar__icon shrink-0" />
+          <div className="hms-infra-save-bar__content">
             <div>
               <p className="hms-infra-save-bar__title">Sync core master settings.</p>
               <p className="hms-infra-save-bar__sub mt-0.5">
@@ -1061,7 +1250,7 @@ export default function InfrastructureMapping() {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="hms-infra-save-bar__btn"
+            className="zu-btn-primary"
           >
             <Save className="w-4 h-4" />
             {saving ? "Saving Changes…" : "Save Master Layout"}
@@ -1077,9 +1266,50 @@ export default function InfrastructureMapping() {
               <AlertTriangle className="w-6 h-6 text-red-500" />
               <h3 className="hms-infra-modal__title">Confirm Removal</h3>
             </div>
-            <p className="hms-infra-modal__body">
+            <p className="hms-infra-modal__body" style={{ paddingTop: '4px', marginBottom: '16px' }}>
               {confirmModal.message}
             </p>
+
+            <div className="hms-infra-modal__warning">
+              <div className="hms-infra-modal__warning-content">
+                <div>
+                  <h4 className="hms-infra-modal__warning-title">Critical Data Loss Warning</h4>
+                  <p className="hms-infra-modal__warning-text">
+                    Deleting this infrastructure will cascade and collapse all associated <strong>Past Histories</strong>, <strong>Current Patient Admissions</strong>, and <strong>Active Billings</strong> linked to these units. This action is irreversible.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {confirmModal.dependencies && confirmModal.dependencies.length > 0 && (
+              <div className="hms-infra-modal__deps">
+                <p className="hms-infra-modal__deps-title">
+                  <Layers className="hms-infra-modal__deps-icon" />
+                  The following dependencies will also be destroyed:
+                </p>
+                <div className="hms-infra-modal__deps-box">
+                  <ul className="hms-infra-modal__deps-list">
+                    {confirmModal.dependencies.map((dep, idx) => (
+                      <li key={idx} className="hms-infra-modal__deps-item">
+                        <strong>{dep.split(' ')[0]}</strong> {dep.substring(dep.indexOf(' ') + 1)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            <div className="hms-infra-modal__input-group">
+              <label className="block text-13 font-medium text-slate-700 mb-1.5">
+                Type <strong>DELETE</strong> to confirm
+              </label>
+              <input
+                type="text"
+                className="hms-infra-modal__input"
+                placeholder="DELETE"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+              />
+            </div>
             <div className="hms-infra-modal__footer">
               <button
                 type="button"
@@ -1091,9 +1321,41 @@ export default function InfrastructureMapping() {
               <button
                 type="button"
                 onClick={confirmModal.onConfirm}
-                className="hms-infra-modal__confirm-btn"
+                disabled={confirmText !== "DELETE"}
+                className="hms-infra-modal__confirm-btn is-danger disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirm Removal
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unsaved Changes Blocker Modal */}
+      {blocker.state === "blocked" && (
+        <div className="hms-infra-modal-overlay">
+          <div className="hms-infra-modal">
+            <div className="hms-infra-modal__header">
+              <AlertTriangle className="w-6 h-6 text-orange-500" />
+              <h3 className="hms-infra-modal__title">Unsaved Changes</h3>
+            </div>
+            <p className="hms-infra-modal__body">
+              You have unsaved changes to your hospital infrastructure. If you leave this page now, your changes will be permanently lost.
+            </p>
+            <div className="hms-infra-modal__footer">
+              <button
+                type="button"
+                onClick={() => blocker.reset()}
+                className="hms-infra-modal__cancel-btn"
+              >
+                Stay on Page
+              </button>
+              <button
+                type="button"
+                onClick={() => blocker.proceed()}
+                className="hms-infra-modal__confirm-btn is-danger"
+              >
+                Discard Changes
               </button>
             </div>
           </div>
@@ -1128,8 +1390,8 @@ export default function InfrastructureMapping() {
             <FormGroup
               label={
                 editModal.type === "bed" ? "Bed Name" :
-                editModal.type === "ward-room" ? "Room Name" : 
-                `${editModal.type.charAt(0).toUpperCase() + editModal.type.slice(1)} Name`
+                  editModal.type === "ward-room" ? "Room Name" :
+                    `${editModal.type.charAt(0).toUpperCase() + editModal.type.slice(1)} Name`
               }
               hint="Required name/identifier"
             >
@@ -1140,25 +1402,50 @@ export default function InfrastructureMapping() {
               />
             </FormGroup>
 
-            {(editModal.type === "ward" || editModal.type === "room") && (
+            {(editModal.type === "ward" || editModal.type === "room" || editModal.type === "ward-room") && (
               <div className="grid grid-cols-2 gap-4">
                 <FormGroup label="Type">
-                  <SearchableSelect
+                  <Select
                     value={editModal.formState.roomType}
-                    onChange={(v) => setEditModal(p => ({ ...p, formState: { ...p.formState, roomType: v } }))}
-                    options={roomTypes.map((t) => ({ value: t.value, label: t.label }))}
-                  />
+                    onChange={(e) => setEditModal(p => ({ ...p, formState: { ...p.formState, roomType: e.target.value } }))}
+                  >
+                    {roomTypes
+                      .filter(t => editModal.type === "ward" ? t.category === "WARD" : t.category !== "WARD")
+                      .map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                  </Select>
                 </FormGroup>
 
-                <FormGroup label="Daily Charge (₹)">
-                  <Input
-                    type="number"
-                    min="0"
-                    value={editModal.formState.dailyCharge ?? ""}
-                    onChange={(e) => setEditModal(p => ({ ...p, formState: { ...p.formState, dailyCharge: e.target.value } }))}
-                    placeholder="0"
-                  />
-                </FormGroup>
+                {supportsDailyCharge(editModal.formState.roomType) && (
+                  <FormGroup label="Daily Charge (₹)">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={editModal.formState.dailyCharge ?? ""}
+                      onChange={(e) => setEditModal(p => ({ ...p, formState: { ...p.formState, dailyCharge: e.target.value } }))}
+                      placeholder="0"
+                    />
+                  </FormGroup>
+                )}
+              </div>
+            )}
+
+            {editModal.type === "bed" && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-start gap-3">
+                <div className="bg-blue-100 p-1.5 rounded-md mt-0.5 shrink-0">
+                  <Info className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-13 font-semibold text-blue-900 m-0 leading-tight">
+                    Applied Daily Charge: {editModal.formState.effectiveCharge ? `₹${editModal.formState.effectiveCharge}` : "Not Configured"}
+                  </p>
+                  <p className="text-11 text-blue-700 m-0 mt-1 leading-tight">
+                    {editModal.formState.effectiveCharge
+                      ? `This bed inherits its pricing from the ${editModal.formState.inheritedFrom} configuration.`
+                      : "No pricing has been configured for this room or its parent ward."}
+                  </p>
+                </div>
               </div>
             )}
           </div>

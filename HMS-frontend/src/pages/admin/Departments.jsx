@@ -91,7 +91,7 @@ export default function Departments() {
     const [editing, setEditing] = useState(null);
     const [form, setForm] = useState(emptyForm);
     const [saving, setSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState("CLINICAL");
+    const [activeTab, setActiveTab] = useState("ALL");
 
     const load = async () => {
         if (!user?.hospitalId) return;
@@ -112,8 +112,8 @@ export default function Departments() {
         setEditing(null);
         setForm(
             preset
-                ? { name: preset.name, type: activeTab, code: preset.code, description: "" }
-                : { ...emptyForm, type: activeTab }
+                ? { name: preset.name, type: preset.type || (activeTab === "ALL" ? "CLINICAL" : activeTab), code: preset.code, description: "" }
+                : { ...emptyForm, type: activeTab === "ALL" ? "CLINICAL" : activeTab }
         );
         setShowModal(true);
     };
@@ -164,11 +164,11 @@ export default function Departments() {
     }, {});
 
     const existing = new Set(departments.map((d) => d.name));
-    const rows = grouped[activeTab] || [];
-    const presetsForTab = (PRESETS[activeTab] || []).filter(
+    const rows = activeTab === "ALL" ? departments : (grouped[activeTab] || []);
+    const presetsForTab = activeTab === "ALL" ? [] : (PRESETS[activeTab] || []).filter(
         (p) => !existing.has(p.name)
     );
-    const allPresetsAdded = (PRESETS[activeTab] || []).every((p) =>
+    const allPresetsAdded = activeTab === "ALL" ? true : (PRESETS[activeTab] || []).every((p) =>
         existing.has(p.name)
     );
 
@@ -256,17 +256,20 @@ export default function Departments() {
                     type="pill"
                     active={activeTab}
                     onChange={setActiveTab}
-                    tabs={DEPT_TYPES.map((t) => ({
-                        id: t,
-                        label: titleCase(t),
-                        count: grouped[t]?.length ?? 0,
-                    }))}
+                    tabs={[
+                        { id: "ALL", label: "All", count: departments.length },
+                        ...DEPT_TYPES.map((t) => ({
+                            id: t,
+                            label: titleCase(t),
+                            count: grouped[t]?.length ?? 0,
+                        }))
+                    ]}
                 />
 
                 <Card className="p-0">
                     <div className="hms-group-header">
                         <span className="hms-group-header__title">
-                            {titleCase(activeTab)} departments
+                            {activeTab === "ALL" ? "All" : titleCase(activeTab)} departments
                         </span>
                         <span className="hms-group-header__count">
                             {rows.length} {rows.length === 1 ? "department" : "departments"}
@@ -280,28 +283,30 @@ export default function Departments() {
                         emptyMessage="No departments yet. Add from presets below or create custom."
                     />
 
-                    <div className="hms-preset-strip">
-                        <p className="hms-section-label is-tiny mb-3">
-                            Quick add from presets
-                        </p>
-                        <div className="hms-preset-strip__list">
-                            {presetsForTab.map((p) => (
-                                <button
-                                    key={p.name}
-                                    type="button"
-                                    onClick={() => openCreate(p)}
-                                    className="hms-preset-chip"
-                                >
-                                    <Plus size={12} /> {p.name}
-                                </button>
-                            ))}
-                            {allPresetsAdded && (
-                                <span className="hms-preset-strip__none">
-                                    All presets added
-                                </span>
-                            )}
+                    {activeTab !== "ALL" && (
+                        <div className="hms-preset-strip">
+                            <p className="hms-section-label is-tiny mb-3">
+                                Quick add from presets
+                            </p>
+                            <div className="hms-preset-strip__list">
+                                {presetsForTab.map((p) => (
+                                    <button
+                                        key={p.name}
+                                        type="button"
+                                        onClick={() => openCreate(p)}
+                                        className="hms-preset-chip"
+                                    >
+                                        <Plus size={12} /> {p.name}
+                                    </button>
+                                ))}
+                                {allPresetsAdded && (
+                                    <span className="hms-preset-strip__none">
+                                        All presets added
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </Card>
             
 

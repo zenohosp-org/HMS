@@ -30,7 +30,7 @@ public class HospitalServiceService {
                 .orElseThrow(() -> new RuntimeException("Service not found"));
         
         service.setName(details.getName());
-        service.setSpecializationId(details.getSpecializationId());
+        service.setDepartmentId(details.getDepartmentId());
         service.setPrice(details.getPrice());
         service.setGstRate(details.getGstRate());
         service.setIsActive(details.getIsActive());
