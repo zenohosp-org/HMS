@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { Droplet, Plus, MoreHorizontal, AlertTriangle, RefreshCw, FlaskConical, History, Activity, Calendar, CalendarDays } from "lucide-react";
+import {
+  Droplet,
+  Plus,
+  MoreHorizontal,
+  AlertTriangle,
+  RefreshCw,
+  FlaskConical,
+  History,
+  Activity,
+  Calendar,
+  CalendarDays,
+  Search,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { bloodBankApi } from "@/utils/api";
@@ -8,10 +20,8 @@ import {
   Button,
   Menu,
   PageHeader,
-  SearchBar,
   Table,
 } from "@/components/ui";
-import SearchableSelect from "@/components/ui/SearchableSelect";
 import RegisterBloodUnitModal from "@/components/modals/RegisterBloodUnitModal";
 import IssueBloodUnitModal from "@/components/modals/IssueBloodUnitModal";
 
@@ -25,25 +35,25 @@ function tonePillClass(meta) {
   }
 }
 
+const groupLabel = (code) =>
+  code ? code.replace("_POS", "+").replace("_NEG", "−") : "";
+
 /**
- * Blood Bank — two-view dashboard split by the zu-pill-group pattern
- * used on IPD Billing.
+ * Blood Bank — two-view dashboard (Stock / Issue Blood).
  *
- *   • Stock view     — inventory health: stat strip + group × component
- *                      matrix + filterable table of non-issued bags.
- *                      Primary action: Register bag.
- *   • Issue Blood    — issuance audit: time-based stat strip + history
- *                      table of ISSUED bags with patient / admission /
- *                      doctor columns. Read-only audit surface — actual
- *                      issuance is triggered from the Stock view's row
- *                      action menu (matches the billing tabs' pattern of
- *                      "this view is a lens, not a different workflow").
+ * Layout:
+ *   • zu-filter-bar holds the view tabs (pill-group, left), search
+ *     (centre, grows) and filter selects (right-aligned).
+ *   • Stat strip varies per tab.
+ *   • Stock tab adds a horizontal "by group" availability chip strip
+ *     — clicking a chip filters the bag table by that blood group.
+ *   • Bag table below.
  */
 export default function BloodBankStock() {
   const { user } = useAuth();
   const { notify } = useNotification();
 
-  const [tab, setTab] = useState("stock"); // "stock" | "issue"
+  const [tab, setTab] = useState("stock");
 
   const [stats, setStats] = useState(null);
   const [units, setUnits] = useState([]);
@@ -94,7 +104,6 @@ export default function BloodBankStock() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hospitalId, groupFilter, componentFilter, statusFilter]);
 
-  // Reset filters when switching tabs — each view has its own focus.
   useEffect(() => {
     setSearch("");
     setGroupFilter("");
@@ -108,9 +117,6 @@ export default function BloodBankStock() {
     return m;
   }, [statuses]);
 
-  // ── Per-tab unit subset ──────────────────────────────────────────────
-  // Stock view hides ISSUED bags by default (history belongs on the
-  // Issue tab); Issue view only shows ISSUED bags.
   const visibleUnits = useMemo(() => {
     if (tab === "issue") return units.filter((u) => u.statusCode === "ISSUED");
     return units.filter((u) => u.statusCode !== "ISSUED");
@@ -131,7 +137,6 @@ export default function BloodBankStock() {
     );
   }, [visibleUnits, search]);
 
-  // ── Issue-tab time-based metrics ─────────────────────────────────────
   const issuanceMetrics = useMemo(() => {
     const issued = units.filter((u) => u.statusCode === "ISSUED" && u.issuedAt);
     const now = new Date();
@@ -159,7 +164,6 @@ export default function BloodBankStock() {
     }
   };
 
-  // ── Column sets — each view picks its own ────────────────────────────
   const stockColumns = [
     {
       header: "Bag",
@@ -176,7 +180,7 @@ export default function BloodBankStock() {
       width: "22%",
       render: (u) => (
         <div className="flex items-center gap-2">
-          <span className="hms-bb-group">{u.bloodGroupCode?.replace("_POS", "+").replace("_NEG", "−")}</span>
+          <span className="hms-bb-group">{groupLabel(u.bloodGroupCode)}</span>
           <span className="text-sm text-gray-700">{u.componentCode}</span>
         </div>
       ),
@@ -258,7 +262,7 @@ export default function BloodBankStock() {
       width: "16%",
       render: (u) => (
         <div className="flex items-center gap-2">
-          <span className="hms-bb-group">{u.bloodGroupCode?.replace("_POS", "+").replace("_NEG", "−")}</span>
+          <span className="hms-bb-group">{groupLabel(u.bloodGroupCode)}</span>
           <span className="text-sm text-gray-700">{u.componentCode}</span>
         </div>
       ),
@@ -310,65 +314,6 @@ export default function BloodBankStock() {
     },
   ];
 
-  const groupOrder = groups.map((g) => g.code);
-  const componentOrder = components.map((c) => c.code);
-
-  const renderMatrix = () => {
-    if (!stats?.stockMatrix) return null;
-    const matrix = stats.stockMatrix;
-    return (
-      <div className="hms-bb-matrix">
-        <div className="hms-bb-matrix__head">
-          <div>
-            <div className="hms-bb-matrix__title">Available stock by group × component</div>
-            <div className="hms-bb-matrix__sub">Only AVAILABLE bags. Click a cell to filter the table.</div>
-          </div>
-          <Button variant="ghost" onClick={reload}><RefreshCw size={14} /> Refresh</Button>
-        </div>
-        <div className="hms-bb-matrix__grid">
-          <table className="hms-bb-matrix__table">
-            <thead>
-              <tr>
-                <th>Group</th>
-                {componentOrder.map((c) => (
-                  <th key={c}>{c.replace(/_/g, " ")}</th>
-                ))}
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupOrder.map((g) => {
-                const row = matrix[g] || {};
-                const total = Object.values(row).reduce((a, b) => a + b, 0);
-                return (
-                  <tr key={g}>
-                    <td><span className="hms-bb-group">{g.replace("_POS", "+").replace("_NEG", "−")}</span></td>
-                    {componentOrder.map((c) => {
-                      const count = row[c] || 0;
-                      return (
-                        <td key={c} className={`hms-bb-matrix__cell ${count ? "is-stocked" : "is-zero"}`}>
-                          <button
-                            type="button"
-                            onClick={() => { setGroupFilter(g); setComponentFilter(c); setStatusFilter("AVAILABLE"); }}
-                            className="bg-transparent border-0 cursor-pointer text-inherit p-0"
-                          >
-                            {count}
-                          </button>
-                        </td>
-                      );
-                    })}
-                    <td className={`hms-bb-matrix__cell ${total ? "is-stocked" : "is-zero"}`}>{total}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
-
-  // ── Stat strips — different per view ─────────────────────────────────
   const renderStockStats = () => (
     <div className="hms-bb-stats">
       <div className="hms-bb-stat">
@@ -453,6 +398,42 @@ export default function BloodBankStock() {
     </div>
   );
 
+  // Horizontal chip strip — one per blood group with available count.
+  // Click toggles group filter (and pins status to AVAILABLE).
+  const renderGroupStrip = () => {
+    if (!groups.length) return null;
+    const matrix = stats?.stockMatrix || {};
+    return (
+      <div className="hms-bb-groupstrip">
+        {groups.map((g) => {
+          const count = Object.values(matrix[g.code] || {}).reduce((a, b) => a + b, 0);
+          const isActive = groupFilter === g.code;
+          return (
+            <button
+              key={g.code}
+              type="button"
+              onClick={() => {
+                if (isActive) {
+                  setGroupFilter("");
+                } else {
+                  setGroupFilter(g.code);
+                  setStatusFilter("AVAILABLE");
+                }
+              }}
+              className={`hms-bb-groupstrip__chip ${isActive ? "is-active" : ""} ${count === 0 ? "is-empty" : ""}`}
+            >
+              <span className="hms-bb-group">{groupLabel(g.code)}</span>
+              <div className="hms-bb-groupstrip__meta">
+                <span className="hms-bb-groupstrip__count">{count}</span>
+                <span className="hms-bb-groupstrip__hint">avail</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   const titleBadge = tab === "stock"
     ? <Badge tone="info">{stats?.availableUnits ?? 0} available</Badge>
     : <Badge tone="violet">{issuanceMetrics.total} issued</Badge>;
@@ -481,7 +462,7 @@ export default function BloodBankStock() {
       />
 
       <div className="zu-page-content">
-        {/* Tab strip — pill segmented control, same pattern as IPD Billing */}
+        {/* Unified filter bar: tabs (left) · search (centre, grows) · selects (right) */}
         <div className="zu-filter-bar">
           <div className="zu-filter-bar__controls">
             <div className="zu-pill-group">
@@ -491,6 +472,7 @@ export default function BloodBankStock() {
                 className={`zu-pill-group__btn ${tab === "stock" ? "is-active" : ""}`}
               >
                 <Droplet size={13} /> Stock
+                <span className="zu-pill-group__btn-count">{stats?.availableUnits ?? 0}</span>
               </button>
               <button
                 type="button"
@@ -498,55 +480,64 @@ export default function BloodBankStock() {
                 className={`zu-pill-group__btn ${tab === "issue" ? "is-active" : ""}`}
               >
                 <History size={13} /> Issue Blood
+                <span className="zu-pill-group__btn-count">{issuanceMetrics.total}</span>
               </button>
             </div>
           </div>
-        </div>
 
-        {tab === "stock" ? renderStockStats() : renderIssueStats()}
-        {tab === "stock" && renderMatrix()}
-
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <div className="flex-1 min-w-[240px]">
-            <SearchBar
+          <div className="zu-filter-bar__search">
+            <Search className="zu-filter-bar__search-icon" />
+            <input
+              type="text"
               value={search}
-              onChange={setSearch}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder={
                 tab === "stock"
                   ? "Search bag / group / donor…"
                   : "Search bag / patient / admission / doctor…"
               }
+              className="zu-filter-bar__search-input"
             />
           </div>
-          <div className="w-44">
-            <SearchableSelect
+
+          <div className="zu-filter-bar__controls">
+            <select
               value={groupFilter}
-              onChange={setGroupFilter}
-              options={[{ value: "", label: "All groups" }, ...groups.map((g) => ({ value: g.code, label: g.label }))]}
-            />
-          </div>
-          <div className="w-44">
-            <SearchableSelect
+              onChange={(e) => setGroupFilter(e.target.value)}
+              className="zu-filter-select"
+            >
+              <option value="">All groups</option>
+              {groups.map((g) => (
+                <option key={g.code} value={g.code}>{g.label}</option>
+              ))}
+            </select>
+            <select
               value={componentFilter}
-              onChange={setComponentFilter}
-              options={[{ value: "", label: "All components" }, ...components.map((c) => ({ value: c.code, label: c.label }))]}
-            />
-          </div>
-          {tab === "stock" && (
-            <div className="w-44">
-              <SearchableSelect
+              onChange={(e) => setComponentFilter(e.target.value)}
+              className="zu-filter-select"
+            >
+              <option value="">All components</option>
+              {components.map((c) => (
+                <option key={c.code} value={c.code}>{c.label}</option>
+              ))}
+            </select>
+            {tab === "stock" && (
+              <select
                 value={statusFilter}
-                onChange={setStatusFilter}
-                options={[
-                  { value: "", label: "All statuses" },
-                  ...statuses
-                    .filter((s) => s.code !== "ISSUED")
-                    .map((s) => ({ value: s.code, label: s.label })),
-                ]}
-              />
-            </div>
-          )}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="zu-filter-select"
+              >
+                <option value="">All statuses</option>
+                {statuses.filter((s) => s.code !== "ISSUED").map((s) => (
+                  <option key={s.code} value={s.code}>{s.label}</option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
+
+        {tab === "stock" ? renderStockStats() : renderIssueStats()}
+        {tab === "stock" && renderGroupStrip()}
 
         <Table
           columns={tab === "stock" ? stockColumns : issueColumns}

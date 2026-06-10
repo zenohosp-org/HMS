@@ -52,69 +52,72 @@
 .hms-bb-stat.is-warn .hms-bb-stat__label { color: #92400e; }
 
 
-/* ── Stock matrix (blood group × component) ─────────────────────── */
-.hms-bb-matrix {
-    background: var(--hms-white);
-    border: 1px solid var(--hms-gray-200);
-    border-radius: 12px;
-    padding: 16px;
+/* ── Group availability strip (replaces the matrix) ─────────────────
+   Horizontal chip row, one chip per blood group, showing AVAILABLE
+   bag count. Click a chip to filter the bag table to that group. */
+.hms-bb-groupstrip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 10px;
     margin-bottom: 16px;
 }
 
-.hms-bb-matrix__head {
+.hms-bb-groupstrip__chip {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
-}
-
-.hms-bb-matrix__title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--hms-gray-900);
-}
-
-.hms-bb-matrix__sub {
-    font-size: 12px;
-    color: var(--hms-gray-500);
-}
-
-.hms-bb-matrix__grid {
-    overflow-x: auto;
-}
-
-.hms-bb-matrix__table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-.hms-bb-matrix__table th,
-.hms-bb-matrix__table td {
-    padding: 8px 10px;
-    text-align: center;
-    border-bottom: 1px solid var(--hms-gray-100);
-    font-variant-numeric: tabular-nums;
-}
-
-.hms-bb-matrix__table th {
-    font-weight: 600;
-    color: var(--hms-gray-600);
-    background: var(--hms-gray-50);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.hms-bb-matrix__table th:first-child,
-.hms-bb-matrix__table td:first-child {
+    gap: 10px;
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
     text-align: left;
-    font-weight: 700;
-    color: var(--hms-gray-900);
+    font-family: inherit;
 }
 
-.hms-bb-matrix__cell.is-zero { color: var(--hms-gray-400); }
-.hms-bb-matrix__cell.is-stocked { color: var(--hms-gray-900); font-weight: 600; }
+.hms-bb-groupstrip__chip:hover {
+    border-color: #fca5a5;
+    background: #fff7f7;
+}
+
+.hms-bb-groupstrip__chip.is-active {
+    border-color: #ef4444;
+    background: #fef2f2;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.10);
+}
+
+.hms-bb-groupstrip__chip.is-empty {
+    opacity: 0.55;
+}
+
+.hms-bb-groupstrip__chip.is-empty .hms-bb-groupstrip__count {
+    color: var(--hms-gray-400);
+}
+
+.hms-bb-groupstrip__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.hms-bb-groupstrip__count {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--hms-gray-900);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.hms-bb-groupstrip__hint {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--hms-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
 
 
 /* ── Group pill (compact A+/B−/etc. badge) ──────────────────────── */
