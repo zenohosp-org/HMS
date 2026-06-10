@@ -203,7 +203,26 @@ export default function AdminDashboard() {
         setLoading(true);
         dashboardApi
             .getSummary(user.hospitalId)
-            .then((data) => setSummary(data))
+            .then((data) => setSummary({
+                // Normalise the whole response shape up-front so every
+                // downstream access has a sensible default. Defensive
+                // against a partial backend response or a fresh hospital
+                // with no rows: scalars → 0 so .toLocaleString() works,
+                // arrays → [] so .map/.reduce/.length work.
+                totalPatients:              data?.totalPatients              ?? 0,
+                todaysNewPatients:          data?.todaysNewPatients          ?? 0,
+                patientMoMGrowthPercent:    data?.patientMoMGrowthPercent    ?? 0,
+                totalDoctors:               data?.totalDoctors               ?? 0,
+                totalActiveStaff:           data?.totalActiveStaff           ?? 0,
+                totalRevenueCollected:      data?.totalRevenueCollected      ?? 0,
+                totalOutstandingRevenue:    data?.totalOutstandingRevenue    ?? 0,
+                activeAdmissions:           data?.activeAdmissions           ?? 0,
+                appointmentsBreakdown:      data?.appointmentsBreakdown      || [],
+                patientAgeGroups:           data?.patientAgeGroups           || [],
+                staffByRole:                data?.staffByRole                || [],
+                patientRegistrationsTrend:  data?.patientRegistrationsTrend  || [],
+                revenueOverview:            data?.revenueOverview            || [],
+            }))
             .catch(() => notify("Failed to load dashboard statistics", "error"))
             .finally(() => setLoading(false));
     }, [user?.hospitalId, notify]);
@@ -226,7 +245,7 @@ export default function AdminDashboard() {
         );
     }
 
-    const apptTotal = summary.appointmentsBreakdown.reduce((sum, d) => sum + d.value, 0);
+    const apptTotal = (summary.appointmentsBreakdown || []).reduce((sum, d) => sum + (d?.value || 0), 0);
 
     const quickActions = [
         { label: "Add doctor",       sub: "Register a new doctor",   to: "/doctors",           icon: <Stethoscope size={16} />, iconTone: "success" },
