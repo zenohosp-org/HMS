@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Droplet, Plus, MoreHorizontal, AlertTriangle, RefreshCw, FlaskConical } from "lucide-react";
+import { Droplet, Plus, MoreHorizontal, AlertTriangle, RefreshCw, FlaskConical, History, Activity, Calendar, CalendarDays } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { bloodBankApi } from "@/utils/api";
@@ -26,13 +26,24 @@ function tonePillClass(meta) {
 }
 
 /**
- * Blood Bank stock + issuance — one-screen dashboard, list view, filters.
- * Stat strip → matrix grid → units table. Auto-bill happens inside the
- * issue modal; this page only orchestrates the calls.
+ * Blood Bank — two-view dashboard split by the zu-pill-group pattern
+ * used on IPD Billing.
+ *
+ *   • Stock view     — inventory health: stat strip + group × component
+ *                      matrix + filterable table of non-issued bags.
+ *                      Primary action: Register bag.
+ *   • Issue Blood    — issuance audit: time-based stat strip + history
+ *                      table of ISSUED bags with patient / admission /
+ *                      doctor columns. Read-only audit surface — actual
+ *                      issuance is triggered from the Stock view's row
+ *                      action menu (matches the billing tabs' pattern of
+ *                      "this view is a lens, not a different workflow").
  */
 export default function BloodBankStock() {
   const { user } = useAuth();
   const { notify } = useNotification();
+
+  const [tab, setTab] = useState("stock"); // "stock" | "issue"
 
   const [stats, setStats] = useState(null);
   const [units, setUnits] = useState([]);
@@ -83,24 +94,60 @@ export default function BloodBankStock() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hospitalId, groupFilter, componentFilter, statusFilter]);
 
+  // Reset filters when switching tabs — each view has its own focus.
+  useEffect(() => {
+    setSearch("");
+    setGroupFilter("");
+    setComponentFilter("");
+    setStatusFilter("");
+  }, [tab]);
+
   const statusByCode = useMemo(() => {
     const m = {};
     statuses.forEach((s) => { m[s.code] = s; });
     return m;
   }, [statuses]);
 
+  // ── Per-tab unit subset ──────────────────────────────────────────────
+  // Stock view hides ISSUED bags by default (history belongs on the
+  // Issue tab); Issue view only shows ISSUED bags.
+  const visibleUnits = useMemo(() => {
+    if (tab === "issue") return units.filter((u) => u.statusCode === "ISSUED");
+    return units.filter((u) => u.statusCode !== "ISSUED");
+  }, [units, tab]);
+
   const filteredUnits = useMemo(() => {
-    if (!search) return units;
+    if (!search) return visibleUnits;
     const q = search.toLowerCase();
-    return units.filter(
+    return visibleUnits.filter(
       (u) =>
         u.bagNumber?.toLowerCase().includes(q) ||
         u.bloodGroupCode?.toLowerCase().includes(q) ||
         u.componentCode?.toLowerCase().includes(q) ||
         u.donorName?.toLowerCase().includes(q) ||
-        u.issuedToPatientName?.toLowerCase().includes(q)
+        u.issuedToPatientName?.toLowerCase().includes(q) ||
+        u.issuedToAdmissionNumber?.toLowerCase().includes(q) ||
+        u.issuedDoctorName?.toLowerCase().includes(q)
     );
-  }, [units, search]);
+  }, [visibleUnits, search]);
+
+  // ── Issue-tab time-based metrics ─────────────────────────────────────
+  const issuanceMetrics = useMemo(() => {
+    const issued = units.filter((u) => u.statusCode === "ISSUED" && u.issuedAt);
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(startOfToday);
+    startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    let today = 0, week = 0, month = 0;
+    issued.forEach((u) => {
+      const t = new Date(u.issuedAt);
+      if (t >= startOfToday) today += 1;
+      if (t >= startOfWeek) week += 1;
+      if (t >= startOfMonth) month += 1;
+    });
+    return { today, week, month, total: issued.length };
+  }, [units]);
 
   const handleStatusChange = async (unit, newStatus) => {
     try {
@@ -112,7 +159,8 @@ export default function BloodBankStock() {
     }
   };
 
-  const columns = [
+  // ── Column sets — each view picks its own ────────────────────────────
+  const stockColumns = [
     {
       header: "Bag",
       width: "18%",
@@ -125,7 +173,7 @@ export default function BloodBankStock() {
     },
     {
       header: "Group / Component",
-      width: "20%",
+      width: "22%",
       render: (u) => (
         <div className="flex items-center gap-2">
           <span className="hms-bb-group">{u.bloodGroupCode?.replace("_POS", "+").replace("_NEG", "−")}</span>
@@ -152,26 +200,13 @@ export default function BloodBankStock() {
     },
     {
       header: "Donor / Source",
-      width: "18%",
+      width: "24%",
       render: (u) => (
         <div className="text-sm">
           <div className="text-gray-900">{u.donorName || (u.sourceCode === "EXTERNAL_PURCHASE" ? "External" : "—")}</div>
           <div className="text-xs text-gray-500">{u.donorPhone || ""}</div>
         </div>
       ),
-    },
-    {
-      header: "Issued to",
-      width: "14%",
-      render: (u) =>
-        u.issuedToPatientName ? (
-          <div className="text-sm">
-            <div className="text-gray-900">{u.issuedToPatientName}</div>
-            <div className="text-xs text-gray-500">{u.issuedAt?.slice(0, 16).replace("T", " ")}</div>
-          </div>
-        ) : (
-          <span className="text-gray-400">—</span>
-        ),
     },
     {
       header: "",
@@ -207,6 +242,71 @@ export default function BloodBankStock() {
           />
         );
       },
+    },
+  ];
+
+  const issueColumns = [
+    {
+      header: "Bag",
+      width: "14%",
+      render: (u) => (
+        <div className="font-semibold text-gray-900">{u.bagNumber}</div>
+      ),
+    },
+    {
+      header: "Group / Component",
+      width: "16%",
+      render: (u) => (
+        <div className="flex items-center gap-2">
+          <span className="hms-bb-group">{u.bloodGroupCode?.replace("_POS", "+").replace("_NEG", "−")}</span>
+          <span className="text-sm text-gray-700">{u.componentCode}</span>
+        </div>
+      ),
+    },
+    {
+      header: "Patient",
+      width: "20%",
+      render: (u) => (
+        <div className="text-sm">
+          <div className="text-gray-900">{u.issuedToPatientName || "—"}</div>
+          {u.issuedToAdmissionNumber && (
+            <div className="text-xs text-gray-500">Adm. {u.issuedToAdmissionNumber}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      header: "Prescribing doctor",
+      width: "15%",
+      render: (u) => (
+        <span className="text-sm text-gray-700">{u.issuedDoctorName || "—"}</span>
+      ),
+    },
+    {
+      header: "Issued",
+      width: "13%",
+      render: (u) => (
+        <span className="text-sm text-gray-700">
+          {u.issuedAt ? u.issuedAt.slice(0, 16).replace("T", " ") : "—"}
+        </span>
+      ),
+    },
+    {
+      header: "Replacements",
+      width: "10%",
+      align: "right",
+      render: (u) => (
+        <span className="text-sm text-gray-700 tabular-nums">
+          {(u.replacementsReceived ?? 0)} / {(u.replacementsPledged ?? 0)}
+        </span>
+      ),
+    },
+    {
+      header: "Issued by",
+      width: "12%",
+      render: (u) => (
+        <span className="text-sm text-gray-700">{u.issuedByUserName || "—"}</span>
+      ),
     },
   ];
 
@@ -268,6 +368,95 @@ export default function BloodBankStock() {
     );
   };
 
+  // ── Stat strips — different per view ─────────────────────────────────
+  const renderStockStats = () => (
+    <div className="hms-bb-stats">
+      <div className="hms-bb-stat">
+        <div className="hms-bb-stat__label">Total units</div>
+        <div className="hms-bb-stat__value">{stats?.totalUnits ?? "—"}</div>
+        <div className="hms-bb-stat__hint">Across all statuses</div>
+      </div>
+      <div className="hms-bb-stat">
+        <div className="hms-bb-stat__label">Available</div>
+        <div className="hms-bb-stat__value">{stats?.availableUnits ?? "—"}</div>
+        <div className="hms-bb-stat__hint">Ready to issue</div>
+      </div>
+      <div className="hms-bb-stat">
+        <div className="hms-bb-stat__label">Quarantine</div>
+        <div className="hms-bb-stat__value">{stats?.quarantineUnits ?? "—"}</div>
+        <div className="hms-bb-stat__hint">Awaiting TTI clearance</div>
+      </div>
+      <div className="hms-bb-stat">
+        <div className="hms-bb-stat__label">Reserved</div>
+        <div className="hms-bb-stat__value">{stats?.reservedUnits ?? "—"}</div>
+        <div className="hms-bb-stat__hint">Tagged for patients</div>
+      </div>
+      <div className="hms-bb-stat is-warn">
+        <div className="hms-bb-stat__label">
+          <span className="inline-flex items-center gap-1">
+            <AlertTriangle size={12} /> Expiring soon
+          </span>
+        </div>
+        <div className="hms-bb-stat__value">{stats?.expiringSoonUnits ?? "—"}</div>
+        <div className="hms-bb-stat__hint">Within 7 days</div>
+      </div>
+      <div className="hms-bb-stat">
+        <div className="hms-bb-stat__label">
+          <span className="inline-flex items-center gap-1">
+            <FlaskConical size={12} /> Donors
+          </span>
+        </div>
+        <div className="hms-bb-stat__value">{stats?.totalDonors ?? "—"}</div>
+        <div className="hms-bb-stat__hint">Active registry</div>
+      </div>
+    </div>
+  );
+
+  const renderIssueStats = () => (
+    <div className="hms-bb-stats">
+      <div className="hms-bb-stat">
+        <div className="hms-bb-stat__label">
+          <span className="inline-flex items-center gap-1">
+            <Activity size={12} /> Today
+          </span>
+        </div>
+        <div className="hms-bb-stat__value">{issuanceMetrics.today}</div>
+        <div className="hms-bb-stat__hint">Bags issued</div>
+      </div>
+      <div className="hms-bb-stat">
+        <div className="hms-bb-stat__label">
+          <span className="inline-flex items-center gap-1">
+            <Calendar size={12} /> This week
+          </span>
+        </div>
+        <div className="hms-bb-stat__value">{issuanceMetrics.week}</div>
+        <div className="hms-bb-stat__hint">Since Sunday</div>
+      </div>
+      <div className="hms-bb-stat">
+        <div className="hms-bb-stat__label">
+          <span className="inline-flex items-center gap-1">
+            <CalendarDays size={12} /> This month
+          </span>
+        </div>
+        <div className="hms-bb-stat__value">{issuanceMetrics.month}</div>
+        <div className="hms-bb-stat__hint">Month-to-date</div>
+      </div>
+      <div className="hms-bb-stat">
+        <div className="hms-bb-stat__label">
+          <span className="inline-flex items-center gap-1">
+            <History size={12} /> All-time
+          </span>
+        </div>
+        <div className="hms-bb-stat__value">{issuanceMetrics.total}</div>
+        <div className="hms-bb-stat__hint">Total issuances</div>
+      </div>
+    </div>
+  );
+
+  const titleBadge = tab === "stock"
+    ? <Badge tone="info">{stats?.availableUnits ?? 0} available</Badge>
+    : <Badge tone="violet">{issuanceMetrics.total} issued</Badge>;
+
   return (
     <div className="zu-page">
       <PageHeader
@@ -275,66 +464,58 @@ export default function BloodBankStock() {
           <span className="inline-flex items-center gap-3">
             <Droplet size={20} className="text-rose-500" />
             Blood Bank
-            <Badge tone="info">{stats?.availableUnits ?? 0} available</Badge>
+            {titleBadge}
           </span>
         }
         actions={
-          <Button variant="primary" onClick={() => setRegisterOpen(true)}>
-            <Plus size={14} /> Register bag
-          </Button>
+          tab === "stock" ? (
+            <Button variant="primary" onClick={() => setRegisterOpen(true)}>
+              <Plus size={14} /> Register bag
+            </Button>
+          ) : (
+            <Button variant="ghost" onClick={reload}>
+              <RefreshCw size={14} /> Refresh
+            </Button>
+          )
         }
       />
 
       <div className="zu-page-content">
-        <div className="hms-bb-stats">
-          <div className="hms-bb-stat">
-            <div className="hms-bb-stat__label">Total units</div>
-            <div className="hms-bb-stat__value">{stats?.totalUnits ?? "—"}</div>
-            <div className="hms-bb-stat__hint">Across all statuses</div>
-          </div>
-          <div className="hms-bb-stat">
-            <div className="hms-bb-stat__label">Available</div>
-            <div className="hms-bb-stat__value">{stats?.availableUnits ?? "—"}</div>
-            <div className="hms-bb-stat__hint">Ready to issue</div>
-          </div>
-          <div className="hms-bb-stat">
-            <div className="hms-bb-stat__label">Quarantine</div>
-            <div className="hms-bb-stat__value">{stats?.quarantineUnits ?? "—"}</div>
-            <div className="hms-bb-stat__hint">Awaiting TTI clearance</div>
-          </div>
-          <div className="hms-bb-stat">
-            <div className="hms-bb-stat__label">Reserved</div>
-            <div className="hms-bb-stat__value">{stats?.reservedUnits ?? "—"}</div>
-            <div className="hms-bb-stat__hint">Tagged for patients</div>
-          </div>
-          <div className="hms-bb-stat is-warn">
-            <div className="hms-bb-stat__label">
-              <span className="inline-flex items-center gap-1">
-                <AlertTriangle size={12} /> Expiring soon
-              </span>
+        {/* Tab strip — pill segmented control, same pattern as IPD Billing */}
+        <div className="zu-filter-bar">
+          <div className="zu-filter-bar__controls">
+            <div className="zu-pill-group">
+              <button
+                type="button"
+                onClick={() => setTab("stock")}
+                className={`zu-pill-group__btn ${tab === "stock" ? "is-active" : ""}`}
+              >
+                <Droplet size={13} /> Stock
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("issue")}
+                className={`zu-pill-group__btn ${tab === "issue" ? "is-active" : ""}`}
+              >
+                <History size={13} /> Issue Blood
+              </button>
             </div>
-            <div className="hms-bb-stat__value">{stats?.expiringSoonUnits ?? "—"}</div>
-            <div className="hms-bb-stat__hint">Within 7 days</div>
-          </div>
-          <div className="hms-bb-stat">
-            <div className="hms-bb-stat__label">
-              <span className="inline-flex items-center gap-1">
-                <FlaskConical size={12} /> Donors
-              </span>
-            </div>
-            <div className="hms-bb-stat__value">{stats?.totalDonors ?? "—"}</div>
-            <div className="hms-bb-stat__hint">Active registry</div>
           </div>
         </div>
 
-        {renderMatrix()}
+        {tab === "stock" ? renderStockStats() : renderIssueStats()}
+        {tab === "stock" && renderMatrix()}
 
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <div className="flex-1 min-w-[240px]">
             <SearchBar
               value={search}
               onChange={setSearch}
-              placeholder="Search bag / group / patient / donor…"
+              placeholder={
+                tab === "stock"
+                  ? "Search bag / group / donor…"
+                  : "Search bag / patient / admission / doctor…"
+              }
             />
           </div>
           <div className="w-44">
@@ -351,30 +532,45 @@ export default function BloodBankStock() {
               options={[{ value: "", label: "All components" }, ...components.map((c) => ({ value: c.code, label: c.label }))]}
             />
           </div>
-          <div className="w-44">
-            <SearchableSelect
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={[{ value: "", label: "All statuses" }, ...statuses.map((s) => ({ value: s.code, label: s.label }))]}
-            />
-          </div>
+          {tab === "stock" && (
+            <div className="w-44">
+              <SearchableSelect
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: "", label: "All statuses" },
+                  ...statuses
+                    .filter((s) => s.code !== "ISSUED")
+                    .map((s) => ({ value: s.code, label: s.label })),
+                ]}
+              />
+            </div>
+          )}
         </div>
 
         <Table
-          columns={columns}
+          columns={tab === "stock" ? stockColumns : issueColumns}
           data={filteredUnits}
           loading={loading}
-          loadingMessage={<span className="text-gray-500">Loading inventory…</span>}
-          rowClassName={(u) => u.expiringSoon ? "hms-bb-row is-expiring" : ""}
+          loadingMessage={
+            <span className="text-gray-500">
+              Loading {tab === "stock" ? "inventory" : "issuance history"}…
+            </span>
+          }
+          rowClassName={(u) => tab === "stock" && u.expiringSoon ? "hms-bb-row is-expiring" : ""}
           emptyMessage={
             <div className="hms-cell-empty">
               <span className="hms-cell-empty__icon">
-                <Droplet size={22} />
+                {tab === "stock" ? <Droplet size={22} /> : <History size={22} />}
               </span>
               <div className="hms-cell-empty__text">
-                {search || groupFilter || componentFilter || statusFilter
-                  ? "No bags match your filters."
-                  : "No bags registered yet. Register the first bag to get started."}
+                {tab === "stock"
+                  ? (search || groupFilter || componentFilter || statusFilter
+                    ? "No bags match your filters."
+                    : "No bags registered yet. Register the first bag to get started.")
+                  : (search || groupFilter || componentFilter
+                    ? "No issuances match your filters."
+                    : "No bags have been issued yet. Bags issued from the Stock view will appear here.")}
               </div>
             </div>
           }
