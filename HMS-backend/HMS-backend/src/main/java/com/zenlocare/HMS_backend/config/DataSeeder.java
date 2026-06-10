@@ -179,6 +179,38 @@ public class DataSeeder implements CommandLineRunner {
             log.warn("Could not ensure hospital_wards.room_type: " + e.getMessage());
         }
 
+        try {
+            jdbcTemplate.execute("ALTER TABLE hospital_services RENAME COLUMN specialization_id TO department_id");
+            log.info("✅ Migrated hospital_services column specialization_id -> department_id");
+        } catch (Exception e) {
+            log.warn("Could not migrate hospital_services column: " + e.getMessage());
+        }
+
+        try {
+            String dropFkSql = "DO $$ " +
+                               "DECLARE " +
+                               "    r RECORD; " +
+                               "BEGIN " +
+                               "    FOR r IN (SELECT tc.constraint_name " +
+                               "              FROM information_schema.table_constraints tc " +
+                               "              JOIN information_schema.key_column_usage kcu " +
+                               "                ON tc.constraint_name = kcu.constraint_name " +
+                               "              WHERE tc.constraint_type = 'FOREIGN KEY' " +
+                               "                AND tc.table_name = 'hospital_services' " +
+                               "                AND kcu.column_name = 'department_id') " +
+                               "    LOOP " +
+                               "        EXECUTE 'ALTER TABLE hospital_services DROP CONSTRAINT IF EXISTS ' || quote_ident(r.constraint_name); " +
+                               "    END LOOP; " +
+                               "END $$;";
+            jdbcTemplate.execute(dropFkSql);
+            log.info("✅ Dropped old foreign key constraints from hospital_services.department_id");
+            
+            jdbcTemplate.execute("ALTER TABLE hospital_services ADD CONSTRAINT fk_hospital_services_department_id FOREIGN KEY (department_id) REFERENCES departments (id)");
+            log.info("✅ Added new foreign key constraint fk_hospital_services_department_id");
+        } catch (Exception e) {
+            log.warn("Could not replace foreign key constraint on hospital_services: " + e.getMessage());
+        }
+
         dropGhostStatusNotNullConstraints();
         seedReferenceTables();
         migrateStatusColumns();

@@ -25,8 +25,8 @@ public class HospitalService {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "specialization_id", nullable = false)
-    private UUID specializationId;
+    @Column(name = "department_id", nullable = false)
+    private UUID departmentId;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
