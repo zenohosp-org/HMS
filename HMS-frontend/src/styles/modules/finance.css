@@ -7017,7 +7017,7 @@
 .hms-infra-shell {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: calc(100vh - 56px);
     background: #f8fafc;
     color: var(--hms-gray-900);
     overflow: hidden;
@@ -7062,7 +7062,7 @@
     background: rgba(255,255,255,0.85);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--hms-gray-200);
-    padding: 16px 24px;
+    padding: 10px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -7076,7 +7076,7 @@
 }
 
 .hms-infra-banner__title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--hms-gray-900);
@@ -7100,13 +7100,13 @@
 }
 
 .hms-infra-stats-strip__item {
-    padding: 6px 12px;
+    padding: 4px 10px;
     text-align: center;
     background: var(--hms-white);
     border-radius: 8px;
     box-shadow: var(--hms-shadow-xs);
     border: 1px solid rgba(226,232,240,0.1);
-    min-width: 64px;
+    min-width: 56px;
 }
 
 .hms-infra-stats-strip__label {
