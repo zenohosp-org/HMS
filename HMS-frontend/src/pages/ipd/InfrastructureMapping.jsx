@@ -339,6 +339,32 @@ export default function InfrastructureMapping() {
         roomsCount: (ward.rooms || []).length,
         rooms: (ward.rooms || []).map(r => ({ ...r }))
       };
+<<<<<<< Updated upstream
+=======
+    } else if (type === "room") {
+      // Standalone room in Col 3
+      const roomNode = buildings[bIdx].floors[fIdx].wards[wIdx];
+      const actualRoom = (roomNode.rooms || [])[0] || { name: roomNode.name, bedNames: [] };
+      formState = {
+        name: roomNode.name,
+        roomType: roomNode.roomType || "OT",
+        dailyCharge: roomNode.dailyCharge ?? ""
+      };
+    } else if (type === "ward-room") {
+      // Room inside a Ward in Col 4
+      const ward = buildings[bIdx].floors[fIdx].wards[wIdx];
+      const room = ward.rooms[rIdx];
+      formState = {
+        name: room.name,
+        dailyCharge: room.dailyCharge ?? ""
+      };
+    } else if (type === "bed") {
+      const ward = buildings[bIdx].floors[fIdx].wards[wIdx];
+      const room = ward.rooms[rIdx];
+      formState = {
+        name: room.bedNames[bItemIdx] || ""
+      };
+>>>>>>> Stashed changes
     }
 
     setEditModal({
@@ -376,6 +402,37 @@ export default function InfrastructureMapping() {
               wards: f.wards.map((w, k) => {
                 if (k !== wIdx) return w;
 
+<<<<<<< Updated upstream
+=======
+                if (type === "room") {
+                  return {
+                    ...w,
+                    name: formState.name,
+                    roomType: formState.roomType,
+                    dailyCharge: formState.dailyCharge === "" || formState.dailyCharge == null ? null : Number(formState.dailyCharge),
+                    rooms: [{ name: formState.name, bedNames: w.rooms?.[0]?.bedNames || [] }]
+                  };
+                }
+
+                if (type === "ward-room") {
+                  const updatedRooms = [...w.rooms];
+                  updatedRooms[rIdx] = { 
+                    ...updatedRooms[rIdx], 
+                    name: formState.name,
+                    dailyCharge: formState.dailyCharge === "" || formState.dailyCharge == null ? null : Number(formState.dailyCharge)
+                  };
+                  return { ...w, rooms: updatedRooms };
+                }
+
+                if (type === "bed") {
+                  const updatedRooms = [...w.rooms];
+                  const newBedNames = [...(updatedRooms[rIdx].bedNames || [])];
+                  newBedNames[bItemIdx] = formState.name;
+                  updatedRooms[rIdx] = { ...updatedRooms[rIdx], bedNames: newBedNames };
+                  return { ...w, rooms: updatedRooms };
+                }
+
+>>>>>>> Stashed changes
                 const targetCount = Number(formState.roomsCount) || 0;
                 let updatedRooms = formState.rooms || [];
                 if (updatedRooms.length !== targetCount) {
@@ -730,6 +787,169 @@ export default function InfrastructureMapping() {
             </div>
           </div>
 
+<<<<<<< Updated upstream
+=======
+          {/* COLUMN 4: ROOMS (Only visible if active item in Col 3 is a Ward) */}
+          {activeFloor && activeFloor.wards?.[activeWardIdx] && activeFloor.wards[activeWardIdx].nodeType !== 'room' && (
+            <div className="infra-tree-col">
+              <div className="infra-tree-col-header">
+                <span className="infra-tree-col-title">
+                  <Bed className="w-4 h-4 text-gray-500" /> Rooms
+                </span>
+                <span className="infra-tree-col-count">
+                  {(activeFloor.wards[activeWardIdx].rooms || []).length}
+                </span>
+              </div>
+              <div 
+                className={`infra-tree-col-content is-connected${(activeFloor.wards[activeWardIdx].rooms || []).length === 0 ? " is-empty" : ""}`} 
+                style={getMinContentHeight(activeWardIdx)}
+              >
+                {(activeFloor.wards[activeWardIdx].rooms || []).map((r, rIdx) => {
+                  const isRActive = activeRoomIdx === rIdx;
+                  return (
+                    <div
+                      key={rIdx}
+                      onClick={() => setActiveRoomIdx(rIdx)}
+                      className={`infra-tree-card${isRActive ? " is-active" : ""} has-children`}
+                    >
+                      <div className="infra-tree-card__icon-wrap">
+                        <Bed className="w-5 h-5" />
+                      </div>
+                      <div className="infra-tree-card__info">
+                        <h4 className="infra-tree-card__name truncate">{r.name || `Room ${rIdx + 1}`}</h4>
+                        <div className="infra-tree-card__meta truncate">
+                          <span className="infra-tree-badge-tag is-general">ROOM</span>
+                          {(r.bedNames || []).length} Beds
+                          {r.dailyCharge != null 
+                            ? ` • ₹${r.dailyCharge}/d` 
+                            : (activeFloor.wards[activeWardIdx].dailyCharge != null ? ` • Inherits ₹${activeFloor.wards[activeWardIdx].dailyCharge}/d` : "")}
+                        </div>
+                      </div>
+                      <div className="infra-tree-card__actions" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => openEditModal("ward-room", activeBuildingIdx, activeFloorIdx, activeWardIdx, rIdx)}
+                          className="infra-tree-card__btn"
+                          title="Edit Name"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBuildings(p => p.map((b, i) => i !== activeBuildingIdx ? b : {
+                              ...b, floors: b.floors.map((f, j) => j !== activeFloorIdx ? f : {
+                                ...f, wards: f.wards.map((w, k) => k !== activeWardIdx ? w : {
+                                  ...w, rooms: w.rooms.filter((_, idx) => idx !== rIdx)
+                                })
+                              })
+                            }));
+                          }}
+                          className="infra-tree-card__btn is-danger"
+                          title="Delete Room"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className={`infra-tree-connection-badge ${isRActive ? "is-active" : "is-inactive"}`}>
+                        {(r.bedNames || []).length}
+                      </div>
+                    </div>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => handleAddRoomToWard(activeBuildingIdx, activeFloorIdx, activeWardIdx)}
+                  className="infra-tree-add-card-btn"
+                >
+                  <Plus className="w-4 h-4" /> Add Room
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* COLUMN 5: BEDS */}
+          {activeFloor && activeFloor.wards?.[activeWardIdx] && (
+            (() => {
+              const ward = activeFloor.wards[activeWardIdx];
+              // If it's a standalone room, we edit its beds directly. Otherwise, we edit the activeRoomIdx.
+              const rIdx = ward.nodeType === 'room' ? 0 : activeRoomIdx;
+              const room = (ward.rooms || [])[rIdx];
+
+              if (!room) return null;
+
+              return (
+                <div className="infra-tree-col">
+                  <div className="infra-tree-col-header">
+                    <span className="infra-tree-col-title">
+                      <Bed className="w-4 h-4 text-gray-500" /> Beds
+                    </span>
+                    <span className="infra-tree-col-count">
+                      {(room.bedNames || []).length}
+                    </span>
+                  </div>
+                  <div 
+                    className={`infra-tree-col-content is-connected${(room.bedNames || []).length === 0 ? " is-empty" : ""}`} 
+                    style={getMinContentHeight(ward.nodeType === 'room' ? activeWardIdx : activeRoomIdx)}
+                  >
+                    {(room.bedNames || []).map((bedName, bItemIdx) => {
+                      return (
+                        <div
+                          key={bItemIdx}
+                          className="infra-tree-card"
+                        >
+                          <div className="infra-tree-card__icon-wrap">
+                            <Bed className="w-5 h-5" />
+                          </div>
+                          <div className="infra-tree-card__info">
+                            <h4 className="infra-tree-card__name truncate">{bedName || `Bed ${bItemIdx + 1}`}</h4>
+                          </div>
+                          <div className="infra-tree-card__actions" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => openEditModal("bed", activeBuildingIdx, activeFloorIdx, activeWardIdx, rIdx, bItemIdx)}
+                              className="infra-tree-card__btn"
+                              title="Edit Name"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBuildings(p => p.map((b, i) => i !== activeBuildingIdx ? b : {
+                                  ...b, floors: b.floors.map((f, j) => j !== activeFloorIdx ? f : {
+                                    ...f, wards: f.wards.map((w, k) => k !== activeWardIdx ? w : {
+                                      ...w, rooms: w.rooms.map((r, l) => l !== rIdx ? r : {
+                                        ...r, bedNames: r.bedNames.filter((_, idx) => idx !== bItemIdx)
+                                      })
+                                    })
+                                  })
+                                }));
+                              }}
+                              className="infra-tree-card__btn is-danger"
+                              title="Delete Bed"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => handleAddBedToRoom(activeBuildingIdx, activeFloorIdx, activeWardIdx, rIdx)}
+                      className="infra-tree-add-card-btn"
+                    >
+                      <Plus className="w-4 h-4" /> Add Bed
+                    </button>
+                  </div>
+                </div>
+              );
+            })()
+          )}
+
+>>>>>>> Stashed changes
         </div>
       </div>
 
@@ -824,16 +1044,24 @@ export default function InfrastructureMapping() {
               />
             </FormGroup>
 
+<<<<<<< Updated upstream
             {editModal.type === "ward" && (
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <FormGroup label="Room Type">
+=======
+            {(editModal.type === "ward" || editModal.type === "room" || editModal.type === "ward-room") && (
+              <div className="grid grid-cols-2 gap-4">
+                {(editModal.type === "ward" || editModal.type === "room") && (
+                  <FormGroup label="Type">
+>>>>>>> Stashed changes
                     <SearchableSelect
                       value={editModal.formState.roomType}
                       onChange={(v) => setEditModal(p => ({ ...p, formState: { ...p.formState, roomType: v } }))}
                       options={roomTypes.map((t) => ({ value: t.value, label: t.label }))}
                     />
                   </FormGroup>
+<<<<<<< Updated upstream
 
                   <FormGroup label="Daily Charge (₹)">
                     <Input
@@ -856,6 +1084,17 @@ export default function InfrastructureMapping() {
                     onChange={handleFormRoomsCountChange}
                     min={0}
                     max={50}
+=======
+                )}
+
+                <FormGroup label={editModal.type === "ward-room" ? "Daily Charge (Override) ₹" : "Daily Charge (₹)"}>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={editModal.formState.dailyCharge ?? ""}
+                    onChange={(e) => setEditModal(p => ({ ...p, formState: { ...p.formState, dailyCharge: e.target.value } }))}
+                    placeholder={editModal.type === "ward-room" ? "Inherits from Ward" : "0"}
+>>>>>>> Stashed changes
                   />
                 </div>
 
