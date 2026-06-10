@@ -29,6 +29,7 @@ import java.util.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BloodBankService {
 
     private static final int EXPIRY_WARN_DAYS = 7;
