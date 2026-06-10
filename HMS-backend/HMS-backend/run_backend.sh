@@ -20,4 +20,5 @@ echo " http://localhost:9001"
 echo " Press Ctrl+C to stop."
 echo ""
 
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.jvmArguments="-Xmx512m"
+
