@@ -940,7 +940,7 @@ export default function InfrastructureMapping() {
                         </div>
                         <div className="infra-tree-card__info">
                           <h4 className="infra-tree-card__name truncate">{f.name || `Floor ${f.originalIdx + 1}`}</h4>
-                          <p className="infra-tree-card__meta">{(f.wards || []).length} Wards & zones</p>
+                          <p className="infra-tree-card__meta">{(f.wards || []).length} Zones</p>
                         </div>
                         <div className="infra-tree-card__actions" onClick={(e) => e.stopPropagation()}>
                           <button
@@ -985,7 +985,7 @@ export default function InfrastructureMapping() {
           <div className="infra-tree-col">
             <div className="infra-tree-col-header">
               <span className="infra-tree-col-title">
-                <Bed className="w-4 h-4 text-gray-500" /> Ward / Room
+                <Bed className="w-4 h-4 text-gray-500" /> Floor Zones
               </span>
               <span className="infra-tree-col-count">
                 {activeFloor ? (activeFloor.wards || []).length : 0}
@@ -998,7 +998,7 @@ export default function InfrastructureMapping() {
               {!activeFloor ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-4 text-gray-400">
                   <Layers className="w-8 h-8 mb-2 opacity-55" />
-                  <p className="text-12 font-medium">Select a floor to view wards & rooms</p>
+                  <p className="text-12 font-medium">Select a floor to view zones</p>
                 </div>
               ) : (
                 <>
@@ -1070,7 +1070,7 @@ export default function InfrastructureMapping() {
                       onClick={() => handleAddWardOrRoom(activeBuildingIdx, activeFloorIdx, 'ward')}
                       className="infra-tree-add-card-btn flex-1"
                     >
-                      <Plus className="w-4 h-4" /> Add Ward
+                      <Plus className="w-4 h-4" /> Add Zone
                     </button>
                     <button
                       type="button"

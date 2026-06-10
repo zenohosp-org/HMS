@@ -668,8 +668,10 @@ public class DataSeeder implements CommandLineRunner {
             {"LABOUR",       "Labour & Delivery",   "WARD",  "heart",       "#ec4899",  "9"},
             {"OT",           "Operating Theatre",   "OT",    "scissors",    "#10b981", "10"},
             {"POST_OT",      "Post-Op Recovery",    "OT",    "activity",    "#14b8a6", "11"},
-            {"CATH_LAB",     "Cath Lab",            "OT",    "heart-pulse", "#06b6d4", "12"},
-            {"STORE",        "Inventory Store",     "STORE", "package",     "#f59e0b", "13"},
+            {"CATH_LAB",     "Cath Lab",            "OT",       "heart-pulse", "#06b6d4", "12"},
+            {"STORE",        "Inventory Store",     "STORE",    "package",     "#f59e0b", "13"},
+            {"PHARMACY",     "Pharmacy Shop",       "PHARMACY", "store",       "#10b981", "14"},
+            {"PHARMACY_INV", "Pharmacy Inventory",  "STORE",    "package",     "#8b5cf6", "15"},
         };
 
         // Explicit check-then-insert/update. The previous ON CONFLICT
