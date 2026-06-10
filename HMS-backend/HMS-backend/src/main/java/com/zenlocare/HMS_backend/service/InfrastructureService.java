@@ -27,66 +27,90 @@ public class InfrastructureService {
     private final StoreRepository storeRepo;
 
     @Transactional(readOnly = true)
-    public List<BuildingDto> get(UUID hospitalId) {
+    public List<BuildingDto> get(UUID hospitalId, boolean includeInactive) {
         List<HospitalBuilding> buildings = buildingRepo.findByHospitalIdWithDetails(hospitalId);
-        return buildings.stream().map(b -> toDto(b, hospitalId)).collect(Collectors.toList());
+        return buildings.stream()
+                .filter(b -> includeInactive || Boolean.TRUE.equals(b.getIsActive()))
+                .map(b -> toDto(b, hospitalId, includeInactive))
+                .collect(Collectors.toList());
     }
 
     @Transactional
     public List<BuildingDto> save(UUID hospitalId, List<BuildingDto> dtos) {
-        List<Room> prevInfraRooms = new ArrayList<>(roomRepo.findByHospitalIdAndHospitalWardIsNotNull(hospitalId));
-
-        wardRepo.detachRoomsFromWards(hospitalId);
-        wardRepo.deleteByHospitalId(hospitalId);
-        floorRepo.deleteByHospitalId(hospitalId);
-        buildingRepo.deleteByHospitalId(hospitalId);
-
         Hospital hospital = hospitalRepo.getReferenceById(hospitalId);
-        Set<Long> reassignedRoomIds = new HashSet<>();
+        List<HospitalBuilding> allBuildings = buildingRepo.findByHospitalIdWithDetails(hospitalId);
+        
+        Set<Long> activeBuildingIds = new HashSet<>();
+        Set<Long> activeFloorIds = new HashSet<>();
+        Set<Long> activeWardIds = new HashSet<>();
+        Set<Long> activeRoomIds = new HashSet<>();
+        Set<Long> activeBedIds = new HashSet<>();
 
         for (int i = 0; i < dtos.size(); i++) {
             BuildingDto bDto = dtos.get(i);
-            HospitalBuilding building = new HospitalBuilding();
-            building.setHospital(hospital);
+            HospitalBuilding building = allBuildings.stream()
+                .filter(b -> bDto.getId() != null ? b.getId().equals(bDto.getId()) : b.getName().equals(bDto.getName()))
+                .findFirst()
+                .orElseGet(() -> {
+                    HospitalBuilding newB = new HospitalBuilding();
+                    newB.setHospital(hospital);
+                    newB.setFloors(new ArrayList<>());
+                    allBuildings.add(newB);
+                    return newB;
+                });
+            
             building.setName(bDto.getName());
             building.setDisplayOrder(i);
-            building.setFloors(new ArrayList<>());
-
+            building.setIsActive(true);
+            
+            building = buildingRepo.saveAndFlush(building);
+            activeBuildingIds.add(building.getId());
+            
             for (int j = 0; j < bDto.getFloors().size(); j++) {
                 FloorDto fDto = bDto.getFloors().get(j);
-                HospitalFloor floor = new HospitalFloor();
+                final HospitalBuilding currentBuilding = building;
+                HospitalFloor floor = building.getFloors().stream()
+                    .filter(f -> fDto.getId() != null ? f.getId().equals(fDto.getId()) : f.getName().equals(fDto.getName()))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        HospitalFloor newF = new HospitalFloor();
+                        newF.setBuilding(currentBuilding);
+                        newF.setWards(new ArrayList<>());
+                        currentBuilding.getFloors().add(newF);
+                        return newF;
+                    });
+                
                 floor.setBuilding(building);
                 floor.setName(fDto.getName());
                 floor.setDisplayOrder(j);
-                floor.setWards(new ArrayList<>());
+                floor.setIsActive(true);
+                floor = floorRepo.saveAndFlush(floor);
+                activeFloorIds.add(floor.getId());
 
                 for (int k = 0; k < fDto.getWards().size(); k++) {
                     WardDto wDto = fDto.getWards().get(k);
-                    HospitalWard ward = new HospitalWard();
+                    final HospitalFloor currentFloor = floor;
+                    HospitalWard ward = floor.getWards().stream()
+                        .filter(w -> wDto.getId() != null ? w.getId().equals(wDto.getId()) : w.getName().equals(wDto.getName()))
+                        .findFirst()
+                        .orElseGet(() -> {
+                            HospitalWard newW = new HospitalWard();
+                            newW.setFloor(currentFloor);
+                            currentFloor.getWards().add(newW);
+                            return newW;
+                        });
+
                     ward.setFloor(floor);
                     ward.setName(wDto.getName());
                     ward.setDailyCharge(wDto.getDailyCharge());
                     ward.setRoomType(wDto.getRoomType() != null ? wDto.getRoomType() : "GENERAL");
                     ward.setDisplayOrder(k);
-                    floor.getWards().add(ward);
-                }
-                building.getFloors().add(floor);
-            }
-
-            buildingRepo.saveAndFlush(building);
-
-            for (int j = 0; j < building.getFloors().size(); j++) {
-                HospitalFloor floor = building.getFloors().get(j);
-                FloorDto fDto = bDto.getFloors().get(j);
-
-                for (int k = 0; k < floor.getWards().size(); k++) {
-                    HospitalWard ward = floor.getWards().get(k);
-                    WardDto wDto = fDto.getWards().get(k);
-                    String roomType = wDto.getRoomType() != null ? wDto.getRoomType() : "GENERAL";
+                    ward.setIsActive(true);
+                    ward = wardRepo.saveAndFlush(ward);
+                    activeWardIds.add(ward.getId());
 
                     for (RoomDto rDto : wDto.getRooms()) {
                         Room room = null;
-
                         if (rDto.getId() != null) {
                             room = roomRepo.findById(rDto.getId()).orElse(null);
                         }
@@ -100,130 +124,196 @@ public class InfrastructureService {
                         }
 
                         room.setRoomNumber(rDto.getName());
-                        room.setRoomType(roomType);
+                        room.setRoomType(ward.getRoomType());
                         room.setWard(wDto.getName());
                         room.setHospitalWard(ward);
                         room.setBedCount(rDto.getBedNames().size());
-                        // Cascade the ward's daily rate onto each room as the
-                        // billing snapshot. AdmissionDTO.roomPricePerDay is
-                        // computed live from Room.getPricePerDay() at every
-                        // fetch, so updating the room here means
-                        // SmartBillingService and the IPD finalize modal pick
-                        // up the new rate without any further plumbing.
-                        // Per-room overrides can still be applied directly on
-                        // the rooms table after the fact.
                         if (ward.getDailyCharge() != null) {
                             room.setPricePerDay(ward.getDailyCharge());
                         }
-                        Room saved = roomRepo.save(room);
+                        room.setIsActive(true);
+                        Room savedRoom = roomRepo.saveAndFlush(room);
+                        activeRoomIds.add(savedRoom.getId());
 
-                        syncBeds(saved, rDto.getBedNames());
+                        List<Bed> beds = bedRepo.findByRoomIdOrderByBedNumberAsc(savedRoom.getId());
+                        for (String bedName : rDto.getBedNames()) {
+                            Bed bed = beds.stream()
+                                .filter(b -> b.getBedNumber().equals(bedName))
+                                .findFirst()
+                                .orElseGet(() -> {
+                                    Bed newBed = new Bed();
+                                    newBed.setRoom(savedRoom);
+                                    newBed.setStatus(BedStatus.AVAILABLE);
+                                    return newBed;
+                                });
+                            bed.setBedNumber(bedName);
+                            bed.setIsActive(true);
+                            bed.setWard(null);
+                            bed = bedRepo.saveAndFlush(bed);
+                            activeBedIds.add(bed.getId());
+                        }
+                        
+                        for (Bed bed : beds) {
+                            if (!activeBedIds.contains(bed.getId())) {
+                                bed.setIsActive(false);
+                                bedRepo.save(bed);
+                            }
+                        }
 
-                        if ("STORE".equals(roomType)) {
-                            Store store = storeRepo.findByRoomId(saved.getId()).orElse(null);
+                        if ("STORE".equals(room.getRoomType())) {
+                            Store store = storeRepo.findByRoomId(savedRoom.getId()).orElse(null);
                             if (store == null) {
                                 store = new Store();
-                                store.setRoomId(saved.getId());
+                                store.setRoomId(savedRoom.getId());
                             }
                             store.setHospital(hospital);
-                            store.setName(saved.getRoomNumber());
+                            store.setName(savedRoom.getRoomNumber());
                             store.setIsActive(true);
                             store.setType("STORE");
                             storeRepo.save(store);
                         } else {
-                            storeRepo.deleteByRoomId(saved.getId());
+                            Store store = storeRepo.findByRoomId(savedRoom.getId()).orElse(null);
+                            if (store != null) {
+                                store.setIsActive(false);
+                                storeRepo.save(store);
+                            }
+                        }
+                    }
+
+                    if (wDto.getBedNames() != null) {
+                        List<Bed> wardBeds = bedRepo.findByWardIdOrderByBedNumberAsc(ward.getId());
+                        final HospitalWard finalWard = ward;
+                        for (String bedName : wDto.getBedNames()) {
+                            Bed bed = wardBeds.stream()
+                                .filter(b -> b.getBedNumber().equals(bedName))
+                                .findFirst()
+                                .orElseGet(() -> {
+                                    Bed newBed = new Bed();
+                                    newBed.setWard(finalWard);
+                                    newBed.setStatus(BedStatus.AVAILABLE);
+                                    return newBed;
+                                });
+                            bed.setWard(finalWard);
+                            bed.setRoom(null);
+                            bed.setBedNumber(bedName);
+                            bed.setIsActive(true);
+                            bed = bedRepo.saveAndFlush(bed);
+                            activeBedIds.add(bed.getId());
                         }
 
-                        if (saved.getId() != null) reassignedRoomIds.add(saved.getId());
+                        for (Bed bed : wardBeds) {
+                            if (!activeBedIds.contains(bed.getId())) {
+                                bed.setIsActive(false);
+                                bedRepo.save(bed);
+                            }
+                        }
                     }
                 }
             }
         }
 
+        List<Room> prevInfraRooms = roomRepo.findByHospitalIdAndHospitalWardIsNotNull(hospitalId);
         for (Room room : prevInfraRooms) {
-            Long id = room.getId();
-            if (id != null && !reassignedRoomIds.contains(id)) {
-                if (room.getStatus() == RoomStatus.AVAILABLE) {
-                    storeRepo.deleteByRoomId(id);
-                    bedRepo.findByRoomIdOrderByBedNumberAsc(id).forEach(bedRepo::delete);
-                    roomRepo.deleteById(id);
+            if (!activeRoomIds.contains(room.getId()) && Boolean.TRUE.equals(room.getIsActive())) {
+                room.setIsActive(false);
+                roomRepo.save(room);
+                
+                Store store = storeRepo.findByRoomId(room.getId()).orElse(null);
+                if (store != null) {
+                    store.setIsActive(false);
+                    storeRepo.save(store);
                 }
             }
         }
 
-        return get(hospitalId);
-    }
-
-    private void syncBeds(Room room, List<String> targetBedNames) {
-        List<Bed> existing = bedRepo.findByRoomIdOrderByBedNumberAsc(room.getId());
-        
-        // Remove beds that are no longer in the target list (only if AVAILABLE)
-        for (Bed bed : existing) {
-            if (!targetBedNames.contains(bed.getBedNumber())) {
-                if (bed.getStatus() == BedStatus.AVAILABLE) {
-                    bedRepo.delete(bed);
+        for (HospitalBuilding b : allBuildings) {
+            if (!activeBuildingIds.contains(b.getId()) && Boolean.TRUE.equals(b.getIsActive())) {
+                b.setIsActive(false);
+                buildingRepo.save(b);
+            }
+            for (HospitalFloor f : b.getFloors()) {
+                if (!activeFloorIds.contains(f.getId()) && Boolean.TRUE.equals(f.getIsActive())) {
+                    f.setIsActive(false);
+                    floorRepo.save(f);
+                }
+                for (HospitalWard w : f.getWards()) {
+                    if (!activeWardIds.contains(w.getId()) && Boolean.TRUE.equals(w.getIsActive())) {
+                        w.setIsActive(false);
+                        wardRepo.save(w);
+                    }
                 }
             }
         }
-        
-        // Add new beds
-        for (String bedName : targetBedNames) {
-            boolean exists = existing.stream().anyMatch(b -> b.getBedNumber().equals(bedName));
-            if (!exists) {
-                bedRepo.save(Bed.builder()
-                        .room(room)
-                        .bedNumber(bedName)
-                        .status(BedStatus.AVAILABLE)
-                        .build());
-            }
-        }
+
+        return get(hospitalId, false);
     }
 
-    // roomType is now a plain String — no enum parsing needed
-
-    private BuildingDto toDto(HospitalBuilding b, UUID hospitalId) {
+    private BuildingDto toDto(HospitalBuilding b, UUID hospitalId, boolean includeInactive) {
         BuildingDto dto = new BuildingDto();
         dto.setId(b.getId());
         dto.setName(b.getName());
-        dto.setFloors(b.getFloors().stream().map(f -> toDto(f, hospitalId)).collect(Collectors.toList()));
+        dto.setIsActive(b.getIsActive());
+        dto.setFloors(b.getFloors().stream()
+                .filter(f -> includeInactive || Boolean.TRUE.equals(f.getIsActive()))
+                .map(f -> toDto(f, hospitalId, includeInactive))
+                .collect(Collectors.toList()));
         return dto;
     }
 
-    private FloorDto toDto(HospitalFloor f, UUID hospitalId) {
+    private FloorDto toDto(HospitalFloor f, UUID hospitalId, boolean includeInactive) {
         FloorDto dto = new FloorDto();
         dto.setId(f.getId());
         dto.setName(f.getName());
-        dto.setWards(f.getWards().stream().map(w -> toDto(w, hospitalId)).collect(Collectors.toList()));
+        dto.setIsActive(f.getIsActive());
+        dto.setWards(f.getWards().stream()
+                .filter(w -> includeInactive || Boolean.TRUE.equals(w.getIsActive()))
+                .map(w -> toDto(w, hospitalId, includeInactive))
+                .collect(Collectors.toList()));
         return dto;
     }
 
-    private WardDto toDto(HospitalWard w, UUID hospitalId) {
+    private WardDto toDto(HospitalWard w, UUID hospitalId, boolean includeInactive) {
         WardDto dto = new WardDto();
         dto.setId(w.getId());
         dto.setName(w.getName());
+        dto.setIsActive(w.getIsActive());
         dto.setDailyCharge(w.getDailyCharge());
         List<Room> wardRooms = roomRepo.findByHospitalWard_Id(w.getId());
-        // Ward stores the authoritative roomType. Fall back to the first room's
-        // type for legacy rows where the ward column wasn't populated yet, then
-        // default to GENERAL.
+        wardRooms = wardRooms.stream()
+                .filter(r -> includeInactive || Boolean.TRUE.equals(r.getIsActive()))
+                .collect(Collectors.toList());
+                
         String wardType = w.getRoomType();
         if (wardType == null || wardType.isBlank()) {
             wardType = wardRooms.isEmpty() ? "GENERAL"
                     : Optional.ofNullable(wardRooms.get(0).getRoomType()).orElse("GENERAL");
         }
         dto.setRoomType(wardType);
+        
         List<RoomDto> rooms = wardRooms.stream()
                 .map(r -> {
                     RoomDto rd = new RoomDto();
                     rd.setId(r.getId());
                     rd.setName(r.getRoomNumber());
+                    rd.setIsActive(r.getIsActive());
                     List<String> bedNames = bedRepo.findByRoomIdOrderByBedNumberAsc(r.getId())
-                            .stream().map(Bed::getBedNumber).collect(Collectors.toList());
+                            .stream()
+                            .filter(bed -> includeInactive || Boolean.TRUE.equals(bed.getIsActive()))
+                            .map(Bed::getBedNumber)
+                            .collect(Collectors.toList());
                     rd.setBedNames(bedNames);
                     return rd;
                 })
                 .collect(Collectors.toList());
         dto.setRooms(rooms);
+        
+        List<String> wardBedNames = bedRepo.findByWardIdOrderByBedNumberAsc(w.getId())
+                .stream()
+                .filter(bed -> bed.getRoom() == null && (includeInactive || Boolean.TRUE.equals(bed.getIsActive())))
+                .map(Bed::getBedNumber)
+                .collect(Collectors.toList());
+        dto.setBedNames(wardBedNames);
+        
         return dto;
     }
 }

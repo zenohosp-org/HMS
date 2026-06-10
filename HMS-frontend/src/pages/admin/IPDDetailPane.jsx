@@ -2,7 +2,7 @@ import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors, Activity, Package, Receipt, Phone, User, ExternalLink, RotateCcw, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, Plus, FileText, Printer,  } from "lucide-react";
+import { X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors, Activity, Package, Receipt, Phone, User, ExternalLink, RotateCcw, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, Plus, FileText, Printer, Ban,  } from "lucide-react";
 import { fmtDateTime, fmtDateMed } from "@/utils/date";
 import {
     roomLogsApi,
@@ -1355,11 +1355,23 @@ function RecordDetail({ ev }) {
             <div className="hms-rec-drugs">
                 {visible.map((d, i) => {
                     const signa = [d.dose, d.frequency].filter(Boolean).join(" · ");
+                    const isStopped = d.status === "STOPPED";
                     return (
-                        <div key={i} className="hms-rec-drug-chip">
+                        <div key={i} className={`hms-rec-drug-chip${isStopped ? " is-stopped" : ""}`}>
                             <Pill size={10} className="hms-rec-drug-chip__icon" />
                             <span className="hms-rec-drug-chip__name">{d.drugName}</span>
                             {signa && <span className="hms-rec-drug-chip__signa">{signa}</span>}
+                            {d.allergyOverrideReason && (
+                                <span className="hms-rec-drug-chip__allergy-badge" title={`Prescribed despite recorded allergy — ${d.allergyOverrideReason}`}>
+                                    <AlertTriangle size={9} /> Allergy override
+                                </span>
+                            )}
+                            {isStopped && (
+                                <span className="hms-rec-drug-chip__stopped-badge" title={d.stopReason || "Order stopped"}>
+                                    <Ban size={9} /> Stopped
+                                    {d.stoppedAt && ` · ${fmtDateMed(d.stoppedAt)}`}
+                                </span>
+                            )}
                         </div>
                     );
                 })}

@@ -10,7 +10,8 @@ import {
   bankApi,
   doctorsApi,
   hospitalServiceApi,
-  patientServicesApi
+  patientServicesApi,
+  gstRateApi
 } from "@/utils/api";
 import { generateInvoiceNumber } from "@/utils/validators";
 import { fmtId } from "@/utils/idFormat";
@@ -34,7 +35,6 @@ function accountsForMethod(accounts, method) {
   return (accounts || []).filter(a => allowed.includes((a.accountType || "").toUpperCase()));
 }
 
-const GST_RATE = 0.18;
 function fmt(n) {
   return "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -94,6 +94,8 @@ function CreateInvoice() {
   const [logStatus, setLogStatus] = useState("ALL");
   const [expandedInvoice, setExpandedInvoice] = useState(null);
   const [markingPaidId, setMarkingPaidId] = useState(null);
+  const [gstRates, setGstRates] = useState([]);
+  const [gstRatePercent, setGstRatePercent] = useState(18);
 
   const loadLogs = useCallback(async (forPatient) => {
     if (!user?.hospitalId) return;
@@ -122,6 +124,11 @@ function CreateInvoice() {
       const eligible = accountsForMethod(accounts, "Cash");
       const def = eligible.find((a) => a.isDefault) ?? eligible[0];
       if (def) setBankAccountId(def.id);
+    }).catch(() => {});
+    gstRateApi.list(user.hospitalId, true).then((rates) => {
+      setGstRates(rates || []);
+      const def = (rates || []).find((r) => r.isDefault);
+      if (def) setGstRatePercent(Number(def.ratePercent));
     }).catch(() => {});
   }, [user?.hospitalId]);
 
@@ -204,7 +211,7 @@ function CreateInvoice() {
   const subtotal = useMemo(() => items.reduce((s, i) => s + (i.totalPrice || 0), 0), [items]);
   const discountAmt = subtotal * (discountPct / 100);
   const medicineTotal = items.filter((i) => i.itemType === "MEDICINE").reduce((s, i) => s + (i.totalPrice || 0), 0);
-  const gstOnMedicines = (medicineTotal - medicineTotal * (discountPct / 100)) * GST_RATE;
+  const gstOnMedicines = (medicineTotal - medicineTotal * (discountPct / 100)) * (gstRatePercent / 100);
   const grandTotal = subtotal - discountAmt + gstOnMedicines;
   const hasSuggestions = suggestions && (suggestions.roomCharge || suggestions.radiologyOrders.length > 0 || suggestions.appointments.length > 0);
 
@@ -597,7 +604,18 @@ function CreateInvoice() {
                     </div>
                     {medicineTotal > 0 && (
                       <div className="hms-create-inv-summary__row">
-                        <span>GST Medicines (18%):</span>
+                        <span className="hms-create-inv-summary__disc">
+                          GST Medicines
+                          <select
+                            value={gstRatePercent}
+                            onChange={(e) => setGstRatePercent(Number(e.target.value))}
+                            className="hms-create-inv-summary__gst-select"
+                          >
+                            {(gstRates.length ? gstRates : [{ id: "default", ratePercent: gstRatePercent }]).map((r) => (
+                              <option key={r.id} value={r.ratePercent}>{r.ratePercent}%</option>
+                            ))}
+                          </select>
+                        </span>
                         <span>{fmt(gstOnMedicines)}</span>
                       </div>
                     )}
@@ -881,7 +899,7 @@ function CreateInvoice() {
         <div className="mt-6 text-right text-13">
           <p>Subtotal: {fmt(subtotal)}</p>
           {discountAmt > 0 && <p>Discount ({discountPct}%): -{fmt(discountAmt)}</p>}
-          {gstOnMedicines > 0 && <p>GST on Medicines (18%): {fmt(gstOnMedicines)}</p>}
+          {gstOnMedicines > 0 && <p>GST on Medicines ({gstRatePercent}%): {fmt(gstOnMedicines)}</p>}
           <p className="text-18 font-bold border-t pt-2 mt-2">Grand Total: {fmt(grandTotal)}</p>
           <p className="text-13 text-gray-500">Payment: {paymentMethod}</p>
         </div>

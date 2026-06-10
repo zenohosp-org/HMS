@@ -282,6 +282,12 @@ public class RecordController {
                 d.setRoute(pi.getRoute() != null ? pi.getRoute().name() : null);
                 d.setInstructions(pi.getInstructions());
                 d.setDisplayOrder(pi.getDisplayOrder());
+                d.setStatus(pi.getStatus());
+                if ("STOPPED".equals(pi.getStatus())) {
+                    d.setStoppedAt(pi.getStoppedAt() != null ? pi.getStoppedAt().toString() : null);
+                    d.setStopReason(pi.getStopReason());
+                }
+                d.setAllergyOverrideReason(pi.getAllergyOverrideReason());
                 items.add(d);
             }
         }
@@ -325,6 +331,8 @@ public class RecordController {
         private String route;
         private String instructions;
         private Integer displayOrder;
+        // Set when the prescriber acknowledged & overrode a recorded drug allergy.
+        private String allergyOverrideReason;
     }
 
     @Data
@@ -367,6 +375,13 @@ public class RecordController {
         private String route;
         private String instructions;
         private Integer displayOrder;
+        /** ACTIVE or STOPPED — order lifecycle state from PrescriptionItem. */
+        private String status;
+        /** Set only when status is STOPPED. */
+        private String stoppedAt;
+        private String stopReason;
+        /** Set when the prescriber overrode a recorded drug allergy for this item. */
+        private String allergyOverrideReason;
     }
 
     @Data

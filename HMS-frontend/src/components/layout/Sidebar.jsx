@@ -26,6 +26,7 @@ import {
     HeartPulse,
     Settings,
     ConciergeBell,
+    Percent,
 } from "lucide-react";
 
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
@@ -42,6 +43,7 @@ const SETTINGS_LINKS = [
     { label: "General Settings", to: "/settings/general", icon: Settings },
     { label: "Infrastructure", to: "/settings/infrastructure", icon: Building2 },
     { label: "Patient Services", to: "/settings/patient-services", icon: ConciergeBell },
+    { label: "GST Rates", to: "/settings/gst-rates", icon: Percent },
     { label: "Packages", to: "/checkups/packages", icon: ClipboardList },
 ];
 const ROOMS_LINKS = [

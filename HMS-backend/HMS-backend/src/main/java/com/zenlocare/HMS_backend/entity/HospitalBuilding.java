@@ -34,4 +34,8 @@ public class HospitalBuilding {
     @OrderBy("displayOrder ASC")
     @Builder.Default
     private List<HospitalFloor> floors = new ArrayList<>();
+
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
 }

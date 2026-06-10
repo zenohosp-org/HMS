@@ -11,8 +11,12 @@ import java.util.Optional;
 @Repository
 public interface BedRepository extends JpaRepository<Bed, Long> {
     List<Bed> findByRoomIdOrderByBedNumberAsc(Long roomId);
+    List<Bed> findByWardIdOrderByBedNumberAsc(Long wardId);
     long countByRoomIdAndStatus(Long roomId, BedStatus status);
+    long countByWardIdAndStatus(Long wardId, BedStatus status);
     long countByRoomId(Long roomId);
+    long countByWardId(Long wardId);
     Optional<Bed> findFirstByRoomIdAndStatus(Long roomId, BedStatus status);
+    Optional<Bed> findFirstByWardIdAndStatus(Long wardId, BedStatus status);
     Optional<Bed> findByCurrentPatientId(Integer patientId);
 }

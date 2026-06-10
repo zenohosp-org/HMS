@@ -36,7 +36,7 @@ export default function MoveToOTModal({ admission, onClose, onMoved }) {
         Promise.all([roomApi.list(user.hospitalId), doctorsApi.list(user.hospitalId)])
             .then(([rooms, docs]) => {
                 setOtRooms(
-                    rooms.filter((r) => r.roomType === "OT" && r.status === "AVAILABLE")
+                    rooms.filter((r) => r.roomCategory === "OT" && r.status === "AVAILABLE")
                 );
                 setDoctors(docs.filter((d) => d.userIsActive));
             })

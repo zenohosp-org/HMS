@@ -253,6 +253,11 @@ function OrderCard({
                 <div className="mar-card__text">
                     <div className="mar-card__name-row">
                         <p className="mar-card__drug-name">{drugTitle}</p>
+                        {order.allergyOverrideReason && (
+                            <span className="mar-card__allergy-badge" title={`Prescribed despite recorded allergy — ${order.allergyOverrideReason}`}>
+                                <AlertTriangle size={10} /> Allergy override
+                            </span>
+                        )}
                         {isStopped && (
                             <span className="mar-card__stopped-badge">
                                 <BanIcon size={10} /> Stopped

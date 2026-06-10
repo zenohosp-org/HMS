@@ -218,6 +218,7 @@ public class RecordService {
                                 .route(com.zenlocare.HMS_backend.entity.PrescriptionRoute.fromCode(ir.getRoute()))
                                 .instructions(ir.getInstructions())
                                 .displayOrder(ir.getDisplayOrder() != null ? ir.getDisplayOrder() : order)
+                                .allergyOverrideReason(ir.getAllergyOverrideReason())
                                 .build();
                 record.getPrescriptionItems().add(item);
                 order++;

@@ -116,14 +116,30 @@ export default function SearchableSelect({
             {filtered.length === 0 && (
               <li className="hms-select__empty">No results</li>
             )}
-            {filtered.map((opt) => (
-              <li
-                key={opt.value}
-                onClick={() => pick(opt)}
-                className={`hms-select__option ${String(value) === String(opt.value) ? "is-selected" : ""}`}
-              >
-                {opt.label}
-              </li>
+            {Object.entries(
+                filtered.reduce((acc, opt) => {
+                    const group = opt.group || "";
+                    if (!acc[group]) acc[group] = [];
+                    acc[group].push(opt);
+                    return acc;
+                }, {})
+            ).map(([groupName, opts]) => (
+              <div key={groupName || "ungrouped"}>
+                {groupName && (
+                  <div className="px-3 py-1.5 text-[10px] font-bold tracking-wider text-gray-500 uppercase bg-gray-50 border-y border-gray-100">
+                    {groupName}
+                  </div>
+                )}
+                {opts.map((opt) => (
+                  <li
+                    key={opt.value}
+                    onClick={() => pick(opt)}
+                    className={`hms-select__option ${String(value) === String(opt.value) ? "is-selected" : ""}`}
+                  >
+                    {opt.label}
+                  </li>
+                ))}
+              </div>
             ))}
           </ul>
         </div>

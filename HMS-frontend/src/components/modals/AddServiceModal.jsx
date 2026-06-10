@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { hospitalServiceApi } from "@/utils/api";
+import { hospitalServiceApi, gstRateApi } from "@/utils/api";
 import {
     Button,
     Drawer,
@@ -29,6 +29,7 @@ function AddServiceModal({ isOpen, onClose, service, departments, onSuccess }) {
     const { user } = useAuth();
     const { notify } = useNotification();
     const [loading, setLoading] = useState(false);
+    const [gstRates, setGstRates] = useState([]);
     const [formData, setFormData] = useState({
         name: "",
         departmentId: "",
@@ -42,15 +43,20 @@ function AddServiceModal({ isOpen, onClose, service, departments, onSuccess }) {
                 name: service.name,
                 departmentId: service.departmentId,
                 price: service.price.toString(),
-                gstRate:
-                    service.gstRate != null && service.gstRate !== 0
-                        ? service.gstRate.toString()
-                        : "",
+                gstRate: service.gstRate != null ? service.gstRate.toString() : "",
             });
         } else {
             setFormData({ name: "", departmentId: "", price: "", gstRate: "" });
         }
     }, [service, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || !user?.hospitalId) return;
+        gstRateApi
+            .list(user.hospitalId, true)
+            .then((data) => setGstRates(data || []))
+            .catch(() => setGstRates([]));
+    }, [isOpen, user?.hospitalId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -120,15 +126,15 @@ function AddServiceModal({ isOpen, onClose, service, departments, onSuccess }) {
                 />
             </FormGroup>
 
-            <FormGroup label="GST rate (%)" hint="Leave blank if exempt">
-                <Input
-                    type="number"
-                    min="0"
-                    max="28"
-                    step="0.5"
+            <FormGroup label="GST rate (%)" hint="Choose the slab applied to this service">
+                <SearchableSelect
                     value={formData.gstRate}
-                    onChange={(e) => setFormData((p) => ({ ...p, gstRate: e.target.value }))}
-                    placeholder="e.g. 18"
+                    onChange={(v) => setFormData((p) => ({ ...p, gstRate: v }))}
+                    options={gstRates.map((r) => ({
+                        value: String(r.ratePercent),
+                        label: r.name,
+                    }))}
+                    placeholder="Select GST rate"
                 />
             </FormGroup>
         </form>

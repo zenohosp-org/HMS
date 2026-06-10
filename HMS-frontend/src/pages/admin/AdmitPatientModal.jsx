@@ -134,7 +134,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
         if (!user?.hospitalId) return;
         api
             .get("/rooms", { params: { hospitalId: user.hospitalId } })
-            .then((r) => setRooms(r.data.filter((rm) => rm.status === "AVAILABLE")))
+            .then((r) => setRooms(r.data.filter((rm) => rm.status === "AVAILABLE" && rm.roomCategory === "WARD")))
             .catch(() => { });
     }, [user?.hospitalId]);
 
@@ -405,8 +405,8 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                                 onChange={(v) => setForm({ ...form, roomId: v, bedId: "" })}
                                 options={rooms.map((r) => ({
                                     value: r.id,
-                                    label: `${r.roomNumber} · ${r.roomType}${r.bedCount > 1 ? ` · ${r.bedCount} beds` : ""
-                                        }${r.ward ? ` · ${r.ward}` : ""}`,
+                                    group: r.ward || r.roomType || "Unassigned",
+                                    label: `Room ${r.roomNumber} (${r.roomType})${r.bedCount > 1 ? ` · ${r.bedCount} beds` : ""}`,
                                 }))}
                                 placeholder="Assign later…"
                             />

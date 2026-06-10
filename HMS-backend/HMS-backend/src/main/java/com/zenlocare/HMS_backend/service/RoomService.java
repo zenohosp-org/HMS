@@ -33,9 +33,12 @@ public class RoomService {
     private final DepartmentRepository departmentRepository;
     private final AdmissionRepository admissionRepository;
     private final BedRepository bedRepository;
+    private final RoomTypeConfigRepository roomTypeConfigRepository;
 
     public List<RoomDto> getRoomsForHospital(UUID hospitalId) {
-        List<Room> rooms = roomRepository.findByHospitalId(hospitalId);
+        List<Room> rooms = roomRepository.findByHospitalId(hospitalId).stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
+                .collect(Collectors.toList());
         // Batch-fetch active admissions for this hospital (one query) and key
         // them by room_id, so each RoomDto can pick up attender + admissionId
         // without per-room round-trips.
@@ -45,8 +48,14 @@ public class RoomService {
                 byRoomId.put(a.getRoom().getId(), a);
             }
         }
+        // Fetch categories and configurations for all room types
+        Map<String, RoomTypeConfig> configMap = new HashMap<>();
+        for (RoomTypeConfig cfg : roomTypeConfigRepository.findActiveByHospitalId(hospitalId)) {
+            configMap.put(cfg.getCode(), cfg);
+        }
+
         return rooms.stream()
-                .map(r -> RoomDto.fromEntity(r, byRoomId.get(r.getId())))
+                .map(r -> RoomDto.fromEntity(r, byRoomId.get(r.getId()), configMap.get(r.getRoomType())))
                 .collect(Collectors.toList());
     }
 
@@ -242,7 +251,7 @@ public class RoomService {
                 .performedBy(performedBy)
                 .build());
 
-        return RoomDto.fromEntity(saved, activeAdmission.orElse(null));
+        return RoomDto.fromEntity(saved, activeAdmission.orElse(null), getRoomTypeConfig(saved.getRoomType(), hospitalId));
     }
 
     @Transactional
@@ -293,7 +302,13 @@ public class RoomService {
                 .build());
 
         // Active admission is now DISCHARGED; pass null so the DTO clears attender.
-        return RoomDto.fromEntity(saved, null);
+        return RoomDto.fromEntity(saved, null, getRoomTypeConfig(saved.getRoomType(), hospitalId));
+    }
+
+    private RoomTypeConfig getRoomTypeConfig(String roomType, UUID hospitalId) {
+        return roomTypeConfigRepository.findByHospitalIdAndCode(hospitalId, roomType)
+            .orElseGet(() -> roomTypeConfigRepository.findSystemByCode(roomType)
+                .orElse(null));
     }
 
     @Transactional

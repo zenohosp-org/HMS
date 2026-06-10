@@ -2,6 +2,7 @@ package com.zenlocare.HMS_backend.repository;
 
 import com.zenlocare.HMS_backend.entity.Hospital;
 import com.zenlocare.HMS_backend.entity.User;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +13,11 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
 
+    // hospital is LAZY — eagerly fetch it (alongside the EAGER role, which
+    // an explicit entity graph would otherwise demote to LAZY) since
+    // login/auth flows read user.getHospital() outside a transaction
+    // (open-in-view=false).
+    @EntityGraph(attributePaths = {"hospital", "role"})
     Optional<User> findByEmail(String email);
 
     Optional<User> findByEmailAndHospitalId(String email, UUID hospitalId);

@@ -1,16 +1,21 @@
 import { Spinner } from "@/components/ui/Loader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { recordApi, doctorsApi } from "@/utils/api";
-import { Plus, Pill, CheckCircle2, AlertTriangle } from "lucide-react";
+import { recordApi, doctorsApi, marApi } from "@/utils/api";
+import { Plus, Pill, CheckCircle2, AlertTriangle, StopCircle } from "lucide-react";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { FormGroup } from "@/components/ui";
+import { fmtDateTime } from "@/utils/date";
 import {
   PrescriptionDrugRow,
   newBlankDrugItem,
   drugItemToRequest,
 } from "@/components/prescription/PrescriptionDrugRow";
+
+// Roles that may stop an active order — mirrors @PreAuthorize on the
+// /ipd/prescription-items/{id}/stop endpoint and IpdMarTab's CAN_STOP_ROLES.
+const CAN_STOP_ROLES = new Set(["doctor", "hospital_admin", "super_admin"]);
 
 /**
  * Modal for writing a PRESCRIPTION-type record with structured drug lines.
@@ -33,6 +38,12 @@ export default function WritePrescriptionModal({
   const [saving, setSaving] = useState(false);
   const [doctors, setDoctors] = useState([]);
   const [attendingDoctorId, setAttendingDoctorId] = useState(null);
+  const [activeOrders, setActiveOrders] = useState([]);
+  const [stopOpenId, setStopOpenId] = useState(null);
+  const [stopReason, setStopReason] = useState("");
+  const [stoppingId, setStoppingId] = useState(null);
+
+  const canStop = CAN_STOP_ROLES.has(user?.role);
 
   useEffect(() => {
     doctorsApi.list(user.hospitalId).then((list) => {
@@ -41,15 +52,69 @@ export default function WritePrescriptionModal({
     }).catch(() => {});
   }, [user.hospitalId, user.id, user.role]);
 
+  // Currently-running medication orders for this admission, so the
+  // prescriber can see what's already active before adding new drugs and
+  // catch unintentional duplicate/overlapping orders (e.g. re-prescribing
+  // the same drug under a different frequency without stopping the old one).
+  const fetchActiveOrders = useCallback(() => {
+    if (!admissionId) return;
+    marApi.list(admissionId).then((data) => {
+      setActiveOrders((data ?? []).filter((o) => o.status === "ACTIVE"));
+    }).catch(() => {});
+  }, [admissionId]);
+
+  useEffect(() => { fetchActiveOrders(); }, [fetchActiveOrders]);
+
+  const handleStopOrder = async (orderId) => {
+    if (!stopReason.trim()) {
+      notify("Reason is required to stop an order", "warning");
+      return;
+    }
+    setStoppingId(orderId);
+    try {
+      await marApi.stopOrder(orderId, stopReason.trim());
+      notify("Order stopped", "success");
+      setStopOpenId(null);
+      setStopReason("");
+      fetchActiveOrders();
+    } catch (err) {
+      notify(err?.response?.data?.message || "Failed to stop order", "error");
+    } finally {
+      setStoppingId(null);
+    }
+  };
+
+  // Best-effort match against currently-active orders so a drug row can warn
+  // "this is already running" — same loose substring approach as the
+  // allergy check below.
+  const findActiveDuplicate = (drugName, drugGeneric) => {
+    const name = (drugName || "").trim().toLowerCase();
+    const generic = (drugGeneric || "").trim().toLowerCase();
+    if (!name) return null;
+    return activeOrders.find((o) => {
+      const oName = (o.drugName || "").toLowerCase();
+      if (!oName) return false;
+      return oName.includes(name) || name.includes(oName)
+        || (generic && (oName.includes(generic) || generic.includes(oName)));
+    }) || null;
+  };
+
   const doctorOptions = doctors.map((d) => ({
     value: d.userId,
     label: `Dr. ${[d.firstName, d.lastName].filter(Boolean).join(" ")}${d.specialization ? ` · ${d.specialization}` : ""}`,
   }));
 
   const knownAllergies = Array.isArray(allergies) ? allergies : [];
-  const allergenNames = knownAllergies.map((a) => a.allergen.toLowerCase());
-  const drugMatchesAllergy = (drugName) =>
-    !!drugName && allergenNames.some((a) => drugName.toLowerCase().includes(a) || a.includes(drugName.toLowerCase()));
+  const drugMatchesAllergy = (drugName, drugGeneric) => {
+    const name = (drugName || "").trim().toLowerCase();
+    const generic = (drugGeneric || "").trim().toLowerCase();
+    if (!name && !generic) return null;
+    return knownAllergies.find((a) => {
+      const allergen = a.allergen.toLowerCase();
+      return (name && (name.includes(allergen) || allergen.includes(name)))
+          || (generic && (generic.includes(allergen) || allergen.includes(generic)));
+    }) || null;
+  };
 
   const setItemField = (key, field, value) => {
     setItems(prev => prev.map(i => i.key === key ? { ...i, [field]: value } : i));
@@ -74,6 +139,11 @@ export default function WritePrescriptionModal({
       const qty = Number(it.quantity);
       if (!qty || qty <= 0) {
         notify(`Set a positive quantity for ${it.drugName}`, "warning");
+        return;
+      }
+      const allergyMatch = drugMatchesAllergy(it.drugName, it.drugGeneric);
+      if (allergyMatch && !it.allergyAck?.trim()) {
+        notify(`Enter a reason for prescribing ${it.drugName} despite the recorded ${allergyMatch.allergen} allergy`, "warning");
         return;
       }
     }
@@ -149,6 +219,77 @@ export default function WritePrescriptionModal({
               </div>
             )}
 
+            {admissionId && activeOrders.length > 0 && (
+              <div className="hms-active-meds">
+                <p className="hms-active-meds__label">
+                  <Pill size={12} /> Active medications for this admission
+                </p>
+                <div className="hms-active-meds__list">
+                  {activeOrders.map((o) => {
+                    const signa = [o.dose, o.frequency, o.route].filter(Boolean).join(" · ");
+                    const isOpen = stopOpenId === o.orderId;
+                    return (
+                      <div key={o.orderId} className="hms-active-med-row">
+                        <div className="hms-active-med-row__info">
+                          <span className="hms-active-med-row__name">
+                            {[o.drugName, o.drugStrength, o.drugForm].filter(Boolean).join(" ")}
+                          </span>
+                          {signa && <span className="hms-active-med-row__signa">{signa}</span>}
+                          {(o.prescribedBy || o.prescribedAt) && (
+                            <span className="hms-active-med-row__meta">
+                              {o.prescribedBy && `Dr. ${o.prescribedBy}`}
+                              {o.prescribedBy && o.prescribedAt && " · "}
+                              {o.prescribedAt && fmtDateTime(o.prescribedAt)}
+                            </span>
+                          )}
+                        </div>
+                        {canStop && (
+                          isOpen ? (
+                            <div className="hms-active-med-row__stop-form">
+                              <input
+                                type="text"
+                                value={stopReason}
+                                onChange={(e) => setStopReason(e.target.value)}
+                                placeholder="Reason for stopping…"
+                                className="hms-active-med-row__stop-input"
+                                autoFocus
+                              />
+                              <button
+                                type="button"
+                                className="hms-active-med-row__stop-confirm"
+                                disabled={stoppingId === o.orderId}
+                                onClick={() => handleStopOrder(o.orderId)}
+                                title="Confirm stop"
+                              >
+                                {stoppingId === o.orderId
+                                  ? <Spinner className="w-3 h-3 zu-spinner" />
+                                  : <StopCircle size={12} />}
+                              </button>
+                              <button
+                                type="button"
+                                className="hms-active-med-row__stop-cancel"
+                                onClick={() => { setStopOpenId(null); setStopReason(""); }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              className="hms-active-med-row__stop-btn"
+                              onClick={() => { setStopOpenId(o.orderId); setStopReason(""); }}
+                            >
+                              <StopCircle size={12} /> Stop
+                            </button>
+                          )
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <FormGroup label={<span>Prescribing doctor <span className="text-danger">*</span></span>}>
               <SearchableSelect
                 value={attendingDoctorId}
@@ -179,7 +320,8 @@ export default function WritePrescriptionModal({
                     key={item.key}
                     index={idx}
                     item={item}
-                    allergyMatch={drugMatchesAllergy(item.drugName)}
+                    allergyMatch={drugMatchesAllergy(item.drugName, item.drugGeneric)}
+                    duplicateOrder={findActiveDuplicate(item.drugName, item.drugGeneric)}
                     onChange={(field, value) => setItemField(item.key, field, value)}
                     onRemove={() => removeItem(item.key)}
                     isLastRemovable={items.length > 1}

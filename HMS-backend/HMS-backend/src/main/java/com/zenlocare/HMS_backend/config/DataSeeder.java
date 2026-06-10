@@ -227,6 +227,7 @@ public class DataSeeder implements CommandLineRunner {
         seedHospitalAdmin();
         ensureZemaRulesSchema();
         seedZemaRules();
+        seedGstRates();
     }
 
     /**
@@ -688,22 +689,22 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         String[][] defaults = {
-            {"GENERAL",      "General Ward",        "WARD",  "bed-double",  "#3b82f6",  "0"},
-            {"WARD",         "Shared Ward",         "WARD",  "bed-double",  "#6366f1",  "1"},
-            {"SEMI_PRIVATE", "Semi-Private Room",   "WARD",  "bed-single",  "#8b5cf6",  "2"},
-            {"PRIVATE",      "Private Room",        "WARD",  "bed-single",  "#a855f7",  "3"},
-            {"DELUXE",       "Deluxe / VIP Room",   "WARD",  "crown",       "#f59e0b",  "4"},
-            {"ICU",          "ICU",                 "WARD",  "heart-pulse", "#ef4444",  "5"},
-            {"NICU",         "Neonatal ICU",        "WARD",  "baby",        "#f87171",  "6"},
-            {"ISOLATION",    "Isolation Room",      "WARD",  "shield",      "#f97316",  "7"},
-            {"EMERGENCY",    "Emergency / ER",      "WARD",  "siren",       "#dc2626",  "8"},
-            {"LABOUR",       "Labour & Delivery",   "WARD",  "heart",       "#ec4899",  "9"},
-            {"OT",           "Operating Theatre",   "OT",    "scissors",    "#10b981", "10"},
-            {"POST_OT",      "Post-Op Recovery",    "OT",    "activity",    "#14b8a6", "11"},
-            {"CATH_LAB",     "Cath Lab",            "OT",       "heart-pulse", "#06b6d4", "12"},
-            {"STORE",        "Inventory Store",     "STORE",    "package",     "#f59e0b", "13"},
-            {"PHARMACY",     "Pharmacy Shop",       "PHARMACY", "store",       "#10b981", "14"},
-            {"PHARMACY_INV", "Pharmacy Inventory",  "STORE",    "package",     "#8b5cf6", "15"},
+            {"GENERAL",      "General Ward",        "WARD",  "bed-double",  "#3b82f6",  "0", "true", "true"},
+            {"WARD",         "Shared Ward",         "WARD",  "bed-double",  "#6366f1",  "1", "true", "true"},
+            {"SEMI_PRIVATE", "Semi-Private Room",   "WARD",  "bed-single",  "#8b5cf6",  "2", "true", "true"},
+            {"PRIVATE",      "Private Room",        "WARD",  "bed-single",  "#a855f7",  "3", "true", "true"},
+            {"DELUXE",       "Deluxe / VIP Room",   "WARD",  "crown",       "#f59e0b",  "4", "true", "true"},
+            {"ICU",          "ICU",                 "WARD",  "heart-pulse", "#ef4444",  "5", "true", "true"},
+            {"NICU",         "Neonatal ICU",        "WARD",  "baby",        "#f87171",  "6", "true", "true"},
+            {"ISOLATION",    "Isolation Room",      "WARD",  "shield",      "#f97316",  "7", "true", "true"},
+            {"EMERGENCY",    "Emergency / ER",      "WARD",  "siren",       "#dc2626",  "8", "true", "true"},
+            {"LABOUR",       "Labour & Delivery",   "WARD",  "heart",       "#ec4899",  "9", "true", "true"},
+            {"OT",           "Operating Theatre",   "OT",    "scissors",    "#10b981", "10", "false", "false"},
+            {"POST_OT",      "Post-Op Recovery",    "OT",    "activity",    "#14b8a6", "11", "true", "false"},
+            {"CATH_LAB",     "Cath Lab",            "OT",       "heart-pulse", "#06b6d4", "12", "false", "false"},
+            {"STORE",        "Inventory Store",     "STORE",    "package",     "#f59e0b", "13", "false", "false"},
+            {"PHARMACY",     "Pharmacy Shop",       "PHARMACY", "store",       "#10b981", "14", "false", "false"},
+            {"PHARMACY_INV", "Pharmacy Inventory",  "STORE",    "package",     "#8b5cf6", "15", "false", "false"},
         };
 
         // Explicit check-then-insert/update. The previous ON CONFLICT
@@ -721,6 +722,9 @@ public class DataSeeder implements CommandLineRunner {
                     "WHERE hospital_id IS NULL AND code = ?",
                     Integer.class, d[0]);
 
+                boolean hasBeds = Boolean.parseBoolean(d[6]);
+                boolean hasDailyCharge = Boolean.parseBoolean(d[7]);
+
                 if (existing != null && existing > 0) {
                     // Keep system rows fresh — label / category / icon /
                     // color / display_order may have been edited in the
@@ -728,16 +732,17 @@ public class DataSeeder implements CommandLineRunner {
                     jdbcTemplate.update(
                         "UPDATE room_type_configs " +
                         "   SET label = ?, category = ?, icon = ?, color = ?, " +
-                        "       is_system = true, display_order = ? " +
+                        "       is_system = true, display_order = ?, " +
+                        "       has_beds = ?, has_daily_charge = ? " +
                         " WHERE hospital_id IS NULL AND code = ?",
-                        d[1], d[2], d[3], d[4], Integer.parseInt(d[5]), d[0]);
+                        d[1], d[2], d[3], d[4], Integer.parseInt(d[5]), hasBeds, hasDailyCharge, d[0]);
                 } else {
                     jdbcTemplate.update(
                         "INSERT INTO room_type_configs " +
                         "  (hospital_id, code, label, category, icon, color, " +
-                        "   is_system, is_active, display_order) " +
-                        "VALUES (NULL, ?, ?, ?, ?, ?, true, true, ?)",
-                        d[0], d[1], d[2], d[3], d[4], Integer.parseInt(d[5]));
+                        "   is_system, is_active, display_order, has_beds, has_daily_charge) " +
+                        "VALUES (NULL, ?, ?, ?, ?, ?, true, true, ?, ?, ?)",
+                        d[0], d[1], d[2], d[3], d[4], Integer.parseInt(d[5]), hasBeds, hasDailyCharge);
                 }
             } catch (Exception e) {
                 log.warn("Could not seed room type " + d[0] + ": " + e.getMessage());
@@ -1048,5 +1053,42 @@ public class DataSeeder implements CommandLineRunner {
         insertCombinationRule("combo", "((sbp !== null && sbp >= 140) || (dbp !== null && dbp >= 90)) && age !== null && age < 40", "Early hypertension", "Early-onset hypertension (age < 40) - consider secondary causes (renal, endocrine). Suggest workup.", "warning", 32);
         insertCombinationRule("combo", "bmi !== null && bmi >= 25 && pulse !== null && pulse > 100", "Elevated BMI with tachycardia", "Elevated BMI with tachycardia - consider metabolic stress, deconditioning, or obstructive sleep apnea screening.", "warning", 33);
         insertCombinationRule("combo", "sbp !== null && dbp !== null && sbp < 140 && dbp < 90 && (spo2 === null || spo2 >= 95) && (pulse === null || (pulse >= 60 && pulse <= 100)) && (shockIndex === null || shockIndex <= 0.9)", "No acute hemodynamic or respiratory concern", "No acute hemodynamic or respiratory concern identified from current vitals. Routine follow-up suggested.", "reassurance", 34);
+    }
+
+    /**
+     * Seeds the standard Indian GST slabs (0/5/12/18/28%) as per-hospital
+     * rate presets, with 18% marked as the default. Skips any hospital that
+     * already has gst_rates rows so re-runs and manual edits are preserved.
+     */
+    private void seedGstRates() {
+        try {
+            Object[][] defaults = {
+                {"GST 0%",  0.0,  0.0,  0.0,  0.0,  0.0, false},
+                {"GST 5%",  5.0,  2.5,  2.5,  5.0,  0.0, false},
+                {"GST 12%", 12.0, 6.0,  6.0,  12.0, 0.0, false},
+                {"GST 18%", 18.0, 9.0,  9.0,  18.0, 0.0, true},
+                {"GST 28%", 28.0, 14.0, 14.0, 28.0, 0.0, false},
+            };
+
+            for (Hospital hospital : hospitalRepository.findAll()) {
+                Integer existing = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM public.gst_rates WHERE hospital_id = ?",
+                        Integer.class, hospital.getId());
+                if (existing != null && existing > 0) {
+                    continue;
+                }
+
+                for (Object[] d : defaults) {
+                    jdbcTemplate.update("""
+                        INSERT INTO public.gst_rates
+                            (hospital_id, name, rate_percent, cgst_percent, sgst_percent, igst_percent, cess_percent, is_default, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, true)
+                    """, hospital.getId(), d[0], d[1], d[2], d[3], d[4], d[5], d[6]);
+                }
+            }
+            log.info("✅ GST rate presets seeded (0/5/12/18/28%) for hospitals missing them.");
+        } catch (Exception e) {
+            log.warn("Could not seed GST rates: " + e.getMessage());
+        }
     }
 }

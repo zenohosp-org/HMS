@@ -6,7 +6,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "beds", uniqueConstraints = @UniqueConstraint(columnNames = {"room_id", "bed_number"}))
+@Table(name = "beds", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"room_id", "bed_number"}),
+    @UniqueConstraint(columnNames = {"ward_id", "bed_number"})
+})
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,9 +21,14 @@ public class Bed {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id", nullable = false)
+    @JoinColumn(name = "room_id")
     @JsonIgnore
     private Room room;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ward_id")
+    @JsonIgnore
+    private HospitalWard ward;
 
     @Column(name = "bed_number", nullable = false, length = 20)
     private String bedNumber;
@@ -41,6 +49,10 @@ public class Bed {
     @Column(name = "updated_at")
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
 
     @PreUpdate
     protected void onUpdate() {

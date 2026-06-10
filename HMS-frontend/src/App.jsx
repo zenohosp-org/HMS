@@ -36,6 +36,7 @@ import InfrastructureMapping from "@/pages/ipd/InfrastructureMapping"
 import Settings from "@/pages/settings/Settings"
 import GeneralSettings from "@/pages/settings/GeneralSettings"
 import PatientServices from "@/pages/settings/PatientServices"
+import GstRates from "@/pages/settings/GstRates"
 import AmbulanceBook from "@/pages/ambulance/AmbulanceBook"
 import AmbulanceStatus from "@/pages/ambulance/AmbulanceStatus";
 import PackageManager from "@/pages/checkups/PackageManager";
@@ -65,6 +66,7 @@ const router = createBrowserRouter(
         <Route path="settings/general" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><GeneralSettings /></ProtectedRoute>} />
         <Route path="settings/infrastructure" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Settings /></ProtectedRoute>} />
         <Route path="settings/patient-services" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><PatientServices /></ProtectedRoute>} />
+        <Route path="settings/gst-rates" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><GstRates /></ProtectedRoute>} />
         <Route path="ipd/infrastructure" element={<Navigate to="/settings/infrastructure" replace />} />
         
         {/* Ambulance */}
