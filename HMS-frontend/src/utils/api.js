@@ -48,8 +48,33 @@ const unauthorizedRedirect = (err) => {
   }
   return Promise.reject(err);
 };
-api.interceptors.response.use((res) => res, unauthorizedRedirect);
-labsApi.interceptors.response.use((res) => res, unauthorizedRedirect);
+
+/**
+ * Some API calls came back 200 OK but with the SSO login HTML in the body
+ * because axios silently followed a 302 redirect from the backend. The
+ * consuming page then tried .filter / .map / .reduce on a string and
+ * crashed. Bounce to /login on any 2xx whose Content-Type is HTML so the
+ * auth failure surfaces cleanly. The backend Spring Security fix
+ * (HttpStatusEntryPoint on /api/**) is the proper cure; this is the
+ * belt-and-braces guard for any other endpoint that misbehaves.
+ */
+const htmlBodyRedirect = (res) => {
+  const ct = res?.headers?.["content-type"] || "";
+  const url = res?.config?.url || "";
+  if (
+    ct.includes("text/html") &&
+    !url.includes("/auth/me") &&
+    typeof window !== "undefined" &&
+    !window.location.pathname.startsWith("/login")
+  ) {
+    window.location.href = "/login";
+    return Promise.reject(new Error("Auth required"));
+  }
+  return res;
+};
+
+api.interceptors.response.use(htmlBodyRedirect, unauthorizedRedirect);
+labsApi.interceptors.response.use(htmlBodyRedirect, unauthorizedRedirect);
 const authApi = {
   login: async (email, password) => {
     const { data } = await api.post("/auth/login", { email, password });
