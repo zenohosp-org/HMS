@@ -28,7 +28,7 @@ public class RoomTypeConfigController {
     public ResponseEntity<RoomTypeDto> create(@RequestParam UUID hospitalId,
                                                @RequestBody CreateRoomTypeRequest req) {
         RoomTypeConfig created = service.create(hospitalId, req.getCode(), req.getLabel(),
-                req.getCategory(), req.getIcon(), req.getColor());
+                req.getCategory(), req.getIcon(), req.getColor(), req.getHasBeds(), req.getHasDailyCharge());
         return ResponseEntity.ok(toDto(created));
     }
 
@@ -36,7 +36,7 @@ public class RoomTypeConfigController {
     public ResponseEntity<RoomTypeDto> update(@PathVariable UUID id,
                                                @RequestBody UpdateRoomTypeRequest req) {
         RoomTypeConfig updated = service.update(id, req.getLabel(), req.getCategory(),
-                req.getIcon(), req.getColor());
+                req.getIcon(), req.getColor(), req.getHasBeds(), req.getHasDailyCharge());
         return ResponseEntity.ok(toDto(updated));
     }
 
@@ -54,6 +54,8 @@ public class RoomTypeConfigController {
         dto.setCategory(c.getCategory());
         dto.setIcon(c.getIcon());
         dto.setColor(c.getColor());
+        dto.setHasBeds(c.getHasBeds());
+        dto.setHasDailyCharge(c.getHasDailyCharge());
         dto.setIsSystem(c.getIsSystem());
         dto.setDisplayOrder(c.getDisplayOrder());
         return dto;
@@ -67,6 +69,8 @@ public class RoomTypeConfigController {
         private String category;
         private String icon;
         private String color;
+        private Boolean hasBeds;
+        private Boolean hasDailyCharge;
         private Boolean isSystem;
         private Integer displayOrder;
     }
@@ -78,6 +82,8 @@ public class RoomTypeConfigController {
         private String category;
         private String icon;
         private String color;
+        private Boolean hasBeds;
+        private Boolean hasDailyCharge;
     }
 
     @Data
@@ -86,5 +92,7 @@ public class RoomTypeConfigController {
         private String category;
         private String icon;
         private String color;
+        private Boolean hasBeds;
+        private Boolean hasDailyCharge;
     }
 }

@@ -47,6 +47,14 @@ public class RoomTypeConfig {
     @Column(length = 20)
     private String color;
 
+    @Column(name = "has_beds")
+    @Builder.Default
+    private Boolean hasBeds = true;
+
+    @Column(name = "has_daily_charge")
+    @Builder.Default
+    private Boolean hasDailyCharge = true;
+
     /** System defaults cannot be deleted by users */
     @Column(name = "is_system")
     @Builder.Default
