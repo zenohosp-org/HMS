@@ -7,8 +7,10 @@ import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -174,10 +176,10 @@ public class BloodBankService {
                 .orElseThrow(() -> new RuntimeException("Hospital not found"));
 
         if (req.getBagNumber() == null || req.getBagNumber().isBlank()) {
-            throw new RuntimeException("Bag number is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bag number is required");
         }
         unitRepo.findByHospital_IdAndBagNumber(hospitalId, req.getBagNumber())
-                .ifPresent(b -> { throw new RuntimeException("Bag number already exists"); });
+                .ifPresent(b -> { throw new ResponseStatusException(HttpStatus.CONFLICT, "Bag number already exists"); });
 
         BloodDonor donor = req.getDonorId() != null
                 ? donorRepo.findById(req.getDonorId()).orElse(null)
@@ -222,7 +224,8 @@ public class BloodBankService {
         BloodUnit unit = unitRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Unit not found"));
         if ("ISSUED".equals(unit.getStatusCode())) {
-            throw new RuntimeException("Issued units cannot be re-statused — register a new bag");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Issued units cannot be re-statused — register a new bag");
         }
         unit.setStatusCode(newStatusCode);
         if ("AVAILABLE".equals(newStatusCode)) {
@@ -243,13 +246,19 @@ public class BloodBankService {
         BloodUnit unit = unitRepo.findById(unitId)
                 .orElseThrow(() -> new RuntimeException("Unit not found"));
         if (!"AVAILABLE".equals(unit.getStatusCode()) && !"RESERVED".equals(unit.getStatusCode())) {
-            throw new RuntimeException("Only AVAILABLE or RESERVED units can be issued");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Only AVAILABLE or RESERVED units can be issued; this bag is " + unit.getStatusCode());
         }
         if (unit.getExpiryDate() != null && unit.getExpiryDate().isBefore(LocalDate.now())) {
-            throw new RuntimeException("Cannot issue an expired bag — mark it EXPIRED first");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cannot issue an expired bag — mark it EXPIRED first");
         }
         if (req.getPatientId() == null) {
-            throw new RuntimeException("Patient is required for issuance");
+            // Surfaces a clean 400 to callers (notably OTM) instead of a 500
+            // when an OT booking has no linked hmsPatientId. OTM Claude
+            // flagged this as a callsite worth guarding clearly.
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "patientId is required for issuance");
         }
 
         Patient patient = patientRepository.findById(req.getPatientId())
