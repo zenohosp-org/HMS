@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, FormGroup, Input, Modal, Textarea } from "@/components/ui";
 import SearchableSelect from "@/components/ui/SearchableSelect";
-import { bloodBankApi } from "@/utils/api";
+import { bloodBankApi, roomApi } from "@/utils/api";
 import { useNotification } from "@/context/NotificationContext";
 
 export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, onSuccess }) {
@@ -10,6 +10,7 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
   const [components, setComponents] = useState([]);
   const [sources, setSources] = useState([]);
   const [donors, setDonors] = useState([]);
+  const [storageRooms, setStorageRooms] = useState([]);
   const [form, setForm] = useState({
     bagNumber: "",
     bloodGroupCode: "",
@@ -33,11 +34,15 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
       bloodBankApi.listLookups(hospitalId, "COMPONENT").catch(() => []),
       bloodBankApi.listLookups(hospitalId, "SOURCE_TYPE").catch(() => []),
       bloodBankApi.listDonors(hospitalId).catch(() => []),
-    ]).then(([g, c, s, d]) => {
+      roomApi.list(hospitalId).catch(() => []),
+    ]).then(([g, c, s, d, rooms]) => {
       setGroups(g);
       setComponents(c);
       setSources(s);
       setDonors(d);
+      setStorageRooms(
+        (rooms || []).filter((r) => r.roomType === "BLOOD_BANK")
+      );
     });
   }, [isOpen, hospitalId]);
 
@@ -151,8 +156,31 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
           <FormGroup label="Collection date">
             <Input type="date" value={form.collectionDate} onChange={(e) => set("collectionDate", e.target.value)} />
           </FormGroup>
-          <FormGroup label="Storage location">
-            <Input value={form.storageLocation} onChange={(e) => set("storageLocation", e.target.value)} placeholder="Refrigerator A, shelf 2" />
+          <FormGroup
+            label="Storage location"
+            hint={
+              storageRooms.length === 0
+                ? "No blood bank rooms configured. Add one in Settings → Infrastructure."
+                : undefined
+            }
+          >
+            {storageRooms.length > 0 ? (
+              <SearchableSelect
+                value={form.storageLocation}
+                onChange={(v) => set("storageLocation", v)}
+                options={storageRooms.map((r) => ({
+                  value: r.roomNumber,
+                  label: r.ward ? `${r.roomNumber} · ${r.ward}` : r.roomNumber,
+                }))}
+                placeholder="Select blood bank room"
+              />
+            ) : (
+              <Input
+                value={form.storageLocation}
+                onChange={(e) => set("storageLocation", e.target.value)}
+                placeholder="Refrigerator A, shelf 2"
+              />
+            )}
           </FormGroup>
           <FormGroup label="Cost price (₹)">
             <Input type="number" min="0" step="0.01" value={form.costPrice} onChange={(e) => set("costPrice", e.target.value)} />
