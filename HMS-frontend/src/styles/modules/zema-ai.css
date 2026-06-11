@@ -300,6 +300,19 @@
     transform: scale(0.97);
 }
 
+.zema-suggest-chip.is-active {
+    background: var(--zema-grad-brand);
+    border-style: solid;
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: var(--zema-shadow-glow-sm);
+}
+
+.zema-suggest-chip.is-active:hover {
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
 
 /* ─────────────────────────── Glassmorphic Panel (AI Summary Card) ─────────────────────────── */
 
@@ -838,4 +851,40 @@
 .zema-alert-banner__icon {
     flex-shrink: 0;
     margin-top: 1px;
+}
+
+
+/* ─────────────────────────── "Analyze with Zema AI" Modal ─────────────────────────── */
+
+.hms-zema-modal__title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hms-zema-modal__title h3 {
+    margin: 0;
+}
+
+.hms-zema-modal__subtitle {
+    margin: 2px 0 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--hms-gray-500);
+}
+
+.hms-zema-modal__analysis-card {
+    margin-bottom: 18px;
+}
+
+.hms-zema-modal__reading-time {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: -4px 0 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    position: relative;
+    z-index: 1;
 }
