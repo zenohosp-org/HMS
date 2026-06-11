@@ -983,12 +983,27 @@ const ioApi = {
   remove: (admissionId, entryId) => api.delete(`/ipd/fluid/${admissionId}/${entryId}`).then((r) => r.data),
 };
 
+// Lab orders are now owned by the labs service (api-labs.zenohosp.com). Same
+// shared sso_token cookie, same hospital scoping — only the host moves. The
+// admissionId is the implicit scope for read (`/lab/admission/{id}`); write
+// endpoints take just the order id so collect/report/cancel drop the
+// admission segment from the path.
 const labOrderApi = {
-  list:    (admissionId)                   => api.get(`/ipd/lab-orders/${admissionId}`).then((r) => r.data),
-  create:  (admissionId, payload)          => api.post(`/ipd/lab-orders/${admissionId}`, payload).then((r) => r.data),
-  collect: (admissionId, orderId)          => api.patch(`/ipd/lab-orders/${admissionId}/${orderId}/collect`).then((r) => r.data),
-  result:  (admissionId, orderId, payload) => api.patch(`/ipd/lab-orders/${admissionId}/${orderId}/result`, payload).then((r) => r.data),
-  cancel:  (admissionId, orderId)          => api.delete(`/ipd/lab-orders/${admissionId}/${orderId}`).then((r) => r.data),
+  list:    (admissionId)                              => labsApi.get(`/lab/admission/${admissionId}`).then((r) => r.data),
+  getByPatient: (patientId)                           => labsApi.get(`/lab/patient/${patientId}`).then((r) => r.data),
+  create:  (payload)                                  => labsApi.post(`/lab`, payload).then((r) => r.data),
+  collect: (orderId)                                  => labsApi.patch(`/lab/${orderId}/collect`).then((r) => r.data),
+  report:  (orderId, { findings, observation })       => labsApi.patch(`/lab/${orderId}/report`, { findings, observation }).then((r) => r.data),
+  cancel:  (orderId)                                  => labsApi.delete(`/lab/${orderId}`).then((r) => r.data),
+};
+
+// Unified lab + radiology read for IPD Detail Pane and Consultation View.
+// Returns InvestigationSummaryDTO[] with `kind: "LAB" | "RADIOLOGY"`, sorted
+// by createdAt DESC. Read-only — writes still go through labOrderApi /
+// radiologyApi for the kind-specific endpoint.
+const investigationsApi = {
+  byAdmission: (admissionId) => labsApi.get(`/investigations/admission/${admissionId}`).then((r) => r.data),
+  byPatient:   (patientId)   => labsApi.get(`/investigations/patient/${patientId}`).then((r) => r.data),
 };
 
 const nursingTaskApi = {
@@ -1074,6 +1089,7 @@ export {
   allergyApi,
   ioApi,
   labOrderApi,
+  investigationsApi,
   nursingTaskApi,
   referralApi,
   zemaRulesApi,

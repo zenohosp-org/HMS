@@ -1130,6 +1130,7 @@ export default function IPDDetailPane({
                     {activeTab === "Labs" && (
                         <IpdLabTab
                             admissionId={admission.id}
+                            patientId={admission.patientId}
                             isDischarged={!!admission.actualDischargeDate}
                         />
                     )}
