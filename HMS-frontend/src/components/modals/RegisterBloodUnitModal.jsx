@@ -67,6 +67,21 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
 
   const isExternal = form.sourceCode === "EXTERNAL_PURCHASE";
 
+  // Donor must match the selected blood group — a donor's bag carries the
+  // donor's group, so cross-group registration would be a data integrity bug.
+  const eligibleDonors = form.bloodGroupCode
+    ? donors.filter((d) => d.bloodGroupCode === form.bloodGroupCode)
+    : donors;
+
+  // If the currently-picked donor no longer matches the group, clear it so
+  // the user re-picks intentionally instead of submitting a mismatched bag.
+  useEffect(() => {
+    if (!form.donorId) return;
+    const stillEligible = eligibleDonors.some((d) => d.id === form.donorId);
+    if (!stillEligible) setForm((p) => ({ ...p, donorId: "" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.bloodGroupCode, donors]);
+
   const submit = async (e) => {
     e.preventDefault();
     if (!form.bloodGroupCode) return notify("Blood group is required", "error");
@@ -138,11 +153,20 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
           </FormGroup>
           {!isExternal && (
             <div className="hms-bb-modal-grid__full">
-              <FormGroup label="Donor *">
+              <FormGroup
+                label="Donor *"
+                hint={
+                  form.bloodGroupCode && eligibleDonors.length === 0
+                    ? "No donors registered for this blood group. Register one in the Donors tab."
+                    : form.bloodGroupCode
+                      ? `Showing donors with matching blood group only.`
+                      : "Pick a blood group first to filter eligible donors."
+                }
+              >
                 <SearchableSelect
                   value={form.donorId}
                   onChange={(v) => set("donorId", v)}
-                  options={donors.map((d) => ({
+                  options={eligibleDonors.map((d) => ({
                     value: d.id,
                     label: `${d.firstName ?? ""} ${d.lastName ?? ""}`.trim() || d.donorCode,
                   }))}
