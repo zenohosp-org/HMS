@@ -220,6 +220,7 @@ public class DataSeeder implements CommandLineRunner {
         backfillPatientRegistrationFlag();
         backfillAppointmentTokens();
         migrateRoomAttenderToAdmission();
+        ensureRoomOccupancyColumns();
         ensurePrescriptionSchema();
         ensureAttachmentSchema();
         seedRoomTypeConfigs();
@@ -264,6 +265,23 @@ public class DataSeeder implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE rooms DROP COLUMN IF EXISTS attender_relationship");
         } catch (Exception e) {
             log.warn("Could not drop rooms.attender_* columns: " + e.getMessage());
+        }
+    }
+
+    /**
+     * The Room entity has carried admission_date / approx_discharge_time
+     * since the bed-tracking refactor; AdmissionService writes them as the
+     * live occupancy snapshot (the persistent admission row stays the
+     * source of truth). Some environments have these columns dropped
+     * externally, which breaks every SELECT against rooms. Re-create them
+     * idempotently so the entity and schema stay in sync.
+     */
+    private void ensureRoomOccupancyColumns() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE rooms ADD COLUMN IF NOT EXISTS admission_date TIMESTAMP");
+            jdbcTemplate.execute("ALTER TABLE rooms ADD COLUMN IF NOT EXISTS approx_discharge_time TIMESTAMP");
+        } catch (Exception e) {
+            log.warn("Could not ensure rooms occupancy columns: " + e.getMessage());
         }
     }
 
