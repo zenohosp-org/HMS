@@ -289,6 +289,10 @@ public class DataSeeder implements CommandLineRunner {
             "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true",
             "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS room_code VARCHAR(20)",
             "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS department_id UUID",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS patient_id INTEGER",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS status_id INTEGER",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS price_per_day NUMERIC(10,2)",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP",
         };
         for (String sql : alters) {
             try {
