@@ -34,14 +34,9 @@ public class Room {
     @Column(name = "room_type", nullable = false, length = 30)
     private String roomType;
 
-    @Convert(converter = com.zenlocare.HMS_backend.converter.RoomStatusConverter.class)
-    @Column(name = "status_id")
-    private RoomStatus status;
-
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "patient_id")
-    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler", "hospital" })
-    private Patient currentPatient;
+    @Column(name = "is_under_maintenance")
+    @Builder.Default
+    private boolean isUnderMaintenance = false;
 
     @Column(name = "price_per_day", precision = 10, scale = 2)
     private java.math.BigDecimal pricePerDay;
@@ -50,30 +45,10 @@ public class Room {
     // The DB columns are dropped by DataSeeder on startup; the field-less
     // entity here means Hibernate stops reading/writing them.
 
-    @Column(name = "allocation_token", length = 30)
-    private String allocationToken;
-
-    @Column(name = "approx_discharge_time")
-    private LocalDateTime approxDischargeTime;
-
-    @Column(name = "admission_date")
-    private LocalDateTime admissionDate;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id")
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    private Department department;
-
-    @Column(name = "ward", length = 100)
-    private String ward;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ward_id")
     @JsonIgnore
     private HospitalWard hospitalWard;
-
-    @Column(name = "bed_count")
-    private Integer bedCount;
 
     // Optimistic-lock cursor — concurrent allocations / status flips against
     // the same room (e.g. two admits racing for the last AVAILABLE room) will

@@ -80,6 +80,7 @@ public class InfrastructureService {
                         return newF;
                     });
                 
+                floor.setHospital(building.getHospital());
                 floor.setBuilding(building);
                 floor.setName(fDto.getName());
                 floor.setDisplayOrder(j);
@@ -100,6 +101,7 @@ public class InfrastructureService {
                             return newW;
                         });
 
+                    ward.setHospital(floor.getHospital());
                     ward.setFloor(floor);
                     ward.setName(wDto.getName());
                     ward.setDailyCharge(wDto.getDailyCharge());
@@ -120,14 +122,11 @@ public class InfrastructureService {
                         if (room == null) {
                             room = new Room();
                             room.setHospital(hospital);
-                            room.setStatus(RoomStatus.AVAILABLE);
                         }
 
                         room.setRoomNumber(rDto.getName());
                         room.setRoomType(ward.getRoomType());
-                        room.setWard(wDto.getName());
                         room.setHospitalWard(ward);
-                        room.setBedCount(rDto.getBedNames().size());
                         if (ward.getDailyCharge() != null) {
                             room.setPricePerDay(ward.getDailyCharge());
                         }
@@ -143,7 +142,6 @@ public class InfrastructureService {
                                 .orElseGet(() -> {
                                     Bed newBed = new Bed();
                                     newBed.setRoom(savedRoom);
-                                    newBed.setStatus(BedStatus.AVAILABLE);
                                     return newBed;
                                 });
                             bed.setBedNumber(bedName);
@@ -190,7 +188,6 @@ public class InfrastructureService {
                                 .orElseGet(() -> {
                                     Bed newBed = new Bed();
                                     newBed.setWard(finalWard);
-                                    newBed.setStatus(BedStatus.AVAILABLE);
                                     return newBed;
                                 });
                             bed.setWard(finalWard);

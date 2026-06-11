@@ -39,23 +39,24 @@ const TYPE_TONE = {
 
 const normalizeKey = (v) => v?.toString()?.trim()?.toLowerCase() || "";
 
-const statusTone = (status) => {
-    if (status === "AVAILABLE") return "is-available";
-    if (status === "OCCUPIED") return "is-occupied";
-    return "";
+const statusTone = (room) => {
+    if (room?.underMaintenance) return "is-neutral";
+    if (room?.occupied) return "is-occupied";
+    return "is-available";
 };
 
-const chipStatusClass = (status) => {
-    if (status === "AVAILABLE") return "hms-status-chip is-success";
-    if (status === "OCCUPIED") return "hms-status-chip is-info";
-    return "hms-status-chip is-neutral";
+const chipStatusClass = (room) => {
+    if (room?.underMaintenance) return "hms-status-chip is-neutral";
+    if (room?.occupied) return "hms-status-chip is-info";
+    return "hms-status-chip is-success";
 };
 
 /** Compact dot+label status chip used in card headers. */
-function StatusChip({ status }) {
+function StatusChip({ room }) {
+    const label = room?.underMaintenance ? "Maintenance" : (room?.occupied ? "Occupied" : "Available");
     return (
-        <span className={chipStatusClass(status)}>
-            {status ?? "Not Set"}
+        <span className={chipStatusClass(room)}>
+            {label}
         </span>
     );
 }
@@ -88,7 +89,7 @@ function OccupancyBar({ occupied, total, size = "md" }) {
 }
 
 function RoomMenu({ room, onView, onAttender }) {
-    const isMultiBed = room.bedCount != null && room.bedCount > 1;
+    const isMultiBed = (room.beds?.length ?? 0) > 1;
     const items = [
         {
             label: isMultiBed ? "View beds" : "View details",
@@ -96,7 +97,7 @@ function RoomMenu({ room, onView, onAttender }) {
             onClick: () => onView(room),
         },
     ];
-    if (room.status === "OCCUPIED" && !isMultiBed) {
+    if (room.occupied && !isMultiBed) {
         items.push({
             label: room.attenderName ? "Edit attender" : "Assign attender",
             icon: <User size={14} />,
@@ -117,10 +118,11 @@ function RoomMenu({ room, onView, onAttender }) {
 
 /** Room card used inside the infrastructure tree. */
 function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onView, onAttender }) {
-    const isMultiBed = roomData?.bedCount != null && roomData.bedCount > 1;
-    const status = roomData?.status;
+    const isMultiBed = (roomData?.beds?.length ?? 0) > 1;
+    const isOccupied = roomData?.occupied;
+    const isUnderMaintenance = roomData?.underMaintenance;
     const roomType = roomData?.roomType ?? roomInfo.roomType ?? "GENERAL";
-    const accentTone = roomData ? statusTone(status) : "";
+    const accentTone = roomData ? statusTone(roomData) : "";
 
     return (
         <div
@@ -129,7 +131,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
                 "hms-room-cell" +
                 (!roomData ? " is-empty" : "") +
                 (isSelected ? " is-selected" : "") +
-                (status === "OCCUPIED" ? " is-occupied" : "")
+                (isOccupied ? " is-occupied" : "")
             }
         >
             <div className={"hms-room-cell__accent " + accentTone} />
@@ -152,10 +154,10 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
                         </Badge>
                         {isMultiBed && (
                             <Badge tone="violet" soft>
-                                {roomData.bedCount} beds
+                                {roomData.beds?.length ?? 0} beds
                             </Badge>
                         )}
-                        {isMultiBed && status === "OCCUPIED" && (
+                        {isMultiBed && isOccupied && (
                             <Badge tone="info" soft>
                                 Patients Inside
                             </Badge>
@@ -169,7 +171,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
                 )}
             </div>
 
-            {roomData && status === "OCCUPIED" && roomData.currentPatient && !isMultiBed && (
+            {roomData && isOccupied && roomData.currentPatient && !isMultiBed && (
                 <div className="hms-room-cell__patient">
                     <p className="hms-room-cell__patient-name">
                         {roomData.currentPatient.firstName} {roomData.currentPatient.lastName}
@@ -180,7 +182,7 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
                 </div>
             )}
             
-            {roomData && status === "OCCUPIED" && isMultiBed && (
+            {roomData && isOccupied && isMultiBed && (
                 <div className="hms-room-cell__patient">
                     <p className="hms-room-cell__patient-name text-[#0284c7]">
                         Beds are occupied
@@ -336,8 +338,8 @@ function Rooms() {
         const q = search.trim().toLowerCase();
         return rooms
             .filter((r) => {
-                if (filter === "AVAILABLE" && r.status !== "AVAILABLE") return false;
-                if (filter === "OCCUPIED" && r.status !== "OCCUPIED") return false;
+                if (filter === "AVAILABLE" && (r.occupied || r.underMaintenance)) return false;
+                if (filter === "OCCUPIED" && !r.occupied) return false;
                 return matchesSearch(r, q);
             })
             .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber));
@@ -362,12 +364,12 @@ function Rooms() {
                                     .filter((room) => {
                                         if (
                                             filter === "AVAILABLE" &&
-                                            room.roomData?.status !== "AVAILABLE"
+                                            (room.roomData?.occupied || room.roomData?.underMaintenance)
                                         )
                                             return false;
                                         if (
                                             filter === "OCCUPIED" &&
-                                            room.roomData?.status !== "OCCUPIED"
+                                            !room.roomData?.occupied
                                         )
                                             return false;
                                         return (
@@ -393,12 +395,12 @@ function Rooms() {
     );
 
     const showInfrastructureView = infrastructure.length > 0;
-    const availableCount = rooms.filter((r) => r.status === "AVAILABLE").length;
-    const occupiedCount = rooms.filter((r) => r.status === "OCCUPIED").length;
-    const icuAvailable = rooms.filter((r) => r.roomType === "ICU" && r.status === "AVAILABLE").length;
-    const icuOccupied = rooms.filter((r) => r.roomType === "ICU" && r.status === "OCCUPIED").length;
-    const otAvailable = rooms.filter((r) => r.roomType === "OT" && r.status === "AVAILABLE").length;
-    const otOccupied = rooms.filter((r) => r.roomType === "OT" && r.status === "OCCUPIED").length;
+    const availableCount = rooms.filter((r) => !r.occupied && !r.underMaintenance).length;
+    const occupiedCount = rooms.filter((r) => r.occupied).length;
+    const icuAvailable = rooms.filter((r) => r.roomType === "ICU" && !r.occupied && !r.underMaintenance).length;
+    const icuOccupied = rooms.filter((r) => r.roomType === "ICU" && r.occupied).length;
+    const otAvailable = rooms.filter((r) => r.roomType === "OT" && !r.occupied && !r.underMaintenance).length;
+    const otOccupied = rooms.filter((r) => r.roomType === "OT" && r.occupied).length;
 
     const totalBuildings = infrastructure.length;
     const totalFloors = infrastructure.reduce((s, b) => s + (b.floors?.length || 0), 0);
@@ -520,7 +522,7 @@ function Rooms() {
                                 building.floors.flatMap((floor, fIdx) =>
                                     floor.wards.map((ward, wIdx) => {
                                         const wRooms = ward.rooms.map((r) => r.roomData).filter(Boolean);
-                                        const wOcc = wRooms.filter((r) => r.status === "OCCUPIED").length;
+                                        const wOcc = wRooms.filter((r) => r.occupied).length;
                                         const bName = building.name || `Building ${bIdx + 1}`;
                                         const fName = floor.name || `Floor ${fIdx + 1}`;
                                         const wName = ward.name || `Ward ${wIdx + 1}`;
@@ -674,10 +676,10 @@ function FlatRoomList({ rooms, selectedRoom, onSelect, onView, onAttender }) {
     return (
         <>
             {rooms.map((room) => {
-                const isMultiBed = room.bedCount != null && room.bedCount > 1;
+                const isMultiBed = (room.beds?.length ?? 0) > 1;
                 const isSelected = selectedRoom?.id === room.id;
-                const accentCls = statusTone(room.status);
-                const iconCls = statusTone(room.status);
+                const accentCls = statusTone(room);
+                const iconCls = statusTone(room);
                 return (
                     <div
                         key={room.id}
@@ -706,12 +708,12 @@ function FlatRoomList({ rooms, selectedRoom, onSelect, onView, onAttender }) {
                                     </Badge>
                                     {isMultiBed && (
                                         <Badge tone="neutral" soft>
-                                            {room.bedCount} beds
+                                            {room.beds?.length ?? 0} beds
                                         </Badge>
                                     )}
                                 </div>
                                 <div className="mt-1">
-                                    <StatusChip status={room.status} />
+                                    <StatusChip room={room} />
                                 </div>
                             </div>
                         </div>
@@ -722,7 +724,7 @@ function FlatRoomList({ rooms, selectedRoom, onSelect, onView, onAttender }) {
                                     Open panel to view beds →
                                 </p>
                             </div>
-                        ) : room.status === "OCCUPIED" && room.currentPatient ? (
+                        ) : room.occupied && room.currentPatient ? (
                             <div className="hms-room-row__main is-block">
                                 <div className="hms-room-row__split">
                                     <div className="hms-room-row__patient">
@@ -762,16 +764,6 @@ function FlatRoomList({ rooms, selectedRoom, onSelect, onView, onAttender }) {
                                         )}
                                     </div>
                                     <div className="hms-room-row__aside">
-                                        {room.allocationToken && (
-                                            <div>
-                                                <p className="hms-room-kv-label">
-                                                    Token
-                                                </p>
-                                                <span className="hms-room-row__token">
-                                                    {room.allocationToken}
-                                                </span>
-                                            </div>
-                                        )}
                                         {room.approxDischargeTime && (
                                             <div>
                                                 <div className="hms-room-row__discharge">

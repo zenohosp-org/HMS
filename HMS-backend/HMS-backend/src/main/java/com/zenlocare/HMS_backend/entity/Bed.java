@@ -33,14 +33,14 @@ public class Bed {
     @Column(name = "bed_number", nullable = false, length = 20)
     private String bedNumber;
 
-    @Convert(converter = com.zenlocare.HMS_backend.converter.BedStatusConverter.class)
-    @Column(name = "status_id")
+    @Column(name = "is_under_maintenance")
     @Builder.Default
-    private BedStatus status = BedStatus.AVAILABLE;
+    private boolean isUnderMaintenance = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id")
-    private Patient currentPatient;
+    @JoinColumn(name = "hospital_id", nullable = false)
+    @JsonIgnore
+    private Hospital hospital;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

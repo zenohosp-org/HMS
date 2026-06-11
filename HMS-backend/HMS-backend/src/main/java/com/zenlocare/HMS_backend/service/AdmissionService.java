@@ -83,7 +83,8 @@ public class AdmissionService {
             room = roomRepository.findById(req.getRoomId())
                     .orElseThrow(() -> new RuntimeException("Room not found"));
             assertSameHospital(req.getHospitalId(), room.getHospital().getId(), "Room");
-            if (room.getStatus() != RoomStatus.AVAILABLE) {
+            boolean isRoomAvailable = !room.isUnderMaintenance() && !admissionRepository.existsByRoomIdAndStatus(room.getId(), AdmissionStatus.ADMITTED);
+            if (!isRoomAvailable) {
                 throw new RuntimeException("Room is not available");
             }
         }
@@ -94,13 +95,17 @@ public class AdmissionService {
                     .orElseThrow(() -> new RuntimeException("Bed not found"));
             Hospital bedHospital = bed.getRoom() != null ? bed.getRoom().getHospital() : bed.getWard().getFloor().getBuilding().getHospital();
             assertSameHospital(req.getHospitalId(), bedHospital.getId(), "Bed");
-            if (bed.getStatus() != BedStatus.AVAILABLE) {
+            boolean isBedAvailable = !bed.isUnderMaintenance() && !admissionRepository.existsByBedIdAndStatus(bed.getId(), AdmissionStatus.ADMITTED);
+            if (!isBedAvailable) {
                 throw new RuntimeException("Selected bed is not available");
             }
         } else if (room != null) {
-            boolean isMultiBed = room.getBedCount() != null && room.getBedCount() > 1;
+            boolean isMultiBed = bedRepository.countByRoomId(room.getId()) > 1;
             if (!isMultiBed) {
-                bed = bedRepository.findFirstByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE).orElse(null);
+                bed = bedRepository.findByRoomIdOrderByBedNumberAsc(room.getId()).stream()
+                        .filter(b -> !b.isUnderMaintenance() && !admissionRepository.existsByBedIdAndStatus(b.getId(), AdmissionStatus.ADMITTED))
+                        .findFirst()
+                        .orElse(null);
             }
         }
 
@@ -130,28 +135,7 @@ public class AdmissionService {
         Admission saved = admissionRepository.save(admission);
 
         if (room != null) {
-            boolean isMultiBed = room.getBedCount() != null && room.getBedCount() > 1;
 
-            if (bed != null) {
-                bed.setStatus(BedStatus.OCCUPIED);
-                bed.setCurrentPatient(patient);
-                bedRepository.save(bed);
-            }
-
-            if (isMultiBed) {
-                long availableBeds = bedRepository.countByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE);
-                if (availableBeds == 0) {
-                    room.setStatus(RoomStatus.OCCUPIED);
-                }
-            } else {
-                room.setStatus(RoomStatus.OCCUPIED);
-                room.setCurrentPatient(patient);
-                // Attender already set on the Admission above (req → admission.attender_*);
-                // Room no longer carries attender_* columns.
-                room.setAdmissionDate(saved.getAdmissionDate());
-                room.setApproxDischargeTime(req.getApproxDischargeDate());
-            }
-            roomRepository.save(room);
 
             roomLogRepository.save(RoomLog.builder()
                     .room(room).hospital(hospital)
@@ -203,26 +187,20 @@ public class AdmissionService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
         assertSameHospital(admission.getHospital().getId(), room.getHospital().getId(), "Room");
-        if (room.getStatus() != RoomStatus.AVAILABLE) {
+        boolean isRoomAvailable = !room.isUnderMaintenance() && !admissionRepository.existsByRoomIdAndStatus(room.getId(), AdmissionStatus.ADMITTED);
+        if (!isRoomAvailable) {
             throw new RuntimeException("Room is not available");
         }
 
-        boolean isMultiBed = room.getBedCount() != null && room.getBedCount() > 1;
+        boolean isMultiBed = bedRepository.countByRoomId(room.getId()) > 1;
 
         Bed bed = null;
         if (!isMultiBed) {
-            bed = bedRepository.findFirstByRoomIdAndStatus(room.getId(), BedStatus.AVAILABLE).orElse(null);
-            if (bed != null) {
-                bed.setStatus(BedStatus.OCCUPIED);
-                bed.setCurrentPatient(admission.getPatient());
-                bedRepository.save(bed);
-            }
-            room.setStatus(RoomStatus.OCCUPIED);
-            room.setCurrentPatient(admission.getPatient());
-            room.setAdmissionDate(LocalDateTime.now());
-            // Attender stays on the admission — no Room.setAttender* here.
+            bed = bedRepository.findByRoomIdOrderByBedNumberAsc(room.getId()).stream()
+                    .filter(b -> !b.isUnderMaintenance() && !admissionRepository.existsByBedIdAndStatus(b.getId(), AdmissionStatus.ADMITTED))
+                    .findFirst()
+                    .orElse(null);
         }
-        roomRepository.save(room);
 
         admission.setRoom(room);
         if (bed != null) admission.setBed(bed);
@@ -279,50 +257,9 @@ public class AdmissionService {
         discharge.setDischargedAt(LocalDateTime.now());
         dischargeRepository.save(discharge);
 
-        if (admission.getBed() != null) {
-            Bed bed = admission.getBed();
-            bed.setStatus(BedStatus.AVAILABLE);
-            bed.setCurrentPatient(null);
-            bedRepository.save(bed);
-
-            if (admission.getRoom() != null) {
-                Room room = admission.getRoom();
-                long occupiedCount = bedRepository.countByRoomIdAndStatus(room.getId(), BedStatus.OCCUPIED);
-                if (occupiedCount == 0) {
-                    room.setStatus(RoomStatus.AVAILABLE);
-                    room.setCurrentPatient(null);
-                    room.setApproxDischargeTime(null);
-                    room.setAdmissionDate(null);
-                    roomRepository.save(room);
-
-                    roomLogRepository.save(RoomLog.builder()
-                            .room(room).hospital(admission.getHospital())
-                            .event(RoomLogEvent.DEALLOCATED)
-                            .roomNumber(room.getRoomNumber())
-                            .patientName(admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName())
-                            .patientUhid(admission.getPatient().getUhid())
-                            .performedBy(performedBy)
-                            .build());
-                }
-            }
-        } else if (admission.getRoom() != null) {
+        if (admission.getRoom() != null) {
             Room room = admission.getRoom();
             String patName = admission.getPatient().getFirstName() + " " + admission.getPatient().getLastName();
-
-            room.setStatus(RoomStatus.AVAILABLE);
-            room.setCurrentPatient(null);
-            room.setApproxDischargeTime(null);
-            room.setAdmissionDate(null);
-            roomRepository.save(room);
-
-            bedRepository.findByRoomIdOrderByBedNumberAsc(room.getId()).forEach(b -> {
-                if (b.getCurrentPatient() != null &&
-                        b.getCurrentPatient().getId().equals(admission.getPatient().getId())) {
-                    b.setStatus(BedStatus.AVAILABLE);
-                    b.setCurrentPatient(null);
-                    bedRepository.save(b);
-                }
-            });
 
             roomLogRepository.save(RoomLog.builder()
                     .room(room).hospital(admission.getHospital())
@@ -363,7 +300,8 @@ public class AdmissionService {
                 && !"POST_OT".equalsIgnoreCase(cfg.getCode());
         if (!isOtCategory)
             throw new RuntimeException("Selected room is not an OT room");
-        if (otRoom.getStatus() != RoomStatus.AVAILABLE)
+        boolean isOtRoomAvailable = !otRoom.isUnderMaintenance() && !admissionRepository.existsByRoomIdAndStatus(otRoom.getId(), AdmissionStatus.ADMITTED);
+        if (!isOtRoomAvailable)
             throw new RuntimeException("OT room is not available");
         if (doctorId != null) {
             Doctor d = doctorRepository.findById(doctorId).orElseThrow(() -> new RuntimeException("Doctor not found"));
@@ -375,23 +313,12 @@ public class AdmissionService {
             admission.setPreviousRoom(admission.getRoom());
         }
 
-        // The ward room's currentPatient pointed at this patient. We move the
         // patient-of-record to the OT room while keeping the bed allocated
         // (status stays OCCUPIED — the bed is held for return). Without this,
         // Rooms.jsx would show the same patient on both the ward and OT rows.
-        if (admission.getPreviousRoom() != null
-                && admission.getPreviousRoom().getCurrentPatient() != null
-                && admission.getPatient().getId().equals(admission.getPreviousRoom().getCurrentPatient().getId())) {
-            Room wardRoom = admission.getPreviousRoom();
-            wardRoom.setCurrentPatient(null);
-            roomRepository.save(wardRoom);
-        }
+        // Handled purely by Admission associations now.
 
-        // Occupy OT room
-        otRoom.setStatus(RoomStatus.OCCUPIED);
-        otRoom.setCurrentPatient(admission.getPatient());
-        otRoom.setAdmissionDate(LocalDateTime.now());
-        Room savedRoom = roomRepository.save(otRoom);
+        Room savedRoom = otRoom;
 
         // Update admission to OT room, record OT booking ref
         admission.setRoom(savedRoom);
@@ -421,11 +348,6 @@ public class AdmissionService {
         // Free the OT room
         if (admission.getRoom() != null && "OT".equals(admission.getRoom().getRoomType())) {
             Room otRoom = admission.getRoom();
-            otRoom.setStatus(RoomStatus.AVAILABLE);
-            otRoom.setCurrentPatient(null);
-            otRoom.setAdmissionDate(null);
-            otRoom.setApproxDischargeTime(null);
-            roomRepository.save(otRoom);
 
             roomLogRepository.save(com.zenlocare.HMS_backend.entity.RoomLog.builder()
                     .room(otRoom).hospital(admission.getHospital())
@@ -444,13 +366,9 @@ public class AdmissionService {
             assertSameHospital(admission.getHospital().getId(), postOtRoom.getHospital().getId(), "Post-OT room");
             if (!"POST_OT".equals(postOtRoom.getRoomType()))
                 throw new RuntimeException("Selected room is not a POST_OT room");
-            if (postOtRoom.getStatus() != RoomStatus.AVAILABLE)
+            boolean isPostOtAvailable = !postOtRoom.isUnderMaintenance() && !admissionRepository.existsByRoomIdAndStatus(postOtRoom.getId(), AdmissionStatus.ADMITTED);
+            if (!isPostOtAvailable)
                 throw new RuntimeException("Post-OT room is not available");
-
-            postOtRoom.setStatus(RoomStatus.OCCUPIED);
-            postOtRoom.setCurrentPatient(admission.getPatient());
-            postOtRoom.setAdmissionDate(LocalDateTime.now());
-            roomRepository.save(postOtRoom);
 
             admission.setRoom(postOtRoom);
 
@@ -463,10 +381,8 @@ public class AdmissionService {
                     .performedBy(performedBy)
                     .build());
         } else if (admission.getPreviousRoom() != null) {
-            // No recovery room — return directly to original ward room.
             // Restore the patient pointer we cleared during moveToOT.
             Room wardRoom = admission.getPreviousRoom();
-            wardRoom.setCurrentPatient(admission.getPatient());
             roomRepository.save(wardRoom);
             admission.setRoom(wardRoom);
             admission.setPreviousRoom(null);
@@ -490,10 +406,6 @@ public class AdmissionService {
         // Free post-OT room if currently in one
         if (admission.getRoom() != null && "POST_OT".equals(admission.getRoom().getRoomType())) {
             Room postOtRoom = admission.getRoom();
-            postOtRoom.setStatus(RoomStatus.AVAILABLE);
-            postOtRoom.setCurrentPatient(null);
-            postOtRoom.setAdmissionDate(null);
-            roomRepository.save(postOtRoom);
 
             roomLogRepository.save(com.zenlocare.HMS_backend.entity.RoomLog.builder()
                     .room(postOtRoom).hospital(admission.getHospital())
@@ -505,10 +417,7 @@ public class AdmissionService {
                     .build());
         }
 
-        // Restore original ward room (it was held OCCUPIED throughout) and
-        // re-attach the patient pointer that was cleared on moveToOT.
         Room wardRoom = admission.getPreviousRoom();
-        wardRoom.setCurrentPatient(admission.getPatient());
         roomRepository.save(wardRoom);
         admission.setRoom(wardRoom);
         admission.setPreviousRoom(null);
@@ -609,10 +518,6 @@ public class AdmissionService {
         // If room/bed weren't set on the admission (pre-fix allocations), look up via bed table
         Room room = a.getRoom();
         com.zenlocare.HMS_backend.entity.Bed bed = a.getBed();
-        if (room == null && a.getStatus() == AdmissionStatus.ADMITTED) {
-            bed = bedRepository.findByCurrentPatientId(a.getPatient().getId()).orElse(null);
-            if (bed != null) room = bed.getRoom();
-        }
         final Room resolvedRoom = room;
         final com.zenlocare.HMS_backend.entity.Bed resolvedBed = bed;
 

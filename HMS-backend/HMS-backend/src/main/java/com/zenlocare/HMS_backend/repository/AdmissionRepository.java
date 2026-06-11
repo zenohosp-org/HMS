@@ -18,6 +18,9 @@ public interface AdmissionRepository extends JpaRepository<Admission, UUID> {
     Optional<Admission> findByPatientIdAndStatus(Integer patientId, AdmissionStatus status);
     Optional<Admission> findByRoomIdAndStatus(Long roomId, AdmissionStatus status);
 
+    boolean existsByBedIdAndStatus(Long bedId, AdmissionStatus status);
+    boolean existsByRoomIdAndStatus(Long roomId, AdmissionStatus status);
+
     // Per-bed attender lookup: in a multi-bed ward each bed has its own admission,
     // and the BedDto needs to surface that admission's attender_* and id.
     Optional<Admission> findByBedIdAndStatus(Long bedId, AdmissionStatus status);

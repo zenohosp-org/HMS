@@ -38,7 +38,8 @@ public class SmartBillingService {
 
         // ── Room charge ────────────────────────────────────────────────
         SmartBillingSuggestion.RoomSuggestion roomSuggestion = null;
-        Optional<Room> roomOpt = roomRepository.findByCurrentPatientId(patientId);
+        Optional<Room> roomOpt = admissionRepository.findByPatientIdAndStatus(patientId, AdmissionStatus.ADMITTED)
+                .map(Admission::getRoom);
         if (roomOpt.isPresent()) {
             Room room = roomOpt.get();
             if (room.getPricePerDay() != null && room.getPricePerDay().compareTo(BigDecimal.ZERO) > 0) {

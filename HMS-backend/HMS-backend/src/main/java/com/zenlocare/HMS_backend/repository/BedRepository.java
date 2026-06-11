@@ -1,7 +1,7 @@
 package com.zenlocare.HMS_backend.repository;
 
 import com.zenlocare.HMS_backend.entity.Bed;
-import com.zenlocare.HMS_backend.entity.BedStatus;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,27 +14,24 @@ import java.util.Optional;
 public interface BedRepository extends JpaRepository<Bed, Long> {
     List<Bed> findByRoomIdOrderByBedNumberAsc(Long roomId);
 
-    @Query("SELECT b FROM Bed b LEFT JOIN b.room r LEFT JOIN r.hospitalWard rw LEFT JOIN b.ward w LEFT JOIN w.floor f LEFT JOIN f.building bl " +
-           "WHERE (r.hospital.id = :hospitalId OR bl.hospital.id = :hospitalId) " +
-           "AND b.status = :status " +
+    @Query("SELECT b FROM Bed b LEFT JOIN b.room r LEFT JOIN r.hospitalWard rw LEFT JOIN b.ward w " +
+           "WHERE b.hospital.id = :hospitalId " +
            "AND b.isActive = true " +
+           "AND b.isUnderMaintenance = false " +
+           "AND NOT EXISTS (SELECT 1 FROM Admission a WHERE a.bed = b AND a.status = com.zenlocare.HMS_backend.entity.AdmissionStatus.ADMITTED) " +
            "AND (r IS NULL OR (r.isActive = true AND rw IS NOT NULL AND rw.isActive = true)) " +
            "AND (w IS NULL OR w.isActive = true)")
-    List<Bed> fetchAvailableBeds(@Param("hospitalId") java.util.UUID hospitalId, @Param("status") BedStatus status);
+    List<Bed> fetchAvailableBeds(@Param("hospitalId") java.util.UUID hospitalId);
 
-    @Query("SELECT b FROM Bed b LEFT JOIN b.room r LEFT JOIN r.hospitalWard rw LEFT JOIN b.ward w LEFT JOIN w.floor f LEFT JOIN f.building bl " +
-           "WHERE (r.hospital.id = :hospitalId OR bl.hospital.id = :hospitalId) " +
+    @Query("SELECT b FROM Bed b LEFT JOIN b.room r LEFT JOIN r.hospitalWard rw LEFT JOIN b.ward w " +
+           "WHERE b.hospital.id = :hospitalId " +
            "AND b.isActive = true " +
            "AND (r IS NULL OR (r.isActive = true AND rw IS NOT NULL AND rw.isActive = true)) " +
            "AND (w IS NULL OR w.isActive = true)")
     List<Bed> fetchAllActiveBeds(@Param("hospitalId") java.util.UUID hospitalId);
 
     List<Bed> findByWardIdOrderByBedNumberAsc(Long wardId);
-    long countByRoomIdAndStatus(Long roomId, BedStatus status);
-    long countByWardIdAndStatus(Long wardId, BedStatus status);
     long countByRoomId(Long roomId);
     long countByWardId(Long wardId);
-    Optional<Bed> findFirstByRoomIdAndStatus(Long roomId, BedStatus status);
-    Optional<Bed> findFirstByWardIdAndStatus(Long wardId, BedStatus status);
-    Optional<Bed> findByCurrentPatientId(Integer patientId);
+    boolean existsByIdAndHospitalId(Long id, java.util.UUID hospitalId);
 }
