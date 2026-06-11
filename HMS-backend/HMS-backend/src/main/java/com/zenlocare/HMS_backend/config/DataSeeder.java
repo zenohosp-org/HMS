@@ -269,19 +269,33 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     /**
-     * The Room entity has carried admission_date / approx_discharge_time
-     * since the bed-tracking refactor; AdmissionService writes them as the
-     * live occupancy snapshot (the persistent admission row stays the
-     * source of truth). Some environments have these columns dropped
-     * externally, which breaks every SELECT against rooms. Re-create them
-     * idempotently so the entity and schema stay in sync.
+     * Re-asserts every optional Room column. The Room entity has gained
+     * several columns over time (admission_date, approx_discharge_time,
+     * allocation_token, ward / ward_id, bed_count, version, is_active);
+     * some environments have one or more dropped externally, which breaks
+     * every SELECT against rooms (Hibernate lists every @Column in the
+     * SELECT clause). All ADDs are IF NOT EXISTS so this is idempotent
+     * and a no-op once the schema is in sync.
      */
     private void ensureRoomOccupancyColumns() {
-        try {
-            jdbcTemplate.execute("ALTER TABLE rooms ADD COLUMN IF NOT EXISTS admission_date TIMESTAMP");
-            jdbcTemplate.execute("ALTER TABLE rooms ADD COLUMN IF NOT EXISTS approx_discharge_time TIMESTAMP");
-        } catch (Exception e) {
-            log.warn("Could not ensure rooms occupancy columns: " + e.getMessage());
+        String[] alters = {
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS admission_date TIMESTAMP",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS approx_discharge_time TIMESTAMP",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS allocation_token VARCHAR(30)",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS ward VARCHAR(100)",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS ward_id BIGINT",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS bed_count INTEGER",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS version BIGINT DEFAULT 0",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS room_code VARCHAR(20)",
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS department_id UUID",
+        };
+        for (String sql : alters) {
+            try {
+                jdbcTemplate.execute(sql);
+            } catch (Exception e) {
+                log.warn("Skipped: {} — {}", sql, e.getMessage());
+            }
         }
     }
 
