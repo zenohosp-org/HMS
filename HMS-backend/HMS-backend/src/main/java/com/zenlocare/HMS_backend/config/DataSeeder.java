@@ -222,6 +222,7 @@ public class DataSeeder implements CommandLineRunner {
         migrateRoomAttenderToAdmission();
         ensureRoomOccupancyColumns();
         ensureBedColumns();
+        backfillStoreTypesFromRoomType();
         ensurePrescriptionSchema();
         ensureAttachmentSchema();
         seedRoomTypeConfigs();
@@ -301,6 +302,34 @@ public class DataSeeder implements CommandLineRunner {
             } catch (Exception e) {
                 log.warn("Skipped: {} — {}", sql, e.getMessage());
             }
+        }
+    }
+
+    /**
+     * One-time fix for the pre-InfrastructureService rewrite: every store row
+     * HMS wrote carried type="STORE" regardless of the originating room's
+     * roomType, so Pharmacy/Blood Bank couldn't find their canonical stores
+     * by type. Re-anchors the stores.type column to the room's actual roomType
+     * for the four HMS-governed types (STORE, PHARMACY, PHARMACY_INV,
+     * BLOOD_BANK). Inventory-module rows are left untouched — the join
+     * filter on r.room_type excludes anything pointing at a room type HMS
+     * doesn't author. Idempotent: re-running is a no-op once aligned.
+     */
+    private void backfillStoreTypesFromRoomType() {
+        try {
+            int updated = jdbcTemplate.update("""
+                UPDATE stores s
+                SET    type = r.room_type
+                FROM   rooms r
+                WHERE  s.room_id = r.room_id
+                  AND  r.room_type IN ('STORE','PHARMACY','PHARMACY_INV','BLOOD_BANK')
+                  AND  s.type IS DISTINCT FROM r.room_type
+                """);
+            if (updated > 0) {
+                log.info("✅ Backfilled stores.type from rooms.room_type for {} row(s)", updated);
+            }
+        } catch (Exception e) {
+            log.warn("Could not backfill stores.type from rooms.room_type: {}", e.getMessage());
         }
     }
 

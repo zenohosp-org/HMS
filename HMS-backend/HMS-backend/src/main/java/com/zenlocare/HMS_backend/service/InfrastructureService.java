@@ -21,6 +21,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class InfrastructureService {
 
+    /**
+     * Room types that should produce a row in the `stores` table so cross-module
+     * consumers (Pharmacy, Blood Bank) can find their canonical store by type.
+     *
+     * Don't include INVENTORY here — that namespace belongs to the Inventory
+     * module which writes its own rows; HMS shouldn't be authoring them. Pharmacy
+     * reads where type='PHARMACY'; if HMS forces every row to "STORE" (the old
+     * bug) the pharmacy default-store lookup returns nothing and falls back to a
+     * confusing first-batch heuristic.
+     */
+    private static final Set<String> STORE_LIKE_ROOM_TYPES = Set.of(
+            "STORE", "PHARMACY", "PHARMACY_INV", "BLOOD_BANK"
+    );
+
     private final HospitalBuildingRepository buildingRepo;
     private final HospitalFloorRepository floorRepo;
     private final HospitalWardRepository wardRepo;
@@ -206,23 +220,22 @@ public class InfrastructureService {
                             }
                         }
 
-                        if ("STORE".equals(room.getRoomType())) {
-                            Store store = storeRepo.findByRoomId(savedRoom.getId()).orElse(null);
-                            if (store == null) {
-                                store = new Store();
+                        if (STORE_LIKE_ROOM_TYPES.contains(room.getRoomType())) {
+                            Store store = storeRepo.findByRoomId(savedRoom.getId())
+                                    .orElseGet(Store::new);
+                            if (store.getId() == null) {
                                 store.setRoomId(savedRoom.getId());
                             }
                             store.setHospital(hospital);
                             store.setName(savedRoom.getRoomNumber());
                             store.setIsActive(true);
-                            store.setType("STORE");
+                            store.setType(room.getRoomType()); // verbatim — Pharmacy/etc. filter by exact type
                             storeRepo.save(store);
                         } else {
-                            Store store = storeRepo.findByRoomId(savedRoom.getId()).orElse(null);
-                            if (store != null) {
-                                store.setIsActive(false);
-                                storeRepo.save(store);
-                            }
+                            storeRepo.findByRoomId(savedRoom.getId()).ifPresent(s -> {
+                                s.setIsActive(false);
+                                storeRepo.save(s);
+                            });
                         }
                     }
 
