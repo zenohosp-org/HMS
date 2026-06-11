@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(rm -rf /tmp/test_jwt.txt /tmp/verify_allergy_gate.mjs /tmp/verify_badges*.mjs /tmp/backend-restart.log /tmp/*.png /tmp/records.json /tmp/mar.json /tmp/node_modules /tmp/package-lock.json /tmp/package.json && ls /tmp | head -20)"
+      "Bash(rm -rf /tmp/test_jwt.txt /tmp/verify_allergy_gate.mjs /tmp/verify_badges*.mjs /tmp/backend-restart.log /tmp/*.png /tmp/records.json /tmp/mar.json /tmp/node_modules /tmp/package-lock.json /tmp/package.json && ls /tmp | head -20)",
+      "Bash(PGPASSWORD='Javatech@2026' psql \"host=aws-1-ap-south-1.pooler.supabase.com port=6543 dbname=postgres user=postgres.qmfupslqooexhshomnhw sslmode=require\" -c \"DELETE FROM patient_allergies WHERE patient_id=9 AND allergen='paracetamal' RETURNING id, allergen, severity;\")"
     ],
     "additionalDirectories": [
       "/tmp"

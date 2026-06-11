@@ -1361,18 +1361,12 @@
 
 
 /* ─────────────────────────── AdmitPatientModal: advance block + summary ─────────────────────────── */
-.hms-advance-block {
+.hms-admit-advance-block {
     padding-top: 16px;
     border-top: 1px solid var(--hms-gray-100);
     display: flex;
     flex-direction: column;
     gap: 12px;
-}
-
-.hms-advance-hint {
-    margin: 0;
-    font-size: 12px;
-    color: var(--hms-gray-400);
 }
 
 .hms-advance-account-hint {
@@ -3488,6 +3482,44 @@
     color: var(--hms-gray-400);
     text-transform: uppercase;
     letter-spacing: 0.06em;
+}
+
+/* ── SOAP note sections (inline in timeline) ─────────────────────────────── */
+
+.hms-soap-note {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hms-soap-note__section {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.hms-soap-note__label {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.hms-soap-note__text {
+    margin: 0;
+    padding-top: 2px;
+    font-size: 12px;
+    color: var(--hms-gray-600);
+    line-height: 1.4;
+    white-space: pre-wrap;
 }
 
 /* ── Prescription drug chips (inline in timeline) ────────────────────────── */

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,6 +37,19 @@ public class RoomController {
             @RequestParam UUID hospitalId) {
         return ResponseEntity.ok(roomService.getBedsByRoom(roomId, hospitalId));
     }
+
+    @GetMapping("/beds/available")
+    @PreAuthorize("hasAnyRole('hospital_admin', 'receptionist', 'doctor', 'nurse')")
+    public ResponseEntity<List<BedDto>> getAvailableBeds(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(roomService.getAvailableBeds(user.getHospital().getId()));
+    }
+
+    @GetMapping("/beds/all")
+    @PreAuthorize("hasAnyRole('hospital_admin', 'receptionist', 'doctor', 'nurse')")
+    public ResponseEntity<List<BedDto>> getAllActiveBeds(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(roomService.getAllActiveBeds(user.getHospital().getId()));
+    }
+
 
     @PostMapping("/generate")
     @PreAuthorize("hasRole('hospital_admin')")

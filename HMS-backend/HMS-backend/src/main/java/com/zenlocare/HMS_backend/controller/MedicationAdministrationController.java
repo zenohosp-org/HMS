@@ -177,8 +177,10 @@ public class MedicationAdministrationController {
 
         var rec = item.getRecord();
         dto.setPrescribedAt(rec.getCreatedAt() != null ? rec.getCreatedAt().toString() : null);
-        if (rec.getCreatedBy() != null) {
-            var doc = rec.getCreatedBy();
+        // Prefer the attending/prescribing doctor over the record's creator —
+        // a staff member may enter the prescription on behalf of a doctor.
+        var doc = rec.getAttendingDoctor() != null ? rec.getAttendingDoctor() : rec.getCreatedBy();
+        if (doc != null) {
             dto.setPrescribedBy(doc.getFirstName() +
                     (doc.getLastName() != null ? " " + doc.getLastName() : ""));
         }

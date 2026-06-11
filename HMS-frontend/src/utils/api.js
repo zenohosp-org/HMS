@@ -337,6 +337,14 @@ const bedApi = {
     const { data } = await api.post(`/rooms/beds/${bedId}/free`, null, { params: { hospitalId } });
     return data;
   },
+  getAvailable: async (hospitalId) => {
+    const { data } = await api.get(`/rooms/beds/available`, { params: { hospitalId } });
+    return data;
+  },
+  getAll: async (hospitalId) => {
+    const { data } = await api.get(`/rooms/beds/all`, { params: { hospitalId } });
+    return data;
+  },
 };
 const roomLogsApi = {
   getHospitalLogs: async (hospitalId, search) => {

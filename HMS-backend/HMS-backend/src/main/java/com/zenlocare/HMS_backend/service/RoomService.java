@@ -80,6 +80,27 @@ public class RoomService {
                 .collect(Collectors.toList());
     }
 
+    public List<BedDto> getAvailableBeds(UUID hospitalId) {
+        return bedRepository.fetchAvailableBeds(hospitalId, com.zenlocare.HMS_backend.entity.BedStatus.AVAILABLE).stream()
+                .map(bed -> BedDto.fromEntity(bed, null))
+                .collect(Collectors.toList());
+    }
+
+    public List<BedDto> getAllActiveBeds(UUID hospitalId) {
+        List<Bed> beds = bedRepository.fetchAllActiveBeds(hospitalId);
+        Map<Long, Admission> byBedId = new HashMap<>();
+        for (Bed b : beds) {
+            if (b.getStatus() == BedStatus.OCCUPIED) {
+                admissionRepository.findByBedIdAndStatus(b.getId(), AdmissionStatus.ADMITTED)
+                        .ifPresent(a -> byBedId.put(b.getId(), a));
+            }
+        }
+        return beds.stream()
+                .map(b -> BedDto.fromEntity(b, byBedId.get(b.getId())))
+                .collect(Collectors.toList());
+    }
+
+
     private String generateRoomCode(Hospital hospital) {
         String hospPrefix = HospitalIdPrefix.of(hospital);
         List<String> existing = roomRepository.findRoomCodes(hospital.getId());

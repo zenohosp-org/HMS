@@ -2,6 +2,7 @@ import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
+import { BedSelectionModal } from "./BedSelectionModal";
 import {
     admissionApi,
     departmentApi,
@@ -19,7 +20,7 @@ import {
     Button,
     FormGroup,
     Input,
-    Modal,
+    Drawer,
     Textarea,
 } from "@/components/ui";
 import SearchableSelect from "@/components/ui/SearchableSelect";
@@ -68,6 +69,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     const [doctors, setDoctors] = useState([]);
     const [rooms, setRooms] = useState([]);
     const [availableBeds, setAvailableBeds] = useState([]);
+    const [allBeds, setAllBeds] = useState([]);
     const [bedsLoading, setBedsLoading] = useState(false);
     const [patientSearch, setPatientSearch] = useState("");
     const [selectedPatient, setSelectedPatient] = useState(prefill?.patient || null);
@@ -94,6 +96,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     const [selectedBankAccountId, setSelectedBankAccountId] = useState("");
 
     const [submitting, setSubmitting] = useState(false);
+    const [isBedModalOpen, setIsBedModalOpen] = useState(false);
 
     useEffect(() => {
         if (!user?.hospitalId) return;
@@ -132,10 +135,16 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
 
     useEffect(() => {
         if (!user?.hospitalId) return;
-        api
-            .get("/rooms", { params: { hospitalId: user.hospitalId } })
-            .then((r) => setRooms(r.data.filter((rm) => rm.status === "AVAILABLE" && rm.roomCategory === "WARD")))
-            .catch(() => { });
+        setBedsLoading(true);
+        bedApi.getAll(user.hospitalId)
+            .then((beds) => {
+                // Filter only WARD category beds or beds belonging to a WARD
+                const assignable = beds.filter(b => b.roomType !== 'OT' && b.roomType !== 'POST_OT' && b.roomType !== 'STORE');
+                setAllBeds(assignable);
+                setAvailableBeds(assignable.filter(b => b.status === 'AVAILABLE'));
+            })
+            .catch(() => { })
+            .finally(() => setBedsLoading(false));
     }, [user?.hospitalId]);
 
     const selectedDept = departments.find((d) => String(d.id) === String(form.departmentId));
@@ -145,23 +154,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                 (d) => d.specialization?.toLowerCase() === selectedDept.name?.toLowerCase()
             )
             : doctors;
-
-    const selectedRoom = rooms.find((r) => String(r.id) === String(form.roomId));
-    const isMultiBed = selectedRoom && selectedRoom.bedCount != null && selectedRoom.bedCount > 1;
-
-    useEffect(() => {
-        if (!isMultiBed || !form.roomId || !user?.hospitalId) {
-            setAvailableBeds([]);
-            setForm((f) => ({ ...f, bedId: "" }));
-            return;
-        }
-        setBedsLoading(true);
-        bedApi
-            .getByRoom(form.roomId, user.hospitalId)
-            .then((beds) => setAvailableBeds(beds.filter((b) => b.status === "AVAILABLE")))
-            .catch(() => setAvailableBeds([]))
-            .finally(() => setBedsLoading(false));
-    }, [form.roomId, isMultiBed, user?.hospitalId]);
 
     useEffect(() => {
         if (selectedPatient) setPaymentCategory(selectedPatient.paymentCategory || "CASH");
@@ -193,10 +185,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
 
     const handleSubmit = async () => {
         if (!selectedPatient) return;
-        if (isMultiBed && !form.bedId) {
-            notify("Please select a bed for this room.", "warning");
-            return;
-        }
         setSubmitting(true);
         try {
             const admission = await admissionApi.admit({
@@ -251,23 +239,12 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
     const advanceAmt = Number(advanceAmount) || 0;
 
     return (
-        <Modal
+        <Drawer
             isOpen
             onClose={onClose}
-            size="xl"
-            title={
-                <div className="hms-modal-title-row">
-                    <span className="hms-icon-tile">
-                        <BedDouble size={20} />
-                    </span>
-                    <div className="hms-modal-title-row__body">
-                        <p className="hms-modal-title-row__title">Admit patient to IPD</p>
-                        <p className="hms-modal-title-row__subtitle">
-                            All sections in one place — scroll to fill, submit when ready.
-                        </p>
-                    </div>
-                </div>
-            }
+            width="650px"
+            title="Admit patient to IPD"
+            subtitle="All sections in one place — scroll to fill, submit when ready."
             footer={
                 <>
                     <Button variant="cancel" onClick={onClose}>
@@ -399,17 +376,34 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                         />
                     </FormGroup>
                     <div className="hms-form-grid is-2col">
-                        <FormGroup label="Assign room (optional)">
-                            <SearchableSelect
-                                value={form.roomId}
-                                onChange={(v) => setForm({ ...form, roomId: v, bedId: "" })}
-                                options={rooms.map((r) => ({
-                                    value: r.id,
-                                    group: r.ward || r.roomType || "Unassigned",
-                                    label: `Room ${r.roomNumber} (${r.roomType})${r.bedCount > 1 ? ` · ${r.bedCount} beds` : ""}`,
-                                }))}
-                                placeholder="Assign later…"
-                            />
+                        <FormGroup label="Assign location (optional)">
+                            <div className="flex gap-2 items-center">
+                                {form.bedId ? (
+                                    <div className="flex-1 p-2 border rounded-md bg-gray-50 flex justify-between items-center">
+                                        <span className="text-sm">
+                                            {availableBeds.find(b => String(b.id) === String(form.bedId))?.roomName ? 
+                                                `Room ${availableBeds.find(b => String(b.id) === String(form.bedId))?.roomName} - ` : ''}
+                                            {availableBeds.find(b => String(b.id) === String(form.bedId))?.bedNumber}
+                                        </span>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setForm({ ...form, bedId: "", roomId: "" })}
+                                            className="text-red-500 hover:text-red-700 p-1"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <Button 
+                                        type="button" 
+                                        variant="secondary" 
+                                        onClick={() => setIsBedModalOpen(true)}
+                                        className="w-full justify-center border-dashed"
+                                    >
+                                        + Select Bed / Room
+                                    </Button>
+                                )}
+                            </div>
                         </FormGroup>
                         <FormGroup label="Approx. discharge">
                             <Input
@@ -421,34 +415,6 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                             />
                         </FormGroup>
                     </div>
-
-                    {form.roomId && isMultiBed && (
-                        <FormGroup label="Select bed *">
-                            {bedsLoading ? (
-                                <CenterLoader text="Loading beds…" />
-                            ) : availableBeds.length === 0 ? (
-                                <p className="hms-bed-empty">No available beds in this room.</p>
-                            ) : (
-                                <div className="hms-bed-grid">
-                                    {availableBeds.map((bed) => {
-                                        const selected = String(form.bedId) === String(bed.id);
-                                        return (
-                                            <button
-                                                key={bed.id}
-                                                type="button"
-                                                onClick={() =>
-                                                    setForm((f) => ({ ...f, bedId: String(bed.id) }))
-                                                }
-                                                className={`hms-bed-chip ${selected ? "is-on" : ""}`}
-                                            >
-                                                {bed.bedNumber}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </FormGroup>
-                    )}
                 </section>
 
                 {/* Section 3: Attender */}
@@ -458,7 +424,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                         title="Attender / guardian"
                         subtitle="Optional but recommended — required for discharge handover."
                     />
-                    <div className="hms-form-grid is-3col">
+                    <div className="hms-form-grid is-2col">
                         <FormGroup label="Attender name">
                             <Input
                                 value={form.attenderName}
@@ -490,7 +456,7 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
 
                     {/* Payment Category */}
                     <div>
-                        <p className="hms-section-label mb-2">Payment category</p>
+                        <p className="hms-label mb-2">Payment category</p>
                         <div className="hms-form-grid is-2col">
                             {[
                                 { value: "CASH",   label: "Cash",   desc: "Periodic payments during stay" },
@@ -513,12 +479,12 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                     </div>
 
                     {/* Admission advance */}
-                    <div className="hms-advance-block">
+                    <div className="hms-admit-advance-block">
                         <div>
-                            <p className="hms-section-label mb-1">
+                            <p className="hms-label mb-1">
                                 Admission advance / room deposit
                             </p>
-                            <p className="hms-advance-hint">
+                            <p className="hms-form-hint">
                                 Optional. Collect a room security deposit or initial advance — it will
                                 be auto-deducted from the final IPD bill.
                             </p>
@@ -616,14 +582,14 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                                 {form.admissionType.replace(/_/g, " ")}
                             </div>
                             <div>
-                                <span className="font-medium">Room: </span>
-                                {selectedRoom?.roomNumber || "To be assigned"}
-                                {form.bedId &&
-                                    availableBeds.find((b) => String(b.id) === String(form.bedId))
-                                    ? ` · ${availableBeds.find((b) => String(b.id) === String(form.bedId))
-                                        .bedNumber
-                                    }`
-                                    : ""}
+                                <span className="font-medium">Location: </span>
+                                {form.bedId ? (
+                                    (() => {
+                                        const b = availableBeds.find((b) => String(b.id) === String(form.bedId));
+                                        if (!b) return "To be assigned";
+                                        return `${b.roomName ? `Room ${b.roomName} - ` : (b.wardName ? `Ward ${b.wardName} - ` : '')}${b.bedNumber}`;
+                                    })()
+                                ) : "To be assigned"}
                             </div>
                             <div>
                                 <span className="font-medium">Payment: </span>
@@ -636,6 +602,16 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                     </div>
                 )}
             </div>
-        </Modal>
+
+            <BedSelectionModal 
+                isOpen={isBedModalOpen}
+                onClose={() => setIsBedModalOpen(false)}
+                availableBeds={allBeds}
+                onSelect={(bed) => {
+                    setForm({ ...form, bedId: String(bed.id), roomId: bed.roomId ? String(bed.roomId) : "" });
+                    setIsBedModalOpen(false);
+                }}
+            />
+        </Drawer>
     );
 }

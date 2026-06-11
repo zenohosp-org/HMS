@@ -118,6 +118,13 @@ export default function InfrastructureMapping() {
   const [activeWardIdx, setActiveWardIdx] = useState(0);
   const [activeRoomIdx, setActiveRoomIdx] = useState(0);
 
+  const supportsBeds = useCallback((typeValue) => {
+    if (!typeValue) return true;
+    const t = roomTypes.find(rt => rt.value === typeValue);
+    if (!t) return true;
+    return t.hasBeds;
+  }, [roomTypes]);
+
   // Modals state
   const [confirmModal, setConfirmModal] = useState({
     show: false,
@@ -235,13 +242,6 @@ export default function InfrastructureMapping() {
 
     return { bldgs, floors, rooms, ots, stores, beds };
   }, [buildings, roomTypes]);
-
-  const supportsBeds = useCallback((typeValue) => {
-    if (!typeValue) return true;
-    const t = roomTypes.find(rt => rt.value === typeValue);
-    if (!t) return true;
-    return t.hasBeds;
-  }, [roomTypes]);
 
   const supportsDailyCharge = useCallback((typeValue) => {
     if (!typeValue) return true;
@@ -1292,7 +1292,18 @@ export default function InfrastructureMapping() {
                 ))}
                 <button
                   type="button"
-                  onClick={() => setAddZoneRoomModal({ isOpen: true, target: 'ward', bIdx: activeBuildingIdx, fIdx: activeFloorIdx, wIdx: activeWardIdx, selectedType: 'beds', name: "", roomType: roomTypes[0]?.value || "", dailyCharge: "", bedCount: 1 })}
+                  onClick={() => setAddZoneRoomModal({ 
+                    isOpen: true, 
+                    target: 'ward', 
+                    bIdx: activeBuildingIdx, 
+                    fIdx: activeFloorIdx, 
+                    wIdx: activeWardIdx, 
+                    selectedType: supportsBeds(activeFloor.wards[activeWardIdx].roomType) ? 'beds' : 'room', 
+                    name: "", 
+                    roomType: roomTypes[0]?.value || "", 
+                    dailyCharge: "", 
+                    bedCount: 1 
+                  })}
                   className="infra-tree-add-card-btn"
                 >
                   <Plus className="w-4 h-4" /> Add
@@ -1661,7 +1672,9 @@ export default function InfrastructureMapping() {
                 }))}
               >
                 <option value="room">Room</option>
-                <option value="beds">Bed(s)</option>
+                {(addZoneRoomModal.target !== 'ward' || supportsBeds(buildings[addZoneRoomModal.bIdx]?.floors[addZoneRoomModal.fIdx]?.wards[addZoneRoomModal.wIdx]?.roomType)) && (
+                  <option value="beds">Bed(s)</option>
+                )}
               </Select>
             </FormGroup>
           )}
