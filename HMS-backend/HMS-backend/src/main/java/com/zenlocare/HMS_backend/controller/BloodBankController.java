@@ -81,6 +81,11 @@ public class BloodBankController {
         return ResponseEntity.ok(service.registerUnit(hospitalId, req));
     }
 
+    @GetMapping("/units/next-bag-number")
+    public ResponseEntity<java.util.Map<String, String>> nextBagNumber(@RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(java.util.Map.of("bagNumber", service.generateNextBagNumber(hospitalId)));
+    }
+
     @PatchMapping("/units/{id}/status")
     public ResponseEntity<BloodBankDtos.UnitDto> updateStatus(
             @PathVariable UUID id,

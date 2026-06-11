@@ -42,6 +42,7 @@ public class RoomDto {
     private String departmentName;
     private String ward;
     private Long hospitalWardId;
+    private String floorName;
     private Integer bedCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -86,6 +87,9 @@ public class RoomDto {
                 .departmentName(room.getDepartment() != null ? room.getDepartment().getName() : null)
                 .ward(room.getWard())
                 .hospitalWardId(room.getHospitalWard() != null ? room.getHospitalWard().getId() : null)
+                .floorName(room.getHospitalWard() != null && room.getHospitalWard().getFloor() != null
+                        ? room.getHospitalWard().getFloor().getName()
+                        : null)
                 .bedCount(room.getBedCount())
                 .createdAt(room.getCreatedAt())
                 .updatedAt(room.getUpdatedAt())

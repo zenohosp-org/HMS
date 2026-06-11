@@ -170,15 +170,40 @@ public class BloodBankService {
         return toUnitDto(unit, LocalDate.now().plusDays(EXPIRY_WARN_DAYS));
     }
 
+    /**
+     * Next bag number for a hospital, formatted "BG-{year}-{0001}". Sequence
+     * resets per calendar year. Lexical MAX over the zero-padded suffix
+     * gives the numeric MAX, so a single MAX() query is enough to compute
+     * the next slot. Final conflict-safety is enforced by the unique
+     * (hospital, bag_number) check on insert.
+     */
+    public String generateNextBagNumber(UUID hospitalId) {
+        String prefix = "BG-" + LocalDate.now().getYear() + "-";
+        String max = unitRepo.findMaxBagNumberWithPrefix(hospitalId, prefix);
+        int next = 1;
+        if (max != null && max.length() > prefix.length()) {
+            try {
+                next = Integer.parseInt(max.substring(prefix.length())) + 1;
+            } catch (NumberFormatException ignored) {
+                // legacy non-numeric suffix — fall back to 1, uniqueness check will retry
+            }
+        }
+        return prefix + String.format("%04d", next);
+    }
+
     @Transactional
     public BloodBankDtos.UnitDto registerUnit(UUID hospitalId, BloodBankDtos.UnitRequest req) {
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new RuntimeException("Hospital not found"));
 
-        if (req.getBagNumber() == null || req.getBagNumber().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bag number is required");
+        // Auto-generate when the caller omits the bag number — the modal no
+        // longer accepts free-text entry, so this is the standard path.
+        String bagNumber = req.getBagNumber();
+        if (bagNumber == null || bagNumber.isBlank()) {
+            bagNumber = generateNextBagNumber(hospitalId);
         }
-        unitRepo.findByHospital_IdAndBagNumber(hospitalId, req.getBagNumber())
+        final String finalBagNumber = bagNumber;
+        unitRepo.findByHospital_IdAndBagNumber(hospitalId, finalBagNumber)
                 .ifPresent(b -> { throw new ResponseStatusException(HttpStatus.CONFLICT, "Bag number already exists"); });
 
         BloodDonor donor = req.getDonorId() != null
@@ -194,7 +219,7 @@ public class BloodBankService {
 
         BloodUnit unit = BloodUnit.builder()
                 .hospital(hospital)
-                .bagNumber(req.getBagNumber())
+                .bagNumber(finalBagNumber)
                 .bloodGroupCode(req.getBloodGroupCode())
                 .componentCode(req.getComponentCode())
                 .statusCode(Boolean.TRUE.equals(req.getScreeningPassed()) ? "AVAILABLE" : "QUARANTINE")

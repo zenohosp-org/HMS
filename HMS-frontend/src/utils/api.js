@@ -898,6 +898,10 @@ const bloodBankApi = {
     const { data } = await api.post("/blood-bank/units", payload, { params: { hospitalId } });
     return data;
   },
+  getNextBagNumber: async (hospitalId) => {
+    const { data } = await api.get("/blood-bank/units/next-bag-number", { params: { hospitalId } });
+    return data.bagNumber;
+  },
   updateStatus: async (id, statusCode) => {
     const { data } = await api.patch(`/blood-bank/units/${id}/status`, { statusCode });
     return data;

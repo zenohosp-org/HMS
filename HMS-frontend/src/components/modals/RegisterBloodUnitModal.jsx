@@ -35,7 +35,8 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
       bloodBankApi.listLookups(hospitalId, "SOURCE_TYPE").catch(() => []),
       bloodBankApi.listDonors(hospitalId).catch(() => []),
       roomApi.list(hospitalId).catch(() => []),
-    ]).then(([g, c, s, d, rooms]) => {
+      bloodBankApi.getNextBagNumber(hospitalId).catch(() => ""),
+    ]).then(([g, c, s, d, rooms, nextBag]) => {
       setGroups(g);
       setComponents(c);
       setSources(s);
@@ -43,6 +44,7 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
       setStorageRooms(
         (rooms || []).filter((r) => r.roomType === "BLOOD_BANK")
       );
+      if (nextBag) setForm((p) => ({ ...p, bagNumber: nextBag }));
     });
   }, [isOpen, hospitalId]);
 
@@ -67,7 +69,6 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.bagNumber.trim()) return notify("Bag number is required", "error");
     if (!form.bloodGroupCode) return notify("Blood group is required", "error");
     if (!form.componentCode) return notify("Component is required", "error");
     if (!isExternal && !form.donorId) return notify("Donor is required for in-house bags", "error");
@@ -110,8 +111,8 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
     <Modal isOpen={isOpen} onClose={onClose} title="Register blood bag" size="md" footer={footer}>
       <form id="bb-unit-form" onSubmit={submit}>
         <div className="hms-bb-modal-grid">
-          <FormGroup label="Bag number *">
-            <Input value={form.bagNumber} onChange={(e) => set("bagNumber", e.target.value)} placeholder="BG-2026-0001" />
+          <FormGroup label="Bag number" hint="Auto-generated">
+            <Input value={form.bagNumber} readOnly placeholder="…" />
           </FormGroup>
           <FormGroup label="Source *">
             <SearchableSelect
@@ -143,7 +144,7 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
                   onChange={(v) => set("donorId", v)}
                   options={donors.map((d) => ({
                     value: d.id,
-                    label: `${d.donorCode} — ${d.firstName} ${d.lastName ?? ""} (${d.bloodGroupCode || "?"})`,
+                    label: `${d.firstName ?? ""} ${d.lastName ?? ""}`.trim() || d.donorCode,
                   }))}
                   placeholder="Search donor"
                 />
@@ -170,7 +171,7 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
                 onChange={(v) => set("storageLocation", v)}
                 options={storageRooms.map((r) => ({
                   value: r.roomNumber,
-                  label: r.ward ? `${r.roomNumber} · ${r.ward}` : r.roomNumber,
+                  label: r.floorName ? `${r.floorName} · ${r.roomNumber}` : r.roomNumber,
                 }))}
                 placeholder="Select blood bank room"
               />

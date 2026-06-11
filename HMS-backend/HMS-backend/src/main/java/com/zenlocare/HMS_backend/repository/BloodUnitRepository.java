@@ -16,6 +16,20 @@ public interface BloodUnitRepository extends JpaRepository<BloodUnit, UUID> {
 
     Optional<BloodUnit> findByHospital_IdAndBagNumber(UUID hospitalId, String bagNumber);
 
+    /**
+     * Largest existing bag number for the hospital that matches `prefix%`.
+     * Used to compute the next sequence value when auto-generating bag
+     * numbers (callers pass e.g. "BG-2026-"). Returns null when none exist.
+     * Because the suffix is zero-padded, lexical MAX equals numeric MAX.
+     */
+    @Query("""
+        SELECT MAX(u.bagNumber) FROM BloodUnit u
+        WHERE u.hospital.id = :hospitalId
+          AND u.bagNumber LIKE CONCAT(:prefix, '%')
+        """)
+    String findMaxBagNumberWithPrefix(@Param("hospitalId") UUID hospitalId,
+                                      @Param("prefix") String prefix);
+
     @Query("""
         SELECT u FROM BloodUnit u
         WHERE u.hospital.id = :hospitalId
