@@ -39,6 +39,7 @@ export default function AddMedicalRecordModal({
 
   const [historyType, setHistoryType] = useState("PROGRESS_NOTE");
   const [description, setDescription] = useState("");
+  const [soap, setSoap] = useState({ subjective: "", objective: "", assessment: "", plan: "" });
   const [saving, setSaving] = useState(false);
   const [doctors, setDoctors] = useState([]);
   const [attendingDoctorId, setAttendingDoctorId] = useState(null);
@@ -63,9 +64,17 @@ export default function AddMedicalRecordModal({
     setHistoryType(v);
   };
 
+  const isProgressNote = historyType === "PROGRESS_NOTE";
+
   const handleSave = async (e) => {
     e?.preventDefault?.();
-    if (!description.trim()) {
+    if (isProgressNote) {
+      const hasSoap = Object.values(soap).some((v) => v.trim());
+      if (!hasSoap) {
+        notify("Add at least one SOAP section (Subjective, Objective, Assessment, or Plan)", "warning");
+        return;
+      }
+    } else if (!description.trim()) {
       notify("Add notes or a description for this record", "warning");
       return;
     }
@@ -79,13 +88,19 @@ export default function AddMedicalRecordModal({
         patientId: patient.id,
         hospitalId: user.hospitalId,
         historyType,
-        description,
+        description: isProgressNote ? "" : description,
+        ...(isProgressNote && {
+          soapSubjective: soap.subjective.trim() || undefined,
+          soapObjective: soap.objective.trim() || undefined,
+          soapAssessment: soap.assessment.trim() || undefined,
+          soapPlan: soap.plan.trim() || undefined,
+        }),
         admissionId,
         admissionNumber,
         attendingDoctorId: attendingDoctorId || undefined,
       });
       notify("Record added", "success");
-      onSaved?.(saved, { historyType, description });
+      onSaved?.(saved, { historyType, description, soap: isProgressNote ? soap : undefined });
     } catch {
       notify("Failed to add record", "error");
     } finally {
@@ -136,21 +151,58 @@ export default function AddMedicalRecordModal({
               />
             </FormGroup>
 
-            <FormGroup
-              label={
-                <span>
-                  Notes / description <span className="text-danger">*</span>
-                </span>
-              }
-            >
-              <Textarea
-                rows={6}
-                placeholder="Enter notes or description…"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-              />
-            </FormGroup>
+            {isProgressNote ? (
+              <>
+                <FormGroup label="Subjective">
+                  <Textarea
+                    rows={3}
+                    placeholder="Patient-reported symptoms, history…"
+                    value={soap.subjective}
+                    onChange={(e) => setSoap((s) => ({ ...s, subjective: e.target.value }))}
+                  />
+                </FormGroup>
+                <FormGroup label="Objective">
+                  <Textarea
+                    rows={3}
+                    placeholder="Vitals, exam findings, test results…"
+                    value={soap.objective}
+                    onChange={(e) => setSoap((s) => ({ ...s, objective: e.target.value }))}
+                  />
+                </FormGroup>
+                <FormGroup label="Assessment">
+                  <Textarea
+                    rows={3}
+                    placeholder="Diagnosis, clinical impression…"
+                    value={soap.assessment}
+                    onChange={(e) => setSoap((s) => ({ ...s, assessment: e.target.value }))}
+                  />
+                </FormGroup>
+                <FormGroup label="Plan">
+                  <Textarea
+                    rows={3}
+                    placeholder="Treatment plan, next steps…"
+                    value={soap.plan}
+                    onChange={(e) => setSoap((s) => ({ ...s, plan: e.target.value }))}
+                  />
+                </FormGroup>
+              </>
+            ) : (
+              <FormGroup
+                label={
+                  <span>
+                    Notes / description <span className="text-danger">*</span>
+                  </span>
+                }
+              >
+                <Textarea
+                  rows={6}
+                  placeholder="Enter notes or description…"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
+                />
+              </FormGroup>
+            )}
           </div>
         </form>
 

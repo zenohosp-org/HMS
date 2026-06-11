@@ -158,4 +158,8 @@ public class PrescriptionItem {
     /** Free-text clinical reason for stopping (required by the stop endpoint). */
     @Column(name = "stop_reason", columnDefinition = "TEXT")
     private String stopReason;
+
+    /** Free-text reason recorded when the prescriber overrode a recorded drug allergy for this item. Null = no allergy conflict at prescribe time. */
+    @Column(name = "allergy_override_reason", columnDefinition = "TEXT")
+    private String allergyOverrideReason;
 }

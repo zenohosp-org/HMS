@@ -1361,18 +1361,12 @@
 
 
 /* ─────────────────────────── AdmitPatientModal: advance block + summary ─────────────────────────── */
-.hms-advance-block {
+.hms-admit-advance-block {
     padding-top: 16px;
     border-top: 1px solid var(--hms-gray-100);
     display: flex;
     flex-direction: column;
     gap: 12px;
-}
-
-.hms-advance-hint {
-    margin: 0;
-    font-size: 12px;
-    color: var(--hms-gray-400);
 }
 
 .hms-advance-account-hint {
@@ -3490,6 +3484,44 @@
     letter-spacing: 0.06em;
 }
 
+/* ── SOAP note sections (inline in timeline) ─────────────────────────────── */
+
+.hms-soap-note {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hms-soap-note__section {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.hms-soap-note__label {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.hms-soap-note__text {
+    margin: 0;
+    padding-top: 2px;
+    font-size: 12px;
+    color: var(--hms-gray-600);
+    line-height: 1.4;
+    white-space: pre-wrap;
+}
+
 /* ── Prescription drug chips (inline in timeline) ────────────────────────── */
 
 .hms-rec-drugs {
@@ -3537,6 +3569,53 @@
     font-size: 11px;
     color: var(--hms-gray-500);
     padding-left: 2px;
+}
+
+/* Stopped/discontinued order chip — strike-through name + "Stopped" badge */
+.hms-rec-drug-chip.is-stopped {
+    background: var(--hms-gray-50);
+    border-color: var(--hms-gray-200);
+    opacity: 0.85;
+}
+
+.hms-rec-drug-chip.is-stopped .hms-rec-drug-chip__icon {
+    color: var(--hms-gray-400);
+}
+
+.hms-rec-drug-chip.is-stopped .hms-rec-drug-chip__name,
+.hms-rec-drug-chip.is-stopped .hms-rec-drug-chip__signa {
+    color: var(--hms-gray-500);
+    text-decoration: line-through;
+}
+
+.hms-rec-drug-chip__stopped-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 4px;
+    padding: 1px 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.hms-rec-drug-chip__allergy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #b45309;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    padding: 1px 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* ── "View in detail" button on RECORD timeline cards ────────────────────── */
@@ -4208,6 +4287,135 @@
     white-space: nowrap;
     flex-shrink: 0;
     margin-top: 1px;
+}
+
+/* ── Active medications panel (WritePrescriptionModal) ───────────────── */
+
+.hms-active-meds {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f0f7ff;
+    border: 1px solid #bfdbfe;
+}
+
+.hms-active-meds__label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d4ed8;
+}
+
+.hms-active-meds__list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hms-active-med-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 6px 8px;
+    background: var(--hms-white);
+    border: 1px solid #dbeafe;
+    border-radius: 6px;
+}
+
+.hms-active-med-row__info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.hms-active-med-row__name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hms-gray-800);
+}
+
+.hms-active-med-row__signa {
+    font-size: 11px;
+    font-weight: 500;
+    color: #3b82f6;
+    white-space: nowrap;
+}
+
+.hms-active-med-row__meta {
+    font-size: 10.5px;
+    color: var(--hms-gray-500);
+    white-space: nowrap;
+}
+
+.hms-active-med-row__stop-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.hms-active-med-row__stop-btn:hover {
+    background: #fee2e2;
+}
+
+.hms-active-med-row__stop-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.hms-active-med-row__stop-input {
+    font-size: 11px;
+    padding: 4px 6px;
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 5px;
+    min-width: 160px;
+}
+
+.hms-active-med-row__stop-confirm,
+.hms-active-med-row__stop-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.hms-active-med-row__stop-confirm {
+    color: var(--hms-white);
+    background: #dc2626;
+}
+
+.hms-active-med-row__stop-confirm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.hms-active-med-row__stop-cancel {
+    color: var(--hms-gray-600);
+    background: var(--hms-gray-100);
 }
 
 /* ── Allergy panel (collapsible in IPD header) ───────────────────────── */

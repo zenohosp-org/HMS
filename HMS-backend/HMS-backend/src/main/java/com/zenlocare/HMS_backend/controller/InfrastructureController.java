@@ -18,8 +18,10 @@ public class InfrastructureController {
     private final InfrastructureService service;
 
     @GetMapping
-    public ResponseEntity<List<BuildingDto>> get(@RequestParam UUID hospitalId) {
-        return ResponseEntity.ok(service.get(hospitalId));
+    public ResponseEntity<List<BuildingDto>> get(
+            @RequestParam UUID hospitalId,
+            @RequestParam(required = false, defaultValue = "false") boolean includeInactive) {
+        return ResponseEntity.ok(service.get(hospitalId, includeInactive));
     }
 
     @PostMapping
@@ -33,6 +35,7 @@ public class InfrastructureController {
     public static class BuildingDto {
         private Long id;
         private String name;
+        private Boolean isActive;
         private List<FloorDto> floors = List.of();
     }
 
@@ -40,6 +43,7 @@ public class InfrastructureController {
     public static class FloorDto {
         private Long id;
         private String name;
+        private Boolean isActive;
         private List<WardDto> wards = List.of();
     }
 
@@ -47,15 +51,18 @@ public class InfrastructureController {
     public static class WardDto {
         private Long id;
         private String name;
+        private Boolean isActive;
         private String roomType;
         private java.math.BigDecimal dailyCharge;
         private List<RoomDto> rooms = List.of();
+        private List<String> bedNames = List.of();
     }
 
     @Data
     public static class RoomDto {
         private Long id;
         private String name;
+        private Boolean isActive;
         private List<String> bedNames = List.of();
     }
 }

@@ -2760,6 +2760,18 @@
 
 .hms-create-inv-summary__disc-amt { color: var(--hms-danger); font-weight: 600; }
 
+.hms-create-inv-summary__gst-select {
+    padding: 4px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--hms-gray-200);
+    background: var(--hms-white);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hms-gray-500);
+    outline: none;
+    font-family: var(--hms-font-family);
+}
+
 .hms-create-inv-summary__grand {
     display: flex;
     justify-content: space-between;

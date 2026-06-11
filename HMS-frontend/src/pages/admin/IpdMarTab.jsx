@@ -8,7 +8,7 @@ import {
     PauseCircle, AlertCircle, ChevronDown, ChevronUp,
     StopCircle, BanIcon, AlertTriangle,
 } from "lucide-react";
-import { fmtDateTime } from "@/utils/date";
+import { fmtDateTime, fmtTime } from "@/utils/date";
 import "@/styles/modules/ipd-mar.css";
 
 // ── Status metadata ────────────────────────────────────────────────────────────
@@ -44,6 +44,38 @@ function emptyStopForm() {
     return { reason: "" };
 }
 
+// Hours between scheduled doses for fixed-interval frequencies. Frequencies
+// tied to events (meals, bedtime) or given as-needed have no fixed schedule
+// and are intentionally omitted — they never show a due/overdue badge.
+const FREQUENCY_INTERVAL_HOURS = {
+    OD: 24, BD: 12, TDS: 8, QID: 6,
+    Q4H: 4, Q6H: 6, Q8H: 8,
+};
+
+const DUE_SOON_WINDOW_MS = 30 * 60 * 1000;
+
+/** Returns { state: "due"|"overdue", nextDueAt: Date } or null if no badge applies. */
+function getDoseSchedule(order, now) {
+    if (order.status === "STOPPED") return null;
+    const intervalHours = FREQUENCY_INTERVAL_HOURS[order.frequency];
+    if (!intervalHours) return null;
+
+    const lastGiven = (order.administrations || [])
+        .filter((a) => a.status === "GIVEN" && a.administeredAt)
+        .map((a) => new Date(a.administeredAt).getTime())
+        .sort((a, b) => b - a)[0];
+
+    const baseline = lastGiven ?? (order.prescribedAt ? new Date(order.prescribedAt).getTime() : null);
+    if (baseline == null || Number.isNaN(baseline)) return null;
+
+    const nextDueAt = baseline + intervalHours * 60 * 60 * 1000;
+    const diffMs = nextDueAt - now.getTime();
+
+    if (diffMs <= 0) return { state: "overdue", nextDueAt: new Date(nextDueAt) };
+    if (diffMs <= DUE_SOON_WINDOW_MS) return { state: "due", nextDueAt: new Date(nextDueAt) };
+    return null;
+}
+
 // ── Main component ──────────────────────────────────────────────────────────────
 
 export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
@@ -59,6 +91,13 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
     const [expanded, setExpanded]     = useState({});
     const [savingId, setSavingId]     = useState(null);
     const [stoppingId, setStoppingId] = useState(null);
+    const [now, setNow]               = useState(() => new Date());
+
+    // Keep due/overdue badges current without requiring a page refresh.
+    useEffect(() => {
+        const id = setInterval(() => setNow(new Date()), 60_000);
+        return () => clearInterval(id);
+    }, []);
 
     const fetchOrders = useCallback(async () => {
         try {
@@ -206,6 +245,7 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
                         <OrderCard
                             key={order.orderId}
                             order={order}
+                            now={now}
                             form={getForm(order.orderId)}
                             stopForm={getStopForm(order.orderId)}
                             setField={setField}
@@ -231,7 +271,7 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
 // ── Order card ──────────────────────────────────────────────────────────────────
 
 function OrderCard({
-    order, form, stopForm, setField, setStopField,
+    order, now, form, stopForm, setField, setStopField,
     onSubmit, onStop, saving, stopping,
     stopOpen, onToggleStop,
     logExpanded, onToggleLog,
@@ -241,6 +281,7 @@ function OrderCard({
     const adminCount   = order.administrations?.length ?? 0;
     const needsReason  = form.status === "HELD" || form.status === "REFUSED";
     const drugTitle    = [order.drugName, order.drugStrength, order.drugForm].filter(Boolean).join(" ");
+    const doseSchedule = getDoseSchedule(order, now);
 
     return (
         <div className={`mar-card${isStopped ? " is-stopped" : ""}`}>
@@ -253,6 +294,11 @@ function OrderCard({
                 <div className="mar-card__text">
                     <div className="mar-card__name-row">
                         <p className="mar-card__drug-name">{drugTitle}</p>
+                        {order.allergyOverrideReason && (
+                            <span className="mar-card__allergy-badge" title={`Prescribed despite recorded allergy — ${order.allergyOverrideReason}`}>
+                                <AlertTriangle size={10} /> Allergy override
+                            </span>
+                        )}
                         {isStopped && (
                             <span className="mar-card__stopped-badge">
                                 <BanIcon size={10} /> Stopped
@@ -267,6 +313,16 @@ function OrderCard({
                         )}
                         {order.route && (
                             <span className="mar-signa-pill is-route">{order.route}</span>
+                        )}
+                        {doseSchedule?.state === "overdue" && (
+                            <span className="mar-signa-pill is-overdue" title={`Next dose was due at ${fmtTime(doseSchedule.nextDueAt)}`}>
+                                <AlertCircle size={10} /> Overdue
+                            </span>
+                        )}
+                        {doseSchedule?.state === "due" && (
+                            <span className="mar-signa-pill is-due" title={`Next dose due at ${fmtTime(doseSchedule.nextDueAt)}`}>
+                                <Clock size={10} /> Due now
+                            </span>
                         )}
                         {order.dose && (
                             <span className="mar-signa-dose">· {order.dose} per dose</span>

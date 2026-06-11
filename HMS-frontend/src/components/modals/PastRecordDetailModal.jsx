@@ -3,7 +3,7 @@ import { fmtId } from "@/utils/idFormat";
 import {
   Stethoscope, Pill, ClipboardList, FileText, ListChecks, CalendarClock,
   IdCard, Clock, X, User as UserIcon, Beaker, Scissors, FlaskConical,
-  Tag, BedDouble, NotebookPen,
+  Tag, BedDouble, NotebookPen, MessageCircle, Activity, Brain, ClipboardCheck,
 } from "lucide-react";
 
 /**
@@ -41,6 +41,7 @@ export default function PastRecordDetailModal({ record, onClose }) {
 
   const { chiefComplaint, notes } = splitDescription(record.description);
   const items = Array.isArray(record.prescriptionItems) ? record.prescriptionItems : [];
+  const hasSoap = !!(record.soapSubjective || record.soapObjective || record.soapAssessment || record.soapPlan);
   const meta = TYPE_META[record.historyType] || TYPE_META.OTHER;
   const Icon = meta.icon;
   const creator = record.createdBy
@@ -106,6 +107,31 @@ export default function PastRecordDetailModal({ record, onClose }) {
         <div className="zu-modal-body">
           <div className="hms-form-stack">
 
+            {record.historyType === "PROGRESS_NOTE" && hasSoap && (
+              <>
+                {record.soapSubjective && (
+                  <Section icon={<MessageCircle className="w-3.5 h-3.5" />} title="Subjective" tone="blue">
+                    <p className="hms-past-prose">{record.soapSubjective}</p>
+                  </Section>
+                )}
+                {record.soapObjective && (
+                  <Section icon={<Activity className="w-3.5 h-3.5" />} title="Objective">
+                    <p className="hms-past-prose">{record.soapObjective}</p>
+                  </Section>
+                )}
+                {record.soapAssessment && (
+                  <Section icon={<Brain className="w-3.5 h-3.5" />} title="Assessment" tone="amber">
+                    <p className="hms-past-prose">{record.soapAssessment}</p>
+                  </Section>
+                )}
+                {record.soapPlan && (
+                  <Section icon={<ClipboardCheck className="w-3.5 h-3.5" />} title="Plan" tone="emerald">
+                    <p className="hms-past-prose">{record.soapPlan}</p>
+                  </Section>
+                )}
+              </>
+            )}
+
             {chiefComplaint && (
               <Section icon={<ClipboardList className="w-3.5 h-3.5" />} title="Chief complaint" tone="blue">
                 <p className="hms-past-prose is-strong">
@@ -166,7 +192,7 @@ export default function PastRecordDetailModal({ record, onClose }) {
             )}
 
             {/* Empty state for records that somehow carry no body content */}
-            {!chiefComplaint && !notes && !record.instructions && items.length === 0 && !nextVisit && (
+            {!chiefComplaint && !notes && !record.instructions && items.length === 0 && !nextVisit && !hasSoap && (
               <div className="hms-past-empty">
                 <p className="m-0">
                   This record has no clinical content to display.

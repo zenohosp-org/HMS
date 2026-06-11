@@ -111,7 +111,8 @@ public class RecordService {
             java.util.UUID admissionId, String admissionNumber,
             java.util.UUID appointmentId,
             java.util.List<com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest> prescriptionItems,
-            UUID attendingDoctorId) {
+            UUID attendingDoctorId,
+            String soapSubjective, String soapObjective, String soapAssessment, String soapPlan) {
 
         DataIntegrityViolationException lastError = null;
         for (int attempt = 1; attempt <= MAX_MRN_ATTEMPTS; attempt++) {
@@ -119,7 +120,8 @@ public class RecordService {
                 return txTemplate.execute(status -> doCreate(
                         hospitalId, patientId, createdBy, historyType, description, instructions,
                         nextVisitDate, admissionId, admissionNumber,
-                        appointmentId, prescriptionItems, attendingDoctorId));
+                        appointmentId, prescriptionItems, attendingDoctorId,
+                        soapSubjective, soapObjective, soapAssessment, soapPlan));
             } catch (DataIntegrityViolationException e) {
                 lastError = e;
                 log.warn("MRN collision on attempt {} for patient {} at hospital {} — retrying",
@@ -136,7 +138,8 @@ public class RecordService {
             java.util.UUID admissionId, String admissionNumber,
             java.util.UUID appointmentId,
             java.util.List<com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest> prescriptionItems,
-            UUID attendingDoctorId) {
+            UUID attendingDoctorId,
+            String soapSubjective, String soapObjective, String soapAssessment, String soapPlan) {
 
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
@@ -179,6 +182,10 @@ public class RecordService {
                 .historyType(type)
                 .description(description)
                 .instructions(instructions)
+                .soapSubjective(soapSubjective)
+                .soapObjective(soapObjective)
+                .soapAssessment(soapAssessment)
+                .soapPlan(soapPlan)
                 .nextVisitDate(nextVisitDate)
                 .admissionId(admissionId)
                 .admissionNumber(admissionNumber)
@@ -218,6 +225,7 @@ public class RecordService {
                                 .route(com.zenlocare.HMS_backend.entity.PrescriptionRoute.fromCode(ir.getRoute()))
                                 .instructions(ir.getInstructions())
                                 .displayOrder(ir.getDisplayOrder() != null ? ir.getDisplayOrder() : order)
+                                .allergyOverrideReason(ir.getAllergyOverrideReason())
                                 .build();
                 record.getPrescriptionItems().add(item);
                 order++;

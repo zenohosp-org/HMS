@@ -173,11 +173,14 @@ public class MedicationAdministrationController {
         dto.setFrequency(item.getFrequency() != null ? item.getFrequency().name() : null);
         dto.setRoute(item.getRoute()          != null ? item.getRoute().name()     : null);
         dto.setInstructions(item.getInstructions());
+        dto.setAllergyOverrideReason(item.getAllergyOverrideReason());
 
         var rec = item.getRecord();
         dto.setPrescribedAt(rec.getCreatedAt() != null ? rec.getCreatedAt().toString() : null);
-        if (rec.getCreatedBy() != null) {
-            var doc = rec.getCreatedBy();
+        // Prefer the attending/prescribing doctor over the record's creator —
+        // a staff member may enter the prescription on behalf of a doctor.
+        var doc = rec.getAttendingDoctor() != null ? rec.getAttendingDoctor() : rec.getCreatedBy();
+        if (doc != null) {
             dto.setPrescribedBy(doc.getFirstName() +
                     (doc.getLastName() != null ? " " + doc.getLastName() : ""));
         }
@@ -264,6 +267,8 @@ public class MedicationAdministrationController {
         private String         stoppedAt;
         private String         stoppedByName;
         private String         stopReason;
+        /** Set when the prescriber overrode a recorded drug allergy for this item. */
+        private String         allergyOverrideReason;
         private List<AdminDto> administrations;
     }
 }

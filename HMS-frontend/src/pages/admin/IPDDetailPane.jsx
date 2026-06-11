@@ -2,7 +2,7 @@ import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors, Activity, Package, Receipt, Phone, User, ExternalLink, RotateCcw, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, Plus, FileText, Printer,  } from "lucide-react";
+import { X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors, Activity, Package, Receipt, Phone, User, ExternalLink, RotateCcw, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, Plus, FileText, Printer, Ban,  } from "lucide-react";
 import { fmtDateTime, fmtDateMed } from "@/utils/date";
 import {
     roomLogsApi,
@@ -15,6 +15,7 @@ import {
     admissionApi,
     recordApi,
     allergyApi,
+    gstRateApi,
 } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import Barcode from "@/components/ui/Barcode";
@@ -68,8 +69,6 @@ const TABS = [
     { id: "Room Mapped Assets", label: "Assets"   },
     { id: "IPD Billing",        label: "Billing"  },
 ];
-
-const GST_RATE = 0.18;
 
 /** Timeline event tone — modifier class for .hms-ipd-event-tag */
 const EVENT_TONE_CLASS = {
@@ -180,6 +179,7 @@ export default function IPDDetailPane({
     const [pharmacyBillsError, setPharmacyBillsError] = useState(false);
     const [loadingBilling, setLoadingBilling] = useState(false);
     const [billingFetched, setBillingFetched] = useState(false);
+    const [gstRatePercent, setGstRatePercent] = useState(18);
 
     const [showAddRecord, setShowAddRecord] = useState(false);
     const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -200,8 +200,8 @@ export default function IPDDetailPane({
         () =>
             billingItems
                 .filter((i) => i.itemType === "MEDICINE")
-                .reduce((s, i) => s + (i.totalPrice || 0), 0) * GST_RATE,
-        [billingItems]
+                .reduce((s, i) => s + (i.totalPrice || 0), 0) * (gstRatePercent / 100),
+        [billingItems, gstRatePercent]
     );
     const grandTotal = subtotal + gst;
     const hasZeroPrice = billingItems.some(
@@ -426,6 +426,10 @@ export default function IPDDetailPane({
                                     title: (r.historyType || "OTHER").replace(/_/g, " "),
                                     subtitle: [r.mrn, attendingName ?? creator].filter(Boolean).join(" · "),
                                     description: r.description || r.notes || "",
+                                    soapSubjective: r.soapSubjective || "",
+                                    soapObjective: r.soapObjective || "",
+                                    soapAssessment: r.soapAssessment || "",
+                                    soapPlan: r.soapPlan || "",
                                     prescriptionItems: Array.isArray(r.prescriptionItems) ? r.prescriptionItems : [],
                                     rawRecord: r,
                                     timestamp: new Date(r.createdAt),
@@ -542,7 +546,7 @@ export default function IPDDetailPane({
         let key = 0;
         const items = [];
         try {
-            const [suggestions, services, fullAdmission, radiologyOrders, patientServices, allPatientInvoices] =
+            const [suggestions, services, fullAdmission, radiologyOrders, patientServices, allPatientInvoices, gstRates] =
                 await Promise.all([
                     invoiceApi
                         .getSmartSuggestions(admission.patientId, admission.id)
@@ -552,7 +556,11 @@ export default function IPDDetailPane({
                     radiologyApi.getByAdmission(admission.id).catch(() => []),
                     patientServicesApi.list(user.hospitalId).catch(() => []),
                     invoiceApi.getPatientInvoices(admission.patientId).catch(() => []),
+                    gstRateApi.list(user.hospitalId, true).catch(() => []),
                 ]);
+
+            const defaultGstRate = (gstRates || []).find((r) => r.isDefault);
+            if (defaultGstRate) setGstRatePercent(Number(defaultGstRate.ratePercent));
 
             const isFirstAdmission =
                 (allPatientInvoices || []).filter(
@@ -773,16 +781,21 @@ export default function IPDDetailPane({
         fetchBilling();
     }, [fetchBilling]);
 
-    const handleRecordSaved = (saved, { historyType, description }) => {
+    const handleRecordSaved = (saved, { historyType, description, soap }) => {
         const creatorName =
             user?.name ||
             [user?.firstName, user?.lastName].filter(Boolean).join(" ");
         const optimisticEvent = {
             id: `rec-${saved?.id ?? Date.now()}`,
             type: "RECORD",
+            historyType,
             title: historyType.replace("_", " "),
             subtitle: [saved?.mrn, creatorName].filter(Boolean).join(" · "),
             description,
+            soapSubjective: soap?.subjective || "",
+            soapObjective: soap?.objective || "",
+            soapAssessment: soap?.assessment || "",
+            soapPlan: soap?.plan || "",
             timestamp: new Date(),
         };
         setLogs((prev) => [optimisticEvent, ...prev]);
@@ -1144,6 +1157,7 @@ export default function IPDDetailPane({
                             retryPharmacyBills={retryPharmacyBills}
                             subtotal={subtotal}
                             gst={gst}
+                            gstRatePercent={gstRatePercent}
                             grandTotal={grandTotal}
                             hasZeroPrice={hasZeroPrice}
                             isDischarged={!!admission.actualDischargeDate}
@@ -1355,16 +1369,63 @@ function RecordDetail({ ev }) {
             <div className="hms-rec-drugs">
                 {visible.map((d, i) => {
                     const signa = [d.dose, d.frequency].filter(Boolean).join(" · ");
+                    const isStopped = d.status === "STOPPED";
                     return (
-                        <div key={i} className="hms-rec-drug-chip">
+                        <div key={i} className={`hms-rec-drug-chip${isStopped ? " is-stopped" : ""}`}>
                             <Pill size={10} className="hms-rec-drug-chip__icon" />
                             <span className="hms-rec-drug-chip__name">{d.drugName}</span>
                             {signa && <span className="hms-rec-drug-chip__signa">{signa}</span>}
+                            {d.allergyOverrideReason && (
+                                <span className="hms-rec-drug-chip__allergy-badge" title={`Prescribed despite recorded allergy — ${d.allergyOverrideReason}`}>
+                                    <AlertTriangle size={9} /> Allergy override
+                                </span>
+                            )}
+                            {isStopped && (
+                                <span className="hms-rec-drug-chip__stopped-badge" title={d.stopReason || "Order stopped"}>
+                                    <Ban size={9} /> Stopped
+                                    {d.stoppedAt && ` · ${fmtDateMed(d.stoppedAt)}`}
+                                </span>
+                            )}
                         </div>
                     );
                 })}
                 {overflow > 0 && (
                     <span className="hms-rec-drugs__more">+{overflow} more</span>
+                )}
+                {ev.description && (
+                    <p className="hms-ipd-timeline__desc">{ev.description}</p>
+                )}
+            </div>
+        );
+    }
+
+    if (type === "PROGRESS_NOTE" &&
+        (ev.soapSubjective || ev.soapObjective || ev.soapAssessment || ev.soapPlan)) {
+        return (
+            <div className="hms-soap-note">
+                {ev.soapSubjective && (
+                    <div className="hms-soap-note__section">
+                        <span className="hms-soap-note__label">S</span>
+                        <p className="hms-soap-note__text">{ev.soapSubjective}</p>
+                    </div>
+                )}
+                {ev.soapObjective && (
+                    <div className="hms-soap-note__section">
+                        <span className="hms-soap-note__label">O</span>
+                        <p className="hms-soap-note__text">{ev.soapObjective}</p>
+                    </div>
+                )}
+                {ev.soapAssessment && (
+                    <div className="hms-soap-note__section">
+                        <span className="hms-soap-note__label">A</span>
+                        <p className="hms-soap-note__text">{ev.soapAssessment}</p>
+                    </div>
+                )}
+                {ev.soapPlan && (
+                    <div className="hms-soap-note__section">
+                        <span className="hms-soap-note__label">P</span>
+                        <p className="hms-soap-note__text">{ev.soapPlan}</p>
+                    </div>
                 )}
                 {ev.description && (
                     <p className="hms-ipd-timeline__desc">{ev.description}</p>
@@ -1585,6 +1646,7 @@ function BillingTab({
     retryPharmacyBills,
     subtotal,
     gst,
+    gstRatePercent,
     grandTotal,
     hasZeroPrice,
     isDischarged,
@@ -1829,6 +1891,7 @@ function EstimatedBillView({
     billingItems,
     subtotal,
     gst,
+    gstRatePercent,
     grandTotal,
     hasZeroPrice,
     isDischarged,
@@ -1863,7 +1926,10 @@ function EstimatedBillView({
                 <div className="hms-ipd-bill-totals">
                     <TotalRow label="Subtotal" value={fmtMoney(subtotal)} />
                     {gst > 0 && (
-                        <TotalRow label="GST on medicines (18%)" value={fmtMoney(gst)} />
+                        <TotalRow
+                            label={`GST on medicines (${gstRatePercent}%)`}
+                            value={fmtMoney(gst)}
+                        />
                     )}
                     <div className="hms-ipd-bill-totals__grand">
                         <span>Estimated total</span>

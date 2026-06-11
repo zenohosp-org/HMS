@@ -307,6 +307,32 @@ const patientServicesApi = {
   }
 };
 
+const gstRateApi = {
+  list: async (hospitalId, activeOnly = false) => {
+    const { data } = await api.get("/gst-rates", { params: { hospitalId, activeOnly } });
+    return data;
+  },
+  create: async (payload) => {
+    const { data } = await api.post("/gst-rates", payload);
+    return data;
+  },
+  update: async (id, payload) => {
+    const { data } = await api.put(`/gst-rates/${id}`, payload);
+    return data;
+  },
+  toggle: async (id) => {
+    const { data } = await api.patch(`/gst-rates/${id}/toggle`);
+    return data;
+  },
+  setDefault: async (id) => {
+    const { data } = await api.patch(`/gst-rates/${id}/set-default`);
+    return data;
+  },
+  delete: async (id) => {
+    await api.delete(`/gst-rates/${id}`);
+  }
+};
+
 const hospitalServiceApi = {
   list: async (hospitalId) => {
     const { data } = await api.get(`/hospital-services?hospitalId=${hospitalId}`);
@@ -334,6 +360,14 @@ const bedApi = {
   },
   freeBed: async (bedId, hospitalId) => {
     const { data } = await api.post(`/rooms/beds/${bedId}/free`, null, { params: { hospitalId } });
+    return data;
+  },
+  getAvailable: async (hospitalId) => {
+    const { data } = await api.get(`/rooms/beds/available`, { params: { hospitalId } });
+    return data;
+  },
+  getAll: async (hospitalId) => {
+    const { data } = await api.get(`/rooms/beds/all`, { params: { hospitalId } });
     return data;
   },
 };
@@ -588,8 +622,8 @@ const roomApi = {
 };
 
 const infrastructureApi = {
-  get: async (hospitalId) => {
-    const { data } = await api.get("/ipd/infrastructure", { params: { hospitalId } });
+  get: async (hospitalId, includeInactive = false) => {
+    const { data } = await api.get("/ipd/infrastructure", { params: { hospitalId, includeInactive } });
     return data;
   },
   save: async (hospitalId, buildings) => {
@@ -1004,6 +1038,7 @@ export {
   featureFlagsApi,
   hospitalServiceApi,
   patientServicesApi,
+  gstRateApi,
   invoiceApi,
   patientApi,
   pricingApi,

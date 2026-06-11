@@ -3148,6 +3148,18 @@
     font-weight: 600;
 }
 
+.hms-inv-totals__gst-select {
+    padding: 4px 6px;
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 8px;
+    background: var(--hms-white);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hms-gray-500);
+    outline: none;
+    font-family: var(--hms-font-family);
+}
+
 .hms-inv-pay-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

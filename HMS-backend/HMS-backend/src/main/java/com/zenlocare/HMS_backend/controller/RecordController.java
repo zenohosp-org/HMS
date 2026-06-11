@@ -232,7 +232,9 @@ public class RecordController {
                 req.getNextVisitDate(),
                 req.getAdmissionId(), req.getAdmissionNumber(),
                 req.getAppointmentId(), req.getPrescriptionItems(),
-                req.getAttendingDoctorId());
+                req.getAttendingDoctorId(),
+                req.getSoapSubjective(), req.getSoapObjective(),
+                req.getSoapAssessment(), req.getSoapPlan());
         return ResponseEntity.ok(mapToDto(record));
     }
 
@@ -242,6 +244,10 @@ public class RecordController {
         dto.setHistoryType(record.getHistoryType() != null ? record.getHistoryType().name() : null);
         dto.setDescription(record.getDescription());
         dto.setInstructions(record.getInstructions());
+        dto.setSoapSubjective(record.getSoapSubjective());
+        dto.setSoapObjective(record.getSoapObjective());
+        dto.setSoapAssessment(record.getSoapAssessment());
+        dto.setSoapPlan(record.getSoapPlan());
         dto.setNextVisitDate(record.getNextVisitDate() != null ? record.getNextVisitDate().toString() : null);
         dto.setCreatedAt(record.getCreatedAt().toString());
         dto.setAdmissionId(record.getAdmissionId() != null ? record.getAdmissionId().toString() : null);
@@ -282,6 +288,12 @@ public class RecordController {
                 d.setRoute(pi.getRoute() != null ? pi.getRoute().name() : null);
                 d.setInstructions(pi.getInstructions());
                 d.setDisplayOrder(pi.getDisplayOrder());
+                d.setStatus(pi.getStatus());
+                if ("STOPPED".equals(pi.getStatus())) {
+                    d.setStoppedAt(pi.getStoppedAt() != null ? pi.getStoppedAt().toString() : null);
+                    d.setStopReason(pi.getStopReason());
+                }
+                d.setAllergyOverrideReason(pi.getAllergyOverrideReason());
                 items.add(d);
             }
         }
@@ -309,6 +321,11 @@ public class RecordController {
         // The doctor who attended/prescribed — users.id UUID. May differ from the
         // authenticated user when a staff member enters on behalf of a doctor.
         private UUID attendingDoctorId;
+        // Structured SOAP note fields, used when historyType=PROGRESS_NOTE.
+        private String soapSubjective;
+        private String soapObjective;
+        private String soapAssessment;
+        private String soapPlan;
     }
 
     @Data
@@ -325,6 +342,8 @@ public class RecordController {
         private String route;
         private String instructions;
         private Integer displayOrder;
+        // Set when the prescriber acknowledged & overrode a recorded drug allergy.
+        private String allergyOverrideReason;
     }
 
     @Data
@@ -333,6 +352,11 @@ public class RecordController {
         private String historyType;
         private String description;
         private String instructions;
+        // Structured SOAP note fields — populated only for PROGRESS_NOTE records.
+        private String soapSubjective;
+        private String soapObjective;
+        private String soapAssessment;
+        private String soapPlan;
         private String nextVisitDate;
         private String createdAt;
         private String admissionId;
@@ -367,6 +391,13 @@ public class RecordController {
         private String route;
         private String instructions;
         private Integer displayOrder;
+        /** ACTIVE or STOPPED — order lifecycle state from PrescriptionItem. */
+        private String status;
+        /** Set only when status is STOPPED. */
+        private String stoppedAt;
+        private String stopReason;
+        /** Set when the prescriber overrode a recorded drug allergy for this item. */
+        private String allergyOverrideReason;
     }
 
     @Data

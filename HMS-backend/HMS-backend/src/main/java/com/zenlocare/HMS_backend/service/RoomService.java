@@ -33,9 +33,12 @@ public class RoomService {
     private final DepartmentRepository departmentRepository;
     private final AdmissionRepository admissionRepository;
     private final BedRepository bedRepository;
+    private final RoomTypeConfigRepository roomTypeConfigRepository;
 
     public List<RoomDto> getRoomsForHospital(UUID hospitalId) {
-        List<Room> rooms = roomRepository.findByHospitalId(hospitalId);
+        List<Room> rooms = roomRepository.findByHospitalId(hospitalId).stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
+                .collect(Collectors.toList());
         // Batch-fetch active admissions for this hospital (one query) and key
         // them by room_id, so each RoomDto can pick up attender + admissionId
         // without per-room round-trips.
@@ -45,8 +48,14 @@ public class RoomService {
                 byRoomId.put(a.getRoom().getId(), a);
             }
         }
+        // Fetch categories and configurations for all room types
+        Map<String, RoomTypeConfig> configMap = new HashMap<>();
+        for (RoomTypeConfig cfg : roomTypeConfigRepository.findActiveByHospitalId(hospitalId)) {
+            configMap.put(cfg.getCode(), cfg);
+        }
+
         return rooms.stream()
-                .map(r -> RoomDto.fromEntity(r, byRoomId.get(r.getId())))
+                .map(r -> RoomDto.fromEntity(r, byRoomId.get(r.getId()), configMap.get(r.getRoomType())))
                 .collect(Collectors.toList());
     }
 
@@ -70,6 +79,27 @@ public class RoomService {
                 .map(b -> BedDto.fromEntity(b, byBedId.get(b.getId())))
                 .collect(Collectors.toList());
     }
+
+    public List<BedDto> getAvailableBeds(UUID hospitalId) {
+        return bedRepository.fetchAvailableBeds(hospitalId, com.zenlocare.HMS_backend.entity.BedStatus.AVAILABLE).stream()
+                .map(bed -> BedDto.fromEntity(bed, null))
+                .collect(Collectors.toList());
+    }
+
+    public List<BedDto> getAllActiveBeds(UUID hospitalId) {
+        List<Bed> beds = bedRepository.fetchAllActiveBeds(hospitalId);
+        Map<Long, Admission> byBedId = new HashMap<>();
+        for (Bed b : beds) {
+            if (b.getStatus() == BedStatus.OCCUPIED) {
+                admissionRepository.findByBedIdAndStatus(b.getId(), AdmissionStatus.ADMITTED)
+                        .ifPresent(a -> byBedId.put(b.getId(), a));
+            }
+        }
+        return beds.stream()
+                .map(b -> BedDto.fromEntity(b, byBedId.get(b.getId())))
+                .collect(Collectors.toList());
+    }
+
 
     private String generateRoomCode(Hospital hospital) {
         String hospPrefix = HospitalIdPrefix.of(hospital);
@@ -242,7 +272,7 @@ public class RoomService {
                 .performedBy(performedBy)
                 .build());
 
-        return RoomDto.fromEntity(saved, activeAdmission.orElse(null));
+        return RoomDto.fromEntity(saved, activeAdmission.orElse(null), getRoomTypeConfig(saved.getRoomType(), hospitalId));
     }
 
     @Transactional
@@ -293,7 +323,13 @@ public class RoomService {
                 .build());
 
         // Active admission is now DISCHARGED; pass null so the DTO clears attender.
-        return RoomDto.fromEntity(saved, null);
+        return RoomDto.fromEntity(saved, null, getRoomTypeConfig(saved.getRoomType(), hospitalId));
+    }
+
+    private RoomTypeConfig getRoomTypeConfig(String roomType, UUID hospitalId) {
+        return roomTypeConfigRepository.findByHospitalIdAndCode(hospitalId, roomType)
+            .orElseGet(() -> roomTypeConfigRepository.findSystemByCode(roomType)
+                .orElse(null));
     }
 
     @Transactional

@@ -35,4 +35,8 @@ public class HospitalFloor {
     @org.hibernate.annotations.BatchSize(size = 50)
     @Builder.Default
     private List<HospitalWard> wards = new ArrayList<>();
+
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
 }

@@ -49,6 +49,21 @@ public class PatientRecord {
     @Column(columnDefinition = "TEXT")
     private String instructions;
 
+    // Structured SOAP note fields (Subjective/Objective/Assessment/Plan), used
+    // by PROGRESS_NOTE records. All nullable — non-progress-note records and
+    // legacy progress notes leave these unset and rely on `description` instead.
+    @Column(name = "soap_subjective", columnDefinition = "TEXT")
+    private String soapSubjective;
+
+    @Column(name = "soap_objective", columnDefinition = "TEXT")
+    private String soapObjective;
+
+    @Column(name = "soap_assessment", columnDefinition = "TEXT")
+    private String soapAssessment;
+
+    @Column(name = "soap_plan", columnDefinition = "TEXT")
+    private String soapPlan;
+
     @Column(name = "next_visit_date")
     private LocalDateTime nextVisitDate;
 

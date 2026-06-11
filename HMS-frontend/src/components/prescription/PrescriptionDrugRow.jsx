@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { drugsApi } from "@/utils/api";
 import { Search, Trash2, AlertCircle, AlertTriangle } from "lucide-react";
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import { fmtDateMed } from "@/utils/date";
 import "@/styles/modules/prescription-table.css";
 
 // Standard schedule shorthand used in Indian clinical practice.
@@ -60,6 +61,7 @@ export function newBlankDrugItem() {
     dose: "", frequency: "BD", durationDays: "", quantity: "", route: "ORAL",
     instructions: "",
     quantityTouched: false,
+    allergyAck: "",
   };
 }
 
@@ -78,10 +80,11 @@ export function drugItemToRequest(it, displayOrder) {
     route: it.route || undefined,
     instructions: it.instructions || undefined,
     displayOrder,
+    allergyOverrideReason: it.allergyAck?.trim() || undefined,
   };
 }
 
-export function PrescriptionDrugRow({ index, item, allergyMatch, onChange, onRemove, isLastRemovable }) {
+export function PrescriptionDrugRow({ index, item, allergyMatch, duplicateOrder, onChange, onRemove, isLastRemovable }) {
   const { user } = useAuth();
   const [query, setQuery] = useState(item.drugName);
   const [results, setResults] = useState([]);
@@ -136,7 +139,7 @@ export function PrescriptionDrugRow({ index, item, allergyMatch, onChange, onRem
   const isAutoQty = !item.quantityTouched && !!item.quantity;
 
   return (
-    <div className={`hms-rx-row${allergyMatch ? " is-allergy-match" : ""}`}>
+    <div className={`hms-rx-row${allergyMatch ? " is-allergy-match" : ""}${duplicateOrder ? " is-duplicate-match" : ""}`}>
 
       {/* ── Main fields row ── */}
       <div className="hms-rx-row__cells">
@@ -164,8 +167,26 @@ export function PrescriptionDrugRow({ index, item, allergyMatch, onChange, onRem
             return detail ? <p className="hms-rx-drug-linked">{detail}</p> : null;
           })()}
           {allergyMatch && (
-            <p className="hms-rx-drug-allergy-warn">
-              <AlertTriangle size={9} /> Patient has a recorded allergy to this drug
+            <div className="hms-rx-allergy-ack">
+              <p className="hms-rx-drug-allergy-warn">
+                <AlertTriangle size={9} /> Allergy: {allergyMatch.allergen}
+                {allergyMatch.reaction ? ` — ${allergyMatch.reaction}` : ""}
+              </p>
+              <input
+                type="text"
+                value={item.allergyAck}
+                onChange={(e) => onChange("allergyAck", e.target.value)}
+                placeholder="Reason for prescribing despite this allergy…"
+                className="hms-rx-allergy-ack-input"
+              />
+            </div>
+          )}
+          {duplicateOrder && (
+            <p className="hms-rx-drug-duplicate-warn">
+              <AlertTriangle size={9} /> Active order already exists
+              {[duplicateOrder.dose, duplicateOrder.frequency].filter(Boolean).join(" · ") &&
+                ` — ${[duplicateOrder.dose, duplicateOrder.frequency].filter(Boolean).join(" · ")}`}
+              {duplicateOrder.prescribedAt && ` (since ${fmtDateMed(duplicateOrder.prescribedAt)})`}
             </p>
           )}
           {!item.drugId && query.trim().length >= 2 && (

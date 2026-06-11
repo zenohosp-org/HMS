@@ -24,6 +24,11 @@ public class BedDto {
     private String attenderPhone;
     private String attenderRelationship;
 
+    private String wardName;
+    private String roomName;
+    private String roomType;
+    private Long roomId;
+
     public static BedDto fromEntity(Bed bed) {
         return fromEntity(bed, null);
     }
@@ -42,6 +47,10 @@ public class BedDto {
                 .attenderName(activeAdmission != null ? activeAdmission.getAttenderName() : null)
                 .attenderPhone(activeAdmission != null ? activeAdmission.getAttenderPhone() : null)
                 .attenderRelationship(activeAdmission != null ? activeAdmission.getAttenderRelationship() : null)
+                .wardName(bed.getWard() != null ? bed.getWard().getName() : (bed.getRoom() != null && bed.getRoom().getHospitalWard() != null ? bed.getRoom().getHospitalWard().getName() : null))
+                .roomName(bed.getRoom() != null ? bed.getRoom().getRoomNumber() : null)
+                .roomType(bed.getRoom() != null ? bed.getRoom().getRoomType() : (bed.getWard() != null ? bed.getWard().getRoomType() : null))
+                .roomId(bed.getRoom() != null ? bed.getRoom().getId() : null)
                 .build();
     }
 }

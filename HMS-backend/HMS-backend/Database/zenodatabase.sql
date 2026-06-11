@@ -2115,3 +2115,20 @@ CREATE TABLE IF NOT EXISTS public.patient_referrals (
     CONSTRAINT chk_referral_status   CHECK (status   IN ('PENDING','ACCEPTED','COMPLETED','CANCELLED'))
 );
 CREATE INDEX IF NOT EXISTS idx_patient_referrals_admission ON public.patient_referrals(admission_id);
+
+-- ── GST Rates (per-hospital tax rate presets) ────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.gst_rates (
+    id            UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+    hospital_id   UUID          NOT NULL REFERENCES public.hospitals(id) ON DELETE CASCADE,
+    name          VARCHAR(100)  NOT NULL,
+    rate_percent  NUMERIC(5,2)  NOT NULL,
+    cgst_percent  NUMERIC(5,2)  NOT NULL DEFAULT 0,
+    sgst_percent  NUMERIC(5,2)  NOT NULL DEFAULT 0,
+    igst_percent  NUMERIC(5,2)  NOT NULL DEFAULT 0,
+    cess_percent  NUMERIC(5,2)  NOT NULL DEFAULT 0,
+    is_default    BOOLEAN       NOT NULL DEFAULT FALSE,
+    is_active     BOOLEAN       NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMP     NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_gst_rate_percent CHECK (rate_percent >= 0 AND rate_percent <= 100)
+);
+CREATE INDEX IF NOT EXISTS idx_gst_rates_hospital ON public.gst_rates(hospital_id);

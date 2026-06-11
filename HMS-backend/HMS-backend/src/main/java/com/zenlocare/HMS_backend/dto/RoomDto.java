@@ -23,6 +23,9 @@ public class RoomDto {
     private String roomNumber;
     private String roomCode;
     private String roomType;
+    private String roomCategory;
+    private Boolean hasBeds;
+    private Boolean hasDailyCharge;
     private String status;
     private BigDecimal pricePerDay;
 
@@ -57,7 +60,7 @@ public class RoomDto {
         private String phone;
     }
 
-    public static RoomDto fromEntity(Room room, Admission activeAdmission) {
+    public static RoomDto fromEntity(Room room, Admission activeAdmission, com.zenlocare.HMS_backend.entity.RoomTypeConfig config) {
         PatientLite p = null;
         if (room.getCurrentPatient() != null) {
             p = PatientLite.builder()
@@ -73,6 +76,9 @@ public class RoomDto {
                 .roomNumber(room.getRoomNumber())
                 .roomCode(room.getRoomCode())
                 .roomType(room.getRoomType())
+                .roomCategory(config != null ? config.getCategory() : "WARD")
+                .hasBeds(config != null ? config.getHasBeds() : true)
+                .hasDailyCharge(config != null ? config.getHasDailyCharge() : true)
                 .status(room.getStatus() != null ? room.getStatus().name() : null)
                 .pricePerDay(room.getPricePerDay())
                 .currentPatient(p)

@@ -92,7 +92,8 @@ public class AdmissionService {
         if (req.getBedId() != null) {
             bed = bedRepository.findById(req.getBedId())
                     .orElseThrow(() -> new RuntimeException("Bed not found"));
-            assertSameHospital(req.getHospitalId(), bed.getRoom().getHospital().getId(), "Bed");
+            Hospital bedHospital = bed.getRoom() != null ? bed.getRoom().getHospital() : bed.getWard().getFloor().getBuilding().getHospital();
+            assertSameHospital(req.getHospitalId(), bedHospital.getId(), "Bed");
             if (bed.getStatus() != BedStatus.AVAILABLE) {
                 throw new RuntimeException("Selected bed is not available");
             }

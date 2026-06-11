@@ -163,6 +163,48 @@
     border-left: 3px solid #f87171;
 }
 
+.hms-rx-allergy-ack {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.hms-rx-allergy-ack-input {
+    width: 100%;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #7f1d1d;
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: 11px;
+    font-family: var(--hms-font-family);
+}
+
+.hms-rx-allergy-ack-input:focus {
+    outline: none;
+    border-color: #b91c1c;
+}
+
+.hms-rx-allergy-ack-input::placeholder {
+    color: #b91c1c;
+    opacity: 0.6;
+}
+
+.hms-rx-drug-duplicate-warn {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #b45309;
+    margin: 0;
+}
+
+.hms-rx-row.is-duplicate-match {
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+}
+
 /* Typeahead results dropdown */
 .hms-rx-drug-results {
     position: absolute;
