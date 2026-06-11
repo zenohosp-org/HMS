@@ -221,6 +221,7 @@ public class DataSeeder implements CommandLineRunner {
         backfillAppointmentTokens();
         migrateRoomAttenderToAdmission();
         ensureRoomOccupancyColumns();
+        ensureBedColumns();
         ensurePrescriptionSchema();
         ensureAttachmentSchema();
         seedRoomTypeConfigs();
@@ -293,6 +294,30 @@ public class DataSeeder implements CommandLineRunner {
             "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS status_id INTEGER",
             "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS price_per_day NUMERIC(10,2)",
             "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP",
+        };
+        for (String sql : alters) {
+            try {
+                jdbcTemplate.execute(sql);
+            } catch (Exception e) {
+                log.warn("Skipped: {} — {}", sql, e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Same idempotent column-assertion for the beds table. Bed entity gained
+     * patient_id, status_id, ward_id, is_active over time and drifted
+     * environments are missing one or more. Each ALTER is IF NOT EXISTS and
+     * try-guarded so one bad statement doesn't tank the rest.
+     */
+    private void ensureBedColumns() {
+        String[] alters = {
+            "ALTER TABLE beds ADD COLUMN IF NOT EXISTS room_id BIGINT",
+            "ALTER TABLE beds ADD COLUMN IF NOT EXISTS ward_id BIGINT",
+            "ALTER TABLE beds ADD COLUMN IF NOT EXISTS patient_id INTEGER",
+            "ALTER TABLE beds ADD COLUMN IF NOT EXISTS status_id INTEGER",
+            "ALTER TABLE beds ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true",
+            "ALTER TABLE beds ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP",
         };
         for (String sql : alters) {
             try {
