@@ -42,7 +42,17 @@ if (import.meta.env.VITE_DEV_MOCK_AUTH === 'true' && import.meta.env.VITE_MOCK_J
 
 const unauthorizedRedirect = (err) => {
   if (err.response?.status === 401) {
-    if (!err.config?.url?.includes("/auth/me")) {
+    const url = err.config?.url || "";
+    // Don't bounce on /auth/me — the AuthContext handles 401 there itself
+    // (setUser(null) + isLoading=false). Don't bounce when already on /login
+    // either — any 401 from a page mounted at the login route would just
+    // reload /login, and providers like ReferenceDataProvider that fire
+    // pre-auth would put the page into an infinite refresh loop.
+    if (
+      !url.includes("/auth/me") &&
+      typeof window !== "undefined" &&
+      !window.location.pathname.startsWith("/login")
+    ) {
       window.location.href = "/login";
     }
   }
