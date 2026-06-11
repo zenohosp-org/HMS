@@ -6,6 +6,9 @@ import com.zenlocare.HMS_backend.controller.InfrastructureController.RoomDto;
 import com.zenlocare.HMS_backend.controller.InfrastructureController.WardDto;
 import com.zenlocare.HMS_backend.entity.*;
 import com.zenlocare.HMS_backend.repository.*;
+import com.zenlocare.HMS_backend.exception.InfrastructureValidationException;
+import com.zenlocare.HMS_backend.controller.InfrastructureController.ValidationRequest;
+import com.zenlocare.HMS_backend.controller.InfrastructureController.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,9 @@ public class InfrastructureService {
     private final RoomRepository roomRepo;
     private final BedRepository bedRepo;
     private final StoreRepository storeRepo;
+    private final AdmissionRepository admissionRepo;
+    private final OtBookingRepository otBookingRepo;
+    private final AssetRepository assetRepo;
 
     @Transactional(readOnly = true)
     public List<BuildingDto> get(UUID hospitalId, boolean includeInactive) {
@@ -45,6 +51,45 @@ public class InfrastructureService {
         Set<Long> activeWardIds = new HashSet<>();
         Set<Long> activeRoomIds = new HashSet<>();
         Set<Long> activeBedIds = new HashSet<>();
+
+        // 1. First, we need to collect all Room IDs and Bed IDs that are going to be removed
+        // so we can validate them in one pass before changing anything in DB.
+        List<Long> roomsToRemove = new ArrayList<>();
+        List<Long> bedsToRemove = new ArrayList<>();
+        
+        // Let's populate active IDs by simulating the payload traversal without saving
+        Set<Long> incomingRoomIds = new HashSet<>();
+        Set<Long> incomingBedIds = new HashSet<>();
+        for (BuildingDto bDto : dtos) {
+            for (FloorDto fDto : bDto.getFloors()) {
+                for (WardDto wDto : fDto.getWards()) {
+                    for (RoomDto rDto : wDto.getRooms()) {
+                        if (rDto.getId() != null) incomingRoomIds.add(rDto.getId());
+                        for (com.zenlocare.HMS_backend.controller.InfrastructureController.InfraBedDto b : rDto.getBeds()) {
+                            if (b.getId() != null) incomingBedIds.add(b.getId());
+                        }
+                    }
+                    for (com.zenlocare.HMS_backend.controller.InfrastructureController.InfraBedDto b : wDto.getBeds()) {
+                        if (b.getId() != null) incomingBedIds.add(b.getId());
+                    }
+                }
+            }
+        }
+        
+        List<Room> allPrevInfraRooms = roomRepo.findByHospitalIdAndHospitalWardIsNotNull(hospitalId);
+        for (Room room : allPrevInfraRooms) {
+            if (!incomingRoomIds.contains(room.getId()) && Boolean.TRUE.equals(room.getIsActive())) {
+                roomsToRemove.add(room.getId());
+            }
+        }
+        // Since we don't have a hospital-wide bed query, we will rely on validation inside the save loop
+        // But the prompt wants us to block the SAVE flow.
+        ValidationRequest vReq = new ValidationRequest();
+        vReq.setRoomIds(roomsToRemove);
+        // Wait, the validation logic needs beds too. 
+        // Let's defer beds to a lazy check, or we can just run the check directly inside the save loops below.
+        // Actually, the prompt says: "In InfrastructureService.save(), before marking any room or bed as is_active = false, run these checks:"
+        // So we can just do it right where they are marked.
 
         for (int i = 0; i < dtos.size(); i++) {
             BuildingDto bDto = dtos.get(i);
@@ -152,7 +197,10 @@ public class InfrastructureService {
                         }
                         
                         for (Bed bed : beds) {
-                            if (!activeBedIds.contains(bed.getId())) {
+                            if (!activeBedIds.contains(bed.getId()) && Boolean.TRUE.equals(bed.getIsActive())) {
+                                if (admissionRepo.existsByBedIdAndStatus(bed.getId(), AdmissionStatus.ADMITTED)) {
+                                    throw new InfrastructureValidationException(List.of("Bed '" + bed.getBedNumber() + "' cannot be removed: active admission"), List.of());
+                                }
                                 bed.setIsActive(false);
                                 bedRepo.save(bed);
                             }
@@ -199,7 +247,10 @@ public class InfrastructureService {
                         }
 
                         for (Bed bed : wardBeds) {
-                            if (!activeBedIds.contains(bed.getId())) {
+                            if (!activeBedIds.contains(bed.getId()) && Boolean.TRUE.equals(bed.getIsActive())) {
+                                if (admissionRepo.existsByBedIdAndStatus(bed.getId(), AdmissionStatus.ADMITTED)) {
+                                    throw new InfrastructureValidationException(List.of("Bed '" + bed.getBedNumber() + "' cannot be removed: active admission"), List.of());
+                                }
                                 bed.setIsActive(false);
                                 bedRepo.save(bed);
                             }
@@ -212,6 +263,12 @@ public class InfrastructureService {
         List<Room> prevInfraRooms = roomRepo.findByHospitalIdAndHospitalWardIsNotNull(hospitalId);
         for (Room room : prevInfraRooms) {
             if (!activeRoomIds.contains(room.getId()) && Boolean.TRUE.equals(room.getIsActive())) {
+                if (admissionRepo.existsByRoomIdAndStatus(room.getId(), AdmissionStatus.ADMITTED)) {
+                    throw new InfrastructureValidationException(List.of("Room '" + room.getRoomNumber() + "' cannot be removed: active admission"), List.of());
+                }
+                if (otBookingRepo.existsByRoomIdAndStatusNotIn(room.getId(), List.of("COMPLETED", "CANCELLED"))) {
+                    throw new InfrastructureValidationException(List.of("Room '" + room.getRoomNumber() + "' cannot be removed: active OT booking"), List.of());
+                }
                 room.setIsActive(false);
                 roomRepo.save(room);
                 
@@ -243,6 +300,46 @@ public class InfrastructureService {
         }
 
         return get(hospitalId, false);
+    }
+
+    @Transactional(readOnly = true)
+    public ValidationResponse validateRemoval(ValidationRequest req) {
+        List<String> reasons = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+
+        if (req.getRoomIds() != null && !req.getRoomIds().isEmpty()) {
+            for (Long roomId : req.getRoomIds()) {
+                Room room = roomRepo.findById(roomId).orElse(null);
+                if (room != null) {
+                    if (admissionRepo.existsByRoomIdAndStatus(roomId, AdmissionStatus.ADMITTED)) {
+                        reasons.add(String.format("Room '%s' cannot be removed: active admission", room.getRoomNumber()));
+                    }
+                    if (otBookingRepo.existsByRoomIdAndStatusNotIn(roomId, List.of("COMPLETED", "CANCELLED"))) {
+                        reasons.add(String.format("Room '%s' cannot be removed: active OT booking", room.getRoomNumber()));
+                    }
+                }
+            }
+            if (assetRepo.existsByRoomIdIn(req.getRoomIds())) {
+                warnings.add("One or more rooms have assigned assets. They will become unlocated.");
+            }
+        }
+
+        if (req.getBedIds() != null && !req.getBedIds().isEmpty()) {
+            for (Long bedId : req.getBedIds()) {
+                Bed bed = bedRepo.findById(bedId).orElse(null);
+                if (bed != null) {
+                    if (admissionRepo.existsByBedIdAndStatus(bedId, AdmissionStatus.ADMITTED)) {
+                        reasons.add(String.format("Bed '%s' cannot be removed: active admission", bed.getBedNumber()));
+                    }
+                }
+            }
+        }
+
+        ValidationResponse res = new ValidationResponse();
+        res.setBlocked(!reasons.isEmpty());
+        res.setReasons(reasons);
+        res.setWarnings(warnings);
+        return res;
     }
 
     private BuildingDto toDto(HospitalBuilding b, UUID hospitalId, boolean includeInactive) {
@@ -293,23 +390,41 @@ public class InfrastructureService {
                     rd.setId(r.getId());
                     rd.setName(r.getRoomNumber());
                     rd.setIsActive(r.getIsActive());
-                    List<String> bedNames = bedRepo.findByRoomIdOrderByBedNumberAsc(r.getId())
+                    List<Bed> activeBeds = bedRepo.findByRoomIdOrderByBedNumberAsc(r.getId())
                             .stream()
                             .filter(bed -> includeInactive || Boolean.TRUE.equals(bed.getIsActive()))
-                            .map(Bed::getBedNumber)
                             .collect(Collectors.toList());
+                    
+                    List<String> bedNames = activeBeds.stream().map(Bed::getBedNumber).collect(Collectors.toList());
+                    List<com.zenlocare.HMS_backend.controller.InfrastructureController.InfraBedDto> infraBeds = activeBeds.stream().map(bed -> {
+                        com.zenlocare.HMS_backend.controller.InfrastructureController.InfraBedDto ib = new com.zenlocare.HMS_backend.controller.InfrastructureController.InfraBedDto();
+                        ib.setId(bed.getId());
+                        ib.setName(bed.getBedNumber());
+                        return ib;
+                    }).collect(Collectors.toList());
+                    
                     rd.setBedNames(bedNames);
+                    rd.setBeds(infraBeds);
                     return rd;
                 })
                 .collect(Collectors.toList());
         dto.setRooms(rooms);
         
-        List<String> wardBedNames = bedRepo.findByWardIdOrderByBedNumberAsc(w.getId())
+        List<Bed> activeWardBeds = bedRepo.findByWardIdOrderByBedNumberAsc(w.getId())
                 .stream()
                 .filter(bed -> bed.getRoom() == null && (includeInactive || Boolean.TRUE.equals(bed.getIsActive())))
-                .map(Bed::getBedNumber)
                 .collect(Collectors.toList());
+                
+        List<String> wardBedNames = activeWardBeds.stream().map(Bed::getBedNumber).collect(Collectors.toList());
+        List<com.zenlocare.HMS_backend.controller.InfrastructureController.InfraBedDto> wardInfraBeds = activeWardBeds.stream().map(bed -> {
+            com.zenlocare.HMS_backend.controller.InfrastructureController.InfraBedDto ib = new com.zenlocare.HMS_backend.controller.InfrastructureController.InfraBedDto();
+            ib.setId(bed.getId());
+            ib.setName(bed.getBedNumber());
+            return ib;
+        }).collect(Collectors.toList());
+        
         dto.setBedNames(wardBedNames);
+        dto.setBeds(wardInfraBeds);
         
         return dto;
     }

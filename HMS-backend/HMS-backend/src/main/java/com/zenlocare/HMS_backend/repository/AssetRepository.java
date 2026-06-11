@@ -11,6 +11,8 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
 
     List<Asset> findByHospitalIdAndRoomId(UUID hospitalId, Long roomId);
 
+    boolean existsByRoomIdIn(List<Long> roomIds);
+
     // Assets not assigned to any room yet — available for room assignment
     @Query("SELECT a FROM Asset a WHERE a.hospitalId = :hospitalId AND a.roomId IS NULL AND a.status != 'DISPOSED' ORDER BY a.assetName ASC")
     List<Asset> findAvailableForRoom(UUID hospitalId);

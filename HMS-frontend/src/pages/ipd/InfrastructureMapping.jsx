@@ -133,6 +133,7 @@ export default function InfrastructureMapping() {
     dependencies: [],
   });
   const [confirmText, setConfirmText] = useState("");
+  const [acknowledgeWarnings, setAcknowledgeWarnings] = useState(false);
   const [addZoneRoomModal, setAddZoneRoomModal] = useState({ 
     isOpen: false, target: 'floor', bIdx: null, fIdx: null, wIdx: null, selectedType: "ward", name: "", roomType: "GENERAL", dailyCharge: "", bedCount: 1 
   });
@@ -191,11 +192,13 @@ export default function InfrastructureMapping() {
                     roomType: w.roomType ?? "GENERAL",
                     dailyCharge: w.dailyCharge ?? "",
                     bedNames: w.bedNames ?? [],
+                    beds: w.beds ?? [],
                     rooms: (w.rooms ?? []).map((r) => ({
                       id: r.id,
                       name: r.name,
                       isActive: r.isActive,
                       bedNames: r.bedNames ?? [],
+                      beds: r.beds ?? [],
                     })),
                   };
                 }),
@@ -278,17 +281,54 @@ export default function InfrastructureMapping() {
     }).filter(b => b.floors.length > 0 || b.name.toLowerCase().includes(query));
   }, [buildings, searchQuery]);
 
-  const confirmReduction = (message, onConfirm, dependencies = []) => {
-    setConfirmText("");
-    setConfirmModal({
-      show: true,
-      message,
-      onConfirm: () => {
-        onConfirm();
-        setConfirmModal({ show: false, message: "", onConfirm: null, dependencies: [] });
-      },
-      dependencies
-    });
+  const confirmReduction = async (message, onConfirm, dependencies = [], roomIds = [], bedIds = []) => {
+    if (roomIds.length > 0 || bedIds.length > 0) {
+      try {
+        const validation = await infrastructureApi.validateRemoval({ roomIds, bedIds });
+        setConfirmText("");
+        setAcknowledgeWarnings(false);
+        setConfirmModal({
+          show: true,
+          message,
+          onConfirm: () => {
+            onConfirm();
+            setConfirmModal({ show: false, message: "", onConfirm: null, dependencies: [] });
+          },
+          dependencies,
+          validation
+        });
+      } catch (err) {
+        if (err.response?.status === 409) {
+          setConfirmText("");
+          setAcknowledgeWarnings(false);
+          setConfirmModal({
+            show: true,
+            message,
+            onConfirm: () => {
+              onConfirm();
+              setConfirmModal({ show: false, message: "", onConfirm: null, dependencies: [] });
+            },
+            dependencies,
+            validation: err.response.data
+          });
+        } else {
+          notify("Failed to validate infrastructure removal", "error");
+        }
+      }
+    } else {
+      setConfirmText("");
+      setAcknowledgeWarnings(false);
+      setConfirmModal({
+        show: true,
+        message,
+        onConfirm: () => {
+          onConfirm();
+          setConfirmModal({ show: false, message: "", onConfirm: null, dependencies: [] });
+        },
+        dependencies,
+        validation: null
+      });
+    }
   };
 
   const handleAddBuilding = () => {
@@ -373,14 +413,18 @@ export default function InfrastructureMapping() {
     };
 
     let floorCount = b.floors.length;
-    let wardCount = 0; let roomCount = 0; let bedCount = 0;
+    let wardCount = 0;    let roomCount = 0; let bedCount = 0;
+    let roomIds = []; let bedIds = [];
     b.floors.forEach(f => {
       wardCount += (f.wards || []).length;
       (f.wards || []).forEach(w => {
         roomCount += (w.rooms || []).length;
         (w.rooms || []).forEach(r => {
+          if (r.id) roomIds.push(r.id);
           bedCount += (r.bedNames || []).length;
+          (r.beds || []).forEach(bd => { if (bd.id) bedIds.push(bd.id); });
         });
+        (w.beds || []).forEach(bd => { if (bd.id) bedIds.push(bd.id); });
       });
     });
 
@@ -393,7 +437,9 @@ export default function InfrastructureMapping() {
     confirmReduction(
       `Are you sure you want to delete ${b.name || `Building ${bIdx + 1}`}? This will permanently discard all configured floors, wards, and rooms under it.`,
       executeDelete,
-      deps
+      deps,
+      roomIds,
+      bedIds
     );
   };
 
@@ -409,11 +455,15 @@ export default function InfrastructureMapping() {
 
     let wardCount = (f.wards || []).length;
     let roomCount = 0; let bedCount = 0;
+    let roomIds = []; let bedIds = [];
     (f.wards || []).forEach(w => {
       roomCount += (w.rooms || []).length;
       (w.rooms || []).forEach(r => {
+        if (r.id) roomIds.push(r.id);
         bedCount += (r.bedNames || []).length;
+        (r.beds || []).forEach(bd => { if (bd.id) bedIds.push(bd.id); });
       });
+      (w.beds || []).forEach(bd => { if (bd.id) bedIds.push(bd.id); });
     });
 
     const deps = [];
@@ -424,7 +474,9 @@ export default function InfrastructureMapping() {
     confirmReduction(
       `Are you sure you want to delete ${f.name || `Floor ${fIdx + 1}`}? This will permanently discard all configured wards and rooms on it.`,
       executeDelete,
-      deps
+      deps,
+      roomIds,
+      bedIds
     );
   };
 
@@ -440,9 +492,13 @@ export default function InfrastructureMapping() {
 
     let roomCount = (ward.rooms || []).length;
     let bedCount = 0;
+    let roomIds = []; let bedIds = [];
     (ward.rooms || []).forEach(r => {
+      if (r.id) roomIds.push(r.id);
       bedCount += (r.bedNames || []).length;
+      (r.beds || []).forEach(bd => { if (bd.id) bedIds.push(bd.id); });
     });
+    (ward.beds || []).forEach(bd => { if (bd.id) bedIds.push(bd.id); });
 
     const deps = [];
     if (roomCount > 0) deps.push(`${roomCount} Room${roomCount !== 1 ? 's' : ''}`);
@@ -451,7 +507,9 @@ export default function InfrastructureMapping() {
     confirmReduction(
       `Are you sure you want to delete ${ward.name || `Ward ${wIdx + 1}`}? This will permanently discard all configured rooms in it.`,
       executeDelete,
-      deps
+      deps,
+      roomIds,
+      bedIds
     );
   };
 
@@ -468,23 +526,31 @@ export default function InfrastructureMapping() {
     };
 
     let bedCount = (room.bedNames || []).length;
+    let roomIds = room.id ? [room.id] : [];
+    let bedIds = (room.beds || []).filter(b => b.id).map(b => b.id);
     const deps = [];
     if (bedCount > 0) deps.push(`${bedCount} Bed${bedCount !== 1 ? 's' : ''}`);
 
     confirmReduction(
       `Are you sure you want to delete ${room.name || `Room ${rIdx + 1}`}? This will permanently discard all configured beds inside it.`,
       executeDelete,
-      deps
+      deps,
+      roomIds,
+      bedIds
     );
   };
 
   const removeWardBed = (bIdx, fIdx, wIdx, bItemIdx) => {
-    const bedName = buildings[bIdx].floors[fIdx].wards[wIdx].bedNames[bItemIdx];
+    const ward = buildings[bIdx].floors[fIdx].wards[wIdx];
+    const bedName = ward.bedNames[bItemIdx];
+    const bedId = (ward.beds && ward.beds[bItemIdx]) ? ward.beds[bItemIdx].id : null;
+    let bedIds = bedId ? [bedId] : [];
     const executeDelete = () => {
       setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
         ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
           ...f, wards: f.wards.map((w, k) => k !== wIdx ? w : {
-            ...w, bedNames: (w.bedNames || []).filter((_, idx) => idx !== bItemIdx)
+            ...w, bedNames: (w.bedNames || []).filter((_, idx) => idx !== bItemIdx),
+                  beds: (w.beds || []).filter((_, idx) => idx !== bItemIdx)
           })
         })
       }));
@@ -492,18 +558,25 @@ export default function InfrastructureMapping() {
 
     confirmReduction(
       `Are you sure you want to delete ${bedName || `Bed ${bItemIdx + 1}`}?`,
-      executeDelete
+      executeDelete,
+      [],
+      [],
+      bedIds
     );
   };
 
   const removeBed = (bIdx, fIdx, wIdx, rIdx, bItemIdx) => {
-    const bedName = buildings[bIdx].floors[fIdx].wards[wIdx].rooms[rIdx].bedNames[bItemIdx];
+    const room = buildings[bIdx].floors[fIdx].wards[wIdx].rooms[rIdx];
+    const bedName = room.bedNames[bItemIdx];
+    const bedId = (room.beds && room.beds[bItemIdx]) ? room.beds[bItemIdx].id : null;
+    let bedIds = bedId ? [bedId] : [];
     const executeDelete = () => {
       setBuildings((p) => p.map((b, i) => i !== bIdx ? b : {
         ...b, floors: b.floors.map((f, j) => j !== fIdx ? f : {
           ...f, wards: f.wards.map((w, k) => k !== wIdx ? w : {
             ...w, rooms: w.rooms.map((r, l) => l !== rIdx ? r : {
-              ...r, bedNames: r.bedNames.filter((_, idx) => idx !== bItemIdx)
+              ...r, bedNames: r.bedNames.filter((_, idx) => idx !== bItemIdx),
+                    beds: (r.beds || []).filter((_, idx) => idx !== bItemIdx)
             })
           })
         })
@@ -512,7 +585,10 @@ export default function InfrastructureMapping() {
 
     confirmReduction(
       `Are you sure you want to delete ${bedName || `Bed ${bItemIdx + 1}`}?`,
-      executeDelete
+      executeDelete,
+      [],
+      [],
+      bedIds
     );
   };
 
@@ -1451,19 +1527,59 @@ export default function InfrastructureMapping() {
                 </div>
               </div>
             )}
-            <div className="hms-infra-modal__input-group">
-              <label className="block text-13 font-medium text-slate-700 mb-1.5">
-                Type <strong>DELETE</strong> to confirm
-              </label>
-              <input
-                type="text"
-                className="hms-infra-modal__input"
-                placeholder="DELETE"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-              />
-            </div>
-            <div className="hms-infra-modal__footer">
+            {confirmModal.validation && confirmModal.validation.blocked && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <h4 className="text-13 font-semibold text-red-700 flex items-center gap-1.5 mb-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Cannot Remove Infrastructure
+                </h4>
+                <ul className="list-disc list-inside text-13 text-red-600 space-y-1">
+                  {confirmModal.validation.reasons.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {confirmModal.validation && !confirmModal.validation.blocked && confirmModal.validation.warnings && confirmModal.validation.warnings.length > 0 && (
+              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="text-13 font-semibold text-amber-700 flex items-center gap-1.5 mb-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Warnings
+                </h4>
+                <ul className="list-disc list-inside text-13 text-amber-600 space-y-1 mb-3">
+                  {confirmModal.validation.warnings.map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                </ul>
+                <label className="flex items-center gap-2 text-13 font-medium text-amber-800 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acknowledgeWarnings}
+                    onChange={(e) => setAcknowledgeWarnings(e.target.checked)}
+                    className="rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  I acknowledge these warnings
+                </label>
+              </div>
+            )}
+
+            {!confirmModal.validation?.blocked && (
+              <div className="hms-infra-modal__input-group mt-4">
+                <label className="block text-13 font-medium text-slate-700 mb-1.5">
+                  Type <strong>DELETE</strong> to confirm
+                </label>
+                <input
+                  type="text"
+                  className="hms-infra-modal__input"
+                  placeholder="DELETE"
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                />
+              </div>
+            )}
+            
+            <div className="hms-infra-modal__footer mt-6">
               <button
                 type="button"
                 onClick={() => setConfirmModal({ show: false, message: "", onConfirm: null })}
@@ -1474,10 +1590,14 @@ export default function InfrastructureMapping() {
               <button
                 type="button"
                 onClick={confirmModal.onConfirm}
-                disabled={confirmText !== "DELETE"}
+                disabled={
+                  confirmModal.validation?.blocked || 
+                  confirmText !== "DELETE" || 
+                  (confirmModal.validation?.warnings?.length > 0 && !acknowledgeWarnings)
+                }
                 className="hms-infra-modal__confirm-btn is-danger disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Delete
+                Permanently Delete
               </button>
             </div>
           </div>

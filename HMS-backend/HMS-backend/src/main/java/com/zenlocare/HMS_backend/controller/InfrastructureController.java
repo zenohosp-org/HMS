@@ -4,7 +4,9 @@ import com.zenlocare.HMS_backend.service.InfrastructureService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import com.zenlocare.HMS_backend.exception.InfrastructureValidationException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -56,6 +58,7 @@ public class InfrastructureController {
         private java.math.BigDecimal dailyCharge;
         private List<RoomDto> rooms = List.of();
         private List<String> bedNames = List.of();
+        private List<InfraBedDto> beds = List.of();
     }
 
     @Data
@@ -64,5 +67,39 @@ public class InfrastructureController {
         private String name;
         private Boolean isActive;
         private List<String> bedNames = List.of();
+        private List<InfraBedDto> beds = List.of();
+    }
+
+    @Data
+    public static class InfraBedDto {
+        private Long id;
+        private String name;
+    }
+
+    @Data
+    public static class ValidationRequest {
+        private List<Long> roomIds = List.of();
+        private List<Long> bedIds = List.of();
+    }
+
+    @Data
+    public static class ValidationResponse {
+        private boolean blocked;
+        private List<String> reasons = List.of();
+        private List<String> warnings = List.of();
+    }
+
+    @PostMapping("/validate-removal")
+    public ResponseEntity<ValidationResponse> validateRemoval(@RequestBody ValidationRequest request) {
+        return ResponseEntity.ok(service.validateRemoval(request));
+    }
+
+    @ExceptionHandler(InfrastructureValidationException.class)
+    public ResponseEntity<ValidationResponse> handleValidationException(InfrastructureValidationException ex) {
+        ValidationResponse response = new ValidationResponse();
+        response.setBlocked(ex.isBlocked());
+        response.setReasons(ex.getReasons());
+        response.setWarnings(ex.getWarnings());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 }

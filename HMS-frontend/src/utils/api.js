@@ -605,6 +605,10 @@ const infrastructureApi = {
     const { data } = await api.post("/ipd/infrastructure", buildings, { params: { hospitalId } });
     return data;
   },
+  validateRemoval: async (payload) => {
+    const { data } = await api.post(`/ipd/infrastructure/validate-removal`, payload);
+    return data;
+  },
 };
 
 const roomTypeApi = {
