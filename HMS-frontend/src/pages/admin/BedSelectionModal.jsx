@@ -73,58 +73,60 @@ export const BedSelectionModal = ({ isOpen, onClose, onSelect, availableBeds }) 
                                     <div key={room || 'no-room'} className="room-group mb-5 ml-2">
                                         {room && <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>{room}</h4>}
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
-                                            {groupedBeds[ward][room].map(bed => (
+                                            {groupedBeds[ward][room].map(bed => {
+                                                const isAvailable = !bed.occupied && !bed.underMaintenance;
+                                                return (
                                                 <button
                                                     key={bed.id}
-                                                    disabled={bed.status !== 'AVAILABLE'}
+                                                    disabled={!isAvailable}
                                                     onClick={() => onSelect(bed)}
                                                     style={{
                                                         display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
                                                         padding: '14px', border: '1px solid #e5e7eb', borderRadius: '10px',
-                                                        background: bed.status === 'AVAILABLE' ? '#ffffff' : '#f3f4f6', 
-                                                        cursor: bed.status === 'AVAILABLE' ? 'pointer' : 'not-allowed', 
+                                                        background: isAvailable ? '#ffffff' : '#f3f4f6', 
+                                                        cursor: isAvailable ? 'pointer' : 'not-allowed', 
                                                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                                         boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', textAlign: 'left',
                                                         outline: 'none',
-                                                        opacity: bed.status === 'AVAILABLE' ? 1 : 0.7
+                                                        opacity: isAvailable ? 1 : 0.7
                                                     }}
                                                     onMouseEnter={(e) => {
-                                                        if (bed.status !== 'AVAILABLE') return;
+                                                        if (!isAvailable) return;
                                                         e.currentTarget.style.borderColor = '#10b981';
                                                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.15)';
                                                         e.currentTarget.style.transform = 'translateY(-2px)';
                                                     }}
                                                     onMouseLeave={(e) => {
-                                                        if (bed.status !== 'AVAILABLE') return;
+                                                        if (!isAvailable) return;
                                                         e.currentTarget.style.borderColor = '#e5e7eb';
                                                         e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
                                                         e.currentTarget.style.transform = 'translateY(0)';
                                                     }}
                                                     onFocus={(e) => {
-                                                        if (bed.status !== 'AVAILABLE') return;
+                                                        if (!isAvailable) return;
                                                         e.currentTarget.style.borderColor = '#10b981';
                                                         e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.2)';
                                                     }}
                                                     onBlur={(e) => {
-                                                        if (bed.status !== 'AVAILABLE') return;
+                                                        if (!isAvailable) return;
                                                         e.currentTarget.style.borderColor = '#e5e7eb';
                                                         e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
                                                     }}
                                                 >
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', marginBottom: '12px' }}>
                                                         <span style={{ fontWeight: 700, fontSize: '16px', color: '#1f2937', lineHeight: 1.2 }}>{bed.bedNumber}</span>
-                                                        <div style={{ padding: '6px', backgroundColor: bed.status === 'AVAILABLE' ? '#ecfdf5' : '#fee2e2', borderRadius: '8px', color: bed.status === 'AVAILABLE' ? '#10b981' : '#ef4444' }}>
+                                                        <div style={{ padding: '6px', backgroundColor: isAvailable ? '#ecfdf5' : '#fee2e2', borderRadius: '8px', color: isAvailable ? '#10b981' : bed.underMaintenance ? '#f59e0b' : '#ef4444' }}>
                                                             <Bed size={18} />
                                                         </div>
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: bed.status === 'AVAILABLE' ? '#10b981' : '#ef4444' }}></span>
-                                                        <span style={{ fontSize: '13px', color: bed.status === 'AVAILABLE' ? '#059669' : '#b91c1c', fontWeight: 600 }}>
-                                                            {bed.status === 'AVAILABLE' ? 'Available' : (bed.patientName ? `Occupied by ${bed.patientName.split(' ')[0]}` : 'Occupied')}
+                                                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isAvailable ? '#10b981' : bed.underMaintenance ? '#f59e0b' : '#ef4444' }}></span>
+                                                        <span style={{ fontSize: '13px', color: isAvailable ? '#059669' : bed.underMaintenance ? '#d97706' : '#b91c1c', fontWeight: 600 }}>
+                                                            {bed.underMaintenance ? 'Maintenance' : (isAvailable ? 'Available' : (bed.patientName ? `Occupied by ${bed.patientName.split(' ')[0]}` : 'Occupied'))}
                                                         </span>
                                                     </div>
                                                 </button>
-                                            ))}
+                                            )})}
                                         </div>
                                     </div>
                                 ))}

@@ -180,7 +180,7 @@ function BedsSection({ room, hospitalId }) {
 
     if (beds.length === 0) return null;
 
-    const occupiedCount = beds.filter((b) => b.status === "OCCUPIED").length;
+    const occupiedCount = beds.filter((b) => b.occupied).length;
     const occupancyTone =
         occupiedCount === beds.length ? "danger" : occupiedCount > 0 ? "warning" : "success";
 
@@ -200,7 +200,7 @@ function BedsSection({ room, hospitalId }) {
 
             <div className="hms-room-bed-list">
                 {beds.map((bed) => {
-                    const occupied = bed.status === "OCCUPIED";
+                    const occupied = bed.occupied;
                     return (
                         <div
                             key={bed.id}
@@ -326,7 +326,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
         }
     };
 
-    const isMultiBed = room.bedCount != null && room.bedCount > 1;
+    const isMultiBed = (room.beds?.length ?? 0) > 1;
 
     const sectionLabel = (Icon, label, suffix) => (
         <div className="hms-room-panel-section-head">
@@ -350,12 +350,12 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
                         <Badge tone={room.roomType === "ICU" ? "danger" : "neutral"} soft>
                             {room.roomType}
                         </Badge>
-                        <Badge tone={room.status === "AVAILABLE" ? "success" : "info"} soft>
-                            {room.status}
+                        <Badge tone={room.occupied ? "info" : "success"} soft>
+                            {room.underMaintenance ? "Maintenance" : (room.occupied ? "Occupied" : "Available")}
                         </Badge>
                         {isMultiBed && (
                             <Badge tone="neutral" soft>
-                                {room.bedCount} beds
+                                {room.beds?.length ?? 0} beds
                             </Badge>
                         )}
                     </div>
@@ -371,16 +371,7 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
             </div>
 
             <div className="hms-room-panel__body">
-                {!isMultiBed && room.allocationToken && (
-                    <div className="hms-room-panel-chip">
-                        <p className="hms-room-panel-chip__label">
-                            Allocation token
-                        </p>
-                        <span className="hms-room-panel-chip__value">
-                            {room.allocationToken}
-                        </span>
-                    </div>
-                )}
+                {/* allocation token removed */}
 
                 {!isMultiBed && room.approxDischargeTime && (
                     <div className="hms-room-panel-chip is-warning">

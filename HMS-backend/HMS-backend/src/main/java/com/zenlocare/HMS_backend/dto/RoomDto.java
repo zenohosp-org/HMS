@@ -26,7 +26,8 @@ public class RoomDto {
     private String roomCategory;
     private Boolean hasBeds;
     private Boolean hasDailyCharge;
-    private String status;
+    private boolean occupied;
+    private boolean underMaintenance;
     private BigDecimal pricePerDay;
 
     private PatientLite currentPatient;
@@ -40,12 +41,7 @@ public class RoomDto {
     private String allocationToken;
     private LocalDateTime approxDischargeTime;
     private LocalDateTime admissionDate;
-
-    private UUID departmentId;
-    private String departmentName;
-    private String ward;
-    private Long hospitalWardId;
-    private Integer bedCount;
+    private String wardName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -61,13 +57,13 @@ public class RoomDto {
 
     public static RoomDto fromEntity(Room room, Admission activeAdmission, com.zenlocare.HMS_backend.entity.RoomTypeConfig config) {
         PatientLite p = null;
-        if (room.getCurrentPatient() != null) {
+        if (activeAdmission != null && activeAdmission.getPatient() != null) {
             p = PatientLite.builder()
-                    .id(room.getCurrentPatient().getId())
-                    .firstName(room.getCurrentPatient().getFirstName())
-                    .lastName(room.getCurrentPatient().getLastName())
-                    .uhid(room.getCurrentPatient().getUhid())
-                    .phone(room.getCurrentPatient().getPhone())
+                    .id(activeAdmission.getPatient().getId())
+                    .firstName(activeAdmission.getPatient().getFirstName())
+                    .lastName(activeAdmission.getPatient().getLastName())
+                    .uhid(activeAdmission.getPatient().getUhid())
+                    .phone(activeAdmission.getPatient().getPhone())
                     .build();
         }
         return RoomDto.builder()
@@ -78,21 +74,18 @@ public class RoomDto {
                 .roomCategory(config != null ? config.getCategory() : "WARD")
                 .hasBeds(config != null ? config.getHasBeds() : true)
                 .hasDailyCharge(config != null ? config.getHasDailyCharge() : true)
-                .status(room.getStatus() != null ? room.getStatus().name() : null)
+                .occupied(activeAdmission != null)
+                .underMaintenance(room.isUnderMaintenance())
                 .pricePerDay(room.getPricePerDay())
                 .currentPatient(p)
                 .admissionId(activeAdmission != null ? activeAdmission.getId() : null)
                 .attenderName(activeAdmission != null ? activeAdmission.getAttenderName() : null)
                 .attenderPhone(activeAdmission != null ? activeAdmission.getAttenderPhone() : null)
                 .attenderRelationship(activeAdmission != null ? activeAdmission.getAttenderRelationship() : null)
-                .allocationToken(room.getAllocationToken())
-                .approxDischargeTime(room.getApproxDischargeTime())
-                .admissionDate(room.getAdmissionDate())
-                .departmentId(room.getDepartment() != null ? room.getDepartment().getId() : null)
-                .departmentName(room.getDepartment() != null ? room.getDepartment().getName() : null)
-                .ward(room.getWard())
-                .hospitalWardId(room.getHospitalWard() != null ? room.getHospitalWard().getId() : null)
-                .bedCount(room.getBedCount())
+                .allocationToken(null)
+                .approxDischargeTime(activeAdmission != null ? activeAdmission.getApproxDischargeDate() : null)
+                .admissionDate(activeAdmission != null ? activeAdmission.getAdmissionDate() : null)
+                .wardName(room.getHospitalWard() != null ? room.getHospitalWard().getName() : null)
                 .createdAt(room.getCreatedAt())
                 .updatedAt(room.getUpdatedAt())
                 .build();

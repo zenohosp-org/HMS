@@ -188,7 +188,7 @@ public class RecordController {
 
         if (admission != null && admission.getRoom() != null) {
             d.setRoomLabel(admission.getRoom().getRoomNumber());
-            d.setWardLabel(admission.getRoom().getWard());
+            d.setWardLabel(admission.getRoom().getHospitalWard() != null ? admission.getRoom().getHospitalWard().getName() : null);
         }
 
         d.setDrugId(pi.getDrugId() != null ? pi.getDrugId().toString() : null);

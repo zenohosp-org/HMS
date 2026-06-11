@@ -12,7 +12,8 @@ import java.util.UUID;
 public class BedDto {
     private Long id;
     private String bedNumber;
-    private String status;
+    private boolean occupied;
+    private boolean underMaintenance;
     private Integer patientId;
     private String patientName;
     private String patientUhid;
@@ -37,12 +38,13 @@ public class BedDto {
         return BedDto.builder()
                 .id(bed.getId())
                 .bedNumber(bed.getBedNumber())
-                .status(bed.getStatus().name())
-                .patientId(bed.getCurrentPatient() != null ? bed.getCurrentPatient().getId() : null)
-                .patientName(bed.getCurrentPatient() != null
-                        ? bed.getCurrentPatient().getFirstName() + " " + bed.getCurrentPatient().getLastName()
+                .occupied(activeAdmission != null)
+                .underMaintenance(bed.isUnderMaintenance())
+                .patientId(activeAdmission != null && activeAdmission.getPatient() != null ? activeAdmission.getPatient().getId() : null)
+                .patientName(activeAdmission != null && activeAdmission.getPatient() != null
+                        ? activeAdmission.getPatient().getFirstName() + " " + activeAdmission.getPatient().getLastName()
                         : null)
-                .patientUhid(bed.getCurrentPatient() != null ? bed.getCurrentPatient().getUhid() : null)
+                .patientUhid(activeAdmission != null && activeAdmission.getPatient() != null ? activeAdmission.getPatient().getUhid() : null)
                 .admissionId(activeAdmission != null ? activeAdmission.getId() : null)
                 .attenderName(activeAdmission != null ? activeAdmission.getAttenderName() : null)
                 .attenderPhone(activeAdmission != null ? activeAdmission.getAttenderPhone() : null)
