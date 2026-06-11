@@ -109,6 +109,7 @@ public class RecordController {
      * endpoints use.
      */
     @GetMapping("/prescriptions/pending")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<PendingPrescriptionDto>> getPendingPrescriptions(
             @RequestParam UUID hospitalId) {
 
