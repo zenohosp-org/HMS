@@ -2,7 +2,7 @@ import { Spinner, CenterLoader } from "@/components/ui/Loader";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors, Activity, Package, Receipt, Phone, User, ExternalLink, RotateCcw, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, Plus, FileText, Printer, Ban,  } from "lucide-react";
+import { X, BedDouble, Stethoscope, Clock, Calendar, LogOut, Scissors, Activity, Package, Receipt, Phone, User, ExternalLink, RotateCcw, ScanLine, Pill, FlaskConical, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, Plus, FileText, Printer, Ban, Sparkles,  } from "lucide-react";
 import { fmtDateTime, fmtDateMed } from "@/utils/date";
 import {
     roomLogsApi,
@@ -30,6 +30,7 @@ import IpdIoTab from "@/pages/admin/IpdIoTab";
 import IpdLabTab from "@/pages/admin/IpdLabTab";
 import IpdNursingTab from "@/pages/admin/IpdNursingTab";
 import IpdReferralTab from "@/pages/admin/IpdReferralTab";
+import IpdZemaAiModal from "@/pages/admin/IpdZemaAiModal";
 import { useNotification } from "@/context/NotificationContext";
 import {
     Alert,
@@ -183,6 +184,7 @@ export default function IPDDetailPane({
 
     const [showAddRecord, setShowAddRecord] = useState(false);
     const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+    const [showZemaModal, setShowZemaModal] = useState(false);
     const [viewRecord, setViewRecord] = useState(null);
 
     const [allergies, setAllergies] = useState([]);
@@ -949,6 +951,13 @@ export default function IPDDetailPane({
                         <div className="hms-ipd-header__actions">
                             <button
                                 type="button"
+                                className="hms-ipd-chip-btn is-zema"
+                                onClick={() => setShowZemaModal(true)}
+                            >
+                                <Sparkles size={11} /> Analyze with Zema AI
+                            </button>
+                            <button
+                                type="button"
                                 className={`hms-ipd-chip-btn${allergies.length > 0 ? " is-allergy" : ""}`}
                                 onClick={() => setShowAllergyPanel((v) => !v)}
                             >
@@ -1171,6 +1180,13 @@ export default function IPDDetailPane({
                 <PastRecordDetailModal
                     record={viewRecord}
                     onClose={() => setViewRecord(null)}
+                />
+            )}
+
+            {showZemaModal && (
+                <IpdZemaAiModal
+                    admission={admission}
+                    onClose={() => setShowZemaModal(false)}
                 />
             )}
 

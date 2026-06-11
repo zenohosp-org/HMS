@@ -32,13 +32,14 @@
 .hms-rooms-banner__icon {
     width: 44px;
     height: 44px;
-    border-radius: 8px;
-    background: var(--hms-brand-primary);
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--hms-brand-primary), #4f46e5);
     color: var(--hms-white);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
 }
 
 .hms-rooms-banner__title-row {
@@ -85,21 +86,34 @@
 /* ─── Stats strip ─── */
 .hms-rooms-stats {
     padding: 0 !important;
-    overflow: hidden;
-    gap: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .hms-rooms-stats__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
 .hms-rooms-stats__cell {
-    padding: 16px 20px;
-    border-left: 1px solid var(--hms-gray-200);
+    flex: 1;
+    min-width: 160px;
+    padding: 20px;
+    background: var(--hms-white);
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.hms-rooms-stats__cell:first-child { border-left: none; }
+.hms-rooms-stats__cell:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+    border-color: var(--hms-gray-300);
+}
 
 .hms-rooms-stats__head { display: flex; align-items: center; gap: 8px; }
 
@@ -289,23 +303,30 @@
     overflow: hidden;
     background: var(--hms-white);
     border: 1px solid var(--hms-gray-200);
-    border-radius: 8px;
-    padding: 12px 12px 12px 14px;
+    border-radius: 12px;
+    padding: 14px 14px 14px 16px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: var(--hms-font-family);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.hms-room-cell:hover:not(.is-empty) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+    border-color: var(--hms-gray-300);
 }
 
 .hms-room-cell.is-empty { cursor: default; opacity: 0.6; }
 
 .hms-room-cell.is-selected {
     border-color: #60a5fa;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1), 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
 .hms-room-cell.is-occupied {
-    background: #f0f9ff;
-    border-color: #bae6fd;
+    background: linear-gradient(to bottom right, #ffffff, #f8fafc);
+    border-color: #e2e8f0;
 }
 
 .hms-room-cell__accent {
@@ -385,9 +406,9 @@
 }
 
 .hms-room-cell__patient-name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--hms-gray-800);
+    color: var(--hms-gray-900);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -452,29 +473,47 @@
 }
 
 
-/* ─── Section label (dim small label with icon + count) ─── */
+/* ─── Section label (breadcrumb style) ─── */
 .hms-room-section-label {
     display: flex;
     align-items: center;
-    gap: 6px;
-    color: var(--hms-gray-400);
+    gap: 8px;
+    color: var(--hms-gray-500);
+    font-family: var(--hms-font-family);
+    background: var(--hms-gray-50);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--hms-gray-200);
+    width: fit-content;
 }
 
 .hms-room-section-label.is-on-dark {
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .hms-room-section-label__text {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hms-gray-700);
+    letter-spacing: 0.02em;
+}
+
+.hms-room-section-label__sep {
+    color: var(--hms-gray-400);
+    font-size: 10px;
+    margin: 0 2px;
 }
 
 .hms-room-section-label__count {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
+    color: var(--hms-gray-500);
     font-variant-numeric: tabular-nums;
+    margin-left: 4px;
+    padding-left: 8px;
+    border-left: 1px solid var(--hms-gray-300);
 }
 
 

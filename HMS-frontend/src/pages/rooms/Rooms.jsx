@@ -173,12 +173,19 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
 
             {roomData && isOccupied && roomData.currentPatient && !isMultiBed && (
                 <div className="hms-room-cell__patient">
-                    <p className="hms-room-cell__patient-name">
-                        {roomData.currentPatient.firstName} {roomData.currentPatient.lastName}
-                    </p>
-                    <p className="hms-room-cell__patient-uhid">
-                        {fmtId(roomData.currentPatient.uhid)}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
+                            {roomData.currentPatient.firstName?.[0] || ""}{roomData.currentPatient.lastName?.[0] || ""}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                            <p className="hms-room-cell__patient-name">
+                                {roomData.currentPatient.firstName} {roomData.currentPatient.lastName}
+                            </p>
+                            <p className="hms-room-cell__patient-uhid">
+                                {fmtId(roomData.currentPatient.uhid)}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             )}
             
@@ -203,15 +210,23 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
 }
 
 function SectionLabel({ icon: Icon, label, count, onDark }) {
+    const parts = label ? label.split(' / ') : [];
     return (
         <div className={"hms-room-section-label" + (onDark ? " is-on-dark" : "")}>
             <Icon size={12} />
-            <span className="hms-room-section-label__text">
-                {label}
+            <span className="hms-room-section-label__text flex items-center">
+                {parts.map((part, i) => (
+                    <span key={i} className="flex items-center">
+                        {part}
+                        {i < parts.length - 1 && (
+                            <span className="hms-room-section-label__sep">/</span>
+                        )}
+                    </span>
+                ))}
             </span>
             {count != null && (
                 <span className="hms-room-section-label__count">
-                    · {count}
+                    {count}
                 </span>
             )}
         </div>
@@ -485,8 +500,8 @@ function Rooms() {
             </Card>
 
             {/* Controls */}
-            <Card className="hms-rooms-controls">
-                <div className="zu-pill-group">
+            <div className="hms-rooms-controls flex items-center justify-between mb-4 mt-6">
+                <div className="zu-pill-group hms-rooms-filter-pills">
                     {["ALL", "AVAILABLE", "OCCUPIED"].map((f) => {
                         const active = filter === f;
                         return (
@@ -494,22 +509,21 @@ function Rooms() {
                                 key={f}
                                 type="button"
                                 onClick={() => setFilter(f)}
-                                className={"zu-pill-group__btn" + (active ? " is-active" : "")}
+                                className={"hms-rooms-filter-pill" + (active ? " is-active" : "")}
                             >
                                 {f === "ALL" ? "All" : f}
                             </button>
                         );
                     })}
                 </div>
-
-                <div className="flex-1">
+                <div className="flex-1 max-w-md ml-4">
                     <SearchBar
+                        placeholder="Search rooms, patients, UHID..."
                         value={search}
                         onChange={setSearch}
-                        placeholder="Search rooms, patients, UHID…"
                     />
                 </div>
-            </Card>
+            </div>
 
             {/* Content */}
             <div className="hms-rooms-body">

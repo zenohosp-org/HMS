@@ -3241,6 +3241,18 @@
     border-color: transparent;
 }
 
+.hms-ipd-chip-btn.is-zema {
+    background: var(--zema-grad-brand);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.hms-ipd-chip-btn.is-zema:hover {
+    color: #ffffff;
+    box-shadow: var(--zema-shadow-glow-sm);
+    transform: translateY(-1px);
+}
+
 
 /* Discharge guard banner */
 .hms-ipd-discharge-block {
@@ -4162,6 +4174,42 @@
 .hms-ipd-vitals-history {
     display: flex;
     flex-direction: column;
+}
+
+/* Zema AI vitals trend panel */
+.hms-vitals-trend-panel {
+    margin-bottom: 18px;
+}
+
+.hms-vitals-trend-chips {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.hms-vitals-trend-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(139, 92, 246, 0.15);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--hms-gray-600);
+    position: relative;
+    z-index: 1;
+}
+
+.hms-vitals-trend-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.hms-vitals-trend-legend__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
 }
 
 .hms-vitals-reading-list {
