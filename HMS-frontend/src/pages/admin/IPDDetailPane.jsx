@@ -1386,11 +1386,23 @@ function RecordDetail({ ev }) {
                 {visible.map((d, i) => {
                     const signa = [d.dose, d.frequency].filter(Boolean).join(" · ");
                     const isStopped = d.status === "STOPPED";
+                    const isDispensed = d.dispenseStatus === "DISPENSED";
+                    const isPartial = d.dispenseStatus === "PARTIAL";
                     return (
                         <div key={i} className={`hms-rec-drug-chip${isStopped ? " is-stopped" : ""}`}>
                             <Pill size={10} className="hms-rec-drug-chip__icon" />
                             <span className="hms-rec-drug-chip__name">{d.drugName}</span>
                             {signa && <span className="hms-rec-drug-chip__signa">{signa}</span>}
+                            {isDispensed && (
+                                <span className="hms-rec-drug-chip__dispense-badge is-dispensed" title="Dispensed by pharmacy">
+                                    <CheckCircle2 size={9} /> Dispensed
+                                </span>
+                            )}
+                            {isPartial && (
+                                <span className="hms-rec-drug-chip__dispense-badge is-partial" title={`${d.dispensedQty ?? 0} of ${d.quantity ?? "?"} dispensed`}>
+                                    <CheckCircle2 size={9} /> Partial {d.dispensedQty != null && d.quantity != null ? `· ${d.dispensedQty}/${d.quantity}` : ""}
+                                </span>
+                            )}
                             {d.allergyOverrideReason && (
                                 <span className="hms-rec-drug-chip__allergy-badge" title={`Prescribed despite recorded allergy — ${d.allergyOverrideReason}`}>
                                     <AlertTriangle size={9} /> Allergy override

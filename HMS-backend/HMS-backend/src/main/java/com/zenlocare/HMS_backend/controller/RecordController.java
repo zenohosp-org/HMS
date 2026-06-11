@@ -295,6 +295,8 @@ public class RecordController {
                     d.setStopReason(pi.getStopReason());
                 }
                 d.setAllergyOverrideReason(pi.getAllergyOverrideReason());
+                d.setDispenseStatus(pi.getDispenseStatus() != null ? pi.getDispenseStatus().name() : "PENDING");
+                d.setDispensedQty(pi.getDispensedQty());
                 items.add(d);
             }
         }
@@ -399,6 +401,10 @@ public class RecordController {
         private String stopReason;
         /** Set when the prescriber overrode a recorded drug allergy for this item. */
         private String allergyOverrideReason;
+        /** PENDING | PARTIAL | DISPENSED — kept in sync by pharmacy's dispense callback. */
+        private String dispenseStatus;
+        /** How many of the prescribed quantity have been dispensed. */
+        private Integer dispensedQty;
     }
 
     @Data
