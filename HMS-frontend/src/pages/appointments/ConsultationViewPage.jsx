@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import {
   appointmentsApi, doctorsApi, recordApi, investigationsApi, externalResultsApi, zemaRulesApi,
+  LABS_FRONTEND_URL,
 } from "@/utils/api";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import { fmtId } from "@/utils/idFormat";
@@ -1243,7 +1244,7 @@ function InternalInvestigationsSection({ rows, loading, title, kind }) {
               <div className="hms-cv-rad-head__col-1 hms-cv-rad-row__report-cell">
                 {order.reportUrl || order.reportId ? (
                   <a
-                    href={order.reportUrl || `/${reportPath}/reports/${order.reportId}`}
+                    href={order.reportUrl || `${LABS_FRONTEND_URL}/${reportPath}/reports/${order.reportId}`}
                     className="hms-cv-rad-row__report-link"
                     target="_blank"
                     rel="noreferrer"

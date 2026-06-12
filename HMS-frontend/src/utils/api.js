@@ -1,5 +1,13 @@
 import axios from "axios";
 const DIRECTORY_API_URL = "https://api-directory.zenohosp.com";
+
+// Labs *frontend* origin — distinct from VITE_LABS_API_URL (the API host).
+// Used to build absolute "Open report" links into labs' report pages
+// (labs.zenohosp.com/lab/reports/{id} and /radiology/reports/{id}). Defaults
+// to the labs Vite dev port (5175) so local dev works out of the box.
+// Trailing slash stripped so callers can safely concatenate `/path`.
+export const LABS_FRONTEND_URL =
+  (import.meta.env.VITE_LABS_FRONTEND_URL || "http://localhost:5175").replace(/\/$/, "");
 const api = axios.create({
   baseURL: (() => {
     const rawUrl = import.meta.env.VITE_API_URL || "";
