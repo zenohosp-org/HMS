@@ -99,6 +99,18 @@
     margin-bottom: 4px;
 }
 
+.lab-form__hint {
+    font-size: 11px;
+    color: var(--hms-gray-500);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.lab-form__hint strong {
+    color: var(--hms-gray-900);
+    font-weight: 700;
+}
+
 .lab-form__input,
 .lab-form__select {
     padding: 7px 10px;

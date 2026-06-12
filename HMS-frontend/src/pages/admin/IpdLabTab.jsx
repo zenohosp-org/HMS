@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { labOrderApi } from "@/utils/api";
+import { labOrderApi, hospitalServiceApi, departmentApi } from "@/utils/api";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { CenterLoader } from "@/components/ui/Loader";
 import {
     FlaskConical, Plus, CheckCircle2, Clock, AlertCircle,
@@ -35,11 +36,13 @@ const STATUS_ORDER = {
 };
 
 const BLANK_ORDER_FORM = {
+    serviceId: "",
     serviceName: "",
     specializationName: "",
     sampleType: "",
     priority: "ROUTINE",
     price: "",
+    gstRate: "",
 };
 
 const BLANK_REPORT_FORM = { findings: "", observation: "" };
@@ -53,6 +56,11 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
     const [showForm, setShowForm]     = useState(false);
     const [saving, setSaving]         = useState(false);
     const [orderForm, setOrderForm]   = useState(BLANK_ORDER_FORM);
+
+    // Lab-services catalog — populated from HospitalService rows whose
+    // department.code === "LABS". Lets the operator pick a catalogued test
+    // (auto-fills price + gstRate) instead of typing one off.
+    const [labServices, setLabServices] = useState([]);
 
     // Per-order report form state: { [orderId]: { open, saving, form } }
     const [reportPanels, setReportPanels] = useState({});
@@ -74,6 +82,38 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
 
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
+    // Load lab-services catalog once per hospital. Find the Labs department
+    // (code === "LABS") and filter active services to its id. Tolerant of
+    // missing dept / services — the form falls back to a free-text input.
+    useEffect(() => {
+        if (!user?.hospitalId) return;
+        let cancelled = false;
+        Promise.all([
+            departmentApi.list(user.hospitalId),
+            hospitalServiceApi.list(user.hospitalId),
+        ])
+            .then(([depts, services]) => {
+                if (cancelled) return;
+                const labsDept = (depts || []).find((d) => d.code === "LABS");
+                if (!labsDept) { setLabServices([]); return; }
+                setLabServices((services || []).filter(
+                    (s) => s.departmentId === labsDept.id && s.isActive !== false
+                ));
+            })
+            .catch(() => { if (!cancelled) setLabServices([]); });
+        return () => { cancelled = true; };
+    }, [user?.hospitalId]);
+
+    // Compute total (price + GST) for the in-progress form. Display only —
+    // the labs API still receives price + gstRate so labs can split CGST/SGST
+    // on the auto-billed invoice.
+    const previewTotal = useMemo(() => {
+        const price = Number(orderForm.price) || 0;
+        const gst = Number(orderForm.gstRate) || 0;
+        if (price <= 0) return null;
+        return Math.round((price * (1 + gst / 100)) * 100) / 100;
+    }, [orderForm.price, orderForm.gstRate]);
+
     const handleCreate = async () => {
         if (!orderForm.serviceName.trim()) {
             notify("Test name is required", "warning");
@@ -94,6 +134,10 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
                 sampleType: orderForm.sampleType.trim() || null,
                 priority: orderForm.priority,
                 price: orderForm.price ? Number(orderForm.price) : null,
+                // Labs side will compute price * (1 + gstRate/100) and split
+                // CGST/SGST on the auto-billed invoice. Extra field — labs
+                // ignores it today, ready when the labs-side support lands.
+                gstRate: orderForm.gstRate ? Number(orderForm.gstRate) : null,
             };
             const saved = await labOrderApi.create(payload);
             setOrders((prev) =>
@@ -213,23 +257,43 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
                 <div className="lab-form">
                     <div className="lab-form__fields">
                         <div className="lab-form__field lab-form__field--grow">
-                            <label className="lab-form__label">Test name *</label>
-                            <input
-                                className="lab-form__input"
-                                placeholder="e.g. CBC, LFT, Serum Creatinine"
-                                value={orderForm.serviceName}
-                                onChange={(e) => setOrderForm((f) => ({ ...f, serviceName: e.target.value }))}
-                                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                            />
-                        </div>
-                        <div className="lab-form__field">
-                            <label className="lab-form__label">Specialization</label>
-                            <input
-                                className="lab-form__input"
-                                placeholder="Hematology"
-                                value={orderForm.specializationName}
-                                onChange={(e) => setOrderForm((f) => ({ ...f, specializationName: e.target.value }))}
-                            />
+                            <label className="lab-form__label">Test *</label>
+                            {labServices.length > 0 ? (
+                                <SearchableSelect
+                                    value={orderForm.serviceId}
+                                    onChange={(serviceId) => {
+                                        const svc = labServices.find((s) => s.id === serviceId);
+                                        setOrderForm((f) => ({
+                                            ...f,
+                                            serviceId,
+                                            serviceName: svc?.name || "",
+                                            price: svc?.price != null ? String(svc.price) : "",
+                                            gstRate: svc?.gstRate != null ? String(svc.gstRate) : "",
+                                        }));
+                                    }}
+                                    options={labServices.map((s) => ({
+                                        value: s.id,
+                                        label: s.gstRate
+                                            ? `${s.name} — ₹${s.price} + ${s.gstRate}% GST`
+                                            : `${s.name} — ₹${s.price}`,
+                                    }))}
+                                    placeholder="Pick a lab test"
+                                />
+                            ) : (
+                                <input
+                                    className="lab-form__input"
+                                    placeholder="e.g. CBC, LFT, Serum Creatinine"
+                                    value={orderForm.serviceName}
+                                    onChange={(e) => setOrderForm((f) => ({ ...f, serviceName: e.target.value }))}
+                                    onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                                />
+                            )}
+                            {labServices.length === 0 && (
+                                <p className="lab-form__hint">
+                                    No services in the Labs department yet. Add them in Settings → Services
+                                    (department = Labs) so prices + GST are picked up automatically.
+                                </p>
+                            )}
                         </div>
                         <div className="lab-form__field">
                             <label className="lab-form__label">Sample</label>
@@ -261,8 +325,13 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
                                 step="0.01"
                                 placeholder="0"
                                 value={orderForm.price}
-                                onChange={(e) => setOrderForm((f) => ({ ...f, price: e.target.value }))}
+                                onChange={(e) => setOrderForm((f) => ({ ...f, price: e.target.value, serviceId: "" }))}
                             />
+                            {previewTotal != null && orderForm.gstRate && Number(orderForm.gstRate) > 0 && (
+                                <p className="lab-form__hint">
+                                    + {orderForm.gstRate}% GST = <strong>₹{previewTotal}</strong> total
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div className="lab-form__actions">

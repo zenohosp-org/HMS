@@ -233,6 +233,35 @@ public class DataSeeder implements CommandLineRunner {
         ensureBloodBankSchema();
         seedBloodBankLookups();
         seedGstRates();
+        seedLabsDepartmentPerHospital();
+    }
+
+    /**
+     * Every hospital gets a system-default "Labs" department (code=LABS) so
+     * the lab-order picker on IPD / Consultation can populate from
+     * department-scoped HospitalServices without the operator having to
+     * create the department manually first. Idempotent — runs are no-ops
+     * once the department exists. Filter is by code (stable contract);
+     * operators can rename the display name without breaking anything.
+     */
+    private void seedLabsDepartmentPerHospital() {
+        try {
+            for (Hospital hospital : hospitalRepository.findAll()) {
+                Integer existing = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM public.departments WHERE hospital_id = ? AND code = 'LABS'",
+                        Integer.class, hospital.getId());
+                if (existing != null && existing > 0) continue;
+                jdbcTemplate.update("""
+                    INSERT INTO public.departments (id, hospital_id, name, type, code, description, is_active, created_at)
+                    VALUES (gen_random_uuid(), ?, 'Labs', 'CLINICAL', 'LABS',
+                            'Lab investigations catalogue — services here populate the lab-order picker.',
+                            true, now())
+                    """, hospital.getId());
+            }
+            log.info("✅ Ensured 'Labs' department (code=LABS) for every hospital");
+        } catch (Exception e) {
+            log.warn("Could not seed Labs department: {}", e.getMessage());
+        }
     }
 
     /**
