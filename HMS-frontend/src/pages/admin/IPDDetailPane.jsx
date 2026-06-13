@@ -574,18 +574,26 @@ export default function IPDDetailPane({
                 ).length === 0;
 
             const roomNumber = admission.roomNumber || fullAdmission?.roomNumber;
-            if (roomNumber && roomDays > 0) {
+            if (roomNumber) {
+                // Always emit the room line when a room is assigned. Floor to
+                // 1 day so same-day admits still owe a day, and so a malformed
+                // admissionDate (would leave roomDays as NaN) can't silently
+                // hide the row. A 0-price room shows as "₹0" and trips the
+                // existing hasZeroPrice notice — that's a useful data signal
+                // (operator needs to set pricePerDay on this room) rather
+                // than a mysterious absence.
+                const safeDays = Number.isFinite(roomDays) && roomDays > 0 ? roomDays : 1;
                 const pricePerDay =
-                    suggestions.roomCharge?.pricePerDay ||
-                    fullAdmission?.roomPricePerDay ||
+                    Number(suggestions.roomCharge?.pricePerDay) ||
+                    Number(fullAdmission?.roomPricePerDay) ||
                     0;
                 items.push({
                     key: key++,
                     itemType: "ROOM_CHARGE",
-                    description: `Room ${roomNumber} (${roomDays} day${roomDays !== 1 ? "s" : ""})`,
-                    quantity: roomDays,
+                    description: `Room ${roomNumber} (${safeDays} day${safeDays !== 1 ? "s" : ""})`,
+                    quantity: safeDays,
                     unitPrice: pricePerDay,
-                    totalPrice: roomDays * pricePerDay,
+                    totalPrice: safeDays * pricePerDay,
                 });
             }
 
