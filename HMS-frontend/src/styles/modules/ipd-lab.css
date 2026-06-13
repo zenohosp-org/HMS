@@ -99,6 +99,18 @@
     margin-bottom: 4px;
 }
 
+.lab-form__hint {
+    font-size: 11px;
+    color: var(--hms-gray-500);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.lab-form__hint strong {
+    color: var(--hms-gray-900);
+    font-weight: 700;
+}
+
 .lab-form__input,
 .lab-form__select {
     padding: 7px 10px;
@@ -369,6 +381,19 @@
     color: #166534;
     opacity: 0.6;
     margin: 6px 0 0;
+}
+
+.lab-result-block__billed {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: 8px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #ecfdf5;
+    color: #047857;
+    opacity: 1;
+    font-weight: 600;
 }
 
 /* ── Card action buttons ──────────────────────────────────────────── */

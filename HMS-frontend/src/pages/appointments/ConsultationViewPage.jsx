@@ -4,7 +4,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import {
-  appointmentsApi, doctorsApi, recordApi, radiologyApi, externalResultsApi, zemaRulesApi,
+  appointmentsApi, doctorsApi, recordApi, investigationsApi, externalResultsApi, zemaRulesApi,
+  LABS_FRONTEND_URL,
 } from "@/utils/api";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import { fmtId } from "@/utils/idFormat";
@@ -161,7 +162,8 @@ export default function ConsultationViewPage() {
     let cancelled = false;
     if (!current?.patientId) { setLabOrders([]); return () => { cancelled = true; }; }
     setLoadingLabs(true);
-    radiologyApi.getByPatient(current.patientId)
+    // Unified lab + radiology read (kind-tagged) from the labs service.
+    investigationsApi.byPatient(current.patientId)
       .then(rows => { if (!cancelled) setLabOrders(Array.isArray(rows) ? rows : []); })
       .catch(() => { if (!cancelled) setLabOrders([]); })
       .finally(() => { if (!cancelled) setLoadingLabs(false); });
@@ -1064,10 +1066,36 @@ function LabTab({ orders, loading, externalResults, loadingExternal }) {
         <div className="hms-cv-lab-divider" />
       )}
 
-      {/* Internal radiology — the existing radiologyApi.getByPatient data. */}
-      {(hasInternal || loading) && (
-        <InternalRadiologySection orders={orders} loading={loading} />
-      )}
+      {/* Internal investigations — kind-tagged from the labs service.
+          Split into Labs + Radiology subsections so the doctor sees them
+          grouped, but they share one fetch (investigationsApi.byPatient). */}
+      {(hasInternal || loading) && (() => {
+        const labRows = (orders || []).filter(o => o.kind === "LAB");
+        const radRows = (orders || []).filter(o => o.kind === "RADIOLOGY" || !o.kind);
+        return (
+          <>
+            {(labRows.length > 0 || loading) && (
+              <InternalInvestigationsSection
+                rows={labRows}
+                loading={loading}
+                title="Internal Labs"
+                kind="LAB"
+              />
+            )}
+            {labRows.length > 0 && radRows.length > 0 && (
+              <div className="hms-cv-lab-divider" />
+            )}
+            {(radRows.length > 0 || loading) && (
+              <InternalInvestigationsSection
+                rows={radRows}
+                loading={loading}
+                title="Internal Radiology"
+                kind="RADIOLOGY"
+              />
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }
@@ -1164,15 +1192,20 @@ function ExternalResultCard({ result }) {
   );
 }
 
-function InternalRadiologySection({ orders, loading }) {
+// Renders either Lab or Radiology rows from the unified investigations DTO.
+// kind drives the icon, tone and the report URL path (labs and radiology
+// host their own /reports/{id} pages under the labs domain).
+function InternalInvestigationsSection({ rows, loading, title, kind }) {
+  const isLab = kind === "LAB";
+  const icon = isLab ? <FlaskConical className="w-4 h-4" /> : <ScanIcon />;
+  const tone = isLab ? "violet" : "blue";
+  const hint = isLab ? "Lab orders raised inside HMS" : "Radiology orders raised inside HMS";
+  const reportPath = isLab ? "lab" : "radiology";
+
   if (loading) {
     return (
       <div>
-        <SectionHeading
-          icon={<ScanIcon />}
-          title="Internal Radiology"
-          hint="Orders raised inside HMS"
-        />
+        <SectionHeading icon={icon} title={title} hint={hint} />
         <CenterLoader text="Loading…" />
       </div>
     );
@@ -1180,11 +1213,11 @@ function InternalRadiologySection({ orders, loading }) {
   return (
     <div>
       <SectionHeading
-        icon={<ScanIcon />}
-        title="Internal Radiology"
-        count={orders.length}
-        hint="Orders raised inside HMS"
-        tone="blue"
+        icon={icon}
+        title={title}
+        count={rows.length}
+        hint={hint}
+        tone={tone}
       />
       <div className="hms-cv-rad-table">
         <div className="hms-cv-rad-head">
@@ -1194,14 +1227,14 @@ function InternalRadiologySection({ orders, loading }) {
           <div className="hms-cv-rad-head__col-1">Report</div>
         </div>
         <div className="hms-cv-rad-body">
-          {orders.map(order => (
+          {rows.map(order => (
             <div key={order.id} className="hms-cv-rad-row">
               <div className="hms-cv-rad-head__col-5">
                 <p className="hms-cv-rad-row__name">
                   {order.serviceName || order.investigationName || "—"}
                 </p>
-                {order.modality && (
-                  <p className="hms-cv-rad-row__mod">{order.modality}</p>
+                {(order.specializationName || order.modality) && (
+                  <p className="hms-cv-rad-row__mod">{order.specializationName || order.modality}</p>
                 )}
               </div>
               <div className="hms-cv-rad-head__col-3"><StatusPill status={order.status} /></div>
@@ -1211,7 +1244,7 @@ function InternalRadiologySection({ orders, loading }) {
               <div className="hms-cv-rad-head__col-1 hms-cv-rad-row__report-cell">
                 {order.reportUrl || order.reportId ? (
                   <a
-                    href={order.reportUrl || `/radiology/reports/${order.reportId}`}
+                    href={order.reportUrl || `${LABS_FRONTEND_URL}/${reportPath}/reports/${order.reportId}`}
                     className="hms-cv-rad-row__report-link"
                     target="_blank"
                     rel="noreferrer"

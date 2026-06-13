@@ -1,5 +1,13 @@
 import axios from "axios";
 const DIRECTORY_API_URL = "https://api-directory.zenohosp.com";
+
+// Labs *frontend* origin — distinct from VITE_LABS_API_URL (the API host).
+// Used to build absolute "Open report" links into labs' report pages
+// (labs.zenohosp.com/lab/reports/{id} and /radiology/reports/{id}). Defaults
+// to the labs Vite dev port (5175) so local dev works out of the box.
+// Trailing slash stripped so callers can safely concatenate `/path`.
+export const LABS_FRONTEND_URL =
+  (import.meta.env.VITE_LABS_FRONTEND_URL || "http://localhost:5175").replace(/\/$/, "");
 const api = axios.create({
   baseURL: (() => {
     const rawUrl = import.meta.env.VITE_API_URL || "";
@@ -42,7 +50,17 @@ if (import.meta.env.VITE_DEV_MOCK_AUTH === 'true' && import.meta.env.VITE_MOCK_J
 
 const unauthorizedRedirect = (err) => {
   if (err.response?.status === 401) {
-    if (!err.config?.url?.includes("/auth/me")) {
+    const url = err.config?.url || "";
+    // Don't bounce on /auth/me — the AuthContext handles 401 there itself
+    // (setUser(null) + isLoading=false). Don't bounce when already on /login
+    // either — any 401 from a page mounted at the login route would just
+    // reload /login, and providers like ReferenceDataProvider that fire
+    // pre-auth would put the page into an infinite refresh loop.
+    if (
+      !url.includes("/auth/me") &&
+      typeof window !== "undefined" &&
+      !window.location.pathname.startsWith("/login")
+    ) {
       window.location.href = "/login";
     }
   }
@@ -977,12 +995,27 @@ const ioApi = {
   remove: (admissionId, entryId) => api.delete(`/ipd/fluid/${admissionId}/${entryId}`).then((r) => r.data),
 };
 
+// Lab orders are now owned by the labs service (api-labs.zenohosp.com). Same
+// shared sso_token cookie, same hospital scoping — only the host moves. The
+// admissionId is the implicit scope for read (`/lab/admission/{id}`); write
+// endpoints take just the order id so collect/report/cancel drop the
+// admission segment from the path.
 const labOrderApi = {
-  list:    (admissionId)                   => api.get(`/ipd/lab-orders/${admissionId}`).then((r) => r.data),
-  create:  (admissionId, payload)          => api.post(`/ipd/lab-orders/${admissionId}`, payload).then((r) => r.data),
-  collect: (admissionId, orderId)          => api.patch(`/ipd/lab-orders/${admissionId}/${orderId}/collect`).then((r) => r.data),
-  result:  (admissionId, orderId, payload) => api.patch(`/ipd/lab-orders/${admissionId}/${orderId}/result`, payload).then((r) => r.data),
-  cancel:  (admissionId, orderId)          => api.delete(`/ipd/lab-orders/${admissionId}/${orderId}`).then((r) => r.data),
+  list:    (admissionId)                              => labsApi.get(`/lab/admission/${admissionId}`).then((r) => r.data),
+  getByPatient: (patientId)                           => labsApi.get(`/lab/patient/${patientId}`).then((r) => r.data),
+  create:  (payload)                                  => labsApi.post(`/lab`, payload).then((r) => r.data),
+  collect: (orderId)                                  => labsApi.patch(`/lab/${orderId}/collect`).then((r) => r.data),
+  report:  (orderId, { findings, observation })       => labsApi.patch(`/lab/${orderId}/report`, { findings, observation }).then((r) => r.data),
+  cancel:  (orderId)                                  => labsApi.delete(`/lab/${orderId}`).then((r) => r.data),
+};
+
+// Unified lab + radiology read for IPD Detail Pane and Consultation View.
+// Returns InvestigationSummaryDTO[] with `kind: "LAB" | "RADIOLOGY"`, sorted
+// by createdAt DESC. Read-only — writes still go through labOrderApi /
+// radiologyApi for the kind-specific endpoint.
+const investigationsApi = {
+  byAdmission: (admissionId) => labsApi.get(`/investigations/admission/${admissionId}`).then((r) => r.data),
+  byPatient:   (patientId)   => labsApi.get(`/investigations/patient/${patientId}`).then((r) => r.data),
 };
 
 const nursingTaskApi = {
@@ -1068,6 +1101,7 @@ export {
   allergyApi,
   ioApi,
   labOrderApi,
+  investigationsApi,
   nursingTaskApi,
   referralApi,
   zemaRulesApi,

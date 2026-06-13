@@ -222,6 +222,7 @@ public class DataSeeder implements CommandLineRunner {
         migrateRoomAttenderToAdmission();
         ensureRoomOccupancyColumns();
         ensureBedColumns();
+        backfillStoreTypesFromRoomType();
         ensurePrescriptionSchema();
         ensureAttachmentSchema();
         seedRoomTypeConfigs();
@@ -232,6 +233,35 @@ public class DataSeeder implements CommandLineRunner {
         ensureBloodBankSchema();
         seedBloodBankLookups();
         seedGstRates();
+        seedLabsDepartmentPerHospital();
+    }
+
+    /**
+     * Every hospital gets a system-default "Labs" department (code=LABS) so
+     * the lab-order picker on IPD / Consultation can populate from
+     * department-scoped HospitalServices without the operator having to
+     * create the department manually first. Idempotent — runs are no-ops
+     * once the department exists. Filter is by code (stable contract);
+     * operators can rename the display name without breaking anything.
+     */
+    private void seedLabsDepartmentPerHospital() {
+        try {
+            for (Hospital hospital : hospitalRepository.findAll()) {
+                Integer existing = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM public.departments WHERE hospital_id = ? AND code = 'LABS'",
+                        Integer.class, hospital.getId());
+                if (existing != null && existing > 0) continue;
+                jdbcTemplate.update("""
+                    INSERT INTO public.departments (id, hospital_id, name, type, code, description, is_active, created_at)
+                    VALUES (gen_random_uuid(), ?, 'Labs', 'CLINICAL', 'LABS',
+                            'Lab investigations catalogue — services here populate the lab-order picker.',
+                            true, now())
+                    """, hospital.getId());
+            }
+            log.info("✅ Ensured 'Labs' department (code=LABS) for every hospital");
+        } catch (Exception e) {
+            log.warn("Could not seed Labs department: {}", e.getMessage());
+        }
     }
 
     /**
@@ -301,6 +331,34 @@ public class DataSeeder implements CommandLineRunner {
             } catch (Exception e) {
                 log.warn("Skipped: {} — {}", sql, e.getMessage());
             }
+        }
+    }
+
+    /**
+     * One-time fix for the pre-InfrastructureService rewrite: every store row
+     * HMS wrote carried type="STORE" regardless of the originating room's
+     * roomType, so Pharmacy/Blood Bank couldn't find their canonical stores
+     * by type. Re-anchors the stores.type column to the room's actual roomType
+     * for the four HMS-governed types (STORE, PHARMACY, PHARMACY_INV,
+     * BLOOD_BANK). Inventory-module rows are left untouched — the join
+     * filter on r.room_type excludes anything pointing at a room type HMS
+     * doesn't author. Idempotent: re-running is a no-op once aligned.
+     */
+    private void backfillStoreTypesFromRoomType() {
+        try {
+            int updated = jdbcTemplate.update("""
+                UPDATE stores s
+                SET    type = r.room_type
+                FROM   rooms r
+                WHERE  s.room_id = r.room_id
+                  AND  r.room_type IN ('STORE','PHARMACY','PHARMACY_INV','BLOOD_BANK')
+                  AND  s.type IS DISTINCT FROM r.room_type
+                """);
+            if (updated > 0) {
+                log.info("✅ Backfilled stores.type from rooms.room_type for {} row(s)", updated);
+            }
+        } catch (Exception e) {
+            log.warn("Could not backfill stores.type from rooms.room_type: {}", e.getMessage());
         }
     }
 

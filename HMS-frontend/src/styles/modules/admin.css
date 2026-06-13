@@ -3630,6 +3630,32 @@
     flex-shrink: 0;
 }
 
+/* Pharmacy dispense status — mirrored from PrescriptionItem.dispenseStatus,
+   kept in sync by the pharmacy /dispense callback. */
+.hms-rec-drug-chip__dispense-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 4px;
+    padding: 1px 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.hms-rec-drug-chip__dispense-badge.is-dispensed {
+    color: #047857;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+}
+
+.hms-rec-drug-chip__dispense-badge.is-partial {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+}
+
 /* ── "View in detail" button on RECORD timeline cards ────────────────────── */
 
 .hms-ipd-view-btn {

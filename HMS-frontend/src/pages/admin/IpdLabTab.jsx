@@ -1,20 +1,25 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { labOrderApi } from "@/utils/api";
+import { labOrderApi, hospitalServiceApi, departmentApi } from "@/utils/api";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { CenterLoader } from "@/components/ui/Loader";
 import {
     FlaskConical, Plus, CheckCircle2, Clock, AlertCircle,
-    ChevronDown, ChevronUp, X, Beaker,
+    ChevronDown, ChevronUp, X, Beaker, IndianRupee,
 } from "lucide-react";
 import { fmtDateTime } from "@/utils/date";
 import "@/styles/modules/ipd-lab.css";
 
-// ── Status metadata ────────────────────────────────────────────────────────────
-
+// Status semantics now match the labs service (api-labs.zenohosp.com).
+// PENDING_COLLECTION → AWAITING_REPORT → REPORT_GENERATED → BILLED
+// BILLED is downstream of REPORT_GENERATED (set when labs auto-bills to
+// the active IPD invoice on report generation).
 const STATUS_META = {
-    PENDING:          { label: "Pending",          cls: "is-pending"   },
-    SAMPLE_COLLECTED: { label: "Sample collected", cls: "is-collected" },
-    RESULTED:         { label: "Resulted",         cls: "is-resulted"  },
+    PENDING_COLLECTION: { label: "Pending",        cls: "is-pending"   },
+    AWAITING_REPORT:    { label: "Collected",      cls: "is-collected" },
+    REPORT_GENERATED:   { label: "Reported",       cls: "is-resulted"  },
+    BILLED:             { label: "Billed",         cls: "is-resulted"  },
 };
 
 const PRIORITY_META = {
@@ -23,12 +28,27 @@ const PRIORITY_META = {
     STAT:    { label: "STAT",    cls: "is-stat"    },
 };
 
-const STATUS_ORDER = { PENDING: 0, SAMPLE_COLLECTED: 1, RESULTED: 2 };
+const STATUS_ORDER = {
+    PENDING_COLLECTION: 0,
+    AWAITING_REPORT: 1,
+    REPORT_GENERATED: 2,
+    BILLED: 3,
+};
 
-const BLANK_ORDER_FORM = { testName: "", testCode: "", priority: "ROUTINE" };
-const BLANK_RESULT_FORM = { resultValue: "", resultUnit: "", referenceRange: "", resultNotes: "" };
+const BLANK_ORDER_FORM = {
+    serviceId: "",
+    serviceName: "",
+    specializationName: "",
+    sampleType: "",
+    priority: "ROUTINE",
+    price: "",
+    gstRate: "",
+};
 
-export default function IpdLabTab({ admissionId, isDischarged }) {
+const BLANK_REPORT_FORM = { findings: "", observation: "" };
+
+export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
+    const { user } = useAuth();
     const { notify } = useNotification();
 
     const [orders, setOrders]         = useState([]);
@@ -37,8 +57,13 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
     const [saving, setSaving]         = useState(false);
     const [orderForm, setOrderForm]   = useState(BLANK_ORDER_FORM);
 
-    // Per-order result form state: { [orderId]: { open, saving, form } }
-    const [resultPanels, setResultPanels] = useState({});
+    // Lab-services catalog — populated from HospitalService rows whose
+    // department.code === "LABS". Lets the operator pick a catalogued test
+    // (auto-fills price + gstRate) instead of typing one off.
+    const [labServices, setLabServices] = useState([]);
+
+    // Per-order report form state: { [orderId]: { open, saving, form } }
+    const [reportPanels, setReportPanels] = useState({});
 
     const fetchOrders = useCallback(async () => {
         setLoading(true);
@@ -57,14 +82,64 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
 
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
+    // Load lab-services catalog once per hospital. Find the Labs department
+    // (code === "LABS") and filter active services to its id. Tolerant of
+    // missing dept / services — the form falls back to a free-text input.
+    useEffect(() => {
+        if (!user?.hospitalId) return;
+        let cancelled = false;
+        Promise.all([
+            departmentApi.list(user.hospitalId),
+            hospitalServiceApi.list(user.hospitalId),
+        ])
+            .then(([depts, services]) => {
+                if (cancelled) return;
+                const labsDept = (depts || []).find((d) => d.code === "LABS");
+                if (!labsDept) { setLabServices([]); return; }
+                setLabServices((services || []).filter(
+                    (s) => s.departmentId === labsDept.id && s.isActive !== false
+                ));
+            })
+            .catch(() => { if (!cancelled) setLabServices([]); });
+        return () => { cancelled = true; };
+    }, [user?.hospitalId]);
+
+    // Compute total (price + GST) for the in-progress form. Display only —
+    // the labs API still receives price + gstRate so labs can split CGST/SGST
+    // on the auto-billed invoice.
+    const previewTotal = useMemo(() => {
+        const price = Number(orderForm.price) || 0;
+        const gst = Number(orderForm.gstRate) || 0;
+        if (price <= 0) return null;
+        return Math.round((price * (1 + gst / 100)) * 100) / 100;
+    }, [orderForm.price, orderForm.gstRate]);
+
     const handleCreate = async () => {
-        if (!orderForm.testName.trim()) {
+        if (!orderForm.serviceName.trim()) {
             notify("Test name is required", "warning");
+            return;
+        }
+        if (!user?.hospitalId) {
+            notify("Hospital scope missing — please reload", "error");
             return;
         }
         setSaving(true);
         try {
-            const saved = await labOrderApi.create(admissionId, orderForm);
+            const payload = {
+                hospitalId: user.hospitalId,
+                patientId,
+                admissionId,
+                serviceName: orderForm.serviceName.trim(),
+                specializationName: orderForm.specializationName.trim() || null,
+                sampleType: orderForm.sampleType.trim() || null,
+                priority: orderForm.priority,
+                price: orderForm.price ? Number(orderForm.price) : null,
+                // Labs side will compute price * (1 + gstRate/100) and split
+                // CGST/SGST on the auto-billed invoice. Extra field — labs
+                // ignores it today, ready when the labs-side support lands.
+                gstRate: orderForm.gstRate ? Number(orderForm.gstRate) : null,
+            };
+            const saved = await labOrderApi.create(payload);
             setOrders((prev) =>
                 [saved, ...prev].sort((a, b) => (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0))
             );
@@ -80,7 +155,7 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
 
     const handleCollect = async (orderId) => {
         try {
-            const updated = await labOrderApi.collect(admissionId, orderId);
+            const updated = await labOrderApi.collect(orderId);
             setOrders((prev) =>
                 prev.map((o) => o.id === orderId ? updated : o)
                     .sort((a, b) => (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0))
@@ -93,7 +168,7 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
 
     const handleCancel = async (orderId) => {
         try {
-            await labOrderApi.cancel(admissionId, orderId);
+            await labOrderApi.cancel(orderId);
             setOrders((prev) => prev.filter((o) => o.id !== orderId));
             notify("Order cancelled", "success");
         } catch (err) {
@@ -101,46 +176,50 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
         }
     };
 
-    const openResultPanel = (orderId) => {
-        setResultPanels((prev) => ({
+    const openReportPanel = (orderId) => {
+        setReportPanels((prev) => ({
             ...prev,
-            [orderId]: { open: true, saving: false, form: { ...BLANK_RESULT_FORM } },
+            [orderId]: { open: true, saving: false, form: { ...BLANK_REPORT_FORM } },
         }));
     };
 
-    const closeResultPanel = (orderId) => {
-        setResultPanels((prev) => ({ ...prev, [orderId]: { ...prev[orderId], open: false } }));
+    const closeReportPanel = (orderId) => {
+        setReportPanels((prev) => ({ ...prev, [orderId]: { ...prev[orderId], open: false } }));
     };
 
-    const setResultField = (orderId, field, value) => {
-        setResultPanels((prev) => ({
+    const setReportField = (orderId, field, value) => {
+        setReportPanels((prev) => ({
             ...prev,
             [orderId]: { ...prev[orderId], form: { ...prev[orderId].form, [field]: value } },
         }));
     };
 
-    const handleEnterResult = async (orderId) => {
-        const panel = resultPanels[orderId];
+    const handleEnterReport = async (orderId) => {
+        const panel = reportPanels[orderId];
         if (!panel) return;
-        setResultPanels((prev) => ({ ...prev, [orderId]: { ...prev[orderId], saving: true } }));
+        if (!panel.form.findings.trim()) {
+            notify("Findings is required", "warning");
+            return;
+        }
+        setReportPanels((prev) => ({ ...prev, [orderId]: { ...prev[orderId], saving: true } }));
         try {
-            const updated = await labOrderApi.result(admissionId, orderId, panel.form);
+            const updated = await labOrderApi.report(orderId, panel.form);
             setOrders((prev) =>
                 prev.map((o) => o.id === orderId ? updated : o)
                     .sort((a, b) => (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0))
             );
-            setResultPanels((prev) => ({ ...prev, [orderId]: { open: false, saving: false, form: { ...BLANK_RESULT_FORM } } }));
-            notify("Result recorded", "success");
+            setReportPanels((prev) => ({ ...prev, [orderId]: { open: false, saving: false, form: { ...BLANK_REPORT_FORM } } }));
+            notify("Report saved · billed to active invoice if priced", "success");
         } catch (err) {
-            notify(err?.response?.data?.message || "Failed to save result", "error");
-            setResultPanels((prev) => ({ ...prev, [orderId]: { ...prev[orderId], saving: false } }));
+            notify(err?.response?.data?.message || "Failed to save report", "error");
+            setReportPanels((prev) => ({ ...prev, [orderId]: { ...prev[orderId], saving: false } }));
         }
     };
 
     // ── Counts for summary ─────────────────────────────────────────────────────
-    const pendingCount   = orders.filter((o) => o.status === "PENDING").length;
-    const collectedCount = orders.filter((o) => o.status === "SAMPLE_COLLECTED").length;
-    const resultedCount  = orders.filter((o) => o.status === "RESULTED").length;
+    const pendingCount   = orders.filter((o) => o.status === "PENDING_COLLECTION").length;
+    const collectedCount = orders.filter((o) => o.status === "AWAITING_REPORT").length;
+    const reportedCount  = orders.filter((o) => o.status === "REPORT_GENERATED" || o.status === "BILLED").length;
 
     return (
         <div className="hms-ipd-tab-body lab-tab">
@@ -155,7 +234,7 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
                         <Beaker size={11} /> {collectedCount} Collected
                     </div>
                     <div className="lab-summary__pill is-resulted">
-                        <CheckCircle2 size={11} /> {resultedCount} Resulted
+                        <CheckCircle2 size={11} /> {reportedCount} Reported
                     </div>
                 </div>
             )}
@@ -178,22 +257,51 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
                 <div className="lab-form">
                     <div className="lab-form__fields">
                         <div className="lab-form__field lab-form__field--grow">
-                            <label className="lab-form__label">Test name *</label>
-                            <input
-                                className="lab-form__input"
-                                placeholder="e.g. CBC, LFT, Serum Creatinine"
-                                value={orderForm.testName}
-                                onChange={(e) => setOrderForm((f) => ({ ...f, testName: e.target.value }))}
-                                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                            />
+                            <label className="lab-form__label">Test *</label>
+                            {labServices.length > 0 ? (
+                                <SearchableSelect
+                                    value={orderForm.serviceId}
+                                    onChange={(serviceId) => {
+                                        const svc = labServices.find((s) => s.id === serviceId);
+                                        setOrderForm((f) => ({
+                                            ...f,
+                                            serviceId,
+                                            serviceName: svc?.name || "",
+                                            price: svc?.price != null ? String(svc.price) : "",
+                                            gstRate: svc?.gstRate != null ? String(svc.gstRate) : "",
+                                        }));
+                                    }}
+                                    options={labServices.map((s) => ({
+                                        value: s.id,
+                                        label: s.gstRate
+                                            ? `${s.name} — ₹${s.price} + ${s.gstRate}% GST`
+                                            : `${s.name} — ₹${s.price}`,
+                                    }))}
+                                    placeholder="Pick a lab test"
+                                />
+                            ) : (
+                                <input
+                                    className="lab-form__input"
+                                    placeholder="e.g. CBC, LFT, Serum Creatinine"
+                                    value={orderForm.serviceName}
+                                    onChange={(e) => setOrderForm((f) => ({ ...f, serviceName: e.target.value }))}
+                                    onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                                />
+                            )}
+                            {labServices.length === 0 && (
+                                <p className="lab-form__hint">
+                                    No services in the Labs department yet. Add them in Settings → Services
+                                    (department = Labs) so prices + GST are picked up automatically.
+                                </p>
+                            )}
                         </div>
                         <div className="lab-form__field">
-                            <label className="lab-form__label">Code (optional)</label>
+                            <label className="lab-form__label">Sample</label>
                             <input
                                 className="lab-form__input"
-                                placeholder="LAB001"
-                                value={orderForm.testCode}
-                                onChange={(e) => setOrderForm((f) => ({ ...f, testCode: e.target.value }))}
+                                placeholder="Blood / Urine"
+                                value={orderForm.sampleType}
+                                onChange={(e) => setOrderForm((f) => ({ ...f, sampleType: e.target.value }))}
                             />
                         </div>
                         <div className="lab-form__field">
@@ -207,6 +315,23 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
                                 <option value="URGENT">Urgent</option>
                                 <option value="STAT">STAT</option>
                             </select>
+                        </div>
+                        <div className="lab-form__field">
+                            <label className="lab-form__label">Price (₹)</label>
+                            <input
+                                className="lab-form__input"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0"
+                                value={orderForm.price}
+                                onChange={(e) => setOrderForm((f) => ({ ...f, price: e.target.value, serviceId: "" }))}
+                            />
+                            {previewTotal != null && orderForm.gstRate && Number(orderForm.gstRate) > 0 && (
+                                <p className="lab-form__hint">
+                                    + {orderForm.gstRate}% GST = <strong>₹{previewTotal}</strong> total
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div className="lab-form__actions">
@@ -251,7 +376,7 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
             ) : (
                 <div className="lab-list">
                     {orders.map((order) => {
-                        const panel = resultPanels[order.id] || { open: false, saving: false, form: BLANK_RESULT_FORM };
+                        const panel = reportPanels[order.id] || { open: false, saving: false, form: BLANK_REPORT_FORM };
                         return (
                             <LabOrderCard
                                 key={order.id}
@@ -260,10 +385,10 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
                                 isDischarged={isDischarged}
                                 onCollect={() => handleCollect(order.id)}
                                 onCancel={() => handleCancel(order.id)}
-                                onOpenResult={() => openResultPanel(order.id)}
-                                onCloseResult={() => closeResultPanel(order.id)}
-                                onResultFieldChange={(field, value) => setResultField(order.id, field, value)}
-                                onEnterResult={() => handleEnterResult(order.id)}
+                                onOpenReport={() => openReportPanel(order.id)}
+                                onCloseReport={() => closeReportPanel(order.id)}
+                                onReportFieldChange={(field, value) => setReportField(order.id, field, value)}
+                                onEnterReport={() => handleEnterReport(order.id)}
                             />
                         );
                     })}
@@ -277,24 +402,24 @@ export default function IpdLabTab({ admissionId, isDischarged }) {
 
 function LabOrderCard({
     order, panel, isDischarged,
-    onCollect, onCancel, onOpenResult, onCloseResult,
-    onResultFieldChange, onEnterResult,
+    onCollect, onCancel, onOpenReport, onCloseReport,
+    onReportFieldChange, onEnterReport,
 }) {
-    const statusMeta   = STATUS_META[order.status]   || STATUS_META.PENDING;
+    const statusMeta   = STATUS_META[order.status]   || STATUS_META.PENDING_COLLECTION;
     const priorityMeta = PRIORITY_META[order.priority] || PRIORITY_META.ROUTINE;
-    const isPending    = order.status === "PENDING";
-    const isCollected  = order.status === "SAMPLE_COLLECTED";
-    const isResulted   = order.status === "RESULTED";
+    const isPending    = order.status === "PENDING_COLLECTION";
+    const isCollected  = order.status === "AWAITING_REPORT";
+    const isReported   = order.status === "REPORT_GENERATED" || order.status === "BILLED";
 
     return (
-        <div className={`lab-card${isResulted ? " is-resulted" : ""}`}>
+        <div className={`lab-card${isReported ? " is-resulted" : ""}`}>
             {/* Card header */}
             <div className="lab-card__head">
                 <div className="lab-card__title-row">
                     <FlaskConical size={14} className="lab-card__icon" />
-                    <span className="lab-card__name">{order.testName}</span>
-                    {order.testCode && (
-                        <span className="lab-card__code">{order.testCode}</span>
+                    <span className="lab-card__name">{order.serviceName}</span>
+                    {order.specializationName && (
+                        <span className="lab-card__code">{order.specializationName}</span>
                     )}
                 </div>
                 <div className="lab-card__badges">
@@ -305,54 +430,50 @@ function LabOrderCard({
 
             {/* Meta */}
             <div className="lab-card__meta">
-                {order.orderedByName && (
-                    <span>Ordered by {order.orderedByName}</span>
+                {order.referredByName && (
+                    <span>Ordered by {order.referredByName}</span>
+                )}
+                {order.sampleType && (
+                    <span>Sample: {order.sampleType}</span>
                 )}
                 <span>{fmtDateTime(order.createdAt)}</span>
             </div>
 
             {/* Collected info */}
-            {isCollected && order.sampleCollectedAt && (
+            {isCollected && order.collectedAt && (
                 <p className="lab-card__collected-info">
                     <Beaker size={11} />
-                    Sample collected {fmtDateTime(order.sampleCollectedAt)}
-                    {order.sampleCollectedByName && ` · ${order.sampleCollectedByName}`}
+                    Sample collected {fmtDateTime(order.collectedAt)}
                 </p>
             )}
 
-            {/* Result block */}
-            {isResulted && (
+            {/* Report block */}
+            {isReported && (
                 <div className="lab-result-block">
-                    {(order.resultValue || order.resultNotes) && (
+                    {order.findings && (
                         <div className="lab-result-block__value-row">
-                            {order.resultValue && (
-                                <span className="lab-result-block__value">
-                                    {order.resultValue}
-                                    {order.resultUnit && <span className="lab-result-block__unit"> {order.resultUnit}</span>}
-                                </span>
-                            )}
-                            {order.referenceRange && (
-                                <span className="lab-result-block__range">
-                                    Ref: {order.referenceRange}
-                                </span>
-                            )}
+                            <span className="lab-result-block__value">{order.findings}</span>
                         </div>
                     )}
-                    {order.resultNotes && (
-                        <p className="lab-result-block__notes">{order.resultNotes}</p>
+                    {order.observation && (
+                        <p className="lab-result-block__notes">{order.observation}</p>
                     )}
-                    {order.resultedAt && (
+                    {order.reportedAt && (
                         <p className="lab-result-block__meta">
                             <CheckCircle2 size={10} />
-                            Resulted {fmtDateTime(order.resultedAt)}
-                            {order.resultedByName && ` · ${order.resultedByName}`}
+                            Reported {fmtDateTime(order.reportedAt)}
+                            {order.status === "BILLED" && (
+                                <span className="lab-result-block__billed">
+                                    <IndianRupee size={9} /> Billed
+                                </span>
+                            )}
                         </p>
                     )}
                 </div>
             )}
 
             {/* Action buttons */}
-            {!isDischarged && !isResulted && (
+            {!isDischarged && !isReported && (
                 <div className="lab-card__actions">
                     {isPending && (
                         <>
@@ -368,54 +489,36 @@ function LabOrderCard({
                         <button
                             type="button"
                             className="lab-card__action-btn is-result"
-                            onClick={panel.open ? onCloseResult : onOpenResult}
+                            onClick={panel.open ? onCloseReport : onOpenReport}
                         >
                             <CheckCircle2 size={11} />
-                            {panel.open ? "Hide form" : "Enter result"}
+                            {panel.open ? "Hide form" : "Enter report"}
                             {panel.open ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                         </button>
                     )}
                 </div>
             )}
 
-            {/* Result entry form */}
+            {/* Report entry form */}
             {panel.open && (
                 <div className="lab-result-form">
                     <div className="lab-result-form__fields">
-                        <div className="lab-result-form__field">
-                            <label className="lab-form__label">Result value</label>
+                        <div className="lab-result-form__field lab-result-form__field--full">
+                            <label className="lab-form__label">Findings *</label>
                             <input
                                 className="lab-form__input"
-                                placeholder="e.g. 95, Positive, Normal"
-                                value={panel.form.resultValue}
-                                onChange={(e) => onResultFieldChange("resultValue", e.target.value)}
-                            />
-                        </div>
-                        <div className="lab-result-form__field">
-                            <label className="lab-form__label">Unit</label>
-                            <input
-                                className="lab-form__input"
-                                placeholder="mg/dL"
-                                value={panel.form.resultUnit}
-                                onChange={(e) => onResultFieldChange("resultUnit", e.target.value)}
-                            />
-                        </div>
-                        <div className="lab-result-form__field">
-                            <label className="lab-form__label">Reference range</label>
-                            <input
-                                className="lab-form__input"
-                                placeholder="70–110 mg/dL"
-                                value={panel.form.referenceRange}
-                                onChange={(e) => onResultFieldChange("referenceRange", e.target.value)}
+                                placeholder="e.g. Hb 12.5 g/dL, WBC 8,200 /µL"
+                                value={panel.form.findings}
+                                onChange={(e) => onReportFieldChange("findings", e.target.value)}
                             />
                         </div>
                         <div className="lab-result-form__field lab-result-form__field--full">
-                            <label className="lab-form__label">Interpretation / notes</label>
+                            <label className="lab-form__label">Observation / interpretation</label>
                             <input
                                 className="lab-form__input"
-                                placeholder="Borderline elevated, repeat in 48h…"
-                                value={panel.form.resultNotes}
-                                onChange={(e) => onResultFieldChange("resultNotes", e.target.value)}
+                                placeholder="Normal range. Recommend repeat in 30 days."
+                                value={panel.form.observation}
+                                onChange={(e) => onReportFieldChange("observation", e.target.value)}
                             />
                         </div>
                     </div>
@@ -423,12 +526,12 @@ function LabOrderCard({
                         <button
                             type="button"
                             className="lab-form__save-btn"
-                            onClick={onEnterResult}
+                            onClick={onEnterReport}
                             disabled={panel.saving}
                         >
-                            {panel.saving ? "Saving…" : "Save result"}
+                            {panel.saving ? "Saving…" : "Save report"}
                         </button>
-                        <button type="button" className="lab-form__cancel-btn" onClick={onCloseResult}>
+                        <button type="button" className="lab-form__cancel-btn" onClick={onCloseReport}>
                             Cancel
                         </button>
                     </div>
