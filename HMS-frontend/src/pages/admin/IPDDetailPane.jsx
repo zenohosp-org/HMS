@@ -7,6 +7,7 @@ import { fmtDateTime, fmtDateMed } from "@/utils/date";
 import {
     roomLogsApi,
     radiologyApi,
+    labOrderApi,
     ambulanceApi,
     assetApi,
     invoiceApi,
@@ -63,7 +64,7 @@ const TABS = [
     { id: "Vitals",             label: "Vitals"   },
     { id: "Meds",               label: "Meds"     },
     { id: "I/O",                label: "I/O"      },
-    { id: "Labs",               label: "Labs"     },
+    { id: "Investigations",     label: "Investigations" },
     { id: "Tasks",              label: "Tasks"     },
     { id: "Referrals",          label: "Referrals" },
     { id: "Attendor Details",   label: "Attender"  },
@@ -548,7 +549,7 @@ export default function IPDDetailPane({
         let key = 0;
         const items = [];
         try {
-            const [suggestions, services, fullAdmission, radiologyOrders, patientServices, allPatientInvoices, gstRates] =
+            const [suggestions, services, fullAdmission, radiologyOrders, labOrders, patientServices, allPatientInvoices, gstRates] =
                 await Promise.all([
                     invoiceApi
                         .getSmartSuggestions(admission.patientId, admission.id)
@@ -556,6 +557,7 @@ export default function IPDDetailPane({
                     hospitalServiceApi.list(user.hospitalId).catch(() => []),
                     admissionApi.get(admission.id).catch(() => null),
                     radiologyApi.getByAdmission(admission.id).catch(() => []),
+                    labOrderApi.getByAdmission(admission.id).catch(() => []),
                     patientServicesApi.list(user.hospitalId).catch(() => []),
                     invoiceApi.getPatientInvoices(admission.patientId).catch(() => []),
                     gstRateApi.list(user.hospitalId, true).catch(() => []),
@@ -616,6 +618,28 @@ export default function IPDDetailPane({
                     items.push({
                         key: key++,
                         itemType: "RADIOLOGY",
+                        description: name,
+                        quantity: 1,
+                        unitPrice: price,
+                        totalPrice: price,
+                    });
+                });
+
+            // Mirror block for lab orders — same EXCLUDED filter, same shape.
+            // Labs auto-bills on report generation as item_type='LAB_TEST'; this
+            // block surfaces the same line pre-discharge so the estimate matches
+            // what the final invoice will be.
+            (Array.isArray(labOrders) ? labOrders : [])
+                .filter((l) => !EXCLUDED.includes(l.status))
+                .forEach((l) => {
+                    const name = l.serviceName || "Lab Test";
+                    const match = (Array.isArray(services) ? services : []).find(
+                        (s) => s.name?.toLowerCase() === name.toLowerCase()
+                    );
+                    const price = match?.price ?? l.price ?? 0;
+                    items.push({
+                        key: key++,
+                        itemType: "LAB_TEST",
                         description: name,
                         quantity: 1,
                         unitPrice: price,
@@ -1127,7 +1151,7 @@ export default function IPDDetailPane({
                             isDischarged={!!admission.actualDischargeDate}
                         />
                     )}
-                    {activeTab === "Labs" && (
+                    {activeTab === "Investigations" && (
                         <IpdLabTab
                             admissionId={admission.id}
                             patientId={admission.patientId}
