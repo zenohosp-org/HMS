@@ -44,6 +44,8 @@ import CheckupBookings from "@/pages/checkups/CheckupBookings";
 import CheckupBookingDetail from "@/pages/checkups/CheckupBookingDetail";
 import BloodBankStock from "@/pages/blood-bank/BloodBankStock";
 import BloodDonors from "@/pages/blood-bank/BloodDonors";
+import BiomedicalWasteLog from "@/pages/biomedical-waste/BiomedicalWasteLog";
+import BiomedicalWasteHandovers from "@/pages/biomedical-waste/BiomedicalWasteHandovers";
 import UiGallery from "@/pages/dev/UiGallery";
 import GlobalLoader from "@/components/ui/GlobalLoader";
 
@@ -85,6 +87,11 @@ const router = createBrowserRouter(
         <Route path="blood-bank" element={<Navigate to="/blood-bank/stock" replace />} />
         <Route path="blood-bank/stock" element={<BloodBankStock />} />
         <Route path="blood-bank/donors" element={<BloodDonors />} />
+
+        {/* Biomedical Waste */}
+        <Route path="biomedical-waste" element={<Navigate to="/biomedical-waste/log" replace />} />
+        <Route path="biomedical-waste/log" element={<BiomedicalWasteLog />} />
+        <Route path="biomedical-waste/handovers" element={<BiomedicalWasteHandovers />} />
 
         {/* Rooms */}
         <Route path="rooms" element={<Navigate to="/rooms/allocation" replace />} />

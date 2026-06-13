@@ -28,6 +28,9 @@ import {
     ConciergeBell,
     Droplet,
     Percent,
+    Pill,
+    Trash2,
+    Truck,
 } from "lucide-react";
 
 const DASHBOARD_LINK = { label: "Dashboard", to: "/dashboard", icon: Home };
@@ -61,6 +64,10 @@ const BLOOD_BANK_LINKS = [
     { label: "Stock & Issuance", to: "/blood-bank/stock", icon: Droplet },
     { label: "Donors", to: "/blood-bank/donors", icon: Users },
 ];
+const BMW_LINKS = [
+    { label: "Daily Log", to: "/biomedical-waste/log", icon: Trash2 },
+    { label: "Handovers", to: "/biomedical-waste/handovers", icon: Truck },
+];
 const HR_LINKS = [
     { label: "Staff Directory", to: "/staffs/directory", icon: UserSquare2 },
     { label: "Shift Roster", to: "/staffs/roster", icon: CalendarDays },
@@ -74,9 +81,9 @@ const BILLING_LINKS = [
 ];
 const EXTERNAL_APPS = [
     { label: "Labs", href: "https://labs.zenohosp.com", icon: FlaskConical },
+    { label: "Pharmacy", href: "https://pharmacy.zenohosp.com", icon: Pill },
     { label: "Finance", href: "https://finance.zenohosp.com", icon: BarChart2 },
     { label: "Inventory", href: "https://inventory.zenohosp.com", icon: Boxes },
-    { label: "Directory", href: "https://directory.zenohosp.com", icon: BookOpen },
     { label: "Assets", href: "https://asset.zenohosp.com", icon: LayoutGrid },
 ];
 
@@ -93,6 +100,7 @@ function Sidebar({ isOpen }) {
     );
     const [ambOpen, setAmbOpen] = useState(() => location.pathname.startsWith("/ambulance"));
     const [bbOpen, setBbOpen] = useState(() => location.pathname.startsWith("/blood-bank"));
+    const [bmwOpen, setBmwOpen] = useState(() => location.pathname.startsWith("/biomedical-waste"));
     const [settingsOpen, setSettingsOpen] = useState(
         () =>
             location.pathname.startsWith("/settings") ||
@@ -117,6 +125,7 @@ function Sidebar({ isOpen }) {
         location.pathname.startsWith("/rooms") || location.pathname.startsWith("/admissions");
     const ambActive = location.pathname.startsWith("/ambulance");
     const bbActive = location.pathname.startsWith("/blood-bank");
+    const bmwActive = location.pathname.startsWith("/biomedical-waste");
     const settingsActive =
         location.pathname.startsWith("/settings") ||
         location.pathname.startsWith("/checkups/packages") ||
@@ -260,6 +269,14 @@ function Sidebar({ isOpen }) {
                     bbOpen,
                     setBbOpen,
                     bbActive
+                )}
+                {renderAccordionSection(
+                    BMW_LINKS,
+                    "Biomedical Waste",
+                    Trash2,
+                    bmwOpen,
+                    setBmwOpen,
+                    bmwActive
                 )}
                 {checkupsEnabled && renderLink(CHECKUP_LINK)}
                 {renderAccordionSection(

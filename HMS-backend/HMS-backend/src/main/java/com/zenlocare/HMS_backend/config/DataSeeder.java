@@ -232,6 +232,8 @@ public class DataSeeder implements CommandLineRunner {
         seedZemaRules();
         ensureBloodBankSchema();
         seedBloodBankLookups();
+        ensureBiomedicalWasteSchema();
+        seedBiomedicalWasteLookups();
         seedGstRates();
         seedLabsDepartmentPerHospital();
     }
@@ -1333,6 +1335,131 @@ public class DataSeeder implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.warn("Could not seed blood-bank lookup {}/{}: {}", type, code, e.getMessage());
+        }
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    // Bio-Medical Waste — schema + system-default lookups
+    // ───────────────────────────────────────────────────────────────────
+
+    private void ensureBiomedicalWasteSchema() {
+        try {
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS biomedical_waste_lookups (
+                    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    hospital_id   UUID REFERENCES hospitals(id),
+                    lookup_type   VARCHAR(24)  NOT NULL,
+                    code          VARCHAR(40)  NOT NULL,
+                    label         VARCHAR(120) NOT NULL,
+                    metadata      JSONB,
+                    display_order INTEGER      DEFAULT 0,
+                    is_system     BOOLEAN      DEFAULT false,
+                    is_active     BOOLEAN      DEFAULT true,
+                    created_at    TIMESTAMP    DEFAULT now()
+                )
+            """);
+            jdbcTemplate.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uniq_biomedical_waste_lookups_tenant
+                    ON biomedical_waste_lookups (hospital_id, lookup_type, code)
+            """);
+            jdbcTemplate.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uniq_biomedical_waste_lookups_system
+                    ON biomedical_waste_lookups (lookup_type, code) WHERE hospital_id IS NULL
+            """);
+
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS biomedical_waste_handovers (
+                    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    hospital_id         UUID NOT NULL REFERENCES hospitals(id),
+                    handover_date       DATE NOT NULL,
+                    vendor_name         VARCHAR(150) NOT NULL,
+                    manifest_number     VARCHAR(80),
+                    vehicle_number      VARCHAR(40),
+                    received_by_name    VARCHAR(120),
+                    total_weight_kg     NUMERIC(10,2),
+                    category_breakdown  JSONB,
+                    cost_amount         NUMERIC(10,2),
+                    invoice_number      VARCHAR(80),
+                    notes               TEXT,
+                    created_by_user_id  UUID REFERENCES users(id),
+                    created_at          TIMESTAMP DEFAULT now()
+                )
+            """);
+            jdbcTemplate.execute("ALTER TABLE biomedical_waste_handovers ADD COLUMN IF NOT EXISTS cost_amount NUMERIC(10,2)");
+            jdbcTemplate.execute("ALTER TABLE biomedical_waste_handovers ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(80)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_bmw_handovers_hospital ON biomedical_waste_handovers(hospital_id)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_bmw_handovers_date ON biomedical_waste_handovers(handover_date)");
+
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS biomedical_waste_logs (
+                    id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    hospital_id            UUID NOT NULL REFERENCES hospitals(id),
+                    log_date               DATE NOT NULL,
+                    category_code          VARCHAR(40) NOT NULL,
+                    generation_point_code  VARCHAR(40) NOT NULL,
+                    weight_kg              NUMERIC(8,2) NOT NULL,
+                    bag_count              INTEGER,
+                    collected_by_user_id   UUID REFERENCES users(id),
+                    handover_id            UUID REFERENCES biomedical_waste_handovers(id),
+                    notes                  TEXT,
+                    created_at             TIMESTAMP DEFAULT now(),
+                    updated_at             TIMESTAMP DEFAULT now()
+                )
+            """);
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_bmw_logs_hospital ON biomedical_waste_logs(hospital_id)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_bmw_logs_date ON biomedical_waste_logs(log_date)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_bmw_logs_category ON biomedical_waste_logs(category_code)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_bmw_logs_handover ON biomedical_waste_logs(handover_id)");
+        } catch (Exception e) {
+            log.warn("Biomedical-waste schema setup: " + e.getMessage());
+        }
+    }
+
+    private void seedBiomedicalWasteLookups() {
+        // Waste categories — BMWM Rules 2016 Schedule I color codes
+        upsertBiomedicalWasteLookup("WASTE_CATEGORY", "YELLOW", "Yellow — Anatomical & soiled waste",
+                "{\"color\":\"#facc15\",\"treatment\":\"Incineration / deep burial\"}", 1);
+        upsertBiomedicalWasteLookup("WASTE_CATEGORY", "RED", "Red — Contaminated recyclables",
+                "{\"color\":\"#ef4444\",\"treatment\":\"Autoclave/microwave + shred\"}", 2);
+        upsertBiomedicalWasteLookup("WASTE_CATEGORY", "WHITE", "White — Sharps",
+                "{\"color\":\"#94a3b8\",\"treatment\":\"Autoclave + shred / encapsulation\"}", 3);
+        upsertBiomedicalWasteLookup("WASTE_CATEGORY", "BLUE", "Blue — Glassware & metal implants",
+                "{\"color\":\"#3b82f6\",\"treatment\":\"Disinfection + recycling\"}", 4);
+
+        // Generation points — departments that generate biomedical waste
+        upsertBiomedicalWasteLookup("GENERATION_POINT", "OT", "Operation Theatre", null, 1);
+        upsertBiomedicalWasteLookup("GENERATION_POINT", "ICU", "ICU", null, 2);
+        upsertBiomedicalWasteLookup("GENERATION_POINT", "GENERAL_WARD", "General Ward", null, 3);
+        upsertBiomedicalWasteLookup("GENERATION_POINT", "LABOUR_ROOM", "Labour Room", null, 4);
+        upsertBiomedicalWasteLookup("GENERATION_POINT", "LABORATORY", "Laboratory", null, 5);
+        upsertBiomedicalWasteLookup("GENERATION_POINT", "OPD", "OPD", null, 6);
+        upsertBiomedicalWasteLookup("GENERATION_POINT", "PHARMACY", "Pharmacy", null, 7);
+        upsertBiomedicalWasteLookup("GENERATION_POINT", "DIALYSIS", "Dialysis Unit", null, 8);
+        upsertBiomedicalWasteLookup("GENERATION_POINT", "EMERGENCY", "Emergency", null, 9);
+        upsertBiomedicalWasteLookup("GENERATION_POINT", "ISOLATION", "Isolation Ward", null, 10);
+
+        log.info("✅ Biomedical waste lookups seeded.");
+    }
+
+    /** NULL-safe idempotent upsert — same pattern as upsertBloodBankLookup. */
+    private void upsertBiomedicalWasteLookup(String type, String code, String label, String metadataJson, int order) {
+        try {
+            Integer existing = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM biomedical_waste_lookups WHERE hospital_id IS NULL AND lookup_type = ? AND code = ?",
+                Integer.class, type, code);
+            if (existing != null && existing > 0) {
+                jdbcTemplate.update(
+                    "UPDATE biomedical_waste_lookups SET label = ?, metadata = ?::jsonb, display_order = ?, is_system = true " +
+                    "WHERE hospital_id IS NULL AND lookup_type = ? AND code = ?",
+                    label, metadataJson, order, type, code);
+            } else {
+                jdbcTemplate.update(
+                    "INSERT INTO biomedical_waste_lookups (hospital_id, lookup_type, code, label, metadata, display_order, is_system, is_active) " +
+                    "VALUES (NULL, ?, ?, ?, ?::jsonb, ?, true, true)",
+                    type, code, label, metadataJson, order);
+            }
+        } catch (Exception e) {
+            log.warn("Could not seed biomedical-waste lookup {}/{}: {}", type, code, e.getMessage());
         }
     }
 

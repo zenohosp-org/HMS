@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(rm -rf /tmp/test_jwt.txt /tmp/verify_allergy_gate.mjs /tmp/verify_badges*.mjs /tmp/backend-restart.log /tmp/*.png /tmp/records.json /tmp/mar.json /tmp/node_modules /tmp/package-lock.json /tmp/package.json && ls /tmp | head -20)",
-      "Bash(PGPASSWORD='Javatech@2026' psql \"host=aws-1-ap-south-1.pooler.supabase.com port=6543 dbname=postgres user=postgres.qmfupslqooexhshomnhw sslmode=require\" -c \"DELETE FROM patient_allergies WHERE patient_id=9 AND allergen='paracetamal' RETURNING id, allergen, severity;\")"
+      "Bash(PGPASSWORD='Javatech@2026' psql \"host=aws-1-ap-south-1.pooler.supabase.com port=6543 dbname=postgres user=postgres.qmfupslqooexhshomnhw sslmode=require\" -c \"DELETE FROM patient_allergies WHERE patient_id=9 AND allergen='paracetamal' RETURNING id, allergen, severity;\")",
+      "Bash(./mvnw -q -o clean compile)",
+      "Bash(kill 12451)",
+      "Bash(curl -s -o /dev/null -w \"frontend:%{http_code}\\\\n\" http://localhost:5175/)",
+      "Bash(curl -s -o /dev/null -w \"backend:%{http_code}\\\\n\" http://localhost:9001/api/biomedical-waste/lookups)",
+      "Bash(chromium-cli --help)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(npx --no-install playwright install --dry-run)",
+      "Bash(node bmw-verify.js)",
+      "Bash(node bmw-verify2.js)",
+      "Bash(kill 15850)",
+      "Bash(node bmw-cost-verify.js)"
     ],
     "additionalDirectories": [
       "/tmp"

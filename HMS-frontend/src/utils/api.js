@@ -976,6 +976,47 @@ const bloodBankApi = {
   },
 };
 
+// Bio-medical waste — BMWM Rules 2016 daily category-wise waste logging and
+// handover-to-vendor manifests. Lookups (waste categories, generation
+// points) live as DB rows, same convention as Blood Bank.
+const bioMedicalWasteApi = {
+  listLookups: async (hospitalId, type) => {
+    const { data } = await api.get("/biomedical-waste/lookups", { params: { hospitalId, type } });
+    return data;
+  },
+  listLogs: async (hospitalId, params = {}) => {
+    const { data } = await api.get("/biomedical-waste/logs", { params: { hospitalId, ...params } });
+    return data;
+  },
+  createLog: async (hospitalId, payload) => {
+    const { data } = await api.post("/biomedical-waste/logs", payload, { params: { hospitalId } });
+    return data;
+  },
+  updateLog: async (id, hospitalId, payload) => {
+    const { data } = await api.put(`/biomedical-waste/logs/${id}`, payload, { params: { hospitalId } });
+    return data;
+  },
+  deleteLog: async (id, hospitalId) => {
+    await api.delete(`/biomedical-waste/logs/${id}`, { params: { hospitalId } });
+  },
+  getStats: async (hospitalId) => {
+    const { data } = await api.get("/biomedical-waste/stats", { params: { hospitalId } });
+    return data;
+  },
+  listHandovers: async (hospitalId, params = {}) => {
+    const { data } = await api.get("/biomedical-waste/handovers", { params: { hospitalId, ...params } });
+    return data;
+  },
+  createHandover: async (hospitalId, payload) => {
+    const { data } = await api.post("/biomedical-waste/handovers", payload, { params: { hospitalId } });
+    return data;
+  },
+  getHandover: async (id, hospitalId) => {
+    const { data } = await api.get(`/biomedical-waste/handovers/${id}`, { params: { hospitalId } });
+    return data;
+  },
+};
+
 // IPD Medication Administration Record — order cards with embedded admin log.
 const marApi = {
   list:      (admissionId)      => api.get(`/ipd/mar/admission/${admissionId}`).then((r) => r.data),
@@ -1106,4 +1147,5 @@ export {
   referralApi,
   zemaRulesApi,
   bloodBankApi,
+  bioMedicalWasteApi,
 };
