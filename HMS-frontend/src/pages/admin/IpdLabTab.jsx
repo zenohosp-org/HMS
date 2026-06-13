@@ -1,25 +1,28 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { labOrderApi, hospitalServiceApi, departmentApi } from "@/utils/api";
+import {
+    labOrderApi, radiologyApi, investigationsApi,
+    hospitalServiceApi, departmentApi,
+} from "@/utils/api";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { CenterLoader } from "@/components/ui/Loader";
 import {
-    FlaskConical, Plus, CheckCircle2, Clock, AlertCircle,
+    FlaskConical, ScanLine, Plus, CheckCircle2, Clock, AlertCircle,
     ChevronDown, ChevronUp, X, Beaker, IndianRupee,
 } from "lucide-react";
 import { fmtDateTime } from "@/utils/date";
 import "@/styles/modules/ipd-lab.css";
 
-// Status semantics now match the labs service (api-labs.zenohosp.com).
-// PENDING_COLLECTION → AWAITING_REPORT → REPORT_GENERATED → BILLED
-// BILLED is downstream of REPORT_GENERATED (set when labs auto-bills to
-// the active IPD invoice on report generation).
+// Unified status semantics across lab + radiology orders (per the labs
+// contract). LAB starts at PENDING_COLLECTION, RADIOLOGY at PENDING_SCAN;
+// both converge at AWAITING_REPORT → REPORT_GENERATED → BILLED.
 const STATUS_META = {
-    PENDING_COLLECTION: { label: "Pending",        cls: "is-pending"   },
-    AWAITING_REPORT:    { label: "Collected",      cls: "is-collected" },
-    REPORT_GENERATED:   { label: "Reported",       cls: "is-resulted"  },
-    BILLED:             { label: "Billed",         cls: "is-resulted"  },
+    PENDING_COLLECTION: { label: "Pending",   cls: "is-pending"   },
+    PENDING_SCAN:       { label: "Pending",   cls: "is-pending"   },
+    AWAITING_REPORT:    { label: "Collected", cls: "is-collected" },
+    REPORT_GENERATED:   { label: "Reported",  cls: "is-resulted"  },
+    BILLED:             { label: "Billed",    cls: "is-resulted"  },
 };
 
 const PRIORITY_META = {
@@ -30,15 +33,15 @@ const PRIORITY_META = {
 
 const STATUS_ORDER = {
     PENDING_COLLECTION: 0,
-    AWAITING_REPORT: 1,
-    REPORT_GENERATED: 2,
-    BILLED: 3,
+    PENDING_SCAN:       0,
+    AWAITING_REPORT:    1,
+    REPORT_GENERATED:   2,
+    BILLED:             3,
 };
 
 const BLANK_ORDER_FORM = {
     serviceId: "",
     serviceName: "",
-    specializationName: "",
     sampleType: "",
     priority: "ROUTINE",
     price: "",
@@ -46,6 +49,14 @@ const BLANK_ORDER_FORM = {
 };
 
 const BLANK_REPORT_FORM = { findings: "", observation: "" };
+
+// Map a service's department code to the kind labs uses.
+const kindFromCode = (code) => {
+    const c = (code || "").toUpperCase();
+    if (c === "LABS") return "LAB";
+    if (c === "RADIOLOGY") return "RADIOLOGY";
+    return null;
+};
 
 export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
     const { user } = useAuth();
@@ -57,24 +68,27 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
     const [saving, setSaving]         = useState(false);
     const [orderForm, setOrderForm]   = useState(BLANK_ORDER_FORM);
 
-    // Lab-services catalog — populated from HospitalService rows whose
-    // department.code === "LABS". Lets the operator pick a catalogued test
-    // (auto-fills price + gstRate) instead of typing one off.
-    const [labServices, setLabServices] = useState([]);
+    // Top-level filter pill — All / Pathology / Radiology.
+    const [kindFilter, setKindFilter] = useState("ALL");
+
+    // Catalog: services tagged to LABS or RADIOLOGY departments, annotated
+    // with a `kind` field so the picker can show + route correctly.
+    const [catalog, setCatalog] = useState([]);
 
     // Per-order report form state: { [orderId]: { open, saving, form } }
     const [reportPanels, setReportPanels] = useState({});
 
+    // Unified read — labs service merges lab + radiology by patient/admission.
     const fetchOrders = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await labOrderApi.list(admissionId);
+            const data = await investigationsApi.byAdmission(admissionId);
             const sorted = (Array.isArray(data) ? data : []).sort(
                 (a, b) => (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0)
             );
             setOrders(sorted);
         } catch {
-            notify("Failed to load lab orders", "error");
+            notify("Failed to load investigations", "error");
         } finally {
             setLoading(false);
         }
@@ -82,9 +96,8 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
 
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-    // Load lab-services catalog once per hospital. Find the Labs department
-    // (code === "LABS") and filter active services to its id. Tolerant of
-    // missing dept / services — the form falls back to a free-text input.
+    // Load services catalogued under LABS or RADIOLOGY departments, annotated
+    // with `kind` so the picker can label them and the submit can route.
     useEffect(() => {
         if (!user?.hospitalId) return;
         let cancelled = false;
@@ -94,19 +107,21 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
         ])
             .then(([depts, services]) => {
                 if (cancelled) return;
-                const labsDept = (depts || []).find((d) => d.code === "LABS");
-                if (!labsDept) { setLabServices([]); return; }
-                setLabServices((services || []).filter(
-                    (s) => s.departmentId === labsDept.id && s.isActive !== false
-                ));
+                const kindByDeptId = {};
+                (depts || []).forEach((d) => {
+                    const k = kindFromCode(d.code);
+                    if (k) kindByDeptId[d.id] = k;
+                });
+                setCatalog(
+                    (services || [])
+                        .filter((s) => s.isActive !== false && kindByDeptId[s.departmentId])
+                        .map((s) => ({ ...s, kind: kindByDeptId[s.departmentId] }))
+                );
             })
-            .catch(() => { if (!cancelled) setLabServices([]); });
+            .catch(() => { if (!cancelled) setCatalog([]); });
         return () => { cancelled = true; };
     }, [user?.hospitalId]);
 
-    // Compute total (price + GST) for the in-progress form. Display only —
-    // the labs API still receives price + gstRate so labs can split CGST/SGST
-    // on the auto-billed invoice.
     const previewTotal = useMemo(() => {
         const price = Number(orderForm.price) || 0;
         const gst = Number(orderForm.gstRate) || 0;
@@ -114,9 +129,29 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
         return Math.round((price * (1 + gst / 100)) * 100) / 100;
     }, [orderForm.price, orderForm.gstRate]);
 
+    // Visible orders honor the kind filter pill.
+    const visibleOrders = useMemo(() => {
+        if (kindFilter === "ALL") return orders;
+        return orders.filter((o) => o.kind === kindFilter);
+    }, [orders, kindFilter]);
+
+    // The picker only shows services matching the active kind filter so
+    // operators on the Radiology pill can't accidentally pick a pathology
+    // test. When filter is ALL, both kinds appear with a kind chip.
+    const pickerOptions = useMemo(() => {
+        const pool = kindFilter === "ALL"
+            ? catalog
+            : catalog.filter((s) => s.kind === kindFilter);
+        return pool.map((s) => ({
+            value: s.id,
+            label: `${s.name} — ${s.kind === "LAB" ? "Pathology" : "Radiology"} · ₹${s.price}${s.gstRate ? ` + ${s.gstRate}% GST` : ""}`,
+        }));
+    }, [catalog, kindFilter]);
+
     const handleCreate = async () => {
-        if (!orderForm.serviceName.trim()) {
-            notify("Test name is required", "warning");
+        const picked = catalog.find((s) => s.id === orderForm.serviceId);
+        if (!picked) {
+            notify("Pick a service tagged as Labs or Radiology", "warning");
             return;
         }
         if (!user?.hospitalId) {
@@ -129,23 +164,19 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
                 hospitalId: user.hospitalId,
                 patientId,
                 admissionId,
-                serviceName: orderForm.serviceName.trim(),
-                specializationName: orderForm.specializationName.trim() || null,
-                sampleType: orderForm.sampleType.trim() || null,
+                serviceName: picked.name,
+                sampleType: orderForm.sampleType.trim() || null,    // ignored for radiology
                 priority: orderForm.priority,
                 price: orderForm.price ? Number(orderForm.price) : null,
-                // Labs side will compute price * (1 + gstRate/100) and split
-                // CGST/SGST on the auto-billed invoice. Extra field — labs
-                // ignores it today, ready when the labs-side support lands.
                 gstRate: orderForm.gstRate ? Number(orderForm.gstRate) : null,
             };
-            const saved = await labOrderApi.create(payload);
-            setOrders((prev) =>
-                [saved, ...prev].sort((a, b) => (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0))
-            );
+            await (picked.kind === "LAB"
+                ? labOrderApi.create(payload)
+                : radiologyApi.create(payload));
+            await fetchOrders();
             setOrderForm(BLANK_ORDER_FORM);
             setShowForm(false);
-            notify("Lab order placed", "success");
+            notify(`${picked.kind === "LAB" ? "Lab" : "Radiology"} order placed`, "success");
         } catch (err) {
             notify(err?.response?.data?.message || "Failed to place order", "error");
         } finally {
@@ -153,23 +184,31 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
         }
     };
 
-    const handleCollect = async (orderId) => {
+    const handleAdvance = async (order) => {
+        // LAB collect / RADIOLOGY scan — first transition from pending.
         try {
-            const updated = await labOrderApi.collect(orderId);
-            setOrders((prev) =>
-                prev.map((o) => o.id === orderId ? updated : o)
-                    .sort((a, b) => (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0))
-            );
-            notify("Sample marked as collected", "success");
+            if (order.kind === "LAB") {
+                await labOrderApi.collect(order.id);
+            } else {
+                await radiologyApi.markScanned(order.id);
+            }
+            await fetchOrders();
+            notify(order.kind === "LAB" ? "Sample marked as collected" : "Scan marked done", "success");
         } catch (err) {
             notify(err?.response?.data?.message || "Failed to update status", "error");
         }
     };
 
-    const handleCancel = async (orderId) => {
+    const handleCancel = async (order) => {
+        // Only labs side currently exposes DELETE; radiology cancels go via
+        // the labs UI for now.
+        if (order.kind !== "LAB") {
+            notify("Cancel radiology orders from the labs app", "warning");
+            return;
+        }
         try {
-            await labOrderApi.cancel(orderId);
-            setOrders((prev) => prev.filter((o) => o.id !== orderId));
+            await labOrderApi.cancel(order.id);
+            await fetchOrders();
             notify("Order cancelled", "success");
         } catch (err) {
             notify(err?.response?.data?.message || "Failed to cancel order", "error");
@@ -194,38 +233,56 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
         }));
     };
 
-    const handleEnterReport = async (orderId) => {
-        const panel = reportPanels[orderId];
+    const handleEnterReport = async (order) => {
+        const panel = reportPanels[order.id];
         if (!panel) return;
         if (!panel.form.findings.trim()) {
             notify("Findings is required", "warning");
             return;
         }
-        setReportPanels((prev) => ({ ...prev, [orderId]: { ...prev[orderId], saving: true } }));
+        setReportPanels((prev) => ({ ...prev, [order.id]: { ...prev[order.id], saving: true } }));
         try {
-            const updated = await labOrderApi.report(orderId, panel.form);
-            setOrders((prev) =>
-                prev.map((o) => o.id === orderId ? updated : o)
-                    .sort((a, b) => (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0))
-            );
-            setReportPanels((prev) => ({ ...prev, [orderId]: { open: false, saving: false, form: { ...BLANK_REPORT_FORM } } }));
+            if (order.kind === "LAB") {
+                await labOrderApi.report(order.id, panel.form);
+            } else {
+                await radiologyApi.generateReport(order.id, panel.form.findings, panel.form.observation);
+            }
+            await fetchOrders();
+            setReportPanels((prev) => ({ ...prev, [order.id]: { open: false, saving: false, form: { ...BLANK_REPORT_FORM } } }));
             notify("Report saved · billed to active invoice if priced", "success");
         } catch (err) {
             notify(err?.response?.data?.message || "Failed to save report", "error");
-            setReportPanels((prev) => ({ ...prev, [orderId]: { ...prev[orderId], saving: false } }));
+            setReportPanels((prev) => ({ ...prev, [order.id]: { ...prev[order.id], saving: false } }));
         }
     };
 
-    // ── Counts for summary ─────────────────────────────────────────────────────
-    const pendingCount   = orders.filter((o) => o.status === "PENDING_COLLECTION").length;
-    const collectedCount = orders.filter((o) => o.status === "AWAITING_REPORT").length;
-    const reportedCount  = orders.filter((o) => o.status === "REPORT_GENERATED" || o.status === "BILLED").length;
+    const pendingCount   = visibleOrders.filter((o) => o.status === "PENDING_COLLECTION" || o.status === "PENDING_SCAN").length;
+    const collectedCount = visibleOrders.filter((o) => o.status === "AWAITING_REPORT").length;
+    const reportedCount  = visibleOrders.filter((o) => o.status === "REPORT_GENERATED" || o.status === "BILLED").length;
 
     return (
         <div className="hms-ipd-tab-body lab-tab">
 
+            {/* Kind filter — All / Pathology / Radiology */}
+            <div className="lab-kind-pills">
+                {[
+                    { key: "ALL",       label: "All" },
+                    { key: "LAB",       label: "Pathology" },
+                    { key: "RADIOLOGY", label: "Radiology" },
+                ].map((p) => (
+                    <button
+                        key={p.key}
+                        type="button"
+                        className={`lab-kind-pill ${kindFilter === p.key ? "is-active" : ""}`}
+                        onClick={() => setKindFilter(p.key)}
+                    >
+                        {p.label}
+                    </button>
+                ))}
+            </div>
+
             {/* Summary strip */}
-            {orders.length > 0 && (
+            {visibleOrders.length > 0 && (
                 <div className="lab-summary">
                     <div className="lab-summary__pill is-pending">
                         <Clock size={11} /> {pendingCount} Pending
@@ -258,11 +315,11 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
                     <div className="lab-form__fields">
                         <div className="lab-form__field lab-form__field--grow">
                             <label className="lab-form__label">Test *</label>
-                            {labServices.length > 0 ? (
+                            {pickerOptions.length > 0 ? (
                                 <SearchableSelect
                                     value={orderForm.serviceId}
                                     onChange={(serviceId) => {
-                                        const svc = labServices.find((s) => s.id === serviceId);
+                                        const svc = catalog.find((s) => s.id === serviceId);
                                         setOrderForm((f) => ({
                                             ...f,
                                             serviceId,
@@ -271,27 +328,13 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
                                             gstRate: svc?.gstRate != null ? String(svc.gstRate) : "",
                                         }));
                                     }}
-                                    options={labServices.map((s) => ({
-                                        value: s.id,
-                                        label: s.gstRate
-                                            ? `${s.name} — ₹${s.price} + ${s.gstRate}% GST`
-                                            : `${s.name} — ₹${s.price}`,
-                                    }))}
-                                    placeholder="Pick a lab test"
+                                    options={pickerOptions}
+                                    placeholder={`Pick a ${kindFilter === "ALL" ? "test" : kindFilter === "LAB" ? "pathology test" : "radiology test"}`}
                                 />
                             ) : (
-                                <input
-                                    className="lab-form__input"
-                                    placeholder="e.g. CBC, LFT, Serum Creatinine"
-                                    value={orderForm.serviceName}
-                                    onChange={(e) => setOrderForm((f) => ({ ...f, serviceName: e.target.value }))}
-                                    onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                                />
-                            )}
-                            {labServices.length === 0 && (
                                 <p className="lab-form__hint">
-                                    No services in the Labs department yet. Add them in Settings → Services
-                                    (department = Labs) so prices + GST are picked up automatically.
+                                    No services tagged under {kindFilter === "RADIOLOGY" ? "Radiology" : "Labs"} yet.
+                                    Add them in Settings → Services and set the department to Labs or Radiology.
                                 </p>
                             )}
                         </div>
@@ -358,37 +401,39 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
             {isDischarged && (
                 <div className="mar-discharge-notice">
                     <AlertCircle size={14} />
-                    <span>Patient discharged — lab orders are read-only</span>
+                    <span>Patient discharged — investigations are read-only</span>
                 </div>
             )}
 
             {/* Order list */}
             {loading ? (
-                <CenterLoader text="Loading lab orders…" />
-            ) : orders.length === 0 ? (
+                <CenterLoader text="Loading investigations…" />
+            ) : visibleOrders.length === 0 ? (
                 <div className="hms-ipd-center-empty">
                     <div className="hms-ipd-center-empty__icon"><FlaskConical size={32} /></div>
-                    <p className="hms-ipd-center-empty__text">No lab orders for this admission</p>
+                    <p className="hms-ipd-center-empty__text">
+                        No {kindFilter === "ALL" ? "investigations" : kindFilter === "LAB" ? "pathology orders" : "radiology orders"} for this admission
+                    </p>
                     <p className="hms-ipd-center-empty__sub">
-                        Use "Order test" above to place a lab investigation
+                        Use "Order test" above to place an investigation
                     </p>
                 </div>
             ) : (
                 <div className="lab-list">
-                    {orders.map((order) => {
+                    {visibleOrders.map((order) => {
                         const panel = reportPanels[order.id] || { open: false, saving: false, form: BLANK_REPORT_FORM };
                         return (
-                            <LabOrderCard
-                                key={order.id}
+                            <InvestigationCard
+                                key={`${order.kind}-${order.id}`}
                                 order={order}
                                 panel={panel}
                                 isDischarged={isDischarged}
-                                onCollect={() => handleCollect(order.id)}
-                                onCancel={() => handleCancel(order.id)}
+                                onAdvance={() => handleAdvance(order)}
+                                onCancel={() => handleCancel(order)}
                                 onOpenReport={() => openReportPanel(order.id)}
                                 onCloseReport={() => closeReportPanel(order.id)}
                                 onReportFieldChange={(field, value) => setReportField(order.id, field, value)}
-                                onEnterReport={() => handleEnterReport(order.id)}
+                                onEnterReport={() => handleEnterReport(order)}
                             />
                         );
                     })}
@@ -400,27 +445,29 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
 
 // ── Order card ─────────────────────────────────────────────────────────────────
 
-function LabOrderCard({
+function InvestigationCard({
     order, panel, isDischarged,
-    onCollect, onCancel, onOpenReport, onCloseReport,
+    onAdvance, onCancel, onOpenReport, onCloseReport,
     onReportFieldChange, onEnterReport,
 }) {
     const statusMeta   = STATUS_META[order.status]   || STATUS_META.PENDING_COLLECTION;
     const priorityMeta = PRIORITY_META[order.priority] || PRIORITY_META.ROUTINE;
-    const isPending    = order.status === "PENDING_COLLECTION";
+    const isPending    = order.status === "PENDING_COLLECTION" || order.status === "PENDING_SCAN";
     const isCollected  = order.status === "AWAITING_REPORT";
     const isReported   = order.status === "REPORT_GENERATED" || order.status === "BILLED";
+    const isLab        = order.kind === "LAB";
+    const Icon         = isLab ? FlaskConical : ScanLine;
 
     return (
         <div className={`lab-card${isReported ? " is-resulted" : ""}`}>
             {/* Card header */}
             <div className="lab-card__head">
                 <div className="lab-card__title-row">
-                    <FlaskConical size={14} className="lab-card__icon" />
+                    <Icon size={14} className="lab-card__icon" />
                     <span className="lab-card__name">{order.serviceName}</span>
-                    {order.specializationName && (
-                        <span className="lab-card__code">{order.specializationName}</span>
-                    )}
+                    <span className={`lab-kind-chip ${isLab ? "is-lab" : "is-radiology"}`}>
+                        {isLab ? "Pathology" : "Radiology"}
+                    </span>
                 </div>
                 <div className="lab-card__badges">
                     <span className={`lab-status-badge ${statusMeta.cls}`}>{statusMeta.label}</span>
@@ -433,17 +480,19 @@ function LabOrderCard({
                 {order.referredByName && (
                     <span>Ordered by {order.referredByName}</span>
                 )}
-                {order.sampleType && (
+                {isLab && order.sampleType && (
                     <span>Sample: {order.sampleType}</span>
                 )}
                 <span>{fmtDateTime(order.createdAt)}</span>
             </div>
 
-            {/* Collected info */}
-            {isCollected && order.collectedAt && (
+            {/* Collected / scanned info */}
+            {isCollected && (isLab ? order.collectedAt : order.scannedAt) && (
                 <p className="lab-card__collected-info">
                     <Beaker size={11} />
-                    Sample collected {fmtDateTime(order.collectedAt)}
+                    {isLab
+                        ? `Sample collected ${fmtDateTime(order.collectedAt)}`
+                        : `Scan performed ${fmtDateTime(order.scannedAt)}`}
                 </p>
             )}
 
@@ -477,12 +526,14 @@ function LabOrderCard({
                 <div className="lab-card__actions">
                     {isPending && (
                         <>
-                            <button type="button" className="lab-card__action-btn is-collect" onClick={onCollect}>
-                                <Beaker size={11} /> Mark sample collected
+                            <button type="button" className="lab-card__action-btn is-collect" onClick={onAdvance}>
+                                <Beaker size={11} /> {isLab ? "Mark sample collected" : "Mark scan done"}
                             </button>
-                            <button type="button" className="lab-card__action-btn is-cancel" onClick={onCancel}>
-                                <X size={11} /> Cancel
-                            </button>
+                            {isLab && (
+                                <button type="button" className="lab-card__action-btn is-cancel" onClick={onCancel}>
+                                    <X size={11} /> Cancel
+                                </button>
+                            )}
                         </>
                     )}
                     {isCollected && (
@@ -507,7 +558,9 @@ function LabOrderCard({
                             <label className="lab-form__label">Findings *</label>
                             <input
                                 className="lab-form__input"
-                                placeholder="e.g. Hb 12.5 g/dL, WBC 8,200 /µL"
+                                placeholder={isLab
+                                    ? "e.g. Hb 12.5 g/dL, WBC 8,200 /µL"
+                                    : "e.g. No acute findings. Normal study."}
                                 value={panel.form.findings}
                                 onChange={(e) => onReportFieldChange("findings", e.target.value)}
                             />

@@ -236,6 +236,7 @@ public class DataSeeder implements CommandLineRunner {
         seedBiomedicalWasteLookups();
         seedGstRates();
         seedLabsDepartmentPerHospital();
+        seedRadiologyDepartmentPerHospital();
     }
 
     /**
@@ -256,13 +257,39 @@ public class DataSeeder implements CommandLineRunner {
                 jdbcTemplate.update("""
                     INSERT INTO public.departments (id, hospital_id, name, type, code, description, is_active, created_at)
                     VALUES (gen_random_uuid(), ?, 'Labs', 'CLINICAL', 'LABS',
-                            'Lab investigations catalogue — services here populate the lab-order picker.',
+                            'Lab investigations catalogue — services here populate the pathology order picker.',
                             true, now())
                     """, hospital.getId());
             }
             log.info("✅ Ensured 'Labs' department (code=LABS) for every hospital");
         } catch (Exception e) {
             log.warn("Could not seed Labs department: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Sibling of the Labs seed. Services tagged to this department feed
+     * the Radiology order picker on the IPD Investigations tab. The HMS
+     * front-end routes orders by department code: LABS → /api/lab,
+     * RADIOLOGY → /api/radiology.
+     */
+    private void seedRadiologyDepartmentPerHospital() {
+        try {
+            for (Hospital hospital : hospitalRepository.findAll()) {
+                Integer existing = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM public.departments WHERE hospital_id = ? AND code = 'RADIOLOGY'",
+                        Integer.class, hospital.getId());
+                if (existing != null && existing > 0) continue;
+                jdbcTemplate.update("""
+                    INSERT INTO public.departments (id, hospital_id, name, type, code, description, is_active, created_at)
+                    VALUES (gen_random_uuid(), ?, 'Radiology', 'CLINICAL', 'RADIOLOGY',
+                            'Radiology investigations catalogue — services here populate the radiology order picker.',
+                            true, now())
+                    """, hospital.getId());
+            }
+            log.info("✅ Ensured 'Radiology' department (code=RADIOLOGY) for every hospital");
+        } catch (Exception e) {
+            log.warn("Could not seed Radiology department: {}", e.getMessage());
         }
     }
 
