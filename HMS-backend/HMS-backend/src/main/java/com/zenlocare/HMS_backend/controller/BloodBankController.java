@@ -40,8 +40,10 @@ public class BloodBankController {
     }
 
     @GetMapping("/donors/{id}")
-    public ResponseEntity<BloodBankDtos.DonorDto> getDonor(@PathVariable UUID id) {
-        return ResponseEntity.ok(service.getDonor(id));
+    public ResponseEntity<BloodBankDtos.DonorDto> getDonor(
+            @PathVariable UUID id,
+            @RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(service.getDonor(id, hospitalId));
     }
 
     @PostMapping("/donors")
@@ -54,8 +56,9 @@ public class BloodBankController {
     @PutMapping("/donors/{id}")
     public ResponseEntity<BloodBankDtos.DonorDto> updateDonor(
             @PathVariable UUID id,
+            @RequestParam UUID hospitalId,
             @RequestBody BloodBankDtos.DonorRequest req) {
-        return ResponseEntity.ok(service.updateDonor(id, req));
+        return ResponseEntity.ok(service.updateDonor(id, hospitalId, req));
     }
 
     // ───── Units (inventory) ──────────────────────────────────────────
@@ -70,8 +73,10 @@ public class BloodBankController {
     }
 
     @GetMapping("/units/{id}")
-    public ResponseEntity<BloodBankDtos.UnitDto> getUnit(@PathVariable UUID id) {
-        return ResponseEntity.ok(service.getUnit(id));
+    public ResponseEntity<BloodBankDtos.UnitDto> getUnit(
+            @PathVariable UUID id,
+            @RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(service.getUnit(id, hospitalId));
     }
 
     @PostMapping("/units")
@@ -89,17 +94,26 @@ public class BloodBankController {
     @PatchMapping("/units/{id}/status")
     public ResponseEntity<BloodBankDtos.UnitDto> updateStatus(
             @PathVariable UUID id,
+            @RequestParam UUID hospitalId,
             @RequestBody StatusRequest req) {
-        return ResponseEntity.ok(service.updateUnitStatus(id, req.getStatusCode()));
+        return ResponseEntity.ok(service.updateUnitStatus(id, hospitalId, req.getStatusCode()));
+    }
+
+    @PatchMapping("/units/{id}/replacements")
+    public ResponseEntity<BloodBankDtos.UnitDto> recordReplacement(
+            @PathVariable UUID id,
+            @RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(service.recordReplacement(id, hospitalId));
     }
 
     @PostMapping("/units/{id}/issue")
     public ResponseEntity<BloodBankDtos.UnitDto> issueUnit(
             @PathVariable UUID id,
+            @RequestParam UUID hospitalId,
             @RequestBody BloodBankDtos.IssueUnitRequest req,
             Authentication auth) {
         UUID issuedBy = auth != null && auth.getPrincipal() instanceof User u ? u.getId() : null;
-        return ResponseEntity.ok(service.issueUnit(id, req, issuedBy));
+        return ResponseEntity.ok(service.issueUnit(id, hospitalId, req, issuedBy));
     }
 
     // ───── Stats ──────────────────────────────────────────────────────

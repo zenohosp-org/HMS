@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zenlocare.HMS_backend.dto.BloodBankDtos;
 import com.zenlocare.HMS_backend.entity.*;
+import com.zenlocare.HMS_backend.exception.ResourceNotFoundException;
 import com.zenlocare.HMS_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,53 @@ public class BloodBankService {
 
     private static final int EXPIRY_WARN_DAYS = 7;
     private static final ObjectMapper JSON = new ObjectMapper();
+
+    /**
+     * Legal bag status transitions reachable via {@link #updateUnitStatus}.
+     * ISSUED is reached only via {@link #issueUnit} and is a dead end here
+     * (re-statusing an issued bag is rejected below); EXPIRED/DISCARDED are
+     * terminal except EXPIRED → DISCARDED for write-off.
+     */
+    /** Components whose RBC content makes ABO/Rh donor antigens the deciding factor. */
+    private static final Set<String> RBC_COMPONENTS = Set.of("WHOLE_BLOOD", "PRBC");
+
+    /**
+     * For RBC-containing components: recipient blood-group code → set of bag
+     * blood-group codes that are safe to transfuse (standard ABO/Rh donor
+     * compatibility; AB+ is the universal recipient, O- the universal donor).
+     */
+    private static final Map<String, Set<String>> RBC_COMPATIBLE_DONORS = Map.of(
+            "O_NEG",  Set.of("O_NEG"),
+            "O_POS",  Set.of("O_NEG", "O_POS"),
+            "A_NEG",  Set.of("O_NEG", "A_NEG"),
+            "A_POS",  Set.of("O_NEG", "O_POS", "A_NEG", "A_POS"),
+            "B_NEG",  Set.of("O_NEG", "B_NEG"),
+            "B_POS",  Set.of("O_NEG", "O_POS", "B_NEG", "B_POS"),
+            "AB_NEG", Set.of("O_NEG", "A_NEG", "B_NEG", "AB_NEG"),
+            "AB_POS", Set.of("O_NEG", "O_POS", "A_NEG", "A_POS", "B_NEG", "B_POS", "AB_NEG", "AB_POS")
+    );
+
+    /**
+     * For plasma-bearing components (FFP, cryo, platelets): donor antibodies
+     * matter, not antigens, so compatibility is ABO-only (Rh irrelevant) and
+     * reversed from RBC — AB is the universal plasma donor, O the universal
+     * plasma recipient. Keyed by recipient ABO letter → safe donor ABO letters.
+     */
+    private static final Map<String, Set<String>> PLASMA_COMPATIBLE_DONOR_ABO = Map.of(
+            "O",  Set.of("O", "A", "B", "AB"),
+            "A",  Set.of("A", "AB"),
+            "B",  Set.of("B", "AB"),
+            "AB", Set.of("AB")
+    );
+
+    private static final Map<String, Set<String>> ALLOWED_STATUS_TRANSITIONS = Map.of(
+            "QUARANTINE", Set.of("AVAILABLE", "DISCARDED"),
+            "AVAILABLE", Set.of("RESERVED", "EXPIRED", "DISCARDED"),
+            "RESERVED", Set.of("AVAILABLE", "EXPIRED", "DISCARDED"),
+            "EXPIRED", Set.of("DISCARDED"),
+            "DISCARDED", Set.of(),
+            "ISSUED", Set.of()
+    );
 
     private final BloodBankLookupRepository lookupRepo;
     private final BloodDonorRepository donorRepo;
@@ -75,15 +124,17 @@ public class BloodBankService {
                 .toList();
     }
 
-    public BloodBankDtos.DonorDto getDonor(UUID id) {
-        return toDonorDto(donorRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Donor not found")));
+    public BloodBankDtos.DonorDto getDonor(UUID id, UUID hospitalId) {
+        BloodDonor donor = donorRepo.findById(id)
+                .filter(d -> d.getHospital().getId().equals(hospitalId))
+                .orElseThrow(() -> new ResourceNotFoundException("Donor not found"));
+        return toDonorDto(donor);
     }
 
     @Transactional
     public BloodBankDtos.DonorDto registerDonor(UUID hospitalId, BloodBankDtos.DonorRequest req) {
         Hospital hospital = hospitalRepository.findById(hospitalId)
-                .orElseThrow(() -> new RuntimeException("Hospital not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
 
         long existing = donorRepo.countByHospital_Id(hospitalId);
         String donorCode = "DON-" + String.format("%04d", existing + 1);
@@ -102,6 +153,7 @@ public class BloodBankService {
                 .address(req.getAddress())
                 .aadhaarNumber(req.getAadhaarNumber())
                 .patientId(req.getPatientId())
+                .isEligible(req.getIsEligible() != null ? req.getIsEligible() : true)
                 .notes(req.getNotes())
                 .build();
 
@@ -109,9 +161,10 @@ public class BloodBankService {
     }
 
     @Transactional
-    public BloodBankDtos.DonorDto updateDonor(UUID id, BloodBankDtos.DonorRequest req) {
+    public BloodBankDtos.DonorDto updateDonor(UUID id, UUID hospitalId, BloodBankDtos.DonorRequest req) {
         BloodDonor donor = donorRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Donor not found"));
+                .filter(d -> d.getHospital().getId().equals(hospitalId))
+                .orElseThrow(() -> new ResourceNotFoundException("Donor not found"));
         if (req.getFirstName() != null) donor.setFirstName(req.getFirstName());
         if (req.getLastName() != null) donor.setLastName(req.getLastName());
         if (req.getPhone() != null) donor.setPhone(req.getPhone());
@@ -123,6 +176,7 @@ public class BloodBankService {
         if (req.getAddress() != null) donor.setAddress(req.getAddress());
         if (req.getAadhaarNumber() != null) donor.setAadhaarNumber(req.getAadhaarNumber());
         if (req.getPatientId() != null) donor.setPatientId(req.getPatientId());
+        if (req.getIsEligible() != null) donor.setIsEligible(req.getIsEligible());
         if (req.getNotes() != null) donor.setNotes(req.getNotes());
         return toDonorDto(donorRepo.save(donor));
     }
@@ -164,9 +218,10 @@ public class BloodBankService {
                 .toList();
     }
 
-    public BloodBankDtos.UnitDto getUnit(UUID id) {
+    public BloodBankDtos.UnitDto getUnit(UUID id, UUID hospitalId) {
         BloodUnit unit = unitRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Unit not found"));
+                .filter(u -> u.getHospital().getId().equals(hospitalId))
+                .orElseThrow(() -> new ResourceNotFoundException("Unit not found"));
         return toUnitDto(unit, LocalDate.now().plusDays(EXPIRY_WARN_DAYS));
     }
 
@@ -194,7 +249,7 @@ public class BloodBankService {
     @Transactional
     public BloodBankDtos.UnitDto registerUnit(UUID hospitalId, BloodBankDtos.UnitRequest req) {
         Hospital hospital = hospitalRepository.findById(hospitalId)
-                .orElseThrow(() -> new RuntimeException("Hospital not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
 
         // Auto-generate when the caller omits the bag number — the modal no
         // longer accepts free-text entry, so this is the standard path.
@@ -209,6 +264,10 @@ public class BloodBankService {
         BloodDonor donor = req.getDonorId() != null
                 ? donorRepo.findById(req.getDonorId()).orElse(null)
                 : null;
+        if (donor != null && !Boolean.TRUE.equals(donor.getIsEligible())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Donor " + donor.getDonorCode() + " is deferred and cannot supply new units");
+        }
 
         LocalDate collection = req.getCollectionDate() != null ? req.getCollectionDate() : LocalDate.now();
         LocalDate expiry = req.getExpiryDate();
@@ -235,7 +294,15 @@ public class BloodBankService {
                 .notes(req.getNotes())
                 .build();
 
-        BloodUnit saved = unitRepo.save(unit);
+        BloodUnit saved;
+        try {
+            saved = unitRepo.saveAndFlush(unit);
+        } catch (DataIntegrityViolationException e) {
+            // Two concurrent registrations raced past the pre-check above —
+            // the unique (hospital, bag_number) constraint is the final guard.
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Bag number " + finalBagNumber + " was just taken by another registration — please retry");
+        }
         if (donor != null) {
             donor.setTotalDonations((donor.getTotalDonations() == null ? 0 : donor.getTotalDonations()) + 1);
             donor.setLastDonationDate(collection);
@@ -244,13 +311,34 @@ public class BloodBankService {
         return toUnitDto(saved, LocalDate.now().plusDays(EXPIRY_WARN_DAYS));
     }
 
+    /**
+     * Records one replacement donation against an issued bag's pledge.
+     * Bumps replacementsReceived by 1, capped at replacementsPledged.
+     */
     @Transactional
-    public BloodBankDtos.UnitDto updateUnitStatus(UUID id, String newStatusCode) {
+    public BloodBankDtos.UnitDto recordReplacement(UUID id, UUID hospitalId) {
         BloodUnit unit = unitRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Unit not found"));
-        if ("ISSUED".equals(unit.getStatusCode())) {
+                .filter(u -> u.getHospital().getId().equals(hospitalId))
+                .orElseThrow(() -> new ResourceNotFoundException("Unit not found"));
+        int pledged = unit.getReplacementsPledged() == null ? 0 : unit.getReplacementsPledged();
+        int received = unit.getReplacementsReceived() == null ? 0 : unit.getReplacementsReceived();
+        if (received >= pledged) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Issued units cannot be re-statused — register a new bag");
+                    "All " + pledged + " pledged replacement(s) already recorded for this bag");
+        }
+        unit.setReplacementsReceived(received + 1);
+        return toUnitDto(unitRepo.save(unit), LocalDate.now().plusDays(EXPIRY_WARN_DAYS));
+    }
+
+    @Transactional
+    public BloodBankDtos.UnitDto updateUnitStatus(UUID id, UUID hospitalId, String newStatusCode) {
+        BloodUnit unit = unitRepo.findById(id)
+                .filter(u -> u.getHospital().getId().equals(hospitalId))
+                .orElseThrow(() -> new ResourceNotFoundException("Unit not found"));
+        Set<String> allowed = ALLOWED_STATUS_TRANSITIONS.getOrDefault(unit.getStatusCode(), Set.of());
+        if (!allowed.contains(newStatusCode)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cannot move bag from " + unit.getStatusCode() + " to " + newStatusCode);
         }
         unit.setStatusCode(newStatusCode);
         if ("AVAILABLE".equals(newStatusCode)) {
@@ -267,9 +355,10 @@ public class BloodBankService {
      * future cancel can find the line item.
      */
     @Transactional
-    public BloodBankDtos.UnitDto issueUnit(UUID unitId, BloodBankDtos.IssueUnitRequest req, UUID issuedByUserId) {
+    public BloodBankDtos.UnitDto issueUnit(UUID unitId, UUID hospitalId, BloodBankDtos.IssueUnitRequest req, UUID issuedByUserId) {
         BloodUnit unit = unitRepo.findById(unitId)
-                .orElseThrow(() -> new RuntimeException("Unit not found"));
+                .filter(u -> u.getHospital().getId().equals(hospitalId))
+                .orElseThrow(() -> new ResourceNotFoundException("Unit not found"));
         if (!"AVAILABLE".equals(unit.getStatusCode()) && !"RESERVED".equals(unit.getStatusCode())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Only AVAILABLE or RESERVED units can be issued; this bag is " + unit.getStatusCode());
@@ -287,7 +376,24 @@ public class BloodBankService {
         }
 
         Patient patient = patientRepository.findById(req.getPatientId())
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
+
+        String patientGroupCode = normalizeBloodGroupCode(patient.getBloodGroup());
+        boolean incompatible = patientGroupCode != null && unit.getBloodGroupCode() != null
+                && !isCompatible(unit.getBloodGroupCode(), unit.getComponentCode(), patientGroupCode);
+        if (incompatible) {
+            if (!Boolean.TRUE.equals(req.getOverrideIncompatibility())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Blood group mismatch: bag is " + bloodGroupLabel(unit.getBloodGroupCode())
+                                + " (" + unit.getComponentCode() + ") but the patient's recorded group is "
+                                + bloodGroupLabel(patientGroupCode)
+                                + ". Confirm override with a reason to proceed.");
+            }
+            if (req.getIncompatibilityOverrideReason() == null || req.getIncompatibilityOverrideReason().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "A reason is required to override the blood-group mismatch");
+            }
+        }
 
         Admission admission = req.getAdmissionId() != null
                 ? admissionRepository.findById(req.getAdmissionId()).orElse(null)
@@ -366,6 +472,12 @@ public class BloodBankService {
         if (req.getNotes() != null && !req.getNotes().isBlank()) {
             unit.setNotes(unit.getNotes() == null ? req.getNotes() : (unit.getNotes() + "\n" + req.getNotes()));
         }
+        if (incompatible) {
+            String overrideNote = "[Blood group override] Bag " + bloodGroupLabel(unit.getBloodGroupCode())
+                    + " issued to " + bloodGroupLabel(patientGroupCode) + " patient — "
+                    + req.getIncompatibilityOverrideReason();
+            unit.setNotes(unit.getNotes() == null ? overrideNote : (unit.getNotes() + "\n" + overrideNote));
+        }
         if (req.getSalePrice() != null) unit.setSalePrice(req.getSalePrice());
 
         return toUnitDto(unitRepo.save(unit), LocalDate.now().plusDays(EXPIRY_WARN_DAYS));
@@ -407,11 +519,60 @@ public class BloodBankService {
                 + " · " + unit.getComponentCode();
     }
 
+    /** Converts a Patient.bloodGroup value ("A+", "O-", ...) to a lookup code ("A_POS", "O_NEG", ...), or null if unrecognized. */
+    private static String normalizeBloodGroupCode(String patientBloodGroup) {
+        if (patientBloodGroup == null) return null;
+        return switch (patientBloodGroup.trim().toUpperCase()) {
+            case "A+" -> "A_POS";
+            case "A-" -> "A_NEG";
+            case "B+" -> "B_POS";
+            case "B-" -> "B_NEG";
+            case "AB+" -> "AB_POS";
+            case "AB-" -> "AB_NEG";
+            case "O+" -> "O_POS";
+            case "O-" -> "O_NEG";
+            default -> null;
+        };
+    }
+
+    /** Renders a lookup code ("A_POS") back to its short label ("A+") for messages/audit notes. */
+    private static String bloodGroupLabel(String code) {
+        if (code == null) return "Unknown";
+        return switch (code) {
+            case "A_POS" -> "A+";
+            case "A_NEG" -> "A-";
+            case "B_POS" -> "B+";
+            case "B_NEG" -> "B-";
+            case "AB_POS" -> "AB+";
+            case "AB_NEG" -> "AB-";
+            case "O_POS" -> "O+";
+            case "O_NEG" -> "O-";
+            default -> code;
+        };
+    }
+
+    /**
+     * True if a bag of {@code bagGroupCode}/{@code componentCode} is safe to
+     * transfuse into a recipient with {@code patientGroupCode}. RBC-bearing
+     * components follow standard donor-antigen rules; plasma-bearing
+     * components follow the reversed, ABO-only (Rh-irrelevant) rule.
+     */
+    private static boolean isCompatible(String bagGroupCode, String componentCode, String patientGroupCode) {
+        if (RBC_COMPONENTS.contains(componentCode)) {
+            Set<String> donors = RBC_COMPATIBLE_DONORS.get(patientGroupCode);
+            return donors == null || donors.contains(bagGroupCode);
+        }
+        String patientAbo = patientGroupCode.split("_")[0];
+        String bagAbo = bagGroupCode.split("_")[0];
+        Set<String> donors = PLASMA_COMPATIBLE_DONOR_ABO.get(patientAbo);
+        return donors == null || donors.contains(bagAbo);
+    }
+
     // ───── Stats ──────────────────────────────────────────────────────
 
     public BloodBankDtos.StatsDto getStats(UUID hospitalId) {
         LocalDate warnBefore = LocalDate.now().plusDays(EXPIRY_WARN_DAYS);
-        long total = unitRepo.findAllByHospital(hospitalId).size();
+        long total = unitRepo.countByHospital_Id(hospitalId);
         long available = unitRepo.countByStatus(hospitalId, "AVAILABLE");
         long quarantine = unitRepo.countByStatus(hospitalId, "QUARANTINE");
         long reserved = unitRepo.countByStatus(hospitalId, "RESERVED");

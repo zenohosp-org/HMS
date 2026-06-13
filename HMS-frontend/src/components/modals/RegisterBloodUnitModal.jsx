@@ -69,9 +69,11 @@ export default function RegisterBloodUnitModal({ isOpen, onClose, hospitalId, on
 
   // Donor must match the selected blood group — a donor's bag carries the
   // donor's group, so cross-group registration would be a data integrity bug.
-  const eligibleDonors = form.bloodGroupCode
-    ? donors.filter((d) => d.bloodGroupCode === form.bloodGroupCode)
-    : donors;
+  // Deferred donors (isEligible === false) are excluded — they're hard-blocked
+  // from supplying new units (positive TTI, repeat deferral, etc.).
+  const eligibleDonors = donors.filter(
+    (d) => d.isEligible !== false && (!form.bloodGroupCode || d.bloodGroupCode === form.bloodGroupCode)
+  );
 
   // If the currently-picked donor no longer matches the group, clear it so
   // the user re-picks intentionally instead of submitting a mismatched bag.

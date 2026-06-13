@@ -88,12 +88,27 @@
     box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.10);
 }
 
-.hms-bb-groupstrip__chip.is-empty {
-    opacity: 0.55;
+/* Stock-level signal — flags groups that need attention at a glance.
+   "Critical" (0 units) and "Low" (below threshold) override the base
+   chip colours; the is-active selection ring still layers on top. */
+.hms-bb-groupstrip__chip.is-critical {
+    border-color: #fca5a5;
+    background: #fef2f2;
 }
 
-.hms-bb-groupstrip__chip.is-empty .hms-bb-groupstrip__count {
-    color: var(--hms-gray-400);
+.hms-bb-groupstrip__chip.is-critical .hms-bb-groupstrip__count,
+.hms-bb-groupstrip__chip.is-critical .hms-bb-groupstrip__hint {
+    color: #dc2626;
+}
+
+.hms-bb-groupstrip__chip.is-low {
+    border-color: #fde68a;
+    background: #fffbeb;
+}
+
+.hms-bb-groupstrip__chip.is-low .hms-bb-groupstrip__count,
+.hms-bb-groupstrip__chip.is-low .hms-bb-groupstrip__hint {
+    color: #b45309;
 }
 
 .hms-bb-groupstrip__meta {
@@ -104,6 +119,9 @@
 }
 
 .hms-bb-groupstrip__count {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 22px;
     font-weight: 700;
     color: var(--hms-gray-900);
@@ -183,4 +201,54 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+}
+
+
+/* ── Blood-group incompatibility warning (Issue Blood modal) ────── */
+.hms-bb-incompatible-warn {
+    border: 1px solid #fca5a5;
+    background: #fef2f2;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hms-bb-incompatible-warn__msg {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b91c1c;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.hms-bb-incompatible-warn__msg svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+
+/* ── Replacement-donation "+1" button (Issue Blood tab) ─────────── */
+.hms-bb-replacement-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    border: 1px solid var(--hms-gray-200);
+    background: var(--hms-white);
+    color: var(--hms-gray-500);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.hms-bb-replacement-btn:hover {
+    border-color: #6ee7b7;
+    background: #ecfdf5;
+    color: #047857;
 }

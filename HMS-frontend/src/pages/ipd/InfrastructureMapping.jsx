@@ -1266,10 +1266,16 @@ export default function InfrastructureMapping() {
             <div className="infra-tree-col">
               <div className="infra-tree-col-header">
                 <span className="infra-tree-col-title">
-                  <Bed className="w-4 h-4 text-gray-500" /> Rooms
+                  <Bed className="w-4 h-4 text-gray-500" /> {(() => {
+                    const rCount = (activeFloor.wards[activeWardIdx].rooms || []).length;
+                    const bCount = (activeFloor.wards[activeWardIdx].bedNames || []).length;
+                    if (rCount > 0 && bCount > 0) return "Rooms & Beds";
+                    if (bCount > 0 && rCount === 0) return "Beds";
+                    return "Rooms";
+                  })()}
                 </span>
                 <span className="infra-tree-col-count">
-                  {(activeFloor.wards[activeWardIdx].rooms || []).length}
+                  {(activeFloor.wards[activeWardIdx].rooms || []).length + (activeFloor.wards[activeWardIdx].bedNames || []).length}
                 </span>
               </div>
               <div

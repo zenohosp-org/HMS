@@ -82,6 +82,7 @@ public final class BloodBankDtos {
         private String address;
         private String aadhaarNumber;
         private Integer patientId;
+        private Boolean isEligible;
         private String notes;
     }
 
@@ -156,6 +157,10 @@ public final class BloodBankDtos {
         private Integer replacementsPledged;
         private BigDecimal salePrice;
         private String notes;
+        /** Set true to proceed despite an ABO/Rh mismatch with the patient's recorded blood group. */
+        private Boolean overrideIncompatibility;
+        /** Required when overrideIncompatibility is true — recorded on the bag's notes for audit. */
+        private String incompatibilityOverrideReason;
     }
 
     // ─────── Stats ─────────────────────────────────────────────────────

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { bloodBankApi } from "@/utils/api";
-import { Badge, Button, PageHeader, SearchBar, Table } from "@/components/ui";
+import { Badge, Button, Menu, PageHeader, SearchBar, Table } from "@/components/ui";
 import RegisterDonorModal from "@/components/modals/RegisterDonorModal";
 
 export default function BloodDonors() {
@@ -53,6 +53,16 @@ export default function BloodDonors() {
     groups.forEach((g) => { m[g.code] = g; });
     return m;
   }, [groups]);
+
+  const handleToggleEligibility = async (donor) => {
+    try {
+      await bloodBankApi.updateDonor(donor.id, hospitalId, { isEligible: !donor.isEligible });
+      notify(donor.isEligible ? "Donor marked as deferred" : "Donor reinstated", "success");
+      reload();
+    } catch {
+      notify("Failed to update donor", "error");
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!search) return donors;
@@ -114,6 +124,23 @@ export default function BloodDonors() {
         d.isEligible
           ? <Badge tone="success" soft>Yes</Badge>
           : <Badge tone="danger" soft>Deferred</Badge>,
+    },
+    {
+      header: "",
+      width: "6%",
+      align: "right",
+      render: (d) => (
+        <Menu
+          triggerIcon={<MoreHorizontal size={18} />}
+          triggerLabel="Donor actions"
+          align="right"
+          items={[
+            d.isEligible
+              ? { label: "Mark as deferred", tone: "danger", onClick: () => handleToggleEligibility(d) }
+              : { label: "Reinstate donor", onClick: () => handleToggleEligibility(d) },
+          ]}
+        />
+      ),
     },
   ];
 

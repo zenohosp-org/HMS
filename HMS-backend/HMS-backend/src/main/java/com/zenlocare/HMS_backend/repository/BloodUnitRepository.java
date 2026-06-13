@@ -30,12 +30,7 @@ public interface BloodUnitRepository extends JpaRepository<BloodUnit, UUID> {
     String findMaxBagNumberWithPrefix(@Param("hospitalId") UUID hospitalId,
                                       @Param("prefix") String prefix);
 
-    @Query("""
-        SELECT u FROM BloodUnit u
-        WHERE u.hospital.id = :hospitalId
-        ORDER BY u.expiryDate ASC, u.createdAt DESC
-        """)
-    List<BloodUnit> findAllByHospital(@Param("hospitalId") UUID hospitalId);
+    long countByHospital_Id(UUID hospitalId);
 
     @Query("""
         SELECT u FROM BloodUnit u

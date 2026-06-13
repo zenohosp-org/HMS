@@ -912,24 +912,24 @@ const bloodBankApi = {
     const { data } = await api.get("/blood-bank/donors", { params: { hospitalId } });
     return data;
   },
-  getDonor: async (id) => {
-    const { data } = await api.get(`/blood-bank/donors/${id}`);
+  getDonor: async (id, hospitalId) => {
+    const { data } = await api.get(`/blood-bank/donors/${id}`, { params: { hospitalId } });
     return data;
   },
   registerDonor: async (hospitalId, payload) => {
     const { data } = await api.post("/blood-bank/donors", payload, { params: { hospitalId } });
     return data;
   },
-  updateDonor: async (id, payload) => {
-    const { data } = await api.put(`/blood-bank/donors/${id}`, payload);
+  updateDonor: async (id, hospitalId, payload) => {
+    const { data } = await api.put(`/blood-bank/donors/${id}`, payload, { params: { hospitalId } });
     return data;
   },
   listUnits: async (hospitalId, params = {}) => {
     const { data } = await api.get("/blood-bank/units", { params: { hospitalId, ...params } });
     return data;
   },
-  getUnit: async (id) => {
-    const { data } = await api.get(`/blood-bank/units/${id}`);
+  getUnit: async (id, hospitalId) => {
+    const { data } = await api.get(`/blood-bank/units/${id}`, { params: { hospitalId } });
     return data;
   },
   registerUnit: async (hospitalId, payload) => {
@@ -940,12 +940,16 @@ const bloodBankApi = {
     const { data } = await api.get("/blood-bank/units/next-bag-number", { params: { hospitalId } });
     return data.bagNumber;
   },
-  updateStatus: async (id, statusCode) => {
-    const { data } = await api.patch(`/blood-bank/units/${id}/status`, { statusCode });
+  updateStatus: async (id, hospitalId, statusCode) => {
+    const { data } = await api.patch(`/blood-bank/units/${id}/status`, { statusCode }, { params: { hospitalId } });
     return data;
   },
-  issueUnit: async (id, payload) => {
-    const { data } = await api.post(`/blood-bank/units/${id}/issue`, payload);
+  issueUnit: async (id, hospitalId, payload) => {
+    const { data } = await api.post(`/blood-bank/units/${id}/issue`, payload, { params: { hospitalId } });
+    return data;
+  },
+  recordReplacement: async (id, hospitalId) => {
+    const { data } = await api.patch(`/blood-bank/units/${id}/replacements`, {}, { params: { hospitalId } });
     return data;
   },
   getStats: async (hospitalId) => {

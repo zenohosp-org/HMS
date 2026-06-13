@@ -4,7 +4,6 @@ import {
   Plus,
   MoreHorizontal,
   AlertTriangle,
-  RefreshCw,
   FlaskConical,
   History,
   Activity,
@@ -37,6 +36,10 @@ function tonePillClass(meta) {
 
 const groupLabel = (code) =>
   code ? code.replace("_POS", "+").replace("_NEG", "−") : "";
+
+// Default availability threshold below which a blood group chip is
+// flagged "low"; 0 units is always flagged "critical".
+const LOW_STOCK_THRESHOLD = 5;
 
 /**
  * Blood Bank — two-view dashboard (Stock / Issue Blood).
@@ -156,11 +159,21 @@ export default function BloodBankStock() {
 
   const handleStatusChange = async (unit, newStatus) => {
     try {
-      await bloodBankApi.updateStatus(unit.id, newStatus);
+      await bloodBankApi.updateStatus(unit.id, hospitalId, newStatus);
       notify(`Marked as ${newStatus.toLowerCase()}`, "success");
       reload();
-    } catch {
-      notify("Failed to update status", "error");
+    } catch (err) {
+      notify(err?.response?.data?.message || "Failed to update status", "error");
+    }
+  };
+
+  const handleRecordReplacement = async (unit) => {
+    try {
+      await bloodBankApi.recordReplacement(unit.id, hospitalId);
+      notify("Replacement donation recorded", "success");
+      reload();
+    } catch (err) {
+      notify(err?.response?.data?.message || "Failed to record replacement", "error");
     }
   };
 
@@ -299,11 +312,25 @@ export default function BloodBankStock() {
       header: "Replacements",
       width: "10%",
       align: "right",
-      render: (u) => (
-        <span className="text-sm text-gray-700 tabular-nums">
-          {(u.replacementsReceived ?? 0)} / {(u.replacementsPledged ?? 0)}
-        </span>
-      ),
+      render: (u) => {
+        const pledged = u.replacementsPledged ?? 0;
+        const received = u.replacementsReceived ?? 0;
+        return (
+          <div className="inline-flex items-center justify-end gap-2">
+            <span className="text-sm text-gray-700 tabular-nums">{received} / {pledged}</span>
+            {pledged > 0 && received < pledged && (
+              <button
+                type="button"
+                title="Record a replacement donation"
+                onClick={() => handleRecordReplacement(u)}
+                className="hms-bb-replacement-btn"
+              >
+                <Plus size={12} />
+              </button>
+            )}
+          </div>
+        );
+      },
     },
     {
       header: "Issued by",
@@ -400,6 +427,7 @@ export default function BloodBankStock() {
 
   // Horizontal chip strip — one per blood group with available count.
   // Click toggles group filter (and pins status to AVAILABLE).
+  // Stock-level colouring (default thresholds): 0 = critical, <5 = low.
   const renderGroupStrip = () => {
     if (!groups.length) return null;
     const matrix = stats?.stockMatrix || {};
@@ -408,6 +436,7 @@ export default function BloodBankStock() {
         {groups.map((g) => {
           const count = Object.values(matrix[g.code] || {}).reduce((a, b) => a + b, 0);
           const isActive = groupFilter === g.code;
+          const stockLevel = count === 0 ? "is-critical" : count < LOW_STOCK_THRESHOLD ? "is-low" : "";
           return (
             <button
               key={g.code}
@@ -420,12 +449,15 @@ export default function BloodBankStock() {
                   setStatusFilter("AVAILABLE");
                 }
               }}
-              className={`hms-bb-groupstrip__chip ${isActive ? "is-active" : ""} ${count === 0 ? "is-empty" : ""}`}
+              className={`hms-bb-groupstrip__chip ${isActive ? "is-active" : ""} ${stockLevel}`}
             >
               <span className="hms-bb-group">{groupLabel(g.code)}</span>
               <div className="hms-bb-groupstrip__meta">
-                <span className="hms-bb-groupstrip__count">{count}</span>
-                <span className="hms-bb-groupstrip__hint">avail</span>
+                <span className="hms-bb-groupstrip__count">
+                  {stockLevel === "is-critical" && <AlertTriangle size={12} />}
+                  {count}
+                </span>
+                <span className="hms-bb-groupstrip__hint">{stockLevel === "is-critical" ? "critical" : stockLevel === "is-low" ? "low" : "avail"}</span>
               </div>
             </button>
           );
@@ -449,13 +481,9 @@ export default function BloodBankStock() {
           </span>
         }
         actions={
-          tab === "stock" ? (
+          tab === "stock" && (
             <Button variant="primary" onClick={() => setRegisterOpen(true)}>
               <Plus size={14} /> Register bag
-            </Button>
-          ) : (
-            <Button variant="ghost" onClick={reload}>
-              <RefreshCw size={14} /> Refresh
             </Button>
           )
         }

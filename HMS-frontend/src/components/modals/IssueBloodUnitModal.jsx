@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { Button, FormGroup, Input, Modal, Textarea } from "@/components/ui";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { bloodBankApi, patientApi } from "@/utils/api";
 import { useNotification } from "@/context/NotificationContext";
+import { bloodGroupLabel, isCompatible, normalizeBloodGroupCode } from "@/utils/bloodCompatibility";
 
 export default function IssueBloodUnitModal({ isOpen, onClose, hospitalId, unit, onSuccess }) {
   const { notify } = useNotification();
@@ -14,6 +16,7 @@ export default function IssueBloodUnitModal({ isOpen, onClose, hospitalId, unit,
     replacementsPledged: "0",
     salePrice: "",
     notes: "",
+    overrideReason: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -28,18 +31,34 @@ export default function IssueBloodUnitModal({ isOpen, onClose, hospitalId, unit,
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
+  const selectedPatient = useMemo(
+    () => patients.find((p) => String(p.id) === String(form.patientId)),
+    [patients, form.patientId]
+  );
+
+  const patientGroupCode = normalizeBloodGroupCode(selectedPatient?.bloodGroup);
+  const incompatible =
+    !!patientGroupCode &&
+    !!unit?.bloodGroupCode &&
+    !isCompatible(unit.bloodGroupCode, unit.componentCode, patientGroupCode);
+
   const submit = async (e) => {
     e.preventDefault();
     if (!form.patientId) return notify("Patient is required", "error");
+    if (incompatible && !form.overrideReason.trim()) {
+      return notify("A reason is required to override the blood group mismatch", "error");
+    }
     setSaving(true);
     try {
-      await bloodBankApi.issueUnit(unit.id, {
+      await bloodBankApi.issueUnit(unit.id, hospitalId, {
         patientId: Number(form.patientId),
         admissionId: form.admissionId || null,
         doctorName: form.doctorName || null,
         replacementsPledged: form.replacementsPledged ? Number(form.replacementsPledged) : 0,
         salePrice: form.salePrice ? Number(form.salePrice) : null,
         notes: form.notes || null,
+        overrideIncompatibility: incompatible || undefined,
+        incompatibilityOverrideReason: incompatible ? form.overrideReason.trim() : undefined,
       });
       notify("Bag issued and billed", "success");
       onSuccess && onSuccess();
@@ -86,6 +105,24 @@ export default function IssueBloodUnitModal({ isOpen, onClose, hospitalId, unit,
               />
             </FormGroup>
           </div>
+          {incompatible && (
+            <div className="hms-bb-modal-grid__full">
+              <div className="hms-bb-incompatible-warn">
+                <p className="hms-bb-incompatible-warn__msg">
+                  <AlertTriangle size={14} />
+                  Blood group mismatch: bag is {bloodGroupLabel(unit.bloodGroupCode)} but patient&apos;s
+                  recorded group is {bloodGroupLabel(patientGroupCode)}.
+                </p>
+                <FormGroup label="Reason for override *">
+                  <Input
+                    value={form.overrideReason}
+                    onChange={(e) => set("overrideReason", e.target.value)}
+                    placeholder="e.g. Emergency — no compatible stock available"
+                  />
+                </FormGroup>
+              </div>
+            </div>
+          )}
           <FormGroup label="Admission ID (optional)">
             <Input value={form.admissionId} onChange={(e) => set("admissionId", e.target.value)} placeholder="Auto-detected if IPD" />
           </FormGroup>
