@@ -525,7 +525,8 @@ export default function IPDDetailPane({
                             Array.isArray(res.data) ? res.data : res.data?.content ?? []
                         );
                         setOtInvoicesError(false);
-                    } catch {
+                    } catch (e) {
+                        console.error("[IPDBilling] discharged OT invoice fetch failed:", e);
                         setOtInvoicesError(true);
                     }
                     try {
@@ -536,14 +537,20 @@ export default function IPDDetailPane({
                             Array.isArray(res.data) ? res.data : res.data?.content ?? []
                         );
                         setPharmacyBillsError(false);
-                    } catch {
+                    } catch (e) {
+                        console.error("[IPDBilling] discharged pharmacy fetch failed:", e);
                         setPharmacyBillsError(true);
                     }
                     setBillingFetched(true);
                     setLoadingBilling(false);
                     return;
                 }
-            } catch { /* fall through to estimation */ }
+            } catch (e) {
+                // Fall through to live estimation. Logged so we can tell if
+                // the discharged-invoice path bombed for a legit reason vs.
+                // simply not finding a match.
+                console.error("[IPDBilling] discharged-invoice path failed, falling back to estimation:", e);
+            }
         }
 
         let key = 0;
@@ -720,7 +727,14 @@ export default function IPDDetailPane({
                     });
                 }
             });
-        } catch { /* swallow — estimation continues with partial data */ }
+        } catch (e) {
+            // Estimation continues with partial data — OT / pharmacy blocks
+            // below still run. But log so a runtime crash here (typo on an
+            // api wrapper, malformed suggestion shape, etc.) doesn't drop
+            // half the bill silently — past incident: labOrderApi.getByAdmission
+            // was missing, killed room/consult/labs lines for everyone.
+            console.error("[IPDBilling] estimation block failed:", e);
+        }
 
         try {
             const res = await otApi.get("/api/ot/invoices", {
@@ -741,7 +755,8 @@ export default function IPDDetailPane({
                     });
                 });
             });
-        } catch {
+        } catch (e) {
+            console.error("[IPDBilling] OT invoice fetch failed:", e);
             setOtInvoicesError(true);
         }
 
@@ -777,7 +792,8 @@ export default function IPDDetailPane({
                     });
                 });
             });
-        } catch {
+        } catch (e) {
+            console.error("[IPDBilling] pharmacy bill fetch failed:", e);
             setPharmacyBillsError(true);
         }
 
