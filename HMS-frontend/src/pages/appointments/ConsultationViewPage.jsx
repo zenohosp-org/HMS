@@ -5,8 +5,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import {
   appointmentsApi, doctorsApi, recordApi, investigationsApi, externalResultsApi, zemaRulesApi,
+  hospitalServiceApi, departmentApi,
   LABS_FRONTEND_URL,
 } from "@/utils/api";
+import RequestInvestigationForm from "@/components/investigations/RequestInvestigationForm";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import { fmtId } from "@/utils/idFormat";
 import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
@@ -48,6 +50,10 @@ export default function ConsultationViewPage() {
   const [loadingExternal, setLoadingExternal] = useState(false);
   const [loadingPast, setLoadingPast] = useState(false);
   const [loadingLabs, setLoadingLabs] = useState(false);
+  // Catalog of orderable investigations — services tagged under the Labs
+  // or Radiology department, fetched once per hospital and threaded down
+  // to the shared RequestInvestigationForm so it doesn't refetch per mount.
+  const [investigationCatalog, setInvestigationCatalog] = useState([]);
   const [openedPastRecord, setOpenedPastRecord] = useState(null);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
   const [zemaRules, setZemaRules] = useState([]);
@@ -158,17 +164,55 @@ export default function ConsultationViewPage() {
     return () => { cancelled = true; };
   }, [current?.patientId, user?.hospitalId]);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (!current?.patientId) { setLabOrders([]); return () => { cancelled = true; }; }
+  // Unified lab + radiology read (kind-tagged) from the labs service.
+  // Wrapped in a useCallback so the "Request Investigation" submit handler
+  // can re-run it via onCreated, surfacing the new order immediately in
+  // the Internal Labs / Internal Radiology sections below.
+  const refetchLabOrders = useCallback(() => {
+    if (!current?.patientId) { setLabOrders([]); return; }
     setLoadingLabs(true);
-    // Unified lab + radiology read (kind-tagged) from the labs service.
     investigationsApi.byPatient(current.patientId)
-      .then(rows => { if (!cancelled) setLabOrders(Array.isArray(rows) ? rows : []); })
-      .catch(() => { if (!cancelled) setLabOrders([]); })
-      .finally(() => { if (!cancelled) setLoadingLabs(false); });
-    return () => { cancelled = true; };
+      .then(rows => setLabOrders(Array.isArray(rows) ? rows : []))
+      .catch(() => setLabOrders([]))
+      .finally(() => setLoadingLabs(false));
   }, [current?.patientId]);
+
+  useEffect(() => { refetchLabOrders(); }, [refetchLabOrders]);
+
+  // Fetch the orderable investigation catalog once per hospital — services
+  // tagged under LABS or RADIOLOGY departments, annotated with kind so the
+  // form can route the submit to the correct labs endpoint. Same pattern
+  // IpdLabTab uses; threaded down to RequestInvestigationForm so we don't
+  // refetch per form mount.
+  useEffect(() => {
+    if (!user?.hospitalId) return;
+    let cancelled = false;
+    const kindFromCode = (code) => {
+      const c = (code || "").toUpperCase();
+      if (c === "LABS") return "LAB";
+      if (c === "RADIOLOGY") return "RADIOLOGY";
+      return null;
+    };
+    Promise.all([
+      departmentApi.list(user.hospitalId),
+      hospitalServiceApi.list(user.hospitalId),
+    ])
+      .then(([depts, services]) => {
+        if (cancelled) return;
+        const kindByDeptId = {};
+        (depts || []).forEach((d) => {
+          const k = kindFromCode(d.code);
+          if (k) kindByDeptId[d.id] = k;
+        });
+        setInvestigationCatalog(
+          (services || [])
+            .filter((s) => s.isActive !== false && kindByDeptId[s.departmentId])
+            .map((s) => ({ ...s, kind: kindByDeptId[s.departmentId] }))
+        );
+      })
+      .catch(() => { if (!cancelled) setInvestigationCatalog([]); });
+    return () => { cancelled = true; };
+  }, [user?.hospitalId]);
 
   // Outside-clinic results captured at triage by front-desk / nursing
   // staff, plus anything the doctor has typed in during the consultation.
@@ -344,7 +388,18 @@ export default function ConsultationViewPage() {
             />
           )}
           {tab === "rx" && <RxTab draft={draft} />}
-          {tab === "lab" && <LabTab orders={labOrders} loading={loadingLabs} externalResults={externalResults} loadingExternal={loadingExternal} />}
+          {tab === "lab" && (
+            <LabTab
+              orders={labOrders}
+              loading={loadingLabs}
+              externalResults={externalResults}
+              loadingExternal={loadingExternal}
+              hospitalId={user?.hospitalId}
+              patientId={current?.patientId}
+              catalog={investigationCatalog}
+              onCreated={refetchLabOrders}
+            />
+          )}
         </div>
 
         <BottomBar
@@ -1030,33 +1085,77 @@ function RxTab({ draft }) {
   );
 }
 
-function LabTab({ orders, loading, externalResults, loadingExternal }) {
+function LabTab({
+  orders, loading, externalResults, loadingExternal,
+  hospitalId, patientId, catalog, onCreated,
+}) {
+  const [showRequest, setShowRequest] = useState(false);
   const hasInternal = !loading && orders && orders.length > 0;
   const hasExternal = !loadingExternal && externalResults && externalResults.length > 0;
 
+  // Request affordance shown above whatever else renders below — including
+  // the empty state, so a doctor consulting a patient with no investigations
+  // yet can still raise the first one. Disabled until patient context lands.
+  const RequestToolbar = (
+    <div className="hms-cv-lab-toolbar">
+      <button
+        type="button"
+        className="hms-btn-primary is-sm"
+        onClick={() => setShowRequest((v) => !v)}
+        disabled={!patientId}
+      >
+        <Plus className="w-3.5 h-3.5" />
+        {showRequest ? "Close request" : "Request investigation"}
+      </button>
+      {showRequest && (
+        <RequestInvestigationForm
+          hospitalId={hospitalId}
+          patientId={patientId}
+          /* No admissionId — consultation context is OPD; labs auto-creates
+             a standalone walk-in invoice on report generation. */
+          catalog={catalog}
+          defaultKind="ALL"
+          onCreated={(saved) => {
+            setShowRequest(false);
+            onCreated?.(saved);
+          }}
+          onCancel={() => setShowRequest(false)}
+        />
+      )}
+    </div>
+  );
+
   if (loading && loadingExternal) {
     return (
-      <CenterLoader text="Loading lab results…" />
+      <div className="hms-cv-pane">
+        {RequestToolbar}
+        <CenterLoader text="Loading lab results…" />
+      </div>
     );
   }
 
   if (!hasInternal && !hasExternal && !loading && !loadingExternal) {
     return (
-      <div className="hms-cv-lab-empty">
-        <div className="hms-cv-lab-empty__icon">
-          <FlaskConical className="w-5 h-5" />
+      <div className="hms-cv-pane">
+        {RequestToolbar}
+        <div className="hms-cv-lab-empty">
+          <div className="hms-cv-lab-empty__icon">
+            <FlaskConical className="w-5 h-5" />
+          </div>
+          <p className="hms-cv-lab-empty__title">No lab results yet</p>
+          <p className="hms-cv-lab-empty__desc">
+            Outside-clinic reports go in at check-in from the appointments dashboard.
+            Internal investigations raised here show up below.
+          </p>
         </div>
-        <p className="hms-cv-lab-empty__title">No lab results yet</p>
-        <p className="hms-cv-lab-empty__desc">
-          Outside-clinic reports go in at check-in from the appointments dashboard.
-          Internal radiology orders show up here once raised.
-        </p>
       </div>
     );
   }
 
   return (
     <div className="hms-cv-pane">
+      {RequestToolbar}
+
       {/* External Results — top because outside-clinic reports usually
           drive immediate clinical decisions and the doctor is reading
           left-to-right from this column first. */}

@@ -6796,6 +6796,21 @@
     gap: 12px;
 }
 
+/* "Request investigation" toolbar above the lab tab's results sections.
+   Houses the trigger button + the expanded RequestInvestigationForm when
+   the doctor wants to raise a new pathology / radiology order from the
+   consultation surface. */
+.hms-cv-lab-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.hms-cv-lab-toolbar > button {
+    align-self: flex-start;
+}
+
 .hms-cv-lab-empty {
     padding: 80px 32px;
     text-align: center;

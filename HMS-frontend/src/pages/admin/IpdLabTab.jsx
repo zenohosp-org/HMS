@@ -5,7 +5,7 @@ import {
     labOrderApi, radiologyApi, investigationsApi,
     hospitalServiceApi, departmentApi,
 } from "@/utils/api";
-import SearchableSelect from "@/components/ui/SearchableSelect";
+import RequestInvestigationForm from "@/components/investigations/RequestInvestigationForm";
 import { CenterLoader } from "@/components/ui/Loader";
 import {
     FlaskConical, ScanLine, Plus, CheckCircle2, Clock, AlertCircle,
@@ -39,15 +39,6 @@ const STATUS_ORDER = {
     BILLED:             3,
 };
 
-const BLANK_ORDER_FORM = {
-    serviceId: "",
-    serviceName: "",
-    sampleType: "",
-    priority: "ROUTINE",
-    price: "",
-    gstRate: "",
-};
-
 const BLANK_REPORT_FORM = { findings: "", observation: "" };
 
 // Map a service's department code to the kind labs uses.
@@ -65,14 +56,14 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
     const [orders, setOrders]         = useState([]);
     const [loading, setLoading]       = useState(true);
     const [showForm, setShowForm]     = useState(false);
-    const [saving, setSaving]         = useState(false);
-    const [orderForm, setOrderForm]   = useState(BLANK_ORDER_FORM);
 
     // Top-level filter pill — All / Pathology / Radiology.
     const [kindFilter, setKindFilter] = useState("ALL");
 
     // Catalog: services tagged to LABS or RADIOLOGY departments, annotated
-    // with a `kind` field so the picker can show + route correctly.
+    // with a `kind` field so the picker can show + route correctly. Owned
+    // here and passed down to RequestInvestigationForm — one fetch per
+    // hospital-context, not per form mount.
     const [catalog, setCatalog] = useState([]);
 
     // Per-order report form state: { [orderId]: { open, saving, form } }
@@ -122,67 +113,11 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
         return () => { cancelled = true; };
     }, [user?.hospitalId]);
 
-    const previewTotal = useMemo(() => {
-        const price = Number(orderForm.price) || 0;
-        const gst = Number(orderForm.gstRate) || 0;
-        if (price <= 0) return null;
-        return Math.round((price * (1 + gst / 100)) * 100) / 100;
-    }, [orderForm.price, orderForm.gstRate]);
-
     // Visible orders honor the kind filter pill.
     const visibleOrders = useMemo(() => {
         if (kindFilter === "ALL") return orders;
         return orders.filter((o) => o.kind === kindFilter);
     }, [orders, kindFilter]);
-
-    // The picker only shows services matching the active kind filter so
-    // operators on the Radiology pill can't accidentally pick a pathology
-    // test. When filter is ALL, both kinds appear with a kind chip.
-    const pickerOptions = useMemo(() => {
-        const pool = kindFilter === "ALL"
-            ? catalog
-            : catalog.filter((s) => s.kind === kindFilter);
-        return pool.map((s) => ({
-            value: s.id,
-            label: `${s.name} — ${s.kind === "LAB" ? "Pathology" : "Radiology"} · ₹${s.price}${s.gstRate ? ` + ${s.gstRate}% GST` : ""}`,
-        }));
-    }, [catalog, kindFilter]);
-
-    const handleCreate = async () => {
-        const picked = catalog.find((s) => s.id === orderForm.serviceId);
-        if (!picked) {
-            notify("Pick a service tagged as Labs or Radiology", "warning");
-            return;
-        }
-        if (!user?.hospitalId) {
-            notify("Hospital scope missing — please reload", "error");
-            return;
-        }
-        setSaving(true);
-        try {
-            const payload = {
-                hospitalId: user.hospitalId,
-                patientId,
-                admissionId,
-                serviceName: picked.name,
-                sampleType: orderForm.sampleType.trim() || null,    // ignored for radiology
-                priority: orderForm.priority,
-                price: orderForm.price ? Number(orderForm.price) : null,
-                gstRate: orderForm.gstRate ? Number(orderForm.gstRate) : null,
-            };
-            await (picked.kind === "LAB"
-                ? labOrderApi.create(payload)
-                : radiologyApi.create(payload));
-            await fetchOrders();
-            setOrderForm(BLANK_ORDER_FORM);
-            setShowForm(false);
-            notify(`${picked.kind === "LAB" ? "Lab" : "Radiology"} order placed`, "success");
-        } catch (err) {
-            notify(err?.response?.data?.message || "Failed to place order", "error");
-        } finally {
-            setSaving(false);
-        }
-    };
 
     const handleAdvance = async (order) => {
         // LAB collect / RADIOLOGY scan — first transition from pending.
@@ -309,92 +244,22 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
                 </div>
             )}
 
-            {/* New order form */}
+            {/* Shared order form. Kind filter flows into defaultKind so the
+                Radiology pill scopes the picker to radiology services; ALL
+                shows both with an in-form sub-toggle. */}
             {showForm && (
-                <div className="lab-form">
-                    <div className="lab-form__fields">
-                        <div className="lab-form__field lab-form__field--grow">
-                            <label className="lab-form__label">Test *</label>
-                            {pickerOptions.length > 0 ? (
-                                <SearchableSelect
-                                    value={orderForm.serviceId}
-                                    onChange={(serviceId) => {
-                                        const svc = catalog.find((s) => s.id === serviceId);
-                                        setOrderForm((f) => ({
-                                            ...f,
-                                            serviceId,
-                                            serviceName: svc?.name || "",
-                                            price: svc?.price != null ? String(svc.price) : "",
-                                            gstRate: svc?.gstRate != null ? String(svc.gstRate) : "",
-                                        }));
-                                    }}
-                                    options={pickerOptions}
-                                    placeholder={`Pick a ${kindFilter === "ALL" ? "test" : kindFilter === "LAB" ? "pathology test" : "radiology test"}`}
-                                />
-                            ) : (
-                                <p className="lab-form__hint">
-                                    No services tagged under {kindFilter === "RADIOLOGY" ? "Radiology" : "Labs"} yet.
-                                    Add them in Settings → Services and set the department to Labs or Radiology.
-                                </p>
-                            )}
-                        </div>
-                        <div className="lab-form__field">
-                            <label className="lab-form__label">Sample</label>
-                            <input
-                                className="lab-form__input"
-                                placeholder="Blood / Urine"
-                                value={orderForm.sampleType}
-                                onChange={(e) => setOrderForm((f) => ({ ...f, sampleType: e.target.value }))}
-                            />
-                        </div>
-                        <div className="lab-form__field">
-                            <label className="lab-form__label">Priority</label>
-                            <select
-                                className="lab-form__select"
-                                value={orderForm.priority}
-                                onChange={(e) => setOrderForm((f) => ({ ...f, priority: e.target.value }))}
-                            >
-                                <option value="ROUTINE">Routine</option>
-                                <option value="URGENT">Urgent</option>
-                                <option value="STAT">STAT</option>
-                            </select>
-                        </div>
-                        <div className="lab-form__field">
-                            <label className="lab-form__label">Price (₹)</label>
-                            <input
-                                className="lab-form__input"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                placeholder="0"
-                                value={orderForm.price}
-                                onChange={(e) => setOrderForm((f) => ({ ...f, price: e.target.value, serviceId: "" }))}
-                            />
-                            {previewTotal != null && orderForm.gstRate && Number(orderForm.gstRate) > 0 && (
-                                <p className="lab-form__hint">
-                                    + {orderForm.gstRate}% GST = <strong>₹{previewTotal}</strong> total
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                    <div className="lab-form__actions">
-                        <button
-                            type="button"
-                            className="lab-form__save-btn"
-                            onClick={handleCreate}
-                            disabled={saving}
-                        >
-                            {saving ? "Saving…" : "Place order"}
-                        </button>
-                        <button
-                            type="button"
-                            className="lab-form__cancel-btn"
-                            onClick={() => { setShowForm(false); setOrderForm(BLANK_ORDER_FORM); }}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
+                <RequestInvestigationForm
+                    hospitalId={user?.hospitalId}
+                    patientId={patientId}
+                    admissionId={admissionId}
+                    catalog={catalog}
+                    defaultKind={kindFilter}
+                    onCreated={() => {
+                        setShowForm(false);
+                        fetchOrders();
+                    }}
+                    onCancel={() => setShowForm(false)}
+                />
             )}
 
             {/* Discharge notice */}
