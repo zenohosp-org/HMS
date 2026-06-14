@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { admissionApi } from "@/utils/api";
+import { admissionApi, infrastructureApi } from "@/utils/api";
 import AdmitPatientModal from "./AdmitPatientModal";
 import DischargeModal from "./DischargeModal";
 import MoveToOTModal from "./MoveToOTModal";
@@ -30,6 +30,7 @@ import {
     PageHeader,
     Pagination,
     SearchBar,
+    Select,
     Tabs,
 } from "@/components/ui";
 import TableSkeleton from "@/components/ui/TableSkeleton";
@@ -88,6 +89,12 @@ export default function Admissions() {
     const [returningToWard, setReturningToWard] = useState(null);
     const [selectedAdmission, setSelectedAdmission] = useState(null);
 
+    // Infrastructure Filters
+    const [infrastructure, setInfrastructure] = useState([]);
+    const [selectedBlock, setSelectedBlock] = useState("");
+    const [selectedFloor, setSelectedFloor] = useState("");
+    const [selectedWard, setSelectedWard] = useState("");
+
     // Pagination
     const [page, setPage] = useState(0);
     const [size, setSize] = useState(30);
@@ -111,6 +118,24 @@ export default function Admissions() {
         return () => clearTimeout(timer);
     }, [search]);
 
+    const loadInfrastructure = async () => {
+        if (!user?.hospitalId) return;
+        try {
+            const data = await infrastructureApi.get(user.hospitalId);
+            setInfrastructure(data || []);
+            if (data?.length === 1) {
+                setSelectedBlock(data[0].name);
+            }
+        } catch (err) {
+            console.error("Failed to load infrastructure", err);
+        }
+    };
+
+    useEffect(() => {
+        loadInfrastructure();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.hospitalId]);
+
     const load = async () => {
         if (!user?.hospitalId) return;
         try {
@@ -120,7 +145,8 @@ export default function Admissions() {
                 statusFilter,
                 debouncedSearch,
                 page,
-                size
+                size,
+                { block: selectedBlock, floor: selectedFloor, ward: selectedWard }
             );
             if (res) {
                 setAdmissions(res.page?.content || []);
@@ -143,7 +169,39 @@ export default function Admissions() {
     useEffect(() => {
         load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.hospitalId, statusFilter, debouncedSearch, page, size]);
+    }, [user?.hospitalId, statusFilter, debouncedSearch, page, size, selectedBlock, selectedFloor, selectedWard]);
+
+    const blocks = useMemo(() => infrastructure, [infrastructure]);
+    
+    const floors = useMemo(() => {
+        if (!selectedBlock) return [];
+        const block = infrastructure.find(b => b.name === selectedBlock);
+        return block?.floors || [];
+    }, [infrastructure, selectedBlock]);
+
+    const wards = useMemo(() => {
+        if (!selectedFloor) return [];
+        const floor = floors.find(f => f.name === selectedFloor);
+        return floor?.wards || [];
+    }, [floors, selectedFloor]);
+
+    const handleBlockChange = (block) => {
+        setSelectedBlock(block);
+        setSelectedFloor("");
+        setSelectedWard("");
+        setPage(0);
+    };
+
+    const handleFloorChange = (floor) => {
+        setSelectedFloor(floor);
+        setSelectedWard("");
+        setPage(0);
+    };
+
+    const handleWardChange = (ward) => {
+        setSelectedWard(ward);
+        setPage(0);
+    };
 
     const counts = useMemo(
         () => ({
@@ -201,8 +259,8 @@ export default function Admissions() {
                 </div>
 
                 {/* Filter row */}
-                <div className="zu-filter-bar">
-                    <div className="zu-filter-bar__search">
+                <div className="zu-filter-bar" style={{ flexWrap: "wrap", gap: 12 }}>
+                    <div className="zu-filter-bar__search" style={{ flex: 1, minWidth: 280 }}>
                         <Search className="zu-filter-bar__search-icon" />
                         <input
                             type="text"
@@ -211,6 +269,37 @@ export default function Admissions() {
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search by patient, admission no., department, room…"
                         />
+                    </div>
+                    
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        {blocks.length > 1 && (
+                            <Select
+                                style={{ width: 140, height: 36, fontSize: 13 }}
+                                value={selectedBlock}
+                                onChange={(e) => handleBlockChange(e.target.value)}
+                            >
+                                <option value="">All Blocks</option>
+                                {blocks.map(b => <option key={b.name} value={b.name}>{b.name}</option>)}
+                            </Select>
+                        )}
+                        <Select
+                            style={{ width: 140, height: 36, fontSize: 13 }}
+                            value={selectedFloor}
+                            onChange={(e) => handleFloorChange(e.target.value)}
+                            disabled={!selectedBlock && blocks.length > 1}
+                        >
+                            <option value="">All Floors</option>
+                            {floors.map(f => <option key={f.name} value={f.name}>{f.name}</option>)}
+                        </Select>
+                        <Select
+                            style={{ width: 140, height: 36, fontSize: 13 }}
+                            value={selectedWard}
+                            onChange={(e) => handleWardChange(e.target.value)}
+                            disabled={!selectedFloor}
+                        >
+                            <option value="">All Wards</option>
+                            {wards.map(w => <option key={w.name} value={w.name}>{w.name}</option>)}
+                        </Select>
                     </div>
                     <div className="zu-filter-bar__controls">
                         <Tabs

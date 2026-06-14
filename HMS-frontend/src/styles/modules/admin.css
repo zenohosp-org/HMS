@@ -3438,15 +3438,11 @@
 .hms-ipd-timeline__card {
     flex: 1;
     min-width: 0;
-    border-radius: 8px;
-    border: 1px solid var(--hms-gray-100);
-    background: var(--hms-white);
-    padding: 10px 14px;
-    margin-bottom: 12px;
+    padding: 0 0 24px 12px;
 }
 
 .hms-ipd-timeline__entry:last-child .hms-ipd-timeline__card {
-    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .hms-ipd-timeline__head {
@@ -3490,10 +3486,9 @@
 
 .hms-ipd-timeline__badge {
     margin: 4px 0 0;
-    font-size: 11px;
-    color: var(--hms-gray-400);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--hms-gray-500);
 }
 
 /* ── SOAP note sections (inline in timeline) ─────────────────────────────── */
@@ -3691,9 +3686,8 @@
     align-items: center;
     padding: 2px 8px;
     border-radius: 999px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
+    font-size: 11px;
+    font-weight: 600;
     background: var(--hms-gray-50);
     color: var(--hms-gray-600);
     border: 1px solid var(--hms-gray-200);

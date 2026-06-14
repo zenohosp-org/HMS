@@ -293,7 +293,8 @@ CREATE TABLE public.appointment_vitals (
     weight_kg numeric(5,2),
     recorded_by uuid NOT NULL,
     height_cm integer,
-    blood_glucose integer
+    blood_glucose integer,
+    temperature numeric
 );
 
 

@@ -586,8 +586,8 @@ const admissionApi = {
     const { data } = await api.get("/admissions", { params: { hospitalId, all } });
     return data;
   },
-  listPaginated: async (hospitalId, status = "ADMITTED", search = "", page = 0, size = 10) => {
-    const { data } = await api.get("/admissions/paginated", { params: { hospitalId, status, search, page, size } });
+  listPaginated: async (hospitalId, status = "ADMITTED", search = "", page = 0, size = 10, filters = {}) => {
+    const { data } = await api.get("/admissions/paginated", { params: { hospitalId, status, search, page, size, ...filters } });
     return data;
   },
   get: async (id) => {

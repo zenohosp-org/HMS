@@ -3,7 +3,7 @@ import { Spinner } from "@/components/ui/Loader";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { fmtId } from "@/utils/idFormat";
-import { Stethoscope, Pill, Plus, CheckCircle2, ClipboardList, CalendarClock, FileText, ListChecks, Save, AlertCircle, User as UserIcon, IdCard, Activity, HeartPulse, Wind, Scale, Droplet, Ruler, ChevronUp, ChevronDown } from "lucide-react";
+import { Stethoscope, Pill, Plus, CheckCircle2, ClipboardList, CalendarClock, FileText, ListChecks, Save, AlertCircle, User as UserIcon, IdCard, Activity, HeartPulse, Wind, Scale, Droplet, Ruler, ChevronUp, ChevronDown, Utensils } from "lucide-react";
 import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import VitalsModal from "@/components/modals/VitalsModal";
@@ -75,6 +75,8 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
     dbp: vitals?.bpDiastolic,
     weight: vitals?.weightKg,
     height: vitals?.heightCm,
+    temperature: vitals?.temperature,
+    bloodGlucose: vitals?.bloodGlucose,
     spo2: vitals?.spo2,
     pulse: vitals?.heartRate,
   }, zemaRules);
@@ -303,6 +305,20 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
                             <div className="zema-decision-support">
                               <h4 className="zema-decision-support__title">Clinical Decision Support</h4>
                               <p className="zema-decision-support__text">{zemaResult.interpretationParagraph}</p>
+                            </div>
+                          )}
+
+                          {/* Dietary Recommendations narrative */}
+                          {zemaResult.dietRecommendations?.length > 0 && (
+                            <div className="zema-dietary-support" style={{ marginTop: 16, padding: 16, backgroundColor: "rgba(16, 185, 129, 0.05)", borderRadius: 12, border: "1px solid rgba(16, 185, 129, 0.15)" }}>
+                              <h4 className="zema-decision-support__title" style={{ display: "flex", alignItems: "center", gap: 6, color: "#065f46", marginBottom: 8, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                <Utensils className="w-4 h-4" /> Preferred Diet Intakes
+                              </h4>
+                              <ul style={{ margin: 0, paddingLeft: 20, color: "#064e3b", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                                {zemaResult.dietRecommendations.map((rec, i) => (
+                                  <li key={i} style={{ marginBottom: 4 }}>{rec}</li>
+                                ))}
+                              </ul>
                             </div>
                           )}
 

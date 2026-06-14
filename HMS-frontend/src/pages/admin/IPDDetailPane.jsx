@@ -86,16 +86,16 @@ const EVENT_TONE_CLASS = {
     RECORD: "is-record",
 };
 const EVENT_LABEL = {
-    ADMITTED: "ADMITTED",
-    ALLOCATED: "ROOM ASSIGNED",
-    DEALLOCATED: "ROOM VACATED",
-    ATTENDER_ASSIGNED: "ATTENDER ASSIGNED",
-    ATTENDER_UPDATED: "ATTENDER UPDATED",
-    RADIOLOGY: "RADIOLOGY",
-    AMBULANCE: "AMBULANCE",
-    OT: "OT PROCEDURE",
-    DISCHARGED: "DISCHARGED",
-    RECORD: "MEDICAL RECORD",
+    ADMITTED: "Admitted",
+    ALLOCATED: "Room Assigned",
+    DEALLOCATED: "Room Vacated",
+    ATTENDER_ASSIGNED: "Attender Assigned",
+    ATTENDER_UPDATED: "Attender Updated",
+    RADIOLOGY: "Radiology",
+    AMBULANCE: "Ambulance",
+    OT: "OT Procedure",
+    DISCHARGED: "Discharged",
+    RECORD: "Medical Record",
 };
 
 /** Billing item-type → icon + tone-modifier-class pair. */
@@ -426,7 +426,10 @@ export default function IPDDetailPane({
                                     id: `rec-${r.id}`,
                                     type: "RECORD",
                                     historyType: r.historyType || "OTHER",
-                                    title: (r.historyType || "OTHER").replace(/_/g, " "),
+                                    title: (r.historyType || "OTHER")
+                                        .replace(/_/g, " ")
+                                        .toLowerCase()
+                                        .replace(/\b\w/g, c => c.toUpperCase()),
                                     subtitle: [r.mrn, attendingName ?? creator].filter(Boolean).join(" · "),
                                     description: r.description || r.notes || "",
                                     soapSubjective: r.soapSubjective || "",

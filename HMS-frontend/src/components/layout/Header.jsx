@@ -1,5 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
-import { Menu, Bell, LogOut } from "lucide-react";
+import { Menu, Bell, LogOut, HelpCircle } from "lucide-react";
+import { startProductTour } from "./ProductTour";
 
 function Header({ onMenuClick }) {
     const { user, logout } = useAuth();
@@ -20,7 +21,15 @@ function Header({ onMenuClick }) {
             )}
             <span className="zu-topnav-title">Hospital Management System</span>
             <div className="zu-topnav-right">
-                <button className="zu-topnav-bell" aria-label="Notifications">
+                <button 
+                    className="zu-topnav-bell" 
+                    aria-label="Take a Tour"
+                    title="Take a Tour"
+                    onClick={() => startProductTour()}
+                >
+                    <HelpCircle className="w-4 h-4" />
+                </button>
+                <button id="tour-notification-bell" className="zu-topnav-bell" aria-label="Notifications">
                     <Bell className="w-4 h-4" />
                     <span className="zu-topnav-bell-dot" />
                 </button>

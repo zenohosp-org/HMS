@@ -146,42 +146,42 @@ export default function IpdVitalsTab({ admissionId, isDischarged }) {
                     </div>
 
                     <form onSubmit={handleSubmit} className="hms-form-stack">
-                        {/* Recorded-at datetime */}
-                        <FormGroup label={<span>Observation time <span className="text-danger">*</span></span>}>
-                            <input
-                                type="datetime-local"
-                                className="hms-vitals-input"
-                                style={{ width: "100%", maxWidth: 260 }}
-                                value={form.recordedAt}
-                                onChange={set("recordedAt")}
-                                required
-                            />
-                        </FormGroup>
-
-                        {/* BP — paired input */}
-                        <FormGroup label="Blood Pressure (mmHg)">
-                            <div className="hms-vitals-row">
-                                <input
-                                    type="number" min="40" max="300" step="1" inputMode="numeric"
-                                    placeholder="Systolic"
-                                    className="hms-vitals-input"
-                                    value={form.bpSystolic}
-                                    onChange={set("bpSystolic")}
-                                />
-                                <span className="hms-vitals-row__sep">/</span>
-                                <input
-                                    type="number" min="20" max="200" step="1" inputMode="numeric"
-                                    placeholder="Diastolic"
-                                    className="hms-vitals-input"
-                                    value={form.bpDiastolic}
-                                    onChange={set("bpDiastolic")}
-                                />
-                                <span className="hms-vitals-row__unit">mmHg</span>
-                            </div>
-                        </FormGroup>
-
-                        {/* 3-column row: HR / RR / SpO2 */}
                         <div className="hms-form-grid is-3col">
+                            {/* Recorded-at datetime */}
+                            <FormGroup label={<span>Observation time <span className="text-danger">*</span></span>}>
+                                <input
+                                    type="datetime-local"
+                                    className="hms-vitals-input"
+                                    style={{ width: "100%" }}
+                                    value={form.recordedAt}
+                                    onChange={set("recordedAt")}
+                                    required
+                                />
+                            </FormGroup>
+
+                            {/* BP — paired input */}
+                            <FormGroup label="Blood Pressure (mmHg)">
+                                <div className="hms-vitals-row">
+                                    <input
+                                        type="number" min="40" max="300" step="1" inputMode="numeric"
+                                        placeholder="Sys"
+                                        className="hms-vitals-input"
+                                        style={{ minWidth: 0, flex: 1 }}
+                                        value={form.bpSystolic}
+                                        onChange={set("bpSystolic")}
+                                    />
+                                    <span className="hms-vitals-row__sep">/</span>
+                                    <input
+                                        type="number" min="20" max="200" step="1" inputMode="numeric"
+                                        placeholder="Dia"
+                                        className="hms-vitals-input"
+                                        style={{ minWidth: 0, flex: 1 }}
+                                        value={form.bpDiastolic}
+                                        onChange={set("bpDiastolic")}
+                                    />
+                                </div>
+                            </FormGroup>
+
                             <FormGroup label="Heart Rate">
                                 <div className="hms-vitals-row">
                                     <input type="number" min="20" max="300" step="1" inputMode="numeric"
@@ -190,6 +190,7 @@ export default function IpdVitalsTab({ admissionId, isDischarged }) {
                                     <span className="hms-vitals-row__unit">bpm</span>
                                 </div>
                             </FormGroup>
+
                             <FormGroup label="Resp. Rate">
                                 <div className="hms-vitals-row">
                                     <input type="number" min="5" max="60" step="1" inputMode="numeric"
@@ -198,6 +199,7 @@ export default function IpdVitalsTab({ admissionId, isDischarged }) {
                                     <span className="hms-vitals-row__unit">br/min</span>
                                 </div>
                             </FormGroup>
+
                             <FormGroup label="SpO₂">
                                 <div className="hms-vitals-row">
                                     <input type="number" min="0" max="100" step="1" inputMode="numeric"
@@ -206,10 +208,7 @@ export default function IpdVitalsTab({ admissionId, isDischarged }) {
                                     <span className="hms-vitals-row__unit">%</span>
                                 </div>
                             </FormGroup>
-                        </div>
 
-                        {/* 3-column row: Temp / Pain / Glucose */}
-                        <div className="hms-form-grid is-3col">
                             <FormGroup label="Temperature">
                                 <div className="hms-vitals-row">
                                     <input type="number" min="90" max="110" step="0.1" inputMode="decimal"
@@ -218,6 +217,7 @@ export default function IpdVitalsTab({ admissionId, isDischarged }) {
                                     <span className="hms-vitals-row__unit">°F</span>
                                 </div>
                             </FormGroup>
+
                             <FormGroup label="Pain Score (0–10)">
                                 <div className="hms-vitals-row">
                                     <input type="number" min="0" max="10" step="1" inputMode="numeric"
@@ -226,6 +226,7 @@ export default function IpdVitalsTab({ admissionId, isDischarged }) {
                                     <span className="hms-vitals-row__unit">/10</span>
                                 </div>
                             </FormGroup>
+
                             <FormGroup label="Blood Glucose">
                                 <div className="hms-vitals-row">
                                     <input type="number" min="20" max="1000" step="1" inputMode="numeric"
@@ -234,18 +235,16 @@ export default function IpdVitalsTab({ admissionId, isDischarged }) {
                                     <span className="hms-vitals-row__unit">mg/dL</span>
                                 </div>
                             </FormGroup>
-                        </div>
 
-                        {/* Weight */}
-                        <FormGroup label="Weight">
-                            <div className="hms-vitals-row">
-                                <input type="number" min="1" max="999" step="0.1" inputMode="decimal"
-                                    placeholder="65.0" className="hms-vitals-input"
-                                    style={{ maxWidth: 100 }}
-                                    value={form.weightKg} onChange={set("weightKg")} />
-                                <span className="hms-vitals-row__unit">kg</span>
-                            </div>
-                        </FormGroup>
+                            <FormGroup label="Weight">
+                                <div className="hms-vitals-row">
+                                    <input type="number" min="1" max="999" step="0.1" inputMode="decimal"
+                                        placeholder="65.0" className="hms-vitals-input"
+                                        value={form.weightKg} onChange={set("weightKg")} />
+                                    <span className="hms-vitals-row__unit">kg</span>
+                                </div>
+                            </FormGroup>
+                        </div>
 
                         {/* Notes */}
                         <FormGroup label="Notes">

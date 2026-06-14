@@ -205,7 +205,6 @@ export default function PastRecordDetailModal({ record, onClose }) {
         {/* ── Footer ──────────────────────────────────────────── */}
         <div className="zu-modal-footer is-split">
           <div className="hms-past-footer-meta">
-            <UserIcon className="w-3 h-3 shrink-0" />
             {record.attendingDoctorName ? (
               <>
                 <span className="hms-past-footer-meta__strong">Dr. {record.attendingDoctorName}</span>
@@ -300,7 +299,7 @@ function MetaField({ icon, label, value, mono }) {
   return (
     <div className="hms-meta-field">
       <div className="hms-meta-field__label">
-        {icon}{label}
+        {label}
       </div>
       <p className={`hms-meta-field__value${mono ? " is-mono" : ""}`}>
         {value}
@@ -318,7 +317,7 @@ function Section({ icon, title, tone, children }) {
   return (
     <section className="hms-past-section">
       <h3 className={`hms-past-section__title ${toneCls}`.trim()}>
-        {icon}{title}
+        {title}
       </h3>
       {children}
     </section>

@@ -11,10 +11,10 @@ const VALID_RANGES = {
   age: { min: 0, max: 120 },
   sbp: { min: 60, max: 300 },
   dbp: { min: 30, max: 200 },
-  weight: { min: 1, max: 300 },
-  height: { min: 30, max: 250 },
   spo2: { min: 50, max: 100 },
   pulse: { min: 30, max: 250 },
+  temperature: { min: 90, max: 110 },
+  bloodGlucose: { min: 20, max: 1000 },
 };
 
 // Severity mappings for sorting
@@ -37,6 +37,8 @@ const SEVERITY_WEIGHTS = {
  * @param {number|string} inputs.height - Height in cm
  * @param {number|string} inputs.spo2 - Oxygen saturation (%)
  * @param {number|string} inputs.pulse - Heart rate (bpm)
+ * @param {number|string} inputs.temperature - Body temperature (°F)
+ * @param {number|string} inputs.bloodGlucose - Blood Glucose (mg/dL)
  * 
  * @returns {Object} Result containing computed metrics, validation errors, and statuses.
  */
@@ -59,6 +61,7 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
     pediatricNote: null,
     isPediatric: false,
     firedRules: [],
+    dietRecommendations: [],
     interpretationParagraph: "",
     footer: "Zema AI is a deterministic clinical rules engine. Outputs are decision-support prompts based on entered vitals and do not constitute a diagnosis. Clinical judgment applies.",
   };
@@ -86,6 +89,8 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
   const rawHeight = parseNumber(inputs.height);
   const rawSpo2 = parseNumber(inputs.spo2);
   const rawPulse = parseNumber(inputs.pulse);
+  const rawTemperature = parseNumber(inputs.temperature);
+  const rawBloodGlucose = parseNumber(inputs.bloodGlucose);
 
   const fieldsToCheck = [
     { key: "age", val: rawAge, label: "Age" },
@@ -96,6 +101,8 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
     { key: "height", val: rawHeight, label: "Height" },
     { key: "spo2", val: rawSpo2, label: "SpO₂" },
     { key: "pulse", val: rawPulse, label: "Pulse" },
+    { key: "temperature", val: rawTemperature, label: "Temperature" },
+    { key: "bloodGlucose", val: rawBloodGlucose, label: "Blood Glucose" },
   ];
 
   // 2. Validate fields and identify missing / rejected fields
@@ -159,6 +166,8 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
   const finalSbp = result.inputs.sbp;
   const finalDbp = result.inputs.dbp;
   const spo2 = result.inputs.spo2;
+  const temperature = result.inputs.temperature;
+  const bloodGlucose = result.inputs.bloodGlucose;
 
   // BMI & BSA
   if (weight !== null && height !== null) {
@@ -252,13 +261,55 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
   if (rawSex !== null) summaryParts.push(`Sex ${rawSex === "M" ? "Male" : "Female"}`);
   if (finalSbp !== null && finalDbp !== null) summaryParts.push(`BP ${finalSbp}/${finalDbp} mmHg`);
   else if (finalSbp !== null) summaryParts.push(`SBP ${finalSbp} mmHg`);
-  else if (finalDbp !== null) summaryParts.push(`DBP ${finalDbp} mmHg`);
+  if (finalDbp !== null) summaryParts.push(`DBP ${finalDbp} mmHg`);
   if (spo2 !== null) summaryParts.push(`SpO₂ ${spo2}%`);
   if (pulse !== null) summaryParts.push(`Pulse ${pulse} bpm`);
+  if (temperature !== null) summaryParts.push(`Temp ${temperature.toFixed(1)} °F`);
+  if (bloodGlucose !== null) summaryParts.push(`Blood Glucose ${bloodGlucose.toFixed(1)} mg/dL`);
   if (weight !== null) summaryParts.push(`Weight ${weight.toFixed(1)} kg`);
   if (height !== null) summaryParts.push(`Height ${height.toFixed(1)} cm`);
 
   const vitalsSummary = `Raw vitals summary: ${summaryParts.join(", ")}.`;
+
+  // 7.5 Generate Indian Dietary Recommendations (Applies to both Adult and Pediatric)
+  const diet = [];
+
+  // Hypertension
+  if (!result.isPediatric && ((finalSbp !== null && finalSbp > 130) || (finalDbp !== null && finalDbp > 80))) {
+    diet.push("Include potassium-rich foods like tender coconut water, moong dal, and bottle gourd (lauki). Avoid high-sodium items like pickles, papad, and salted snacks.");
+  }
+
+  // Blood Glucose
+  if (bloodGlucose !== null && bloodGlucose > 140) {
+    diet.push("Opt for low-glycemic foods such as ragi or millet dosa, bitter gourd (karela), and fenugreek (methi). Avoid refined sugar, sweets, and white rice.");
+  }
+
+  // Fever / High Temp
+  if (temperature !== null && temperature > 99.5) {
+    diet.push("Consume easily digestible, hydrating foods like moong dal khichdi, rasam, rice kanji, and tulsi-ginger tea.");
+  }
+
+  // BMI Check
+  const bmiVal = result.metrics.bmi?.raw;
+  if (!result.isPediatric && bmiVal !== null && bmiVal !== undefined) {
+    if (bmiVal < 18.5) {
+      diet.push("Include nutrient-dense foods to support healthy weight gain, such as cow's ghee, paneer, mixed nuts, sweet potato, and whole milk.");
+    } else if (bmiVal >= 25) {
+      diet.push("Focus on high-fiber, low-calorie options like sprouts salad, dal cheela, oats upma, and plain buttermilk (chaas). Limit deep-fried snacks.");
+    }
+  }
+
+  // SpO2
+  if (spo2 !== null && spo2 < 95) {
+    diet.push("Incorporate iron and Vitamin C-rich foods to support oxygen transport, such as amla (Indian gooseberry), spinach (palak), beetroot, and jaggery.");
+  }
+
+  // Default healthy
+  if (diet.length === 0) {
+    diet.push("Maintain a balanced diet with a variety of fresh vegetables, lentils, and whole grains. Stay well hydrated throughout the day.");
+  }
+
+  result.dietRecommendations = diet;
 
   // 8. Pediatric Guard Exit - Bypasses interpretation and sorting
   if (result.isPediatric) {
@@ -279,6 +330,8 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
       height: result.inputs.height,
       spo2: result.inputs.spo2,
       pulse: result.inputs.pulse,
+      temperature: result.inputs.temperature,
+      bloodGlucose: result.inputs.bloodGlucose,
       bmi: result.metrics.bmi.raw,
       bsa: result.metrics.bsa.raw,
       map: result.metrics.map.raw,
@@ -368,6 +421,17 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
       });
     }
 
+    if (evaluatedMetrics.temperature) {
+      firedRules.push({
+        metric: "Temperature",
+        label: evaluatedMetrics.temperature.label,
+        severity: evaluatedMetrics.temperature.severity,
+        text: evaluatedMetrics.temperature.text,
+        ruleType: 'single',
+        sortHint: evaluatedMetrics.temperature.sortHint
+      });
+    }
+
     if (evaluatedMetrics.shockindex) {
       result.metrics.shockIndex.category = evaluatedMetrics.shockindex.label;
       result.metrics.shockIndex.severity = evaluatedMetrics.shockindex.severity;
@@ -417,7 +481,7 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
       if (!condition) return;
 
       try {
-        const fn = new Function('{ sbp, dbp, map, bmi, spo2, pulse, shockIndex, pulsePressure, age }', `return ${condition};`);
+        const fn = new Function('{ sbp, dbp, map, bmi, spo2, pulse, shockIndex, pulsePressure, age, temperature }', `return ${condition};`);
         const matched = fn(values);
         if (matched) {
           bpOptions.push({
@@ -470,7 +534,7 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
       if (!condition) return;
 
       try {
-        const fn = new Function('{ sbp, dbp, map, bmi, spo2, pulse, shockIndex, pulsePressure, age }', `return ${condition};`);
+        const fn = new Function('{ sbp, dbp, map, bmi, spo2, pulse, shockIndex, pulsePressure, age, temperature }', `return ${condition};`);
         const matched = fn(values);
         if (matched) {
           firedCombinationRules.push({
@@ -498,7 +562,7 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
       if (c8Rule) {
         const condition = c8Rule.conditionExpr;
         try {
-          const fn = new Function('{ sbp, dbp, map, bmi, spo2, pulse, shockIndex, pulsePressure, age }', `return ${condition};`);
+          const fn = new Function('{ sbp, dbp, map, bmi, spo2, pulse, shockIndex, pulsePressure, age, temperature }', `return ${condition};`);
           const matched = fn(values);
           if (matched) {
             firedCombinationRules.push({
@@ -546,6 +610,5 @@ export function calculateZemaVitals(inputs = {}, rules = []) {
   result.interpretationParagraph = interpretationSentences
     ? `${vitalsSummary} ${interpretationSentences}`
     : vitalsSummary;
-
   return result;
 }

@@ -5,7 +5,7 @@ import { calculateZemaVitals } from "@/utils/zemaCalculationEngine";
 import { fmtDateTime } from "@/utils/date";
 import IpdVitalsTrendChart from "./IpdVitalsTrendChart";
 import zemaAiLogo from "@/assets/Zema-AI.svg";
-import { X, AlertCircle, ChevronUp, ChevronDown, Activity, Clock } from "lucide-react";
+import { X, AlertCircle, ChevronUp, ChevronDown, Activity, Clock, Utensils } from "lucide-react";
 
 // Minimum time the "Analyzing…" state stays visible, so the Zema AI
 // branding moment reads consistently even when the API responses are fast.
@@ -86,6 +86,8 @@ export default function IpdZemaAiModal({ admission, onClose }) {
             dbp: latest.bpDiastolic,
             weight: latest.weightKg,
             height: undefined,
+            temperature: latest.temperature,
+            bloodGlucose: latest.bloodGlucose,
             spo2: latest.spo2,
             pulse: latest.heartRate,
         }, zemaRules);
@@ -256,6 +258,20 @@ export default function IpdZemaAiModal({ admission, onClose }) {
                                             <div className="zema-decision-support">
                                                 <h4 className="zema-decision-support__title">Clinical Decision Support</h4>
                                                 <p className="zema-decision-support__text">{zemaResult.interpretationParagraph}</p>
+                                            </div>
+                                        )}
+
+                                        {/* Dietary Recommendations narrative */}
+                                        {zemaResult.dietRecommendations?.length > 0 && (
+                                            <div className="zema-dietary-support" style={{ marginTop: 16, padding: 16, backgroundColor: "rgba(16, 185, 129, 0.05)", borderRadius: 12, border: "1px solid rgba(16, 185, 129, 0.15)" }}>
+                                                <h4 className="zema-decision-support__title" style={{ display: "flex", alignItems: "center", gap: 6, color: "#065f46", marginBottom: 8, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                                    <Utensils className="w-4 h-4" /> Preferred Diet Intakes
+                                                </h4>
+                                                <ul style={{ margin: 0, paddingLeft: 20, color: "#064e3b", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                                                    {zemaResult.dietRecommendations.map((rec, i) => (
+                                                        <li key={i} style={{ marginBottom: 4 }}>{rec}</li>
+                                                    ))}
+                                                </ul>
                                             </div>
                                         )}
 

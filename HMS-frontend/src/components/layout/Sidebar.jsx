@@ -138,11 +138,13 @@ function Sidebar({ isOpen }) {
     const renderLink = (link, isSubmenu = false) => {
         const Icon = link.icon;
         const isActiveLink = location.pathname.startsWith(link.to);
+        const tourId = link.label.toLowerCase().replace(/\s+/g, '-');
         
         if (isSubmenu) {
             return (
                 <li key={link.to}>
                     <button
+                        data-tour={tourId}
                         onClick={() => navigate(link.to)}
                         title={!isOpen ? link.label : undefined}
                         className={isActiveLink ? "active" : ""}
@@ -156,6 +158,7 @@ function Sidebar({ isOpen }) {
         return (
             <div className="sidebar-nav-group" key={link.to}>
                 <button
+                    data-tour={tourId}
                     onClick={() => navigate(link.to)}
                     title={!isOpen ? link.label : undefined}
                     className={`sidebar-nav-item${!isOpen ? " is-icon-only" : ""}${isActiveLink ? " active" : ""}`}
@@ -201,9 +204,11 @@ function Sidebar({ isOpen }) {
 
     const renderAccordionSection = (links, label, AccIcon, open, setOpen, active) => {
         if (!isOpen) return links.map((link) => renderLink(link));
+        const accordionId = label === "Settings" ? "tour-settings-accordion" : undefined;
         return (
             <div className="sidebar-nav-group" key={label}>
                 <button
+                    id={accordionId}
                     onClick={() => setOpen((o) => !o)}
                     className={`sidebar-nav-item has-submenu${active ? " active" : ""}`}
                 >

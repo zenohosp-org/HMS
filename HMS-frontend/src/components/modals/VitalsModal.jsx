@@ -6,7 +6,7 @@ import { vitalsApi, zemaRulesApi } from "@/utils/api";
 import { fmtId } from "@/utils/idFormat";
 import { calculateZemaVitals } from "@/utils/zemaCalculationEngine";
 import zemaAiLogo from "@/assets/Zema-AI.svg";
-import { Activity, HeartPulse, Wind, Scale, Droplet, CheckCircle2, User as UserIcon, IdCard, CalendarClock, Stethoscope, Clock, Ruler, AlertCircle } from "lucide-react";
+import { Activity, HeartPulse, Wind, Scale, Droplet, CheckCircle2, User as UserIcon, IdCard, CalendarClock, Stethoscope, Clock, Ruler, AlertCircle, Thermometer } from "lucide-react";
 
 /**
  * Nurse-facing form to record per-visit vitals (BP, SpO2, HR, weight) on
@@ -36,6 +36,7 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
   const [weightKg, setWeightKg] = useState("");
   const [heightCm, setHeightCm] = useState("");
   const [bloodGlucose, setBloodGlucose] = useState("");
+  const [temperature, setTemperature] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -66,6 +67,7 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
         if (v.weightKg != null)    setWeightKg(String(v.weightKg));
         if (v.heightCm != null)    setHeightCm(String(v.heightCm));
         if (v.bloodGlucose != null) setBloodGlucose(String(v.bloodGlucose));
+        if (v.temperature != null) setTemperature(String(v.temperature));
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -86,6 +88,7 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
     const wt = weightKg === "" ? null : Number(weightKg);
     const ht = heightCm === "" ? null : Number(heightCm);
     const bg = bloodGlucose === "" ? null : Number(bloodGlucose);
+    const temp = temperature === "" ? null : Number(temperature);
 
     if (sys != null && (sys < 40 || sys > 300)) {
       notify("Systolic BP must be between 40 and 300 mmHg", "warning"); return;
@@ -108,14 +111,17 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
     if (bg != null && (bg < 20 || bg > 1000)) {
       notify("Blood glucose must be between 20 and 1000 mg/dL", "warning"); return;
     }
-    if (sys == null && dia == null && sp == null && hr == null && wt == null && ht == null && bg == null) {
+    if (temp != null && (temp < 90 || temp > 110)) {
+      notify("Temperature must be between 90 and 110 °F", "warning"); return;
+    }
+    if (sys == null && dia == null && sp == null && hr == null && wt == null && ht == null && bg == null && temp == null) {
       notify("Enter at least one vital sign before saving", "warning"); return;
     }
 
     setSaving(true);
     try {
       const saved = await vitalsApi.upsert(appointment.id, {
-        bpSystolic: sys, bpDiastolic: dia, spo2: sp, heartRate: hr, weightKg: wt, heightCm: ht, bloodGlucose: bg,
+        bpSystolic: sys, bpDiastolic: dia, spo2: sp, heartRate: hr, weightKg: wt, heightCm: ht, bloodGlucose: bg, temperature: temp,
       });
       notify(existing ? "Vitals updated" : "Vitals recorded", "success");
       onSaved?.(saved);
@@ -153,6 +159,7 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
     dbp: bpDiastolic,
     weight: weightKg,
     height: heightCm,
+    temperature: temperature,
     spo2: spo2,
     pulse: heartRate,
   }, zemaRules);
@@ -257,6 +264,23 @@ export default function VitalsModal({ appointment, onClose, onSaved }) {
                       className="hms-vitals-input"
                     />
                     <span className="hms-vitals-row__unit">bpm</span>
+                  </div>
+                </VitalField>
+
+                <VitalField
+                  icon={<Thermometer className="w-3.5 h-3.5" />}
+                  label="Temperature"
+                  hint="Body temp, °F"
+                >
+                  <div className="hms-vitals-row">
+                    <input
+                      type="number" min="90" max="110" step="0.1" inputMode="decimal"
+                      value={temperature}
+                      onChange={e => setTemperature(e.target.value)}
+                      placeholder="98.6"
+                      className="hms-vitals-input"
+                    />
+                    <span className="hms-vitals-row__unit">°F</span>
                   </div>
                 </VitalField>
 

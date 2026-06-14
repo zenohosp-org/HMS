@@ -14,7 +14,7 @@ import PastRecordDetailModal from "@/components/modals/PastRecordDetailModal";
 import VitalsModal from "@/components/modals/VitalsModal";
 import { calculateZemaVitals } from "@/utils/zemaCalculationEngine";
 import zemaAiLogo from "@/assets/Zema-AI.svg";
-import { Stethoscope, Pill, FlaskConical, ChevronLeft, ChevronRight, LogOut, CalendarClock, CheckCircle2, Save, AlertCircle, ClipboardList, FileText, ListChecks, Plus, IdCard, Droplet, HeartPulse, Scale, Wind, Activity, FileBarChart, Clock, User as UserIcon, PlayCircle, Ruler, ChevronUp, ChevronDown } from "lucide-react";
+import { Stethoscope, Pill, FlaskConical, ChevronLeft, ChevronRight, LogOut, CalendarClock, CheckCircle2, Save, AlertCircle, ClipboardList, FileText, ListChecks, Plus, IdCard, Droplet, HeartPulse, Scale, Wind, Activity, FileBarChart, Clock, User as UserIcon, PlayCircle, Ruler, ChevronUp, ChevronDown, Utensils } from "lucide-react";
 
 /**
  * Full-page, queue-walked consultation workspace. Replaces the modal
@@ -307,6 +307,8 @@ export default function ConsultationViewPage() {
     dbp: draft.vitals?.bpDiastolic,
     weight: draft.vitals?.weightKg,
     height: draft.vitals?.heightCm,
+    temperature: draft.vitals?.temperature,
+    bloodGlucose: draft.vitals?.bloodGlucose,
     spo2: draft.vitals?.spo2,
     pulse: draft.vitals?.heartRate,
   }, zemaRules);
@@ -417,6 +419,8 @@ function LeftPanel({ appointment, vitals, vitalsStatus, pastRecords, loadingPast
     dbp: vitals?.bpDiastolic,
     weight: vitals?.weightKg,
     height: vitals?.heightCm,
+    temperature: vitals?.temperature,
+    bloodGlucose: vitals?.bloodGlucose,
     spo2: vitals?.spo2,
     pulse: vitals?.heartRate,
   }, zemaRules);
@@ -921,6 +925,20 @@ function ConsultTab({ draft, zemaResult, zemaAnalysisState, setZemaAnalysisState
                     <div className="zema-decision-support">
                       <h4 className="zema-decision-support__title">Clinical Decision Support</h4>
                       <p className="zema-decision-support__text">{zemaResult.interpretationParagraph}</p>
+                    </div>
+                  )}
+
+                  {/* Dietary Recommendations narrative */}
+                  {zemaResult.dietRecommendations?.length > 0 && (
+                    <div className="zema-dietary-support" style={{ marginTop: 16, padding: 16, backgroundColor: "rgba(16, 185, 129, 0.05)", borderRadius: 12, border: "1px solid rgba(16, 185, 129, 0.15)" }}>
+                      <h4 className="zema-decision-support__title" style={{ display: "flex", alignItems: "center", gap: 6, color: "#065f46", marginBottom: 8, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        <Utensils className="w-4 h-4" /> Preferred Diet Intakes
+                      </h4>
+                      <ul style={{ margin: 0, paddingLeft: 20, color: "#064e3b", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                        {zemaResult.dietRecommendations.map((rec, i) => (
+                          <li key={i} style={{ marginBottom: 4 }}>{rec}</li>
+                        ))}
+                      </ul>
                     </div>
                   )}
 
