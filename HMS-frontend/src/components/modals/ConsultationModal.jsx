@@ -1,14 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Spinner } from "@/components/ui/Loader";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { fmtId } from "@/utils/idFormat";
-import { Stethoscope, Pill, Plus, CheckCircle2, ClipboardList, CalendarClock, FileText, ListChecks, Save, AlertCircle, User as UserIcon, IdCard, Activity, HeartPulse, Wind, Scale, Droplet, Ruler, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Stethoscope, Pill, Plus, CheckCircle2, ClipboardList, CalendarClock, FileText, ListChecks,
+  Save, AlertCircle, User as UserIcon, IdCard, Activity, HeartPulse, Wind, Scale, Droplet,
+  Ruler, ChevronUp, ChevronDown, FlaskConical,
+} from "lucide-react";
 import { PrescriptionDrugRow } from "@/components/prescription/PrescriptionDrugRow";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import VitalsModal from "@/components/modals/VitalsModal";
 import Modal from "@/components/ui/Modal";
-import { zemaRulesApi } from "@/utils/api";
+import {
+  zemaRulesApi, investigationsApi, hospitalServiceApi, departmentApi,
+} from "@/utils/api";
+import RequestInvestigationForm from "@/components/investigations/RequestInvestigationForm";
+import InternalInvestigationsSection from "@/components/investigations/InternalInvestigationsSection";
 import { calculateZemaVitals } from "@/utils/zemaCalculationEngine";
 import zemaAiLogo from "@/assets/Zema-AI.svg";
 
@@ -29,12 +37,70 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
   const [zemaAnalysisState, setZemaAnalysisState] = useState("idle"); // "idle" | "loading" | "completed"
   const [isZemaCollapsed, setIsZemaCollapsed] = useState(false);
 
+  // Investigation surface — same shape as ConsultationViewPage but lives
+  // inside the modal so a doctor resuming a draft consultation (any day,
+  // not just today's queue) can also see + request investigations without
+  // closing the modal. Catalog fetched once per hospital; labs fetched
+  // per patient and re-run on successful create via refetchLabOrders.
+  const [labOrders, setLabOrders] = useState([]);
+  const [loadingLabs, setLoadingLabs] = useState(false);
+  const [investigationCatalog, setInvestigationCatalog] = useState([]);
+  const [showRequest, setShowRequest] = useState(false);
+
   useEffect(() => {
     if (user?.hospitalId) {
       zemaRulesApi.list(user.hospitalId)
         .then(setZemaRules)
         .catch((err) => console.error("Failed to load Zema rules", err));
     }
+  }, [user?.hospitalId]);
+
+  const patientId = appointment?.patientId;
+
+  // Unified lab + radiology read for the patient on this appointment.
+  // Wrapped in a useCallback so the RequestInvestigationForm's onCreated
+  // can re-run it and surface the new order immediately below.
+  const refetchLabOrders = useCallback(() => {
+    if (!patientId) { setLabOrders([]); return; }
+    setLoadingLabs(true);
+    investigationsApi.byPatient(patientId)
+      .then(rows => setLabOrders(Array.isArray(rows) ? rows : []))
+      .catch(() => setLabOrders([]))
+      .finally(() => setLoadingLabs(false));
+  }, [patientId]);
+
+  useEffect(() => { refetchLabOrders(); }, [refetchLabOrders]);
+
+  // Catalog of orderable investigations — services tagged under LABS or
+  // RADIOLOGY departments, annotated with kind so the shared form can route.
+  useEffect(() => {
+    if (!user?.hospitalId) return;
+    let cancelled = false;
+    const kindFromCode = (code) => {
+      const c = (code || "").toUpperCase();
+      if (c === "LABS") return "LAB";
+      if (c === "RADIOLOGY") return "RADIOLOGY";
+      return null;
+    };
+    Promise.all([
+      departmentApi.list(user.hospitalId),
+      hospitalServiceApi.list(user.hospitalId),
+    ])
+      .then(([depts, services]) => {
+        if (cancelled) return;
+        const kindByDeptId = {};
+        (depts || []).forEach((d) => {
+          const k = kindFromCode(d.code);
+          if (k) kindByDeptId[d.id] = k;
+        });
+        setInvestigationCatalog(
+          (services || [])
+            .filter((s) => s.isActive !== false && kindByDeptId[s.departmentId])
+            .map((s) => ({ ...s, kind: kindByDeptId[s.departmentId] }))
+        );
+      })
+      .catch(() => { if (!cancelled) setInvestigationCatalog([]); });
+    return () => { cancelled = true; };
   }, [user?.hospitalId]);
 
   useEffect(() => {
@@ -405,6 +471,84 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* ── Investigations (labs + radiology) ────────────────────────
+              Same shape as the Consultation View's Lab tab — Request button
+              expands the shared form, the list below shows existing orders
+              for this patient. Visible regardless of whether the modal was
+              opened today (check-in) or any other day (resume draft). */}
+          <div className="hms-consult-investigations">
+            <Section
+              icon={<FlaskConical className="w-3.5 h-3.5" />}
+              title="Investigations"
+              hint="Pathology + radiology orders for this patient"
+            >
+              <div className="hms-cv-lab-toolbar">
+                <button
+                  type="button"
+                  className="hms-btn-primary is-sm"
+                  onClick={() => setShowRequest((v) => !v)}
+                  disabled={!patientId}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {showRequest ? "Close request" : "Request investigation"}
+                </button>
+                {showRequest && (
+                  <RequestInvestigationForm
+                    hospitalId={user?.hospitalId}
+                    patientId={patientId}
+                    /* No admissionId — consultation context is OPD; labs
+                       auto-creates a standalone walk-in invoice on report
+                       generation. */
+                    catalog={investigationCatalog}
+                    defaultKind="ALL"
+                    onCreated={() => {
+                      setShowRequest(false);
+                      refetchLabOrders();
+                    }}
+                    onCancel={() => setShowRequest(false)}
+                  />
+                )}
+              </div>
+
+              {(() => {
+                const labRows = (labOrders || []).filter(o => o.kind === "LAB");
+                const radRows = (labOrders || []).filter(o => o.kind === "RADIOLOGY" || !o.kind);
+                const showLabs = loadingLabs || labRows.length > 0;
+                const showRad  = loadingLabs || radRows.length > 0;
+                if (!loadingLabs && labRows.length === 0 && radRows.length === 0) {
+                  return (
+                    <p className="hms-consult-investigations__empty">
+                      No investigations raised for this patient yet.
+                    </p>
+                  );
+                }
+                return (
+                  <>
+                    {showLabs && (
+                      <InternalInvestigationsSection
+                        rows={labRows}
+                        loading={loadingLabs}
+                        title="Internal Labs"
+                        kind="LAB"
+                      />
+                    )}
+                    {showLabs && showRad && labRows.length > 0 && radRows.length > 0 && (
+                      <div className="hms-cv-lab-divider" />
+                    )}
+                    {showRad && (
+                      <InternalInvestigationsSection
+                        rows={radRows}
+                        loading={loadingLabs}
+                        title="Internal Radiology"
+                        kind="RADIOLOGY"
+                      />
+                    )}
+                  </>
+                );
+              })()}
+            </Section>
           </div>
         </div>
 

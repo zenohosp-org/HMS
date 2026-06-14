@@ -224,6 +224,22 @@
     min-height: 0;
 }
 
+/* Full-width investigations block below the two-column body.
+   Houses the "Request investigation" button + the shared form + the
+   InternalInvestigationsSection list. Mirrors what the Consultation
+   View's Lab tab shows but lives inside the modal so a doctor resuming
+   a draft (any day, not just today's queue) can see + raise orders. */
+.hms-consult-investigations {
+    padding: 24px 28px;
+    border-top: 1px solid var(--hms-gray-200, #e5e7eb);
+}
+
+.hms-consult-investigations__empty {
+    font-size: 13px;
+    color: var(--hms-gray-500, #6b7280);
+    margin: 8px 0 0;
+}
+
 .hms-consult-body__aside {
     padding: 24px;
     background: rgba(249, 250, 251, 0.45);
