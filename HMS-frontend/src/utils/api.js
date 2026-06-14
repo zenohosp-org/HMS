@@ -1043,6 +1043,13 @@ const ioApi = {
 // admission segment from the path.
 const labOrderApi = {
   list:    (admissionId)                              => labsApi.get(`/lab/admission/${admissionId}`).then((r) => r.data),
+  // Alias of list — matches radiologyApi.getByAdmission's naming so cross-
+  // module callers (IPD billing, investigation views) can use the same
+  // method name regardless of kind. Missing this alias used to throw a
+  // sync TypeError inside Promise.all and silently kill the entire IPD
+  // billing estimation block (room, consultation, radiology, lab, meds
+  // all disappeared from the right pane).
+  getByAdmission: (admissionId)                       => labsApi.get(`/lab/admission/${admissionId}`).then((r) => r.data),
   getByPatient: (patientId)                           => labsApi.get(`/lab/patient/${patientId}`).then((r) => r.data),
   create:  (payload)                                  => labsApi.post(`/lab`, payload).then((r) => r.data),
   collect: (orderId)                                  => labsApi.patch(`/lab/${orderId}/collect`).then((r) => r.data),
