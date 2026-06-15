@@ -206,6 +206,11 @@ public class InfrastructureService {
                             bed.setBedNumber(bedName);
                             bed.setIsActive(true);
                             bed.setWard(null);
+                            // Set unconditionally — repairs any pre-existing row
+                            // whose hospital_id was NULL (legacy from the bed-
+                            // tracking refactor before the NOT NULL constraint
+                            // landed), and sets it correctly on freshly minted beds.
+                            bed.setHospital(hospital);
                             bed = bedRepo.saveAndFlush(bed);
                             activeBedIds.add(bed.getId());
                         }
@@ -255,6 +260,9 @@ public class InfrastructureService {
                             bed.setRoom(null);
                             bed.setBedNumber(bedName);
                             bed.setIsActive(true);
+                            // See sibling block above — set unconditionally so the
+                            // NOT NULL hospital_id constraint can't reject this row.
+                            bed.setHospital(hospital);
                             bed = bedRepo.saveAndFlush(bed);
                             activeBedIds.add(bed.getId());
                         }

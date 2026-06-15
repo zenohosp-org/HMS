@@ -222,6 +222,7 @@ public class DataSeeder implements CommandLineRunner {
         migrateRoomAttenderToAdmission();
         ensureRoomOccupancyColumns();
         ensureBedColumns();
+        backfillBedsHospitalId();
         backfillStoreTypesFromRoomType();
         ensurePrescriptionSchema();
         ensureAttachmentSchema();
@@ -373,6 +374,46 @@ public class DataSeeder implements CommandLineRunner {
      * filter on r.room_type excludes anything pointing at a room type HMS
      * doesn't author. Idempotent: re-running is a no-op once aligned.
      */
+    /**
+     * Repairs beds rows whose hospital_id is NULL — legacy from the bed-
+     * tracking refactor that added the column before InfrastructureService
+     * was setting it on save. Hospital is resolved from the bed's parent
+     * (room first, ward second). Both joins are filtered so we never write
+     * a NULL where we couldn't determine the hospital — those rows stay
+     * untouched and surface via the entity's NOT NULL constraint, which
+     * is the right behaviour for genuinely orphan beds.
+     *
+     * Idempotent: re-running is a no-op once all reachable rows have
+     * hospital_id populated.
+     */
+    private void backfillBedsHospitalId() {
+        try {
+            int viaRoom = jdbcTemplate.update("""
+                UPDATE beds b
+                SET    hospital_id = r.hospital_id
+                FROM   rooms r
+                WHERE  b.room_id = r.room_id
+                  AND  b.hospital_id IS NULL
+                  AND  r.hospital_id IS NOT NULL
+                """);
+            int viaWard = jdbcTemplate.update("""
+                UPDATE beds b
+                SET    hospital_id = w.hospital_id
+                FROM   hospital_wards w
+                WHERE  b.ward_id = w.id
+                  AND  b.hospital_id IS NULL
+                  AND  w.hospital_id IS NOT NULL
+                """);
+            int total = viaRoom + viaWard;
+            if (total > 0) {
+                log.info("✅ Backfilled beds.hospital_id for {} row(s) ({} via room, {} via ward)",
+                        total, viaRoom, viaWard);
+            }
+        } catch (Exception e) {
+            log.warn("Could not backfill beds.hospital_id: {}", e.getMessage());
+        }
+    }
+
     private void backfillStoreTypesFromRoomType() {
         try {
             int updated = jdbcTemplate.update("""
