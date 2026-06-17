@@ -70,7 +70,6 @@ const BMW_LINKS = [
 ];
 const HR_LINKS = [
     { label: "Staff Directory", to: "/staffs/directory", icon: UserSquare2 },
-    { label: "Shift Roster", to: "/staffs/roster", icon: CalendarDays },
     { label: "Departments", to: "/staffs/departments", icon: Building2 },
     { label: "Designations", to: "/staffs/designations", icon: Award },
 ];

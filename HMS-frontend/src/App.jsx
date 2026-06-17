@@ -28,7 +28,6 @@ import AppointmentsDashboard from "@/pages/appointments/AppointmentsDashboard";
 import ConsultationViewPage from "@/pages/appointments/ConsultationViewPage";
 import PrintConsultation from "@/pages/print/PrintConsultation";
 import PrintDischargeSummary from "@/pages/print/PrintDischargeSummary";
-import ShiftRoster from "@/pages/admin/ShiftRoster";
 import Departments from "@/pages/admin/Departments";
 import Designations from "@/pages/admin/Designations";
 import Admissions from "@/pages/admin/Admissions";
@@ -114,7 +113,6 @@ const router = createBrowserRouter(
         {/* Staffs / HR */}
         <Route path="staffs" element={<Navigate to="/staffs/directory" replace />} />
         <Route path="staffs/directory" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><StaffsList /></ProtectedRoute>} />
-        <Route path="staffs/roster" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><ShiftRoster /></ProtectedRoute>} />
         <Route path="staffs/departments" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Departments /></ProtectedRoute>} />
         <Route path="staffs/designations" element={<ProtectedRoute allowedRoles={["super_admin", "hospital_admin"]}><Designations /></ProtectedRoute>} />
         

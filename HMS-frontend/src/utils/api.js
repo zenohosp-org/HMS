@@ -440,23 +440,9 @@ const radiologyApi = {
     return data;
   }
 };
-const shiftsApi = {
-  getWeek: async (hospitalId, weekStart) => {
-    const { data } = await api.get("/shifts", { params: { hospitalId, weekStart } });
-    return data;
-  },
-  getMonth: async (hospitalId, year, month) => {
-    const { data } = await api.get("/shifts/monthly", { params: { hospitalId, year, month } });
-    return data;
-  },
-  assign: async (payload) => {
-    const { data } = await api.post("/shifts", payload);
-    return data;
-  },
-  remove: async (id) => {
-    await api.delete(`/shifts/${id}`);
-  }
-};
+// shiftsApi removed — HR ownership has moved to the People app
+// (https://people.zenohosp.com). Use the People backend's /api/shifts surface
+// if a future HMS feature needs to read or write the staff_shifts table.
 const invoiceApi = {
   listOpdPaginated: async (hospitalId, page = 0, size = 10, status = 'ALL', search = '') => {
     const { data } = await api.get("/invoices/opd/paginated", {
@@ -1134,7 +1120,6 @@ export {
   radiologyApi,
   recordApi,
   roomLogsApi,
-  shiftsApi,
   specializationApi,
   staffApi,
   patientAdvanceApi,
