@@ -64,12 +64,15 @@ function emptyStopForm() {
     return { reason: "" };
 }
 
-function emptyReturnForm(defaultQty = 1) {
+function emptyReturnForm(defaultQty = 1, isStopped = false) {
     return {
         returnQty:   String(defaultQty),
         reasonCode:  "INEFFECTIVE",
         reasonNotes: "",
-        stopOrder:   true,        // most common nurse-initiated case = stopping the failing drug
+        // Default to "also stop this order" only when the order is still
+        // active — otherwise the hidden stop-reason field would block
+        // submission with a stale "reason required" check.
+        stopOrder:   !isStopped,
         stopReason:  "",
     };
 }
@@ -161,8 +164,8 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
 
     const getForm        = (id) => forms[id] ?? emptyForm();
     const getStopForm    = (id) => stopForms[id] ?? emptyStopForm();
-    const getReturnForm  = (id, defaultQty) =>
-        returnForms[id] ?? emptyReturnForm(defaultQty);
+    const getReturnForm  = (id, defaultQty, isStopped = false) =>
+        returnForms[id] ?? emptyReturnForm(defaultQty, isStopped);
     const setField       = (id, field) => (e) =>
         setForms((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyForm()), [field]: e.target.value } }));
     const setStopField   = (id, field) => (e) =>
@@ -178,12 +181,14 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
     const resetForm    = (id) => setForms((prev) => ({ ...prev, [id]: emptyForm() }));
     const toggleLog    = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
     const toggleStop   = (id) => setStopOpen((prev) => ({ ...prev, [id]: !prev[id] }));
-    const toggleReturn = (id, defaultQty) => {
+    const toggleReturn = (id, defaultQty, isStopped = false) => {
         setReturnOpen((prev) => ({ ...prev, [id]: !prev[id] }));
         // Seed the form with a sane default qty the first time the panel opens
         // so the nurse doesn't have to type "1" for the common single-strip case.
+        // isStopped flips the stopOrder default off — a stopped order can't be
+        // re-stopped, and the stopReason input is hidden in that branch.
         setReturnForms((prev) =>
-            prev[id] ? prev : { ...prev, [id]: emptyReturnForm(defaultQty) },
+            prev[id] ? prev : { ...prev, [id]: emptyReturnForm(defaultQty, isStopped) },
         );
     };
 
@@ -259,10 +264,15 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
 
     const handleReturn = async (e, order) => {
         e.preventDefault();
-        const orderId = order.orderId;
-        const f       = getReturnForm(orderId);
-        const max     = returnableQty(order);
-        const qty     = Number(f.returnQty);
+        const orderId    = order.orderId;
+        const isStopped  = order.status === "STOPPED";
+        const f          = getReturnForm(orderId, 1, isStopped);
+        const max        = returnableQty(order);
+        const qty        = Number(f.returnQty);
+        // A stopped order can't be re-stopped, so the stopOrder flag is a no-op.
+        // We squash it here so both validation and the outgoing payload behave
+        // as if the user had unchecked it.
+        const willStop   = !isStopped && !!f.stopOrder;
 
         if (!Number.isFinite(qty) || qty <= 0) {
             notify("Return quantity must be a positive number", "warning");
@@ -280,7 +290,7 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
             notify("Notes are required when the reason is Other", "warning");
             return;
         }
-        if (f.stopOrder && !f.stopReason.trim()) {
+        if (willStop && !f.stopReason.trim()) {
             notify("Reason is required when stopping the order with the return", "warning");
             return;
         }
@@ -288,16 +298,16 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
         setReturningId(orderId);
         try {
             await marApi.initiateReturn(orderId, {
-                stopOrder:   f.stopOrder,
-                stopReason:  f.stopOrder ? f.stopReason.trim() : undefined,
+                stopOrder:   willStop,
+                stopReason:  willStop ? f.stopReason.trim() : undefined,
                 returnQty:   qty,
                 reasonCode:  f.reasonCode,
                 reasonNotes: f.reasonNotes.trim() || undefined,
             });
             setReturnOpen((prev)  => ({ ...prev, [orderId]: false }));
-            setReturnForms((prev) => ({ ...prev, [orderId]: emptyReturnForm() }));
+            setReturnForms((prev) => ({ ...prev, [orderId]: emptyReturnForm(1, isStopped) }));
             notify(
-                f.stopOrder
+                willStop
                     ? `Return of ${qty} unit(s) sent to pharmacy and order stopped`
                     : `Return of ${qty} unit(s) sent to pharmacy`,
                 "success",
@@ -357,7 +367,9 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
             ) : (
                 <div className="mar-list">
                     {orders.map((order) => {
-                        const max = returnableQty(order);
+                        const max         = returnableQty(order);
+                        const isStopped   = order.status === "STOPPED";
+                        const seedQty     = Math.max(1, max);
                         return (
                             <OrderCard
                                 key={order.orderId}
@@ -365,7 +377,7 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
                                 now={now}
                                 form={getForm(order.orderId)}
                                 stopForm={getStopForm(order.orderId)}
-                                returnForm={getReturnForm(order.orderId, Math.max(1, max))}
+                                returnForm={getReturnForm(order.orderId, seedQty, isStopped)}
                                 setField={setField}
                                 setStopField={setStopField}
                                 setReturnField={setReturnField}
@@ -378,7 +390,7 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
                                 stopOpen={!!stopOpen[order.orderId]}
                                 onToggleStop={() => toggleStop(order.orderId)}
                                 returnOpen={!!returnOpen[order.orderId]}
-                                onToggleReturn={() => toggleReturn(order.orderId, Math.max(1, max))}
+                                onToggleReturn={() => toggleReturn(order.orderId, seedQty, isStopped)}
                                 returnableQty={max}
                                 logExpanded={!!expanded[order.orderId]}
                                 onToggleLog={() => toggleLog(order.orderId)}
