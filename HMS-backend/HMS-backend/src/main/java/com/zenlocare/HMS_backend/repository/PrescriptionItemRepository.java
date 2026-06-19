@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -55,4 +56,29 @@ public interface PrescriptionItemRepository extends JpaRepository<PrescriptionIt
     List<PrescriptionItem> findByAdmissionIdAndHospitalId(
             @Param("admissionId") UUID admissionId,
             @Param("hospitalId") UUID hospitalId);
+
+    /**
+     * Inverse lookup for the drug-switch chain. Given a batch of "old" prescription
+     * item ids, returns the new items that replaced any of them — one query
+     * powers the MAR card's "→ switched to {drug}" badge without a per-row trip.
+     * In practice each old order has at most one replacement (you don't switch
+     * twice), but the query returns a list so the controller can defend against
+     * malformed data without falling over.
+     */
+    @Query("""
+            SELECT pi FROM PrescriptionItem pi
+            WHERE pi.replacesPrescriptionItemId IN :ids
+            """)
+    List<PrescriptionItem> findReplacementsByOldItemIds(@Param("ids") Collection<UUID> ids);
+
+    /**
+     * Batch lookup for the "old drug name" the new card needs to render its
+     * "← replaces {drug}" badge. We only return the name and id, not the full
+     * row, because the MAR card never needs the old order's dispense state.
+     */
+    @Query("""
+            SELECT pi.id, pi.drugName, pi.drugStrength FROM PrescriptionItem pi
+            WHERE pi.id IN :ids
+            """)
+    List<Object[]> findIdNameStrengthIn(@Param("ids") Collection<UUID> ids);
 }

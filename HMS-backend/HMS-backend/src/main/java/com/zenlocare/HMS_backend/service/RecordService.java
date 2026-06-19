@@ -226,6 +226,7 @@ public class RecordService {
                                 .instructions(ir.getInstructions())
                                 .displayOrder(ir.getDisplayOrder() != null ? ir.getDisplayOrder() : order)
                                 .allergyOverrideReason(ir.getAllergyOverrideReason())
+                                .replacesPrescriptionItemId(ir.getReplacesPrescriptionItemId())
                                 .build();
                 record.getPrescriptionItems().add(item);
                 order++;

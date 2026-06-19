@@ -80,8 +80,23 @@ public class MedicationAdministrationController {
         Map<UUID, List<MedicationAdministration>> byOrder = admins.stream()
                 .collect(Collectors.groupingBy(MedicationAdministration::getOrderId));
 
+        // Resolve the drug-switch chain in-memory — both old and new orders live
+        // on the same admission, so they're already in the `orders` list and we
+        // can skip an extra round-trip to the DB.
+        Map<UUID, PrescriptionItem> byId = orders.stream()
+                .collect(Collectors.toMap(PrescriptionItem::getId, pi -> pi, (a, b) -> a));
+        Map<UUID, PrescriptionItem> replacementByOldId = new java.util.HashMap<>();
+        for (PrescriptionItem pi : orders) {
+            UUID oldId = pi.getReplacesPrescriptionItemId();
+            if (oldId != null) replacementByOldId.putIfAbsent(oldId, pi);
+        }
+
         List<OrderCardDto> result = orders.stream()
-                .map(item -> toOrderCardDto(item, byOrder.getOrDefault(item.getId(), List.of())))
+                .map(item -> toOrderCardDto(
+                        item,
+                        byOrder.getOrDefault(item.getId(), List.of()),
+                        byId,
+                        replacementByOldId))
                 .toList();
 
         return ResponseEntity.ok(result);
@@ -163,7 +178,9 @@ public class MedicationAdministrationController {
     // ── DTO mapping ───────────────────────────────────────────────────────────
 
     private OrderCardDto toOrderCardDto(PrescriptionItem item,
-                                        List<MedicationAdministration> admins) {
+                                        List<MedicationAdministration> admins,
+                                        Map<UUID, PrescriptionItem> byId,
+                                        Map<UUID, PrescriptionItem> replacementByOldId) {
         OrderCardDto dto = new OrderCardDto();
         dto.setOrderId(item.getId().toString());
         dto.setDrugName(item.getDrugName());
@@ -208,8 +225,29 @@ public class MedicationAdministrationController {
         dto.setReturnedQty(item.getReturnedQty());
         dto.setDispenseStatus(item.getDispenseStatus() != null ? item.getDispenseStatus().name() : null);
 
+        // "← replaces {old drug}" — this card is the NEW order in a switch.
+        if (item.getReplacesPrescriptionItemId() != null) {
+            dto.setReplacesPrescriptionItemId(item.getReplacesPrescriptionItemId().toString());
+            PrescriptionItem oldItem = byId.get(item.getReplacesPrescriptionItemId());
+            if (oldItem != null) {
+                dto.setReplacesDrugName(joinDrugLabel(oldItem.getDrugName(), oldItem.getDrugStrength()));
+            }
+        }
+        // "→ switched to {new drug}" — this card is the OLD order in a switch.
+        PrescriptionItem replacement = replacementByOldId.get(item.getId());
+        if (replacement != null) {
+            dto.setReplacedByPrescriptionItemId(replacement.getId().toString());
+            dto.setReplacedByDrugName(joinDrugLabel(replacement.getDrugName(), replacement.getDrugStrength()));
+        }
+
         dto.setAdministrations(admins.stream().map(this::toAdminDto).toList());
         return dto;
+    }
+
+    private static String joinDrugLabel(String name, String strength) {
+        if (name == null) return "(unknown)";
+        if (strength == null || strength.isBlank()) return name.trim();
+        return name.trim() + " " + strength.trim();
     }
 
     private AdminDto toAdminDto(MedicationAdministration a) {
@@ -289,6 +327,14 @@ public class MedicationAdministrationController {
         private Integer        returnedQty;
         /** PENDING | PARTIAL | DISPENSED — recomputed after every dispense/return event. */
         private String         dispenseStatus;
+        /** Set on a NEW order created via the ward-return drug-switch flow — the id of the order it replaces. */
+        private String         replacesPrescriptionItemId;
+        /** Display name of the drug this order replaces. Pulled in one batch query in the controller. */
+        private String         replacesDrugName;
+        /** Set on an OLD order that has been replaced — the id of the new order that succeeded it. */
+        private String         replacedByPrescriptionItemId;
+        /** Display name of the new drug that replaced this one. */
+        private String         replacedByDrugName;
         private List<AdminDto> administrations;
     }
 }

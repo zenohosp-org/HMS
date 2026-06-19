@@ -33,6 +33,41 @@ public final class PrescriptionReturnDtos {
         private String reasonNotes;
         /** Idempotency token; client-generated UUID. Required. */
         private UUID clientRequestId;
+        /**
+         * Optional replacement drug. When present, the server stops the old
+         * order, runs the return, and creates a new ACTIVE prescription on the
+         * same admission with {@code replacesPrescriptionItemId} pointing at
+         * the old order — all in the same transaction.
+         *
+         * Restricted to caller roles that may already prescribe (doctor,
+         * hospital_admin, super_admin). Nurses get a 403 when this block is
+         * non-null; they may still initiate plain returns without it.
+         */
+        private ReplacementDrug replacement;
+    }
+
+    /**
+     * Replacement-drug payload — shape mirrors {@code RecordController.PrescriptionItemRequest}
+     * so we can hand it straight to {@code RecordService.createRecord} without
+     * a translation step. Only the fields nurses might leave blank get sensible
+     * server-side defaults.
+     */
+    @Data
+    public static class ReplacementDrug {
+        private UUID drugId;
+        private String drugName;
+        private String drugGeneric;
+        private String drugStrength;
+        private String drugForm;
+        private String dose;
+        /** OD | BD | TDS | QID | Q4H | Q6H | Q8H | HS | AC | PC | SOS | STAT */
+        private String frequency;
+        private Integer durationDays;
+        private Integer quantity;
+        /** ORAL | IV | IM | SC | TOPICAL | INHALED | OPHTHALMIC | OTIC | NASAL | RECTAL */
+        private String route;
+        private String instructions;
+        private String allergyOverrideReason;
     }
 
     /** Response after a successful initiate. */
@@ -49,6 +84,10 @@ public final class PrescriptionReturnDtos {
         private Integer returnedQty;
         private Integer remainingReturnable;   // dispensed - returned - held
         private String requestStatus;          // REQUESTED
+        /** Set only when a replacement drug was created. UUID of the new prescription_items row. */
+        private UUID replacementPrescriptionItemId;
+        /** Display name of the replacement drug — handy for the toast / log line. */
+        private String replacementDrugName;
     }
 
     /** Single row returned to the pharmacy poll. */

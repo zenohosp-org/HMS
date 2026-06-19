@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNotification } from "@/context/NotificationContext";
-import { marApi } from "@/utils/api";
+import { marApi, drugsApi } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext";
-import { CenterLoader } from "@/components/ui/Loader";
+import { CenterLoader, Spinner } from "@/components/ui/Loader";
 import {
     Pill, Clock, User as UserIcon, CheckCircle2, XCircle,
     PauseCircle, AlertCircle, ChevronDown, ChevronUp,
-    StopCircle, BanIcon, AlertTriangle, Undo2,
+    StopCircle, BanIcon, AlertTriangle, Undo2, ArrowRightLeft, Search,
 } from "lucide-react";
 import { fmtDateTime, fmtTime } from "@/utils/date";
 import "@/styles/modules/ipd-mar.css";
@@ -31,6 +31,36 @@ const CAN_STOP_ROLES = new Set(["doctor", "hospital_admin", "super_admin"]);
 // Roles that may initiate a ward return. Nurses are the primary caller —
 // they're the ones physically returning unused units to pharmacy.
 const CAN_RETURN_ROLES = new Set(["nurse", "doctor", "hospital_admin", "super_admin"]);
+
+// Roles that may attach a replacement drug to a return (the "switch drug"
+// branch). Mirrors the backend's CAN_PRESCRIBE_ROLES — switching IS
+// prescribing, and only doctors / admins may prescribe.
+const CAN_SWITCH_ROLES = new Set(["doctor", "hospital_admin", "super_admin"]);
+
+// Drug frequencies + routes — must mirror the backend enums byte-for-byte.
+// Kept local here so the IpdMarTab doesn't have to depend on the heavier
+// PrescriptionDrugRow component (which carries a full table layout).
+const REPLACEMENT_FREQUENCIES = [
+    { value: "OD",   label: "OD — Once daily" },
+    { value: "BD",   label: "BD — Twice daily" },
+    { value: "TDS",  label: "TDS — Thrice daily" },
+    { value: "QID",  label: "QID — Four times daily" },
+    { value: "Q4H",  label: "Q4H — Every 4 hours" },
+    { value: "Q6H",  label: "Q6H — Every 6 hours" },
+    { value: "Q8H",  label: "Q8H — Every 8 hours" },
+    { value: "HS",   label: "HS — At bedtime" },
+    { value: "AC",   label: "AC — Before meals" },
+    { value: "PC",   label: "PC — After meals" },
+    { value: "SOS",  label: "SOS — As needed" },
+    { value: "STAT", label: "STAT — Immediately, once" },
+];
+const REPLACEMENT_ROUTES = [
+    { value: "ORAL", label: "Oral" }, { value: "IV", label: "IV" },
+    { value: "IM",   label: "IM"   }, { value: "SC", label: "Subcutaneous" },
+    { value: "TOPICAL", label: "Topical" }, { value: "INHALED", label: "Inhaled" },
+    { value: "OPHTHALMIC", label: "Eye" }, { value: "OTIC", label: "Ear" },
+    { value: "NASAL",  label: "Nasal" }, { value: "RECTAL", label: "Rectal" },
+];
 
 // Categorical reasons the backend accepts. Order is intentional: the most
 // common nurse-side scenarios up top. The QUARANTINE-bound reasons (the
@@ -74,6 +104,21 @@ function emptyReturnForm(defaultQty = 1, isStopped = false) {
         // submission with a stale "reason required" check.
         stopOrder:   !isStopped,
         stopReason:  "",
+        // Replacement-drug fields. The picker stays collapsed until the user
+        // explicitly chooses to switch — so the typical "just return unused"
+        // path stays one-click.
+        switchDrug:        false,
+        replDrugId:        null,
+        replDrugName:      "",
+        replDrugGeneric:   "",
+        replDrugStrength:  "",
+        replDrugForm:      "",
+        replDose:          "",
+        replFrequency:     "BD",
+        replDurationDays:  "",
+        replQuantity:      "",
+        replRoute:         "ORAL",
+        replInstructions:  "",
     };
 }
 
@@ -123,6 +168,7 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
     const { user }      = useAuth();
     const canStop       = CAN_STOP_ROLES.has(user?.role);
     const canReturn     = CAN_RETURN_ROLES.has(user?.role);
+    const canSwitch     = CAN_SWITCH_ROLES.has(user?.role);
 
     const [orders, setOrders]             = useState([]);
     const [loading, setLoading]           = useState(true);
@@ -273,6 +319,7 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
         // We squash it here so both validation and the outgoing payload behave
         // as if the user had unchecked it.
         const willStop   = !isStopped && !!f.stopOrder;
+        const willSwitch = canSwitch && !!f.switchDrug;
 
         if (!Number.isFinite(qty) || qty <= 0) {
             notify("Return quantity must be a positive number", "warning");
@@ -295,21 +342,52 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
             return;
         }
 
+        // Replacement-drug validation — only enforced when the switch panel is open.
+        let replacement;
+        if (willSwitch) {
+            if (!f.replDrugName?.trim()) {
+                notify("Pick the replacement drug from search before submitting the switch", "warning");
+                return;
+            }
+            const replQty = Number(f.replQuantity);
+            if (!Number.isFinite(replQty) || replQty <= 0) {
+                notify("Replacement quantity must be a positive number", "warning");
+                return;
+            }
+            replacement = {
+                drugId:        f.replDrugId || undefined,
+                drugName:      f.replDrugName.trim(),
+                drugGeneric:   f.replDrugGeneric?.trim()  || undefined,
+                drugStrength:  f.replDrugStrength?.trim() || undefined,
+                drugForm:      f.replDrugForm?.trim()     || undefined,
+                dose:          f.replDose?.trim()         || undefined,
+                frequency:     f.replFrequency,
+                durationDays:  f.replDurationDays ? Number(f.replDurationDays) : undefined,
+                quantity:      replQty,
+                route:         f.replRoute,
+                instructions:  f.replInstructions?.trim() || undefined,
+            };
+        }
+
         setReturningId(orderId);
         try {
-            await marApi.initiateReturn(orderId, {
+            const resp = await marApi.initiateReturn(orderId, {
                 stopOrder:   willStop,
                 stopReason:  willStop ? f.stopReason.trim() : undefined,
                 returnQty:   qty,
                 reasonCode:  f.reasonCode,
                 reasonNotes: f.reasonNotes.trim() || undefined,
+                replacement,
             });
             setReturnOpen((prev)  => ({ ...prev, [orderId]: false }));
             setReturnForms((prev) => ({ ...prev, [orderId]: emptyReturnForm(1, isStopped) }));
+            const switchedTo = resp?.replacementDrugName;
             notify(
-                willStop
-                    ? `Return of ${qty} unit(s) sent to pharmacy and order stopped`
-                    : `Return of ${qty} unit(s) sent to pharmacy`,
+                switchedTo
+                    ? `Return sent · switched to ${switchedTo}`
+                    : willStop
+                        ? `Return of ${qty} unit(s) sent to pharmacy and order stopped`
+                        : `Return of ${qty} unit(s) sent to pharmacy`,
                 "success",
             );
             fetchOrders();
@@ -397,6 +475,7 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
                                 isDischarged={isDischarged}
                                 canStop={canStop}
                                 canReturn={canReturn}
+                                canSwitch={canSwitch}
                             />
                         );
                     })}
@@ -416,7 +495,7 @@ function OrderCard({
     stopOpen, onToggleStop,
     returnOpen, onToggleReturn, returnableQty,
     logExpanded, onToggleLog,
-    isDischarged, canStop, canReturn,
+    isDischarged, canStop, canReturn, canSwitch,
 }) {
     const isStopped       = "STOPPED" === order.status;
     const adminCount      = order.administrations?.length ?? 0;
@@ -429,6 +508,8 @@ function OrderCard({
     // also allow it on STOPPED orders — the strips are still on the trolley
     // even after the doctor stopped the order.
     const canShowReturn   = canReturn && !isDischarged && returnableQty > 0;
+    const replacedByName  = order.replacedByDrugName;
+    const replacesName    = order.replacesDrugName;
 
     return (
         <div className={`mar-card${isStopped ? " is-stopped" : ""}`}>
@@ -449,6 +530,19 @@ function OrderCard({
                         {isStopped && (
                             <span className="mar-card__stopped-badge">
                                 <BanIcon size={10} /> Stopped
+                            </span>
+                        )}
+                        {/* Drug-switch chain — visible on BOTH the old and new orders so
+                            a nurse skimming the MAR sees the relationship without
+                            opening the IPD log. */}
+                        {replacedByName && (
+                            <span className="mar-card__switch-badge is-out" title={`Switched to ${replacedByName}`}>
+                                <ArrowRightLeft size={10} /> → {replacedByName}
+                            </span>
+                        )}
+                        {replacesName && (
+                            <span className="mar-card__switch-badge is-in" title={`Replaces ${replacesName}`}>
+                                <ArrowRightLeft size={10} /> ← replaces {replacesName}
                             </span>
                         )}
                     </div>
@@ -652,6 +746,19 @@ function OrderCard({
                                         </div>
                                     )}
                                 </div>
+                            )}
+
+                            {/* Switch to a different drug — doctors / admins only.
+                                Collapsed by default so the common "just return" flow
+                                stays clean. The picker is inline (debounced search
+                                against /api/drugs/search) so the user doesn't have to
+                                open the full prescription modal for a single drug. */}
+                            {canSwitch && (
+                                <ReplacementDrugSection
+                                    orderId={order.orderId}
+                                    returnForm={returnForm}
+                                    setReturnField={setReturnField}
+                                />
                             )}
 
                             <div className="mar-return-form__actions">
@@ -861,6 +968,236 @@ function EventRow({ admin }) {
             </div>
             {admin.reason && <p className="mar-event__reason">"{admin.reason}"</p>}
             {admin.notes  && <p className="mar-event__notes">{admin.notes}</p>}
+        </div>
+    );
+}
+
+// ── Replacement-drug section ─────────────────────────────────────────────────
+//
+// Inline debounced drug-master search + per-drug fields. Kept local to the
+// IpdMarTab so the regular Stop/Record flows stay 1:1 with the existing UX —
+// no behavioural change for nurses, the picker only appears when a doctor or
+// admin explicitly opens it.
+
+function ReplacementDrugSection({ orderId, returnForm, setReturnField }) {
+    const { user } = useAuth();
+    const [query, setQuery] = useState(returnForm.replDrugName || "");
+    const [results, setResults] = useState([]);
+    const [open, setOpen] = useState(false);
+    const [searching, setSearching] = useState(false);
+    const debounceRef = useRef(null);
+    const blurTimer   = useRef(null);
+
+    // Keep the search field in lock-step with the form state — needed when the
+    // user picks a drug, then later clears the field, then re-opens.
+    useEffect(() => { setQuery(returnForm.replDrugName || ""); }, [returnForm.replDrugName]);
+
+    const runSearch = useCallback(async (q) => {
+        if (!user?.hospitalId) return;
+        setSearching(true);
+        try {
+            const data = await drugsApi.search(user.hospitalId, q);
+            setResults(Array.isArray(data) ? data.slice(0, 30) : []);
+        } catch {
+            setResults([]);
+        } finally {
+            setSearching(false);
+        }
+    }, [user?.hospitalId]);
+
+    const onQueryChange = (e) => {
+        const v = e.target.value;
+        setQuery(v);
+        setOpen(true);
+        // The free-text drugName follows the search box so a doctor can override
+        // the picker (e.g. brand-not-in-master) by typing a name and submitting
+        // without picking from the dropdown.
+        setReturnField(orderId, "replDrugName")({ target: { value: v } });
+        // Picking from the dropdown re-sets drugId; typing freely clears it.
+        setReturnField(orderId, "replDrugId")({ target: { value: null } });
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => runSearch(v.trim()), 200);
+    };
+
+    const pickDrug = (d) => {
+        setReturnField(orderId, "replDrugId")({       target: { value: d.id } });
+        setReturnField(orderId, "replDrugName")({     target: { value: d.brandName || d.genericName || "" } });
+        setReturnField(orderId, "replDrugGeneric")({  target: { value: d.genericName || "" } });
+        setReturnField(orderId, "replDrugStrength")({ target: { value: d.strength   || "" } });
+        setReturnField(orderId, "replDrugForm")({     target: { value: d.form       || "" } });
+        setQuery(d.brandName || d.genericName || "");
+        setOpen(false);
+    };
+
+    // Compute default quantity from frequency × duration so the doctor doesn't
+    // have to do the math. Matches the doses-per-day map in PrescriptionDrugRow.
+    useEffect(() => {
+        if (!returnForm.switchDrug) return;
+        if (returnForm.replQuantity) return; // user already entered something
+        const dpd = { OD:1, BD:2, TDS:3, QID:4, Q4H:6, Q6H:4, Q8H:3, HS:1, AC:3, PC:3, STAT:1 }[returnForm.replFrequency];
+        const days = Number(returnForm.replDurationDays);
+        if (!dpd || !Number.isFinite(days) || days <= 0) return;
+        const q = dpd * days;
+        if (q > 0) {
+            setReturnField(orderId, "replQuantity")({ target: { value: String(q) } });
+        }
+    // The setReturnField identity changes on every parent render — depending
+    // on it would trigger an infinite loop. We want this effect keyed only on
+    // the actual user-facing inputs, so suppressing the exhaustive-deps rule
+    // is intentional here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [returnForm.switchDrug, returnForm.replFrequency, returnForm.replDurationDays]);
+
+    return (
+        <div className="mar-return-form__switch">
+            <label className="mar-return-form__switch-toggle">
+                <input
+                    type="checkbox"
+                    checked={!!returnForm.switchDrug}
+                    onChange={setReturnField(orderId, "switchDrug")}
+                />
+                <ArrowRightLeft size={13} />
+                Switch to a different drug
+            </label>
+
+            {returnForm.switchDrug && (
+                <div className="mar-return-form__switch-body">
+                    <div className="mar-form__field mar-drug-search">
+                        <label className="mar-form__label">
+                            Replacement drug <span className="req">*</span>
+                        </label>
+                        <div className="mar-drug-search__input-wrap">
+                            <Search size={13} className="mar-drug-search__icon" />
+                            <input
+                                type="text"
+                                className="mar-input mar-drug-search__input"
+                                placeholder="Search by brand or generic name…"
+                                value={query}
+                                onChange={onQueryChange}
+                                onFocus={() => { setOpen(true); if (!results.length) runSearch(query.trim()); }}
+                                onBlur={() => { blurTimer.current = setTimeout(() => setOpen(false), 150); }}
+                                autoComplete="off"
+                            />
+                            {searching && <Spinner className="mar-drug-search__spinner" />}
+                        </div>
+                        {open && (results.length > 0 || (!searching && query)) && (
+                            <ul className="mar-drug-search__menu">
+                                {results.map((d) => (
+                                    <li
+                                        key={d.id}
+                                        className="mar-drug-search__option"
+                                        onMouseDown={() => pickDrug(d)}
+                                    >
+                                        <span className="mar-drug-search__brand">
+                                            {d.brandName || d.genericName}
+                                        </span>
+                                        {(d.strength || d.form) && (
+                                            <span className="mar-drug-search__meta">
+                                                {[d.strength, d.form].filter(Boolean).join(" · ")}
+                                            </span>
+                                        )}
+                                        {d.brandName && d.genericName && d.brandName !== d.genericName && (
+                                            <span className="mar-drug-search__generic">{d.genericName}</span>
+                                        )}
+                                    </li>
+                                ))}
+                                {!searching && results.length === 0 && query && (
+                                    <li className="mar-drug-search__option is-empty">
+                                        No match — will be saved as a free-text drug
+                                    </li>
+                                )}
+                            </ul>
+                        )}
+                    </div>
+
+                    {/* Show the resolved drug context once the user has typed or picked. */}
+                    {(returnForm.replDrugStrength || returnForm.replDrugForm) && (
+                        <div className="mar-drug-context">
+                            <Pill size={11} />
+                            <span>{[returnForm.replDrugStrength, returnForm.replDrugForm].filter(Boolean).join(" · ")}</span>
+                        </div>
+                    )}
+
+                    <div className="mar-form__row-2">
+                        <div className="mar-form__field">
+                            <label className="mar-form__label">Dose</label>
+                            <input
+                                type="text"
+                                className="mar-input"
+                                placeholder="e.g. 1 tablet, 10ml"
+                                value={returnForm.replDose}
+                                onChange={setReturnField(orderId, "replDose")}
+                            />
+                        </div>
+                        <div className="mar-form__field">
+                            <label className="mar-form__label">Frequency</label>
+                            <select
+                                className="mar-input"
+                                value={returnForm.replFrequency}
+                                onChange={setReturnField(orderId, "replFrequency")}
+                            >
+                                {REPLACEMENT_FREQUENCIES.map((f) => (
+                                    <option key={f.value} value={f.value}>{f.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="mar-form__row-2">
+                        <div className="mar-form__field">
+                            <label className="mar-form__label">Duration (days)</label>
+                            <input
+                                type="number"
+                                className="mar-input"
+                                min="1"
+                                step="1"
+                                value={returnForm.replDurationDays}
+                                onChange={setReturnField(orderId, "replDurationDays")}
+                            />
+                        </div>
+                        <div className="mar-form__field">
+                            <label className="mar-form__label">
+                                Qty to dispense <span className="req">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                className="mar-input"
+                                min="1"
+                                step="1"
+                                value={returnForm.replQuantity}
+                                onChange={setReturnField(orderId, "replQuantity")}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="mar-form__row-2">
+                        <div className="mar-form__field">
+                            <label className="mar-form__label">Route</label>
+                            <select
+                                className="mar-input"
+                                value={returnForm.replRoute}
+                                onChange={setReturnField(orderId, "replRoute")}
+                            >
+                                {REPLACEMENT_ROUTES.map((r) => (
+                                    <option key={r.value} value={r.value}>{r.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="mar-form__field">
+                            <label className="mar-form__label">Instructions <span className="hint">optional</span></label>
+                            <input
+                                type="text"
+                                className="mar-input"
+                                placeholder="e.g. After food"
+                                value={returnForm.replInstructions}
+                                onChange={setReturnField(orderId, "replInstructions")}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

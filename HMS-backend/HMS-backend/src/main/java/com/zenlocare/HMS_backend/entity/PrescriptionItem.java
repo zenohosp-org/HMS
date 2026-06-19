@@ -190,6 +190,23 @@ public class PrescriptionItem {
     @Builder.Default
     private Long version = 0L;
 
+    /**
+     * Drug-switch audit chain. When a doctor stops an order and prescribes a
+     * replacement from the same MAR action, the new prescription_items row
+     * carries the old order's id here. The OLD order is left STOPPED — this
+     * column lives on the NEW row only — so the chain reads forward:
+     *   oldOrder.id  ←  newOrder.replacesPrescriptionItemId
+     * Inverse "this order was replaced by …" is a single SELECT against the
+     * column (see PrescriptionItemRepository.findReplacementsByOldItemIds).
+     *
+     * Soft FK (no @ManyToOne) so a stopped order can never be hard-deleted
+     * because something references it — it should never be deleted anyway
+     * (medico-legal audit), but the soft pointer keeps the schema additive
+     * and the migration idempotent.
+     */
+    @Column(name = "replaces_prescription_item_id")
+    private UUID replacesPrescriptionItemId;
+
     /** Net units actually with the patient/ward (dispensed minus returned). */
     @jakarta.persistence.Transient
     public int getEffectiveDispensedQty() {

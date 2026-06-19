@@ -379,6 +379,10 @@ public class RecordController {
         private Integer displayOrder;
         // Set when the prescriber acknowledged & overrode a recorded drug allergy.
         private String allergyOverrideReason;
+        // Soft FK to the original order this prescription replaces — set by the
+        // ward-return "switch drug" flow so the audit chain reads forward and
+        // the MAR card can render "← replaces {old drug}" without a join.
+        private UUID replacesPrescriptionItemId;
     }
 
     @Data

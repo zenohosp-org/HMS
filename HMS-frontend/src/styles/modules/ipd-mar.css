@@ -757,3 +757,161 @@ select.mar-input {
     opacity: 0.55;
     cursor: not-allowed;
 }
+
+/* ── Drug-switch chain badges (drug header row) ───────────────────────────── */
+
+.mar-card__switch-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.mar-card__switch-badge.is-out {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.mar-card__switch-badge.is-in {
+    background: #ecfccb;
+    color: #3f6212;
+}
+
+/* ── Switch-to-different-drug section (inside the return form) ────────────── */
+
+.mar-return-form__switch {
+    padding: 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mar-return-form__switch-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #166534;
+    cursor: pointer;
+}
+
+.mar-return-form__switch-toggle input[type="checkbox"] {
+    margin: 0;
+}
+
+.mar-return-form__switch-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 6px;
+    border-top: 1px dashed #bbf7d0;
+}
+
+/* ── Inline drug-master search ────────────────────────────────────────────── */
+
+.mar-drug-search {
+    position: relative;
+}
+
+.mar-drug-search__input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.mar-drug-search__icon {
+    position: absolute;
+    left: 10px;
+    color: var(--hms-gray-500, #6b7280);
+    pointer-events: none;
+}
+
+.mar-drug-search__input {
+    padding-left: 30px !important;
+}
+
+.mar-drug-search__spinner {
+    position: absolute;
+    right: 10px;
+    width: 14px !important;
+    height: 14px !important;
+}
+
+.mar-drug-search__menu {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid var(--hms-gray-200, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.12);
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+}
+
+.mar-drug-search__option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.mar-drug-search__option:hover {
+    background: #f0fdf4;
+}
+
+.mar-drug-search__option.is-empty {
+    color: var(--hms-gray-500, #6b7280);
+    font-style: italic;
+    cursor: default;
+}
+
+.mar-drug-search__option.is-empty:hover {
+    background: transparent;
+}
+
+.mar-drug-search__brand {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hms-gray-900, #111827);
+}
+
+.mar-drug-search__meta {
+    font-size: 11.5px;
+    color: var(--hms-gray-600, #4b5563);
+}
+
+.mar-drug-search__generic {
+    font-size: 11px;
+    color: var(--hms-gray-500, #6b7280);
+    font-style: italic;
+}
+
+.mar-drug-context {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    background: #ecfccb;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #3f6212;
+    align-self: flex-start;
+}

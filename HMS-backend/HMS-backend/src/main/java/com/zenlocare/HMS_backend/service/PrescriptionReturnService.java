@@ -1,7 +1,10 @@
 package com.zenlocare.HMS_backend.service;
 
+import com.zenlocare.HMS_backend.controller.RecordController.PrescriptionItemRequest;
 import com.zenlocare.HMS_backend.dto.PrescriptionReturnDtos.*;
+import com.zenlocare.HMS_backend.entity.HistoryType;
 import com.zenlocare.HMS_backend.entity.Hospital;
+import com.zenlocare.HMS_backend.entity.PatientRecord;
 import com.zenlocare.HMS_backend.entity.PrescriptionDispenseStatus;
 import com.zenlocare.HMS_backend.entity.PrescriptionItem;
 import com.zenlocare.HMS_backend.entity.PrescriptionReturnRequest;
@@ -52,11 +55,21 @@ public class PrescriptionReturnService {
             "EXPIRY_NEAR",
             "WASTAGE_BROKEN", "WASTAGE_SPILLED");
 
+    /**
+     * Caller roles permitted to attach a {@code replacement} block to a return.
+     * Mirrors the {@code @PreAuthorize} on {@code POST /api/records} — switching
+     * drugs is a prescribing action, and nurses can't prescribe (they can still
+     * do plain returns without a replacement).
+     */
+    private static final Set<String> CAN_PRESCRIBE_ROLES = Set.of(
+            "doctor", "hospital_admin", "super_admin");
+
     private final PrescriptionItemRepository prescriptionItemRepo;
     private final PrescriptionReturnRequestRepository returnRequestRepo;
     private final AdmissionRepository admissionRepo;
     private final UserRepository userRepo;
     private final HospitalRepository hospitalRepo;
+    private final RecordService recordService;
 
     // ─── Nurse initiate ────────────────────────────────────────────────────────
 
@@ -78,8 +91,11 @@ public class PrescriptionReturnService {
             throw new BadRequestException("stopReason is required when stopOrder = true");
 
         // Idempotency short-circuit — replay returns the original row unchanged.
+        // Don't re-create the replacement drug on a replay; the original transaction
+        // already produced it, and the new prescriptionItemId is discoverable
+        // through the existing chain (prescription_items.replaces_prescription_item_id).
         var existing = returnRequestRepo.findByClientRequestId(req.getClientRequestId());
-        if (existing.isPresent()) return toInitiateResponse(existing.get());
+        if (existing.isPresent()) return toInitiateResponse(existing.get(), null);
 
         var item = prescriptionItemRepo.findById(Objects.requireNonNull(prescriptionItemId))
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription order not found"));
@@ -145,7 +161,119 @@ public class PrescriptionReturnService {
                 .build();
         request = returnRequestRepo.save(request);
 
-        return toInitiateResponse(request);
+        // ── Optional: switch drug ──────────────────────────────────────────────
+        // When the caller supplies a replacement block, hand it to RecordService
+        // so the new prescription_items row goes through the SAME validation as
+        // a direct doctor prescription (qty > 0, valid frequency/route codes,
+        // MRN allocation, attendingDoctor resolution). Doing it here, in the
+        // same outer transaction as the stop/return, keeps the audit invariant
+        // "if the old order is STOPPED, the new order exists" — a partial
+        // failure would roll the whole thing back.
+        PrescriptionItem replacementItem = null;
+        if (req.getReplacement() != null) {
+            replacementItem = createReplacement(item, req, caller, hospital);
+        }
+
+        return toInitiateResponse(request, replacementItem);
+    }
+
+    /**
+     * Stops-old / spawns-new helper. Re-uses {@link RecordService#createRecord}
+     * so the new prescription is indistinguishable from one a doctor would have
+     * created directly — same MRN scheme, same enum validation, same eager-role
+     * proxy handling. The new record's description carries the human-readable
+     * "Switched from X to Y" string the IPD log timeline renders without any
+     * special-case rendering.
+     */
+    private PrescriptionItem createReplacement(PrescriptionItem oldItem,
+                                               InitiateRequest req,
+                                               User caller,
+                                               Hospital hospital) {
+        // Role gate — switching is prescribing. Nurses get a clean 403.
+        String roleName = caller.getRole() != null ? caller.getRole().getName() : null;
+        if (roleName == null || !CAN_PRESCRIBE_ROLES.contains(roleName.toLowerCase())) {
+            throw new UnauthorizedException(
+                    "Switching to a replacement drug requires a doctor or admin role");
+        }
+
+        ReplacementDrug rep = req.getReplacement();
+        if (rep.getDrugName() == null || rep.getDrugName().isBlank())
+            throw new BadRequestException("replacement.drugName is required");
+        if (rep.getQuantity() == null || rep.getQuantity() <= 0)
+            throw new BadRequestException("replacement.quantity must be > 0");
+
+        // Translate the DTO into the shape RecordService expects. Keeping this
+        // mapping local (instead of having callers build a PrescriptionItemRequest
+        // directly) means we own the contract — future fields land here once.
+        PrescriptionItemRequest pir = new PrescriptionItemRequest();
+        pir.setDrugId(rep.getDrugId());
+        pir.setDrugName(rep.getDrugName());
+        pir.setDrugGeneric(rep.getDrugGeneric());
+        pir.setDrugStrength(rep.getDrugStrength());
+        pir.setDrugForm(rep.getDrugForm());
+        pir.setDose(rep.getDose());
+        pir.setFrequency(rep.getFrequency());
+        pir.setDurationDays(rep.getDurationDays());
+        pir.setQuantity(rep.getQuantity());
+        pir.setRoute(rep.getRoute());
+        pir.setInstructions(rep.getInstructions());
+        pir.setDisplayOrder(0);
+        pir.setAllergyOverrideReason(rep.getAllergyOverrideReason());
+        pir.setReplacesPrescriptionItemId(oldItem.getId());
+
+        // Build the "Switched from X to Y: <reason>" line the IPD log timeline
+        // will surface verbatim. Keep it terse — full audit lives in the
+        // prescription_return_requests row.
+        String description = buildSwitchDescription(oldItem, rep, req);
+
+        // Re-fetch the patient id off the OLD record — the new record sits on
+        // the same admission, same patient, same hospital.
+        Integer patientId = oldItem.getRecord().getPatient().getId();
+        UUID admissionId  = oldItem.getRecord().getAdmissionId();
+
+        // Caller is the doctor of record — they're the one ordering the switch.
+        // Staff entering on behalf of someone else is handled by the existing
+        // direct prescription create flow; the ward-return path is "the person
+        // pressing the button is the prescriber".
+        PatientRecord newRecord = recordService.createRecord(
+                hospital.getId(), patientId, caller,
+                HistoryType.PRESCRIPTION.name(),
+                description,
+                /* instructions */ null,
+                /* nextVisitDate */ null,
+                admissionId,
+                oldItem.getRecord().getAdmissionNumber(),
+                /* appointmentId */ null,
+                java.util.List.of(pir),
+                caller.getId(),
+                null, null, null, null);
+
+        // createRecord cascades item save through the record — pull the first
+        // (and only) one back out by matching the soft FK we just set.
+        return newRecord.getPrescriptionItems().stream()
+                .filter(pi -> oldItem.getId().equals(pi.getReplacesPrescriptionItemId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Replacement prescription was created but could not be re-read; this is a bug"));
+    }
+
+    private static String buildSwitchDescription(PrescriptionItem oldItem,
+                                                 ReplacementDrug rep,
+                                                 InitiateRequest req) {
+        String oldLabel = joinDrugLabel(oldItem.getDrugName(), oldItem.getDrugStrength());
+        String newLabel = joinDrugLabel(rep.getDrugName(),    rep.getDrugStrength());
+        String tail     = (req.getReasonNotes() != null && !req.getReasonNotes().isBlank())
+                ? " — " + req.getReasonNotes().trim()
+                : (req.getStopReason() != null && !req.getStopReason().isBlank())
+                    ? " — " + req.getStopReason().trim()
+                    : "";
+        return "Switched from " + oldLabel + " to " + newLabel + tail;
+    }
+
+    private static String joinDrugLabel(String name, String strength) {
+        if (name == null) return "(unknown)";
+        if (strength == null || strength.isBlank()) return name.trim();
+        return name.trim() + " " + strength.trim();
     }
 
     // ─── Pharmacy poll ─────────────────────────────────────────────────────────
@@ -272,7 +400,8 @@ public class PrescriptionReturnService {
         return reasonCode != null && QUARANTINE_REASONS.contains(reasonCode.toUpperCase());
     }
 
-    private InitiateResponse toInitiateResponse(PrescriptionReturnRequest request) {
+    private InitiateResponse toInitiateResponse(PrescriptionReturnRequest request,
+                                                PrescriptionItem replacementItem) {
         var item = request.getPrescriptionItem();
         int dispensed = nz(item.getDispensedQty());
         int alreadyHeld = nz(returnRequestRepo.sumHeldOrVerifiedQty(item.getId()));
@@ -286,6 +415,8 @@ public class PrescriptionReturnService {
                 .returnedQty(nz(item.getReturnedQty()))
                 .remainingReturnable(remaining)
                 .requestStatus(request.getStatus())
+                .replacementPrescriptionItemId(replacementItem != null ? replacementItem.getId() : null)
+                .replacementDrugName(replacementItem != null ? replacementItem.getDrugName() : null)
                 .build();
     }
 
