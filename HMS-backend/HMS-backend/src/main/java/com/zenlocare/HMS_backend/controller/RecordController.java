@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.controller;
 
+import com.zenlocare.HMS_backend.dto.PrescriptionReturnDtos;
 import com.zenlocare.HMS_backend.entity.Admission;
 import com.zenlocare.HMS_backend.entity.HistoryType;
 import com.zenlocare.HMS_backend.entity.PatientRecord;
@@ -8,6 +9,7 @@ import com.zenlocare.HMS_backend.entity.PrescriptionItem;
 import com.zenlocare.HMS_backend.entity.User;
 import com.zenlocare.HMS_backend.repository.AdmissionRepository;
 import com.zenlocare.HMS_backend.repository.PrescriptionItemRepository;
+import com.zenlocare.HMS_backend.service.PrescriptionReturnService;
 import com.zenlocare.HMS_backend.service.RecordService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class RecordController {
     private final RecordService recordService;
     private final PrescriptionItemRepository prescriptionItemRepository;
     private final AdmissionRepository admissionRepository;
+    private final PrescriptionReturnService prescriptionReturnService;
 
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<RecordDto>> getPatientRecords(
@@ -172,6 +175,35 @@ public class RecordController {
             results.add(r);
         }
         return ResponseEntity.ok(results);
+    }
+
+    // ── IPD ward-return loop ─────────────────────────────────────────────────
+    //
+    // Symmetric to the dispense endpoints above:
+    //   GET  /prescriptions/return-requests   — pharmacy polls REQUESTED rows
+    //   POST /prescriptions/returns/confirm   — pharmacy verified the physical units
+    //   POST /prescriptions/returns/reject    — pharmacy did not receive the units
+    //
+    // Same trust model as the dispense pair: authenticated cross-service call
+    // (pharmacy forwards the user's JWT). No role gate so the pharmacy service
+    // user isn't tied to a specific HMS role.
+
+    @GetMapping("/prescriptions/return-requests")
+    public ResponseEntity<java.util.List<PrescriptionReturnDtos.PendingReturnRequestDto>>
+            getPendingReturnRequests(@RequestParam UUID hospitalId) {
+        return ResponseEntity.ok(prescriptionReturnService.listPending(hospitalId));
+    }
+
+    @PostMapping("/prescriptions/returns/confirm")
+    public ResponseEntity<PrescriptionReturnDtos.CallbackResultDto> confirmReturn(
+            @RequestBody PrescriptionReturnDtos.ConfirmRequest req) {
+        return ResponseEntity.ok(prescriptionReturnService.confirm(req));
+    }
+
+    @PostMapping("/prescriptions/returns/reject")
+    public ResponseEntity<PrescriptionReturnDtos.CallbackResultDto> rejectReturn(
+            @RequestBody PrescriptionReturnDtos.RejectRequest req) {
+        return ResponseEntity.ok(prescriptionReturnService.reject(req));
     }
 
     private PendingPrescriptionDto toPendingDto(PrescriptionItem pi, Admission admission) {

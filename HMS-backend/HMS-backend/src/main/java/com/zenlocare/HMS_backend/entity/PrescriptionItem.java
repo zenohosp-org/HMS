@@ -162,4 +162,39 @@ public class PrescriptionItem {
     /** Free-text reason recorded when the prescriber overrode a recorded drug allergy for this item. Null = no allergy conflict at prescribe time. */
     @Column(name = "allergy_override_reason", columnDefinition = "TEXT")
     private String allergyOverrideReason;
+
+    /**
+     * Running tally of units returned from ward to pharmacy. Effective dispense
+     * is {@code dispensedQty - returnedQty}; remaining to dispense is
+     * {@code quantity - effectiveDispensed}. Walks up monotonically as pharmacy
+     * confirms verified returns. Defaults to 0 at insert via @Builder.Default
+     * + column default so older rows backfill cleanly when the migration adds
+     * the column.
+     *
+     * Set optimistically by the nurse-initiated return endpoint and finalized
+     * by the pharmacy callback; rolled back on pharmacy reject.
+     */
+    @Column(name = "returned_qty", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    @Builder.Default
+    private Integer returnedQty = 0;
+
+    /**
+     * Optimistic-locking guard: dispense callback, MAR insert, and return
+     * mutations race against each other. Every UPDATE bumps this; a stale
+     * writer sees the old version and Hibernate throws OptimisticLockException.
+     * Nullable for safety while existing rows backfill — Hibernate treats NULL
+     * as 0 on the first update (same pattern as Invoice.version).
+     */
+    @Version
+    @Column(name = "version")
+    @Builder.Default
+    private Long version = 0L;
+
+    /** Net units actually with the patient/ward (dispensed minus returned). */
+    @jakarta.persistence.Transient
+    public int getEffectiveDispensedQty() {
+        int d = dispensedQty != null ? dispensedQty : 0;
+        int r = returnedQty   != null ? returnedQty   : 0;
+        return Math.max(0, d - r);
+    }
 }

@@ -2,10 +2,14 @@ package com.zenlocare.HMS_backend.service;
 
 import com.zenlocare.HMS_backend.dto.DoctorCollectionsDailyResponse;
 import com.zenlocare.HMS_backend.dto.DoctorCollectionsSummaryResponse;
+import com.zenlocare.HMS_backend.dto.RefundDtos.PendingRefundDto;
+import com.zenlocare.HMS_backend.dto.RefundDtos.PendingRefundsResponse;
 import com.zenlocare.HMS_backend.entity.Doctor;
+import com.zenlocare.HMS_backend.entity.Invoice;
 import com.zenlocare.HMS_backend.entity.User;
 import com.zenlocare.HMS_backend.repository.DoctorRepository;
 import com.zenlocare.HMS_backend.repository.InvoicePaymentRepository;
+import com.zenlocare.HMS_backend.repository.InvoiceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +42,7 @@ public class FinanceReportService {
 
     private final InvoicePaymentRepository paymentRepo;
     private final DoctorRepository doctorRepo;
+    private final InvoiceRepository invoiceRepo;
 
     // ---------- Summary: today / last 7 days / this month ----------
 
@@ -189,6 +194,54 @@ public class FinanceReportService {
                 .fromDate(from)
                 .toDate(to)
                 .doctors(doctorRows)
+                .build();
+    }
+
+    // ---------- Pending refunds ----------
+
+    /**
+     * Invoices where the patient has overpaid — paid_amount > total — typically
+     * because a HMS_CREDIT_NOTE (ward return) landed after the invoice was
+     * settled. The finance app shows these so a finance user can issue the
+     * refund in one click via {@code POST /api/finance/invoices/{id}/refund}.
+     *
+     * Refund issuance is a separate action (not auto-issued) by design —
+     * financial controls require a human to confirm the bank-account debit.
+     */
+    public PendingRefundsResponse getPendingRefunds(UUID hospitalId) {
+        List<Invoice> invoices = invoiceRepo.findOverpaidByHospital(hospitalId);
+        List<PendingRefundDto> rows = new ArrayList<>(invoices.size());
+        BigDecimal grand = BigDecimal.ZERO;
+        for (Invoice inv : invoices) {
+            BigDecimal paid = inv.getPaidAmount() != null ? inv.getPaidAmount() : BigDecimal.ZERO;
+            BigDecimal total = inv.getTotal()    != null ? inv.getTotal()      : BigDecimal.ZERO;
+            BigDecimal refundable = paid.subtract(total);
+            if (refundable.signum() <= 0) continue; // race-guard
+
+            var patient = inv.getPatient();
+            String name = patient != null
+                    ? ((patient.getFirstName() == null ? "" : patient.getFirstName().trim())
+                       + " " + (patient.getLastName() == null ? "" : patient.getLastName().trim())).trim()
+                    : null;
+
+            rows.add(PendingRefundDto.builder()
+                    .invoiceId(inv.getId())
+                    .invoiceNumber(inv.getInvoiceNumber())
+                    .patientId(patient != null ? patient.getId() : null)
+                    .patientName(name)
+                    .uhid(patient != null ? patient.getUhid() : null)
+                    .admissionId(inv.getAdmission() != null ? inv.getAdmission().getId() : null)
+                    .appointmentId(inv.getAppointment() != null ? inv.getAppointment().getId() : null)
+                    .billedTotal(total)
+                    .paidAmount(paid)
+                    .refundableAmount(refundable)
+                    .lastUpdated(inv.getUpdatedAt())
+                    .build());
+            grand = grand.add(refundable);
+        }
+        return PendingRefundsResponse.builder()
+                .invoices(rows)
+                .totalRefundable(grand)
                 .build();
     }
 

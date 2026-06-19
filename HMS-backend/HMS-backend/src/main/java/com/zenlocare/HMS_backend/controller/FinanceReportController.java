@@ -2,13 +2,22 @@ package com.zenlocare.HMS_backend.controller;
 
 import com.zenlocare.HMS_backend.dto.DoctorCollectionsDailyResponse;
 import com.zenlocare.HMS_backend.dto.DoctorCollectionsSummaryResponse;
+import com.zenlocare.HMS_backend.dto.RefundDtos;
+import com.zenlocare.HMS_backend.entity.Invoice;
+import com.zenlocare.HMS_backend.entity.InvoicePayment;
+import com.zenlocare.HMS_backend.entity.User;
+import com.zenlocare.HMS_backend.repository.InvoiceRepository;
 import com.zenlocare.HMS_backend.security.HospitalAccessGuard;
 import com.zenlocare.HMS_backend.service.FinanceReportService;
+import com.zenlocare.HMS_backend.service.InvoiceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -30,6 +39,8 @@ public class FinanceReportController {
 
     private final FinanceReportService financeReportService;
     private final HospitalAccessGuard hospitalAccessGuard;
+    private final InvoiceService invoiceService;
+    private final InvoiceRepository invoiceRepository;
 
     /**
      * Per-doctor collected-fees summary for three windows:
@@ -63,5 +74,64 @@ public class FinanceReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         hospitalAccessGuard.requireAccess(hospitalId);
         return ResponseEntity.ok(financeReportService.getDaily(hospitalId, from, to));
+    }
+
+    /**
+     * Invoices where the patient has overpaid (typically because a ward-return
+     * credit-note landed after the bill was settled). Drives the finance app's
+     * "Pending Refunds" page.
+     */
+    @GetMapping("/pending-refunds")
+    public ResponseEntity<RefundDtos.PendingRefundsResponse> getPendingRefunds(
+            @RequestParam UUID hospitalId) {
+        hospitalAccessGuard.requireAccess(hospitalId);
+        return ResponseEntity.ok(financeReportService.getPendingRefunds(hospitalId));
+    }
+
+    /**
+     * Issue a refund against an overpaid invoice. Writes a negative
+     * {@code invoice_payment} row and (for non-cash) debits the bank account
+     * via the existing bank-ledger service. End-to-end idempotent on
+     * {@code clientRequestId} — a retried POST returns the original refund.
+     *
+     * Role-gated: only finance / admin roles can move money. Hospital scoping
+     * goes through the invoice → hospital lookup before {@link HospitalAccessGuard}
+     * rejects cross-tenant access.
+     */
+    @PostMapping("/invoices/{invoiceId}/refund")
+    @PreAuthorize("hasAnyRole('finance_admin', 'hospital_admin', 'super_admin')")
+    public ResponseEntity<RefundDtos.IssueRefundResponse> issueRefund(
+            @PathVariable UUID invoiceId,
+            @RequestBody RefundDtos.IssueRefundRequest req,
+            @AuthenticationPrincipal User principal) {
+
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new IllegalArgumentException("Invoice not found"));
+        UUID invoiceHospitalId = invoice.getHospital() != null ? invoice.getHospital().getId() : null;
+        hospitalAccessGuard.requireAccess(invoiceHospitalId);
+
+        InvoicePayment refund = invoiceService.issueRefund(
+                invoiceId,
+                req.getClientRequestId(),
+                req.getAmount(),
+                req.getPaymentMethod(),
+                req.getBankAccountId(),
+                req.getNotes(),
+                principal);
+
+        BigDecimal newPaid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal total   = invoice.getTotal()      != null ? invoice.getTotal()      : BigDecimal.ZERO;
+        BigDecimal remaining = newPaid.subtract(total);
+        if (remaining.signum() < 0) remaining = BigDecimal.ZERO;
+
+        return ResponseEntity.ok(RefundDtos.IssueRefundResponse.builder()
+                .paymentId(refund.getId())
+                .invoiceId(invoiceId)
+                .invoiceNumber(invoice.getInvoiceNumber())
+                .refundedAmount(req.getAmount())
+                .newPaidAmount(newPaid)
+                .newRefundable(remaining)
+                .refundedAt(refund.getPaidAt())
+                .build());
     }
 }

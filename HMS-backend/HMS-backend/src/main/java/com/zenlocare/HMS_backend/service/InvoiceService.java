@@ -529,6 +529,88 @@ public class InvoiceService {
         }
     }
 
+    /**
+     * Issue a refund against an invoice with end-to-end idempotency. Called by
+     * the finance app when a patient is owed money back — typically because a
+     * ward return generated a HMS_CREDIT_NOTE that dropped the invoice total
+     * below {@code paid_amount}, but the same path works for any overpayment.
+     *
+     * Idempotency: every call MUST supply {@code clientRequestId}. If an
+     * {@code InvoicePayment} with that id already exists we short-circuit and
+     * return the existing row instead of double-debiting the bank account.
+     *
+     * Validation:
+     *  - amount must be > 0 and ≤ (paid_amount − net_total) — i.e. cannot
+     *    refund more than the actual overpayment.
+     *  - non-cash refunds must supply a bank account that belongs to the
+     *    invoice's hospital.
+     *
+     * Returns the refunded {@link InvoicePayment} (negative amount).
+     */
+    @Transactional
+    public InvoicePayment issueRefund(UUID invoiceId,
+                                      UUID clientRequestId,
+                                      BigDecimal amount,
+                                      String paymentMethod,
+                                      UUID bankAccountId,
+                                      String notes,
+                                      User actor) {
+        if (clientRequestId == null)
+            throw new IllegalArgumentException("clientRequestId is required for refund idempotency");
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+            throw new IllegalArgumentException("Refund amount must be positive");
+        if (paymentMethod == null || paymentMethod.isBlank())
+            throw new IllegalArgumentException("paymentMethod is required");
+
+        // Idempotent replay — return the existing refund row.
+        var existing = invoicePaymentRepository.findByClientRequestId(clientRequestId);
+        if (existing.isPresent()) return existing.get();
+
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+
+        BigDecimal paid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal total = invoice.getTotal()      != null ? invoice.getTotal()      : BigDecimal.ZERO;
+        BigDecimal refundable = paid.subtract(total);
+        if (refundable.compareTo(BigDecimal.ZERO) <= 0)
+            throw new IllegalArgumentException("Invoice is not overpaid; nothing to refund");
+        if (amount.compareTo(refundable) > 0)
+            throw new IllegalArgumentException(
+                    "Refund amount " + amount + " exceeds refundable " + refundable);
+
+        boolean isCash = "Cash".equalsIgnoreCase(paymentMethod) || "CASH".equalsIgnoreCase(paymentMethod);
+        if (!isCash && bankAccountId == null)
+            throw new IllegalArgumentException("bankAccountId is required for non-cash refunds");
+
+        InvoicePayment refundPayment = InvoicePayment.builder()
+                .invoice(invoice)
+                .amount(amount.negate())
+                .paymentMethod(paymentMethod)
+                .bankAccountId(isCash ? null : bankAccountId)
+                .collectedBy(userDisplayName(actor))
+                .collectedByUser(actor)
+                .notes(notes != null ? notes : "Refund for ward-return credit")
+                .paidAt(LocalDateTime.now())
+                .clientRequestId(clientRequestId)
+                .build();
+        refundPayment = invoicePaymentRepository.save(refundPayment);
+
+        invoice.setPaidAmount(paid.subtract(amount));
+        invoice.setUpdatedAt(LocalDateTime.now());
+        invoice.setUpdatedBy(actor);
+        invoiceRepository.save(invoice);
+
+        if (!isCash) {
+            bankLedgerService.debitPayment(
+                    bankAccountId, amount,
+                    "Refund — " + invoice.getInvoiceNumber(),
+                    invoice.getInvoiceNumber(),
+                    invoice.getId());
+        }
+
+        return refundPayment;
+    }
+
     @Transactional
     public void refundInvoicePayment(Invoice invoice, BigDecimal amount, String refundMode,
                                      UUID refundBankAccountId, User actor) {

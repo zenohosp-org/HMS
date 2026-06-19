@@ -16,6 +16,13 @@ public interface InvoicePaymentRepository extends JpaRepository<InvoicePayment, 
     // one per invoice. Caller groups the flat list by invoice id.
     List<InvoicePayment> findByInvoice_IdInOrderByPaidAtAsc(java.util.Collection<UUID> invoiceIds);
 
+    /**
+     * Idempotency lookup for refund issuance. The unique-when-present column
+     * means at most one row matches; the Optional shape lets callers branch
+     * cleanly on "already processed".
+     */
+    java.util.Optional<InvoicePayment> findByClientRequestId(UUID clientRequestId);
+
     // Per-doctor, per-day collected-fees aggregation for finance reporting.
     //
     // A "collected fee" is one row in invoice_payments. The doctor is resolved via:

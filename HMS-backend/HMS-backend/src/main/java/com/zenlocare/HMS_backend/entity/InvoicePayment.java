@@ -46,4 +46,17 @@ public class InvoicePayment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collected_by_id")
     private User collectedByUser;
+
+    /**
+     * End-to-end idempotency token, supplied by the finance app when issuing a
+     * refund (or any payment write that must be retry-safe). Nullable so the
+     * column is purely additive over the existing schema — historical rows and
+     * the IPD finalize collect path leave it null. UNIQUE so a retried refund
+     * POST returns the original row instead of double-debiting.
+     *
+     * PostgreSQL allows multiple NULLs under a UNIQUE constraint, so existing
+     * rows backfill cleanly when Hibernate adds the column.
+     */
+    @Column(name = "client_request_id", unique = true)
+    private UUID clientRequestId;
 }

@@ -26,6 +26,25 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     @Query("SELECT COALESCE(SUM(i.total), 0.0) FROM Invoice i WHERE i.hospital.id = :hid AND i.status IN (com.zenlocare.HMS_backend.entity.InvoiceStatus.PAID, com.zenlocare.HMS_backend.entity.InvoiceStatus.SETTLED)")
     double sumPaidByHospital(@Param("hid") UUID hospitalId);
 
+    /**
+     * Invoices where the patient has paid more than they owe — typically because
+     * a credit-note (ward return) landed after the bill was settled. Drives the
+     * finance app's "Pending Refunds" page; each row exposes how much is
+     * refundable so the finance user can issue it in one click.
+     *
+     * JOIN FETCH patient so the DTO mapper can read uhid + name without N+1.
+     * Filters out CANCELLED invoices — those don't represent owed money.
+     */
+    @Query("""
+        SELECT i FROM Invoice i
+        LEFT JOIN FETCH i.patient p
+        WHERE i.hospital.id = :hospitalId
+          AND i.status <> com.zenlocare.HMS_backend.entity.InvoiceStatus.CANCELLED
+          AND COALESCE(i.paidAmount, 0) > COALESCE(i.total, 0)
+        ORDER BY i.updatedAt DESC
+        """)
+    List<Invoice> findOverpaidByHospital(@Param("hospitalId") UUID hospitalId);
+
     @Query("SELECT COALESCE(SUM(i.total), 0.0) FROM Invoice i WHERE i.hospital.id = :hid AND i.status NOT IN (com.zenlocare.HMS_backend.entity.InvoiceStatus.PAID, com.zenlocare.HMS_backend.entity.InvoiceStatus.SETTLED, com.zenlocare.HMS_backend.entity.InvoiceStatus.CANCELLED)")
     double sumOutstandingByHospital(@Param("hid") UUID hospitalId);
 

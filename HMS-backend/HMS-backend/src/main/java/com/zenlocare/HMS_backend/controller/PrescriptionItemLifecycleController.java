@@ -1,5 +1,6 @@
 package com.zenlocare.HMS_backend.controller;
 
+import com.zenlocare.HMS_backend.dto.PrescriptionReturnDtos;
 import com.zenlocare.HMS_backend.entity.User;
 import com.zenlocare.HMS_backend.exception.BadRequestException;
 import com.zenlocare.HMS_backend.exception.ResourceNotFoundException;
@@ -7,6 +8,7 @@ import com.zenlocare.HMS_backend.exception.UnauthorizedException;
 import com.zenlocare.HMS_backend.repository.AdmissionRepository;
 import com.zenlocare.HMS_backend.repository.PrescriptionItemRepository;
 import com.zenlocare.HMS_backend.repository.UserRepository;
+import com.zenlocare.HMS_backend.service.PrescriptionReturnService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +40,7 @@ public class PrescriptionItemLifecycleController {
     private final PrescriptionItemRepository prescriptionItemRepo;
     private final AdmissionRepository        admissionRepo;
     private final UserRepository             userRepo;
+    private final PrescriptionReturnService  prescriptionReturnService;
 
     @PatchMapping("/{itemId}/stop")
     @Transactional
@@ -88,6 +91,27 @@ public class PrescriptionItemLifecycleController {
                 (caller.getLastName() != null ? " " + caller.getLastName() : ""));
         dto.setStopReason(order.getStopReason());
         return ResponseEntity.ok(dto);
+    }
+
+    /**
+     * Nurse-initiated ward return for an IPD prescription order. Optionally
+     * stops the order in the same transaction. The class-level @PreAuthorize
+     * is overridden here to also include {@code nurse} — clinically the nurse
+     * is the one who carries unused units back to pharmacy and starts the
+     * paper trail.
+     *
+     * Heavy lifting (validation, optimistic hold on returned_qty, dispense
+     * status recompute, idempotency) lives in {@link PrescriptionReturnService}
+     * so the same logic stays reusable from other entry points (e.g. a future
+     * IPD-doctor "switch drug" action).
+     */
+    @PostMapping("/{itemId}/return")
+    @PreAuthorize("hasAnyRole('nurse', 'doctor', 'hospital_admin', 'super_admin')")
+    public ResponseEntity<PrescriptionReturnDtos.InitiateResponse> initiateReturn(
+            @PathVariable UUID itemId,
+            @RequestBody PrescriptionReturnDtos.InitiateRequest req,
+            @AuthenticationPrincipal User principal) {
+        return ResponseEntity.ok(prescriptionReturnService.initiate(itemId, req, principal));
     }
 
     // ── Request / response types ──────────────────────────────────────────────
