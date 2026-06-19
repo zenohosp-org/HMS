@@ -6,7 +6,7 @@ import { CenterLoader } from "@/components/ui/Loader";
 import {
     Pill, Clock, User as UserIcon, CheckCircle2, XCircle,
     PauseCircle, AlertCircle, ChevronDown, ChevronUp,
-    StopCircle, BanIcon, AlertTriangle,
+    StopCircle, BanIcon, AlertTriangle, Undo2,
 } from "lucide-react";
 import { fmtDateTime, fmtTime } from "@/utils/date";
 import "@/styles/modules/ipd-mar.css";
@@ -28,6 +28,26 @@ const STATUS_OPTIONS = [
 // Roles that may stop an order (mirrors @PreAuthorize on the backend endpoint)
 const CAN_STOP_ROLES = new Set(["doctor", "hospital_admin", "super_admin"]);
 
+// Roles that may initiate a ward return. Nurses are the primary caller —
+// they're the ones physically returning unused units to pharmacy.
+const CAN_RETURN_ROLES = new Set(["nurse", "doctor", "hospital_admin", "super_admin"]);
+
+// Categorical reasons the backend accepts. Order is intentional: the most
+// common nurse-side scenarios up top. The QUARANTINE-bound reasons (the
+// pharmacist won't credit sellable stock) are grouped and visually flagged
+// in the select via a "→ quarantine" suffix.
+const RETURN_REASONS = [
+    { value: "INEFFECTIVE",          label: "Drug ineffective",          quarantine: true  },
+    { value: "ADVERSE_REACTION",     label: "Adverse reaction",          quarantine: true  },
+    { value: "DOSE_CHANGE",          label: "Doctor changed dose",       quarantine: false },
+    { value: "ORDER_STOPPED",        label: "Order stopped",             quarantine: false },
+    { value: "WRONG_DRUG_DISPENSED", label: "Wrong drug dispensed",      quarantine: false },
+    { value: "EXPIRY_NEAR",          label: "Near expiry",               quarantine: true  },
+    { value: "WASTAGE_BROKEN",       label: "Wastage — broken/damaged",  quarantine: true  },
+    { value: "WASTAGE_SPILLED",      label: "Wastage — spilled",         quarantine: true  },
+    { value: "OTHER",                label: "Other (specify in notes)",  quarantine: false },
+];
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function localNow() {
@@ -42,6 +62,23 @@ function emptyForm() {
 
 function emptyStopForm() {
     return { reason: "" };
+}
+
+function emptyReturnForm(defaultQty = 1) {
+    return {
+        returnQty:   String(defaultQty),
+        reasonCode:  "INEFFECTIVE",
+        reasonNotes: "",
+        stopOrder:   true,        // most common nurse-initiated case = stopping the failing drug
+        stopReason:  "",
+    };
+}
+
+/** Effective returnable units = pharmacy-issued minus already returned. */
+function returnableQty(order) {
+    const d = Number(order?.dispensedQty ?? 0);
+    const r = Number(order?.returnedQty  ?? 0);
+    return Math.max(0, d - r);
 }
 
 // Hours between scheduled doses for fixed-interval frequencies. Frequencies
@@ -82,16 +119,20 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
     const { notify }    = useNotification();
     const { user }      = useAuth();
     const canStop       = CAN_STOP_ROLES.has(user?.role);
+    const canReturn     = CAN_RETURN_ROLES.has(user?.role);
 
-    const [orders, setOrders]         = useState([]);
-    const [loading, setLoading]       = useState(true);
-    const [forms, setForms]           = useState({});
-    const [stopForms, setStopForms]   = useState({});
-    const [stopOpen, setStopOpen]     = useState({});
-    const [expanded, setExpanded]     = useState({});
-    const [savingId, setSavingId]     = useState(null);
-    const [stoppingId, setStoppingId] = useState(null);
-    const [now, setNow]               = useState(() => new Date());
+    const [orders, setOrders]             = useState([]);
+    const [loading, setLoading]           = useState(true);
+    const [forms, setForms]               = useState({});
+    const [stopForms, setStopForms]       = useState({});
+    const [stopOpen, setStopOpen]         = useState({});
+    const [returnForms, setReturnForms]   = useState({});
+    const [returnOpen, setReturnOpen]     = useState({});
+    const [returningId, setReturningId]   = useState(null);
+    const [expanded, setExpanded]         = useState({});
+    const [savingId, setSavingId]         = useState(null);
+    const [stoppingId, setStoppingId]     = useState(null);
+    const [now, setNow]                   = useState(() => new Date());
 
     // Keep due/overdue badges current without requiring a page refresh.
     useEffect(() => {
@@ -118,15 +159,33 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
 
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-    const getForm      = (id) => forms[id] ?? emptyForm();
-    const getStopForm  = (id) => stopForms[id] ?? emptyStopForm();
-    const setField     = (id, field) => (e) =>
+    const getForm        = (id) => forms[id] ?? emptyForm();
+    const getStopForm    = (id) => stopForms[id] ?? emptyStopForm();
+    const getReturnForm  = (id, defaultQty) =>
+        returnForms[id] ?? emptyReturnForm(defaultQty);
+    const setField       = (id, field) => (e) =>
         setForms((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyForm()), [field]: e.target.value } }));
-    const setStopField = (id, field) => (e) =>
+    const setStopField   = (id, field) => (e) =>
         setStopForms((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyStopForm()), [field]: e.target.value } }));
+    const setReturnField = (id, field) => (e) => {
+        // Checkboxes use .checked, every other input uses .value.
+        const val = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+        setReturnForms((prev) => ({
+            ...prev,
+            [id]: { ...(prev[id] ?? emptyReturnForm()), [field]: val },
+        }));
+    };
     const resetForm    = (id) => setForms((prev) => ({ ...prev, [id]: emptyForm() }));
     const toggleLog    = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
     const toggleStop   = (id) => setStopOpen((prev) => ({ ...prev, [id]: !prev[id] }));
+    const toggleReturn = (id, defaultQty) => {
+        setReturnOpen((prev) => ({ ...prev, [id]: !prev[id] }));
+        // Seed the form with a sane default qty the first time the panel opens
+        // so the nurse doesn't have to type "1" for the common single-strip case.
+        setReturnForms((prev) =>
+            prev[id] ? prev : { ...prev, [id]: emptyReturnForm(defaultQty) },
+        );
+    };
 
     const handleSubmit = async (e, orderId) => {
         e.preventDefault();
@@ -198,6 +257,62 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
         }
     };
 
+    const handleReturn = async (e, order) => {
+        e.preventDefault();
+        const orderId = order.orderId;
+        const f       = getReturnForm(orderId);
+        const max     = returnableQty(order);
+        const qty     = Number(f.returnQty);
+
+        if (!Number.isFinite(qty) || qty <= 0) {
+            notify("Return quantity must be a positive number", "warning");
+            return;
+        }
+        if (qty > max) {
+            notify(`Cannot return more than ${max} unit(s) — that's all pharmacy has issued`, "warning");
+            return;
+        }
+        if (!f.reasonCode) {
+            notify("Pick a reason for the return", "warning");
+            return;
+        }
+        if (f.reasonCode === "OTHER" && !f.reasonNotes.trim()) {
+            notify("Notes are required when the reason is Other", "warning");
+            return;
+        }
+        if (f.stopOrder && !f.stopReason.trim()) {
+            notify("Reason is required when stopping the order with the return", "warning");
+            return;
+        }
+
+        setReturningId(orderId);
+        try {
+            await marApi.initiateReturn(orderId, {
+                stopOrder:   f.stopOrder,
+                stopReason:  f.stopOrder ? f.stopReason.trim() : undefined,
+                returnQty:   qty,
+                reasonCode:  f.reasonCode,
+                reasonNotes: f.reasonNotes.trim() || undefined,
+            });
+            setReturnOpen((prev)  => ({ ...prev, [orderId]: false }));
+            setReturnForms((prev) => ({ ...prev, [orderId]: emptyReturnForm() }));
+            notify(
+                f.stopOrder
+                    ? `Return of ${qty} unit(s) sent to pharmacy and order stopped`
+                    : `Return of ${qty} unit(s) sent to pharmacy`,
+                "success",
+            );
+            fetchOrders();
+        } catch (err) {
+            // Surface the server's BadRequestException message verbatim — it
+            // already says things like "returnQty exceeds returnable units …".
+            const msg = err?.response?.data?.message ?? "Failed to initiate return";
+            notify(msg, "error");
+        } finally {
+            setReturningId(null);
+        }
+    };
+
     const knownAllergies = Array.isArray(allergies) ? allergies : [];
 
     return (
@@ -241,27 +356,38 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
                 </div>
             ) : (
                 <div className="mar-list">
-                    {orders.map((order) => (
-                        <OrderCard
-                            key={order.orderId}
-                            order={order}
-                            now={now}
-                            form={getForm(order.orderId)}
-                            stopForm={getStopForm(order.orderId)}
-                            setField={setField}
-                            setStopField={setStopField}
-                            onSubmit={handleSubmit}
-                            onStop={handleStop}
-                            saving={savingId === order.orderId}
-                            stopping={stoppingId === order.orderId}
-                            stopOpen={!!stopOpen[order.orderId]}
-                            onToggleStop={() => toggleStop(order.orderId)}
-                            logExpanded={!!expanded[order.orderId]}
-                            onToggleLog={() => toggleLog(order.orderId)}
-                            isDischarged={isDischarged}
-                            canStop={canStop}
-                        />
-                    ))}
+                    {orders.map((order) => {
+                        const max = returnableQty(order);
+                        return (
+                            <OrderCard
+                                key={order.orderId}
+                                order={order}
+                                now={now}
+                                form={getForm(order.orderId)}
+                                stopForm={getStopForm(order.orderId)}
+                                returnForm={getReturnForm(order.orderId, Math.max(1, max))}
+                                setField={setField}
+                                setStopField={setStopField}
+                                setReturnField={setReturnField}
+                                onSubmit={handleSubmit}
+                                onStop={handleStop}
+                                onReturn={handleReturn}
+                                saving={savingId === order.orderId}
+                                stopping={stoppingId === order.orderId}
+                                returning={returningId === order.orderId}
+                                stopOpen={!!stopOpen[order.orderId]}
+                                onToggleStop={() => toggleStop(order.orderId)}
+                                returnOpen={!!returnOpen[order.orderId]}
+                                onToggleReturn={() => toggleReturn(order.orderId, Math.max(1, max))}
+                                returnableQty={max}
+                                logExpanded={!!expanded[order.orderId]}
+                                onToggleLog={() => toggleLog(order.orderId)}
+                                isDischarged={isDischarged}
+                                canStop={canStop}
+                                canReturn={canReturn}
+                            />
+                        );
+                    })}
                 </div>
             )}
         </div>
@@ -271,17 +397,26 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
 // ── Order card ──────────────────────────────────────────────────────────────────
 
 function OrderCard({
-    order, now, form, stopForm, setField, setStopField,
-    onSubmit, onStop, saving, stopping,
+    order, now, form, stopForm, returnForm,
+    setField, setStopField, setReturnField,
+    onSubmit, onStop, onReturn,
+    saving, stopping, returning,
     stopOpen, onToggleStop,
+    returnOpen, onToggleReturn, returnableQty,
     logExpanded, onToggleLog,
-    isDischarged, canStop,
+    isDischarged, canStop, canReturn,
 }) {
-    const isStopped    = "STOPPED" === order.status;
-    const adminCount   = order.administrations?.length ?? 0;
-    const needsReason  = form.status === "HELD" || form.status === "REFUSED";
-    const drugTitle    = [order.drugName, order.drugStrength, order.drugForm].filter(Boolean).join(" ");
-    const doseSchedule = getDoseSchedule(order, now);
+    const isStopped       = "STOPPED" === order.status;
+    const adminCount      = order.administrations?.length ?? 0;
+    const needsReason     = form.status === "HELD" || form.status === "REFUSED";
+    const drugTitle       = [order.drugName, order.drugStrength, order.drugForm].filter(Boolean).join(" ");
+    const doseSchedule    = getDoseSchedule(order, now);
+    const reasonMeta      = RETURN_REASONS.find((r) => r.value === returnForm?.reasonCode);
+    const reasonNotesReq  = returnForm?.reasonCode === "OTHER";
+    // Show the action only when there's something physically returnable. We
+    // also allow it on STOPPED orders — the strips are still on the trolley
+    // even after the doctor stopped the order.
+    const canShowReturn   = canReturn && !isDischarged && returnableQty > 0;
 
     return (
         <div className={`mar-card${isStopped ? " is-stopped" : ""}`}>
@@ -322,6 +457,16 @@ function OrderCard({
                         {doseSchedule?.state === "due" && (
                             <span className="mar-signa-pill is-due" title={`Next dose due at ${fmtTime(doseSchedule.nextDueAt)}`}>
                                 <Clock size={10} /> Due now
+                            </span>
+                        )}
+                        {/* Dispense tally — gives the nurse instant "how much is on the ward" context. */}
+                        {(order.quantity != null || order.dispensedQty != null) && (
+                            <span
+                                className={`mar-signa-pill is-dispense is-${(order.dispenseStatus || "PENDING").toLowerCase()}`}
+                                title={`Returned: ${order.returnedQty ?? 0}`}
+                            >
+                                <Pill size={10} />
+                                {order.dispensedQty ?? 0}/{order.quantity ?? "—"} dispensed
                             </span>
                         )}
                         {order.dose && (
@@ -376,6 +521,148 @@ function OrderCard({
                         <p className="mar-log-empty">No administrations recorded yet</p>
                     ) : (
                         order.administrations.map((a) => <EventRow key={a.id} admin={a} />)
+                    )}
+                </div>
+            )}
+
+            {/* ── Ward actions — return unused units ──
+                Lives outside the administration form so it stays available
+                even after the doctor stops the order (the strips are still
+                on the trolley). Hidden after discharge. */}
+            {canShowReturn && (
+                <div className="mar-ward-actions">
+                    {!returnOpen ? (
+                        <button
+                            type="button"
+                            className="mar-return-btn"
+                            onClick={onToggleReturn}
+                            title={`Up to ${returnableQty} unit(s) returnable to pharmacy`}
+                        >
+                            <Undo2 size={13} />
+                            Return unused to pharmacy
+                            <span className="mar-return-btn__hint">({returnableQty} available)</span>
+                        </button>
+                    ) : (
+                        <form
+                            className="mar-return-form"
+                            onSubmit={(e) => onReturn(e, order)}
+                        >
+                            <p className="mar-return-form__heading">
+                                <Undo2 size={13} /> Return unused units to pharmacy
+                            </p>
+                            <p className="mar-return-form__sub">
+                                Pharmacy will receive a verify request. Stock is re-credited
+                                only after the pharmacist confirms the physical units arrive.
+                            </p>
+
+                            {/* Qty + Reason */}
+                            <div className="mar-form__row-2">
+                                <div className="mar-form__field">
+                                    <label className="mar-form__label">
+                                        Qty to return <span className="req">*</span>
+                                        <span className="hint">max {returnableQty}</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        className="mar-input"
+                                        min="1"
+                                        max={returnableQty}
+                                        step="1"
+                                        value={returnForm.returnQty}
+                                        onChange={setReturnField(order.orderId, "returnQty")}
+                                        required
+                                    />
+                                </div>
+                                <div className="mar-form__field">
+                                    <label className="mar-form__label">
+                                        Reason <span className="req">*</span>
+                                    </label>
+                                    <select
+                                        className="mar-input"
+                                        value={returnForm.reasonCode}
+                                        onChange={setReturnField(order.orderId, "reasonCode")}
+                                        required
+                                    >
+                                        {RETURN_REASONS.map((r) => (
+                                            <option key={r.value} value={r.value}>
+                                                {r.label}{r.quarantine ? "  →  quarantine" : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Reason notes — always shown, required only for OTHER */}
+                            <div className="mar-form__field">
+                                <label className="mar-form__label">
+                                    Notes {reasonNotesReq ? <span className="req">*</span> : <span className="hint">optional</span>}
+                                </label>
+                                <textarea
+                                    className="mar-input is-textarea"
+                                    rows={2}
+                                    placeholder={
+                                        reasonMeta?.value === "INEFFECTIVE"
+                                            ? "e.g. No symptom relief after 6h, vitals unchanged"
+                                            : "Clinical context for pharmacy / audit"
+                                    }
+                                    value={returnForm.reasonNotes}
+                                    onChange={setReturnField(order.orderId, "reasonNotes")}
+                                    required={reasonNotesReq}
+                                />
+                            </div>
+
+                            {/* Optional: also stop the order in the same call.
+                                Only offered when (a) the order is still ACTIVE
+                                and (b) the caller's role can stop. */}
+                            {!isStopped && canStop && (
+                                <div className="mar-return-form__stop">
+                                    <label className="mar-return-form__stop-toggle">
+                                        <input
+                                            type="checkbox"
+                                            checked={returnForm.stopOrder}
+                                            onChange={setReturnField(order.orderId, "stopOrder")}
+                                        />
+                                        Also stop this order
+                                    </label>
+                                    {returnForm.stopOrder && (
+                                        <div className="mar-form__field">
+                                            <label className="mar-form__label">
+                                                Stop reason <span className="req">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className="mar-input"
+                                                placeholder="e.g. Switching to ibuprofen"
+                                                value={returnForm.stopReason}
+                                                onChange={setReturnField(order.orderId, "stopReason")}
+                                                required
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="mar-return-form__actions">
+                                <button
+                                    type="submit"
+                                    className="mar-return-confirm-btn"
+                                    disabled={returning}
+                                >
+                                    {returning
+                                        ? <span className="zu-spinner" style={{ width: 13, height: 13 }} />
+                                        : <Undo2 size={13} />}
+                                    Send return to pharmacy
+                                </button>
+                                <button
+                                    type="button"
+                                    className="mar-return-cancel-btn"
+                                    onClick={onToggleReturn}
+                                    disabled={returning}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
                     )}
                 </div>
             )}

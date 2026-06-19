@@ -196,6 +196,18 @@ public class MedicationAdministrationController {
             }
         }
 
+        // Quantities used by the MAR-side "Return unused" action:
+        //   - quantity:     total prescribed
+        //   - dispensedQty: pharmacy-issued tally
+        //   - returnedQty:  optimistically incremented on initiate, decremented on reject
+        // The UI gates the button on returnable = dispensedQty - returnedQty > 0
+        // and caps the input at the same delta. dispenseStatus is surfaced so the
+        // queue chip can show PENDING / PARTIAL / DISPENSED without a second call.
+        dto.setQuantity(item.getQuantity());
+        dto.setDispensedQty(item.getDispensedQty());
+        dto.setReturnedQty(item.getReturnedQty());
+        dto.setDispenseStatus(item.getDispenseStatus() != null ? item.getDispenseStatus().name() : null);
+
         dto.setAdministrations(admins.stream().map(this::toAdminDto).toList());
         return dto;
     }
@@ -269,6 +281,14 @@ public class MedicationAdministrationController {
         private String         stopReason;
         /** Set when the prescriber overrode a recorded drug allergy for this item. */
         private String         allergyOverrideReason;
+        /** Total prescribed quantity — what pharmacy was asked to dispense. */
+        private Integer        quantity;
+        /** Units pharmacy has actually issued so far. */
+        private Integer        dispensedQty;
+        /** Units returned from ward and confirmed by pharmacy. Returnable = dispensedQty − returnedQty. */
+        private Integer        returnedQty;
+        /** PENDING | PARTIAL | DISPENSED — recomputed after every dispense/return event. */
+        private String         dispenseStatus;
         private List<AdminDto> administrations;
     }
 }

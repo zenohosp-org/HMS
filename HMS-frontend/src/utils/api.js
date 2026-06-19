@@ -1008,6 +1008,27 @@ const marApi = {
   list:      (admissionId)      => api.get(`/ipd/mar/admission/${admissionId}`).then((r) => r.data),
   create:    (payload)          => api.post("/ipd/mar", payload).then((r) => r.data),
   stopOrder: (itemId, reason)   => api.patch(`/ipd/prescription-items/${itemId}/stop`, { reason }).then((r) => r.data),
+
+  /**
+   * Initiate a ward return of unused dispensed units. The backend optimistically
+   * bumps returned_qty, recomputes dispense_status, and (when stopOrder=true)
+   * flips the order to STOPPED in the same transaction. Pharmacy then polls and
+   * verifies the physical units at the counter.
+   *
+   * Idempotency: clientRequestId is generated client-side via crypto.randomUUID()
+   * so a network retry returns the same return-request row instead of bumping twice.
+   * Always generate it inside this function — not on form mount — so an explicit
+   * second submission of an already-failed request gets a fresh id.
+   */
+  initiateReturn: (itemId, body) =>
+    api.post(`/ipd/prescription-items/${itemId}/return`, {
+      ...body,
+      clientRequestId:
+        body?.clientRequestId ??
+        (typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    }).then((r) => r.data),
 };
 
 const allergyApi = {
