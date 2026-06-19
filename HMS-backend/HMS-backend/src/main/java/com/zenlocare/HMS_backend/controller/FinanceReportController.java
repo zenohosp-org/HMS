@@ -119,15 +119,20 @@ public class FinanceReportController {
                 req.getNotes(),
                 principal);
 
-        BigDecimal newPaid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
-        BigDecimal total   = invoice.getTotal()      != null ? invoice.getTotal()      : BigDecimal.ZERO;
+        // Re-fetch so newPaidAmount / newRefundable reflect the post-refund state.
+        // The earlier `invoice` reference is a pre-call snapshot — using it here
+        // would return stale values on the first call (a replay would still be
+        // correct because the existing-row branch in the service no-ops).
+        Invoice fresh = invoiceRepository.findById(invoiceId).orElse(invoice);
+        BigDecimal newPaid = fresh.getPaidAmount() != null ? fresh.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal total   = fresh.getTotal()      != null ? fresh.getTotal()      : BigDecimal.ZERO;
         BigDecimal remaining = newPaid.subtract(total);
         if (remaining.signum() < 0) remaining = BigDecimal.ZERO;
 
         return ResponseEntity.ok(RefundDtos.IssueRefundResponse.builder()
                 .paymentId(refund.getId())
                 .invoiceId(invoiceId)
-                .invoiceNumber(invoice.getInvoiceNumber())
+                .invoiceNumber(fresh.getInvoiceNumber())
                 .refundedAmount(req.getAmount())
                 .newPaidAmount(newPaid)
                 .newRefundable(remaining)

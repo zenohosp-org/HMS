@@ -556,31 +556,37 @@ public class InvoiceService {
                                       String notes,
                                       User actor) {
         if (clientRequestId == null)
-            throw new IllegalArgumentException("clientRequestId is required for refund idempotency");
+            throw new com.zenlocare.HMS_backend.exception.BadRequestException(
+                    "clientRequestId is required for refund idempotency");
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("Refund amount must be positive");
+            throw new com.zenlocare.HMS_backend.exception.BadRequestException(
+                    "Refund amount must be positive");
         if (paymentMethod == null || paymentMethod.isBlank())
-            throw new IllegalArgumentException("paymentMethod is required");
+            throw new com.zenlocare.HMS_backend.exception.BadRequestException(
+                    "paymentMethod is required");
 
         // Idempotent replay — return the existing refund row.
         var existing = invoicePaymentRepository.findByClientRequestId(clientRequestId);
         if (existing.isPresent()) return existing.get();
 
         Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+                .orElseThrow(() -> new com.zenlocare.HMS_backend.exception.ResourceNotFoundException(
+                        "Invoice not found"));
 
         BigDecimal paid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
         BigDecimal total = invoice.getTotal()      != null ? invoice.getTotal()      : BigDecimal.ZERO;
         BigDecimal refundable = paid.subtract(total);
         if (refundable.compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("Invoice is not overpaid; nothing to refund");
+            throw new com.zenlocare.HMS_backend.exception.BadRequestException(
+                    "Invoice is not overpaid; nothing to refund");
         if (amount.compareTo(refundable) > 0)
-            throw new IllegalArgumentException(
+            throw new com.zenlocare.HMS_backend.exception.BadRequestException(
                     "Refund amount " + amount + " exceeds refundable " + refundable);
 
         boolean isCash = "Cash".equalsIgnoreCase(paymentMethod) || "CASH".equalsIgnoreCase(paymentMethod);
         if (!isCash && bankAccountId == null)
-            throw new IllegalArgumentException("bankAccountId is required for non-cash refunds");
+            throw new com.zenlocare.HMS_backend.exception.BadRequestException(
+                    "bankAccountId is required for non-cash refunds");
 
         InvoicePayment refundPayment = InvoicePayment.builder()
                 .invoice(invoice)

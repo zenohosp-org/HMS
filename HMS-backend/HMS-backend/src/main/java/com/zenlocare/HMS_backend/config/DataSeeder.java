@@ -1042,7 +1042,7 @@ public class DataSeeder implements CommandLineRunner {
         // bookings — Hibernate's ddl-auto=update adds the column nullable; we
         // default existing rows to 0 so Hibernate doesn't trip on null version
         // on first read.
-        for (String table : new String[] {"admissions", "rooms", "health_checkup_bookings"}) {
+        for (String table : new String[] {"admissions", "rooms", "health_checkup_bookings", "prescription_items"}) {
             try {
                 jdbcTemplate.execute("ALTER TABLE " + table + " ADD COLUMN IF NOT EXISTS version bigint");
                 int rows = jdbcTemplate.update("UPDATE " + table + " SET version = 0 WHERE version IS NULL");
