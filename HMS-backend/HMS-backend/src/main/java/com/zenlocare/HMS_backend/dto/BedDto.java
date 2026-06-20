@@ -14,6 +14,14 @@ public class BedDto {
     private String bedNumber;
     private boolean occupied;
     private boolean underMaintenance;
+    /**
+     * True when the bed's room has an active admission with no specific bed
+     * picked (the legacy "admit to the whole room" flow), which effectively
+     * holds every bed in that room. The frontend uses this to grey-out the
+     * bed in the picker so users don't try to allocate something the backend
+     * will refuse — see {@code AdmissionService.isBedAvailable}.
+     */
+    private boolean roomLocked;
     private Integer patientId;
     private String patientName;
     private String patientUhid;
@@ -31,15 +39,20 @@ public class BedDto {
     private Long roomId;
 
     public static BedDto fromEntity(Bed bed) {
-        return fromEntity(bed, null);
+        return fromEntity(bed, null, false);
     }
 
     public static BedDto fromEntity(Bed bed, Admission activeAdmission) {
+        return fromEntity(bed, activeAdmission, false);
+    }
+
+    public static BedDto fromEntity(Bed bed, Admission activeAdmission, boolean roomLocked) {
         return BedDto.builder()
                 .id(bed.getId())
                 .bedNumber(bed.getBedNumber())
                 .occupied(activeAdmission != null)
                 .underMaintenance(bed.isUnderMaintenance())
+                .roomLocked(roomLocked)
                 .patientId(activeAdmission != null && activeAdmission.getPatient() != null ? activeAdmission.getPatient().getId() : null)
                 .patientName(activeAdmission != null && activeAdmission.getPatient() != null
                         ? activeAdmission.getPatient().getFirstName() + " " + activeAdmission.getPatient().getLastName()

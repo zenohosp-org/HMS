@@ -20,6 +20,13 @@ public interface AdmissionRepository extends JpaRepository<Admission, UUID> {
 
     boolean existsByBedIdAndStatus(Long bedId, AdmissionStatus status);
     boolean existsByRoomIdAndStatus(Long roomId, AdmissionStatus status);
+    /**
+     * Room-level exclusive lock check. Returns true when there's an active
+     * admission targeting this room but with no specific bed picked — the
+     * legacy "admit to whole room" flow. Per-bed allocations must respect
+     * this lock; see {@code AdmissionService.isBedAvailable} for the call site.
+     */
+    boolean existsByRoomIdAndBedIdIsNullAndStatus(Long roomId, AdmissionStatus status);
 
     // Per-bed attender lookup: in a multi-bed ward each bed has its own admission,
     // and the BedDto needs to surface that admission's attender_* and id.

@@ -51,6 +51,52 @@ public class AdmissionService {
         }
     }
 
+    /**
+     * Returns true if a given bed is available for a new admission.
+     *
+     * A bed is occupied under either condition:
+     *   (a) An ADMITTED admission already targets this bed_id directly, or
+     *   (b) An ADMITTED admission holds the room via room_id with bed_id=NULL
+     *       — i.e. someone is admitted "to the room" without picking a bed
+     *       (the legacy room-level allocation flow), which effectively locks
+     *       the whole room from concurrent bed-level allocations.
+     *
+     * Without (b) a multi-bed room with a bed-less admission would falsely
+     * read as "all beds free" and we'd over-admit. The {@code admit} path
+     * historically only checked (b) via {@code existsByRoomIdAndStatus},
+     * which falsely rejected EVERY multi-bed room the moment one bed
+     * filled up. This helper unifies both checks the right way.
+     */
+    private boolean isBedAvailable(Bed bed) {
+        if (bed == null) return false;
+        if (bed.isUnderMaintenance()) return false;
+        if (admissionRepository.existsByBedIdAndStatus(bed.getId(), AdmissionStatus.ADMITTED)) return false;
+        // Room-level exclusive lock — only meaningful when the bed belongs to a room.
+        if (bed.getRoom() != null
+                && admissionRepository.existsByRoomIdAndBedIdIsNullAndStatus(
+                        bed.getRoom().getId(), AdmissionStatus.ADMITTED)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Multi-bed-aware room availability — true when at least one bed in the
+     * room is free per {@link #isBedAvailable}. Centralising it keeps the
+     * admit and reassign paths in lock-step.
+     */
+    private boolean isAnyBedFreeInRoom(Long roomId) {
+        // Room-level lock short-circuits everything below: if someone already
+        // holds the room without specifying a bed, no individual bed in it is
+        // assignable until they're discharged or moved.
+        if (admissionRepository.existsByRoomIdAndBedIdIsNullAndStatus(roomId, AdmissionStatus.ADMITTED)) {
+            return false;
+        }
+        return bedRepository.findByRoomIdOrderByBedNumberAsc(roomId).stream()
+                .anyMatch(b -> !b.isUnderMaintenance()
+                        && !admissionRepository.existsByBedIdAndStatus(b.getId(), AdmissionStatus.ADMITTED));
+    }
+
     @Transactional
     public AdmissionDTO admit(AdmissionRequest req, String performedBy) {
         Hospital hospital = hospitalRepository.findById(req.getHospitalId())
@@ -83,9 +129,16 @@ public class AdmissionService {
             room = roomRepository.findById(req.getRoomId())
                     .orElseThrow(() -> new RuntimeException("Room not found"));
             assertSameHospital(req.getHospitalId(), room.getHospital().getId(), "Room");
-            boolean isRoomAvailable = !room.isUnderMaintenance() && !admissionRepository.existsByRoomIdAndStatus(room.getId(), AdmissionStatus.ADMITTED);
-            if (!isRoomAvailable) {
-                throw new RuntimeException("Room is not available");
+            if (room.isUnderMaintenance()) {
+                throw new RuntimeException("Room is under maintenance");
+            }
+            // When the caller is picking a specific bed the bed-level availability
+            // check below is the authoritative gate — checking room-level "is
+            // anyone admitted" here used to falsely reject every multi-bed room
+            // the moment one bed was occupied. We only fall back to the
+            // "anyBedFree" check when no bed has been specified.
+            if (req.getBedId() == null && !isAnyBedFreeInRoom(room.getId())) {
+                throw new RuntimeException("Room is not available — all beds are occupied");
             }
         }
 
@@ -95,15 +148,14 @@ public class AdmissionService {
                     .orElseThrow(() -> new RuntimeException("Bed not found"));
             Hospital bedHospital = bed.getRoom() != null ? bed.getRoom().getHospital() : bed.getWard().getFloor().getBuilding().getHospital();
             assertSameHospital(req.getHospitalId(), bedHospital.getId(), "Bed");
-            boolean isBedAvailable = !bed.isUnderMaintenance() && !admissionRepository.existsByBedIdAndStatus(bed.getId(), AdmissionStatus.ADMITTED);
-            if (!isBedAvailable) {
+            if (!isBedAvailable(bed)) {
                 throw new RuntimeException("Selected bed is not available");
             }
         } else if (room != null) {
             boolean isMultiBed = bedRepository.countByRoomId(room.getId()) > 1;
             if (!isMultiBed) {
                 bed = bedRepository.findByRoomIdOrderByBedNumberAsc(room.getId()).stream()
-                        .filter(b -> !b.isUnderMaintenance() && !admissionRepository.existsByBedIdAndStatus(b.getId(), AdmissionStatus.ADMITTED))
+                        .filter(this::isBedAvailable)
                         .findFirst()
                         .orElse(null);
             }
@@ -187,9 +239,15 @@ public class AdmissionService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
         assertSameHospital(admission.getHospital().getId(), room.getHospital().getId(), "Room");
-        boolean isRoomAvailable = !room.isUnderMaintenance() && !admissionRepository.existsByRoomIdAndStatus(room.getId(), AdmissionStatus.ADMITTED);
-        if (!isRoomAvailable) {
-            throw new RuntimeException("Room is not available");
+        if (room.isUnderMaintenance()) {
+            throw new RuntimeException("Room is under maintenance");
+        }
+        // Multi-bed-aware availability: "room available" means at least one bed
+        // in the room is free. The previous existsByRoomIdAndStatus check
+        // returned true whenever any bed was occupied, falsely blocking
+        // re-allocation into the same multi-bed room.
+        if (!isAnyBedFreeInRoom(room.getId())) {
+            throw new RuntimeException("Room is not available — all beds are occupied");
         }
 
         boolean isMultiBed = bedRepository.countByRoomId(room.getId()) > 1;

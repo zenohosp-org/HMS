@@ -32,8 +32,15 @@ export const BedSelectionModal = ({ isOpen, onClose, onSelect, availableBeds }) 
     }, [filteredBeds]);
 
     const stats = useMemo(() => {
+        // The backend BedDto exposes three flags (occupied, roomLocked,
+        // underMaintenance) — there is no `status` field. The previous
+        // `b.status === 'AVAILABLE'` always evaluated false, so the header
+        // counter read "Available: 0" even when individual cards correctly
+        // showed "Available". Compute from the source-of-truth flags here.
         const total = availableBeds.length;
-        const available = availableBeds.filter(b => b.status === 'AVAILABLE').length;
+        const available = availableBeds.filter(
+            (b) => !b.occupied && !b.roomLocked && !b.underMaintenance,
+        ).length;
         const occupied = total - available;
         return { total, available, occupied };
     }, [availableBeds]);
@@ -74,7 +81,14 @@ export const BedSelectionModal = ({ isOpen, onClose, onSelect, availableBeds }) 
                                         {room && <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>{room}</h4>}
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
                                             {groupedBeds[ward][room].map(bed => {
-                                                const isAvailable = !bed.occupied && !bed.underMaintenance;
+                                                // roomLocked covers the legacy "admit to the whole
+                                                // room with bed_id=NULL" case — the backend will
+                                                // refuse a bed-level allocation in such a room, so
+                                                // we visually disable it instead of letting the
+                                                // user pick something that 500s on submit.
+                                                const isAvailable = !bed.occupied
+                                                    && !bed.underMaintenance
+                                                    && !bed.roomLocked;
                                                 return (
                                                 <button
                                                     key={bed.id}
@@ -122,7 +136,15 @@ export const BedSelectionModal = ({ isOpen, onClose, onSelect, availableBeds }) 
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                         <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isAvailable ? '#10b981' : bed.underMaintenance ? '#f59e0b' : '#ef4444' }}></span>
                                                         <span style={{ fontSize: '13px', color: isAvailable ? '#059669' : bed.underMaintenance ? '#d97706' : '#b91c1c', fontWeight: 600 }}>
-                                                            {bed.underMaintenance ? 'Maintenance' : (isAvailable ? 'Available' : (bed.patientName ? `Occupied by ${bed.patientName.split(' ')[0]}` : 'Occupied'))}
+                                                            {bed.underMaintenance
+                                                                ? 'Maintenance'
+                                                                : isAvailable
+                                                                    ? 'Available'
+                                                                    : bed.patientName
+                                                                        ? `Occupied by ${bed.patientName.split(' ')[0]}`
+                                                                        : bed.roomLocked
+                                                                            ? 'Room held'
+                                                                            : 'Occupied'}
                                                         </span>
                                                     </div>
                                                 </button>

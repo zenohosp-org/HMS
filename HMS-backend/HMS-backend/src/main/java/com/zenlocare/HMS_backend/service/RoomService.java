@@ -90,15 +90,31 @@ public class RoomService {
     public List<BedDto> getAllActiveBeds(UUID hospitalId) {
         List<Bed> beds = bedRepository.fetchAllActiveBeds(hospitalId);
         Map<Long, Admission> byBedId = new HashMap<>();
+        // Track which rooms are held by a bed-less admission so we can mark
+        // every bed in that room as locked. Without this, beds in a held
+        // room read as "AVAILABLE" in the picker and the backend later
+        // rejects the allocation — that's the bug the user hit in IPD
+        // admit (a single-bed PRIVATE room with an active admission that
+        // never persisted a bed_id still surfaces its bed as pickable).
+        java.util.Set<Long> roomsHeldWithoutBed = new java.util.HashSet<>();
         for (Bed b : beds) {
             boolean occupied = admissionRepository.existsByBedIdAndStatus(b.getId(), AdmissionStatus.ADMITTED);
             if (occupied) {
                 admissionRepository.findByBedIdAndStatus(b.getId(), AdmissionStatus.ADMITTED)
                         .ifPresent(a -> byBedId.put(b.getId(), a));
             }
+            Long roomId = b.getRoom() != null ? b.getRoom().getId() : null;
+            if (roomId != null && !roomsHeldWithoutBed.contains(roomId)
+                    && admissionRepository.existsByRoomIdAndBedIdIsNullAndStatus(roomId, AdmissionStatus.ADMITTED)) {
+                roomsHeldWithoutBed.add(roomId);
+            }
         }
         return beds.stream()
-                .map(b -> BedDto.fromEntity(b, byBedId.get(b.getId())))
+                .map(b -> {
+                    Long roomId = b.getRoom() != null ? b.getRoom().getId() : null;
+                    boolean roomLocked = roomId != null && roomsHeldWithoutBed.contains(roomId);
+                    return BedDto.fromEntity(b, byBedId.get(b.getId()), roomLocked);
+                })
                 .collect(Collectors.toList());
     }
 

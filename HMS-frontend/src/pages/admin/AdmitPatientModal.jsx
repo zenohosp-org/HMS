@@ -141,7 +141,13 @@ export default function AdmitPatientModal({ onClose, onAdmitted, prefill }) {
                 // Filter only WARD category beds or beds belonging to a WARD
                 const assignable = beds.filter(b => b.roomType !== 'OT' && b.roomType !== 'POST_OT' && b.roomType !== 'STORE');
                 setAllBeds(assignable);
-                setAvailableBeds(assignable.filter(b => b.status === 'AVAILABLE'));
+                // The BedDto has no `status` field — derive availability from
+                // the three flags the backend actually exposes. Without this,
+                // availableBeds ended up empty and the auto-pick fallback
+                // could not resolve a free bed for single-bed-room flows.
+                setAvailableBeds(assignable.filter(
+                    (b) => !b.occupied && !b.roomLocked && !b.underMaintenance,
+                ));
             })
             .catch(() => { })
             .finally(() => setBedsLoading(false));
