@@ -110,8 +110,15 @@ public class RoomService {
                         .ifPresent(a -> byBedId.put(b.getId(), a));
             }
         }
+        // The room-level lock (bed-less admission) applies to every bed in the
+        // room. Without setting this flag here, the right-panel bed list said
+        // "0/3 occupied" with every bed Available while the Rooms card next to
+        // it said "3/3 occupied" — same data, two answers. Single source of
+        // truth: ask the repo once per room call.
+        boolean roomLocked = admissionRepository.existsByRoomIdAndBedIdIsNullAndStatus(
+                roomId, AdmissionStatus.ADMITTED);
         return beds.stream()
-                .map(b -> BedDto.fromEntity(b, byBedId.get(b.getId())))
+                .map(b -> BedDto.fromEntity(b, byBedId.get(b.getId()), roomLocked))
                 .collect(Collectors.toList());
     }
 
