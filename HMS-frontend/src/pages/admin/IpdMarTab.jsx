@@ -505,6 +505,13 @@ function OrderCard({
     const givenCount      = Array.isArray(order.administrations)
         ? order.administrations.filter((a) => "GIVEN" === a.status).length
         : 0;
+    // Pharmacy hand-off status surfacing.
+    //   pendingReturnQty   = nurse-initiated, awaiting pharmacy verify
+    //   confirmedReturnQty = pharmacy verified, ledger IN + credit note posted
+    // Without this the nurse has to phone pharmacy to know whether the audit
+    // chain on the return she initiated has closed out.
+    const pendingReturnQty   = Number(order.pendingReturnQty ?? 0);
+    const confirmedReturnQty = Math.max(0, Number(order.returnedQty ?? 0) - pendingReturnQty);
     const needsReason     = form.status === "HELD" || form.status === "REFUSED";
     const drugTitle       = [order.drugName, order.drugStrength, order.drugForm].filter(Boolean).join(" ");
     const doseSchedule    = getDoseSchedule(order, now);
@@ -599,6 +606,29 @@ function OrderCard({
                             >
                                 <CheckCircle2 size={10} />
                                 {givenCount}/{order.quantity ?? "—"} given
+                            </span>
+                        )}
+                        {/* Pharmacy hand-off chips — visibility is the entire point of
+                            this surface, so we render even when zero only on the
+                            confirmed side (after at least one verified return) so the
+                            nurse has a permanent record on the card.  Pending chip
+                            disappears once pharmacy verifies; confirmed chip fills in. */}
+                        {pendingReturnQty > 0 && (
+                            <span
+                                className="mar-signa-pill is-return-pending"
+                                title="Pharmacy verification still open — strips not yet re-credited to stock and credit note not yet posted to the IPD bill"
+                            >
+                                <Undo2 size={10} />
+                                {pendingReturnQty} pending verify
+                            </span>
+                        )}
+                        {confirmedReturnQty > 0 && (
+                            <span
+                                className="mar-signa-pill is-return-confirmed"
+                                title="Pharmacy verified the physical units — stock re-credited and credit note posted to the IPD bill"
+                            >
+                                <Undo2 size={10} />
+                                {confirmedReturnQty} returned
                             </span>
                         )}
                         {order.dose && (

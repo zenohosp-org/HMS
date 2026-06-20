@@ -52,6 +52,8 @@ public class MedicationAdministrationController {
     private final PrescriptionItemRepository         prescriptionItemRepo;
     private final AdmissionRepository                admissionRepo;
     private final UserRepository                     userRepo;
+    private final com.zenlocare.HMS_backend.repository.PrescriptionReturnRequestRepository
+                                                     returnRequestRepo;
 
     /**
      * All prescription orders for one admission with their administration history.
@@ -91,12 +93,25 @@ public class MedicationAdministrationController {
             if (oldId != null) replacementByOldId.putIfAbsent(oldId, pi);
         }
 
+        // Per-order REQUESTED return qty, one batched query. Empty admissions
+        // skip the call entirely so we don't burn a round-trip on the common
+        // "no orders yet" path.
+        Map<UUID, Integer> pendingReturnByItemId = new java.util.HashMap<>();
+        if (!orders.isEmpty()) {
+            var orderIds = orders.stream().map(PrescriptionItem::getId).toList();
+            for (Object[] row : returnRequestRepo.sumPendingByItemIds(orderIds)) {
+                if (row == null || row[0] == null) continue;
+                pendingReturnByItemId.put((UUID) row[0], ((Number) row[1]).intValue());
+            }
+        }
+
         List<OrderCardDto> result = orders.stream()
                 .map(item -> toOrderCardDto(
                         item,
                         byOrder.getOrDefault(item.getId(), List.of()),
                         byId,
-                        replacementByOldId))
+                        replacementByOldId,
+                        pendingReturnByItemId.getOrDefault(item.getId(), 0)))
                 .toList();
 
         return ResponseEntity.ok(result);
@@ -180,7 +195,8 @@ public class MedicationAdministrationController {
     private OrderCardDto toOrderCardDto(PrescriptionItem item,
                                         List<MedicationAdministration> admins,
                                         Map<UUID, PrescriptionItem> byId,
-                                        Map<UUID, PrescriptionItem> replacementByOldId) {
+                                        Map<UUID, PrescriptionItem> replacementByOldId,
+                                        int pendingReturnQty) {
         OrderCardDto dto = new OrderCardDto();
         dto.setOrderId(item.getId().toString());
         dto.setDrugName(item.getDrugName());
@@ -223,6 +239,7 @@ public class MedicationAdministrationController {
         dto.setQuantity(item.getQuantity());
         dto.setDispensedQty(item.getDispensedQty());
         dto.setReturnedQty(item.getReturnedQty());
+        dto.setPendingReturnQty(pendingReturnQty);
         dto.setDispenseStatus(item.getDispenseStatus() != null ? item.getDispenseStatus().name() : null);
 
         // "← replaces {old drug}" — this card is the NEW order in a switch.
@@ -323,8 +340,20 @@ public class MedicationAdministrationController {
         private Integer        quantity;
         /** Units pharmacy has actually issued so far. */
         private Integer        dispensedQty;
-        /** Units returned from ward and confirmed by pharmacy. Returnable = dispensedQty − returnedQty. */
+        /**
+         * Units returned from ward — total optimistic hold. Includes both
+         * pending (awaiting pharmacy verification) and pharmacy-verified.
+         * Returnable = dispensedQty − returnedQty.
+         */
         private Integer        returnedQty;
+        /**
+         * Subset of {@code returnedQty} that's still in the REQUESTED state
+         * (nurse-initiated, not yet verified by pharmacy). The MAR card
+         * surfaces a "pending verify" chip when this is &gt; 0 so the nurse
+         * sees the audit chain status without phoning pharmacy. Derived
+         * field: {@code confirmedReturnQty = returnedQty − pendingReturnQty}.
+         */
+        private Integer        pendingReturnQty;
         /** PENDING | PARTIAL | DISPENSED — recomputed after every dispense/return event. */
         private String         dispenseStatus;
         /** Set on a NEW order created via the ward-return drug-switch flow — the id of the order it replaces. */

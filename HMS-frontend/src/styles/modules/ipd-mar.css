@@ -686,6 +686,32 @@ select.mar-input {
     color: #166534;
 }
 
+/* ── Pharmacy hand-off chips ──────────────────────────────────────────────
+   Two distinct states so the nurse can read the audit chain at a glance:
+     pending verify → amber (action pending at pharmacy counter)
+     returned       → green (closed-out, stock + credit note posted) */
+
+.mar-signa-pill.is-return-pending {
+    gap: 3px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 600;
+    font-size: 11px;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.mar-signa-pill.is-return-confirmed {
+    gap: 3px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 600;
+    font-size: 11px;
+    background: #dcfce7;
+    color: #166534;
+}
+
 /* ── Ward actions strip (return button + inline form) ─────────────────────── */
 
 .mar-ward-actions {

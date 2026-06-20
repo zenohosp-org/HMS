@@ -50,4 +50,22 @@ public interface PrescriptionReturnRequestRepository extends JpaRepository<Presc
               AND prr.status IN ('REQUESTED', 'VERIFIED')
             """)
     Integer sumHeldOrVerifiedQty(@Param("prescriptionItemId") UUID prescriptionItemId);
+
+    /**
+     * Per-item REQUESTED qty, batched for the MAR list. Drives the
+     * "awaiting pharmacy verify" chip on each prescription card so the nurse
+     * can see whether the return she initiated has actually closed out at
+     * pharmacy yet without phoning to chase.
+     * <p>
+     * Returns {@code Object[]{prescriptionItemId UUID, sumQty Long}} so the
+     * controller can fold it into a {@code Map<UUID, Integer>} in one pass.
+     */
+    @Query("""
+            SELECT prr.prescriptionItem.id, COALESCE(SUM(prr.returnQty), 0)
+            FROM PrescriptionReturnRequest prr
+            WHERE prr.prescriptionItem.id IN :ids
+              AND prr.status = 'REQUESTED'
+            GROUP BY prr.prescriptionItem.id
+            """)
+    List<Object[]> sumPendingByItemIds(@Param("ids") java.util.Collection<UUID> ids);
 }
