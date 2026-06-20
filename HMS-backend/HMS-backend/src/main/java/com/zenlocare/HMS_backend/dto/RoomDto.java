@@ -26,7 +26,26 @@ public class RoomDto {
     private String roomCategory;
     private Boolean hasBeds;
     private Boolean hasDailyCharge;
+    /**
+     * True only when EVERY assignable bed in the room is taken — so a 3-bed
+     * room with 1 patient reads as {@code occupied=false} (two beds still
+     * available), while a 1-bed PRIVATE room with that same admission reads
+     * as occupied. For multi-bed rooms read {@link #bedsTotal} and
+     * {@link #bedsOccupied} together with this flag so the UI can render
+     * "1/3 occupied" instead of the misleading binary state.
+     */
     private boolean occupied;
+    /**
+     * Total assignable beds physically present in the room (active beds only).
+     * Zero for rooms that aren't bed-based (e.g. consultation rooms, OT).
+     */
+    private int bedsTotal;
+    /**
+     * Beds currently occupied by an active admission. When an admission holds
+     * the room without a specific bed (the legacy "room-level lock" flow),
+     * this is forced to {@code bedsTotal} so the UI mirrors the lock.
+     */
+    private int bedsOccupied;
     private boolean underMaintenance;
     private BigDecimal pricePerDay;
 
@@ -57,6 +76,27 @@ public class RoomDto {
     }
 
     public static RoomDto fromEntity(Room room, Admission activeAdmission, com.zenlocare.HMS_backend.entity.RoomTypeConfig config) {
+        // Single-arg compatibility path — preserves the pre-multi-bed semantics
+        // for one-off callers (e.g. RoomService.updateRoom) that don't yet know
+        // how many beds the room has. bedsTotal stays 0 so the UI falls back
+        // to the legacy binary occupied flag for these rows.
+        return fromEntity(room, activeAdmission, config, 0, 0, false);
+    }
+
+    /**
+     * Multi-bed-aware factory used by the batched rooms-list path. {@code bedsTotal}
+     * is the count of active beds in the room and {@code bedsOccupied} is how many
+     * of them are taken right now. When {@code roomLockedByBedlessAdmission} is
+     * true (the legacy "admit to whole room with bed_id=NULL" flow), bedsOccupied
+     * is forced to bedsTotal so the UI mirrors the lock — half-state isn't
+     * possible if any admission claims the room without a bed.
+     */
+    public static RoomDto fromEntity(Room room,
+                                     Admission activeAdmission,
+                                     com.zenlocare.HMS_backend.entity.RoomTypeConfig config,
+                                     int bedsTotal,
+                                     int bedsOccupied,
+                                     boolean roomLockedByBedlessAdmission) {
         PatientLite p = null;
         if (activeAdmission != null && activeAdmission.getPatient() != null) {
             p = PatientLite.builder()
@@ -67,6 +107,22 @@ public class RoomDto {
                     .phone(activeAdmission.getPatient().getPhone())
                     .build();
         }
+
+        // A bed-less admission consumes the whole room; surface that as full
+        // occupancy regardless of how many beds are physically present.
+        int effectiveOccupied = bedsTotal > 0 && roomLockedByBedlessAdmission
+                ? bedsTotal
+                : Math.min(bedsOccupied, bedsTotal);
+
+        // Multi-bed-aware `occupied`:
+        //   - For bedded rooms: true only when every bed is taken.
+        //   - For non-bedded rooms (consultation, OT, STORE): fall back to
+        //     "is there any active admission here?" — that's still the right
+        //     signal because such rooms don't have per-bed allocations.
+        boolean occupied = bedsTotal > 0
+                ? effectiveOccupied >= bedsTotal
+                : activeAdmission != null;
+
         return RoomDto.builder()
                 .id(room.getId())
                 .roomNumber(room.getRoomNumber())
@@ -75,7 +131,9 @@ public class RoomDto {
                 .roomCategory(config != null ? config.getCategory() : "WARD")
                 .hasBeds(config != null ? config.getHasBeds() : true)
                 .hasDailyCharge(config != null ? config.getHasDailyCharge() : true)
-                .occupied(activeAdmission != null)
+                .occupied(occupied)
+                .bedsTotal(bedsTotal)
+                .bedsOccupied(effectiveOccupied)
                 .underMaintenance(room.isUnderMaintenance())
                 .pricePerDay(room.getPricePerDay())
                 .currentPatient(p)

@@ -39,23 +39,57 @@ public class RoomService {
         List<Room> rooms = roomRepository.findByHospitalId(hospitalId).stream()
                 .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
                 .collect(Collectors.toList());
-        // Batch-fetch active admissions for this hospital (one query) and key
-        // them by room_id, so each RoomDto can pick up attender + admissionId
-        // without per-room round-trips.
-        Map<Long, Admission> byRoomId = new HashMap<>();
+
+        // Active admissions for this hospital, in one query. We bucket them
+        // three ways:
+        //   firstByRoomId          → arbitrary "current patient" per room
+        //                             (preserves the old DTO field shape used
+        //                             by the single-bed PRIVATE room card)
+        //   bedLevelCountByRoomId  → how many admissions hold a specific bed
+        //                             in this room — drives bedsOccupied
+        //   roomLockedRoomIds      → rooms held by a bed-less admission, which
+        //                             effectively occupies every bed
+        Map<Long, Admission> firstByRoomId = new HashMap<>();
+        Map<Long, Integer> bedLevelCountByRoomId = new HashMap<>();
+        java.util.Set<Long> roomLockedRoomIds = new java.util.HashSet<>();
         for (Admission a : admissionRepository.findActiveAdmissionsByHospitalId(hospitalId)) {
-            if (a.getRoom() != null) {
-                byRoomId.put(a.getRoom().getId(), a);
+            if (a.getRoom() == null) continue;
+            Long roomId = a.getRoom().getId();
+            firstByRoomId.putIfAbsent(roomId, a);
+            if (a.getBed() != null) {
+                bedLevelCountByRoomId.merge(roomId, 1, Integer::sum);
+            } else {
+                roomLockedRoomIds.add(roomId);
             }
         }
-        // Fetch categories and configurations for all room types
+
+        // Beds physically present per room, batched into one query so the loop
+        // below stays O(rooms) without per-row count() round-trips.
+        Map<Long, Integer> bedsTotalByRoomId = new HashMap<>();
+        for (Object[] row : bedRepository.countActiveBedsGroupedByRoom(hospitalId)) {
+            if (row[0] == null) continue;
+            bedsTotalByRoomId.put(((Number) row[0]).longValue(), ((Number) row[1]).intValue());
+        }
+
+        // Room-type configurations (category, hasBeds, hasDailyCharge) per type code.
         Map<String, RoomTypeConfig> configMap = new HashMap<>();
         for (RoomTypeConfig cfg : roomTypeConfigRepository.findActiveByHospitalId(hospitalId)) {
             configMap.put(cfg.getCode(), cfg);
         }
 
         return rooms.stream()
-                .map(r -> RoomDto.fromEntity(r, byRoomId.get(r.getId()), configMap.get(r.getRoomType())))
+                .map(r -> {
+                    int bedsTotal    = bedsTotalByRoomId.getOrDefault(r.getId(), 0);
+                    int bedsOccupied = bedLevelCountByRoomId.getOrDefault(r.getId(), 0);
+                    boolean roomLocked = roomLockedRoomIds.contains(r.getId());
+                    return RoomDto.fromEntity(
+                            r,
+                            firstByRoomId.get(r.getId()),
+                            configMap.get(r.getRoomType()),
+                            bedsTotal,
+                            bedsOccupied,
+                            roomLocked);
+                })
                 .collect(Collectors.toList());
     }
 

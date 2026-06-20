@@ -34,4 +34,14 @@ public interface BedRepository extends JpaRepository<Bed, Long> {
     long countByRoomId(Long roomId);
     long countByWardId(Long wardId);
     boolean existsByIdAndHospitalId(Long id, java.util.UUID hospitalId);
+
+    /**
+     * Batched per-room bed-count used by the Rooms list to avoid a {@code countByRoomId}
+     * call per row. Returns {@code Object[]{roomId, count}} which the caller folds
+     * into a {@code Map<Long, Long>}.
+     */
+    @Query("SELECT b.room.id, COUNT(b) FROM Bed b " +
+           "WHERE b.hospital.id = :hospitalId AND b.isActive = true AND b.room IS NOT NULL " +
+           "GROUP BY b.room.id")
+    List<Object[]> countActiveBedsGroupedByRoom(@Param("hospitalId") java.util.UUID hospitalId);
 }

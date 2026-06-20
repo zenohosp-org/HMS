@@ -39,21 +39,34 @@ const TYPE_TONE = {
 
 const normalizeKey = (v) => v?.toString()?.trim()?.toLowerCase() || "";
 
+const isPartiallyOccupied = (room) =>
+    (room?.bedsTotal ?? 0) > 1
+        && (room?.bedsOccupied ?? 0) > 0
+        && !room?.occupied;
+
 const statusTone = (room) => {
     if (room?.underMaintenance) return "is-neutral";
     if (room?.occupied) return "is-occupied";
+    if (isPartiallyOccupied(room)) return "is-partial";
     return "is-available";
 };
 
 const chipStatusClass = (room) => {
     if (room?.underMaintenance) return "hms-status-chip is-neutral";
     if (room?.occupied) return "hms-status-chip is-info";
+    if (isPartiallyOccupied(room)) return "hms-status-chip is-warning";
     return "hms-status-chip is-success";
 };
 
 /** Compact dot+label status chip used in card headers. */
 function StatusChip({ room }) {
-    const label = room?.underMaintenance ? "Maintenance" : (room?.occupied ? "Occupied" : "Available");
+    const label = room?.underMaintenance
+        ? "Maintenance"
+        : room?.occupied
+            ? "Occupied"
+            : isPartiallyOccupied(room)
+                ? `${room.bedsOccupied}/${room.bedsTotal} occupied`
+                : "Available";
     return (
         <span className={chipStatusClass(room)}>
             {label}
@@ -89,7 +102,10 @@ function OccupancyBar({ occupied, total, size = "md" }) {
 }
 
 function RoomMenu({ room, onView, onAttender }) {
-    const isMultiBed = (room.beds?.length ?? 0) > 1;
+    // The rooms-list payload has bedsTotal (authoritative) but no `beds` array,
+    // so the old check always evaluated to false and every "View details"
+    // option silently picked the wrong label.
+    const isMultiBed = (room?.bedsTotal ?? 0) > 1;
     const items = [
         {
             label: isMultiBed ? "View beds" : "View details",
@@ -118,8 +134,16 @@ function RoomMenu({ room, onView, onAttender }) {
 
 /** Room card used inside the infrastructure tree. */
 function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onView, onAttender }) {
-    const isMultiBed = (roomData?.beds?.length ?? 0) > 1;
-    const isOccupied = roomData?.occupied;
+    // Multi-bed detection now uses the authoritative bedsTotal from the backend
+    // instead of the previous `roomData.beds?.length` — `beds` was always
+    // undefined on the rooms-list payload, so the badge had been silently
+    // wrong (every room rendered as single-bed).
+    const bedsTotal    = roomData?.bedsTotal ?? 0;
+    const bedsOccupied = roomData?.bedsOccupied ?? 0;
+    const bedsFree     = Math.max(0, bedsTotal - bedsOccupied);
+    const isMultiBed   = bedsTotal > 1;
+    const isOccupied   = roomData?.occupied;
+    const isPartial    = isMultiBed && bedsOccupied > 0 && !isOccupied;
     const isUnderMaintenance = roomData?.underMaintenance;
     const roomType = roomData?.roomType ?? roomInfo.roomType ?? "GENERAL";
     const accentTone = roomData ? statusTone(roomData) : "";
@@ -153,13 +177,13 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
                             {roomType}
                         </Badge>
                         {isMultiBed && (
-                            <Badge tone="violet" soft>
-                                {roomData.beds?.length ?? 0} beds
+                            <Badge tone={isOccupied ? "danger" : isPartial ? "warning" : "violet"} soft>
+                                {bedsOccupied}/{bedsTotal} occupied
                             </Badge>
                         )}
-                        {isMultiBed && isOccupied && (
+                        {!isMultiBed && bedsTotal === 1 && isOccupied && (
                             <Badge tone="info" soft>
-                                Patients Inside
+                                Occupied
                             </Badge>
                         )}
                     </div>
@@ -189,13 +213,18 @@ function InfrastructureRoomCard({ roomInfo, roomData, isSelected, onSelect, onVi
                 </div>
             )}
             
-            {roomData && isOccupied && isMultiBed && (
+            {roomData && isMultiBed && (isOccupied || isPartial) && (
                 <div className="hms-room-cell__patient">
-                    <p className="hms-room-cell__patient-name text-[#0284c7]">
-                        Beds are occupied
+                    <p className={
+                        "hms-room-cell__patient-name " +
+                        (isOccupied ? "text-[#b91c1c]" : "text-[#b45309]")
+                    }>
+                        {isOccupied
+                            ? `All ${bedsTotal} beds occupied`
+                            : `${bedsFree} of ${bedsTotal} bed${bedsFree === 1 ? "" : "s"} free`}
                     </p>
                     <p className="hms-room-cell__patient-uhid">
-                        Click panel to view details
+                        Click panel to view per-bed details
                     </p>
                 </div>
             )}
@@ -410,12 +439,38 @@ function Rooms() {
     );
 
     const showInfrastructureView = infrastructure.length > 0;
-    const availableCount = rooms.filter((r) => !r.occupied && !r.underMaintenance).length;
-    const occupiedCount = rooms.filter((r) => r.occupied).length;
-    const icuAvailable = rooms.filter((r) => r.roomType === "ICU" && !r.occupied && !r.underMaintenance).length;
-    const icuOccupied = rooms.filter((r) => r.roomType === "ICU" && r.occupied).length;
-    const otAvailable = rooms.filter((r) => r.roomType === "OT" && !r.occupied && !r.underMaintenance).length;
-    const otOccupied = rooms.filter((r) => r.roomType === "OT" && r.occupied).length;
+
+    // The KPI strip now counts BED capacity for bedded rooms (a 3-bed room
+    // contributes 3 to total), and falls back to room-count for non-bedded
+    // rooms (consultation, OT, STORE — where bedsTotal=0). This is what the
+    // user actually wants to see: "two free slots in Room 104" reads as +2
+    // available, not "the whole room is occupied / 0 available".
+    const slotsOf = (r) => (r.bedsTotal > 0 ? r.bedsTotal : 1);
+    const occupiedSlotsOf = (r) =>
+        r.bedsTotal > 0
+            ? Math.min(r.bedsOccupied ?? 0, r.bedsTotal)
+            : r.occupied ? 1 : 0;
+    const availableCount = rooms.reduce((sum, r) => {
+        if (r.underMaintenance) return sum;
+        return sum + (slotsOf(r) - occupiedSlotsOf(r));
+    }, 0);
+    const occupiedCount = rooms.reduce((sum, r) => sum + occupiedSlotsOf(r), 0);
+    const icuAvailable = rooms.reduce((sum, r) => {
+        if (r.roomType !== "ICU" || r.underMaintenance) return sum;
+        return sum + (slotsOf(r) - occupiedSlotsOf(r));
+    }, 0);
+    const icuOccupied = rooms.reduce(
+        (sum, r) => (r.roomType === "ICU" ? sum + occupiedSlotsOf(r) : sum),
+        0,
+    );
+    const otAvailable = rooms.reduce((sum, r) => {
+        if (r.roomType !== "OT" || r.underMaintenance) return sum;
+        return sum + (slotsOf(r) - occupiedSlotsOf(r));
+    }, 0);
+    const otOccupied = rooms.reduce(
+        (sum, r) => (r.roomType === "OT" ? sum + occupiedSlotsOf(r) : sum),
+        0,
+    );
 
     const totalBuildings = infrastructure.length;
     const totalFloors = infrastructure.reduce((s, b) => s + (b.floors?.length || 0), 0);
@@ -690,7 +745,9 @@ function FlatRoomList({ rooms, selectedRoom, onSelect, onView, onAttender }) {
     return (
         <>
             {rooms.map((room) => {
-                const isMultiBed = (room.beds?.length ?? 0) > 1;
+                const bedsTotal    = room.bedsTotal ?? 0;
+                const bedsOccupied = room.bedsOccupied ?? 0;
+                const isMultiBed   = bedsTotal > 1;
                 const isSelected = selectedRoom?.id === room.id;
                 const accentCls = statusTone(room);
                 const iconCls = statusTone(room);
@@ -721,8 +778,11 @@ function FlatRoomList({ rooms, selectedRoom, onSelect, onView, onAttender }) {
                                         {room.roomType}
                                     </Badge>
                                     {isMultiBed && (
-                                        <Badge tone="neutral" soft>
-                                            {room.beds?.length ?? 0} beds
+                                        <Badge
+                                            tone={room.occupied ? "danger" : (bedsOccupied > 0 ? "warning" : "neutral")}
+                                            soft
+                                        >
+                                            {bedsOccupied}/{bedsTotal} occupied
                                         </Badge>
                                     )}
                                 </div>

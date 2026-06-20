@@ -339,6 +339,10 @@
 }
 .hms-room-cell__accent.is-available { background: var(--hms-success); }
 .hms-room-cell__accent.is-occupied  { background: var(--hms-info); }
+/* Multi-bed partial state — some beds taken, some still free. Amber so a
+   glance from across the page distinguishes it from fully available (green)
+   and fully occupied (blue). */
+.hms-room-cell__accent.is-partial   { background: var(--hms-warning); }
 
 .hms-room-cell__head {
     display: flex;
@@ -355,6 +359,7 @@
 }
 .hms-room-cell__status-dot.is-available { background: var(--hms-success); }
 .hms-room-cell__status-dot.is-occupied  { background: var(--hms-info); }
+.hms-room-cell__status-dot.is-partial   { background: var(--hms-warning); }
 
 .hms-room-cell__body { flex: 1; min-width: 0; }
 

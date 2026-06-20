@@ -180,7 +180,11 @@ function BedsSection({ room, hospitalId }) {
 
     if (beds.length === 0) return null;
 
-    const occupiedCount = beds.filter((b) => b.occupied).length;
+    // A bed reads as occupied if EITHER an admission has bed_id=this.id
+    // OR the bed's room is held by a bed-less admission (roomLocked). The
+    // earlier `b.occupied` alone missed the room-level lock — a 3-bed room
+    // held by a legacy "admit to whole room" flow rendered as 0/3 here.
+    const occupiedCount = beds.filter((b) => b.occupied || b.roomLocked).length;
     const occupancyTone =
         occupiedCount === beds.length ? "danger" : occupiedCount > 0 ? "warning" : "success";
 
@@ -201,15 +205,21 @@ function BedsSection({ room, hospitalId }) {
             <div className="hms-room-bed-list">
                 {beds.map((bed) => {
                     const occupied = bed.occupied;
+                    // roomLocked means the bed's room is held by a bed-less
+                    // admission. The bed has no patient name on it (the lock
+                    // doesn't specify which bed), but the bed is NOT freely
+                    // assignable — so render it as "held by room admission"
+                    // with the muted visual treatment of an occupied bed.
+                    const heldByRoomLock = !occupied && bed.roomLocked;
                     return (
                         <div
                             key={bed.id}
-                            className={`hms-room-bed${occupied ? " is-occupied" : ""}`}
+                            className={`hms-room-bed${occupied || heldByRoomLock ? " is-occupied" : ""}`}
                         >
                             <div className="hms-room-bed__row">
                                 <div className="hms-room-bed__lead">
                                     <div
-                                        className={`hms-room-bed__dot${occupied ? " is-occupied" : ""}`}
+                                        className={`hms-room-bed__dot${occupied || heldByRoomLock ? " is-occupied" : ""}`}
                                     />
                                     <div className="min-w-0">
                                         <p className="hms-room-bed__number">
@@ -218,6 +228,10 @@ function BedsSection({ room, hospitalId }) {
                                         {bed.patientName ? (
                                             <p className="hms-room-bed__name">
                                                 {bed.patientName}
+                                            </p>
+                                        ) : heldByRoomLock ? (
+                                            <p className="hms-room-bed__name" title="The whole room is held by an admission without a specific bed assignment">
+                                                Held by room admission
                                             </p>
                                         ) : (
                                             <p className="hms-room-bed__name is-available">
@@ -326,7 +340,14 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
         }
     };
 
-    const isMultiBed = (room.beds?.length ?? 0) > 1;
+    // The list endpoint doesn't ship the `beds` array on RoomDto — multi-bed
+    // detection must use the new bedsTotal field. Fallback to the old check
+    // covers any caller that hands a fully-hydrated room (e.g. RoomDetailPanel
+    // standalone use).
+    const bedsTotal    = room.bedsTotal ?? (room.beds?.length ?? 0);
+    const bedsOccupied = room.bedsOccupied ?? 0;
+    const isMultiBed   = bedsTotal > 1;
+    const isPartial    = isMultiBed && bedsOccupied > 0 && !room.occupied;
 
     const sectionLabel = (Icon, label, suffix) => (
         <div className="hms-room-panel-section-head">
@@ -350,12 +371,21 @@ function RoomDetailPanel({ room, onClose, onViewLogs }) {
                         <Badge tone={room.roomType === "ICU" ? "danger" : "neutral"} soft>
                             {room.roomType}
                         </Badge>
-                        <Badge tone={room.occupied ? "info" : "success"} soft>
-                            {room.underMaintenance ? "Maintenance" : (room.occupied ? "Occupied" : "Available")}
+                        <Badge
+                            tone={room.occupied ? "info" : isPartial ? "warning" : "success"}
+                            soft
+                        >
+                            {room.underMaintenance
+                                ? "Maintenance"
+                                : room.occupied
+                                    ? "Occupied"
+                                    : isPartial
+                                        ? `${bedsOccupied}/${bedsTotal} occupied`
+                                        : "Available"}
                         </Badge>
                         {isMultiBed && (
                             <Badge tone="neutral" soft>
-                                {room.beds?.length ?? 0} beds
+                                {bedsTotal} beds
                             </Badge>
                         )}
                     </div>
