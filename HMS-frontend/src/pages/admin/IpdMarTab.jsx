@@ -499,9 +499,23 @@ function OrderCard({
 }) {
     const isStopped       = "STOPPED" === order.status;
     const adminCount      = order.administrations?.length ?? 0;
+    // GIVEN-only count drives the clinical "consumed so far" pill. HELD and
+    // REFUSED rows exist in MAR but no drug actually entered the patient,
+    // so they're intentionally excluded.
+    const givenCount      = Array.isArray(order.administrations)
+        ? order.administrations.filter((a) => "GIVEN" === a.status).length
+        : 0;
     const needsReason     = form.status === "HELD" || form.status === "REFUSED";
     const drugTitle       = [order.drugName, order.drugStrength, order.drugForm].filter(Boolean).join(" ");
     const doseSchedule    = getDoseSchedule(order, now);
+    // Dispense banner state — used by the inline notice above the log form
+    // and (via onSubmit) the soft-confirm before saving a dose with no stock.
+    const dispensedQty    = Number(order.dispensedQty ?? 0);
+    const prescribedQty   = Number(order.quantity     ?? 0);
+    const dispenseState   =
+        prescribedQty > 0 && dispensedQty >= prescribedQty ? "DISPENSED"
+        : dispensedQty > 0                                  ? "PARTIAL"
+        : "PENDING";
     const reasonMeta      = RETURN_REASONS.find((r) => r.value === returnForm?.reasonCode);
     const reasonNotesReq  = returnForm?.reasonCode === "OTHER";
     // Show the action only when there's something physically returnable. We
@@ -573,6 +587,18 @@ function OrderCard({
                             >
                                 <Pill size={10} />
                                 {order.dispensedQty ?? 0}/{order.quantity ?? "—"} dispensed
+                            </span>
+                        )}
+                        {/* Consumption tally (MAR) — "how many doses has the patient
+                            actually received". Hidden when there's nothing to show on
+                            either side so the new prescription cards stay clean. */}
+                        {(givenCount > 0 || order.quantity != null) && (
+                            <span
+                                className={`mar-signa-pill is-given-count${givenCount > 0 ? " has-doses" : ""}`}
+                                title="Doses logged as GIVEN in the MAR — does not include HELD or REFUSED entries"
+                            >
+                                <CheckCircle2 size={10} />
+                                {givenCount}/{order.quantity ?? "—"} given
                             </span>
                         )}
                         {order.dose && (
@@ -786,9 +812,46 @@ function OrderCard({
                 </div>
             )}
 
+            {/* ── Dispense status notice ──
+                Lives just above the entry form so the nurse sees pharmacy
+                state at the moment of administration, not buried in a header
+                pill. PENDING is the loudest signal — administering without
+                an issue means there's no inventory backing the dose. */}
+            {!isStopped && !isDischarged && dispenseState !== "DISPENSED" && (
+                <div className={`mar-dispense-notice is-${dispenseState.toLowerCase()}`}>
+                    <Pill size={13} />
+                    {dispenseState === "PENDING" ? (
+                        <span>
+                            <strong>Awaiting pharmacy issue</strong> — 0 of {prescribedQty || "?"} units
+                            dispensed. Pharmacy hasn't sent any tablets to the ward yet.
+                        </span>
+                    ) : (
+                        <span>
+                            <strong>{dispensedQty}/{prescribedQty || "?"} dispensed</strong> — {Math.max(0, prescribedQty - dispensedQty)} more pending from pharmacy.
+                        </span>
+                    )}
+                </div>
+            )}
+
             {/* ── Administration entry form — hidden after discharge or when stopped ── */}
             {!isDischarged && !isStopped && (
-                <form className="mar-form" onSubmit={(e) => onSubmit(e, order.orderId)}>
+                <form className="mar-form" onSubmit={(e) => {
+                    // Soft-block: if recording a GIVEN with 0 dispensed, confirm.
+                    // We don't hard-block because stat doses from ward float stock
+                    // / emergency cabinets get administered before pharmacy paperwork
+                    // catches up — this happens daily in IPD wards.
+                    if (form.status === "GIVEN" && dispenseState === "PENDING") {
+                        const ok = window.confirm(
+                            "Pharmacy has not issued any units of this drug yet.\n\n" +
+                            "If you're recording a dose from ward float stock or the emergency " +
+                            "cabinet that's fine — but please make sure pharmacy is informed so " +
+                            "they can dispense for the remainder of the course.\n\n" +
+                            "Record this dose anyway?",
+                        );
+                        if (!ok) { e.preventDefault(); return; }
+                    }
+                    onSubmit(e, order.orderId);
+                }}>
                     <p className="mar-form__heading">Log administration</p>
 
                     {/* Row 1: Time + Status */}

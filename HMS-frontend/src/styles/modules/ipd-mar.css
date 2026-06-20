@@ -591,27 +591,97 @@ select.mar-input {
     margin-top: 1px;
 }
 
-/* ── Dispense tally pill (drug header) ────────────────────────────────────── */
+/* ── Dispense tally pill (drug header) ──────────────────────────────────────
+   Bumped to the same visual weight as the frequency / route pills so it's
+   read as a status, not a footnote. The three states have distinct colours
+   so a glance is enough:
+     PENDING   = amber — pharmacy hasn't issued anything, nurse should chase
+     PARTIAL   = blue  — some on the trolley, some still owed
+     DISPENSED = green — all units issued */
 
 .mar-signa-pill.is-dispense {
+    gap: 4px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 700;
+    font-size: 11.5px;
+    padding: 3px 10px;
+    border: 1px solid transparent;
+}
+
+.mar-signa-pill.is-dispense.is-pending {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #fdba74;
+}
+
+.mar-signa-pill.is-dispense.is-partial {
+    background: #dbeafe;
+    color: #1e40af;
+    border-color: #93c5fd;
+}
+
+.mar-signa-pill.is-dispense.is-dispensed {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+}
+
+/* ── Dispense status notice (full-width, above the entry form) ──────────────
+   PENDING is amber so a glance from the doctor's standing position is enough
+   to spot "pharmacy hasn't done their part yet". PARTIAL is a quieter blue
+   nudge. DISPENSED is suppressed in the JSX so it never renders. */
+
+.mar-dispense-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 16px 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    border: 1px solid transparent;
+}
+
+.mar-dispense-notice strong {
+    font-weight: 700;
+}
+
+.mar-dispense-notice svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.mar-dispense-notice.is-pending {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #fdba74;
+}
+
+.mar-dispense-notice.is-partial {
+    background: #eff6ff;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+/* ── Consumption pill (MAR GIVEN count) ─────────────────────────────────── */
+
+.mar-signa-pill.is-given-count {
     gap: 3px;
     text-transform: none;
     letter-spacing: 0;
     font-weight: 600;
     font-size: 11px;
-}
-
-.mar-signa-pill.is-dispense.is-pending {
+    /* Neutral default — quiet while no doses have been given so the dispense
+       pill stays the louder signal for the pre-administration state. */
     background: var(--hms-gray-100, #f3f4f6);
     color: var(--hms-gray-700, #374151);
 }
 
-.mar-signa-pill.is-dispense.is-partial {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.mar-signa-pill.is-dispense.is-dispensed {
+.mar-signa-pill.is-given-count.has-doses {
+    /* Lights up once the patient starts receiving doses — matches the
+       Given event row's success palette so the eye groups it correctly. */
     background: #dcfce7;
     color: #166534;
 }
