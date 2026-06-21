@@ -89,6 +89,24 @@ public class FinanceReportController {
     }
 
     /**
+     * Refunds issued in a window — drives the finance app's "Refund History"
+     * audit page. Source is negative-amount {@code invoice_payment} rows.
+     *
+     * Defaults to the last 7 days when no range is supplied. Hard-capped at
+     * 93 days to mirror the doctor-collections daily endpoint.
+     */
+    @GetMapping("/refunds")
+    public ResponseEntity<RefundDtos.RefundHistoryResponse> getRefundHistory(
+            @RequestParam UUID hospitalId,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        hospitalAccessGuard.requireAccess(hospitalId);
+        return ResponseEntity.ok(financeReportService.getRefundHistory(hospitalId, from, to));
+    }
+
+    /**
      * Issue a refund against an overpaid invoice. Writes a negative
      * {@code invoice_payment} row and (for non-cash) debits the bank account
      * via the existing bank-ledger service. End-to-end idempotent on

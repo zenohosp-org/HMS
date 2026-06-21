@@ -23,6 +23,30 @@ public interface InvoicePaymentRepository extends JpaRepository<InvoicePayment, 
      */
     java.util.Optional<InvoicePayment> findByClientRequestId(UUID clientRequestId);
 
+    /**
+     * Refund history feed for finance. Returns every negative-amount
+     * {@code invoice_payment} row in the hospital's invoices, optionally
+     * windowed by {@code paid_at}. JOIN FETCH the invoice and patient so the
+     * row-by-row DTO mapper stays N+1-free. {@code collectedByUser} is
+     * already EAGER on the entity. Sorted most-recent first because the
+     * finance audit page reads top-down.
+     */
+    @Query("""
+            SELECT ip FROM InvoicePayment ip
+            JOIN FETCH ip.invoice i
+            LEFT JOIN FETCH i.patient p
+            LEFT JOIN FETCH ip.collectedByUser u
+            WHERE i.hospital.id = :hospitalId
+              AND ip.amount < 0
+              AND ip.paidAt >= :fromTs
+              AND ip.paidAt <  :toTs
+            ORDER BY ip.paidAt DESC
+            """)
+    List<InvoicePayment> findRefundsInWindow(
+            @Param("hospitalId") UUID hospitalId,
+            @Param("fromTs") java.time.LocalDateTime fromTs,
+            @Param("toTs")   java.time.LocalDateTime toTs);
+
     // Per-doctor, per-day collected-fees aggregation for finance reporting.
     //
     // A "collected fee" is one row in invoice_payments. The doctor is resolved via:

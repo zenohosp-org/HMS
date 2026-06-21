@@ -43,6 +43,7 @@ public class FinanceReportService {
     private final InvoicePaymentRepository paymentRepo;
     private final DoctorRepository doctorRepo;
     private final InvoiceRepository invoiceRepo;
+    private final com.zenlocare.HMS_backend.repository.BankAccountRepository bankAccountRepo;
 
     // ---------- Summary: today / last 7 days / this month ----------
 
@@ -242,6 +243,103 @@ public class FinanceReportService {
         return PendingRefundsResponse.builder()
                 .invoices(rows)
                 .totalRefundable(grand)
+                .build();
+    }
+
+    // ---------- Refund history ----------
+
+    /**
+     * All refunds issued in a date window for this hospital. Pairs with
+     * {@code POST /api/finance/invoices/{id}/refund}: every refund issued
+     * through that endpoint shows up here for audit.
+     *
+     * The underlying source is {@code invoice_payments} rows with
+     * {@code amount < 0}. We always present {@code amount} as positive in
+     * the DTO so the UI doesn't have to flip signs.
+     *
+     * Default window when both bounds are null: last 7 days ending today
+     * (IST). The caller can override either or both via query params.
+     * Range is capped at {@code MAX_DAILY_RANGE_DAYS} to keep payloads
+     * bounded — same convention as the doctor-collections daily endpoint.
+     */
+    public com.zenlocare.HMS_backend.dto.RefundDtos.RefundHistoryResponse
+            getRefundHistory(UUID hospitalId, LocalDate fromOverride, LocalDate toOverride) {
+
+        LocalDate today = LocalDate.now(HOSPITAL_TZ);
+        LocalDate to    = toOverride != null ? toOverride : today;
+        LocalDate from  = fromOverride != null ? fromOverride : to.minusDays(6);
+        if (from.isAfter(to)) {
+            throw new com.zenlocare.HMS_backend.exception.BadRequestException(
+                    "from must be on or before to");
+        }
+        long span = ChronoUnit.DAYS.between(from, to) + 1;
+        if (span > MAX_DAILY_RANGE_DAYS) {
+            throw new com.zenlocare.HMS_backend.exception.BadRequestException(
+                    "Date range exceeds maximum of " + MAX_DAILY_RANGE_DAYS + " days");
+        }
+
+        LocalDateTime fromTs = from.atStartOfDay();
+        LocalDateTime toTs   = to.plusDays(1).atStartOfDay();
+
+        List<com.zenlocare.HMS_backend.entity.InvoicePayment> rows =
+                paymentRepo.findRefundsInWindow(hospitalId, fromTs, toTs);
+
+        // Batch-resolve bank account names so each row doesn't trigger its own
+        // findById call. Most refunds are non-cash so this collapses N round-trips
+        // into one IN query.
+        Set<UUID> bankIds = new HashSet<>();
+        for (var p : rows) if (p.getBankAccountId() != null) bankIds.add(p.getBankAccountId());
+        Map<UUID, String> bankNameById = new HashMap<>();
+        if (!bankIds.isEmpty()) {
+            for (var b : bankAccountRepo.findAllById(bankIds)) {
+                bankNameById.put(b.getId(), b.getAccountName());
+            }
+        }
+
+        List<com.zenlocare.HMS_backend.dto.RefundDtos.RefundHistoryRow> out = new ArrayList<>(rows.size());
+        BigDecimal grand = BigDecimal.ZERO;
+        for (var p : rows) {
+            var invoice = p.getInvoice();
+            var patient = invoice != null ? invoice.getPatient() : null;
+            BigDecimal amountAbs = p.getAmount() != null ? p.getAmount().abs() : BigDecimal.ZERO;
+            String patientName = patient != null
+                    ? ((patient.getFirstName() == null ? "" : patient.getFirstName().trim())
+                       + " " + (patient.getLastName() == null ? "" : patient.getLastName().trim())).trim()
+                    : null;
+            boolean isCash = "Cash".equalsIgnoreCase(p.getPaymentMethod())
+                    || "CASH".equalsIgnoreCase(p.getPaymentMethod());
+            var collector = p.getCollectedByUser();
+            String collectorName = collector != null
+                    ? ((collector.getFirstName() == null ? "" : collector.getFirstName().trim())
+                       + " " + (collector.getLastName() == null ? "" : collector.getLastName().trim())).trim()
+                    : p.getCollectedBy();
+
+            out.add(com.zenlocare.HMS_backend.dto.RefundDtos.RefundHistoryRow.builder()
+                    .paymentId(p.getId())
+                    .invoiceId(invoice != null ? invoice.getId() : null)
+                    .invoiceNumber(invoice != null ? invoice.getInvoiceNumber() : null)
+                    .patientId(patient != null ? patient.getId() : null)
+                    .patientName(patientName)
+                    .uhid(patient != null ? patient.getUhid() : null)
+                    .amount(amountAbs)
+                    .paymentMethod(p.getPaymentMethod())
+                    .isCash(isCash)
+                    .bankAccountId(p.getBankAccountId())
+                    .bankAccountName(p.getBankAccountId() != null
+                            ? bankNameById.get(p.getBankAccountId())
+                            : null)
+                    .collectedById(collector != null ? collector.getId() : null)
+                    .collectedByName(collectorName)
+                    .notes(p.getNotes())
+                    .refundedAt(p.getPaidAt())
+                    .build());
+            grand = grand.add(amountAbs);
+        }
+        return com.zenlocare.HMS_backend.dto.RefundDtos.RefundHistoryResponse.builder()
+                .refunds(out)
+                .totalRefunded(grand)
+                .fromDate(from)
+                .toDate(to)
                 .build();
     }
 
