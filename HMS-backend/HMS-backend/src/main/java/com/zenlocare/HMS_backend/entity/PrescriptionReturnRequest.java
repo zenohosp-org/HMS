@@ -86,6 +86,25 @@ public class PrescriptionReturnRequest {
     private String reasonNotes;
 
     /**
+     * Optional batch identifier read off the physical strip the nurse is
+     * returning. Pharmacy uses it at verify time to credit stock back to the
+     * exact batch the dispense came from — bypassing the earliest-dispense
+     * heuristic that fails on multi-batch fills.
+     *
+     * Free-text (not a FK) because:
+     *  - HMS doesn't own the pharmacy stock-batch table; cross-service FKs
+     *    would couple the deployments.
+     *  - Nurses scan or type from the strip label, which is a human-readable
+     *    batch code anyway.
+     *  - Pharmacy resolves the code → batch_id on its side at verify time
+     *    and can fall back to the earliest dispense if the code is unknown.
+     *
+     * Nullable: single-dispense returns don't need to specify it.
+     */
+    @Column(name = "batch_number", length = 60)
+    private String batchNumber;
+
+    /**
      * Lifecycle: REQUESTED → (VERIFIED | REJECTED). CANCELLED is reserved for
      * a future "nurse-side cancel before pharmacy picks it up" flow; currently
      * unused but accepted so a rollback path exists if we add it.

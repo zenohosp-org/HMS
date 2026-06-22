@@ -31,6 +31,14 @@ public final class PrescriptionReturnDtos {
         private String reasonCode;
         /** Optional free-text context; required server-side when reasonCode = "OTHER". */
         private String reasonNotes;
+        /**
+         * Optional batch identifier read off the physical strip the nurse is
+         * returning. Pharmacy uses it at verify time to credit stock back to
+         * the exact batch — bypassing the earliest-dispense heuristic that
+         * fails on multi-batch fills. Pharmacy ignores unknown codes and
+         * falls back to its default selection, so it's safe to omit.
+         */
+        private String batchNumber;
         /** Idempotency token; client-generated UUID. Required. */
         private UUID clientRequestId;
         /**
@@ -108,6 +116,12 @@ public final class PrescriptionReturnDtos {
         private Integer returnQty;
         private String reasonCode;
         private String reasonNotes;
+        /**
+         * Batch code the nurse read off the strip when initiating. Pharmacy
+         * uses it at verify time to credit the exact batch and skip the
+         * earliest-dispense fallback. Null when the nurse left it blank.
+         */
+        private String batchNumber;
         private LocalDateTime initiatedAt;
         private String initiatedByName;
         private String initiatedByRole;

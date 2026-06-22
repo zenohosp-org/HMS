@@ -148,6 +148,16 @@ public class PrescriptionReturnService {
                 : hospitalRepo.findById(admHospitalId)
                         .orElseThrow(() -> new ResourceNotFoundException("Hospital not found"));
 
+        // Optional batch tag — nurses scan/type from the strip label.
+        // Normalised to upper-case + trimmed so pharmacy's case-insensitive
+        // resolve doesn't get tripped up by stray spaces or lowercase entry.
+        String batchCode = req.getBatchNumber();
+        if (batchCode != null) {
+            batchCode = batchCode.trim();
+            if (batchCode.isEmpty()) batchCode = null;
+            else batchCode = batchCode.toUpperCase();
+        }
+
         var request = PrescriptionReturnRequest.builder()
                 .hospital(hospital)
                 .prescriptionItem(item)
@@ -156,6 +166,7 @@ public class PrescriptionReturnService {
                 .returnQty(req.getReturnQty())
                 .reasonCode(req.getReasonCode().trim().toUpperCase())
                 .reasonNotes(req.getReasonNotes())
+                .batchNumber(batchCode)
                 .status("REQUESTED")
                 .clientRequestId(req.getClientRequestId())
                 .build();
@@ -299,6 +310,7 @@ public class PrescriptionReturnService {
                     .returnQty(prr.getReturnQty())
                     .reasonCode(prr.getReasonCode())
                     .reasonNotes(prr.getReasonNotes())
+                    .batchNumber(prr.getBatchNumber())
                     .initiatedAt(prr.getCreatedAt())
                     .initiatedByName(initiator != null ? joinName(initiator.getFirstName(), initiator.getLastName()) : null)
                     .initiatedByRole(initiator != null && initiator.getRole() != null ? initiator.getRole().getName() : null)

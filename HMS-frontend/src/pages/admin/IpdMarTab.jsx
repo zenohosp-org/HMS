@@ -99,6 +99,10 @@ function emptyReturnForm(defaultQty = 1, isStopped = false) {
         returnQty:   String(defaultQty),
         reasonCode:  "INEFFECTIVE",
         reasonNotes: "",
+        // Batch identifier the nurse reads off the physical strip. Optional —
+        // pharmacy falls back to the earliest-dispense default when blank, so
+        // single-batch returns don't have to deal with this field.
+        batchNumber: "",
         // Default to "also stop this order" only when the order is still
         // active — otherwise the hidden stop-reason field would block
         // submission with a stale "reason required" check.
@@ -377,6 +381,11 @@ export default function IpdMarTab({ admissionId, isDischarged, allergies }) {
                 returnQty:   qty,
                 reasonCode:  f.reasonCode,
                 reasonNotes: f.reasonNotes.trim() || undefined,
+                // Trim + upper-case so pharmacy's case-insensitive batch
+                // resolve doesn't trip on stray spaces or lowercase entry.
+                batchNumber: f.batchNumber?.trim()
+                    ? f.batchNumber.trim().toUpperCase()
+                    : undefined,
                 replacement,
             });
             setReturnOpen((prev)  => ({ ...prev, [orderId]: false }));
@@ -752,6 +761,27 @@ function OrderCard({
                                         ))}
                                     </select>
                                 </div>
+                            </div>
+
+                            {/* Batch number — optional, lets pharmacy credit the
+                                exact batch instead of guessing the earliest dispense.
+                                Nurse reads it off the strip label. Auto-upper-cased
+                                on submit so the typed/scanned form matches the
+                                pharmacy's stored case. */}
+                            <div className="mar-form__field">
+                                <label className="mar-form__label">
+                                    Batch # <span className="hint">read from strip — optional</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    className="mar-input"
+                                    placeholder="e.g. ABC123"
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                    value={returnForm.batchNumber}
+                                    onChange={setReturnField(order.orderId, "batchNumber")}
+                                    style={{ textTransform: "uppercase", letterSpacing: "0.04em" }}
+                                />
                             </div>
 
                             {/* Reason notes — always shown, required only for OTHER */}
