@@ -44,6 +44,7 @@ public class FinanceReportService {
     private final DoctorRepository doctorRepo;
     private final InvoiceRepository invoiceRepo;
     private final com.zenlocare.HMS_backend.repository.BankAccountRepository bankAccountRepo;
+    private final com.zenlocare.HMS_backend.repository.InvoiceItemRepository invoiceItemRepo;
 
     // ---------- Summary: today / last 7 days / this month ----------
 
@@ -341,6 +342,96 @@ public class FinanceReportService {
                 .fromDate(from)
                 .toDate(to)
                 .build();
+    }
+
+    // ---------- Return credits feed ----------
+
+    /**
+     * Every credit-note line that arrived on this hospital's invoices in a
+     * date window — i.e. negative-priced {@code invoice_items} whose
+     * {@code pharmacy_bill_id} marks them as pharmacy-sourced. Drives the
+     * finance app's "Returns" audit view.
+     *
+     * Window convention mirrors {@link #getRefundHistory} so the finance UI
+     * can share its date-range component: default to last 7 days, hard cap
+     * at 93 days, IST-aligned via {@code HOSPITAL_TZ}.
+     */
+    public com.zenlocare.HMS_backend.dto.RefundDtos.ReturnCreditsResponse
+            getReturnCredits(UUID hospitalId, LocalDate fromOverride, LocalDate toOverride) {
+
+        LocalDate today = LocalDate.now(HOSPITAL_TZ);
+        LocalDate to    = toOverride != null ? toOverride : today;
+        LocalDate from  = fromOverride != null ? fromOverride : to.minusDays(6);
+        if (from.isAfter(to)) {
+            throw new com.zenlocare.HMS_backend.exception.BadRequestException(
+                    "from must be on or before to");
+        }
+        long span = ChronoUnit.DAYS.between(from, to) + 1;
+        if (span > MAX_DAILY_RANGE_DAYS) {
+            throw new com.zenlocare.HMS_backend.exception.BadRequestException(
+                    "Date range exceeds maximum of " + MAX_DAILY_RANGE_DAYS + " days");
+        }
+
+        LocalDateTime fromTs = from.atStartOfDay();
+        LocalDateTime toTs   = to.plusDays(1).atStartOfDay();
+
+        List<com.zenlocare.HMS_backend.entity.InvoiceItem> rows =
+                invoiceItemRepo.findReturnCreditsInWindow(hospitalId, fromTs, toTs);
+
+        List<com.zenlocare.HMS_backend.dto.RefundDtos.ReturnCreditRow> out = new ArrayList<>(rows.size());
+        BigDecimal grandAbs = BigDecimal.ZERO;
+        for (var item : rows) {
+            var inv = item.getInvoice();
+            var patient = inv != null ? inv.getPatient() : null;
+            BigDecimal amount = item.getTotalPrice() != null ? item.getTotalPrice() : BigDecimal.ZERO;
+            String patientName = patient != null
+                    ? ((patient.getFirstName() == null ? "" : patient.getFirstName().trim())
+                       + " " + (patient.getLastName() == null ? "" : patient.getLastName().trim())).trim()
+                    : null;
+
+            out.add(com.zenlocare.HMS_backend.dto.RefundDtos.ReturnCreditRow.builder()
+                    .creditId(item.getId())
+                    .invoiceId(inv != null ? inv.getId() : null)
+                    .invoiceNumber(inv != null ? inv.getInvoiceNumber() : null)
+                    .patientName(patientName)
+                    .uhid(patient != null ? patient.getUhid() : null)
+                    .itemDescription(item.getDescription())
+                    .amount(amount)                              // signed, negative
+                    .pharmacyBillId(item.getPharmacyBillId())
+                    .pharmacyBillNumber(null)                    // pharmacy owns the number; HMS only persists the FK
+                    .createdAt(item.getCreatedAt())
+                    .invoiceStatus(computeInvoiceStatus(inv))
+                    .build());
+            grandAbs = grandAbs.add(amount.abs());
+        }
+        return com.zenlocare.HMS_backend.dto.RefundDtos.ReturnCreditsResponse.builder()
+                .returns(out)
+                .totalCredited(grandAbs)
+                .count(out.size())
+                .fromDate(from)
+                .toDate(to)
+                .build();
+    }
+
+    /**
+     * Computed status string for finance display. Independent of the
+     * persisted {@code invoices.status} enum (which has its own lifecycle
+     * including CANCELLED / UNSETTLED) — we collapse to the four states
+     * finance actually wants on a credit feed:
+     *   UNPAID    nothing collected yet
+     *   PARTIAL   some collected, less than billed
+     *   SETTLED   exactly paid
+     *   OVERPAID  refund is due
+     */
+    private static String computeInvoiceStatus(com.zenlocare.HMS_backend.entity.Invoice inv) {
+        if (inv == null) return null;
+        BigDecimal paid  = inv.getPaidAmount() != null ? inv.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal total = inv.getTotal()      != null ? inv.getTotal()      : BigDecimal.ZERO;
+        int cmp = paid.compareTo(total);
+        if (cmp > 0) return "OVERPAID";
+        if (cmp == 0 && paid.signum() > 0) return "SETTLED";
+        if (paid.signum() == 0) return "UNPAID";
+        return "PARTIAL";
     }
 
     // ---------- helpers ----------

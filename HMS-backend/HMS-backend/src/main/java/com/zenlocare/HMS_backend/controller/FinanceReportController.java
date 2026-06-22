@@ -107,6 +107,29 @@ public class FinanceReportController {
     }
 
     /**
+     * Return-credits feed — every credit-note line written to this hospital's
+     * invoices in a window. Source is negative-priced {@code invoice_items}
+     * with a non-null {@code pharmacy_bill_id} (i.e. pharmacy-sourced from a
+     * ward return that arrived via IPD Finalize). Includes credits that
+     * never triggered a refund (i.e. applied before the patient paid), so
+     * finance sees the full picture rather than just the refund consequences.
+     *
+     * Same access-control + window model as {@code /refunds} and
+     * {@code /pending-refunds}: HospitalAccessGuard, default last-7-days,
+     * 93-day cap.
+     */
+    @GetMapping("/returns")
+    public ResponseEntity<RefundDtos.ReturnCreditsResponse> getReturnCredits(
+            @RequestParam UUID hospitalId,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        hospitalAccessGuard.requireAccess(hospitalId);
+        return ResponseEntity.ok(financeReportService.getReturnCredits(hospitalId, from, to));
+    }
+
+    /**
      * Issue a refund against an overpaid invoice. Writes a negative
      * {@code invoice_payment} row and (for non-cash) debits the bank account
      * via the existing bank-ledger service. End-to-end idempotent on

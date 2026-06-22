@@ -77,4 +77,16 @@ public class InvoiceItem {
 
     @Column(name = "waiver_reason", length = 255)
     private String waiverReason;
+
+    /**
+     * When this line was written to the invoice — i.e. the last IPD Finalize
+     * (since Finalize clears + re-adds items). Drives the finance
+     * {@code /api/finance/returns} feed's time window so the audit list
+     * orders by "when did this credit show up on the bill". Nullable for
+     * defence in depth (legacy rows pre-migration default to the column-add
+     * timestamp via the DB default; new rows pick up via @CreationTimestamp).
+     */
+    @org.hibernate.annotations.CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private java.time.LocalDateTime createdAt;
 }

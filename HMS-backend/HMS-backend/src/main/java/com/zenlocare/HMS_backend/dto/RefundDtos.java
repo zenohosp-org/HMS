@@ -120,4 +120,59 @@ public final class RefundDtos {
         private LocalDate fromDate;
         private LocalDate toDate;
     }
+
+    /**
+     * One row of the return-credits feed — a negative-priced {@code invoice_item}
+     * whose {@code pharmacy_bill_id} marks it as pharmacy-sourced (i.e. a
+     * credit note from a ward return that arrived on the invoice via IPD
+     * Finalize). Surfaces credits that didn't necessarily trigger a refund,
+     * so finance gets visibility into credits-applied-before-payment too.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReturnCreditRow {
+        /** invoice_items.id of the negative line. */
+        private UUID creditId;
+        private UUID invoiceId;
+        private String invoiceNumber;
+        private String patientName;
+        private String uhid;
+        /** Free-text description from the invoice item — usually drug name + qty. */
+        private String itemDescription;
+        /** Signed amount — negative. Matches /refunds shape so the UI can render uniformly. */
+        private BigDecimal amount;
+        private UUID pharmacyBillId;
+        /**
+         * The credit-note pharmacy_bill_number. Empty when HMS doesn't track
+         * it on its side (we only persist the UUID FK; the human-readable
+         * number lives on the pharmacy side). The UI can render the UUID
+         * tail if the number isn't surfaceable.
+         */
+        private String pharmacyBillNumber;
+        private LocalDateTime createdAt;
+        /**
+         * Computed from {@code paid_amount vs total} on the parent invoice —
+         *   UNPAID    paid == 0
+         *   PARTIAL   0 < paid < total
+         *   SETTLED   paid == total
+         *   OVERPAID  paid > total
+         * For context display only — this endpoint takes no action on it.
+         */
+        private String invoiceStatus;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReturnCreditsResponse {
+        private List<ReturnCreditRow> returns;
+        /** Sum of absolute amounts — positive. */
+        private BigDecimal totalCredited;
+        private int count;
+        private LocalDate fromDate;
+        private LocalDate toDate;
+    }
 }
