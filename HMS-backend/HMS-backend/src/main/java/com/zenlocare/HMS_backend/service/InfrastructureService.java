@@ -5,6 +5,7 @@ import com.zenlocare.HMS_backend.controller.InfrastructureController.FloorDto;
 import com.zenlocare.HMS_backend.controller.InfrastructureController.RoomDto;
 import com.zenlocare.HMS_backend.controller.InfrastructureController.WardDto;
 import com.zenlocare.HMS_backend.entity.*;
+import com.zenlocare.HMS_backend.integration.AssetsClient;
 import com.zenlocare.HMS_backend.repository.*;
 import com.zenlocare.HMS_backend.exception.InfrastructureValidationException;
 import com.zenlocare.HMS_backend.controller.InfrastructureController.ValidationRequest;
@@ -44,7 +45,7 @@ public class InfrastructureService {
     private final StoreRepository storeRepo;
     private final AdmissionRepository admissionRepo;
     private final OtBookingRepository otBookingRepo;
-    private final AssetRepository assetRepo;
+    private final AssetsClient assetsClient;
 
     @Transactional(readOnly = true)
     public List<BuildingDto> get(UUID hospitalId, boolean includeInactive) {
@@ -340,7 +341,7 @@ public class InfrastructureService {
                     }
                 }
             }
-            if (assetRepo.existsByRoomIdIn(req.getRoomIds())) {
+            if (assetsClient.existsByRooms(req.getRoomIds())) {
                 warnings.add("One or more rooms have assigned assets. They will become unlocated.");
             }
         }
