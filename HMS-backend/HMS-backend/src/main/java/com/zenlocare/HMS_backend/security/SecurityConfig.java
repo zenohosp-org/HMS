@@ -142,6 +142,8 @@ public class SecurityConfig {
                 "https://api-finance.zenohosp.com",
                 "https://labs.zenohosp.com",
                 "https://api-labs.zenohosp.com",
+                "https://asset.zenohosp.com",
+                "https://api-asset.zenohosp.com",
                 frontendUrl));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
