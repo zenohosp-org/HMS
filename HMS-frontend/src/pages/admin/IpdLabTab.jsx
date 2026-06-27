@@ -3,8 +3,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import {
     labOrderApi, radiologyApi, investigationsApi,
-    hospitalServiceApi, departmentApi,
 } from "@/utils/api";
+import { useInvestigationCatalog } from "@/hooks/useInvestigationCatalog";
 import RequestInvestigationForm from "@/components/investigations/RequestInvestigationForm";
 import { CenterLoader } from "@/components/ui/Loader";
 import {
@@ -41,14 +41,6 @@ const STATUS_ORDER = {
 
 const BLANK_REPORT_FORM = { findings: "", observation: "" };
 
-// Map a service's department code to the kind labs uses.
-const kindFromCode = (code) => {
-    const c = (code || "").toUpperCase();
-    if (c === "LABS") return "LAB";
-    if (c === "RADIOLOGY") return "RADIOLOGY";
-    return null;
-};
-
 export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
     const { user } = useAuth();
     const { notify } = useNotification();
@@ -60,11 +52,10 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
     // Top-level filter pill — All / Pathology / Radiology.
     const [kindFilter, setKindFilter] = useState("ALL");
 
-    // Catalog: services tagged to LABS or RADIOLOGY departments, annotated
-    // with a `kind` field so the picker can show + route correctly. Owned
-    // here and passed down to RequestInvestigationForm — one fetch per
-    // hospital-context, not per form mount.
-    const [catalog, setCatalog] = useState([]);
+    // Orderable investigation catalogue (labs lab_services for gated tenants,
+    // legacy hospital_services otherwise) — shared hook, one fetch per
+    // hospital-context, passed down to RequestInvestigationForm.
+    const catalog = useInvestigationCatalog(user?.hospitalId);
 
     // Per-order report form state: { [orderId]: { open, saving, form } }
     const [reportPanels, setReportPanels] = useState({});
@@ -86,32 +77,6 @@ export default function IpdLabTab({ admissionId, patientId, isDischarged }) {
     }, [admissionId]);
 
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
-
-    // Load services catalogued under LABS or RADIOLOGY departments, annotated
-    // with `kind` so the picker can label them and the submit can route.
-    useEffect(() => {
-        if (!user?.hospitalId) return;
-        let cancelled = false;
-        Promise.all([
-            departmentApi.list(user.hospitalId),
-            hospitalServiceApi.list(user.hospitalId),
-        ])
-            .then(([depts, services]) => {
-                if (cancelled) return;
-                const kindByDeptId = {};
-                (depts || []).forEach((d) => {
-                    const k = kindFromCode(d.code);
-                    if (k) kindByDeptId[d.id] = k;
-                });
-                setCatalog(
-                    (services || [])
-                        .filter((s) => s.isActive !== false && kindByDeptId[s.departmentId])
-                        .map((s) => ({ ...s, kind: kindByDeptId[s.departmentId] }))
-                );
-            })
-            .catch(() => { if (!cancelled) setCatalog([]); });
-        return () => { cancelled = true; };
-    }, [user?.hospitalId]);
 
     // Visible orders honor the kind filter pill.
     const visibleOrders = useMemo(() => {
