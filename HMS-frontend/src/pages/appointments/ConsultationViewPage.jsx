@@ -5,9 +5,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import {
   appointmentsApi, doctorsApi, recordApi, investigationsApi, externalResultsApi, zemaRulesApi,
-  hospitalServiceApi, departmentApi,
   LABS_FRONTEND_URL,
 } from "@/utils/api";
+import { useInvestigationCatalog } from "@/hooks/useInvestigationCatalog";
 import RequestInvestigationForm from "@/components/investigations/RequestInvestigationForm";
 import InternalInvestigationsSection from "@/components/investigations/InternalInvestigationsSection";
 import { useConsultationDraft } from "@/hooks/useConsultationDraft";
@@ -51,10 +51,10 @@ export default function ConsultationViewPage() {
   const [loadingExternal, setLoadingExternal] = useState(false);
   const [loadingPast, setLoadingPast] = useState(false);
   const [loadingLabs, setLoadingLabs] = useState(false);
-  // Catalog of orderable investigations — services tagged under the Labs
-  // or Radiology department, fetched once per hospital and threaded down
-  // to the shared RequestInvestigationForm so it doesn't refetch per mount.
-  const [investigationCatalog, setInvestigationCatalog] = useState([]);
+  // Orderable investigation catalogue (labs lab_services for gated tenants,
+  // legacy hospital_services otherwise) — shared hook, threaded down to the
+  // shared RequestInvestigationForm.
+  const investigationCatalog = useInvestigationCatalog(user?.hospitalId);
   const [openedPastRecord, setOpenedPastRecord] = useState(null);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
   const [zemaRules, setZemaRules] = useState([]);
@@ -179,41 +179,6 @@ export default function ConsultationViewPage() {
   }, [current?.patientId]);
 
   useEffect(() => { refetchLabOrders(); }, [refetchLabOrders]);
-
-  // Fetch the orderable investigation catalog once per hospital — services
-  // tagged under LABS or RADIOLOGY departments, annotated with kind so the
-  // form can route the submit to the correct labs endpoint. Same pattern
-  // IpdLabTab uses; threaded down to RequestInvestigationForm so we don't
-  // refetch per form mount.
-  useEffect(() => {
-    if (!user?.hospitalId) return;
-    let cancelled = false;
-    const kindFromCode = (code) => {
-      const c = (code || "").toUpperCase();
-      if (c === "LABS") return "LAB";
-      if (c === "RADIOLOGY") return "RADIOLOGY";
-      return null;
-    };
-    Promise.all([
-      departmentApi.list(user.hospitalId),
-      hospitalServiceApi.list(user.hospitalId),
-    ])
-      .then(([depts, services]) => {
-        if (cancelled) return;
-        const kindByDeptId = {};
-        (depts || []).forEach((d) => {
-          const k = kindFromCode(d.code);
-          if (k) kindByDeptId[d.id] = k;
-        });
-        setInvestigationCatalog(
-          (services || [])
-            .filter((s) => s.isActive !== false && kindByDeptId[s.departmentId])
-            .map((s) => ({ ...s, kind: kindByDeptId[s.departmentId] }))
-        );
-      })
-      .catch(() => { if (!cancelled) setInvestigationCatalog([]); });
-    return () => { cancelled = true; };
-  }, [user?.hospitalId]);
 
   // Outside-clinic results captured at triage by front-desk / nursing
   // staff, plus anything the doctor has typed in during the consultation.

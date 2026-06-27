@@ -13,8 +13,9 @@ import { useConsultationDraft } from "@/hooks/useConsultationDraft";
 import VitalsModal from "@/components/modals/VitalsModal";
 import Modal from "@/components/ui/Modal";
 import {
-  zemaRulesApi, investigationsApi, hospitalServiceApi, departmentApi,
+  zemaRulesApi, investigationsApi,
 } from "@/utils/api";
+import { useInvestigationCatalog } from "@/hooks/useInvestigationCatalog";
 import RequestInvestigationForm from "@/components/investigations/RequestInvestigationForm";
 import InternalInvestigationsSection from "@/components/investigations/InternalInvestigationsSection";
 import { calculateZemaVitals } from "@/utils/zemaCalculationEngine";
@@ -44,7 +45,7 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
   // per patient and re-run on successful create via refetchLabOrders.
   const [labOrders, setLabOrders] = useState([]);
   const [loadingLabs, setLoadingLabs] = useState(false);
-  const [investigationCatalog, setInvestigationCatalog] = useState([]);
+  const investigationCatalog = useInvestigationCatalog(user?.hospitalId);
   const [showRequest, setShowRequest] = useState(false);
 
   useEffect(() => {
@@ -71,37 +72,6 @@ export default function ConsultationModal({ appointment, onClose, onSaved }) {
 
   useEffect(() => { refetchLabOrders(); }, [refetchLabOrders]);
 
-  // Catalog of orderable investigations — services tagged under LABS or
-  // RADIOLOGY departments, annotated with kind so the shared form can route.
-  useEffect(() => {
-    if (!user?.hospitalId) return;
-    let cancelled = false;
-    const kindFromCode = (code) => {
-      const c = (code || "").toUpperCase();
-      if (c === "LABS") return "LAB";
-      if (c === "RADIOLOGY") return "RADIOLOGY";
-      return null;
-    };
-    Promise.all([
-      departmentApi.list(user.hospitalId),
-      hospitalServiceApi.list(user.hospitalId),
-    ])
-      .then(([depts, services]) => {
-        if (cancelled) return;
-        const kindByDeptId = {};
-        (depts || []).forEach((d) => {
-          const k = kindFromCode(d.code);
-          if (k) kindByDeptId[d.id] = k;
-        });
-        setInvestigationCatalog(
-          (services || [])
-            .filter((s) => s.isActive !== false && kindByDeptId[s.departmentId])
-            .map((s) => ({ ...s, kind: kindByDeptId[s.departmentId] }))
-        );
-      })
-      .catch(() => { if (!cancelled) setInvestigationCatalog([]); });
-    return () => { cancelled = true; };
-  }, [user?.hospitalId]);
 
   useEffect(() => {
     setZemaAnalysisState("idle");
