@@ -108,6 +108,11 @@ export default function RequestInvestigationForm({
             hospitalId,
             patientId,
             ...(admissionId ? { admissionId } : {}),
+            // Catalog link (labs V15). Set for labs-sourced catalogue rows, null
+            // on legacy hospital_services / free-text rows. When present, labs
+            // snapshots serviceName/sampleType/price/gstRate from the catalogue —
+            // the request values below still win when sent (pricing back-compat).
+            labServiceId: picked.labServiceId ?? null,
             serviceName: picked.name,
             specializationName: picked.department?.name ?? null,
             sampleType: picked.kind === "LAB" ? (form.sampleType.trim() || null) : null,
