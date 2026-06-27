@@ -547,3 +547,89 @@
         flex-direction: column;
     }
 }
+
+/* ── Queued tests list (multi-order builder) ──────────────────────── */
+
+.lab-queue {
+    margin-top: 10px;
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.lab-queue__scroll {
+    max-height: 224px;
+    overflow-y: auto;
+}
+
+.lab-queue__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--hms-gray-100);
+}
+
+.lab-queue__row:last-child {
+    border-bottom: none;
+}
+
+/* Reuse the card's discipline chip, but it leads the row here (no left gap). */
+.lab-queue__row .lab-kind-chip {
+    margin-left: 0;
+    flex-shrink: 0;
+}
+
+.lab-queue__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--hms-gray-900);
+}
+
+.lab-queue__price {
+    flex-shrink: 0;
+    font-size: 11.5px;
+    color: var(--hms-gray-700);
+    font-variant-numeric: tabular-nums;
+}
+
+.lab-queue__remove {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--hms-gray-400);
+    cursor: pointer;
+    transition: all 0.12s;
+}
+
+.lab-queue__remove:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.lab-queue__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 11.5px;
+    color: var(--hms-gray-500);
+    background: var(--hms-gray-50);
+    border-top: 1px solid var(--hms-gray-200);
+}
+
+.lab-queue__footer strong {
+    color: var(--hms-gray-900);
+    font-weight: 700;
+}

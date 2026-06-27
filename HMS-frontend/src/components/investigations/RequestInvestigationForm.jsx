@@ -272,55 +272,40 @@ export default function RequestInvestigationForm({
                 </div>
             </div>
 
-            {/* Queued tests — compact list, one per row: kind badge · name ·
-                price · remove. Scrolls past ~8 rows so the panel stays compact;
-                total pinned in the footer. Built for at-a-glance reading by
-                nurses + doctors placing a multi-test order. */}
+            {/* Queued tests — compact list (one per row), styled with the lab-*
+                design system. Reuses lab-kind-chip for the discipline badge and
+                the card's hover-red remove pattern; scrolls past ~8 rows so the
+                panel stays compact, total pinned in the footer. */}
             {selected.length > 0 && (
-                <div className="mt-2.5 rounded-lg border border-gray-200 overflow-hidden">
-                    <div className="max-h-56 overflow-y-auto">
-                        {selected.map((s, i) => (
-                            <div
-                                key={s.id}
-                                className={`flex items-center gap-2 px-2.5 py-1.5 text-xs ${i % 2 ? "bg-gray-50" : "bg-white"}`}
-                            >
-                                <span
-                                    className={`shrink-0 inline-flex items-center justify-center w-10 rounded px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                                        s.kind === "LAB"
-                                            ? "bg-violet-100 text-violet-700"
-                                            : "bg-blue-100 text-blue-700"
-                                    }`}
-                                >
-                                    {s.kind === "LAB" ? "Path" : "Rad"}
+                <div className="lab-queue">
+                    <div className="lab-queue__scroll">
+                        {selected.map((s) => (
+                            <div className="lab-queue__row" key={s.id}>
+                                <span className={`lab-kind-chip ${s.kind === "LAB" ? "is-lab" : "is-radiology"}`}>
+                                    {s.kind === "LAB" ? "Pathology" : "Radiology"}
                                 </span>
-                                <span className="flex-1 min-w-0 truncate font-semibold text-gray-900">
-                                    {s.name}
-                                </span>
-                                <span className="shrink-0 tabular-nums text-gray-600">
-                                    {fmtMoney(s.price)}
-                                </span>
+                                <span className="lab-queue__name">{s.name}</span>
+                                <span className="lab-queue__price">{fmtMoney(s.price)}</span>
                                 <button
                                     type="button"
+                                    className="lab-queue__remove"
                                     onClick={() => removeTest(s.id)}
                                     aria-label={`Remove ${s.name}`}
-                                    className="shrink-0 inline-flex items-center justify-center text-gray-400 hover:text-red-500"
                                 >
-                                    <X className="w-3.5 h-3.5" />
+                                    <X size={13} />
                                 </button>
                             </div>
                         ))}
                     </div>
 
                     {totals.subtotal > 0 && (
-                        <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs bg-gray-50 border-t border-gray-200">
-                            <span className="font-medium text-gray-500">
-                                {selected.length} test{selected.length === 1 ? "" : "s"}
-                            </span>
-                            <span className="text-gray-600">
+                        <div className="lab-queue__footer">
+                            <span>{selected.length} test{selected.length === 1 ? "" : "s"}</span>
+                            <span>
                                 Subtotal {fmtMoney(totals.subtotal)}
                                 {totals.gst > 0 && <> · GST {fmtMoney(totals.gst)}</>}
                                 {" · "}
-                                <strong className="text-gray-900">Total {fmtMoney(totals.total)}</strong>
+                                <strong>Total {fmtMoney(totals.total)}</strong>
                             </span>
                         </div>
                     )}
