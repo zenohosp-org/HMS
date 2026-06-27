@@ -2,38 +2,36 @@ import { useState, useEffect, useMemo } from "react";
 import { useNotification } from "@/context/NotificationContext";
 import { labOrderApi, radiologyApi } from "@/utils/api";
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import { X } from "lucide-react";
 
 /**
- * Shared form for placing a pathology or radiology investigation order.
+ * Shared form for placing one OR MORE pathology/radiology investigation
+ * orders in a single action.
  *
- * Used in two places:
- *   - IPD Detail Pane → Investigations tab (admissionId required → bills
- *     against the active IPD invoice on labs-side report generation).
- *   - Consultation View → Lab tab (admissionId omitted → labs creates a
- *     standalone walk-in invoice on report generation).
+ * Used in three places (IPD Labs tab, Consultation View, Consultation modal).
+ * The doctor adds tests to a queue (each carries its own `kind`), sets a
+ * shared priority (+ optional sample for pathology), and submits once — the
+ * form fires one create per queued test, routed by that test's kind, so a
+ * mixed pathology + radiology batch lands in the correct pipelines. A single
+ * failure never drops the orders that did go through (allSettled); failures
+ * stay queued for retry.
  *
- * Single source of truth for the labOrderApi.create / radiologyApi.create
- * routing — kind is read from the picked catalog row, NEVER from a free-
- * text input or a separate toggle. That contract avoids the historical
- * "MRI ordered into pathology queue" bug.
+ * `kind` is read from the picked catalog row, NEVER from a free-text input —
+ * the contract that avoids the "MRI ordered into pathology queue" bug.
  *
  * Props:
  *   hospitalId   string  — required
  *   patientId    number  — required
- *   admissionId? string  — optional; OMIT key entirely for OPD walk-ins
+ *   admissionId? string  — optional; OMIT entirely for OPD walk-ins
  *   catalog      Service[] — pre-fetched by parent; each row carries `kind`
- *                            ("LAB" | "RADIOLOGY") derived from its
- *                            department.code
+ *                            ("LAB" | "RADIOLOGY"), name, price, gstRate, and
+ *                            (labs-sourced rows) labServiceId
  *   defaultKind? "LAB" | "RADIOLOGY" | "ALL" — initial typeahead filter
- *   onCreated    (savedOrder) => void — fires on successful create
+ *   onCreated    (savedOrders[]) => void — fires once with the created orders
  *   onCancel?    () => void — optional close hook (modal/panel parent)
  */
 
-const BLANK_FORM = {
-    serviceId: "",
-    sampleType: "",
-    priority: "ROUTINE",
-};
+const fmtMoney = (n) => `₹${Math.round((Number(n) || 0) * 100) / 100}`;
 
 export default function RequestInvestigationForm({
     hospitalId,
@@ -46,98 +44,130 @@ export default function RequestInvestigationForm({
 }) {
     const { notify } = useNotification();
 
-    const [form, setForm] = useState(BLANK_FORM);
+    const [selected, setSelected]   = useState([]);          // catalog rows queued for ordering
+    const [pendingId, setPendingId] = useState("");          // transient picker value (resets after add)
+    const [sampleType, setSampleType] = useState("");        // shared, optional (pathology only)
+    const [priority, setPriority]   = useState("ROUTINE");   // shared across the batch
     const [kindFilter, setKindFilter] = useState(defaultKind);
-    const [saving, setSaving] = useState(false);
+    const [saving, setSaving]       = useState(false);
 
-    // Reset state when the patient context changes (e.g. doctor queue-walks
-    // from one OPD patient to the next without unmounting the parent).
+    // Reset when the patient context changes (doctor queue-walks to the next
+    // OPD patient without the parent unmounting).
     useEffect(() => {
-        setForm(BLANK_FORM);
+        setSelected([]);
+        setPendingId("");
+        setSampleType("");
+        setPriority("ROUTINE");
         setKindFilter(defaultKind);
     }, [patientId, defaultKind]);
 
-    // Resolve the picked service from the catalog by id — single source of
-    // truth for routing.
-    const picked = useMemo(
-        () => catalog.find((s) => s.id === form.serviceId) || null,
-        [catalog, form.serviceId]
+    const selectedIds = useMemo(
+        () => new Set(selected.map((s) => String(s.id))),
+        [selected]
     );
 
-    // Typeahead filter — All / Pathology / Radiology.
+    // Picker options — filtered by the kind pill, excluding already-queued
+    // tests, grouped by discipline in the dropdown.
     const pickerOptions = useMemo(() => {
-        const pool = kindFilter === "ALL"
-            ? catalog
-            : catalog.filter((s) => s.kind === kindFilter);
-        return pool.map((s) => ({
-            value: s.id,
-            label: `${s.name} — ${s.kind === "LAB" ? "Pathology" : "Radiology"} · ₹${s.price}${s.gstRate ? ` + ${s.gstRate}% GST` : ""}`,
-        }));
-    }, [catalog, kindFilter]);
+        const pool = kindFilter === "ALL" ? catalog : catalog.filter((s) => s.kind === kindFilter);
+        return pool
+            .filter((s) => !selectedIds.has(String(s.id)))
+            .map((s) => ({
+                value: s.id,
+                group: s.kind === "LAB" ? "Pathology" : "Radiology",
+                label: `${s.name} · ${fmtMoney(s.price)}${s.gstRate ? ` +${s.gstRate}% GST` : ""}`,
+            }));
+    }, [catalog, kindFilter, selectedIds]);
 
-    // GST preview — only shown once a service is picked so the doctor sees
-    // the final billed amount before submitting.
-    const gstPreview = useMemo(() => {
-        if (!picked || picked.price == null) return null;
-        const price = Number(picked.price) || 0;
-        const gstRate = Number(picked.gstRate) || 0;
-        const gstAmount = Math.round(price * gstRate / 100 * 100) / 100;
-        const total = Math.round((price + gstAmount) * 100) / 100;
-        return { price, gstRate, gstAmount, total };
-    }, [picked]);
+    const hasLab = useMemo(() => selected.some((s) => s.kind === "LAB"), [selected]);
 
-    const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+    // Running totals across the queued tests.
+    const totals = useMemo(() => {
+        let subtotal = 0, gst = 0;
+        selected.forEach((s) => {
+            const price = Number(s.price) || 0;
+            const rate = Number(s.gstRate) || 0;
+            subtotal += price;
+            gst += (price * rate) / 100;
+        });
+        subtotal = Math.round(subtotal * 100) / 100;
+        gst = Math.round(gst * 100) / 100;
+        return { subtotal, gst, total: Math.round((subtotal + gst) * 100) / 100 };
+    }, [selected]);
 
-    const resetForm = () => setForm(BLANK_FORM);
+    const addTest = (id) => {
+        const row = catalog.find((s) => String(s.id) === String(id));
+        if (row && !selectedIds.has(String(row.id))) {
+            setSelected((prev) => [...prev, row]);
+        }
+        setPendingId(""); // clear the picker for the next pick
+    };
+
+    const removeTest = (id) =>
+        setSelected((prev) => prev.filter((s) => String(s.id) !== String(id)));
+
+    const buildPayload = (row) => ({
+        hospitalId,
+        patientId,
+        ...(admissionId ? { admissionId } : {}),
+        // Catalog link (labs V15) — set for labs-sourced rows, null on legacy /
+        // free-text rows. When present labs snapshots name/sample/price/gst from
+        // the catalogue; the request values below still win when sent.
+        labServiceId: row.labServiceId ?? null,
+        serviceName: row.name,
+        specializationName: row.department?.name ?? null,
+        sampleType: row.kind === "LAB" ? (sampleType.trim() || null) : null,
+        priority,
+        price: row.price ?? null,
+        gstRate: row.gstRate ?? null,
+    });
 
     const handleSubmit = async (e) => {
         e?.preventDefault?.();
-        if (!picked) {
-            notify("Pick a test from the catalog", "warning");
+        if (selected.length === 0) {
+            notify("Add at least one test", "warning");
             return;
         }
         if (!hospitalId || !patientId) {
             notify("Patient context missing", "error");
             return;
         }
+
         setSaving(true);
-        // Omit the admissionId key entirely for OPD walk-ins. Labs handles
-        // both cases (entity field is nullable), but explicit omission is
-        // cleaner and matches a true OPD create from a walk-in clinic.
-        const payload = {
-            hospitalId,
-            patientId,
-            ...(admissionId ? { admissionId } : {}),
-            // Catalog link (labs V15). Set for labs-sourced catalogue rows, null
-            // on legacy hospital_services / free-text rows. When present, labs
-            // snapshots serviceName/sampleType/price/gstRate from the catalogue —
-            // the request values below still win when sent (pricing back-compat).
-            labServiceId: picked.labServiceId ?? null,
-            serviceName: picked.name,
-            specializationName: picked.department?.name ?? null,
-            sampleType: picked.kind === "LAB" ? (form.sampleType.trim() || null) : null,
-            priority: form.priority,
-            price: picked.price ?? null,
-            gstRate: picked.gstRate ?? null,
-        };
-        try {
-            const saved = picked.kind === "LAB"
-                ? await labOrderApi.create(payload)
-                : await radiologyApi.create(payload);
+        // One create per queued test, each routed by its own kind. allSettled so
+        // a single rejection doesn't drop the orders that succeeded.
+        const results = await Promise.allSettled(
+            selected.map((row) =>
+                (row.kind === "LAB" ? labOrderApi.create : radiologyApi.create)(buildPayload(row))
+            )
+        );
+        setSaving(false);
+
+        const savedData = [];
+        const failedRows = [];
+        results.forEach((r, i) => {
+            if (r.status === "fulfilled") savedData.push(r.value);
+            else failedRows.push(selected[i]);
+        });
+
+        // Keep only the failures queued so the doctor retries just those.
+        setSelected(failedRows);
+        setPendingId("");
+
+        if (savedData.length) {
             notify(
-                `${picked.kind === "LAB" ? "Lab" : "Radiology"} order placed`,
-                "success"
+                `${savedData.length} order${savedData.length === 1 ? "" : "s"} placed`
+                + (failedRows.length
+                    ? ` · ${failedRows.length} failed: ${failedRows.map((f) => f.name).join(", ")}`
+                    : ""),
+                failedRows.length ? "warning" : "success"
             );
-            resetForm();
-            onCreated?.(saved);
-        } catch (err) {
-            // Form stays open with values intact so the user can retry.
+            onCreated?.(savedData);
+        } else {
             notify(
-                err?.response?.data?.message || "Failed to place order",
+                `Failed to place order${failedRows.length === 1 ? "" : "s"}`,
                 "error"
             );
-        } finally {
-            setSaving(false);
         }
     };
 
@@ -167,9 +197,8 @@ export default function RequestInvestigationForm({
 
     return (
         <form className="lab-form" onSubmit={handleSubmit}>
-            {/* Typeahead kind filter — only shown when defaultKind allows
-                cross-kind selection (consult view); IPD already has its own
-                top-level kind toggle that owns this state. */}
+            {/* Typeahead kind filter — only when defaultKind allows cross-kind
+                selection (consult view); IPD owns this state via its own toggle. */}
             {defaultKind === "ALL" && (
                 <div className="lab-kind-pills" style={{ marginBottom: 8 }}>
                     {[
@@ -191,37 +220,40 @@ export default function RequestInvestigationForm({
 
             <div className="lab-form__fields">
                 <div className="lab-form__field lab-form__field--grow">
-                    <label className="lab-form__label">Test *</label>
+                    <label className="lab-form__label">Add tests *</label>
                     {pickerOptions.length > 0 ? (
                         <SearchableSelect
-                            value={form.serviceId}
-                            onChange={(serviceId) => setField("serviceId", serviceId)}
+                            value={pendingId}
+                            onChange={addTest}
                             options={pickerOptions}
-                            placeholder={`Pick a ${
+                            placeholder={`Add a ${
                                 kindFilter === "ALL" ? "test" :
                                 kindFilter === "LAB" ? "pathology test" :
                                 "radiology test"
-                            }`}
+                            }…`}
                         />
                     ) : (
                         <p className="lab-form__hint">
-                            No services tagged under{" "}
-                            {kindFilter === "RADIOLOGY" ? "Radiology" : "Labs"}{" "}
-                            yet. Add them in Settings → Services.
+                            {selected.length > 0
+                                ? "All available tests added."
+                                : <>No services tagged under{" "}
+                                    {kindFilter === "RADIOLOGY" ? "Radiology" : "Labs"}{" "}
+                                    yet. Add them in Settings → Services.</>}
                         </p>
                     )}
                 </div>
 
-                {/* Sample only meaningful for pathology — hidden once a
-                    radiology test is picked so the doctor isn't asked. */}
-                {(picked?.kind !== "RADIOLOGY") && (
+                {/* Sample only meaningful for pathology; one shared, optional
+                    value applied to all pathology tests in the batch (labs uses
+                    the catalogue's specimen default when left blank). */}
+                {hasLab && (
                     <div className="lab-form__field">
                         <label className="lab-form__label">Sample</label>
                         <input
                             className="lab-form__input"
                             placeholder="Blood / Urine"
-                            value={form.sampleType}
-                            onChange={(e) => setField("sampleType", e.target.value)}
+                            value={sampleType}
+                            onChange={(e) => setSampleType(e.target.value)}
                         />
                     </div>
                 )}
@@ -230,8 +262,8 @@ export default function RequestInvestigationForm({
                     <label className="lab-form__label">Priority</label>
                     <select
                         className="lab-form__select"
-                        value={form.priority}
-                        onChange={(e) => setField("priority", e.target.value)}
+                        value={priority}
+                        onChange={(e) => setPriority(e.target.value)}
                     >
                         <option value="ROUTINE">Routine</option>
                         <option value="URGENT">Urgent</option>
@@ -240,15 +272,36 @@ export default function RequestInvestigationForm({
                 </div>
             </div>
 
-            {/* GST preview — visible once a service is picked. */}
-            {gstPreview && gstPreview.price > 0 && (
+            {/* Queued tests — removable chips, kind-coloured. */}
+            {selected.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                    {selected.map((s) => (
+                        <span
+                            key={s.id}
+                            className={`lab-kind-chip ${s.kind === "LAB" ? "is-lab" : "is-radiology"}`}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 8px", fontSize: 11 }}
+                        >
+                            {s.name} · {fmtMoney(s.price)}
+                            <button
+                                type="button"
+                                onClick={() => removeTest(s.id)}
+                                aria-label={`Remove ${s.name}`}
+                                style={{ display: "inline-flex", background: "none", border: "none", cursor: "pointer", padding: 0, color: "inherit" }}
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            {/* Running total across the queued tests. */}
+            {selected.length > 0 && totals.subtotal > 0 && (
                 <p className="lab-form__hint">
-                    Subtotal ₹{gstPreview.price}
-                    {gstPreview.gstRate > 0 && (
-                        <> · GST {gstPreview.gstRate}% ₹{gstPreview.gstAmount}</>
-                    )}
+                    {selected.length} test{selected.length === 1 ? "" : "s"} · Subtotal {fmtMoney(totals.subtotal)}
+                    {totals.gst > 0 && <> · GST {fmtMoney(totals.gst)}</>}
                     {" · "}
-                    <strong>Total ₹{gstPreview.total}</strong>
+                    <strong>Total {fmtMoney(totals.total)}</strong>
                 </p>
             )}
 
@@ -256,15 +309,19 @@ export default function RequestInvestigationForm({
                 <button
                     type="submit"
                     className="lab-form__save-btn"
-                    disabled={saving || !picked}
+                    disabled={saving || selected.length === 0}
                 >
-                    {saving ? "Saving…" : "Place order"}
+                    {saving
+                        ? "Placing…"
+                        : selected.length > 1
+                            ? `Place ${selected.length} orders`
+                            : "Place order"}
                 </button>
                 {onCancel && (
                     <button
                         type="button"
                         className="lab-form__cancel-btn"
-                        onClick={() => { resetForm(); onCancel(); }}
+                        onClick={onCancel}
                     >
                         Cancel
                     </button>
