@@ -1071,6 +1071,15 @@ const labOrderApi = {
 const investigationsApi = {
   byAdmission: (admissionId) => labsApi.get(`/investigations/admission/${admissionId}`).then((r) => r.data),
   byPatient:   (patientId)   => labsApi.get(`/investigations/patient/${patientId}`).then((r) => r.data),
+  // Atomic multi-test requisition (labs Phase 10 / V17). Sends the whole queue
+  // as one group; labs routes each test by discipline, creates all-or-nothing,
+  // and returns { requisitionNumber, labOrderIds, radiologyOrderIds }. The
+  // Idempotency-Key header lets a retried submit dedupe server-side (no
+  // duplicate orders / duplicate bills). Each order still bills individually.
+  createBatch: (payload, idempotencyKey) =>
+    labsApi.post(`/investigations/batch`, payload,
+      idempotencyKey ? { headers: { "Idempotency-Key": idempotencyKey } } : undefined
+    ).then((r) => r.data),
 };
 
 const nursingTaskApi = {

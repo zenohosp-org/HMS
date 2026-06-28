@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNotification } from "@/context/NotificationContext";
-import { labOrderApi, radiologyApi } from "@/utils/api";
+import { labOrderApi, radiologyApi, investigationsApi } from "@/utils/api";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { X } from "lucide-react";
 
@@ -10,14 +10,19 @@ import { X } from "lucide-react";
  *
  * Used in three places (IPD Labs tab, Consultation View, Consultation modal).
  * The doctor adds tests to a queue (each carries its own `kind`), sets a
- * shared priority (+ optional sample for pathology), and submits once — the
- * form fires one create per queued test, routed by that test's kind, so a
- * mixed pathology + radiology batch lands in the correct pipelines. A single
- * failure never drops the orders that did go through (allSettled); failures
- * stay queued for retry.
+ * shared priority (+ optional sample for pathology), and submits once. Submit
+ * has two modes:
+ *   - BATCH_ENABLED (labs Phase 10 / V17): one atomic POST /investigations/batch
+ *     → labs creates the whole queue as a single requisition (one queue card),
+ *     routing each test by discipline; all-or-nothing, deduped by Idempotency-Key.
+ *   - Fallback (default, until that endpoint ships): one create per queued test
+ *     routed by its kind, via allSettled — a single failure doesn't drop the
+ *     rest; failures stay queued for retry.
+ * Either way, every test bills as its OWN invoice line — the requisition groups
+ * for the queue, never for billing.
  *
- * `kind` is read from the picked catalog row, NEVER from a free-text input —
- * the contract that avoids the "MRI ordered into pathology queue" bug.
+ * `kind`/discipline is read from the picked catalog row, NEVER from a free-text
+ * input — the contract that avoids the "MRI ordered into pathology queue" bug.
  *
  * Props:
  *   hospitalId   string  — required
@@ -32,6 +37,16 @@ import { X } from "lucide-react";
  */
 
 const fmtMoney = (n) => `₹${Math.round((Number(n) || 0) * 100) / 100}`;
+
+// Send the whole queue as one atomic requisition via the labs batch endpoint
+// (labs Phase 10 / V17). Off until that endpoint is deployed — when off, the
+// form falls back to one create per test. Either way each test bills on its own.
+const BATCH_ENABLED = import.meta.env.VITE_LABS_BATCH_ORDERS === "true";
+
+const newIdempotencyKey = () =>
+    (typeof crypto !== "undefined" && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `req-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
 export default function RequestInvestigationForm({
     hospitalId,
@@ -51,6 +66,11 @@ export default function RequestInvestigationForm({
     const [kindFilter, setKindFilter] = useState(defaultKind);
     const [saving, setSaving]       = useState(false);
 
+    // Stable idempotency key for the batch submit — held across retries of the
+    // SAME queue so a timeout-then-retry dedupes server-side; reset on success
+    // or any queue change (a different set of tests = a different batch).
+    const idemKeyRef = useRef(null);
+
     // Reset when the patient context changes (doctor queue-walks to the next
     // OPD patient without the parent unmounting).
     useEffect(() => {
@@ -59,6 +79,7 @@ export default function RequestInvestigationForm({
         setSampleType("");
         setPriority("ROUTINE");
         setKindFilter(defaultKind);
+        idemKeyRef.current = null;
     }, [patientId, defaultKind]);
 
     const selectedIds = useMemo(
@@ -100,26 +121,34 @@ export default function RequestInvestigationForm({
         if (row && !selectedIds.has(String(row.id))) {
             setSelected((prev) => [...prev, row]);
         }
-        setPendingId(""); // clear the picker for the next pick
+        setPendingId("");            // clear the picker for the next pick
+        idemKeyRef.current = null;   // queue changed → new batch identity
     };
 
-    const removeTest = (id) =>
+    const removeTest = (id) => {
         setSelected((prev) => prev.filter((s) => String(s.id) !== String(id)));
+        idemKeyRef.current = null;   // queue changed → new batch identity
+    };
+
+    // Per-test fields shared by the batch payload + the per-order fallback.
+    // labServiceId (labs V15) is set for labs-sourced rows, null on legacy /
+    // free-text rows; when present labs snapshots name/sample/price/gst from the
+    // catalogue, with these request values still winning when sent.
+    const toTestItem = (row) => ({
+        labServiceId: row.labServiceId ?? null,
+        serviceName: row.name,
+        specializationName: row.department?.name ?? null,
+        sampleType: row.kind === "LAB" ? (sampleType.trim() || null) : null,
+        price: row.price ?? null,
+        gstRate: row.gstRate ?? null,
+    });
 
     const buildPayload = (row) => ({
         hospitalId,
         patientId,
         ...(admissionId ? { admissionId } : {}),
-        // Catalog link (labs V15) — set for labs-sourced rows, null on legacy /
-        // free-text rows. When present labs snapshots name/sample/price/gst from
-        // the catalogue; the request values below still win when sent.
-        labServiceId: row.labServiceId ?? null,
-        serviceName: row.name,
-        specializationName: row.department?.name ?? null,
-        sampleType: row.kind === "LAB" ? (sampleType.trim() || null) : null,
         priority,
-        price: row.price ?? null,
-        gstRate: row.gstRate ?? null,
+        ...toTestItem(row),
     });
 
     const handleSubmit = async (e) => {
@@ -133,9 +162,49 @@ export default function RequestInvestigationForm({
             return;
         }
 
+        // Preferred path: one atomic requisition card via the labs batch endpoint
+        // (labs Phase 10 / V17). Each test still bills as its own line — the
+        // requisition only groups them for the queue. Gated until the endpoint
+        // ships; the per-order fallback below runs otherwise.
+        if (BATCH_ENABLED) {
+            if (!idemKeyRef.current) idemKeyRef.current = newIdempotencyKey();
+            setSaving(true);
+            try {
+                const res = await investigationsApi.createBatch(
+                    {
+                        hospitalId,
+                        patientId,
+                        ...(admissionId ? { admissionId } : {}),
+                        priority,
+                        tests: selected.map(toTestItem),
+                    },
+                    idemKeyRef.current
+                );
+                const n = (res?.labOrderIds?.length || 0) + (res?.radiologyOrderIds?.length || 0)
+                    || selected.length;
+                notify(
+                    res?.requisitionNumber
+                        ? `Requisition ${res.requisitionNumber} placed · ${n} test${n === 1 ? "" : "s"}`
+                        : `${n} order${n === 1 ? "" : "s"} placed`,
+                    "success"
+                );
+                idemKeyRef.current = null; // batch landed → next submit is a new batch
+                setSelected([]);
+                setPendingId("");
+                onCreated?.(res);
+            } catch (err) {
+                // Labs rolls the whole requisition back on any invalid line — keep
+                // the queue + idempotency key intact so a retry reuses the key.
+                notify(err?.response?.data?.message || "Failed to place requisition", "error");
+            } finally {
+                setSaving(false);
+            }
+            return;
+        }
+
         setSaving(true);
-        // One create per queued test, each routed by its own kind. allSettled so
-        // a single rejection doesn't drop the orders that succeeded.
+        // Fallback: one create per queued test, each routed by its own kind.
+        // allSettled so a single rejection doesn't drop the orders that succeeded.
         const results = await Promise.allSettled(
             selected.map((row) =>
                 (row.kind === "LAB" ? labOrderApi.create : radiologyApi.create)(buildPayload(row))
