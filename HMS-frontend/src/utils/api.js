@@ -1082,6 +1082,19 @@ const investigationsApi = {
     ).then((r) => r.data),
 };
 
+// Labs catalogue read. Direct labsApi call so the response stays off the
+// HMS Render edge — Phase-10 ran into a Render-side 502 on the in-house
+// /api/lab-services proxy for the 45 KB catalogue payload while HMS Spring
+// Boot was correctly returning 200 OK. Same SSO cookie, same VITE_LABS_API_URL.
+const labCatalogApi = {
+  list: async ({ active } = {}) => {
+    const params = {};
+    if (active !== undefined) params.active = active;
+    const { data } = await labsApi.get("/lab-services", { params });
+    return data;
+  },
+};
+
 const nursingTaskApi = {
   list:     (admissionId)                  => api.get(`/ipd/nursing-tasks/${admissionId}`).then((r) => r.data),
   create:   (admissionId, payload)         => api.post(`/ipd/nursing-tasks/${admissionId}`, payload).then((r) => r.data),
@@ -1164,6 +1177,7 @@ export {
   allergyApi,
   ioApi,
   labOrderApi,
+  labCatalogApi,
   investigationsApi,
   nursingTaskApi,
   referralApi,

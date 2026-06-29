@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import api, { departmentApi, hospitalServiceApi } from "@/utils/api";
+import { departmentApi, hospitalServiceApi, labCatalogApi } from "@/utils/api";
 
 /**
  * Single source for the orderable investigation catalogue used by every order
  * picker (IPD Labs tab, Consultation View, Consultation modal).
  *
- * For gated tenants it reads the labs catalogue (lab_services) via the HMS
- * backend proxy (/api/lab-services) — labs owns the discipline + price, so a
- * radiology test can never be misclassified as pathology. For every other
+ * For gated tenants it reads the labs catalogue (lab_services) directly from
+ * the labs service (labCatalogApi -> api-labs) — labs owns the discipline +
+ * price, so a radiology test can never be misclassified as pathology. The
+ * read bypasses the HMS /api/lab-services proxy: the HMS Render edge returned
+ * a 502 on that 45 KB catalogue payload even though Spring Boot answered 200,
+ * and the direct call matches the radiology/investigations reads. For every other
  * tenant it falls back to the legacy hospital_services + department.code
  * derivation, so the rollout is per-tenant: a hospital whose radiology
  * catalogue has not yet been seeded on the labs side keeps its current picker
@@ -65,11 +68,11 @@ export function useInvestigationCatalog(hospitalId) {
       // Proxied through the HMS backend so the SPA stays single-origin (one SSO
       // cookie); labs reads hospitalId off the forwarded JWT. .catch => [] so a
       // labs outage degrades to an empty picker, never a broken tab.
-      api.get("/lab-services", { params: { active: true } })
-        .then((res) => {
+      labCatalogApi.list({ active: true })
+        .then((rows) => {
           if (cancelled) return;
-          const rows = Array.isArray(res.data) ? res.data : [];
-          setCatalog(rows.filter((r) => r.active !== false && !r.parentPanelCode).map(adaptLabsRow));
+          const list = Array.isArray(rows) ? rows : [];
+          setCatalog(list.filter((r) => r.active !== false && !r.parentPanelCode).map(adaptLabsRow));
         })
         .catch(() => { if (!cancelled) setCatalog([]); });
     } else {
